@@ -70,7 +70,6 @@ Your home folder in Emacs is ~C:\c\notes~
 | TAB              | Local tree fold/unfold                        |
 | C-u TAB          | Global tree fold/unfold                       |
 | C-u C-u C-u TAB  | Show all                                      |
-| M-TAB            | New headline                                  |
 |                  |                                               |
 | Table            |                                               |
 |------------------+-----------------------------------------------|
@@ -128,15 +127,16 @@ Your home folder in Emacs is ~C:\c\notes~
 | M-C-r            | backward regex search                         |
 |                  |                                               |
 
-** Headline
-*** Headline and List Navigation
-
-| C-c C-n | Next heading                     |
-| C-c C-p | Previous heading                 |
-| C-c C-f | Next heading same level          |
-| C-c C-b | Previous heading same level      |
-| C-c C-u | Backward to higher level heading |
-|         |                                  |
+** Headline <<<emacs:headline>>>
+| C-u TAB         | Global tree fold/unfold          |
+| C-u C-u C-u TAB | Show all                         |
+|                 |                                  |
+| C-c C-n         | Next heading                     |
+| C-c C-p         | Previous heading                 |
+| C-c C-f         | Next heading same level          |
+| C-c C-b         | Previous heading same level      |
+| C-c C-u         | Backward to higher level heading |
+|                 |                                  |
 
 C-x n s :: Work on one section
 C-x n w :: Back to outline
@@ -160,19 +160,26 @@ This is inside the drawer
 :END:
 
 ** Symbol and Escape
-=\vert{}= :: |
+
+#+BEGIN_EXAMPLE
+\vert{}
+// escape |
+#+END_EXAMPLE
+
 [[http://orgmode.org/worg/org-symbols.html][Table of Symbols]]
 
 ** =TODO=
-Headline + =TODO=
-S-left/right Cycle through *TODO*, *DONE* and empty.
+#+BEGIN_EXAMPLE
+=** TODO=
+#+END_EXAMPLE
+S-left/right :: Cycle through *TODO*, *DONE* and empty.
 
 ** Sparse Tree, Search
 C-c / r :: Search regex, C-c C-c to quit.
 M-g M-n :: Next match
 M-g M-p :: Previous match
 
-** Link
+** Link <<<emacs:link>>>
 [[http://orgmode.org/manual/Link-format.html#Link-format][Here's description of the link]]
 
 | C-c C-l | add or modify link                             |
@@ -181,13 +188,19 @@ M-g M-p :: Previous match
 | C-c &   | Go back to previous position                   |
 | C-c C-c | Update radio targets                           |
 
+#+BEGIN_EXAMPLE
+=[[My Target]]= 
+By defalt, it leads to a text search
+#+END_EXAMPLE
 
-=[[My Target]]= By defalt, it leads to a text search
-
+#+BEGIN_EXAMPLE
 [[Link]] "Link" matches an exact headline
+#+END_EXAMPLE
 
+#+BEGIN_EXAMPLE
 Something is referred to later in the file <<internal target>>
 [[internal target]] will go to the target
+#+END_EXAMPLE
 
 #+NAME: Table One
 | a  | table      |
@@ -195,9 +208,16 @@ Something is referred to later in the file <<internal target>>
 | of | four cells |
 |----+------------|
 
+#+BEGIN_EXAMPLE
 Go to a named section [[Table One]]
+#+END_EXAMPLE
 
-<<<Radio target>>>. Just simply repeat the text and it will go to original place: radio target.
+<<<emacs:radio>>>
+#+BEGIN_EXAMPLE
+<<<Radio target>>>
+This causes each occurence of 'Radio target' in normal text to become activated as a link
+Emacs only update radio targets when the file is first loaded. To manual update, C-c C-c
+#+END_EXAMPLE
 
 * PHP
 ** Array
@@ -221,6 +241,20 @@ Nowdoc can't expand variables
 echo <<<'EOT'
 <span>{$obj->name[1]}</span>
 EOT;
+#+END_EXAMPLE
+
+** Apply XSLT on XML
+#+BEGIN_EXAMPLE
+$xml = new DOMDocument;
+$xml->load('cdcatalog.xml');
+
+$xsl = new DOMDocument;
+$xsl->load('cdcatalog.xsl');
+
+$proc = new XSLTProcessor;
+$proc->importStyleSheet($xsl);
+
+echo $proc->transformToXML($xml);
 #+END_EXAMPLE
 
 * Drupal
@@ -266,6 +300,7 @@ Children nodes Photo under Images node.
 Simply Images/Photo, the result is already array
 Concate multiple nodes
 =concat(photo1,';',photo2)= then explode
+
 ** Debug
 =watchdog('LOG_TYPE','message');=
 
@@ -1722,6 +1757,13 @@ mycallback({foo:'bar'});
 #+END_EXAMPLE
 
 *** JSON
+JSON object names require double quotes.
+String are wrapped in double quotes.
+Boolean is true or false.
+null can be used.
+MIME type: application/json
+
+var obj = JSON.parse(jsonString); // parse a json string
 
 ** String
 s.length
@@ -2344,6 +2386,29 @@ oReq.onload = function(e) {
 oReq.send();
 #+END_EXAMPLE
 
+** Apply XSLT on XML
+#+BEGIN_EXAMPLE
+function loadXMLDoc(filename) {
+ var xhttp = new XMLHttpRequest();
+ xhttp.open("GET", filename, false);
+ try {
+  xhttp.responseType = "msxml-document";
+ }
+ catch(err) {}
+ xhttp.send();
+ return xhttp.responseXML;
+}
+
+var xml = loadXMLDoc('cdcatalog.xml');
+var xsl = loadXMLDoc('cdcatalog.xsl');
+
+var xsltProcessor = new XSLTProcessor();
+xsltProcesser.importStylesheet(xsl);
+resultDocument = xsltProcesser.transformToFragment(xml, document);
+document.getElementById("example").appendChild(resultDocument);
+
+#+END_EXAMPLE
+
 ** WebSocket
 #+BEGIN_EXAMPLE
 var connection = new WebSocket('ws://abc.com/echo', ['soap', 'xmpp']);
@@ -2394,6 +2459,21 @@ catch(err) {
 finally {
 
 }
+#+END_EXAMPLE
+
+** Communication Between Children Window and Parent Window
+A parent window can have multiple iframes and iframes are loaded from other domain.
+
+#+BEGIN_EXAMPLE
+// In iframe
+parent.postMessage('the message');
+
+// In parent window
+function receiveMessage(event) {
+ if (event.origin !== 'http://otherdomain.com') return;
+ console.log(event.data);
+}
+window.addEventListener("message", receiveMessage, false);
 #+END_EXAMPLE
 
 ** Dynamic iframe height
@@ -3511,6 +3591,136 @@ function get_nextSibling(n) {
 ]]>
 #+END_EXAMPLE
 
+** Comment
+#+BEGIN_EXAMPLE
+<!-- Same as HTML but double -- is not allowed -->
+#+END_EXAMPLE
+
+** XML newline is always LF
+** XML Element node name can contain -, _ and . but not space
+** Attribute value should be HTML entity encoded
+Mainly enocde the double quotes " to &quot;
+> &gt;
+< &lt;
+
+** Namespace
+#+BEGIN_EXAMPLE
+<root 
+xmlns:h="http://www.w3.org/TR/html4/"
+xmlns:f="http://www.w3schools.com/furniture">
+
+<h:table>
+  <h:tr>
+    <h:td>Apples</h:td>
+    <h:td>Bananas</h:td>
+  </h:tr>
+</h:table>
+
+<f:table>
+  <f:name>African Coffee Table</f:name>
+  <f:width>80</f:width>
+  <f:length>120</f:length>
+</f:table>
+
+</root>
+#+END_EXAMPLE
+
+** XSLT
+XSLT stands for XSL (Extensible Stylesheet Language) Transformations
+XSLT uses XPath to navigate through elements.
+
+XSLT code
+#+BEGIN_EXAMPLE
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match="/">
+<!-- Associate the template with the root of the XML source document -->
+<!-- A template contains rules to apply when a specified node is match -->
+  <h2>My CD Collection</h2>
+    <table border="1">
+      <tr bgcolor="#9acd32">
+        <th style="text-align:left">Title</th>
+        <th style="text-align:left">Artist</th>
+      </tr>
+      <xsl:for-each select="catalog/cd">
+<!-- for-each loop, select contains XPath expression -->
+<!-- select="catelog/cd[artist='Bob Dylan']" -->
+<!-- =, !-, &lt;, &gt; -->
+     <xsl:sort select="artist" />
+<!-- sort -->
+      <tr>
+        <td><xsl:value-of select="title"/></td>
+        <td><xsl:value-of select="artist"/></td>
+        <xsl:if test="price &gt; 10">
+        <td><xsl:value-of select="price"/></td>
+        </xsl:if>
+<!-- choose, when, otherwise -->
+       <xsl:choose>
+        <xsl:when test="price &lt; 10">
+         <td bgcolor=""><xsl:value-of select="price"/></td>
+        </xsl:when>
+        <!-- Multiple when's -->
+        <xsl:otherwise>
+         <td><xsl:value-of select="price"/></td>
+        </xsl:otherwise>
+       </xsl:choose>
+<!-- choose, when, otherwise. -->
+      </tr>
+      </xsl:for-each>
+<!-- Close a loop -->
+    </table>
+</xsl:template>
+</xsl:stylesheet>
+#+END_EXAMPLE
+
+XML file
+#+BEGIN_EXAMPLE
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <cd>
+    <title>Empire Burlesque</title>
+    <artist>Bob Dylan</artist>
+    <country>USA</country>
+    <company>Columbia</company>
+    <price>10.90</price>
+    <year>1985</year>
+  </cd>
+  <cd>...</cd>
+  ...
+</catalog>
+#+END_EXAMPLE
+
+Template and subtemplates
+#+BEGIN_EXAMPLE
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match="/">
+ <html>
+ <body>
+  <xsl:apply-templates/>
+ </body>
+ </html>
+</xsl:template>
+
+<xsl:template match="cd">
+ <p>
+ <xsl:apply-templates select="title"/>
+ <xsl:apply-templates select="artist"/>
+ </p>
+</xsl:template>
+
+<xsl:template match="title">
+ Title: <xsl:value-of select="."/>
+ <br />
+</xsl:template>
+
+<xsl:template match="title">
+ Artist: <xsl:value-of select="."/>
+ <br />
+</xsl:template>
+</xsl:stylesheet>
+#+END_EXAMPLE
+
 ** Invalid character &#x1F
 change to version 1.1
 #+BEGIN_EXAMPLE
@@ -3561,7 +3771,7 @@ C:\Users\you\AppData\Local\Google\Chrome\User Data\PepperFlash\some.version.numb
 chrome.exe --allow-file-access-from-files
 #+END_EXAMPLE
 
-*** XPath
+*** XPath <<<XPath>>>
 [[http://www.freeformatter.com/xpath-tester.html][xPath Online tools]]
 
 ** Firefox
