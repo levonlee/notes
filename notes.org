@@ -159,11 +159,11 @@ This is inside the drawer
 
 :END:
 
-** Symbol and Escape
+** Symbol and Escape <<<emacs:escape>>>
 
 #+BEGIN_EXAMPLE
 \vert{}
-// escape |
+which escapes |
 #+END_EXAMPLE
 
 [[http://orgmode.org/worg/org-symbols.html][Table of Symbols]]
@@ -926,6 +926,155 @@ div:hover {
  transform: rotate(180deg);
 }
 #+END_EXAMPLE
+
+** Font
+Most widely accepted font format is WOFF then TTF and OTF.
+Only IE supports EOT
+
+#+BEGIN_EXAMPLE
+@font-face {
+ font-family: myFirstFont;
+ src: url(sansation_light.woff);
+}
+
+// Another for bold
+@font-face {
+ font-family: myFirstFont;
+ src: url(sansation_bold.woff);
+ font-weight: bold;
+}
+#+END_EXAMPLE
+
+** Link
+#+BEGIN_EXAMPLE
+// In order
+a:link {} /* Unvisited and normal */
+a:visited {}
+a:hover {}
+a:active {}
+#+END_EXAMPLE
+
+** Text Effects
+*** Ellipsis
+#+BEGIN_EXAMPLE
+div.test {
+ white-space: nowrap;
+ width: 200px; // width has to be defined
+ overflow: hidden; // needed
+ text-overflow: ellipsis; // change to inherit when hover then the clipped text will show
+}
+#+END_EXAMPLE
+
+*** Long Word
+#+BEGIN_EXAMPLE
+word-wrap: break-word; // allow to break a long word
+#+END_EXAMPLE
+
+** Selector
+div > p :: select p elements where the direct parent is div
+div + p :: select p elements that are placed immediately after div
+p ~ ul :: select ul elements that are preceded by a p element
+#+BEGIN_EXAMPLE
+<p></p>
+<ul></ul>
+#+END_EXAMPLE
+
+a[target] :: <a>'s with target attribute
+a[target=_blank]
+a[title~=flower] :: containing a word or followed by a hypen (not match flowers)
+a[lang|=en] :: starting with a word or followed by a hyphen (en, en-us)
+div[class^="test"] :: starting with (anything)
+a[href*="w3schools"] :: containing
+
+a:active
+a:hover
+a:link
+a:visited
+
+p::after
+p::before
+
+input:checked
+input[type="text"]:disabled
+input:enabled
+input:focus
+input:invalid
+input:valid
+input:optional
+input:required
+ 
+p::first-letter
+p::first-line
+ 
+p:empty -- has no children including text nodes
+
+div:not(p) -- all children elements except <p>'s
+
+p:first-child -- <p>'s are the first child of any elements
+p:last-child
+p:nth-child(2)
+p:nth-last-child(2)
+p:only-child -- <p>'s are the only child of any elements
+
+div p:first-of-type -- <div> has 4 children <p>'s and first child is <a>. Select 1st of <p> children.
+div p:last-of-type
+div p:nth-of-type(2)
+div p:only-of-type
+
+div::selection -- the selected portion of an element (e.g. select text)
+
+=#news:target= -- anchor name id=news matches the URL hash
+
+** Functions
+*** attr(data-attr-1)
+#+BEGIN_EXAMPLE
+a::after {
+ content: " (" attr(href) ")";
+}
+#+END_EXAMPLE
+
+*** calc()
+#+BEGIN_EXAMPLE
+<div>Some Text...</div>
+
+// Always leave 50px on both sides for space
+// and take all that is left for width
+
+div {
+ width: calc(100% - 100px); /* calculate */
+ margin-left: 50px;
+}
+#+END_EXAMPLE
+
+*** linear-gradient(), radial-gradient()
+repeat-linear-gradient(), repeat-radial-gradient()
+
+** border-image
+border-image: source slice width outset repeat|initial|inherit;
+border-image: none   100%   1     0     stretch
+
+** background
+background: bg-color bg-image position/bg-size bg-repeat bg-origin bg-clip bg-attachment initial|inherit;
+
+#+BEGIN_EXAMPLE
+background: url(img_flwr.gif) right bottom no-repeat, url(paper.gif) left top repeat;
+#+END_EXAMPLE
+
+*** background-size
+background-size: 20px auto;
+background-size: 50% auto; // sets the width of the bg image in percent of the parent element.
+background-size: contain; // bg image might not cover all content area
+background-size: cover; // content area might not see the whole bg image
+
+*** background-clip, background-origin
+background-clip: border-box; // default. largest area
+// padding-box, content-box
+
+// For background image
+background-origin: border-box; // default. largest area
+// padding-box, content-box
+
+** opacity
 
 ** @keyframes
 #+BEGIN_EXAMPLE
@@ -1775,6 +1924,18 @@ s.lastIndexOf("Paul"); // Case sensitive. Starts from the end
 s.substr(0,4); // From start to 4th index
 s.substring(0,4); // From start and take 4 characters
 s.toLowerCase() s.toUpperCase();
+** URI and URI Component Encode
+#+BEGIN_EXAMPLE
+var url1 = "http://abc.com";
+var url2 = "http://xyz.com/test.php?url=" + encodeURIComponent(url1);
+// decodeURIComponent();
+
+// When you want a working URL as a whole with URL parameters
+var uri = "http://abc.com/folder name with space/file name with space.asp?abc=has space"
+var uri_en = encodeURI(uri);
+// decodeURI(str)
+#+END_EXAMPLE
+
 ** Type Conversion
 Javascript conversion is automatic. 
 var y = "5";
@@ -2409,6 +2570,26 @@ document.getElementById("example").appendChild(resultDocument);
 
 #+END_EXAMPLE
 
+** Apply XPath
+#+BEGIN_EXAMPLE
+var x=loadXMLDoc("books.xml");
+var xml = x.responseXML;
+path = "/bookstore/book[1]/title";
+
+var nodes = xml.evaluate(path, xml, 
+null, // namespaceResolver
+XPathResult.ANY_TYPE, // resultType
+null // If an existing XPathResult object is specified, it will be reused
+); // Return xpathResult object 
+var result = nodes.iterateNext();
+
+while (result) {
+ console.log(result.childNodes[0].nodeValue);
+ result = nodes.iterateNext();
+} 
+
+#+END_EXAMPLE
+
 ** WebSocket
 #+BEGIN_EXAMPLE
 var connection = new WebSocket('ws://abc.com/echo', ['soap', 'xmpp']);
@@ -2596,6 +2777,25 @@ siblingDiv.insertAfter(parentDiv);
 .parentDiv
 .siblingDiv
 */
+#+END_EXAMPLE
+
+** Form
+Checkboxes and radio buttons are included only if they're checked.
+All seriailized form field elements must have name attribute.
+
+#+BEGIN_EXAMPLE
+$("#form_id").on("submit", function(e) {
+ event.preventDefault();
+ console.log($(this).serialize());
+});
+#+END_EXAMPLE
+
+** Animate
+*** Scroll
+#+BEGIN_EXAMPLE
+$("html,body").animate({ 
+ scrollTop: $("[ng-controller=aController]").offset().top - 100 
+});
 #+END_EXAMPLE
 
 * Linux
@@ -3773,6 +3973,50 @@ chrome.exe --allow-file-access-from-files
 
 *** XPath <<<XPath>>>
 [[http://www.freeformatter.com/xpath-tester.html][xPath Online tools]]
+| /nodename/               | select all nodes with name                                                        |
+| ~/~                      | select from the root node                                                         |
+| //                       | select nodes from the current node that match the select no matter where they are |
+| .                        | select the current node                                                           |
+| ..                       | select the parent of the current node                                             |
+| @                        | select attribute                                                                  |
+|                          |                                                                                   |
+| store/book[1]            | first book element                                                                |
+| store/book[last()]       | last book element                                                                 |
+| store/book[last()-1]     |                                                                                   |
+| store/book[position()<3] | first 2 book elements                                                             |
+| store/book[price>35.00]  | all book elements that have price element with a value greater than 35.00         |
+| store/book/title[@lang]  | lang attributes of all title elements in book elements                            |
+|                          |                                                                                   |
+| ~*~                      | match any element node                                                            |
+| @*                       | match any attribute node. Have at least one attribute                             |
+|                          |                                                                                   |
+
+Select multiple paths
+//book/title | //book/price
+
+**** Axis Syntax
+axisname::nodetest[predicate]
+
+axisname is the relationship name
+- self
+- child
+etc.
+
+nodetest is a node name to test
+
+| child::book     | book nodes that are children of the current node |
+| attribute::lang | lang attribute of the current node               |
+| child::*        | children elements of the current node            |
+| child::text()   | text node of the current node                    |
+| child::node()   |                                                  |
+
+**** XPath Operators
++ - * div
+mod (division remainder) :: 5 mod 2 
+=|= combine 2 node-sets
+= != < <= > >=
+or :: price=9.8 or price=9.7
+and
 
 ** Firefox
 *** Make all new windows open in Private Mode
