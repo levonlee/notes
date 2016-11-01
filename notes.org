@@ -257,6 +257,45 @@ $proc->importStyleSheet($xsl);
 echo $proc->transformToXML($xml);
 #+END_EXAMPLE
 
+** Block Referral Traffic
+#+BEGIN_EXAMPLE
+if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
+  $_referer_domain = array(
+    "~timebie\.com~i",
+    "~ana-white\.com~i",
+    "~mlizcochico\.com~i",
+    "~adishofdailylife\.com~i",
+    "~techvibes\.com~i",
+    "~sociableblog\.com~i",
+    "~laurenconrad\.com~i",
+    "~gingerhotels\.com~i",
+    "~grammarist\.com~i",
+    "~dobbersports\.com~i",
+    "~netsidebar\.com~i",
+    "~myhomeideas\.com~i",
+    "~fhm\.com~i",
+    "~gamezebo\.com~i"
+  );
+
+  foreach ( $_referer_domain as $_referer ) {
+    if ( preg_match( $_referer, $_SERVER['HTTP_REFERER'] ) ) {
+      exit;
+    }
+  }
+
+  $_referrer = parse_url($_SERVER['HTTP_REFERER']);
+  if ($_referrer !== false && !is_null($_referrer['host'])
+      && preg_match( "~oralhealthgroup\.com~i", $_referrer['host'] )) {
+    $_p = (isset($_GET['p'])) ? $_GET['p'] : '';
+    $_subid = (isset($_GET['subid'])) ? $_GET['subid'] : '';
+    $_uid = (isset($_GET['uid'])) ? $_GET['uid'] : '';
+    if ($_p !== '' && $_subid !== '' && $_uid !== '') {
+      exit;
+    }
+  }
+}
+#+END_EXAMPLE
+
 * Drupal
 ** Update Module
 - Read module README first
@@ -2798,6 +2837,36 @@ $("html,body").animate({
 });
 #+END_EXAMPLE
 
+* SEO
+** Google Analytics
+Under Admin, you can build Views. Views can have Filters. Views collect data.
+Changes on Views and Filters will affect future data only.
+
+Under Views, there're a lot of reports. Apply Segments to reports to filter out data 
+without destroying Views data.
+*** Too Many Self-referrals
+Reporting > Acquisition > All Traffic > Referrals, you will find the website's url is the source
+And the percentage is high compared to other Referral Sources.
+3 reasons:
+1. Users sessions idle for 30 minutes and become active. This should be < 10% of traffic
+2. Cross domain (need to bring it down to 0 self-referral)
+3. A lot of traffic and sessions are created by spammers to a landing page 
+(most likely homepage with url parameters)  with a fake referral path as the website.
+
+Click on the website URL (referral source), you will see Referral Path (that's From traffic)
+Add secondary dimension "Full Referrer" to see the referrer's domain and full path.
+
+Since self-referrals can be faked and real self-referrals should be small amount, you can filter out
+self-referrals in GA.
+
+Go to Admin > Account > Property > Tracking Info > Referral Exclusion List > add domain
+abc.com also matches www.abc.com because domain name CONTAINS
+
+You cannot use View Filter to filter out referral domain...
+
+You can also create a segment without affecting the data. 
+Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
+
 * Linux
 ** System Version, Distro
 
@@ -3728,6 +3797,33 @@ Parameters
        }
     }
 </script>
+#+END_EXAMPLE
+
+** Responsive
+Add a size to the ad unit /networkid/adunitname
+You can specify one or more sizes for a line item that uses this ad unit.
+And upload each creative and specify the size. You can have creative bigger than the size you specify.
+
+#+BEGIN_EXAMPLE
+googletag.cmd.push(function() {
+  var leaderboard_mapping = googletag.sizeMapping()
+  .addSize([1280, 800], [[970, 250], [970, 90], [728, 90]])
+  .addSize([600, 800], [468, 60]) // viewport size is width and height both > 600 and 800
+  .addSize([0, 0], [[320, 50], [320, 100]]) // Map any viewport size
+/* This will only display the ad if it's mobile or tablet viewport size
+  .addSize([0, 0], []) // [] means don't try to call an ad
+  .addSize([320, 700], [300, 250]) // Mobile or tablet
+  .addSize([1050, 200], [])
+*/
+  .build();
+  
+  googletag.defineSlot('/networkid/adunitname'
+           , [728, 90] // If there is an error in the mapping or if the browser size can't be determined
+                       // the size specified here in .defineSlot will be used. 
+           , 'div-id')
+           .defineSizeMapping(leaderboard_mapping)
+           .addService(googletag.pubads());
+});
 #+END_EXAMPLE
 
 * XML
