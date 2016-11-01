@@ -776,6 +776,50 @@ Get URL alias
 url() just returns a url. $options are the same as l().
 url('taxonomy/term/1');
 
+** Basic Ajax
+#+BEGIN_EXAMPLE
+// Create a menu to receive ajax
+$items['newsletter/builder_entry/%'] = array(
+    'title' => "",
+    'page callback' => '_lili_add_session_handler',
+    'page arguments' => array(2),
+    'access callback' => 'user_access',
+    'access arguments' => array('newsletter builder access'),
+    'type' => MENU_CALLBACK,
+);
+
+function _lili_add_session_handler($command) {
+if (!isset($_POST['ids'])) {
+    return drupal_not_found();
+  }
+
+  if ($command === "manage") {
+    // Add to the session variable detailing what items are added
+    $_SESSION['session_name'] = array();
+
+    $ids = json_decode($_POST['ids']);
+    foreach ($ids as $id) {
+      $id = trim($id);
+      $_SESSION['session_name']["item_" . $id] = $id;
+    }
+  }
+  else {
+    return drupal_not_found();
+  }
+}
+
+// Javascript
+$.ajax({
+ type: "POST",
+ url: '?q=newsletter/builder_entry/manage',
+ data: "ids=" + 'some string',
+ success: function(e) {
+   // do something
+ },
+ dataType: "json"
+});
+#+END_EXAMPLE
+
 ** Email
 Define an email template using hook_mail()
 #+BEGIN_EXAMPLE
