@@ -878,6 +878,7 @@ Get the slugs of the terms under taxonomy publication
 
 ** RSS
 Default template /wp-includes/feed-rss2.php
+Functions to use in The Loop: /wp-includes/feed.php
 
 #+BEGIN_EXAMPLE
 <?php
@@ -890,24 +891,25 @@ $args = array(
 ?>
 query_posts($args);
 <?php while (have_posts()) : the_post(); ?>
-	<item>
-		<title><?php the_title_rss(); ?></title>
-		<?php if (has_post_thumbnail($post->ID)) : ?>
-			<?php
-			$image = wp_get_attachment_image_src(
-				get_post_thumbnail_id( $post->ID ),
-				'thumbnail'
-			);
-			?>
-			<feature_image><?php echo $image[0]; ?></feature_image>
-		<?php endif; ?>
-		?>
-		<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000',
+<item>
+  <title><?php the_title_rss(); ?></title>
+  <?php if (has_post_thumbnail($post->ID)) : ?>
+  <?php
+    $image = wp_get_attachment_image_src(
+    get_post_thumbnail_id( $post->ID ),
+    'thumbnail'
+    );
+  ?>
+  <feature_image><?php echo $image[0]; ?></feature_image>
+  <?php endif; ?>
+  <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000',
 				get_post_time('Y-m-d H:i:s', true),
 				false); ?></pubDate>
-		<?php // Text Version ?>
-		<excerpt><![CDATA[<<?php echo get_the_exerpt(); ?>]]></excerpt>
-		<excerpt_html><![CDATA[<<?php echo the_exerpt_rss(); ?>]]></excerpt_html>
+  <?php // Text Version ?>
+  <excerpt><![CDATA[<<?php echo get_the_exerpt(); ?>]]></excerpt>
+  <excerpt_html><![CDATA[<<?php echo the_exerpt_rss(); ?>]]></excerpt_html>
+  <?php echo the_category_rss('rss2'); // categories and tags ?>
+</item>  
 <?php endwhile; ?>
 #+END_EXAMPLE
 
@@ -1553,10 +1555,10 @@ Also can be applied on almost all elements.
 | onpaste      |                                                   |
 |              |                                                   |
 | onmousedown  |                                                   |
-| onmouseenter |                                                   |
+| onmouseenter | when move into child element                      |
 | onmouseleave | when moving out of the element (not its children) |
 | onmousemove  | when moving inside an element                     |
-| onmouseover  | when onto an element                              |
+| onmouseover  | when onto this element                            |
 | onmouseout   | when moving out of the element and its children   |
 |              |                                                   |
 | onkeydown    | evens are in order. works for all keys            |
@@ -1584,7 +1586,6 @@ animationiteration :: when animaiton repeats
 
 *** Transition Event
 transitionend
-
 
 *** Misc events
 | onerror | when an error occurs while loading an external file: <img> |
@@ -1638,6 +1639,8 @@ transitionend
 |          | required                          | no in IE                                         |
 |          | type="range" min max              | slide control                                    |
 |          | type="search"                     |                                                  |
+|          | disabled="disabled"               | not selectable, editable and not submitted       |
+|          | readonly="readonly"               | selectable, not editable and get submitted       |
 | samp     | sample computer output            |                                                  |
 | code     | monospace                         |                                                  |
 | kbd      | monospace                         |                                                  |
@@ -2863,6 +2866,7 @@ siblingDiv.insertAfter(parentDiv);
 #+END_EXAMPLE
 
 ** Form
+*** serialize
 Checkboxes and radio buttons are included only if they're checked.
 All seriailized form field elements must have name attribute.
 
@@ -2871,6 +2875,19 @@ $("#form_id").on("submit", function(e) {
  event.preventDefault();
  console.log($(this).serialize());
 });
+#+END_EXAMPLE
+
+*** Disabled Field
+Disabled fields are not editable, selectable, copyable and they are not submitted.
+In order to select and copy value of a disabled field, you need to enable it when mouseover and disable it
+when mouseout.
+
+Can't register events directly on disabled fields. Events can be registered on its parent
+
+#+BEGIN_EXAMPLE
+$('.parent_container')
+  .mouseover(function() { $(this).find('textarea').prop('disabled',false)})
+  .mouseout(function() { $(this).find('textarea').prop('disabled',true)});
 #+END_EXAMPLE
 
 ** Animate
