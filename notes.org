@@ -334,6 +334,68 @@ function lili_feeds_presave(FeedsSource $source, $entity, $item) {
 }
 #+END_EXAMPLE
 
+**** New Feed Tamper Plugin
+The plugin does this: Drupal download file with real file extension
+
+#+BEGIN_EXAMPLE
+// Implements hook_ctools_plugin_directory()
+function lili_ctools_plugin_directory($module, $plugin) {
+ if ($module == 'feeds_tamper') {
+  return 'plugins'; // path_to_lili_module/plugins/lili_*.inc
+ }
+}
+
+// lili_change_image_extension.inc
+// You can refer to path_to_feeds_tamper_module/plugins/explode.inc
+$plugin = array(
+  'form' => 'lili_image_extension_form',
+  'callback' => 'lili_image_extension_callback',
+  'validate' => 'lili_image_extension_validate', // optional
+  'name' => 'Convert Image URL Extension',
+  'category' => 'T and T', // group name
+  'multi' => 'direct',
+  // If multiple values are injected to the plugin,
+  // 'direct' will pass the whole array as $field to callback
+  // while 'loop' will loop over and pass each value to callback
+);
+
+function lili_image_extension_form($importer, $element_key, $settings) {
+  $form = array();
+  $form['info'] = array(
+    '#markup' => t('Converts source image URLs that don\'t have regular image extension: jpg, png, etc.'),
+  );
+
+  // Extra variables to pass to $settings in callback
+  $form['importer_name'] = array(
+      '#type' => 'hidden',
+      '#title' => t('Importer machine name'),
+      '#default_value' => isset($settings['importer_name']) ? $settings['importer_name'] : $importer->id,
+  );
+
+  return $form;
+}
+
+function lili_image_extension_validate(&$settings) {
+  // Validate $settings.
+}
+
+function lili_image_extension_callback($result, $item_key, $element_key, &$field, $settings, $source) {
+  //settings has the importer name
+  //$settings['importer_name']
+  //$field has the importing field text value
+  if (!is_array($field)) {
+    $field = array($field);
+  }
+
+  $val = array();
+
+  foreach ($field as $f) {
+    $val[] = _lili_save_file_with_extension($f);
+  }
+  $field = $val;
+}
+#+END_EXAMPLE
+
 **** XPath
 Children nodes Photo under Images node.
 Simply Images/Photo, the result is already array
@@ -342,6 +404,19 @@ Concate multiple nodes
 
 ** Debug
 =watchdog('LOG_TYPE','message');=
+
+If error or warning messages are printed using drupal_set_message, 
+modify the `drupal_set_message` function so that it prints debug_backtrace
+#+BEGIN_EXAMPLE
+if ($type == 'error') {
+  $message .= ' '. print_r(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT,3),1);
+}
+#+END_EXAMPLE
+
+You can throw an Exception
+#+BEGIN_EXAMPLE
+throw new Exception(print_r($val));
+#+END_EXAMPLE
 
 ** URL Alias
 Setup pattern for each node type
@@ -775,6 +850,73 @@ Function l add class="active" when the path is current_path(). Use url() instead
 Get URL alias
 url() just returns a url. $options are the same as l().
 url('taxonomy/term/1');
+
+** File
+Read local or remote file to an object of strings
+#+BEGIN_EXAMPLE
+$result = drupal_http_request($url);
+/*
+obj(
+ code // int 200
+ headers
+)
+*/
+
+$path = 'public://afolder/';
+$replace = FILE_EXISTS_RENAME; // Default
+// FILE_EXISTS_REPLACE, FILE_EXISTS_ERROR
+file_unmanaged_save_data($result->data, $path, $replace);
+#+END_EXAMPLE
+
+<<<file_unmanaged_save_data>>>($data, $destination, $replace)
+#+BEGIN_EXAMPLE
+// $destination is folder path not folder path + filename
+$temp_name = 'temporary://auniquefilename'
+file_put_contents($temp_name,$data); // return number of bytes or false
+file_unmanaged_move($temp_name,$destination, $replace); // rename
+#+END_EXAMPLE
+
+<<<Drupal download file with real file extension>>>
+#+BEGIN_EXAMPLE
+/**
+ * Download external file to temporary filesystem
+ * with correct file extension based on content-type in http response header
+ *
+ * @param $url string Full external URL of a file
+ *
+ * @return string Local file path with correct file extension
+ */
+function _lili_save_file_with_extension( $url ) {
+  $filename  = $url;
+  $extension = '';
+  $result    = drupal_http_request( $url );
+
+  if ( $result->code == 200 && isset( $result->headers['content-type'] ) ) {
+    $mime_type_extension = array(
+      'image/jpeg'  => 'jpg',
+      'image/jpg'   => 'jpg',
+      'image/png'   => 'png',
+      'image/x-png' => 'png',
+      'image/gif'   => 'gif'
+    );
+
+    foreach ( $mime_type_extension as $k => $v ) {
+      if ( strcasecmp( $k, $result->headers['content-type'] ) == 0 ) {
+        $extension = $v;
+        break;
+      }
+    }
+
+    if ( $extension !== '' ) {
+      // Save file with correct file extension
+      $filename = 'temporary://import_' . str_replace( ".", "_", microtime( TRUE ) ) . "." . $extension;
+      file_put_contents( $filename, $result->data );
+    }
+  }
+
+  return $filename;
+}
+#+END_EXAMPLE
 
 ** Basic Ajax
 #+BEGIN_EXAMPLE
