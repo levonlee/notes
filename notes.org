@@ -3369,6 +3369,12 @@ echo -e "Hello\nWorld";
 // echo newline -e to use \n etc
 #+END_EXAMPLE
 
+*** printf
+Print multilines
+#+BEGIN_EXAMPLE
+printf '%s\n%s\n' "$line1" "$line2"
+#+END_EXAMPLE
+
 *** Read command output line by line
 #+BEGIN_EXAMPLE
 output=$(drush command output contains multiple lines);
@@ -3434,8 +3440,24 @@ curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/you
 Popup form or server authentication
 =curl https://a.com/b.aspx -u user:password -L -o /path/to/xml.xml=
 
+**** <<<cURL download only after or before a date>>>
+Works for ftp and Http
+#+BEGIN_EXAMPLE
+fileLocalTime=$(date -r "$localfile")
+curl $remote_file_path -u $user:$password -o $localfile -R -z "${fileLocalTime}"
+# default is "after"
+# add a dash before date string will result in "before".
+fileLocalTimeNew=$(date -r "$localfile")
+if [ "$fileLocalTime" == "$fileLocalTimeNew" ]; then
+ echo "the same"
+else
+ echo $fileLocalTime
+ echo $fileLocalTimeNew
+fi
+#+END_EXAMPLE
 
-Options
+**** Options
+
 | L          | Follow through all redirects                                  |
 | o          | redirect STDOUT to a file                                     |
 | O          | save file using same file name in current folder              |
@@ -3445,6 +3467,9 @@ Options
 | limit-rate | limit download speed: --limit-rate=200k. use k, m or g        |
 | s          | suppress STDOUT                                               |
 | w          | rewrite STDOUT                                                |
+| R          | Keep remote file timestamp. --remote-time                     |
+| z          | cURL download only after or before a date                     |
+|            |                                                               |
  
 ** Commands
 *** Run Sequentially
