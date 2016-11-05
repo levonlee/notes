@@ -1123,15 +1123,17 @@ WordPress cache API in database.
 
 * CSS
 ** Layout - Position
-default position:static
-relative is relative to default static position, use left, right, top
-Other elements adjacent to position:relative element will no be adjusted to fit innto
+Default position is static. left, right, top, bottom have not effect
+relative is relative to default static position, use left, right, top and bottom
+
+Other elements adjacent to position:relative element will no be adjusted to fit into
 any gap left by the element (treat the relative element as static)
+
 position:fixed is relative to viewport
 
 A "positioned" element is one whose position is anything except static.
 
-postion:absolute is positioned realtive to the nearest positioned ancestor.
+postion:absolute is positioned relative to the nearest positioned ancestor.
 If there's no positioned ancestors, document body is used.
 
 When elements are positioned, they can overlap other elements.
@@ -1199,7 +1201,7 @@ word-wrap: break-word; // allow to break a long word
 
 ** Selector
 div > p :: select p elements where the direct parent is div
-div + p :: select p elements that are placed immediately after div
+div + p :: select p elements that are placed immediately after div (div's children)
 p ~ ul :: select ul elements that are preceded by a p element
 #+BEGIN_EXAMPLE
 <p></p>
@@ -1273,9 +1275,6 @@ div {
 }
 #+END_EXAMPLE
 
-*** linear-gradient(), radial-gradient()
-repeat-linear-gradient(), repeat-radial-gradient()
-
 ** border-image
 border-image: source slice width outset repeat|initial|inherit;
 border-image: none   100%   1     0     stretch
@@ -1301,7 +1300,105 @@ background-clip: border-box; // default. largest area
 background-origin: border-box; // default. largest area
 // padding-box, content-box
 
+** Color
+*** <<<CSS inherit color>>>
+You can grab the parent `color` css property and use it in any color properties in child element
+#+BEGIN_EXAMPLE
+<div class="parent">
+ <div class="child">
+ </div>
+</div>
+
+.parent {
+ color: red;
+ background-color: blue;
+}
+.child {
+ background-color: currentColor; /* take the parent color: red */
+ color: currentColor; /* Take the parent color: red */
+}
+#+END_EXAMPLE
+
+*** rgb(), rgba()
+<<<CSS rgba>>>
+#+BEGIN_EXAMPLE
+#f03
+#ff0033
+#FF0033
+rgb(255, 0, 51) // no fraction all integers
+rgb(100%, 0%, 20%) // all % no integer
+
+#f030     // 0% opaque red
+#ff003300 // 0% opaque red
+#FF003388 // 50% opaque red
+rgba(255,0,0,0.7) // 70% opaque red
+
+#+END_EXAMPLE
+
+*** hsl(), hsla()
+Hue :: integer, angle degree of the color circle. Red is 0, Green is 120, Blue is 240
+Saturation :: percentage. 0% is grey
+Lightness :: 100% is white, 0% is black, 50% is normal
+
+#+BEGIN_EXAMPLE
+hsla(240, 100%, 50%, 0.05) // 5% opaque blue
+#+END_EXAMPLE
+
+** Gradient
+Both CSS gradient and CSS repeat gradient can be stacked in background-image
+
+<<<CSS gradient>>>
+
+#+BEGIN_EXAMPLE
+linear-gradient(45deg, blue, red);
+// to bottom, to top
+// to right, to left
+// to bottom right, to top left
+linear-gradient(to bottom, blue, white 80%, orange);
+// blue at 0%, white at 80%, orange at 100%
+linear-gradient(to right, red, orange, yellow, green, blue);
+// evenly distributed
+
+background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,1))
+           ,url(/bg.jpg);
+// Use it with background image
+
+radial-gradient(red, yellow, rgb(30, 144, 255)); // evenly spaced
+radial-gradient(red 5%, yellow 25%, #1E90FF 50%);
+radial-gradient(
+ circle, 
+ // Shape can circle or ellipse
+ // Default farthest-side
+ // Fade from the center point to the ___
+ // closest-corner, closest-side, farthest-corner, farthest-side
+ yellow, #f06d06
+);
+// Change from center point to corner
+radial-gradient(
+ circle farthest-corner at top right,
+ yellow, #f06d06
+);
+#+END_EXAMPLE
+
+<<<CSS repeat gradient>>>
+
+#+BEGIN_EXAMPLE
+// On top of percentage, px can be used in repeat gradient
+repeating-linear-gradient(-45deg, red, red 5px, white 5px, white 10px);
+#+END_EXAMPLE
+
 ** opacity
+0, 0.3, 1. The lower the value the more transparent
+Child elements inherits the parent opacity value
+If you don't want to carry opacity to children, define rgba color in parent elements
+CSS rgba
+
+** Shadow
+Shadows can be stacked
+#+BEGIN_EXAMPLE
+box-shadow: h-shadow v-shadow blur spread color |inset|initial|inherit;
+text-shadow: h-shadow v-shadow blur-radius color|none|initial|inherit;
+#+END_EXAMPLE
 
 ** @keyframes
 #+BEGIN_EXAMPLE
@@ -1339,6 +1436,121 @@ Javascript animation event listners
 x.addEventListner("animationstart", func1);
 x.addEventListner("animationiteration", func2);
 x.addEventListner("animationend", func3);
+#+END_EXAMPLE
+
+** Flexbox
+Container could be display:flex or display:inline-flex
+
+#+BEGIN_EXAMPLE
+.container {
+ display: flex;
+ /* flex-flow: <flex-direction> <flex-wrap> */
+ 
+ /* flex-direction: row | row-reverse | column | column-reverse; */
+ /* main axis is by default horizontally left to right 
+  * main axis is changed by direcion css property (say change it ot rtl, right to left)
+  * row is left to right , column is top to bottom
+  *
+  */
+ /* flex-wrap: nowrap | wrap | wrap-reverse; */
+    flex-flow: row wrap;
+    
+ /* juustify-content: flex-start | flex-end | center | space-between | space-around; */
+ /* e.g. you can change from flex-end to space-around for menu nav with @media queries */
+    justify-content: space-around;   
+ 
+ /* align-items: flex-start | flex-end | center | baseline | stretch; */
+ /* This is for aligning items on cross axis */
+ /* relative to the same line. e.g. you have 3 lines of items and each line holds 3 items. 
+    how do the 3 items align on the y axis on each line?
+  */ 
+
+ /* align-content: stretch | flex-start | flex-end | center | space-between | space-around; */
+ /* This is for space between multiple lines */
+ /* e.g. There're 3 lines of items and each line has 3 items 
+    How do the 3 lines align on the y axis on each line?
+  */
+}
+
+.item {
+ /* order: <integer>; // optional */
+
+ /* flex: none | <flex-grow> <flex-shrink> <flex-basis> */
+
+ /* flex-grow: 0 | <number>; */
+ /* 0 is default and means do not enlarge item */
+
+ /* flex-shrink: 1 | <number> */
+ /* 1 is default and means do not shrink item */
+ 
+ /* flex-basis: auto | <length>; */
+ /* auto is default. if it's 0, extra space will not be factored in. Always use auto */
+ 
+ /* Override align-items in container */
+ /* align-self: auto | flex-start | flex-end | center | baseline | stretch; */
+
+}
+
+.item_1 {
+ /* Set margin:auto in an item will absorb all space of the current line in current direction
+ margin-right: auto;
+ /* all other items to the right of item_1 will not have extra space */
+}
+#+END_EXAMPLE
+
+Insert a line break in flex items. Might not be easy..
+#+BEGIN_EXAMPLE
+.line-break {width: 100%}
+
+<div class="container">
+ <div class="item">1</div>
+ <div class="item">2</div>
+ <div class="line-break"></div>
+ <div class="item">3</div>
+ <div class="item">4</div>
+</div>
+#+END_EXAMPLE
+
+** Column for text
+
+#+BEGIN_EXAMPLE
+<div>
+ <h2>Title takes 2 columsn</h2>
+ long text..
+</div>
+div {
+ column-count: 3;
+ column-gap: 40px;
+ column-rule-style: solid; /* just like border */
+ column-rule-width: 1px;
+ column-rule-color: lightblue;
+ column-rule: 1px solid lightblue;
+}
+div h2 {
+ column-span: 2;
+}
+#+END_EXAMPLE
+
+** Shape
+At the end of 2016, only Chrome, Safari, iOS and Android browswers support shape.
+
+#+BEGIN_EXAMPLE
+<div class="conainer">
+  <img id="image" src="a.jpg">
+  <p id="content">Long text</p>
+</div>
+
+img {
+ display: block;
+ float:left;
+ width: 100%;
+ height: auto;
+ shape-outside: url(shape.png); /* polygon can be used */
+ /* png has areas that are partially or completely transparent */
+ shape-image-threshold: 0.9; /* The shape is any areas that have opacity greater than 0.9 */
+ shape-margin: 20px; 
+}
+
 #+END_EXAMPLE
 
 ** CSS Framework
