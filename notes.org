@@ -1213,6 +1213,7 @@ a[target=_blank]
 a[title~=flower] :: containing a word or followed by a hypen (not match flowers)
 a[lang|=en] :: starting with a word or followed by a hyphen (en, en-us)
 div[class^="test"] :: starting with (anything)
+div[class$="test"] :: ending with (anything)
 a[href*="w3schools"] :: containing
 
 a:active
@@ -1222,6 +1223,10 @@ a:visited
 
 p::after
 p::before
+p::first-letter
+p::first-line
+p::selection
+div::selection -- the selected portion of an element (e.g. select text)
 
 input:checked
 input[type="text"]:disabled
@@ -1232,9 +1237,6 @@ input:valid
 input:optional
 input:required
  
-p::first-letter
-p::first-line
- 
 p:empty -- has no children including text nodes
 
 div:not(p) -- all children elements except <p>'s
@@ -1242,6 +1244,8 @@ div:not(p) -- all children elements except <p>'s
 p:first-child -- <p>'s are the first child of any elements
 p:last-child
 p:nth-child(2)
+tr:nth-child(even)
+tr:nth-child(odd)
 p:nth-last-child(2)
 p:only-child -- <p>'s are the only child of any elements
 
@@ -1250,9 +1254,17 @@ div p:last-of-type
 div p:nth-of-type(2)
 div p:only-of-type
 
-div::selection -- the selected portion of an element (e.g. select text)
-
 =#news:target= -- anchor name id=news matches the URL hash
+
+** Specificity
+(a, b, c, d) start with (0, 0 , 0 ,0)
+a - inline add 1
+b - each id add 1
+c - class, pseudo-class and attribute add 1
+d - element add 1
+
+Pseudo-class :not is not considered as pesudo-class in specificity calculation.
+But anything inside it counts.
 
 ** Functions
 *** attr(data-attr-1)
@@ -1272,6 +1284,24 @@ a::after {
 div {
  width: calc(100% - 100px); /* calculate */
  margin-left: 50px;
+}
+#+END_EXAMPLE
+
+*** counter
+#+BEGIN_EXAMPLE
+body {
+ counter-reset: section;
+}
+h1 {
+ counter-reset: subsection;
+}
+h1::before {
+ counter-increment: section,
+ content: "Section " counter(section) ". ";
+}
+h2::before {
+ counter-increment: subsection;
+ content: counter(section) "." counter(subsection) " ";
 }
 #+END_EXAMPLE
 
@@ -1400,6 +1430,225 @@ box-shadow: h-shadow v-shadow blur spread color |inset|initial|inherit;
 text-shadow: h-shadow v-shadow blur-radius color|none|initial|inherit;
 #+END_EXAMPLE
 
+** @media
+@media not|only /mediatype/ and (/media feature/) {}
+<link rel="stylesheet" media="mediatype and|not|only (media feature)" href="style.css">
+
+*** Syntax
+If not or only is used, it must follow a mediatype. 
+
+Each media feature, key:value or key, must be wrapped in ()
+Some media feature doesn't have a value.
+
+
+not/only can be chained in OR (separated by comma) but not and
+#+BEGIN_EXAMPLE
+// This works
+@media screen and (min-width:200px), not print and (min-width:300px) {}
+
+// This syntax is wrong
+@media screen and (min-width:200px) and not print and (min-width:300px) {}
+#+END_EXAMPLE
+
+Nested media queries (@media inside another @media) is supported on all browsers except IE11 and below.
+
+*** Testing
+#+BEGIN_EXAMPLE
+var mql = window.matchMedia("(orientation: portrait)");
+// window.addListener(handlerOrientationChange);
+handlerOrientationChange(mql);
+
+function handlerOrientationChange(mql) {
+ if (mql.mathces) {
+  console.log('media query matches');
+ }
+ else {
+  console.log('media query does not match');
+ }
+}
+#+END_EXAMPLE
+
+*** Media Types
+all, print, screen, speech
+
+#+BEGIN_EXAMPLE
+@media screen and (max-width: 1000px) and (min-width: 700px) {}
+// Use comma for OR
+@media screen and (max-width: 699px) and (min-width: 520px), (min-width: 1151px) {}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+// Set the width of the page to follow the screen-width of the device
+// Initial zoom level 1.0
+
+// Prevent zoom: add maximum-scale=1.0, user-scalable=0
+#+END_EXAMPLE
+
+*** Features
+| Key           | Min/Max? | value                                                       |
+| orientation   | no       | landscape, portrait. Not reliable when soft keyboard opens  |
+| color         | yes      | int, number of colors. (color) for color device             |
+| aspect-ratio  | yes      | int1/int2                                                   |
+| grid          | no       | 0, 1 or (grid). The last suggests it's a device with 1 font |
+| width, height | yes      | viewport                                                    |
+| monochrome    | yes      | 0 (not mono) or int                                         |
+| resolution    | yes      | 300dpi or 2dppx                                             |
+|               |          |                                                             |
+
+*** Responsive Design
+**** Basic
+#+BEGIN_EXAMPLE
+/* {
+ box-sizing: border-box;
+}
+.row:after {
+ content: "";
+ clear:both;
+ display:block;
+}
+[class*="col-"] {
+ float: left;
+ padding: 15px;
+ width: 100%;
+}
+@media only screen and (min-width: 600px) {
+    .col-s-1 {width: 8.33%;}
+    .col-s-2 {width: 16.66%;}
+    .col-s-3 {width: 25%;}
+    .col-s-4 {width: 33.33%;}
+    .col-s-5 {width: 41.66%;}
+    .col-s-6 {width: 50%;}
+    .col-s-7 {width: 58.33%;}
+    .col-s-8 {width: 66.66%;}
+    .col-s-9 {width: 75%;}
+    .col-s-10 {width: 83.33%;}
+    .col-s-11 {width: 91.66%;}
+    .col-s-12 {width: 100%;}
+}
+@media only screen and (min-width: 768px) {
+    .col-1 {width: 8.33%;}
+    .col-2 {width: 16.66%;}
+    .col-3 {width: 25%;}
+    .col-4 {width: 33.33%;}
+    .col-5 {width: 41.66%;}
+    .col-6 {width: 50%;}
+    .col-7 {width: 58.33%;}
+    .col-8 {width: 66.66%;}
+    .col-9 {width: 75%;}
+    .col-10 {width: 83.33%;}
+    .col-11 {width: 91.66%;}
+    .col-12 {width: 100%;}
+}
+
+<div class="row">
+ <div class="col-3 col-s-3 menu">
+  <ul>
+   <li>Menu 1</li>
+   <li>Menu 2</li>
+   <li>Menu 3</li>
+ </div>
+ 
+ <div class="col-6 col-s-9">
+  long content...
+ </div>
+
+ <div class="col-3 col-s-12">
+  right sidebar...
+ </div>
+</div>
+#+END_EXAMPLE
+
+**** Bootstrap
+
+#+BEGIN_EXAMPLE
+<div class="container">
+  <div class="row">
+    <div class="col-*-*"></div>
+  </div>
+  <div class="row">
+    <div class="col-*-*"></div>
+    <div class="col-*-*"></div>
+    <div class="col-*-*"></div>
+  </div>
+  <div class="row">
+    ...
+  </div>
+</div>
+#+END_EXAMPLE
+
+For all sizes, 15px on each side of a column
+.container has a fixed width based on different viewports.
+Change it to .container-fluid then the container takes the full width
+
+|           | <768px    | >=768px  | >=992px  | >=1200px |
+| Class     | .col-xs-  | .col-sm- | .col-md- | .col-lg- |
+| container | none/auto | 750px    | 970px    | 1170px   |
+|           |           |          |          |          |
+
+col-lg-9 :: non large size will have 100% width
+col-md-7 col-lg-9 :: small size and extra small will have 100% width
+col-xs-9 col-md-7 :: large size will have 7 columns, small size will have 9 columns
+
+div.clearfix to prevent strange wrapping with uneven content
+
+Offset Columns
+col-md-offset-* :: increase the left margin of a column by n columns
+
+Change Column Ordering
+col-sm-push-*, col-sm-pull-* :: col-sm-push-8, col-sm-pull-4
+
+class="img-circle" // border-radius: 50%
+#+BEGIN_EXAMPLE
+<a href="#" class="btn btn-default btn-lg">
+ <span class="glyphicon glyphicon-search"></span> Button Large
+</a>
+
+<!-- block, max-width: 100%; height: auto; -->
+<img src="" class="img-responsive">
+
+<!-- center an image -->
+<img src="" class="img-responsive img-circle" style="display:inline">
+
+<!-- Nav Bar -->
+<nav class="navbar navbar-default">
+ <div class="container">
+
+  <div class="navbar-header">
+   <!-- 3 bars in the toggle button -->
+   <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+    <span class="icon-bar"></span>
+    <span class="icon-bar"></span>
+    <span class="icon-bar"></span>    
+   </button>
+   <a class="navbar-brand" href="">Me</a>
+  </div>
+
+  <!-- .collapse is display: none; -->
+  <div class="collapse navbar-collapse" id="myNavbar">
+   <ul class="nav navbar-nav navbar-right">
+    <li><a href="#">Submenu 1</a></li>
+    <li><a href="#">Submenu 2</a></li>
+    <li><a href="#">Submenu 3</a></li>
+   </ul>
+  </div>
+
+ </div>
+</nav>
+
+<!-- Form fields -->
+<form class="form-inline">
+ <!-- all controls in this form are in one line -->
+ <input type="email" class="form-control" size="50">
+ <!-- form-control sets width:100% and other styles -->
+ <button type="button" class="btn btn-danger">Subscribe</button>
+</form>
+
+#+END_EXAMPLE
+
+*** Viewport sizes of device
+http://viewportsizes.com/
+
 ** @keyframes
 #+BEGIN_EXAMPLE
 @keyframes fa-spin {
@@ -1509,6 +1758,23 @@ Insert a line break in flex items. Might not be easy..
  <div class="item">3</div>
  <div class="item">4</div>
 </div>
+#+END_EXAMPLE
+
+** Horizontal and Vertical Center
+If both the parent and child are blocks, use flexbox.
+For text
+#+BEGIN_EXAMPLE
+.center {
+ height:200px;
+ position:relative;
+}
+.center p {
+ margin:0;
+ position:absolute;
+ top:50%;
+ left:50%;
+ transform: translate(-50%, 50%);
+}
 #+END_EXAMPLE
 
 ** Column for text
@@ -1653,7 +1919,7 @@ for double quotes to push to the right of padding
 		text-decoration:none;
 		cursor:none;
 	}
-	.li-button.has-icon:before {
+	.li-button.has-icon::before {
 		margin-right:6px;
 		background:url(icon.svg) no-repeat;
 		background-size:16px 12px;
@@ -1946,7 +2212,7 @@ transitionend
 
 ** Canvas
 ** Tags, HTML5 Elements
-
+*** HTML Tags
 | Tag      | Usage                             | Notes                                            |
 |----------+-----------------------------------+--------------------------------------------------|
 | a        | download="filename"               | force download                                   |
@@ -2002,6 +2268,16 @@ transitionend
 |          |                                   |                                                  |
 | li       | value="100"                       | increment by 1                                   |
 |          |                                   |                                                  |
+
+*** Picture tag
+#+BEGIN_EXAMPLE
+<picture>
+ <source srcset="a.jpg" media="(min-width: 600px)">
+ <source srcset="b.jpg" media="(min-width: 500px)"> 
+ <source srcset="fallback.jpg">
+ <img src="fallback.jpg">
+</picture>
+#+END_EXAMPLE
 
 *** Term/name in a list
 #+BEGIN_EXAMPLE
@@ -4615,6 +4891,18 @@ That's because the CSV file does not use CR+LF. Open it in Excel and Save As
 *** Google Public DNS
 8.8.8.8
 8.8.4.4
+*** Google Material Icons
+https://material.io/icons/
+
+Use it as font:
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<i class="material-icons md-18">face</i>
+// font-size: 18px
+// md-dark, md-light
+// md-inactive
+
+It has svg!
+
 ** Email
 *** SendGrid
 You can create website specific users who can use to authenticate SMTP and API.
