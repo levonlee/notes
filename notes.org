@@ -304,13 +304,26 @@ if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
 
 ** Module
 *** Feed Import
+
 #+BEGIN_EXAMPLE
 $feed_obj = feeds_source($feed_id,$feed->feed_nid);
 $feed_obj->existing()->import(); // Use this so no jobs are inserted in batch
+
+// Sequence
+$this = feeds_source;
+hook_feeds_before_import($this)
+hook_feeds_after_parse($this, $parser_result)
+FeedsProcessor.inc->process parser_result
+releaseLock()
+hook_feeds_after_import($this)
 #+END_EXAMPLE
 
 Import drush command runtime can be long. Output something every 5 minutes to prevent drush command timeout
-Do this in one of the hooks: hook_feeds_before_update, hook_feeds_presave or hook_feeds_after_save.
+Do this in one of the hooks: 
+- hook_feeds_before_update
+- hook_feeds_presave 
+- hook_feeds_after_save
+
 #+BEGIN_EXAMPLE
 function lili_feeds_presave(FeedsSource $source, $entity, $item) {
 
@@ -402,6 +415,10 @@ Simply Images/Photo, the result is already array
 Concate multiple nodes
 =concat(photo1,';',photo2)= then explode
 
+*** XML Sitemap
+/admin/config/search/xmlsitemap/settings
+Uncheck /Prefetch URL aliases during sitemap generation/
+
 ** Debug
 =watchdog('LOG_TYPE','message');=
 
@@ -461,16 +478,26 @@ echo theme('lili_flair',array('text'=>'hi'));
 =drush en devel= Enable a module
 =drush dis devel= Disable a module
 =drush pmu devel= Uninstall a module
-=drush up <modulename>= Update a module. Don't need to visit update.php
+=drush up <modulename> -y= Update a module. Don't need to visit update.php
+
+#+BEGIN_EXAMPLE
+drush up <modulename> = drush upc <modulename> + drush updb
+#+END_EXAMPLE
 
 *** Custom Drush
-drupal_set_message() :: stdout. No logging. Can be used multiple times in a drush command
+drupal_set_message()
+- stdout. No logging. Can be used multiple times in a drush command. 
+- =[status]= at the end of each line
+- not print out immediately
+
 Use the following every 3 minutes to prevent drush command timeout
 #+BEGIN_EXAMPLE
-print "hello\n";
+print "hello\n"; // print out immediately
 drush_print(); // drush_print uses print
 drush_print_r($array);
 #+END_EXAMPLE
+
+*** Pantheon Drush
 
 ** Database
 *** Close Comment for Existing Nodes
@@ -1199,7 +1226,7 @@ div.test {
 word-wrap: break-word; // allow to break a long word
 #+END_EXAMPLE
 
-** Selector
+** <<<CSS Selectors>>>
 div > p :: select p elements where the direct parent is div
 div + p :: select p elements that are placed immediately after div (div's children)
 p ~ ul :: select ul elements that are preceded by a p element
@@ -3461,6 +3488,11 @@ You can add multiple promise callbacks.
 });
 #+END_EXAMPLE
 
+** <<<jQuery Selectors>>>
+You can use all CSS Selectors
+
+http://api.jquery.com/category/selectors/
+
 ** iFrame refer to parent
 #+BEGIN_EXAMPLE
 var parentVideoDiv = parent.jQuery('#videoplayer').parent('.the-content');
@@ -3817,6 +3849,7 @@ exec 7<&0
 #+BEGIN_EXAMPLE
 # define empty array
 myarray=()
+
 # define array with values
 myarray=( one two three four five )
 
@@ -3834,6 +3867,7 @@ printf "%s\n" "${myarray[@]}"
 
 # Convert an array to string variable delimited by newline
 printf -v stringvar "%s\n" "${myarray[@]}"
+
 # Remove the final newline
 stringvar=${stringvar%?}
 
@@ -3841,20 +3875,32 @@ stringvar=${stringvar%?}
 myarray+=('foo')
 myarray+=("$line")
 
+# Append only if it's new
+containsElement() {
+ local e
+ for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+ return 1 
+}
+if ! containElement "$line" "${myarray[@]}"; then
+ myarray+=("$line")
+fi
+
 # Length
 echo Number of elements in array: ${#myarray[@]}
 
 # Loop array
 for i in "${myarray[@]}"; do
-  echo $i
+  echo "$i"
 done
 
-
 #+END_EXAMPLE
+
 *** echo and print
 #+BEGIN_EXAMPLE
 echo -e "Hello\nWorld"; 
-// echo newline -e to use \n etc
+# echo newline -e to use \n etc
+# always wrap variable in double quotes to preserve newline character
+echo "$output"
 #+END_EXAMPLE
 
 *** printf
@@ -3865,12 +3911,19 @@ printf '%s\n%s\n' "$line1" "$line2"
 
 *** Read command output line by line
 #+BEGIN_EXAMPLE
+multiple_commands_output=""
 output=$(drush command output contains multiple lines);
 count=1
-while read line; do
+while IFS=$'\n' read -r line; do
   echo "Line number $count: $line"
   count=$[ $count + 1 ] 
 done <<< "$output"
+
+multiple_commands_output="$multiple_commands_output""$output"$'\n'
+
+# You don't have to change back IFS as it only affects the while loop
+# newline character is \n
+# read -r :: to ignore all backslashes
 #+END_EXAMPLE
 
 *** String Operators
@@ -3885,6 +3938,18 @@ echo ${foo##*:}
 # until the last ':'
 # also work for space as delimiter
 # ${foo##* }
+
+# Concatenate string variables
+z=""
+a="Hello\n"
+b="World\n"
+c="!"
+
+z="$z""$a"
+z="$z""$b"
+
+# insert a newline
+z="$z""$c"$'\n'
 
 #+END_EXAMPLE
 
@@ -3906,6 +3971,19 @@ Not floating-point values
 |                  | $n1 -lt $n2 |
 | not equal        | $n1 -ne $n2 |
 |                  |             |
+
+*** Bash if
+#+BEGIN_EXAMPLE
+ if [ conditions ]; then
+  # commands
+ elif [ conditions ]; then
+  # more commands
+ elif [ conditions ]; then
+  # more commands
+ else
+  # more commands
+ fi
+#+END_EXAMPLE
 
 ** curl wget
 *** curl
@@ -4116,6 +4194,12 @@ and run `git config --global core.excludesfile ~/.gitignore_global`
 terminus site deploy --site=<s> --env=<e> --sync-content --cc
 #+END_EXAMPLE
 
+** Drush
+<<<Pantheon Drush>>>
+#+BEGIN_EXAMPLE
+terminus drush "<drush command> <drush args>" --site=<> --env=<> 
+#+END_EXAMPLE
+
 ** Determin Environment
 #+BEGIN_EXAMPLE
 if (defined('PANTHEON_ENVIRONMENT') && PANTHEON_ENVIRONMENT == 'dev') {} 
@@ -4128,6 +4212,18 @@ if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
  if ($_SERVER['PANTHEON_ENVIRONMENT'] == 'dev') {
   // Web only excluding Drush and on dev
  }
+}
+#+END_EXAMPLE
+
+** Disable Newrelic
+https://pantheon.io/docs/new-relic
+
+Newrelic may inject javascript in pages.. Disable it
+
+Drupal (sites/default/settings.php)
+#+BEGIN_EXAMPLE
+if (function_exists('newrelic_ignore_transaction')) {
+ newrelic_ignore_transaction();
 }
 #+END_EXAMPLE
 
