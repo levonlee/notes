@@ -1714,6 +1714,15 @@ x.addEventListner("animationiteration", func2);
 x.addEventListner("animationend", func3);
 #+END_EXAMPLE
 
+** @import
+#+BEGIN_EXAMPLE
+/* @import should appear before any css styles defined in a css file */
+@import "mystyle.css";
+@import url("mystyle.css");
+@import "mystyle.css" print;
+/* only media types not media features */
+#+END_EXAMPLE
+
 ** Flexbox
 Container could be display:flex or display:inline-flex
 
@@ -1787,6 +1796,159 @@ Insert a line break in flex items. Might not be easy..
 </div>
 #+END_EXAMPLE
 
+** Grid
+Not yet supported. Only IE and Edge.
+
+*** container: grid-template-columns, grid-template-rows
+#+BEGIN_EXAMPLE
+<div class="container">
+ <!-- .item are direct descendants -->
+ <div class="item item-1"></div>
+ <div class="item item-2"></div>
+ <div class="item item-3"></div>
+</div>
+
+.container {
+ display: grid | inline-grid | subgrid;
+ /* subgrid to indicate the grid container is a grid item of another grid container and 
+    it should take the parent's sizes of rows/columns  
+ */
+ /* Don't use column, float, clear and vertical-align in grid container as they have no effect */
+
+ grid-template-columns: 40px 50px auto 50px 40px; /* 5 columns */
+ grid-template-rows: 25% 100px auto; /* 3 rows */
+ 
+ /* Add line names
+ grid-template-columns: [first] 40px [line2] 50px [line3] auto [col4-start] 50px [five] 40px [end];
+ grid-template-rows: [row1-start] 25% [row1-end row2-start] 100px [third-line] auto [last-line];
+
+ /* Any row or column line can have multiple names: [row1-end row-start] */
+ /* Any row or column line can have the same name */
+ grid-template-columns: repeat(3, 20px [col-start]) 5%;
+ /* equivalent to */
+ grid-template-columns: 20px [col-start] 20px [col-start] 20px [col-start] 5%;
+ 
+ /* Free space is defined as total space minus any fixed size items */
+ grid-template-columns: 1fr 50px 1fr 1fr;
+}
+#+END_EXAMPLE
+
+*** <<<container: grid-template-areas>>>, items: grid-area
+
+#+BEGIN_EXAMPLE
+.item-a{
+  grid-area: header;
+}
+.item-b{
+  grid-area: main;
+}
+.item-c{
+  grid-area: sidebar;
+}
+.item-d{
+  grid-area: footer;
+}
+
+.container{
+  grid-template-columns: 50px 50px 50px 50px;
+  grid-template-rows: auto;
+  grid-template-areas: "header header header header"
+                       "main main . sidebar"
+                       "footer footer footer footer"
+}
+/* . means that single cell is empty. You can have multiple dots without space ".." */
+/*
+The first row line and column line of footer area have the same name "footer-start"
+The last row line and column line of footer aree have the same name "footer-end"
+*/
+#+END_EXAMPLE
+
+*** container: grid-gap
+Gutter size: space inbetween 2 row lines or column lines. But start and end space is always 0.
+
+#+BEGIN_EXAMPLE
+grid-grap: <grid-column-gap> <grid-row-gap>;
+#+END_EXAMPLE
+
+*** container: justify-items, items: justify-self
+#+BEGIN_EXAMPLE
+justify-items: start | end | center | stretch (default);
+/* Adjust content in cell 
+   start: align to left column line
+*/
+.item {
+ justify-self: /* To overwrite .container: justify-items */
+}
+#+END_EXAMPLE
+
+*** container: align-items, items: align-self
+#+BEGIN_EXAMPLE
+align-items: start | end | center | stretch (default);
+/* Adjust content in cell 
+   start: align to top of row line
+*/
+#+END_EXAMPLE
+
+*** container: justify-content
+Total width of all grids is less than width of its grid container.
+start: align all grids to the left of the grid container
+#+BEGIN_EXAMPLE
+justify-content: start | end | center | stretch | space-around | space-between | space-evenly
+#+END_EXAMPLE
+
+*** container: align-content
+Total height of all grids is less than height of its grid container.
+start: align all grids to the top of the grid container
+#+BEGIN_EXAMPLE
+align-content: start | end | center | stretch | space-around | space-between | space-evenly
+#+END_EXAMPLE
+
+*** container: grid-auto-columns, grid-auto-rows
+Implicit grid tracks are created when items have positioned or resized (items: grid-column, grid-row) outside of the defined grid (container: grid-template-areas).
+Implicit grid tracks will have 0 width by default until it's set.
+Implicit grid tracks of 2 columns and 2 rows are set.
+#+BEGIN_EXAMPLE
+grid-template-columns: 60px 60px;
+grid-tempalte-rows: 90px 90px;
+/* 2x2 grids are created */
+/* but item-b is out of bound */
+.item-b {
+ grid-column: 5 / 6;
+ grid-row: 2 / 3;
+}
+/* It's 5x2 grids now. The implicit grid tracks are 2x2 */
+grid-auto-columns: 60px 60px;
+grid-auto-rows: auto;
+#+END_EXAMPLE
+
+*** container: grid-auto-flow
+For items that are not positioned (items: grid-column, grid-row) nor 
+put in a named area (items: grid-area) which is later used by container: grid-template-areas,
+these items are "not explicitly placed on the grid".
+Use this to control the auto placement
+#+BEGIN_EXAMPLE
+grid-auto-flow: row | column | row dense | column dense
+/* row : fill rows first (default)
+   dense : fill smaller items first (order of items might change!)
+*/
+#+END_EXAMPLE
+
+*** <<<items: grid-column, grid-row>>>
+Position and resize an item
+#+BEGIN_EXAMPLE
+grid-column: <start-line> / <end-line> | <start-line> / span <value>;
+grid-row: <start-line> / <end-line> | <start-line> / span <value>;
+
+/* grid-column-start, grid-column-end, grid-row-start, grid-row-end can be 
+   <number> | <name> | span <number> | span <name> | auto
+*/ 
+#+END_EXAMPLE
+
+*** <<<items: grid-area>>>
+#+BEGIN_EXAMPLE
+grid-area: <name> | <row-start> / <column-start> / <row-end> / <column-end>
+#+END_EXAMPLE
+
 ** Horizontal and Vertical Center
 If both the parent and child are blocks, use flexbox.
 For text
@@ -1822,6 +1984,13 @@ div {
 div h2 {
  column-span: 2;
 }
+
+div.fixedWidth {
+ columns: 200px; /* column-count will be auto */
+ overflow-x: scroll;
+ height: 600px; /* So that scrollbar shows on x axis */
+}
+
 #+END_EXAMPLE
 
 ** Shape
