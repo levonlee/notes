@@ -1182,24 +1182,6 @@ div:hover {
 }
 #+END_EXAMPLE
 
-** Font
-Most widely accepted font format is WOFF then TTF and OTF.
-Only IE supports EOT
-
-#+BEGIN_EXAMPLE
-@font-face {
- font-family: myFirstFont;
- src: url(sansation_light.woff);
-}
-
-// Another for bold
-@font-face {
- font-family: myFirstFont;
- src: url(sansation_bold.woff);
- font-weight: bold;
-}
-#+END_EXAMPLE
-
 ** Link
 #+BEGIN_EXAMPLE
 // In order
@@ -1224,7 +1206,6 @@ div.test {
 #+BEGIN_EXAMPLE
 word-wrap: break-word; // allow to break a long word
 #+END_EXAMPLE
-
 ** <<<CSS Selectors>>>
 div > p :: select p elements where the direct parent is div
 div + p :: select p elements that are placed immediately after div (div's children)
@@ -1456,6 +1437,28 @@ box-shadow: h-shadow v-shadow blur spread color |inset|initial|inherit;
 text-shadow: h-shadow v-shadow blur-radius color|none|initial|inherit;
 #+END_EXAMPLE
 
+** @font-face
+Most widely accepted font format is WOFF then TTF and OTF.
+Only IE supports EOT
+
+#+BEGIN_EXAMPLE
+@font-face {
+ font-family: myFirstFont;
+ src: url(sansation_light.woff);
+}
+
+// Another for bold
+@font-face {
+ font-family: myFirstFont;
+ src: url(sansation_bold.woff);
+ font-weight: bold;
+/*
+ font-stretch: normal | condensed | semi condensed | extra condensed | ultra condensed | expanded | ...;
+ font-style: normal | italic | oblique 
+*/
+}
+#+END_EXAMPLE
+
 ** @media
 @media not|only /mediatype/ and (/media feature/) {}
 <link rel="stylesheet" media="mediatype and|not|only (media feature)" href="style.css">
@@ -1503,6 +1506,7 @@ all, print, screen, speech
 @media screen and (max-width: 699px) and (min-width: 520px), (min-width: 1151px) {}
 #+END_EXAMPLE
 
+<<<meta viewport>>>
 #+BEGIN_EXAMPLE
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 // Set the width of the page to follow the screen-width of the device
@@ -1714,12 +1718,36 @@ x.addEventListner("animationend", func3);
 #+END_EXAMPLE
 
 ** @import
+
 #+BEGIN_EXAMPLE
 /* @import should appear before any css styles defined in a css file */
 @import "mystyle.css";
 @import url("mystyle.css");
 @import "mystyle.css" print;
 /* only media types not media features */
+#+END_EXAMPLE
+
+** @viewport
+WD. Only Edge. Same as meta viewport.
+
+#+BEGIN_EXAMPLE
+@media screen and (max-width: 400px) {
+ @-ms-viewport { width: 320px; }
+ /* Define the viewport size */
+}
+#+END_EXAMPLE
+
+** @supports
+
+#+BEGIN_EXAMPLE
+@supports not (display:flex) {}
+@supports (display: flex) or 
+          (display: -ms-flexbox) or
+          (display: -moz-box) {}
+
+@supports (transition-property: color) or 
+          ( (animation-name: myAnimation) and (transform: rotate(225deg) )
+          ) {}
 #+END_EXAMPLE
 
 ** Flexbox
@@ -2016,6 +2044,7 @@ img {
 
 ** CSS Framework
 ** SVG
+*** Make SVG, Optimize SVG
 Exported from AI and [[http://petercollingridge.appspot.com/svg-optimiser][optimize it]]
 
 *** SVG as background image dynamic size
@@ -2027,6 +2056,74 @@ You can only control size in this method
  width: 100px;
  height: 82px;
 }
+#+END_EXAMPLE
+
+*** <<<CSS in SVG>>>
+
+Inline CSS
+#+BEGIN_EXAMPLE
+<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <style type="text/css" >
+      <![CDATA[
+
+        circle.myGreen {
+           stroke: #006600;
+           fill:   #00cc00;
+        }
+       circle.myRed {
+          stroke: #660000;
+          fill:   #cc0000;
+       }
+
+      ]]>
+    </style>
+
+    <circle  class="myGreen" cx="40" cy="40"  r="24"/>
+    <circle  class="myRed"   cx="40" cy="100" r="24"/>
+</svg>
+#+END_EXAMPLE
+
+External CSS
+
+#+BEGIN_EXAMPLE
+<?xml-stylesheet type="text/css" href="svg-stylesheet.css" ?>
+<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+    <circle cx="40" cy="40" r="24"
+       style="stroke:#006600; fill:#00cc00"/>
+</svg>
+#+END_EXAMPLE
+
+Embedded CSS in SVG only affects the SVG not other elements in the global HTML if svg is not inline with global HTML.
+
+*** SVG Zoom and Pan
+
+#+BEGIN_EXAMPLE
+<g id="parentGraphic">
+ <rect />
+ <text></text>
+</g>
+
+<!-- use copy an element -->
+<use href="#parentGraphic" transform="translate(40, 30) scale(0.9)"></use>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<!-- Original -->
+<svg currentScale="1" width="300px" height="200px" viewbox="0 0 300 200">
+<!-- Don't use currentScale to zoom -->
+
+<!-- Move down 200/200*25=25px and move right 300/300=50 px -->
+<svg width="300px" height="200px" viewbox="-50 -25 300 200">
+
+<!-- Enlarge 50% -->
+<svg width="300px" height="200px" viewbox="0 0 150 100">
+
+<!-- Enlarge 50%, move down 200/100*25=50px and move right 300/150*50=100px -->
+<svg width="300px" height="200px" viewbox="-50 -25 150 100">
+
 #+END_EXAMPLE
 
 ** Use Cases
@@ -2439,6 +2536,7 @@ transitionend
 |          |                                   |                                                  |
 | iframe   | srcdoc=""                         | repalce double quote with &quot;                 |
 |          | sandbox=""                        | empty to apply all restrictions                  |
+|          |                                   | e.g. allow-forms allow-same-origin               |
 | input    | autocomplete="on or off"          | default on. turn off for a specific field        |
 |          | autofocus=""                      |                                                  |
 |          | formmethod="get or post"          | overwrite <form> type="submit, image"            |
@@ -2448,6 +2546,7 @@ transitionend
 |          | min="1" max="1979-12-31"          | for type="date" or type="number"                 |
 |          | multiple                          | for type="file"                                  |
 |          | pattern="regex"                   | for type=text,date,search,url,tel,email,password |
+|          |                                   | escape " in regex with \x22                      |
 |          | placeholder="hint"                |                                                  |
 |          | step="3"                          | -3,0,3,6 can be accepted. type="number"          |
 |          | type=email, url                   |                                                  |
@@ -3152,6 +3251,7 @@ function ZParenizor2(v) {
 #+END_EXAMPLE
 
 ** Loops and Breaks
+
 #+BEGIN_EXAMPLE
 for (i = 0, len = cars.length, text = ""; i< len; i++)
 for (; i<len; i++)
@@ -3162,6 +3262,14 @@ while () {
 do {
 }
 while (condition);
+#+END_EXAMPLE
+
+<<<javascript for in loop>>>
+#+BEGIN_EXAMPLE
+var myObj = {};
+for (var prop in myObj) {
+ console.log(myObj[prop]);
+}
 #+END_EXAMPLE
 
 *** break and continue
@@ -3363,7 +3471,7 @@ onconnect = function(e) {
 }
 #+END_EXAMPLE
 
-** XMLHttpRequest
+** <<<XMLHttpRequest>>>
 #+BEGIN_EXAMPLE
 function loadDoc() {
  var xhttp = new XMLHttpRequest();
@@ -3546,7 +3654,7 @@ try {
  throw "Too big"; // Manually throw an error
 }
 catch(err) {
- console.log(err);
+ console.log(err.message, err.number, err.name);
 }
 finally {
 
@@ -4879,7 +4987,7 @@ Mainly enocde the double quotes " to &quot;
 > &gt;
 < &lt;
 
-** Namespace
+** <<<XML namespace>>>
 #+BEGIN_EXAMPLE
 <root 
 xmlns:h="http://www.w3.org/TR/html4/"
@@ -5186,3 +5294,9 @@ Use encripted protocol: Use SSL
 Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplifiedd][SendGrid]]
 
 
+** <<<W3C>>>
+- Working Draft
+- Last Call
+- Candidate Recommenation (Standard)
+- Proposed Recommendation
+- Recommendation
