@@ -1174,11 +1174,12 @@ div {
 /* 
   linear 3s to delay 3 seconds
 */
+/* transition: all 2s linear 3s; */
 }
 div:hover {
  width: 300px;
  height: 300xp;
- transform: rotate(180deg);
+ transform: rotate(180deg) translate(-20px, 0);
 }
 #+END_EXAMPLE
 
@@ -1680,6 +1681,9 @@ class="img-circle" // border-radius: 50%
 http://viewportsizes.com/
 
 ** @keyframes
+
+animation: /name/ /duration/ /timing-function/ /delay/ /iteration-count/ /direction/ /fill-mode/ /play-state/;
+
 #+BEGIN_EXAMPLE
 @keyframes fa-spin {
  0%   { transform: rotate(0deg); }
@@ -1692,6 +1696,12 @@ http://viewportsizes.com/
   3s - delay
   infinite - animation-iteration-count
   alternate - animation-direction
+
+  animation-fill-mode:
+    none (default, after animation ends, styles go back to before start) | 
+    forwards (after animation ends, styles got applied) | 
+    backwards (before animation starts and during delay, apply styles defined in the 1 iteration, e.g. from and to ) | 
+    both;
 */
 }
 .fa-repeat:before {
@@ -2809,11 +2819,13 @@ console.log(window.carName);
 // which allows you to use them before they are declared
 // Functions are hoisted first and then variables
 // Function declarations have priority over variable declarations, but not variable assignments
-showState(); // output: Ready
+
+showState("one", {}, 2, 0.98); // output: Ready
 
 // function declaration
 function showState() {
   console.log("Ready");
+  // arguments[0] is "one"
 } 
 
 // function expression/definition/assignment
@@ -2824,7 +2836,7 @@ var showState = function() {
 showState(); // output: Idle
 #+END_EXAMPLE
 
-** Closure
+** Closure, Javascript Singleton
 When to use closure? 
 - When you don't want to change the variables in outer scope where the closure is in.
 The outer scope can be global or any place where the closure is in.
@@ -2854,11 +2866,18 @@ jQuery(document).ready(function($) {
 });
 #+END_EXAMPLE
 
+<<<Javascript Singleton>>>
+
 #+BEGIN_EXAMPLE
 var Managers = {}; //namespace
 // Singleton object CssManager
+// Managers and singleton object CssManager has to be defined before they are used
+
 Managers.CssManager = (function() {
-// Private space
+
+// Private space in which all variables and methods are protected from the global scope
+// Initialization of properties but it can't be instantialized.
+
 var doc = document;
 var setAttributes = function(element, attributes) {
   for (attribute in attributes) {
@@ -2889,7 +2908,10 @@ return {
     this.removeStyleSheet(id);
     this.addStyleSheet(id, url);
   }
+  // Public members
 }
+// return ends.
+
 })();
 
 #+END_EXAMPLE
@@ -2989,10 +3011,10 @@ a[0] = "Paul";
 a = ["P", "C", "S"]; // never put comma at the end of array
 a[a.length-1] // last element
 
-a[a.length]= "Z";
+a[a.length]= "Z"; // append to last
 var a = new Array("P", "C", "S");
 var b = new Array(31,29,34);
-var c = a.concat(b); // Join arrays P, C, S, 31, 29, 34
+a = a.concat(b); // Join arrays P, C, S, 31, 29, 34
 
 var slice = a.slice(1,2); // C, S
 
@@ -3014,11 +3036,11 @@ function randomSort(anArray) {
  return anArray;
 }
 
-
 var reverse = a.reverse(); // S, C, P
 
 var removed = a.splice(0,1,"Z","B"); // ["P"]
 // First delete 1 element at index 0 and then add element Z and B 
+// return the ones that are removed
 
 a.pop(); // remove last element
 a.shift(); // remove fist element
@@ -3031,6 +3053,24 @@ delete a[0]; // change the first element to undefined
 for (var i = 0; i < fruits.length; i++) {
  fruits[i];
 }
+
+<<<Javascript forEach>>>
+fruits.forEach(function(i) {
+ console.log(i);
+});
+
+// Do something for all items
+a = a.map(function(i) { return i.toUpperCase(); });
+a = a.filter(function(i) { 
+   if ( true then remove condition ) { 
+    return false; 
+   }
+   else {
+    return true; // keep
+   }
+});
+a.every(function(i) { return i[0] === "a"; }); // return true only if all returns are true
+a.some(function(i)  { return i[0] === "a"; }); // return true if at least one return is true
 
 // If variable is array
 #+BEGIN_EXAMPLE
@@ -3114,7 +3154,7 @@ londonOdeon.addBooking(342, "First Last", "Toy Story", "15 July 2004 20:15");
 #+END_EXAMPLE
 
 ** Enumerable
-By default, all methods and properties are enumerable in =for in=
+By default, all methods and properties are enumerable in javascript for in
 To make a method non enumerable
 #+BEGIN_EXAMPLE
 // CustomerBooking class and its method setFilm is already defined
@@ -3264,7 +3304,7 @@ do {
 while (condition);
 #+END_EXAMPLE
 
-<<<javascript for in loop>>>
+<<<Javascript for in>>>
 #+BEGIN_EXAMPLE
 var myObj = {};
 for (var prop in myObj) {
