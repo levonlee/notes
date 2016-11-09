@@ -1044,7 +1044,162 @@ wp user add-role lili administrator
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
 
+** <<<WP Custom Fields>>>
+Normal
+#+BEGIN_EXAMPLE
+<?php 
+print_r(get_post_custom_keys()); // Get all keys as an array
+print_r(get_post_custom()); // Get keys and values as an array
+print_r(get_post_custom_values('fieldkey')); // Get values as an array
+?>
+#+END_EXAMPLE
+
+WP Types is different! Use <<<types_render_field>>>
+
+#+BEGIN_EXAMPLE
+$newsletters = types_render_field('newsletters', array('output'=>'raw'));
+// the real field name is actually wpcf-newsletters
+#+END_EXAMPLE
+
+If the field is a set of checkboxes, in WP_Query, you should use the LIKE operator. 
+Refer to WP Types Custome Field Checkbox and WP Meta Query
+
+** <<<Wordpress The Loop>>>
+*** Basic Syntax, <<<Tags used in The Loop>>>
+#+BEGIN_EXAMPLE
+<?php 
+ $query = new WP_Query('cat=-3,-8'); 
+ // Use query_posts($query_array | $string) instead of creating a new WP_Query then you don't have to prefix $query for methods
+ // But query_posts change the global $wp_query 
+?>
+
+<?php if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post(); ?>
+ <?php //  set the global $post to individual one in $query ?>
+ <div><?php the_content(); ?></div>
+
+ <?php if ( has_post_thumbnail() ): ?>
+  <img src="<?php the_post_thumbnail_url('large'); ?>">
+  <?php the_post_thumbnail(); ?>
+ <?php endif; ?>
+
+<?php endwhile; ?>
+<?php wp_reset_postdata(); // set back global $post to original ?>
+<?php endif; ?>
+
+<?php $query->rewind_posts(); // in order to loop $query again ?>
+
+#+END_EXAMPLE
+
+*** <<<WP_Query>>>
+Generator: https://generatewp.com/wp_query/
+
+Used: WP_Meta_Query
+#+BEGIN_EXAMPLE
+$args = array(
+ 'post_type' => array('editorial', 'blog'), // blog or editorial
+ 'post_status' => array('publish'),
+ 'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
+);
+
+$query = new WP_Query($args);
+#+END_EXAMPLE
+
+*** <<<WP_Meta_Query>>>
+**** Nesting
+Nested: key1=value1 OR (key2=value2 AND key3=value3)
+
+#+BEGIN_EXAMPLE
+$meta_args = array(
+ 'relation' => 'OR', // Optional.
+ array(
+   'key' => 'key1',
+   'value' => 'value1',
+   'compare' => '=', //default
+ ),
+
+ array(
+   'relation' => 'AND',
+   array(
+     'key' => 'key2',
+     'value' => 'value2',
+     'compare' => '=',
+   ),
+   array(
+     'key' => 'key3',
+     'value' => 'value3',
+     'compare' => '=',
+   ),
+ ),
+  
+);
+
+$meta_query = new WP_Meta_Query($meta_args); // parse args array
+
+#+END_EXAMPLE
+
+**** Operators
+compare
+- =, !=
+- >, >=, <, <=
+- LIKE, NOT LIKE
+- IN, NOT IN
+- BETWEEN, NOT BETWEEN
+- EXISTS, NOT EXISTS
+- REGEXP, NOT REGEXP :: MySQL REGEX
+- RLIKE (synonym of REGEXP) 
+
+type 
+In MySQL, it means CAST(the field, to a type)
+- NUMERIC
+- BINARY
+- CHAR
+- DATE :: works with 'compare' value BETWEEN only if the date is stored as YYYY-MM-DD
+- DATETIME
+- DECIMAL
+- SIGNED, UNSIGNED :: MySQL Integer
+- TIME :: MySQL Date and Time
+
+<<<WP Types Custome Field Checkbox and WP Meta Query>>>
+Say the wpcf-newsletters custom field created by WP Types has 2 checkboxes are selected: enligne and pw.
+The following 2 strings will appear in the serialized json string as value in WP_Meta_Query
+#+BEGIN_EXAMPLE
+a:1:{i:0;s:7:"enligne";}
+a:1:{i:0;s:2:"pw";}
+#+END_EXAMPLE 
+
+Select the posts that have checkbox enligne checked.
+#+BEGIN_EXAMPLE
+$meta_query = array(
+ array(
+  'key' => 'wpcf-newsletters',
+  'value' => 'a:1:{i:0;s:7:"enligne";}',
+  'compare' => 'LIKE',
+ ),
+);
+#+END_EXAMPLE
+
 ** RSS
+
+<<<get_template_part>>> calls a template in child theme
+
+#+BEGIN_EXAMPLE
+function lili_RSS() {
+ add_feed('lili-editorial', 'lili_editorial_RSS');
+}
+add_action('init', 'lili_editorial_RSS');
+function lili_editorial_RSS() {
+ get_template_part('rss','feedname');
+ // rss is slug and feedname is an extra name
+ // Search in order
+ // /themes/child/rss-feedname.php
+ // /themes/parent/rss-feedname.php
+ // /themes/child/rss.php
+ // /themes/parent/rss.php
+
+ // the feed url is http://you.com/feed/lili-editorial which is the feed name defined in add_feed
+}
+#+END_EXAMPLE
+
 Default template /wp-includes/feed-rss2.php
 Functions to use in The Loop: /wp-includes/feed.php
 
@@ -1083,10 +1238,19 @@ query_posts($args);
 
 ** add_filter
 #+BEGIN_EXAMPLE
-add_filter(string $tag, callable $function_to_add
+add_filter( 'tagname', 'lili_funct'
 , int $priority = 10 // lower number sooner
-, int $accepted_args = 1
+, int $accepted_args = 1 // default is 1! Be careful
 )
+
+// Later apply_filter();
+apply_filters('tagname', $result, $var1);
+
+// callback should take 2 variables
+function lili_funct($result, $var1) {
+ return $result;
+}
+
 #+END_EXAMPLE
 
 ** add_action
@@ -1108,6 +1272,11 @@ function lili_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
 #+END_EXAMPLE
+
+*** init
+** Settings
+<<<WP All Settings>>>
+/wp-admin/options.php
 
 ** Wordpress Theme
 *** Template Files
@@ -4545,6 +4714,30 @@ if (function_exists('newrelic_ignore_transaction')) {
 
 * Database
 ** MySQL
+*** Data Types
+<<<MySQL Integer>>>
+SIGNED :: contains negative, 0 and positive
+UNSIGNED :: contains 0 and positive
+- TINYINT
+- SMALLINT
+- MEDIUMINT
+- INT
+- BIGINT
+
+<<<MySQL Date and Time>>>
+- TIME :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
+
+*** REGEXP
+<<<MySQL REGEX>>>
+
+Unless the field is binary, REGEXP is case-insensitive.
+
+#+BEGIN_EXAMPLE
+WHERE aut_name REGEXP "^w"
+WHERE aut_name REGEXP "^I am \"Great!\""
+// escape double quotes
+#+END_EXAMPLE
+
 *** Update Fields in Multiple Tables
 #+BEGIN_EXAMPLE
 UPDATE node, node_revision
