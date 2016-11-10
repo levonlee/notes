@@ -4279,32 +4279,51 @@ File descriptors. First 3 are reserved.
 | 2 | STDERR | Standard error         |
 
 #+BEGIN_EXAMPLE
+# Redirect stdout, creates if not exist or overwrites a file
+ls -al goodfile > stdoutlogfile
+# same as 2>, 3> etc.
+
+# Redirect stdout, creates if not exist or appends to a file
+ls -al goodfile >> stdoutlogfile
+# same as &>>, 2>>, 3>> etc.
+
 # Redirect stderr
-ls -al badfile 2> errorlogfile=
+ls -al badfile 2> errorlogfile
 
 # Redirect stdout and stderr to different files
 ls -al goodfile badfile 2> errorlogfile 1> normalOutput
 
 # Redirect stdout and stderr to the same file
 ls -al goodfile badfile &> errorAndOutput
+#+END_EXAMPLE
 
-# Redirect output of a commannd to a file and display the output
+<<<bash:tee>>>
+
+#+BEGIN_EXAMPLE
+# Redirect stdout of a commannd to a file and display stdout
 date | tee testfile
 
-# Redirect output of a command to one or multiple files and save the output to a variable
+# Redirect stdout to a file and pass stdout to another command as stdin
+date | tee testfile | less
+
+# Capture stdout of a command to a variable
+output=$(date)
+
+# Capture stdout and stderr of a command to a variable
+output=$(command_which_has_stdout_and_stderr 2>&1)
+
+# Redirect stdout of a command to one or multiple files and save stdout to a variable
 # a file must be behind a tee command
 # By default tee overwrites the file. Use -a to append to the end
 $output = $(date | tee testfile1 testfile2)
 
-# Redirect output of a command to a variable and display output in real time
+# Redirect stdout to a variable and display to terminal in real time (not to stdout!)
 # Works on Ubuntu and RedHat
 $output = $(date | tee /dev/tty)
 
+# Redirect one file descriptor (M, default 1) to another file descriptor (N) M>&N
 # Redirect a manually made error 
 echo "This is an error" >&2
-
-# Redirect a STDOUT message
-echo "This is a normal output" >&1
 
 # Change a file descriptor to a file
 exec 2>errorLogFile
@@ -4457,7 +4476,7 @@ Not floating-point values
 | not equal        | $n1 -ne $n2 |
 |                  |             |
 
-*** Bash if
+*** <<<Bash if>>>
 #+BEGIN_EXAMPLE
  if [ conditions ]; then
   # commands
@@ -5484,6 +5503,11 @@ Always use PC Outlook to import CSV. OWA barely functions.
 **** Import Contacts
 Import from .pst file handles the field mapping automatically.
 Import from .csv you would need to Clear Map and Default Map.
+
+**** Rules: Multiple Senders
+Create a new contact folder and put contacts with emails.
+Create a rule which can be triggered when anyone in the contact folder belongs to "From"
+The rule is called "Sender is in specified Address Book"
 
 *** Troubleshooting
 **** Outlook CSV Import 
