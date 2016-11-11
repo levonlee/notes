@@ -70,7 +70,7 @@ Your home folder in Emacs is ~C:\c\notes~
 | C-u TAB          | Global tree fold/unfold                       |
 | C-u C-u C-u TAB  | Show all                                      |
 |                  |                                               |
-| Table            |                                               |
+| Table            | <<<emacs:table>>>                             |
 |------------------+-----------------------------------------------|
 | C-c -            | Insert a horizontal line below                |
 | M-S-<down>       | Insert a new row above                        |
@@ -1093,12 +1093,13 @@ Refer to WP Types Custome Field Checkbox and WP Meta Query
 *** <<<WP_Query>>>
 Generator: https://generatewp.com/wp_query/
 
-Used: WP_Meta_Query
+Used: WP_Meta_Query, WP Tax Query
 #+BEGIN_EXAMPLE
 $args = array(
  'post_type' => array('editorial', 'blog'), // blog or editorial
  'post_status' => array('publish'),
  'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
+ 'tax_query' => $tax_query,
 );
 
 $query = new WP_Query($args);
@@ -1174,6 +1175,20 @@ $meta_query = array(
   'key' => 'wpcf-newsletters',
   'value' => 'a:1:{i:0;s:7:"enligne";}',
   'compare' => 'LIKE',
+ ),
+);
+#+END_EXAMPLE
+
+*** <<<WP Tax Query>>>
+#+BEGIN_EXAMPLE
+$tax_query = array(
+ 'relation' => 'AND', // Optional 
+ array(),
+ array(
+   'taxonomy' => '',
+   'field' => 'term_id', // string :: term_id (default), name, slug or term_taxonomy_id
+   'terms' => 'bob', // int/string/array :: multiple terms
+   'operator' => 'IN', // string :: IN (default), NOT IN, AND, EXISTS, NOT EXISTS
  ),
 );
 #+END_EXAMPLE
@@ -2410,78 +2425,117 @@ for double quotes to push to the right of padding
 * HTML
 ** DOM
 *** Document Object
-| document.createElement("p")   | create element |
-| .createTextNode("text node"); | text node      |
+[[https://developer.mozilla.org/en/docs/Web/API/Document][Document properties and methods]]
 
-*** Element Object
-NodeList Object: document.getElementsByTagName("P").item(0).innerHTML;
+| document.methodName() or     | Notes                                                    | Use in       |
+| document.propertyName        |                                                          | Element Obj? |
+|------------------------------+----------------------------------------------------------+--------------|
+| createElement("p")           | appendChild                                              | no           |
+| createTextNode("text node"); | appendChild                                              | no           |
+| createAttribute('data-id')   | appendChild                                              | no           |
+|                              |                                                          |              |
+| getElementById("id")         | null or element object                                   | no           |
+| getElementsByClassName       | NodeList                                                 | yes          |
+| getElementsByTagName("p")    | NodeList                                                 | yes          |
+| querySelector('#id')         | 1st matched element. null or exception or element object | yes          |
+| querySelectorAll('#id')      | Static NodeList or exception                             | yes          |
+|                              |                                                          |              |
+| normalize()                  | remove empty text nodes and join adjacent text nodes     | yes          |
+|                              |                                                          |              |
 
-| element.accessKey                | set/return accessKey                            |
-| .addEventListerner()             | refer to event attributes without 'on'          |
-|                                  | e.addEventListerner("click", myFunction,false ) |
-|                                  | false for bubbling, true for capturing          |
-| .removeEventListener()           | anonymous function will not work                |
-|                                  |                                                 |
-| .click(),focus(),blur()          |                                                 |
-|                                  |                                                 |
-| .createTextNode()                |                                                 |
-|                                  |                                                 |
-| .appendChild(),                  | move element to the end of another element      |
-| list.insertBefore(newnode,       |                                                 |
-| list.childNodes[0])              |                                                 |
-|                                  |                                                 |
-| .cloneNode()                     |                                                 |
-|                                  |                                                 |
-| .attributes                      | .attributes.length, .attributes[0].value        |
-| .getAttribute("class")           |                                                 |
-| .getAttributeNode("class").value |                                                 |
-|                                  |                                                 |
-| .childElementCount               | the number of child element nodes not text      |
-|                                  | and comment nodes                               |
-| .childNodes                      | NodeList object. .childNodes.length             |
-|                                  | var c = e.childNodes[0].text                    |
-| .children                        | exclude text and comment nodes.                 |
-|                                  | HTMLCollection object.                          |
-| .classList                       | .add, .remove, .contains, .item, toggle         |
-| .className                       |                                                 |
-|                                  |                                                 |
-| .clientHeight                    | height + padding, no border and scrollbar       |
-| .clientWidth                     |                                                 |
-| .offsetWdith                     | width+padding+border+scrollbar but no margin    |
-| .offsetHeight                    |                                                 |
-| .offsetLeft, offsetTop           | relative to offsetParent                        |
-| .scrollHeight, .scrollWidth      | width+padding only                              |
-| .scrollLeft, .scrollTop          | pixels are scrolled                             |
-|                                  |                                                 |
-| e1.compareDocumentPosition(e2)   | compare positions of elements                   |
-| e1.contains(e2)                  | if e2 is a descendant of e1                     |
-| .contentEditable                 |                                                 |
-|                                  |                                                 |
-| .firstChild                      | child node                                      |
-| .firstElementChild               | child element node                              |
-| .nextSibling                     |                                                 |
-| .nextElementSibling              |                                                 |
-|                                  |                                                 |
-| .getElementsByClassName("wp")[0] |                                                 |
-| .getElementsByTagName("ul")[0]   |                                                 |
-|                                  |                                                 |
-| .hasAttribute("onclick")         |                                                 |
-| .hasAttributes()                 | has any attributes?                             |
-| .hasChildNodes()                 | has any child nodes                             |
-|                                  |                                                 |
-| .isEqualNode(e1,e2)              |                                                 |
-|                                  |                                                 |
-| .nodeName                        | tag name                                        |
-| .tagName                         | tag name in upppercase                          |
-| .nodeValue                       |                                                 |
-|                                  |                                                 |
-| .normalize()                     | remove empty text node                          |
-|                                  |                                                 |
-| .querySelector()                 | the first element matched                       |
-| .querySelectorAll()              | all matched                                     |
-|                                  |                                                 |
-|                                  |                                                 |
-|                                  |                                                 |
+*** <<<NodeList>>> Object
+NodeList Object appears like an array (loop like an array) but cannot use Array Methods such as valueOf() or join().
+
+<<<Static NodeList>>> means changes to DOM have no effect.
+
+All NodeList objects are live objects meaning changes
+that are made in other code places reflect on all NodeList objects that were previously found.
+
+var myNodeList = document.getElementsByTagName("P");
+console.log(myNodeList.length); 
+var firstP = myNodeList[0];
+var firstP = myNodeList.item(0); // same as above, return null if not exists
+var firstP = document.getElementsByTagName("p")[0]; // same as above
+
+console.log(firstP.innerHTML);
+firstP.style.backgroundColor = "red";
+
+for (var i=0; i < myNodeList.length; i++) {
+ myNodeList[i].style.backgroundColor = "red";
+} 
+
+*** <<<Element Object>>>
+[[https://developer.mozilla.org/en-US/docs/Web/API/Element][Element Properties and Methods]]
+
+| element.methodName() or        | Notes                                           | Use in   |
+| element.propertyName           |                                                 | Document |
+|                                |                                                 | Object?  |
+|--------------------------------+-------------------------------------------------+----------|
+| accessKey                      | get/set accessKey                               |          |
+| addEventListerner()            | refer to event attributes without 'on'          | yes      |
+|                                | e.addEventListerner("click", myFunction,false ) |          |
+|                                | false for bubbling, true for capturing          |          |
+| removeEventListener()          | anonymous function will not work                | yes      |
+|                                |                                                 |          |
+| click()                        | simulate a click on an element                  | no       |
+| blur()                         |                                                 | no       |
+| focus()                        |                                                 | no       |
+|                                |                                                 |          |
+| innerHTML                      | get/set                                         | no       |
+|                                |                                                 |          |
+| appendChild(newChildNode)      | move element to the end of another element      | no       |
+|                                | <<<appendChild>>>                               |          |
+| removeChild(childNode)         |                                                 | no       |
+| list.insertBefore(newnode,     |                                                 |          |
+| list.childNodes[0])            |                                                 |          |
+|                                |                                                 |          |
+| <<<parentNode>>>               | read only                                       | no       |
+| <<<parentElement>>>            | read only                                       | no       |
+|                                |                                                 |          |
+| .cloneNode()                   |                                                 |          |
+|                                |                                                 |          |
+| attributes                     | read only. NamedNodeMap                         | no       |
+| getAttribute("class")          | attribute value in string                       | no       |
+| getAttributeNode("class")      | Attr object                                     | no       |
+|                                |                                                 |          |
+| .childElementCount             | the number of child element nodes not text      |          |
+|                                | and comment nodes                               |          |
+| .childNodes                    | NodeList object. .childNodes.length             |          |
+|                                | var c = e.childNodes[0].text                    |          |
+| .children                      | exclude text and comment nodes.                 |          |
+|                                | HTMLCollection object.                          |          |
+| classList                      | read only. DOMTokenList                         | no       |
+| className                      | get/set                                         | no       |
+|                                |                                                 |          |
+| clientHeight                   | height + padding, no border and scrollbar       | no       |
+| clientWidth                    |                                                 | no       |
+| clientTop                      | Top border width                                | no       |
+| clientLeft                     | Left border width                               | no       |
+| offsetWidth                    | width+padding+border+scrollbar but no margin    | no       |
+| offsetHeight                   |                                                 | no       |
+| .offsetLeft, offsetTop         | relative to offsetParent                        |          |
+| .scrollHeight, .scrollWidth    | width+padding only                              |          |
+| .scrollLeft, .scrollTop        | pixels are scrolled                             |          |
+|                                |                                                 |          |
+| e1.compareDocumentPosition(e2) | compare positions of elements                   |          |
+| e1.contains(e2)                | if e2 is a descendant of e1                     |          |
+| .contentEditable               |                                                 |          |
+|                                |                                                 |          |
+| .firstChild                    | child node                                      |          |
+| .firstElementChild             | child element node                              |          |
+| .nextSibling                   |                                                 |          |
+| .nextElementSibling            |                                                 |          |
+|                                |                                                 |          |
+| .hasAttribute("onclick")       |                                                 |          |
+| .hasAttributes()               | has any attributes?                             |          |
+| .hasChildNodes()               | has any child nodes                             |          |
+|                                |                                                 |          |
+| .isEqualNode(e1,e2)            |                                                 |          |
+|                                |                                                 |          |
+| .nodeName                      | tag name                                        |          |
+| .tagName                       | tag name in upppercase                          |          |
+| .nodeValue                     |                                                 |          |
+|                                |                                                 |          |
 
 *** Event Object
 Property
@@ -2550,6 +2604,29 @@ event.relatedTarget.tagName;
 animationName :: keyframe name
 elapsedTime :: number of seconds the transition has been running
 
+*** <<<DOMTokenList>>> Object
+A collection of space-separated tokens.
+
+| DOMTokenList.methodName() | Notes                                                            |
+| or                        |                                                                  |
+| DOMTokenList.propertyName |                                                                  |
+|---------------------------+------------------------------------------------------------------|
+| length                    | read only                                                        |
+| add("class2Name")         |                                                                  |
+| remove("class2Name")      |                                                                  |
+| replace("old","new")      |                                                                  |
+| toggle('class2Name')      | if exists, removes and return false. If not, add and return true |
+| contains("class2Name")    |                                                                  |
+
+*** <<<NamedNodeMap>>> Object
+A collection of Attr object 's. Loopable like an Array but no Array methods.
+
+*** <<<Attr Object>>>
+An attribute node.
+
+| name  |   |
+| value |   |
+
 ** Global Attributes
 Can be applied to any element
 | accesskey       | Add shortcut. M-accesskey         |
@@ -2595,6 +2672,10 @@ function drop(e) {
 ** Event Attributes
 Capturing phrase: DOM heirarchy up
 Bubbling phrase (default): DOM heirarchy down
+
+These objects have implemented EventTarget interface which can receive events and may have listeners:
+- element, document, window
+- XMLHttpRequest, AudioNode, AudioContext and others
 
 *** Windows Event in body tag
 | onafterprint, onbeforeprint | only IE and FF                                |
@@ -3332,11 +3413,12 @@ Object.defineProperty(Customerbooking.prototype,'setFilm',
 #+END_EXAMPLE
 
 ** Extending Native Object
+Native prototype cann't be deleted or replaced
+But values of its properties can be modified or created
+
+Create a new method in Array class which removes a member after checking if the method is already defined
+
 #+BEGIN_EXAMPLE
-// Native prototype cann't be deleted or replaced
-// But values of its properties can be modified or created
-// create a new array method that removes a member
-// Whether a method is defined
 Array.prototype.remove = Array.prototype.remove || function(member) {
  var i = this.indexOf(member);
  if (i > -1) {
@@ -3344,24 +3426,28 @@ Array.prototype.remove = Array.prototype.remove || function(member) {
  } 
  return this;
 }
-// Newly added remove method is enumerable in =for in=
-// To filter out method in =for in=
-
-var props = [];
-for (var prop in results) {
- results.hasOwnProperty(prop) && props.push(prop);
-}
 
 // If a method (remove) is created in native class, but later it was assigned as a property
 // error will show 
 #+END_EXAMPLE
 
-Add a "method" as a method in Function class so that it creates a method for another class
+Newly added remove method is enumerable in =for in=
+To filter out method in =for in=
+#+BEGIN_EXAMPLE
+var props = [];
+for (var prop in results) {
+ results.hasOwnProperty(prop) && props.push(prop);
+}
+#+END_EXAMPLE
+
+<<<Add "method" in Function class>>>
+Then "method" exists in any function.
 #+BEGIN_EXAMPLE
 Function.prototype.method = function(name, func) {
  this.prototype[name] = func;
  return this;
 }
+
 // Parenizor is a custom class. Create a method called 'setValue'
 Parenizor.method('setValue', function(v) {
  this.value = value;
@@ -3369,7 +3455,7 @@ Parenizor.method('setValue', function(v) {
 });
 #+END_EXAMPLE
 
-Add another method 'inherits' in Function class
+<<<Add "inherits" in Function class>>>
 #+BEGIN_EXAMPLE
 Function.method('inherits', function(parent) {
  // parent is a class that is already defined
@@ -3408,6 +3494,10 @@ Function.method('inherits', function(parent) {
 ** Classical Inheritance and Parasitic Inheritance
 Classical inheritance is about the _is-a_ relationship.
 Parasitic inheritance is about the _was-a-but-now's-a_ relationship.
+
+/Classical inheritance Example/
+Refer to: Add "method" in Function class, Add "inherits" in Function class
+
 #+BEGIN_EXAMPLE
 function Parenizor(v) {
 // enclose v with ( and )
@@ -3441,8 +3531,6 @@ ZParenizor.prototype.toString = function() {
  }
  return "-0-";
 }
-
-//
 #+END_EXAMPLE
 
 Parasitic Inheritance
@@ -3861,12 +3949,21 @@ connection.onmessage = function(e) {
 #+BEGIN_EXAMPLE
 try {
  throw "Too big"; // Manually throw an error
+ var err = new Error("Too big");
+ throw err;
 }
 catch(err) {
- console.log(err.message, err.number, err.name);
+ console.log(
+  err.message, // Standard
+  err.description, // Microsoft.
+  err.number, // Microsoft. same as linenumber
+  err.linenumber, // FF and Chrome
+  err.name, // Standard. Initial is Error but you can change it
+  err.stack // Not standard but works in all browsers.. Stack trace.
+ );
 }
 finally {
-
+ // success or failure, run this
 }
 #+END_EXAMPLE
 
