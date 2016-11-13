@@ -127,15 +127,26 @@ Your home folder in Emacs is ~C:\c\notes~
 |                  |                                               |
 
 ** Headline <<<emacs:headline>>>
-| C-u TAB         | Global tree fold/unfold          |
-| C-u C-u C-u TAB | Show all                         |
-|                 |                                  |
-| C-c C-n         | Next heading                     |
-| C-c C-p         | Previous heading                 |
-| C-c C-f         | Next heading same level          |
-| C-c C-b         | Previous heading same level      |
-| C-c C-u         | Backward to higher level heading |
-|                 |                                  |
+| C-u TAB          | Global tree fold/unfold             |
+| C-u C-u C-u TAB  | Show all                            |
+|                  |                                     |
+| C-c C-n          | Next heading                        |
+| C-c C-p          | Previous heading                    |
+| C-c C-f          | Next heading same level             |
+| C-c C-b          | Previous heading same level         |
+|                  |                                     |
+| C-c C-u          | Backward to higher level heading    |
+|                  |                                     |
+| M-S-<right>      | Increase heading level of an item   |
+|                  | and its child items                 |
+| M-S-<left>       | Same as above but decrease          |
+|                  |                                     |
+| M-<right>/<left> | Decrease/increase level of a        |
+|                  | parent item only                    |
+|                  |                                     |
+| S-<TAB>          | In table, go to previous cell       |
+|                  | In other places, global fold/unfold |
+|                  |                                     |
 
 C-x n s :: Work on one section
 C-x n w :: Back to outline
@@ -143,12 +154,6 @@ C-x n w :: Back to outline
 C-c C-j :: jump to different heading. C-g to exit. up/down to move headline, ~/~ sparse-tree search
 
 M-<RET> or C-<RET> :: insert heading
-
-M-S-<left>
-M-S-<right> :: Decrease/increase indentation the item and its subitems
-
-M-left
-M-right :: Decrease/increase only the parent item
 
 *** Drawer
 C-c C-x d :: Create a drawer
@@ -3174,6 +3179,7 @@ timedCount();
 
 * Javascript
 ** Initialization
+<<<js:Initialization>>>
 Always initialize variables at the top including vars in loops
 var myObj = {},
     myString = "",
@@ -3182,6 +3188,7 @@ var myObj = {},
     myRegex = /()/,
     myNumber = 0;
 ** Variable Scope
+*** Hoisting
 Variables defined outside of any functions are Global.
 Interesting fact:
 #+BEGIN_EXAMPLE
@@ -3221,6 +3228,25 @@ var showState = function() {
 
 showState(); // output: Idle
 #+END_EXAMPLE
+
+*** let, const, var
+A variable is defined by var then this variable is available to the closest function scope.
+
+Always js:Initialization for variables declared by var
+
+let and const are /block-scoped/
+
+let declares a variable which is available to the block it is enclosed in.
+A block can be a switch, for, or if statement which has one pair of {}
+You can only 'let' declare the same variable once in the same block.
+The same variable can be let declaired inside a subblock and it will have new scope but not overwrite the upper scope variable.
+let declared variable must be declared before it is used or referenced.
+ 
+const is the same as let but it's read only. Uppercase naming.
+The same const variable name can be redeclared to different value in sub block.
+If const is an array or object, its child element or key/value is not protected by default.
+Which means you can push to const arry or modify key/value.
+const in the same block cannot be changed or redeclared or redeclared by let or var.
 
 ** Closure, Javascript Singleton
 When to use closure? 
@@ -3302,37 +3328,26 @@ return {
 
 #+END_EXAMPLE
 
-** Type (typeof) and constructor
-| string    |                                            |
-| number    | NaN is number                              |
-| boolean   | true or false. Not FALSE/TRUE              |
-| object    | Array, Date, Object, null                  |
-| function  |                                            |
-| undefined | undefined or has not been assigned a value |
+** Types, typeof, constructor
+*** All types, typeof, constructor
+| String    | js:String                                  |
+| Number    | NaN is number. js:Number                   |
+| Boolean   | true or false. Not FALSE/TRUE              |
+| Object    | js:Array, js:Date, Object, null, js:RegExp |
+|           | js:Math, js:Error                          |
+| Function  | a special type of object                   |
+| Symbol    | new in Edition 6                           |
 |           |                                            |
+| undefined | undefined or has not been assigned a value |
+| null      | a special type of object                   |
 
 varname.constructor returns the constructor function.
+*** Number
+<<<js:Number>>>
+Used: js:Math
 
-** JSONP, JSON
-*** JSONP
-#+BEGIN_EXAMPLE
-<script type="text/javascript" src="http://b.com/returnjsondata?callback=mycallback"></script>
-
-Where b.com/returnjsondata returns a json object. 
-And the whole <script> in yourwebsite.com will become 
-mycallback({foo:'bar'});
-#+END_EXAMPLE
-
-*** JSON
-JSON object names require double quotes.
-String are wrapped in double quotes.
-Boolean is true or false.
-null can be used.
-MIME type: application/json
-
-var obj = JSON.parse(jsonString); // parse a json string
-
-** String
+*** String
+<<<js:String>>>
 s.length
 s.charAt(s.length-1)
 s.charCodeAt(s.length-1) :: UTF-16 code unit value
@@ -3342,70 +3357,23 @@ s.lastIndexOf("Paul"); // Case sensitive. Starts from the end
 s.substr(0,4); // From start to 4th index
 s.substring(0,4); // From start and take 4 characters
 s.toLowerCase() s.toUpperCase();
-** URI and URI Component Encode
-#+BEGIN_EXAMPLE
-var url1 = "http://abc.com";
-var url2 = "http://xyz.com/test.php?url=" + encodeURIComponent(url1);
-// decodeURIComponent();
 
-// When you want a working URL as a whole with URL parameters
-var uri = "http://abc.com/folder name with space/file name with space.asp?abc=has space"
-var uri_en = encodeURI(uri);
-// decodeURI(str)
-#+END_EXAMPLE
-
-** Type Conversion
-Javascript conversion is automatic. 
-var y = "5";
-var x = + y;
-
-General methods:
-String(x) or x.toString() // convert to string
-Number(x) // convert to numbers
-
-*** Number to String
-x.toString();
-x.toExponential(2); // 2 decimal points: 9.66e+0
-x.toFixed(2); // 2 decimal points
-x.toPrecision(); // total number of digits
- 
-*** String to Number
-parseInt("10"); // 10
-parseInt("10.33"); // 10
-parseInt("10.53"); // 10
-parseInt("10 20 30"); // 10
-parseInt("10 years"); // 10
-parseInt("year 10"); // NaN
-
-The same for parseFloat.
-
-** Math
-Math.PI
-Math.abs(-101);
-Math.ceil(101.01); // 102
-Math.floor(101.01); // 101
-Math.round(101.01);
-Math.pow(10, 2); // 100
-parseInt("10"); // 10
-
-var itemCost = 9.99 * 1.075; // 10.73925
-itemCost.toFixed(2); // 10.74
-
-** Array
-*** Basics
+*** Array
+**** Basics
+<<<JS:Array>>>
 var a = new Array();
 a[0] = "Paul";
 a = ["P", "C", "S"]; // never put comma at the end of array
 a[a.length-1] // last element
 a[a.length]= "Z"; // append to last
 
-*** If variable is array
+**** If variable is array
 #+BEGIN_EXAMPLE
 console.log(Array.isArray(fruits)); // true or false
 console.log(fruits instanceof Array) // true or false
 #+END_EXAMPLE
 
-*** array.pop(), array.shift(), array.push(), array.unshift()
+**** array.pop(), array.shift(), array.push(), array.unshift()
 a.pop(); // remove last element
 a.shift(); // remove fist element
 a.push("Z"); // add to the end of array. return new length
@@ -3413,15 +3381,15 @@ a[a.length]="Z"; // also append to last
 
 a.unshift("Z"); // add to the beginning of array. return new length
 
-*** array.concat()
+**** array.concat()
 var a = new Array("P", "C", "S");
 var b = new Array(31,29,34);
 a = a.concat(b); // Join arrays P, C, S, 31, 29, 34
 
-*** array.slice()
+**** array.slice()
 var slice = a.slice(1,2); // C, S
 
-*** array.splice(), remove a value from array if exists
+**** array.splice(), remove a value from array if exists
 var removed = a.splice(0,1,"Z","B"); // ["P"]
 // First delete 1 element at index 0 and then add element Z and B 
 // return the ones that are removed
@@ -3432,12 +3400,12 @@ if (index !== -1) {
  myArray.splice(index, 1);
 }
 
-*** array.join(), array.toString(), array.valueOf()
+**** array.join(), array.toString(), array.valueOf()
 var join = a.join(","); // "P,C,S"
 a.toString() // also "P,C,S"
 a.valueOf(); // also "P,C,S". Convert to primitive
 
-*** array.sort(), array.reverse()
+**** array.sort(), array.reverse()
 var sort = a.sort(); // sort as strings. case sensitive: C, P, S
 function numericSort(anArray) {
  anArray.sort(function(a,b) {
@@ -3454,16 +3422,17 @@ function randomSort(anArray) {
 
 var reverse = a.reverse(); // S, C, P
 
-*** array loop: for, forEach 
+**** array loop: for, forEach 
 for (var i = 0; i < fruits.length; i++) {
  fruits[i];
 }
 
+js:forEach
 fruits.forEach(function(i) {
  console.log(i);
 });
 
-*** array.map(), array.filter() 
+**** array.map(), array.filter() 
 // Do something while each item is iterated, join returned values into an array.
 var result = a.map(function(i) { return i.toUpperCase(); }); // result is an array
 console.log(a); // a is not affected!
@@ -3477,11 +3446,11 @@ a = a.filter(function(i) {
    }
 });
 
-*** array.every(), array.some()
+**** array.every(), array.some()
 a.every(function(i) { return i[0] === "a"; }); // return true only if all returns are true
 a.some(function(i)  { return i[0] === "a"; }); // return true if at least one return is true
 
-*** array.reduce()
+**** array.reduce()
 var sum = [0, 1, 2, 3].reduce(
  function(a,b) { return a=b; },
  0
@@ -3507,7 +3476,8 @@ callback has 4 arguments
 - currentIndex
 - array :: the input array was called upon
 
-** Date
+*** Date
+<<<js:Date>>>
 var date1 = new Date();
 var date2 = new Date(77978); // milliseconds since 1970 01 01 GMT
 var date3 = new Date(2017,0,31,15,35,20,20); // 2017 Jan 1 at 15:35:20 at 20 ms
@@ -3525,8 +3495,309 @@ date4.setDate(currentDay + 28 ); // Plus 28 days
 getHours(), getMinutes(), getSeconds(), getMilliseconds(), toTimeString()
 setHours(), setMinutes(), setSeconds(), setMilliseconds()
 
+*** Math
+<<<js:Math>>>
+Math.PI
+Math.abs(-101);
+Math.ceil(101.01); // 102
+Math.floor(101.01); // 101
+Math.round(101.01);
+Math.pow(10, 2); // 100
+parseInt("10"); // 10
+
+var itemCost = 9.99 * 1.075; // 10.73925
+itemCost.toFixed(2); // 10.74
+*** RegExp 
+**** search(), replace(), match()
+#+BEGIN_EXAMPLE
+var s = "Visit W3Schools!";
+var n = s.search("W3Schools"); // 6. -1 if not found
+var all = s.match("i"); // return all matches
+var res = s.replace(/w3schools/i, "Microsoft");
+var res = s.replace("W3Schools", "Microsoft");
+#+END_EXAMPLE
+
+**** RegExp
+***** Ways to define regex
+<<<js:RegExp>>>
+#+BEGIN_EXAMPLE
+var n = s.search(/w3schools/i); // Use forward slash. Return the first matched index
+var pattern = /w3schools/i; // Define a pattern in a variable
+
+// Need to escape \ with \\
+var patternobj = new RegExp('w3schools','i'); // Define a pattern as a RegExp object 
+var patternobj = new RegExp(/w3schools/,'i');
+
+// Test a pattern
+pattern.test("Perform a test on this string"); // true or false
+
+// Return the first found text
+pattern.exec("Perform an exec on this string"); // null if not found.
+
+// Index
+every time pattern.exec() or pattern.test() is run, the pattern.lastIndex is advanced.
+Until .lastIndex gets to 0
+
+// Return all matches
+s.match(pattern);
+#+END_EXAMPLE
+***** Pattern and modifiers
+=/pattern/modifiers=
+
+Modifiers
+| i | case-insensitive |
+| g | find all match   |
+| m | multiline        |
+
+Brackets
+| [abc]  | a character that is a, b or c      |
+| [^abc] | a character that is not a, b nor c |
+| [0-9]  | a digit                            |
+| [^0-9] | a non-digit character              |
+|        |                                    |
+
+(x|y) one of x or y
+
+Metacharacter
+| .      | a character execpt newline or line terminator  |
+| \w     | a word character including _ [A-Za-z0-9_]      |
+| \W     | a non-word character. same as [$\w]            |
+| \d     | a digit                                        |
+| \D     | a non-digit character                          |
+| \s     | whitespace                                     |
+| \S     | a non-space character                          |
+| \b     | word boundary                                  |
+| \0     | a NUL character                                |
+| \n     | a new line character                           |
+| \f     | a form feed character. e.g. page/section break |
+| \r     | a carriage return                              |
+| \t     | a tab character                                |
+| \v     | a vertical tab character                       |
+| \uxxxx | a Unicode character \u0057 is w                |
+| \xxx   | \127 is w                                      |
+| \xdd   | \x57 is w                                      |
+|        |                                                |
+
+Quantifier
+| n+     | at least one of n                |
+| n*     | zero or more                     |
+| n?     | zero or one                      |
+| n{X}   | \d{4} a 4-digit string           |
+| n{X,Y} | \d{3,4} a 3-to-4-digit string    |
+| n{X,}  | \d{3,} a at-least-3-digit string |
+| n$     | at the end                       |
+| ^n     | at the beginning                 |
+| (?=n)  | non greedy match                 |
+
+***** Word Boundary \b and \B
+#+BEGIN_EXAMPLE
+var s = "Visit W3Schools";
+var pattern = /\bW3/g; // return words that start with W3
+pattern.exec(s); // W3
+var patter = /\bVisit\b/g; // whole word
+var patterB = /\BSchools/g; // return "Schools". Words that do not start or end with Schools
+#+END_EXAMPLE
+
+***** Non greedy match (?=n)
+#+BEGIN_EXAMPLE
+var s = 'Is this all there is';
+var p = /is(?= all)/g;
+s.match(p); // is
+// (?= all) matches any string that is before ' all':  but the matched is not returned.
+// The other way to intepret it is find any 'is' that has ' all' right behind
+var p = /is(?! all)/g; // Find any 'is' that doesn't have ' all' right behind
+#+END_EXAMPLE
+*** Function
+**** arguments
+function add() {
+  var sum = 0;
+  for (var i = 0, j = arguments.length; i < j; i++) {
+    sum += arguments[i];
+  }
+  return sum;
+}
+add(2,3,4,5);
+
+function add() {
+  var sum = 0;
+  for (var i = 0, j = arguments.length; i < j; i++) {
+    sum += arguments[i];
+  }
+  return sum;
+}
+
+// Use Spread Syntax js:spread
+
+function add(firstValue, ...args) {
+  var sum = 0;
+  for (let value of args) {
+    sum += value;
+  }
+  sum += firstValue;
+  return sum;
+}
+
+add(2,3,4,5);
+
+*** Error
+<<<js:Error>>>
+#+BEGIN_EXAMPLE
+try {
+ throw "Too big"; // Manually throw an error
+ var err = new Error("Too big");
+ throw err;
+}
+catch(err) {
+ console.log(
+  err.message, // Standard
+  err.description, // Microsoft.
+  err.number, // Microsoft. same as linenumber
+  err.linenumber, // FF and Chrome
+  err.name, // Standard. Initial is Error but you can change it
+  err.stack // Not standard but works in all browsers.. Stack trace.
+ );
+}
+finally {
+ // success or failure, run this
+}
+#+END_EXAMPLE
+*** Type Conversion
+Javascript conversion is automatic. 
+var y = "5";
+var x = + y;
+
+General methods:
+String(x) or x.toString() // convert to string
+Number(x) // convert to numbers
+
+**** Number to String
+x.toString();
+x.toExponential(2); // 2 decimal points: 9.66e+0
+x.toFixed(2); // 2 decimal points
+x.toPrecision(); // total number of digits
+ 
+**** String to Number
+parseInt("10"); // 10
+parseInt("10.33"); // 10
+parseInt("10.53"); // 10
+parseInt("10 20 30"); // 10
+parseInt("10 years"); // 10
+parseInt("year 10"); // NaN
+
+The same for parseFloat.
+
+Always provide a base number :: parseInt("10", 10); // decimal base
+** Loops and Breaks
+*** for, while, do...while
+#+BEGIN_EXAMPLE
+var cars = ['a', 'b', 'c'];
+for (i = 0, len = cars.length, text = ""; i< len; i++) {
+ // Loop through all properties of Array.prototype
+ // 3rd party libraries or frameworks might add methods or properties to Array.prototype
+ // So this is not recommended for looping an Array
+}
+for (; i<len; i++)
+
+while () {
+}
+
+do {
+}
+while (condition);
+#+END_EXAMPLE
+
+*** for...in
+<<<js:for...in>>>
+#+BEGIN_EXAMPLE
+var myObj = {};
+for (var prop in myObj) {
+ console.log(myObj[prop]);
+}
+#+END_EXAMPLE
+
+*** for...of
+<<<js:for...of>>>
+js:for...in interates over all enumerable properties of an object.
+While for...of iterates over elements of any collection that has a [Symbo.iterator] property.
+
+for...of interates over iterable objects :: Array, Map, Set, String, TypedArray, arguments but not objects!
+
+for (let value of iterable) {
+ console.log(value);
+}
+
+*** forEach
+<<<js:forEach>>>
+
+arr.forEach(callback[, thisArg])
+
+thisArg :: Pass a variable outside of .forEach() and change it inside .forEach() using /this/
+
+callback :: 3 arguments
+- currentValue
+- index
+- array
+
+Return :: undefined. So .forEach() is not chainable
+
+Elements appended after the call to forEach() begins will not be visited.
+The value of element is changed before forEach() visits, it will reflect the change.
+Elements removed before being visited will not be visited.
+
+*** break and continue
+=break= without a label reference, can only jump out of a loop or a switch
+=continue= with or without a label, can only skip one loop iteration.
+With a label reference, =break= can jump out of any code block.
+A code block is a block of code between { and }
+#+BEGIN_EXAMPLE
+list: {
+ text += cars[0] +  "<br>";
+ text += cars[1] +  "<br>";
+ break list;
+ text += cars[3] +  "<br>";
+}
+#+END_EXAMPLE
+** Enumerable
+By default, all methods and properties are enumerable in js:for...in
+To make a method non enumerable
+#+BEGIN_EXAMPLE
+// CustomerBooking class and its method setFilm is already defined
+Object.defineProperty(Customerbooking.prototype,'setFilm',
+{enumerable:false});
+#+END_EXAMPLE
+
+** JSONP, JSON
+*** JSONP
+#+BEGIN_EXAMPLE
+<script type="text/javascript" src="http://b.com/returnjsondata?callback=mycallback"></script>
+
+Where b.com/returnjsondata returns a json object. 
+And the whole <script> in yourwebsite.com will become 
+mycallback({foo:'bar'});
+#+END_EXAMPLE
+
+*** JSON
+JSON object names require double quotes.
+String are wrapped in double quotes.
+Boolean is true or false.
+null can be used.
+MIME type: application/json
+
+var obj = JSON.parse(jsonString); // parse a json string
+** URI and URI Component Encode
+#+BEGIN_EXAMPLE
+var url1 = "http://abc.com";
+var url2 = "http://xyz.com/test.php?url=" + encodeURIComponent(url1);
+// decodeURIComponent();
+
+// When you want a working URL as a whole with URL parameters
+var uri = "http://abc.com/folder name with space/file name with space.asp?abc=has space"
+var uri_en = encodeURI(uri);
+// decodeURI(str)
+#+END_EXAMPLE
+
 ** Class
-By default, all properties and methods are enumerable in =for in=
+By default, all properties and methods are enumerable in js:for...in
 
 #+BEGIN_EXAMPLE
 function CustomerBooking(bookingId, customerName, film, showDate) {
@@ -3582,15 +3853,6 @@ var londonOdeon = new cinema(); // Constructor takes no parameters
 londonOdeon.addBooking(342, "First Last", "Toy Story", "15 July 2004 20:15");
 #+END_EXAMPLE
 
-** Enumerable
-By default, all methods and properties are enumerable in javascript for in
-To make a method non enumerable
-#+BEGIN_EXAMPLE
-// CustomerBooking class and its method setFilm is already defined
-Object.defineProperty(Customerbooking.prototype,'setFilm',
-{enumerable:false});
-#+END_EXAMPLE
-
 ** Extending Native Object
 Native prototype cann't be deleted or replaced
 But values of its properties can be modified or created
@@ -3610,8 +3872,8 @@ Array.prototype.remove = Array.prototype.remove || function(member) {
 // error will show 
 #+END_EXAMPLE
 
-Newly added remove method is enumerable in =for in=
-To filter out method in =for in=
+Newly added remove method is enumerable in js:for...in
+To filter out method in js:for...in
 #+BEGIN_EXAMPLE
 var props = [];
 for (var prop in results) {
@@ -3725,143 +3987,6 @@ function ZParenizor2(v) {
  return that;
 }
 #+END_EXAMPLE
-
-** Loops and Breaks
-
-#+BEGIN_EXAMPLE
-for (i = 0, len = cars.length, text = ""; i< len; i++)
-for (; i<len; i++)
-
-while () {
-}
-
-do {
-}
-while (condition);
-#+END_EXAMPLE
-
-<<<Javascript for in>>>
-#+BEGIN_EXAMPLE
-var myObj = {};
-for (var prop in myObj) {
- console.log(myObj[prop]);
-}
-#+END_EXAMPLE
-
-*** break and continue
-=break= without a label reference, can only jump out of a loop or a switch
-=continue= with or without a label, can only skip one loop iteration.
-With a label reference, =break= can jump out of any code block.
-A code block is a block of code between { and }
-#+BEGIN_EXAMPLE
-list: {
- text += cars[0] +  "<br>";
- text += cars[1] +  "<br>";
- break list;
- text += cars[3] +  "<br>";
-}
-#+END_EXAMPLE
-
-** search, replace and Regex
-#+BEGIN_EXAMPLE
-var s = "Visit W3Schools!";
-var n = s.search("W3Schools"); // 6. -1 if not found
-var all = s.match("i"); // return all matches
-var res = s.replace(/w3schools/i, "Microsoft");
-var res = s.replace("W3Schools", "Microsoft");
-#+END_EXAMPLE
-
-*** Regex
-**** Pattern and modifiers
-=/pattern/modifiers=
-
-Modifiers
-| i | case-insensitive |
-| g | find all match   |
-| m | multiline        |
-
-Brackets
-| [abc]  | a character that is a, b or c      |
-| [^abc] | a character that is not a, b nor c |
-| [0-9]  | a digit                            |
-| [^0-9] | a non-digit character              |
-|        |                                    |
-
-(x|y) one of x or y
-
-Metacharacter
-| .      | a character execpt newline or line terminator  |
-| \w     | a word character including _ [A-Za-z0-9_]      |
-| \W     | a non-word character. same as [$\w]            |
-| \d     | a digit                                        |
-| \D     | a non-digit character                          |
-| \s     | whitespace                                     |
-| \S     | a non-space character                          |
-| \b     | word boundary                                  |
-| \0     | a NUL character                                |
-| \n     | a new line character                           |
-| \f     | a form feed character. e.g. page/section break |
-| \r     | a carriage return                              |
-| \t     | a tab character                                |
-| \v     | a vertical tab character                       |
-| \uxxxx | a Unicode character \u0057 is w                |
-| \xxx   | \127 is w                                      |
-| \xdd   | \x57 is w                                      |
-|        |                                                |
-
-Quantifier
-| n+     | at least one of n                |
-| n*     | zero or more                     |
-| n?     | zero or one                      |
-| n{X}   | \d{4} a 4-digit string           |
-| n{X,Y} | \d{3,4} a 3-to-4-digit string    |
-| n{X,}  | \d{3,} a at-least-3-digit string |
-| n$     | at the end                       |
-| ^n     | at the beginning                 |
-| (?=n)  | non greedy match                 |
-
-**** Ways to define regex
-#+BEGIN_EXAMPLE
-var n = s.search(/w3schools/i); // Use forward slash. Return the first matched index
-var pattern = /w3schools/i; // Define a pattern in a variable
-
-// Need to escape \ with \\
-var patternobj = new RegExp('w3schools','i'); // Define a pattern as a RegExp object 
-var patternobj = new RegExp(/w3schools/,'i');
-
-// Test a pattern
-pattern.test("Perform a test on this string"); // true or false
-
-// Return the first found text
-pattern.exec("Perform an exec on this string"); // null if not found.
-
-// Index
-every time pattern.exec() or pattern.test() is run, the pattern.lastIndex is advanced.
-Until .lastIndex gets to 0
-
-// Return all matches
-s.match(pattern);
-#+END_EXAMPLE
-
-**** Word Boundary \b and \B
-#+BEGIN_EXAMPLE
-var s = "Visit W3Schools";
-var pattern = /\bW3/g; // return words that start with W3
-pattern.exec(s); // W3
-var patter = /\bVisit\b/g; // whole word
-var patterB = /\BSchools/g; // return "Schools". Words that do not start or end with Schools
-#+END_EXAMPLE
-
-**** Non greedy match (?=n)
-#+BEGIN_EXAMPLE
-var s = 'Is this all there is';
-var p = /is(?= all)/g;
-s.match(p); // is
-// (?= all) matches any string that is before ' all':  but the matched is not returned.
-// The other way to intepret it is find any 'is' that has ' all' right behind
-var p = /is(?! all)/g; // Find any 'is' that doesn't have ' all' right behind
-#+END_EXAMPLE
-
 ** Promise
 Promise is now native in all browsers including Edge except IE.
 
@@ -4075,7 +4200,8 @@ onconnect = function(e) {
 }
 #+END_EXAMPLE
 
-** <<<XMLHttpRequest>>>
+** XMLHttpRequest
+<<<XMLHttpRequest>>>
 #+BEGIN_EXAMPLE
 function loadDoc() {
  var xhttp = new XMLHttpRequest();
@@ -4255,28 +4381,6 @@ connection.onmessage = function(e) {
  console.log(e.data.byteLength);
 };
 
-#+END_EXAMPLE
-
-** Error
-#+BEGIN_EXAMPLE
-try {
- throw "Too big"; // Manually throw an error
- var err = new Error("Too big");
- throw err;
-}
-catch(err) {
- console.log(
-  err.message, // Standard
-  err.description, // Microsoft.
-  err.number, // Microsoft. same as linenumber
-  err.linenumber, // FF and Chrome
-  err.name, // Standard. Initial is Error but you can change it
-  err.stack // Not standard but works in all browsers.. Stack trace.
- );
-}
-finally {
- // success or failure, run this
-}
 #+END_EXAMPLE
 
 ** Communication Between Children Window and Parent Window
