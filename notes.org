@@ -3392,22 +3392,52 @@ var itemCost = 9.99 * 1.075; // 10.73925
 itemCost.toFixed(2); // 10.74
 
 ** Array
+*** Basics
 var a = new Array();
 a[0] = "Paul";
 a = ["P", "C", "S"]; // never put comma at the end of array
 a[a.length-1] // last element
-
 a[a.length]= "Z"; // append to last
+
+*** If variable is array
+#+BEGIN_EXAMPLE
+console.log(Array.isArray(fruits)); // true or false
+console.log(fruits instanceof Array) // true or false
+#+END_EXAMPLE
+
+*** array.pop(), array.shift(), array.push(), array.unshift()
+a.pop(); // remove last element
+a.shift(); // remove fist element
+a.push("Z"); // add to the end of array. return new length
+a[a.length]="Z"; // also append to last
+
+a.unshift("Z"); // add to the beginning of array. return new length
+
+*** array.concat()
 var a = new Array("P", "C", "S");
 var b = new Array(31,29,34);
 a = a.concat(b); // Join arrays P, C, S, 31, 29, 34
 
+*** array.slice()
 var slice = a.slice(1,2); // C, S
 
+*** array.splice(), remove a value from array if exists
+var removed = a.splice(0,1,"Z","B"); // ["P"]
+// First delete 1 element at index 0 and then add element Z and B 
+// return the ones that are removed
+
+Remove a value from array if it exists
+var index = myArray.indexOf(item);
+if (index !== -1) {
+ myArray.splice(index, 1);
+}
+
+*** array.join(), array.toString(), array.valueOf()
 var join = a.join(","); // "P,C,S"
 a.toString() // also "P,C,S"
 a.valueOf(); // also "P,C,S". Convert to primitive
 
+*** array.sort(), array.reverse()
 var sort = a.sort(); // sort as strings. case sensitive: C, P, S
 function numericSort(anArray) {
  anArray.sort(function(a,b) {
@@ -3424,29 +3454,20 @@ function randomSort(anArray) {
 
 var reverse = a.reverse(); // S, C, P
 
-var removed = a.splice(0,1,"Z","B"); // ["P"]
-// First delete 1 element at index 0 and then add element Z and B 
-// return the ones that are removed
-
-a.pop(); // remove last element
-a.shift(); // remove fist element
-a.push("Z"); // add to the end of array. return new length
-a.unshift("Z"); // add to the beginning of array. return new length
-
-delete a[0]; // change the first element to undefined
-
-// Loop
+*** array loop: for, forEach 
 for (var i = 0; i < fruits.length; i++) {
  fruits[i];
 }
 
-<<<Javascript forEach>>>
 fruits.forEach(function(i) {
  console.log(i);
 });
 
-// Do something for all items
-a = a.map(function(i) { return i.toUpperCase(); });
+*** array.map(), array.filter() 
+// Do something while each item is iterated, join returned values into an array.
+var result = a.map(function(i) { return i.toUpperCase(); }); // result is an array
+console.log(a); // a is not affected!
+
 a = a.filter(function(i) { 
    if ( true then remove condition ) { 
     return false; 
@@ -3455,14 +3476,36 @@ a = a.filter(function(i) {
     return true; // keep
    }
 });
+
+*** array.every(), array.some()
 a.every(function(i) { return i[0] === "a"; }); // return true only if all returns are true
 a.some(function(i)  { return i[0] === "a"; }); // return true if at least one return is true
 
-// If variable is array
+*** array.reduce()
+var sum = [0, 1, 2, 3].reduce(
+ function(a,b) { return a=b; },
+ 0
+);
+// sum is integer 6
+
 #+BEGIN_EXAMPLE
-console.log(Array.isArray(fruits)); // true or false
-console.log(fruits instanceof Array) // true or false
+var flattened = [[0, 1], [2, 3], [4, 5]].reduce(
+ function(a,b) { return a.concat(b); },
+ []
+);
+// [0, 1, 2, 3, 4, 5]
 #+END_EXAMPLE
+
+array.reduce(callback[, initialValue])
+
+If initialValue is provided, it will start at index 0. 
+If not provided, it will start at index 1 and previousValue is the value at index 0 in the array.
+
+callback has 4 arguments
+- previousValue
+- currentValue
+- currentIndex
+- array :: the input array was called upon
 
 ** Date
 var date1 = new Date();
@@ -3819,6 +3862,134 @@ s.match(p); // is
 var p = /is(?! all)/g; // Find any 'is' that doesn't have ' all' right behind
 #+END_EXAMPLE
 
+** Promise
+Promise is now native in all browsers including Edge except IE.
+
+#+BEGIN_EXAMPLE
+function get(url) {
+  // You should wrap all code into return
+  return new Promise(function (resolve, reject) {
+    // run resolve or reject function to resolve or reject a promise
+    var req = new XMLHttpRequest();
+    req.open('GET', url); // it can be set to async
+
+    req.onload = function () {
+      if (req.status == 200) {
+        resolve(req.response);
+      }
+      else {
+        reject(Error(req.statusText));
+      }
+    };
+
+    req.onerror = function () {
+      reject(Error("Network Error"));
+    }
+
+  });
+}
+
+get('story.json')
+  .then(function (response) {
+    console.log('Success!', response);
+    // transform a value to the next .then
+    // just return the value, you may modify it
+    // The returned value has to be a non-promise
+    return JSON.parse(response);
+  }, function (error) {
+    console.log('Failed!', error);
+    return error;
+  })
+  .then(function (response) {
+    console.log('JSON!', response);
+  });
+
+// If a 'then' just returns a value when it's resolved, use a shortform
+get('story.json').then(JSON.parse).then(function(response) {
+  console.log('JSON!', response);
+});
+
+// In 'then', you can return a promise
+// a promise.then is a promise
+
+function getJSON(url) {
+  return get(url).then(JSON.parse);
+}
+
+getJSON('story.json').then(function(story) {
+  return getJSON(story.chapterUrls[0]);
+}).then(function(chapter1) {
+  console.log('Got Chapter 1', chapter1);
+});
+
+// Store the result of a promise and reuse it
+var storyPromise;
+
+function getChapter(i) {
+  storyPromise = storyPromise || getJSON('story.json');
+
+  return storyPromise.then(function(story) {
+    return getJSON(story.chapterUrls[i]);
+  });
+}
+
+getChapter(0).then(function(chapter) {
+  console.log(chapter);
+  return getChapter(1);
+}).then(function(chapter) {
+  console.log(chapter);
+});
+
+// .catch(function(e) { ... }) equals to
+// .then(undefined, function(e) { ... })
+
+// Dynamically chained .then()
+// Start with a resolved promise: Promise.resolve('initialValue')
+// a reject promise: Promise.reject('initialValue')
+getJSON('story.json')
+  .then(function(story) {
+    // addHTMLToPage(story.heading);
+    return story.chapterUrls.reduce(function(sequence, chapterUrl) {
+      return sequence
+        .then(function() { return getJSON(chapterUrl); })
+        .then(function(chapter) { /* addHtmlToPage(chapter.html); */ });
+    }, Promise.resolve());
+  })
+  .then(function() { /* addTextToPage("All done"); */ })
+  .catch(function(err) { /* addTextToPage("broken" + err.message); */ })
+  .then(function() { /* document.querySelector('.spinner').style.display='none'; */ });
+
+// Start a set of promises in parallel and create a promise that fulfils when all are fulfilled
+getJSON('story.json')
+  .then(function(story) {
+    // addHTMLToPage(story.heading);
+    return Promise.all(
+      story.chapterUrls.map(getJSON)
+    ); // not a callback. It's an array of Promises (not chained)
+    // After promises are added to array as values, they are started already
+
+    // Start a set of promises in parallel, chain them so that we get response in order
+
+    return story.chapterUrls.map(getJSON)
+      .reduce(function (sequence, chapterPromise) {
+
+        return sequence
+          .then(function () {
+            return chapterPromise;
+          })
+          .then(function (chapter) {
+            addHtmlToPage(chapter.html);
+          });
+
+      }, Promise.resolve());
+
+
+  })
+  .then(function() { /* ... */ })
+  .catch(function(err) { /* ... */ })
+  .then(function() { /* ... */ });
+#+END_EXAMPLE
+
 ** Worker
 IE 10 and above supports worker.
 Workers are independent and separated from parent window. 
@@ -3909,14 +4080,19 @@ onconnect = function(e) {
 function loadDoc() {
  var xhttp = new XMLHttpRequest();
 
- //  event handlers. Others: onloadstart, onprgress, onabort, onerror, onload, ontimeout, onloadend
-
- xhttp.onreadystatechange = function() {
-  if (this.readyState == 4  
-  // 0: request not initialized, 1: connection established
-  // 2: request received, 3: processing request
-  // 4: request finished and response is ready
-      && this.status == 200) {
+ // event handlers. Others: onloadstart, onprgress, onabort, onerror, onload, ontimeout, onloadend
+ // Always use onload instead of onreadystatechange
+ // onload = onreadystatechange and this.readyState ==4
+ 
+ // XHR property: readyState
+ // 0: request not initialized, 
+ // 1: connection established
+ // 2: request received, 
+ // 3: processing request
+ // 4: request finished and response is ready 
+ 
+ xhttp.onload = function() {
+  if (this.status == 200) {
    console.log(
       this.responseText // as text
     , this.responseXML // as it's XML data
@@ -4938,7 +5114,6 @@ terminus drush "<drush command> <drush args>" --site=<> --env=<>
 #+END_EXAMPLE
 
 ** WP CLI
-
 <<<WP CLI Pantheon>>>
 terminus wp 'option get home' --site=<site> --env=dev
 
