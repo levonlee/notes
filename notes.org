@@ -1022,6 +1022,13 @@ URL :: /wp-admin/options.php
 
 ** CLI
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
+WP CLI Pantheon
+
+*** Global Parameters
+- --debug
+- --quiet
+- --user=<id|login|email>
+- --require=<path> :: Load PHP file, can be used multiple times
 
 *** User
 #+BEGIN_EXAMPLE
@@ -1038,11 +1045,69 @@ Give role
 wp user add-role lili administrator
 #+END_EXAMPLE
 
+*** Plugin
+[[https://wordpress.org/plugins][Wordpress Official Plugin Directory]]
+
+wp plugin install fly-dynamic-image-resizer
+
+Options
+- --activate :: activate after installation
+
+** Template Tags
+wp-includes/xxx-template.php
+*** post-thumbnail <<<wp:t:thumbnail>>>
+get_post_thumbnail_id($post = null);
+
+get_the_post_thumbnail_* :: can specify which post
+the_post_thumbnail_* :: has to be current post
+
+You can wp:f:add_image_size
+Image size :: $size
+NOTICE: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will 
+get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes
+in HTML to achieve the purpose.
+- 'post-thumbnail' :: default
+- array(100, 100) :: Grab the biggest size in width and height image file possible.
+- array(100, 9999) :: Grab the biggest size in width and height image file possible.
+
+You can resize an image file on the fly using fly-dynamic-image-resizer
+
+the_post_thumbnail($size, $attr='') :: echo
+the_post_thumbnail_url($size) :: echo
+
+*** post <<<wp:t:post>>>
+*** category <<<wp:t:category>>>
+*** general <<<wp:t:general>>>
+
 ** Functions
 *** get_the_ID() - ID of current item or false
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
+
+*** add_image_size
+<<<wp:f:add_image_size>>>
+Use wp:action:after_setup_theme
+Every newly uploaded image will have image files with all defined image sizes.
+
+#+BEGIN_EXAMPLE
+function lili_theme_setup() {
+ add_image_size('lili-w700', 700, 9999); // fixed width, unlimited height
+ add_image_size('lili-w700h600', 700, 600, true); // crop in exact dimension 
+}
+#+END_EXAMPLE
+
+*** add_management_page
+wp:action:admin_menu
+Add sub menu to Tools admin menu
+
+add_management_page(
+ 'Page title', // string
+ 'Menu title', // string
+ 'manage_options', // string. Capability that is required.
+ 'menu_slug', // string
+ 'callbackFunct', // string or array($this, 'options_page')
+);
 
 ** <<<WP Custom Fields>>>
 Normal
@@ -1065,7 +1130,8 @@ If the field is a set of checkboxes, in WP_Query, you should use the LIKE operat
 Refer to WP Types Custome Field Checkbox and WP Meta Query
 
 ** <<<Wordpress The Loop>>>
-*** Basic Syntax, <<<Tags used in The Loop>>>
+*** Syntax
+
 #+BEGIN_EXAMPLE
 <?php 
  $query = new WP_Query('cat=-3,-8'); 
@@ -1093,13 +1159,18 @@ Refer to WP Types Custome Field Checkbox and WP Meta Query
 *** <<<WP_Query>>>
 Generator: https://generatewp.com/wp_query/
 
-Used: WP_Meta_Query, WP Tax Query
+Used: WP_Meta_Query, WP Tax Query, WP Order and Orderby
+Used filters: wp:filter:post_limits or pre_option_posts_per_rss wp:filter:pre_option
+
 #+BEGIN_EXAMPLE
 $args = array(
  'post_type' => array('editorial', 'blog'), // blog or editorial
  'post_status' => array('publish'),
+ 'posts_per_page' => -1, // int. -1 shows all posts. Doesn't work in feed (Default 10). Use wp:filter:post_limits
  'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
  'tax_query' => $tax_query,
+ 'order' => 'DESC', // default, 'ASC'
+ 'orderby' => 'date', // default, which is post_date
 );
 
 $query = new WP_Query($args);
@@ -1193,6 +1264,26 @@ $tax_query = array(
 );
 #+END_EXAMPLE
 
+*** <<<WP Order and Orderby>>>
+2 parameters: order and orderby. They are strings not arrays.
+
+**** orde
+- DESC :: default
+- ASC
+
+**** orderby
+- date :: default, which is post_date
+- modified :: modified date
+- ID :: post id
+- parent :: parent id
+- rand :: random order
+- comment_count
+- author
+- title
+- name :: post name post slug
+- type :: post type
+List goes on...
+
 ** RSS
 
 <<<get_template_part>>> calls a template in child theme
@@ -1252,21 +1343,37 @@ query_posts($args);
 #+END_EXAMPLE
 
 ** add_filter
-#+BEGIN_EXAMPLE
-add_filter( 'tagname', 'lili_funct'
-, int $priority = 10 // lower number sooner
-, int $accepted_args = 1 // default is 1! Be careful
+*** Syntax
+Modify internal data / function returned
+
+For example, WP_Query gets internal settings for building a query.
+You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
+so that you only change the internal setting for that query building without affecting other usage.  
+
+add_filter( 
+ 'tagname', 
+ 'lili_funct',
+  10, // int. Priority, lower number sooner
+  1, // int. Accepted args, default is 1! Be careful
 )
 
-// Later apply_filter();
 apply_filters('tagname', $result, $var1);
 
 // callback should take 2 variables
 function lili_funct($result, $var1) {
  return $result;
 }
+*** post_limits
+<<<wp:filter:post_limits>>>
+For feed, use pre_option_posts_per_rss wp:filter:pre_option
 
-#+END_EXAMPLE
+function lili_f_post_limits($limit, $query) {
+ return 'LIMIT 0, 25';
+ return $limit;
+}
+
+*** pre_option_(option_name) <<<wp:filter:pre_option>>>
+Temporarily alter an option without changing in database.
 
 ** add_action
 Event based
@@ -1289,9 +1396,19 @@ add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
 #+END_EXAMPLE
 
 *** init
-** Settings
-<<<WP All Settings>>>
+*** after_setup_theme
+<<<wp:action:after_setup_theme>>>
+Called each page load after the theme is initialized. 
+Do basic setup, registration and init actions for a theme
+
+*** admin_menu
+<<<wp:action:admin_menu>>>
+
+** Options, Settings
+<<<WP All Options>>>
 /wp-admin/options.php
+
+[[https://codex.wordpress.org/Option_Reference][Option Reference]]
 
 ** Wordpress Theme
 *** Template Files
@@ -1330,6 +1447,25 @@ function lili_wphead_dfp() {
 ** Transient API
 WordPress cache API in database.
 =DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
+
+** Plugins
+*** Resize image on the fly
+<<<fly-dynamic-image-resizer>>>
+
+$image = fly_get_attachment_image_src(
+ get_post_thumbnail_id(),
+ array(160, 9999),
+ false // true to crop to exact dimension
+);
+
+$image :: array(
+ 'src',
+ 'width',
+ 'height'
+);
+
+fly_add_image_size('lili-w600', 600, 9999, true);
+$image = fly_get_attachment_image($post->id, 'lili-w600'); // HTML
 
 * CSS
 ** Layout - Position
@@ -4800,6 +4936,11 @@ terminus site deploy --site=<s> --env=<e> --sync-content --cc
 #+BEGIN_EXAMPLE
 terminus drush "<drush command> <drush args>" --site=<> --env=<> 
 #+END_EXAMPLE
+
+** WP CLI
+
+<<<WP CLI Pantheon>>>
+terminus wp 'option get home' --site=<site> --env=dev
 
 ** Determin Environment
 #+BEGIN_EXAMPLE
