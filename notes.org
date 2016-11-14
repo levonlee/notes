@@ -476,7 +476,8 @@ echo theme('lili_flair',array('text'=>'hi'));
 =drush sa= list all aliases
 
 *** User
-=drush user-login yourusername=
+drush user-login yourusername
+
 *** Module
 =drush dl devel= Download a module
 =drush en devel= Enable a module
@@ -1022,9 +1023,6 @@ drupal_mail($module, 'template_1', $to, $language, $params, $from, $send);
 #+END_EXAMPLE
 
 * Wordpress
-** Global Options
-URL :: /wp-admin/options.php
-
 ** CLI
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
 WP CLI Pantheon
@@ -1057,7 +1055,6 @@ wp plugin install fly-dynamic-image-resizer
 
 Options
 - --activate :: activate after installation
-
 ** Template Tags
 wp-includes/xxx-template.php
 *** post-thumbnail <<<wp:t:thumbnail>>>
@@ -1083,12 +1080,16 @@ the_post_thumbnail_url($size) :: echo
 *** post <<<wp:t:post>>>
 *** category <<<wp:t:category>>>
 *** general <<<wp:t:general>>>
-
 ** Functions
 *** get_the_ID() - ID of current item or false
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
+*** Translate
+echo __($text, 'textdomain'); // return
+'textdomain' is optional but it has to be a string not a variable! Default it's 'default'
+
+_e() is the same as __() but it echoes
 
 *** add_image_size
 <<<wp:f:add_image_size>>>
@@ -1114,7 +1115,131 @@ add_management_page(
  'callbackFunct', // string or array($this, 'options_page')
 );
 
-** <<<WP Custom Fields>>>
+*** register_post_type
+wp:action:init
+wp:action:pre_get_posts
+wp:plugin:acf
+
+register_post_type( $post_type, $args );
+https://codex.wordpress.org/Function_Reference/register_post_type
+
+- $post_type :: string. < 20 characters. All lowercase and no space
+- $args :: array of arguments
+
+#+BEGIN_EXAMPLE
+add_action('init', 'lili_custom_post_type');
+function lili_custom_post_type() {
+  $labels = [
+    // array, wp:register_post_type:labels
+  ];
+
+  $args = [
+    'label' => 'Plural Name', // string
+    'labels' => $labels,
+    'description' => '', // string, optional
+    'public' => false,
+    /* Default. bool.
+     *       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
+     * true:               false,               true,              true, true
+     * false:               true,              false,             false, false
+     */
+    'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+    'publicly_queryable' => true, // optional. take 'public' value.
+    /* ?post_type={post_type_key},
+     * ?{post_type_key}={single_post_slug},
+     * ?{post_type_query_var}={single_post_slug}
+     */
+    'show_ui' => true, // optional. bool. default take 'public' value.
+    'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
+    'show_in_menu' => true, // optional, bool or string. default inherits show_ui
+    // false :: do not display in admin menu
+    // true :: display as a top level menu
+    // 'some string' :: display as a submenu of a menu 'some string'
+    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
+    'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
+	  //  Don't have to add 'custom-fields' in order to use wp:plugin:acf
+
+  ];
+
+  register_post_type('movies', $args);
+
+}
+
+add_action( 'pre_get_posts', 'lili_pre_get_posts' );
+// Should not call this in template because in template the $query is already run
+function lili_pre_get_posts( $query ) {
+  if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
+    $query->set( 'post_type', array( 'post', 'movies' ) );
+  }
+  // this function should return nothing.
+}
+#+END_EXAMPLE
+
+**** labels
+<<<wp:register_post_type:labels>>>
+
+*** add_post_type_support
+<<<wp:f:add_post_type_support>>>
+
+add_post_type_support($post_type, $supports);
+
+- $post_type :: string
+- $supports :: string/array
+  - title
+  - editor :: content
+  - author
+  - thumbnail :: current theme must support Post Thumbnails
+  - excerpt
+  - trackbacks
+  - custom-fields :: wp:Custom_Fields. Don't have to add 'custom-fields' in order to use wp:plugin:acf
+  - comments
+  - revisions
+  - page-attributes :: menu order, hierarchical must be true
+  - post-formats :: add post formats
+
+add_action('init', 'lili_custom_post_type');
+function lili_custom_post_type() {
+  $labels = [
+    // array, wp:register_post_type:labels
+  ];
+
+  $args = [
+    'label' => 'Plural Name', // string
+    'labels' => $labels,
+    'description' => '', // string, optional
+    'public' => false,
+    /* Default. bool.
+     *       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
+     * true:               false,               true,              true, true
+     * false:               true,              false,             false, false
+     */
+    'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+    'publicly_queryable' => true, // optional. take 'public' value.
+    /* ?post_type={post_type_key},
+     * ?{post_type_key}={single_post_slug},
+     * ?{post_type_query_var}={single_post_slug}
+     */
+    'show_ui' => true, // optional. bool. default take 'public' value.
+    'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
+    'show_in_menu' => true, // optional, bool or string. default inherits show_ui
+    // false :: do not display in admin menu
+    // true :: display as a top level menu
+    // 'some string' :: display as a submenu of a menu 'some string'
+    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
+    'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
+
+  ];
+
+  register_post_type('movies', $args);
+
+}
+
+Use wp:action:pre_get_posts to enable query for this new post type
+
+** WP Custom Fields
+<<<wp:Custom_Fields>>>
+
+*** Get Custom Fields
 Normal
 #+BEGIN_EXAMPLE
 <?php 
@@ -1131,10 +1256,17 @@ $newsletters = types_render_field('newsletters', array('output'=>'raw'));
 // the real field name is actually wpcf-newsletters
 #+END_EXAMPLE
 
-If the field is a set of checkboxes, in WP_Query, you should use the LIKE operator. 
-Refer to WP Types Custome Field Checkbox and WP Meta Query
+*** Custom Fields in WP_Meta_Query
+Custom fields created by wp:plugin:acf can use WP_Meta_Query as normal.
 
-** <<<Wordpress The Loop>>>
+Custome fields creasted by WP Types, like a set of checkboxes, in WP_Query, you should use the LIKE operator. 
+Refer to WP Types Custom Field Checkbox and WP Meta Query
+
+*** Create Custom Fields for Custom Post Type
+Use wp:plugin:acf
+
+** Wordpress The Loop
+<<<wp:The_Loop>>>
 *** Syntax
 
 #+BEGIN_EXAMPLE
@@ -1166,6 +1298,7 @@ Generator: https://generatewp.com/wp_query/
 
 Used: WP_Meta_Query, WP Tax Query, WP Order and Orderby
 Used filters: wp:filter:post_limits or pre_option_posts_per_rss wp:filter:pre_option
+Used actions: wp:action:pre_get_posts
 
 #+BEGIN_EXAMPLE
 $args = array(
@@ -1236,7 +1369,7 @@ In MySQL, it means CAST(the field, to a type)
 - SIGNED, UNSIGNED :: MySQL Integer
 - TIME :: MySQL Date and Time
 
-<<<WP Types Custome Field Checkbox and WP Meta Query>>>
+<<<WP Types Custom Field Checkbox and WP Meta Query>>>
 Say the wpcf-newsletters custom field created by WP Types has 2 checkboxes are selected: enligne and pw.
 The following 2 strings will appear in the serialized json string as value in WP_Meta_Query
 #+BEGIN_EXAMPLE
@@ -1348,7 +1481,7 @@ query_posts($args);
 #+END_EXAMPLE
 
 ** add_filter
-*** Syntax
+*** Syntax, remove_filter
 Modify internal data / function returned
 
 For example, WP_Query gets internal settings for building a query.
@@ -1377,10 +1510,12 @@ function lili_f_post_limits($limit, $query) {
  return $limit;
 }
 
-*** pre_option_(option_name) <<<wp:filter:pre_option>>>
+*** pre_option_(option_name)
+<<<wp:filter:pre_option>>>
 Temporarily alter an option without changing in database.
 
 ** add_action
+*** Basic
 Event based
 add_action( string $tag,
 string $function_name,
@@ -1401,10 +1536,29 @@ add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
 #+END_EXAMPLE
 
 *** init
+<<<wp:action:init>>>
+Fires after Wordpress has finished loading but before any headers are sent.
+User is already authenticated.
+Useful for intercepting $_GET or $_POST
+
 *** after_setup_theme
 <<<wp:action:after_setup_theme>>>
 Called each page load after the theme is initialized. 
 Do basic setup, registration and init actions for a theme
+
+*** pre_get_posts
+<<<wp:action:pre_get_posts>>>
+Provide a chance to modify $query object (or do something else) before it's run.
+Do not use this to alter query for single Page requests.
+
+add_action( 'pre_get_posts', 'lili_pre_get_posts' );
+// Should not call this in template because in template the $query is already run
+function lili_pre_get_posts( $query ) {
+  if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
+    $query->set( 'post_type', array( 'post', 'movies' ) );
+  }
+  // this function should return nothing.
+}
 
 *** admin_menu
 <<<wp:action:admin_menu>>>
@@ -1471,7 +1625,18 @@ $image :: array(
 
 fly_add_image_size('lili-w600', 600, 9999, true);
 $image = fly_get_attachment_image($post->id, 'lili-w600'); // HTML
+*** Advanced Custom Fields - ACF
+<<<wp:plugin:acf>>>
+https://wordpress.org/plugins/advanced-custom-fields/
 
+Add a field group and then add custom fields under the group.
+Use Location to define rules to assign the field group to a custom post type.
+You can hide the default post fields (Content editor, comments, categories, etc.)
+Make custom fields required
+
+In wp:The_Loop, to display a custom field :: the_field('field_name')
+To get the value :: get_field('field_name'); 
+ 
 * CSS
 ** Layout - Position
 Default position is static. left, right, top, bottom have not effect
@@ -3642,6 +3807,21 @@ s.match(p); // is
 // The other way to intepret it is find any 'is' that has ' all' right behind
 var p = /is(?! all)/g; // Find any 'is' that doesn't have ' all' right behind
 #+END_EXAMPLE
+
+***** Match Tags
+<<<regex:match_tags>>>
+
+Match all tags
+#+BEGIN_EXAMPLE
+'<[^>]*>'
+#+END_EXAMPLE
+
+Match one tag only
+#+BEGIN_EXAMPLE
+'<img[^>]*>'
+'<(img|/?div|br)[^>]*>'
+#+END_EXAMPLE
+
 *** Function
 <<<js:Function>>> Refer to js:hoisting
 **** arguments
