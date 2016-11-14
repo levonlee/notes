@@ -3189,8 +3189,9 @@ var myObj = {},
     myNumber = 0;
 ** Variable Scope
 *** Hoisting
+<<<js:hoisting>>>. Refer to js:Function
 Variables defined outside of any functions are Global.
-Interesting fact:
+
 #+BEGIN_EXAMPLE
 myFunction();
 
@@ -3216,17 +3217,31 @@ console.log(window.carName);
 showState("one", {}, 2, 0.98); // output: Ready
 
 // function declaration
+// Pros :: Can be used before function is declared
+// Cons :: Can't conditionally declare a function
 function showState() {
   console.log("Ready");
   // arguments[0] is "one"
 } 
 
 // function expression/definition/assignment
+// Pros :: Can conditionally define a function
+// Cons :: Can't be used before it is defined 
 var showState = function() {
   console.log("Idle");
 };
 
 showState(); // output: Idle
+
+// The function that is assigned to a variable doesn't have to anonymous.
+
+really.long.external.scoped.name = function shortcut(n) {
+ // regression
+ shortcut(n-1);
+ // Pass it self as a callback
+ someFunction(shortcut);
+}
+
 #+END_EXAMPLE
 
 *** let, const, var
@@ -3249,12 +3264,14 @@ Which means you can push to const arry or modify key/value.
 const in the same block cannot be changed or redeclared or redeclared by let or var.
 
 ** Closure, Javascript Singleton
-When to use closure? 
+*** Syntax, When to use closure?
+
 - When you don't want to change the variables in outer scope where the closure is in.
 The outer scope can be global or any place where the closure is in.
 - When you want to run the function later
 - When you want to run the function later by providing just reference to other function
 - When you want to run the function later by providing initial state
+- When you want to do regression, don't want to affect outer scope and need more debugging
 
 #+BEGIN_EXAMPLE
 (function() {
@@ -3278,6 +3295,7 @@ jQuery(document).ready(function($) {
 });
 #+END_EXAMPLE
 
+*** Singleton
 <<<Javascript Singleton>>>
 
 #+BEGIN_EXAMPLE
@@ -3328,6 +3346,23 @@ return {
 
 #+END_EXAMPLE
 
+*** Regression
+This provides you more debugging info
+
+#+BEGIN_EXAMPLE
+var charsInBody = (function counter(elm) {
+  // Notice :: this is not an anonymous function as we see before in a closure!
+  if (elm.nodeType == 3) {
+    return elm.nodeValue.length;
+  }
+  var count = 0;
+  for (var i = 0, child; child = elm.childNodes[i]; i++) {
+    count += counter(child);
+  }
+  return count;
+})(document.body);
+#+END_EXAMPLE
+
 ** Types, typeof, constructor
 *** All types, typeof, constructor
 | String    | js:String                                  |
@@ -3335,7 +3370,7 @@ return {
 | Boolean   | true or false. Not FALSE/TRUE              |
 | Object    | js:Array, js:Date, Object, null, js:RegExp |
 |           | js:Math, js:Error                          |
-| Function  | a special type of object                   |
+| Function  | a special type of object js:Function       |
 | Symbol    | new in Edition 6                           |
 |           |                                            |
 | undefined | undefined or has not been assigned a value |
@@ -3433,7 +3468,7 @@ fruits.forEach(function(i) {
 });
 
 **** array.map(), array.filter() 
-// Do something while each item is iterated, join returned values into an array.
+Do something while each item is iterated, join returned values into an array.
 var result = a.map(function(i) { return i.toUpperCase(); }); // result is an array
 console.log(a); // a is not affected!
 
@@ -3608,6 +3643,7 @@ s.match(p); // is
 var p = /is(?! all)/g; // Find any 'is' that doesn't have ' all' right behind
 #+END_EXAMPLE
 *** Function
+<<<js:Function>>> Refer to js:hoisting
 **** arguments
 function add() {
   var sum = 0;
@@ -3638,6 +3674,21 @@ function add(firstValue, ...args) {
 }
 
 add(2,3,4,5);
+**** .apply(), .call()
+<<<js:Function.apply>>> <<<js:Function.call>>>
+.apply() :: Pass arguments as an array to a function which accepts multiple arguments
+.call() :: Pass arguments as arguments to a function which accepts multiple arguments
+
+funct.apply(thisArg, [argsArray])
+
+thisArg :: pass thisArg into funct as this in funct
+argsArray :: array or array-like object
+
+Pass no more than 65536 arguments/elements in array.
+
+var numbers = [5,6,2,3,7];
+var max = Math.max.apply(null, numbers); // Equivalent to Math.max(5,6, ...);
+var max = Math.max.call(null, 5,6,2,3,7);
 
 *** Error
 <<<js:Error>>>
@@ -3819,6 +3870,7 @@ CustomerBooking.prototype.setFilm = function(film) {
  this.film = film;
 }
 
+// Instantiate
 var firstBooking = new CustomerBooking(1234,
  "Arnold Palmer", "Toy Story", "27 July 2004 20:15");
 
@@ -3854,7 +3906,7 @@ londonOdeon.addBooking(342, "First Last", "Toy Story", "15 July 2004 20:15");
 #+END_EXAMPLE
 
 ** Extending Native Object
-Native prototype cann't be deleted or replaced
+Native prototype can't be deleted or replaced
 But values of its properties can be modified or created
 
 Create a new method in Array class which removes a member after checking if the method is already defined
@@ -3932,11 +3984,11 @@ Function.method('inherits', function(parent) {
 });
 #+END_EXAMPLE
 
-** Classical Inheritance and Parasitic Inheritance
+** Classical Inheritance, Parasitic Inheritance
 Classical inheritance is about the _is-a_ relationship.
 Parasitic inheritance is about the _was-a-but-now's-a_ relationship.
 
-/Classical inheritance Example/
+*** Classical inheritance
 Refer to: Add "method" in Function class, Add "inherits" in Function class
 
 #+BEGIN_EXAMPLE
@@ -3945,48 +3997,57 @@ function Parenizor(v) {
  this.setValue(v);
 }
 
-Parenizor.prototype.setValue = function(v) {
- this.value = v;
- return this;
-}
-
-Parenizor.prototype.getValue = function() {
-  return this.value;
-}
-
-Parenizor.prototype.toString = function() {
- return '(' + this.getValue() + ')';
-}
+Parenizor.prototype = {
+  constructor: Parenizor, // This line is crucial as we are overwriting Parenizor.prototype rather than adding
+  setValue: function(v) {
+    this.value = v;
+    return this;
+  },
+  getValue: function() {
+    return this.value;
+  },
+  toString: function() {
+    return '(' + this.getValue() + ')';
+  }
+};
 
 myParenizor = new Parenizor(0); 
 myString = myParenizor.toString(); // "(0)"
 
-// Inherit
-function ZParenizor(v) {
- this.setValue(v);
+// Subclass inherits parent class Parenizor
+function ZParenizor(v, w) {
+ Parenizor.call(this, v); // call parent class parenizor constructor
+ // You can also call other parent class constructor
+ // OtherParenizor.call(this, v);
+
+ // Define other properties that this subclass should have
+ this.otherValue = w;
 }
-ZParenizor.inherits(Parenizor);
+
+ZParenizor.prototype = Object.create(Parenizor.prototype); 
+// Inherits parent class's all methods. 
+// First create an instance of the parent class and assign it to the child class.
+
+// Inherits other parent class's all methods
+// mixin(ZParenizor.prototype, OtherParenizor.prototype);
+
+ZParenizor.prototype.constructor = ZParenizor; 
+// Set subclass constructor
+// Because all ZParenizor.prototype.* were copied from Parenizor.prototype.*, 
+// but ZParenizor should have its own constructor which is ZParenizor.prototype.constructor.
+
+// Modify subclass's inherited method toString 
+
 ZParenizor.prototype.toString = function() {
- if (this.getValue()) {
-  return this.uber('toString');
- }
- return "-0-";
+  // ...
 }
+
+var zParenizor = new ZParenizor('v', 'w');
+
+console.log(zParenizor instanceof ZParenizor); // true
+console.log(zParenizor instanceof Parenizor); // true
 #+END_EXAMPLE
 
-Parasitic Inheritance
-#+BEGIN_EXAMPLE
-function ZParenizor2(v) {
- var that = new Parenizor(v);
- that.toString = function() {
-  if (this.getValue()) {
-   return this.uber('toString');
-  }
-  return "-0-";
- };
- return that;
-}
-#+END_EXAMPLE
 ** Promise
 Promise is now native in all browsers including Edge except IE.
 
