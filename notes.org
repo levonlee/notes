@@ -1236,9 +1236,44 @@ function lili_custom_post_type() {
 
 Use wp:action:pre_get_posts to enable query for this new post type
 
+*** remove_meta_box
+<<<wp:f:remove_meta_box>>>
+
+remove_meta_box( $id, $page, $context);
+- Return 
+- $id :: string
+  - authordiv
+  - categorydiv
+  - comemntstatusdiv
+  - commentsdiv
+  - formatdiv
+  - pageparentdiv
+  - postcustom
+  - postexcerpt
+  - postimagediv
+  - revisionsdiv
+  - slugdiv
+  - submitdiv
+  - tagsdiv-post_tag
+  - tagsdiv-{$tax-name}
+  - {$tax-name}div
+  - trackbacksdiv
+  - ...
+- $page :: string. Type of screen
+  - post
+  - page
+  - attachment
+  - link
+  - dashboard
+  - any custom post type e.g. 'my-product'
+- $context :: string. 'normal', 'advanced', or 'side'
+  - Post edit screen :: normal, side and advanced
+  - Comments screen :: normal and side
+  - Menu meta boxes :: side
+- Return nothing
+
 ** WP Custom Fields
 <<<wp:Custom_Fields>>>
-
 *** Get Custom Fields
 Normal
 #+BEGIN_EXAMPLE
@@ -1249,17 +1284,12 @@ print_r(get_post_custom_values('fieldkey')); // Get values as an array
 ?>
 #+END_EXAMPLE
 
-WP Types is different! Use <<<types_render_field>>>
-
-#+BEGIN_EXAMPLE
-$newsletters = types_render_field('newsletters', array('output'=>'raw'));
-// the real field name is actually wpcf-newsletters
-#+END_EXAMPLE
+Plugin is different :: wp:plugin:types
 
 *** Custom Fields in WP_Meta_Query
 Custom fields created by wp:plugin:acf can use WP_Meta_Query as normal.
 
-Custome fields creasted by WP Types, like a set of checkboxes, in WP_Query, you should use the LIKE operator. 
+Custome fields creasted by wp:plugin:types, like a set of checkboxes, in WP_Query, you should use the LIKE operator. 
 Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 *** Create Custom Fields for Custom Post Type
@@ -1514,7 +1544,7 @@ function lili_f_post_limits($limit, $query) {
 <<<wp:filter:pre_option>>>
 Temporarily alter an option without changing in database.
 
-** add_action
+** add_action, do_action, do_action_ref_array
 *** Basic
 Event based
 add_action( string $tag,
@@ -1522,6 +1552,9 @@ string $function_name,
 int $priority = 10,
 int $accepted_args = 1 // number of args the function accepts
 )
+
+add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
+
 *** wp_head, wp_footer
 Refer to Wordpress Theme > Functions used in template
 
@@ -1562,6 +1595,19 @@ function lili_pre_get_posts( $query ) {
 
 *** admin_menu
 <<<wp:action:admin_menu>>>
+
+*** add_meta_boxes, add_meta_boxes_{post_type}
+lili_add_meta_boxes($post_type, $post) takes 2 arguments, no return. 
+lili_add_meta_boxes_{post_type}($post) takes 1 argument, no return.
+
+Use wp:f:add_meta_box, wp:f:remove_meta_box or modify global $wp_meta_boxes;
+
+$wp_meta_boxes['post-type']['normal']['core']['postexcerpt']['title'] = 'Your title';
+
+You can change the title, callback (complete change to another function) and different context. 
+The callback most likely outputs a label, form field and some description.
+
+You can either completely change the callback or use wp:filter:gettext to change the translation
 
 ** Options, Settings
 <<<WP All Options>>>
@@ -1636,7 +1682,41 @@ Make custom fields required
 
 In wp:The_Loop, to display a custom field :: the_field('field_name')
 To get the value :: get_field('field_name'); 
- 
+*** Toolset Types
+<<<wp:plugin:types>>>
+
+WP Types is different! Use <<<types_render_field>>>
+
+#+BEGIN_EXAMPLE
+$newsletters = types_render_field('newsletters', array('output'=>'raw'));
+// the real field name is actually wpcf-newsletters
+// For single line (text) field, use 'output'=>'raw'
+// For WYSIWYG field, use 'output'=>'html'. 'raw' might be plain text
+// For Image field
+
+$_image = types_render_field('field-image', array('output'=>'raw'));
+// Output original full image url
+// If 'output' => 'raw', 'size' and 'resize' will be ignored
+
+// use 'url' => 'true' to output the url of the resized image.
+$args = array('output'=>'normal', 'url'=>'true', 'width'=> 300, 'resize'=>'proportional');
+// Output image url of a fixed width and dynamic height
+
+$args = array('output'=>'normal', 'url'=>'true', 'size'=>'medium', 'resize'=>'proportional' );
+// Output image url of a max width and height
+// if 'size' is set, 'width' and 'height' will be ignored
+
+/* 
+ * 'size' => 'custom_image_size' | 'full' | 'large' | 'medium' | 'thumbnail'
+ * Set 'size' and also 'resize' => 'crop' | 'proportional' | 'stretch' | 'pad'
+ * If resize is necessary, set 'output' => 'normal'
+ * 'padding_color' => 'transparent' | hex when resize=>pad
+ */
+// For Image field.
+#+END_EXAMPLE
+
+Refer to WP Types Custom Field Checkbox and WP Meta Query
+
 * CSS
 ** Layout - Position
 Default position is static. left, right, top, bottom have not effect
