@@ -1718,7 +1718,7 @@ $args = array('output'=>'normal', 'url'=>'true', 'size'=>'medium', 'resize'=>'pr
 Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 * CSS
-** Layout - Position
+** Position, box-sizing
 Default position is static. left, right, top, bottom have not effect
 relative is relative to default static position, use left, right, top and bottom
 
@@ -1733,6 +1733,8 @@ postion:absolute is positioned relative to the nearest positioned ancestor.
 If there's no positioned ancestors, document body is used.
 
 When elements are positioned, they can overlap other elements.
+
+box-sizing: border-box | content-box (default); 
 
 ** Transform, Transition
 #+BEGIN_EXAMPLE
@@ -1762,7 +1764,7 @@ a:hover {}
 a:active {}
 #+END_EXAMPLE
 
-** Text Effects
+** Text
 *** Ellipsis
 #+BEGIN_EXAMPLE
 div.test {
@@ -1777,7 +1779,20 @@ div.test {
 #+BEGIN_EXAMPLE
 word-wrap: break-word; // allow to break a long word
 #+END_EXAMPLE
-** <<<CSS Selectors>>>
+
+*** Font size, line-height
+font-size in child elements inherit parent element
+em uses the current element's font-size or its closest parent element which has font-size defined
+rem is always relative to the <html> element
+vw and vh are the viewport width and height. 1vw is 1% of vw
+
+Google recommends line-height is at least 1.2
+
+line-height is normal means to use user agent style. Most likely default is 1 not 1.2
+
+** CSS Selectors
+<<<CSS Selectors>>>
+
 div > p :: select p elements where the direct parent is div
 div + p :: select p elements that are placed immediately after div (div's children)
 p ~ ul :: select ul elements that are preceded by a p element
@@ -1822,6 +1837,7 @@ div:not(p) -- all children elements except <p>'s
 p:first-child -- <p>'s are the first child of any elements
 p:last-child
 p:nth-child(2)
+p:nth-child(7n-1)
 tr:nth-child(even)
 tr:nth-child(odd)
 p:nth-last-child(2)
@@ -2035,13 +2051,13 @@ Only IE supports EOT
 <link rel="stylesheet" media="mediatype and|not|only (media feature)" href="style.css">
 
 *** Syntax
-If not or only is used, it must follow a mediatype. 
+not /mediatype/
+only /mediatype/
 
 Each media feature, key:value or key, must be wrapped in ()
 Some media feature doesn't have a value.
 
-
-not/only can be chained in OR (separated by comma) but not and
+=not /mediatype/= and =only /mediatype/= can be chained with OR (separated by comma) but not =and=
 #+BEGIN_EXAMPLE
 // This works
 @media screen and (min-width:200px), not print and (min-width:300px) {}
@@ -2049,6 +2065,8 @@ not/only can be chained in OR (separated by comma) but not and
 // This syntax is wrong
 @media screen and (min-width:200px) and not print and (min-width:300px) {}
 #+END_EXAMPLE
+
+Note :: =not /mediatype/= is different from =not(/mediafeature/)=
 
 Nested media queries (@media inside another @media) is supported on all browsers except IE11 and below.
 
@@ -2332,6 +2350,9 @@ WD. Only Edge. Same as meta viewport.
 
 ** Flexbox
 Container could be display:flex or display:inline-flex
+Flexbox is good for aligning child elements with irregular or unknown or inconsistent width and height
+And the number of child elements are unknown
+Good for vertical and horizontal center a child element inside a container (parent)
 
 #+BEGIN_EXAMPLE
 .container {
@@ -2347,20 +2368,23 @@ Container could be display:flex or display:inline-flex
  /* flex-wrap: nowrap | wrap | wrap-reverse; */
     flex-flow: row wrap;
     
- /* juustify-content: flex-start | flex-end | center | space-between | space-around; */
+ /* justify-content: flex-start | flex-end | center | space-between | space-around; */
  /* e.g. you can change from flex-end to space-around for menu nav with @media queries */
     justify-content: space-around;   
  
  /* align-items: flex-start | flex-end | center | baseline | stretch; */
- /* This is for aligning items on cross axis */
+ /* This is for aligning items on one line (default x axis) on cross axis (y axis) */
  /* relative to the same line. e.g. you have 3 lines of items and each line holds 3 items. 
-    how do the 3 items align on the y axis on each line?
+  * how do the 3 items align on the y axis on each line?
+  * default is stretch
   */ 
 
- /* align-content: stretch | flex-start | flex-end | center | space-between | space-around; */
- /* This is for space between multiple lines */
- /* e.g. There're 3 lines of items and each line has 3 items 
-    How do the 3 lines align on the y axis on each line?
+ /* align-content: stretch | flex-start | flex-end | center | space-between | space-around;
+  * This is for space between multiple lines
+  * e.g. There're 3 lines of items and each line has 3 items 
+  * How do the 3 lines align on the y axis on each line?
+  * default is stretch
+  * It only works when there are multiple lines and the container height is larger than total children height
   */
 }
 
@@ -2370,10 +2394,10 @@ Container could be display:flex or display:inline-flex
  /* flex: none | <flex-grow> <flex-shrink> <flex-basis> */
 
  /* flex-grow: 0 | <number>; */
- /* 0 is default and means do not enlarge item */
+ /* 0 is default and means do not enlarge item in width (default x axis) */
 
  /* flex-shrink: 1 | <number> */
- /* 1 is default and means do not shrink item */
+ /* 1 is default and means do not shrink item in width (default x axis) */
  
  /* flex-basis: auto | <length>; */
  /* auto is default. if it's 0, extra space will not be factored in. Always use auto */
@@ -6224,10 +6248,39 @@ Finally, edit the shortcut to use PhpStorm64.exe
 Ensure phpStorm is running in 64bit.
 
 *** HTML (CSS and Javascript)
+**** Show Applied Styles
 Right click on element and select _Show Applied Sytles for Tag_
 
+**** CSS vendor prefix
+e.g. all vendor prefixes for box-sizing. Type -box-sizing and hit tab.
+ 
 *** XPath
 You need to make the xml file part of a project to use Evaluate XPath... (right click) 
+
+*** Emmet
+**** How it works
+snippets.json store something like "m": "margin:|;"
+**** CSS
+***** margin (m), color (c), border (bd)
+m10 TAB for margin: 10px;
+m10-20 TAB for margin: 10px 20px;
+m-10--20 TAB for margin: -10px -20px;
+m1.5 TAB for margin: 1.5em;
+m1.5rem TAB for margin: 1.5rem;
+m10p30e5x TAB for margin: 10% 30em 5ex;
+
+p :: percentage
+e :: em
+x :: ex
+
+/Color/
+c#fc0
+
+/border/
+border
+bd5#0s
+
+s :: solid 
 
 ** Chrome
 *** Get all events of an element in Console
@@ -6409,3 +6462,6 @@ https://www.microsoft.com/en-us/learning/exam-list.aspx
 
 *** Microsoft Online Proctored Exams
 https://www.microsoft.com/en-us/learning/online-proctored-exams.aspx
+Install the software and do a hardware test.
+Sign in http://microsoft.com/learning to take an exam half an hour early
+Click "Your benefits & exams" then "Start a previously scheduled online proctored exam"
