@@ -5,6 +5,7 @@
 #+TODO: TODO IN-PROGRESS WAITING DONE
 
 * DONE learn emacs org mode
+* TODO QUnit
 * TODO Learn Bootstrap CSS framework
 
 * TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
@@ -442,12 +443,34 @@ throw new Exception(print_r($val));
 ** URL Alias
 Setup pattern for each node type
 Configuration > Search and metadata > URL Aliases > Patterns
+** Link
+Empty link
+=l('Link Text', '', array('fragment'=>' ', 'html'=>TRUE, 'external'=>TRUE))=
+Function l add class="active" when the path is current_path(). Use url() instead.
+
+=url($path = NULL, $options = array())=
+Get URL alias
+url() just returns a url. $options are the same as l().
+url('taxonomy/term/1');
+
 ** Theme
-Module theme: =theme('modname_theme-name',$data)=
+*** System Theme
 Default theme file is located at 
 =sites/all/modules/mod_path/modname/templates/theme-name.tpl.php=
 
+- template.php
+- html.tpl.php
+- page.tpl.php
+- region.tpl.php
+- block.tpl.php
+- node.tpl.php
+- comment-wrapper.tpl.php
+- comment.tpl.php
 
+d7:View_Theming
+
+*** Custom Theme Function
+Module theme: =theme('modname_theme-name',$data)=
 #+BEGIN_EXAMPLE
 function lili_theme( $existing, $type, $theme, $path ) {
   return array(
@@ -598,6 +621,27 @@ function lili_form_views_exposed_form_alter(&$form, &$form_state) {
 views_embed_view('view_name','display_id');
 $arg1 = $arg2 = '123';
 views_embed_view('view_name','display_id',$arg1,$arg2);
+
+*** View Theming
+<<<d7:View_Theming>>>
+
+View, named foobar. Style: unformatted. Row styel: Fields. Display: Page.
+
+- views-view-foobar--page.tpl.php
+- views-view-page.tpl.php
+- views-view--foobar.tpl.php
+- views-view.tpl.php
+
+- views-view-unformatted--foobar--page.tpl.php
+- views-view-unformatted--page.tpl.php
+- views-view-unformatted--foobar.tpl.php
+- views-view-unformatted.tpl.php
+
+- views-view-fields--foobar--page.tpl.php
+- views-view-fields--page.tpl.php
+- views-view-fields--foorbar.tpl.php
+- views-view-fields.tpl.php
+
 
 ** Form
 *** Form alter hooks
@@ -873,15 +917,6 @@ function lili_cache($field, $set = NULL) {
 lili_cache('current_node',$node);
 // Get lili_cache('current_node');
 #+END_EXAMPLE
-** Link
-Empty link
-=l('Link Text', '', array('fragment'=>' ', 'html'=>TRUE, 'external'=>TRUE))=
-Function l add class="active" when the path is current_path(). Use url() instead.
-
-=url($path = NULL, $options = array())=
-Get URL alias
-url() just returns a url. $options are the same as l().
-url('taxonomy/term/1');
 
 ** File
 Read local or remote file to an object of strings
@@ -1737,22 +1772,42 @@ When elements are positioned, they can overlap other elements.
 box-sizing: border-box | content-box (default); 
 
 ** Transform, Transition
+css:animation
+
+*** Transition
+transition: /transition-property/ /transition-duration/ /transition-timing-function/ /transition-delay/
+
+- transition-property :: can be 'all'
+- transition-timing-function :: default linear
+  - ease-in :: slow start
+  - ease-out :: slow end
+  - e.g. use ease-in for div:hover and ease-out in div
+
+- transition-delay :: delay n seconds before the current transition starts.
+
 #+BEGIN_EXAMPLE
 div {
   width: 100px;
   height: 100px;
   background: red;
   transition: width 2s linear 3s, height 2s linear 3s, transform 2s linear 3s;
-/* 
-  linear 3s to delay 3 seconds
-*/
-/* transition: all 2s linear 3s; */
 }
+#+END_EXAMPLE
+
+*** Transform
+
+#+BEGIN_EXAMPLE
 div:hover {
- width: 300px;
- height: 300xp;
- transform: rotate(180deg) translate(-20px, 0);
+  width: 300px;
+  height: 300px;
+  transform: 
+    rotate(180deg) 
+    translate(-20px, 0)
+    scale(0.9, 2)
+    skew(30deg, 20deg);
 }
+/* You can turn off all transform */
+/* transform: none; */
 #+END_EXAMPLE
 
 ** Link
@@ -2269,6 +2324,8 @@ class="img-circle" // border-radius: 50%
 http://viewportsizes.com/
 
 ** @keyframes
+
+<<<css:animation>>>
 
 animation: /name/ /duration/ /timing-function/ /delay/ /iteration-count/ /direction/ /fill-mode/ /play-state/;
 
@@ -2853,8 +2910,9 @@ for double quotes to push to the right of padding
 | normalize()                  | remove empty text nodes and join adjacent text nodes     | yes          |
 |                              |                                                          |              |
 
-*** <<<NodeList>>> Object
-NodeList Object appears like an array (loop like an array) but cannot use Array Methods such as valueOf() or join().
+*** NodeList Object
+<<<NodeList>>>
+NodeList Object appears like an array (loop like an array) but cannot use Array Methods such as valueOf(), join(), forEach().
 
 <<<Static NodeList>>> means changes to DOM have no effect.
 
@@ -2873,6 +2931,17 @@ firstP.style.backgroundColor = "red";
 for (var i=0; i < myNodeList.length; i++) {
  myNodeList[i].style.backgroundColor = "red";
 } 
+
+Another way to loop NodeList
+
+#+BEGIN_EXAMPLE
+Array.prototype.forEach.call(
+ aNodeListArray,
+ function(item) {
+  console.log(item.id);
+ }
+);
+#+END_EXAMPLE
 
 *** <<<Element Object>>>
 [[https://developer.mozilla.org/en-US/docs/Web/API/Element][Element Properties and Methods]]
@@ -3259,6 +3328,7 @@ transitionend
 <meta http-equiv="refresh" content="0;URL='http://abc.com'" />
 // "0" means zero second.
 #+END_EXAMPLE
+
 ** Email
 
 [[https://www.campaignmonitor.com/dev-resources/guides/mobile][Campaign Monitor Mobile Design Guide]]
@@ -3447,6 +3517,29 @@ timedCount();
 #+END_EXAMPLE
 
 * Javascript
+** Loading Sequence
+<script> tags without any attributes are downloaded together and executed immediately in order
+
+- defer :: Works when src is defined. Download together, execute in order just before DOMContentLoaded
+- async :: Works when src is defined. Download together, execute in any order they're downloaded
+- async="false" :: Works when src is defined. Download together, execute in order as soon as all are downloaded
+
+By default, all dynamically added scripts are async.
+
+For example, if you want to load 2 javascript files and execute them in order but after they are all downloaded:
+async="false" is needed.
+
+#+BEGIN_EXAMPLE
+[ '1.js',
+  '2.js'
+].forEach(function(src) {
+  var script = document.createElement('script');
+  script.src = src;
+  script.async = false;
+  document.head.appendChild(script);
+});
+#+END_EXAMPLE
+
 ** Initialization
 <<<js:Initialization>>>
 Always initialize variables at the top including vars in loops
@@ -3456,10 +3549,14 @@ var myObj = {},
     myBoolean = false,
     myRegex = /()/,
     myNumber = 0;
+
+These values are considered as false
+
 ** Variable Scope
 *** Hoisting
 <<<js:hoisting>>>. Refer to js:Function
 Variables defined outside of any functions are Global.
+Only function can create local scope. Without using var to declare variables, those variables are global.
 
 #+BEGIN_EXAMPLE
 myFunction();
@@ -3726,7 +3823,7 @@ function randomSort(anArray) {
 
 var reverse = a.reverse(); // S, C, P
 
-**** array loop: for, forEach 
+**** array loop: for, array.forEach() 
 for (var i = 0; i < fruits.length; i++) {
  fruits[i];
 }
@@ -3974,6 +4071,10 @@ var numbers = [5,6,2,3,7];
 var max = Math.max.apply(null, numbers); // Equivalent to Math.max(5,6, ...);
 var max = Math.max.call(null, 5,6,2,3,7);
 
+.apply() and .call() are used when the number of arguments passed to a method is unknown.
+They are also used to call a method on a varible (obj or array) which doesn't has that method as its property. 
+- Loop arrays which don't have .forEach() such as NodeList 
+
 *** Error
 <<<js:Error>>>
 #+BEGIN_EXAMPLE
@@ -4064,7 +4165,7 @@ for (let value of iterable) {
 *** forEach
 <<<js:forEach>>>
 
-arr.forEach(callback[, thisArg])
+array.forEach(callback[, thisArg])
 
 thisArg :: Pass a variable outside of .forEach() and change it inside .forEach() using /this/
 
@@ -4727,6 +4828,61 @@ connection.onmessage = function(e) {
 };
 
 #+END_EXAMPLE
+
+** Mutation Observer
+<<<js:MutationObserver>>>
+[[https://developer.mozilla.org/en/docs/Web/API/MutationObserver][MDN MutationObserver]]
+[[https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord][MDN MutationRecord]]
+
+#+BEGIN_EXAMPLE
+MutationObserver = window.MutationObserver;
+
+// callback function has 2 arguments
+// mutations: an array of objects of type MutationRecord
+// observer: this MutationObserver instance
+var observer = new MutationObserver(function (mutations, observer) {
+  mutations.forEach(function (mutation) {
+
+    // A MutationRecord has properties
+    // Some of them might be different based on MutationObserver's options
+
+    // Loop addedNodes
+    // addedNodes return NodeList which doesn't have .forEach
+    // js:Function.call
+    Array.prototype.forEach.call(
+      mutation.addedNodes,
+      function (addedNode) {
+        if (addedNode.id == "bar") {
+          console.log("bar was added!");
+        }
+      });
+  });
+});
+
+// Define the parent element
+var target = document.getElementById('foo');
+// Or $('#foo').get(0)
+
+// Which event should be observed
+var config = {
+  attributes: true,
+  attributeOldValue: true, // set to true if attributes is set to true
+  attributeFilter: true, // filter out an array of attribute local names in observation
+  childList: true, // add/remove child elements including text nodes
+  subtree: true, // any change to the subtree including all descendants
+  characterData: true, // maybe image or multimedia changes?
+  characterDataOldValue: true
+};
+
+observer.observe(target, config);
+
+// You may stop observing later
+observer.disconnect();
+#+END_EXAMPLE
+
+** Testing
+*** Unit Testing
+QUnit
 
 ** Communication Between Children Window and Parent Window
 A parent window can have multiple iframes and iframes are loaded from other domain.
@@ -6445,9 +6601,9 @@ Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplifie
 <<<W3C>>>
 - Working Draft
 - Last Call
-- Candidate Recommenation (Standard)
-- Proposed Recommendation
-- Recommendation
+- Candidate Recommenation (CR, Standard)
+- Proposed Recommendation (PR)
+- Recommendation (REC)
 
 ** Training
 *** Microsoft Virtual Academy MVA
