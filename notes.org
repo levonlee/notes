@@ -3736,18 +3736,17 @@ var charsInBody = (function counter(elm) {
 
 ** Types, typeof, constructor
 *** All types, typeof, constructor
-| String    | js:String                                  |
-| Number    | NaN is number. js:Number                   |
-| Boolean   | true or false. Not FALSE/TRUE              |
-| Object    | js:Array, js:Date, Object, null, js:RegExp |
-|           | js:Math, js:Error                          |
-| Function  | a special type of object js:Function       |
-| Symbol    | new in Edition 6                           |
-|           |                                            |
-| undefined | undefined or has not been assigned a value |
-| null      | a special type of object                   |
+| String    | js:String                                     |
+| Number    | NaN is number. js:Number                      |
+| Boolean   | true or false. Not FALSE/TRUE                 |
+| Object    | js:Array, js:Date, js:Object, null, js:RegExp |
+|           | js:Math, js:Error                             |
+| Function  | a special type of object js:Function          |
+| Symbol    | new in Edition 6                              |
+|           |                                               |
+| undefined | undefined or has not been assigned a value    |
+| null      | a special type of object                      |
 
-varname.constructor returns the constructor function.
 *** Number
 <<<js:Number>>>
 Used: js:Math
@@ -4102,6 +4101,33 @@ finally {
  // success or failure, run this
 }
 #+END_EXAMPLE
+*** Prototype Object
+<<<js:prototype>>>
+Every js:Object has a prototype object.
+
+prototype object's default properties and methods
+
+- constructor :: property. get/set 
+- hasOwnProperty('aProperty') :: 
+  - bool. objA.hasOwnProperty('aProperty') not objA.prototype.hasOwnProperty('aProperty')
+  - aProperty has to be direct (not objA.prototype.aProperty) and not inherited
+- isPrototypeOf() :: 
+  - <<<js:prototype.isPrototypeOf>>>
+  - Parent.prototype.isPrototypeOf(SubParent.prototype) is true
+  - Whether or not SubParent has some prototype properties removed, added or modified
+  - js:instanceof 
+- propertyIsEnumerable :: 
+  - <<<js:prototype.propertyIsEnumerable>>>
+  - js:Enumerable
+  - objA.propertyIsEnumerable('prop') not objA.prototype.propertyIsEnumerable('prop')
+  - return true if it's enumerable in js:for...in
+  - inherited properties are not enumerable
+  - but newly created properties or methods are enumerable!
+
+Because protype object can be cloned and modified, that brings one OOP characteristic: js:inheritance
+
+Also, if any prototype property is modified in the upper chain, the lower chain and its instantiated objects will be modified, too!
+
 *** Type Conversion
 Javascript conversion is automatic. 
 var y = "5";
@@ -4199,7 +4225,11 @@ list: {
 }
 #+END_EXAMPLE
 ** Enumerable
-By default, all methods and properties are enumerable in js:for...in
+<<<js:Enumerable>>>
+Except inherited properties, all methods and properties are enumerable in js:for...in
+js:prototype.propertyIsEnumerable
+js:Object.defineProperty
+
 To make a method non enumerable
 #+BEGIN_EXAMPLE
 // CustomerBooking class and its method setFilm is already defined
@@ -4237,9 +4267,51 @@ var uri_en = encodeURI(uri);
 // decodeURI(str)
 #+END_EXAMPLE
 
-** Class
-By default, all properties and methods are enumerable in js:for...in
+** Object only, no Class
 
+<<<js:Object>>>
+
+*** new, Object.create
+Every thing in Javascript is an object. No class.
+
+Every object has a prototype object.
+
+/Parent/ is an object with a constructor (because it's a function) and a prototype object.
+
+When /new/ keyword is used, var parent = new Parent();, 
+parent copies the Parent's prototype object and run the Parent's constructor.
+If the constructor returns anything, parent will take it.
+If the constructor returns nothing, the Parent object with prototype object and Parent's other properties defined in 
+the constructor (this.xyz = ...) will be copied.
+
+var SubParent.prototype = Object.create(Parent.prototype);
+Copies Parent's prototype object and return it. So Parent's constructor is not run.
+js:prototype
+
+You can create an object with null as prototype :: Object.create(null);
+
+You can create an object with extra properties
+Object.create(Object.prototype, 
+{
+ foo: {writable: true, configuration: true, value: 'hello', get: ..., set: ..., otherthings: ...},
+ bar: {...}
+})
+
+*** instanceof
+<<<js:instanceof>>>
+A useful operand that is for object to test instantiation
+Syntax :: /object/ instanceof /constructor/
+Return true if /constructor/.prototype exists in /object/'s prototype chain
+- object :: an instance (an object)
+- constructor :: Function object to test against. It has to be a function
+
+Use instanceof to test instantiation, and use js:prototype.isPrototypeOf to test inheritance
+
+*** Object.defineProperty
+<<<js:Object.defineProperty>>>
+[[https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty][MDN Object.defineProperty()]]
+
+*** Example
 #+BEGIN_EXAMPLE
 function CustomerBooking(bookingId, customerName, film, showDate) {
 /* This is a constructor. It is not a good way to define property
@@ -4314,8 +4386,10 @@ Array.prototype.remove = Array.prototype.remove || function(member) {
 // error will show 
 #+END_EXAMPLE
 
-Newly added remove method is enumerable in js:for...in
+Newly added remove method is enumerable in js:for...in js:prototype.propertyIsEnumerable
+Inherited properties are not enumerable
 To filter out method in js:for...in
+
 #+BEGIN_EXAMPLE
 var props = [];
 for (var prop in results) {
@@ -4375,12 +4449,14 @@ Function.method('inherits', function(parent) {
 #+END_EXAMPLE
 
 ** Classical Inheritance, Parasitic Inheritance
+<<<js:inheritance>>>
 Classical inheritance is about the _is-a_ relationship.
 Parasitic inheritance is about the _was-a-but-now's-a_ relationship.
 
 *** Classical inheritance
 Refer to: Add "method" in Function class, Add "inherits" in Function class
 
+**** Example
 #+BEGIN_EXAMPLE
 function Parenizor(v) {
 // enclose v with ( and )
@@ -4422,8 +4498,7 @@ ZParenizor.prototype = Object.create(Parenizor.prototype);
 // mixin(ZParenizor.prototype, OtherParenizor.prototype);
 
 ZParenizor.prototype.constructor = ZParenizor; 
-// Set subclass constructor
-// Because all ZParenizor.prototype.* were copied from Parenizor.prototype.*, 
+// Set subclass constructor 
 // but ZParenizor should have its own constructor which is ZParenizor.prototype.constructor.
 
 // Modify subclass's inherited method toString 
@@ -4436,6 +4511,75 @@ var zParenizor = new ZParenizor('v', 'w');
 
 console.log(zParenizor instanceof ZParenizor); // true
 console.log(zParenizor instanceof Parenizor); // true
+#+END_EXAMPLE
+
+** OOP Pattern
+
+#+BEGIN_EXAMPLE
+// Javascript Singleton
+(function() {
+  this.myApp = this.MyApp || {};
+  var ns = this.myApp; // further shorten the keyboard typing
+
+  // private properties
+  var vehicleCount = 5;
+  var vehicles = [];
+
+  // Public properties
+
+  ns.publicHello = 'This is public';
+
+  // Define a Class
+  // You can even separate the class definition into another javascript file
+  // Just remember to include the necessary closure like the above
+  ns.Vehicle = (function() {
+
+    function Vehicle(year, make, model) {
+      this.year = year;
+      this.make = make;
+      this.model = model;
+    }
+
+    Vehicle.prototype = {
+      getInfo: function () {
+        return this.year + ' ' + this.make + ' ' + this.model;
+      },
+      startEngine: function () {
+        return 'Vroom';
+      }
+    };
+
+    return Vehicle;
+  }());
+
+  // Define a sub Class
+  ns.Car = (function(parent) {
+
+    function Car(year, make, model) {
+      parent.call(this, year, make, model);
+      this.wheelQuantity = 4;
+    }
+
+    Car.prototype = Object.create(parent.prototype);
+    Car.prototype.constructor = Car;
+    Car.prototype.getInfo = function() {
+      // Extend parent's method
+      return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
+    }
+
+    return Car;
+  }(ns.Vehicle));
+
+}());
+
+console.log(myApp.publicHello);
+
+// Instantiate
+var v = new myApp.Vehicle(2012, 'Toyota', 'Rav4');
+console.log(v.getInfo());
+
+var c = new myApp.Car(2012, 'Toyota', 'Rav4');
+console.log(c.getInfo());
 #+END_EXAMPLE
 
 ** Promise
