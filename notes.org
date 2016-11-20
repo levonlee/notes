@@ -782,6 +782,78 @@ function lili_user_has_delete_right($uid = 0, array $roles) {
 Use db_query as much as possible. db_select is slow because it calls alter hooks.
 Both can only be looped once using foreach
 
+Use db_query or db_select to get all nids, load all nodes at once and then manipulate fields.
+
+#+BEGIN_EXAMPLE
+$q = db_select( 'node', 'n' );
+$q->join( 'field_data_body', 'b', 'n.nid=b.entity_id AND b.delta=0' );
+$q->innerJoin( 'field_data_field_category', 'nc'
+  , 'n.nid=nc.entity_id AND nc.deleted=0' );
+$q->innerJoin( 'taxonomy_term_hierarchy', 'tH', 'tH.tid=nc.field_category_tid' );
+
+if ( ! is_null( $termID ) ) {
+  $articleCats = array( $termID );
+}
+
+$q->fields( 'n', array( 'nid', 'title', 'created' ) )
+  ->fields( 'b', array( 'body_summary', 'body_value' ) )
+  ->condition( 'n.status', 1 )// Published.
+  ->condition( 'n.type', 'article' )// article not page.
+  ->condition(
+    db_or()
+      ->condition( 'nc.field_category_tid', $articleCats, 'IN' )
+      ->condition( 'tH.parent', $articleCats, 'IN' )
+  )
+  ->range( $i_start, $i_length )
+  ->groupBy( 'n.nid' )
+  ->orderBy( 'created', 'DESC' );
+$r = $q->execute();
+
+$nids = [ ];
+foreach ( $result as $n ) {
+  $nids[] = $n->nid;
+}
+$nodes = node_load_multiple( $nids );
+
+foreach ( $nodes as $node ) {
+  $nodeID    = $node->nid;
+  $nodeTitle = $node->title;
+  $nodeBody  = lili_getFieldSafe( $node, 'body' );
+  $nodeURL   = url( "node/" . $node->nid );
+
+  $nodeSplashObj = field_get_items( 'node', $node, 'field_splash_image' );
+
+  if ( is_array( $nodeSplashObj ) ) {
+    // $nodeSplashObj['#item']['uri'];
+    // $nodeSplashObj['#item']['width'];
+    // $nodeSplashObj['#item']['height'];
+  }
+
+  // Entity Reference
+  $nodeFlag = field_get_items('node',$nodeObj,'field_flag');
+  if ($nodeFlag) {
+    $nodeFlag = field_view_value('node', $node, 'field_flag', $nodeFlag[0]);
+    $nodeFlag = $nodeFlag['#markup'];
+    $nodeFlag = theme_infscroll_flair(array('text'=>$nodeFlag));
+  }
+  else {
+    $nodeFlag = '';
+  }
+
+}
+
+function lili_getFieldSafe( $node, $field ) {
+  $s = field_get_items( 'node', $node, $field );
+  if ( $s ) {
+    $s = ( $s[0]['safe_value'] ) ? $s[0]['safe_value'] : '';
+  } else {
+    $s = '';
+  }
+
+  return $s;
+}
+#+END_EXAMPLE
+
 ** Entity
 Node, user, taxonomy are all entities.
 
