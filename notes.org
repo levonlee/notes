@@ -443,7 +443,8 @@ throw new Exception(print_r($val));
 ** URL Alias
 Setup pattern for each node type
 Configuration > Search and metadata > URL Aliases > Patterns
-** Link
+** Link, Module Path, Theme Path
+*** Link
 Empty link
 =l('Link Text', '', array('fragment'=>' ', 'html'=>TRUE, 'external'=>TRUE))=
 Function l add class="active" when the path is current_path(). Use url() instead.
@@ -452,6 +453,31 @@ Function l add class="active" when the path is current_path(). Use url() instead
 Get URL alias
 url() just returns a url. $options are the same as l().
 url('taxonomy/term/1');
+
+*** Module Path, Theme Path
+global $base_url;
+$mod_path =  $base_url.base_path().drupal_get_path('module', 'lili_mod_name');
+$theme_pat = $base_url.base_path().drupal_get_path('theme', 'lili_theme_name');
+
+Both have no trailing slash
+
+** Global Variables
+https://api.drupal.org/api/drupal/globals/7.x
+
+- $base_url :: 'http://www.yoursite.com' wihtout trailing slash 
+
+** Common Functions
+*** drupal_add_html_head
+drupal_add_html_head($tag, 'unique-name');
+
+$tag = array(
+  '#tag'        => 'meta',
+  '#attributes' => array(
+    'property' => 'og:url',
+    'content'  => $base_url,
+  ),
+);
+drupal_add_html_head( $meta_og, 'lili_og_url' );
 
 ** Theme
 *** System Theme
@@ -498,6 +524,7 @@ function theme_lili_flair( $variables ) {
 
 echo theme('lili_flair',array('text'=>'hi'));
 #+END_EXAMPLE
+
 
 ** Drush
 *** Debug =-vd=
@@ -3334,6 +3361,17 @@ transitionend
 // "0" means zero second.
 #+END_EXAMPLE
 
+*** Open Graph Protocol
+<<<html:og>>>
+Required properties for every page
+- og:title
+- og:type :: article, video, video.movie, etc. Refer to [[http://ogp.me/#types][ogp types]]
+- og:image
+- og:url
+
+<meta property="og:title" content="" />
+...
+
 ** Email
 
 [[https://www.campaignmonitor.com/dev-resources/guides/mobile][Campaign Monitor Mobile Design Guide]]
@@ -3402,8 +3440,25 @@ transitionend
 
 #+END_EXAMPLE
 
-** Icons for Mobile Devices
-Default 60x60
+** Icons, Address Bar color
+*** Icons
+General Icon in scale of 48px
+#+BEGIN_EXAMPLE
+<link rel="icon" sizes="192x192" href="icon.png">
+#+END_EXAMPLE
+
+IE Tiles :: 4 sizes. Listed are standard size. 1.8 times is better.
+#+BEGIN_EXAMPLE
+<meta name="application-name" content="CenturyCutCook" />
+<meta name="msapplication-TitleColor" content="#009900" />
+
+<meta name="msapplication-sqaure70x70logo" content="icon_smalltitle.png">
+<meta name="msapplication-sqaure150x150logo" content="icon_mediumitle.png">
+<meta name="msapplication-sqaure310x150logo" content="icon_widetitle.png">
+<meta name="msapplication-sqaure310x310logo" content="icon_largetitle.png">
+#+END_EXAMPLE
+
+Apple Icon :: Default 60x60
 #+BEGIN_EXAMPLE
 <link rel="apple-touch-icon" href="touch-icon-iphone.png">
 <link rel="apple-touch-icon" sizes="76x76" href="touch-icon-ipad.png">
@@ -3411,15 +3466,95 @@ Default 60x60
 <link rel="apple-touch-icon" sizes="152x152" href="touch-icon-ipad-retina.png">
 #+END_EXAMPLE
 
-Startup Image
-Size: 320x480
-=<link rel="apple-touch-startup-image" href="/startup.png">=
+Apple :: Startup Image
+Base Size :: 320x480. But different devices ask for different sizes. Follow this to implement
+#+BEGIN_EXAMPLE
+<link rel="apple-touch-startup-image" href="/startup.png">
 
+<!-- iPad retina portrait startup image -->
+<link href="https://placehold.it/1536x2008"
+      media="(device-width: 768px) and (device-height: 1024px)
+                 and (-webkit-device-pixel-ratio: 2)
+                 and (orientation: portrait)"
+      rel="apple-touch-startup-image">
+
+<!-- iPad retina landscape startup image -->
+<link href="https://placehold.it/1496x2048"
+      media="(device-width: 768px) and (device-height: 1024px)
+                 and (-webkit-device-pixel-ratio: 2)
+                 and (orientation: landscape)"
+      rel="apple-touch-startup-image">
+
+<!-- iPad non-retina portrait startup image -->
+<link href="https://placehold.it/768x1004"
+      media="(device-width: 768px) and (device-height: 1024px)
+                 and (-webkit-device-pixel-ratio: 1)
+                 and (orientation: portrait)"
+      rel="apple-touch-startup-image">
+
+<!-- iPad non-retina landscape startup image -->
+<link href="https://placehold.it/748x1024"
+      media="(device-width: 768px) and (device-height: 1024px)
+                 and (-webkit-device-pixel-ratio: 1)
+                 and (orientation: landscape)"
+      rel="apple-touch-startup-image">
+
+<!-- iPhone 6 Plus portrait startup image -->
+<link href="https://placehold.it/1242x2148"
+      media="(device-width: 414px) and (device-height: 736px)
+                 and (-webkit-device-pixel-ratio: 3)
+                 and (orientation: portrait)"
+      rel="apple-touch-startup-image">
+
+<!-- iPhone 6 Plus landscape startup image -->
+<link href="https://placehold.it/1182x2208"
+      media="(device-width: 414px) and (device-height: 736px)
+                 and (-webkit-device-pixel-ratio: 3)
+                 and (orientation: landscape)"
+      rel="apple-touch-startup-image">
+
+<!-- iPhone 6 startup image -->
+<link href="https://placehold.it/750x1294"
+      media="(device-width: 375px) and (device-height: 667px)
+                 and (-webkit-device-pixel-ratio: 2)"
+      rel="apple-touch-startup-image">
+
+<!-- iPhone 5 startup image -->
+<link href="https://placehold.it/640x1096"
+      media="(device-width: 320px) and (device-height: 568px)
+                 and (-webkit-device-pixel-ratio: 2)"
+      rel="apple-touch-startup-image">
+
+<!-- iPhone < 5 retina startup image -->
+<link href="https://placehold.it/640x920"
+      media="(device-width: 320px) and (device-height: 480px)
+                 and (-webkit-device-pixel-ratio: 2)"
+      rel="apple-touch-startup-image">
+
+<!-- iPhone < 5 non-retina startup image -->
+<link href="https://placehold.it/320x460"
+      media="(device-width: 320px) and (device-height: 480px)
+                 and (-webkit-device-pixel-ratio: 1)"
+      rel="apple-touch-startup-image">
+#+END_EXAMPLE
+
+*** Address Bar
 Hide Safari UI (URL address bar)
-=<meta name="apple-mobile-web-app-capable" content="yes">=
+#+BEGIN_EXAMPLE
+<meta name="apple-mobile-web-app-capable" content="yes">
+#+END_EXAMPLE
 
-Even though UI is hidden, there's a status bar. Style it:
-=<meta name="apple-mobile-web-app-status-bar-style" content="black">=
+By default, iOS web content displays under the top black status bar. 
+Push the content to the top and make the status transparent
+#+BEGIN_EXAMPLE
+// default is black
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+#+END_EXAMPLE
+
+Address Bar color
+#+BEGIN_EXAMPLE
+<meta name="theme-color" content="#4285f4">
+#+END_EXAMPLE
 
 ** Geolocation
 Chrome v50+ only supports geolocation for https
@@ -3491,34 +3626,6 @@ FALLBACK
 # if internet is not available
 
 # Change the manifest file to update cache
-#+END_EXAMPLE
-** Worker
-Workers are in external files, they don't have access to
-- window object
-- document obj
-- parent obj
-#+BEGIN_EXAMPLE
-var w;
-if (typeof(Worker) !== "undefined") {
-  if (typeof(w) == "undefined") {
-    w = new Worker("demo_workers.js");
-  }
-  w.onmessage = function(e) {
-    console.log(e.data);
-  }
-}
-else {
-  // Worker not supported
-}
-
-// demo_workers.js
-var i=0;
-function timedCount() {
-  i= i +1;
-  postMessage(i);
-  setTimeout("timedCount()", 500);
-}
-timedCount();
 #+END_EXAMPLE
 
 * Javascript
@@ -5032,6 +5139,35 @@ observer.disconnect();
 ** Testing
 *** Unit Testing
 QUnit
+
+** Worker
+Workers are in external files, they don't have access to
+- window object
+- document obj
+- parent obj
+#+BEGIN_EXAMPLE
+var w;
+if (typeof(Worker) !== "undefined") {
+  if (typeof(w) == "undefined") {
+    w = new Worker("demo_workers.js");
+  }
+  w.onmessage = function(e) {
+    console.log(e.data);
+  }
+}
+else {
+  // Worker not supported
+}
+
+// demo_workers.js
+var i=0;
+function timedCount() {
+  i= i +1;
+  postMessage(i);
+  setTimeout("timedCount()", 500);
+}
+timedCount();
+#+END_EXAMPLE
 
 ** Communication Between Children Window and Parent Window
 A parent window can have multiple iframes and iframes are loaded from other domain.
