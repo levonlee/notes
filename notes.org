@@ -424,6 +424,12 @@ Concate multiple nodes
 /admin/config/search/xmlsitemap/settings
 Uncheck /Prefetch URL aliases during sitemap generation/
 
+*** ThemeKey
+<<<d7:module:themekey>>>
+
+You can switch to a different based on some rules!
+If you are not clear about some rules, you can just search in code. e.g. search 'system:query_string'
+
 ** Debug
 =watchdog('LOG_TYPE','message');=
 
@@ -466,10 +472,16 @@ https://api.drupal.org/api/drupal/globals/7.x
 
 - $base_url :: 'http://www.yoursite.com' wihtout trailing slash 
 
+https://www.drupal.org/node/2537572
+
+[[https://www.drupal.org/node/2537572][Drupal Properties]]
+$_SERVER['*']
+- QUERY_STRING :: query string without q e.g. 'foo=bar&koo=hoo'
+
 ** Common Functions
 *** drupal_add_html_head
 drupal_add_html_head($tag, 'unique-name');
-
+// $head in html.tpl.php
 $tag = array(
   '#tag'        => 'meta',
   '#attributes' => array(
@@ -502,7 +514,24 @@ If no custom theme function, d7:hook_theme d7:theme_*, is defined, then the defa
 
 *** Custom Theme Function
 Module theme: =theme('modname_theme-name',$data)=
-<<<d7:hook_theme>>> <<<d7:theme_*>>>
+<<<d7:hook_theme>>> 
+- $existing :: array. existing themes
+- $type :: string. Whether a theme, module, etc. is being processed. e.g. Is it a parent theme?
+- $theme :: the name of theme, module, etc. is being processed
+- $path :: the directory path of theme or module
+
+Return an array
+- variables :: 
+- path :: Use with 'template'
+  - If theme_* function is used, you don't need to specify 'path' and 'template'
+  - if hook_theme is defined in template.php, the default path is sites/all/themes/your_theme/templates/
+  - if hook_theme is defined in a module, the default path is sites/all/modules/mod_path/modname/templates
+- template ::
+  - Assuming the theme function name is theme_lili_flair
+  - Default file name is lili_flair and the actual file is lili_flair.tpl.php
+
+<<<d7:theme_*>>>
+
 #+BEGIN_EXAMPLE
 function lili_theme( $existing, $type, $theme, $path ) {
   return array(
@@ -524,7 +553,6 @@ function theme_lili_flair( $variables ) {
 
 echo theme('lili_flair',array('text'=>'hi'));
 #+END_EXAMPLE
-
 
 ** Drush
 *** Debug =-vd=
@@ -750,6 +778,10 @@ function lili_user_has_delete_right($uid = 0, array $roles) {
 }
 #+END_EXAMPLE
 
+** Query
+Use db_query as much as possible. db_select is slow because it calls alter hooks.
+Both can only be looped once using foreach
+
 ** Entity
 Node, user, taxonomy are all entities.
 
@@ -758,6 +790,11 @@ Use this to get entities of one type that have certain:
 - entity properties (propertyCondition: status, changed, etc)
 - field values (fieldCondition)
 - entity meta data (entityCondition: bundle, entity_type, entity_id and revision_id)
+- It's essentially db_select except EFQ can't do joins
+- It's a lot slower
+- But it provides simple syntax
+- It's good for quick filtering entities by basic field values
+- Preferred over db_select
 
 #+BEGIN_EXAMPLE
 $_q = new EntityFieldQuery();
@@ -797,6 +834,17 @@ $_r = array_diff_key($_r_all, $_r_in_12345);
 
 if (!empty($_r['node'])) {
   $nodes = node_load_multiple(array_keys($_r['node']));
+  // If you just want to load a handful of fields, you don't have to load the whole nodes
+  // $stories = $_r['node'];
+  // Get all fields of the entity type first
+  // $fields = field_info_instances('node', 'story'); // node type is story
+  // Get the field id
+  // $field_id = $fields['field_story_image']['field_id'];
+  // Attach the field to the entities loaded by EFQ
+  // field_attach_load('node', $stories, FIELD_LOAD_CURRRENT,
+  //  array('field_id' => $field_id));
+  // All the values of field_story_image of all nodes
+  // $output = field_get_items('node', $stories, 'field_story_image');
 }
 #+END_EXAMPLE
 
