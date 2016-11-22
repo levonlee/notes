@@ -5,6 +5,7 @@
 #+TODO: TODO IN-PROGRESS WAITING DONE
 
 * DONE learn emacs org mode
+* TODO Chase Payment
 * TODO QUnit
 * TODO Learn Bootstrap CSS framework
 
@@ -446,6 +447,25 @@ You can throw an Exception
 throw new Exception(print_r($val));
 #+END_EXAMPLE
 
+** Configuration, Setting
+Override configuration and setting based on the current dev environment
+settings.php
+$conf['admin_theme'] = 'seven';
+pantheon:environment
+
+For assigning permissions to roles, e.g. enable anonymous for Devel, you have to do it manually  
+
+[[https://www.drupal.org/node/1525472][Variable name and its default value]]
+- admin_theme :: 'seven'
+- preprocess_css :: "1"/"0", aggregate.
+- preprocess_js :: "1"/"0", aggregate.
+- cache :: "1"/"0", cache pages for anonymous users
+- block_cache :: "1"/"0", cache blocks
+- cache_lifetime :: "0", none. Minimum cache lifetime
+- error_level :: "0"/"1"/"2", none/error and warnings/all messages. Logging and errors.
+
+If setting is an array, you have to override the whole array. Can't override a key value.
+
 ** URL Alias
 Setup pattern for each node type
 Configuration > Search and metadata > URL Aliases > Patterns
@@ -479,6 +499,8 @@ $_SERVER['*']
 - QUERY_STRING :: query string without q e.g. 'foo=bar&koo=hoo'
 
 ** Common Functions
+<<<d7:functions>>>
+
 *** drupal_add_html_head
 drupal_add_html_head($tag, 'unique-name');
 // $head in html.tpl.php
@@ -490,6 +512,19 @@ $tag = array(
   ),
 );
 drupal_add_html_head( $meta_og, 'lili_og_url' );
+
+*** drupal_set_title
+drupal_set_title($title = NULL, $output = CHECK_PLAIN);
+- $title :: if NULL, leave the current unchanged
+
+*** drupal_goto
+drupal_goto($path = '', array $options= array(), $http_response_code= 302)
+
+- $path :: a drupal path 'node/123' or a full url
+- $options :: URL optoins to pass to url()
+
+Redirect to homepage
+drupal_goto('<front>'); 
 
 ** Theme
 *** System Theme
@@ -526,6 +561,10 @@ Return an array
   - If theme_* function is used, you don't need to specify 'path' and 'template'
   - if hook_theme is defined in template.php, the default path is sites/all/themes/your_theme/templates/
   - if hook_theme is defined in a module, the default path is sites/all/modules/mod_path/modname/templates
+  - if path is not defined but template is defined (theme/template_file_name), then
+    - hook_theme defined in template.php :: path_to_theme/theme/template_file_name
+    - hook_theme defined in a module :: path_to_module/theme/template_file_name
+ 
 - template ::
   - Assuming the theme function name is theme_lili_flair
   - Default file name is lili_flair and the actual file is lili_flair.tpl.php
@@ -865,8 +904,13 @@ Use this to get entities of one type that have certain:
 - It's essentially db_select except EFQ can't do joins
 - It's a lot slower
 - But it provides simple syntax
-- It's good for quick filtering entities by basic field values
+- It's good for quick filtering entities by basic field values and return entity ids
 - Preferred over db_select
+- EFQ can return any type of entities including nodes of various types
+- EFQ can only return essential fields such as node nid, vid and type
+- Use EFQ result nids and node_load_multiple or entity_load
+- Use EFQ result nids and get values of a field for all nodes (load only one field for all nodes)
+- If you want custom fields and node->title, better to use node_load_multiple or entity_load
 
 #+BEGIN_EXAMPLE
 $_q = new EntityFieldQuery();
@@ -937,7 +981,48 @@ $_renderable_form = entityform_form_wrapper($_contact_form, $mode, $form_context
 Try to prefill entityform in hook_form_FORM_ID_alter(). Say the entityform is named dealer_contact
 The hook is lili_form_dealer_contact_entityform_edit_form_alter
 
+** User
+*** user_access
+<<<d7:user_access>>>
+user_access($string, $account = NULL)
+$account
+- NULL. current logged in user
+
 ** Menu
+*** hook_menu: 'page callback'
+You can print or echo some rendered HTML and then drupal_exit() or exit().
+drupal_exit() prevents hoo_exit() from running.
+Or print and echo some HTML and return NULL;
+No header or footer will be added. The page is pure what you output here.
+
+Or you can return a renderable array. Header and footer will be included.
+- return $form. You may theme the form by $form['#theme'][] = 'custom_theme_name'; and return $form
+- return theme('custom_theme_name', ['vars'=>...]);
+
+In page callback function, you can manipulate some variables used in html.tpl.php and page.tpl.php
+Such as change the page title drupal_set_title
+Refer to d7:functions
+
+*** hook_menu: 'file'
+You can local the page callback function in a different file. e.g. 'lili.pages.inc'
+The path is the current module path
+
+*** hook_menu: 'type'
+- MENU_CALLBACK :: A hidden internal callback. Best for return plain text in API calls.
+- MENU_LOCAL_ACTION :: An action specific to the parent, usually rendered as a link
+- MENU_LOCAL_TASK :: A task specific to the parent item, usually rendered as a tab.
+- MENU_NORMAL_ITEM :: Shown in menu and breadcrumbs
+- MENU_SUGGESTED_ITEM :: A normal menu item, hidden until enabled by an administrator
+
+*** hook_menu: 'access callback', 'access arguments'
+access callback
+- default is 'user_access' d7:user_access
+- custom callback must return boolean
+- Often used callbacks: user_is_logged_in
+
+access arguments
+- e.g. array('administer nodes')
+
 *** Embed a View Page
 #+BEGIN_EXAMPLE
 function lili_menu() {
@@ -6165,6 +6250,7 @@ terminus drush "<drush command> <drush args>" --site=<> --env=<>
 terminus wp 'option get home' --site=<site> --env=dev
 
 ** Determin Environment
+<<<pantheon:environment>>>
 #+BEGIN_EXAMPLE
 if (defined('PANTHEON_ENVIRONMENT') && PANTHEON_ENVIRONMENT == 'dev') {} 
 #+END_EXAMPLE
@@ -7044,6 +7130,10 @@ SMTP port: 465
 Use encripted protocol: Use SSL
 - Wordpress
 Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplifiedd][SendGrid]]
+
+** E-commerce
+*** Chase E-xact Gateway
+Chase Paymentech
 
 ** W3C
 <<<W3C>>>
