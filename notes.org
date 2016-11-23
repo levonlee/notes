@@ -432,7 +432,7 @@ You can switch to a different based on some rules!
 If you are not clear about some rules, you can just search in code. e.g. search 'system:query_string'
 
 ** Debug
-=watchdog('LOG_TYPE','message');=
+watchdog('LOG_TYPE','message');
 
 If error or warning messages are printed using drupal_set_message, 
 modify the `drupal_set_message` function so that it prints debug_backtrace
@@ -610,6 +610,12 @@ drush user-login yourusername
 
 #+BEGIN_EXAMPLE
 drush up <modulename> = drush upc <modulename> + drush updb
+#+END_EXAMPLE
+
+*** Detect if it's drush
+#+BEGIN_EXAMPLE
+if (drupal_is_cli() && function_exists('drush_main')) return true;
+return false;
 #+END_EXAMPLE
 
 *** Custom Drush
@@ -921,6 +927,7 @@ Use this to get entities of one type that have certain:
 - Use EFQ result nids and node_load_multiple or entity_load
 - Use EFQ result nids and get values of a field for all nodes (load only one field for all nodes)
 - If you want custom fields and node->title, better to use node_load_multiple or entity_load
+- By default without addMetaData, EFQ requires permissions of all the fields!
 
 #+BEGIN_EXAMPLE
 $_q = new EntityFieldQuery();
@@ -928,13 +935,15 @@ $_r = $_q
 ->entityCondition('entity_type', 'node') // taxonomy_term, user
 ->entityCondition('bundle', 'newsletter') // node type or content type
 ->fieldCondition('field_active','value',1,'=') // boolean field
-->fieldConditin('field_dealer', 'target_id', 12345, '=') // field Entity Reference, single value
-->fieldConditin('field_contacts', 'target_id', 12345) // field Entity Reference, multiple values have one 12345
-// 12345 not in mutlipel target_id: you have to do one query to show all and do one with 'IN' and 
-// Get the difference
+->fieldCondition('field_dealer', 'target_id', 12345, '=') // field Entity Reference, single value
+->fieldCondition('field_contacts', 'target_id', 12345) // field Entity Reference, multiple values have one 12345
+/* NOT IN
+12345 not in mutliple target_id: you have to do one query to show all and do one with 'IN' and 
+get the difference
 $_r_all = (!empty($_r_all['node'])) ? $_r_all['node'] : array();
 $_r_in_12345 = (!empty($_r_in_12345['node'])) ? $_r_in12345['node'] : array();
 $_r = array_diff_key($_r_all, $_r_in_12345);
+*/
 
 ->propertyCondition('status',1) 
 // status, type, nid, uid, rui, type, created
@@ -947,6 +956,13 @@ $_r = array_diff_key($_r_all, $_r_in_12345);
 // IN, NOT IN (does not work)
 // BETWEEN :: propertyCondtion('created', array($start, $end), 'BETWEEN')
 
+// Random order. hook_query_TAG_alter
+->addTag('random')
+
+/* If you run EFQ in Drupal Cron, by default the user is anonymous
+   You should run EFQ as a user
+*/
+->addMetaData('account', user_load(1))
 ->execute();
 
 /* array(
@@ -6104,10 +6120,6 @@ Remove the package source
 Remove it and downgrade back to previous version before using PPA
 =sudo apt-get install ppa-purge=, =sudo ppa-purge ppa:libreoffice/ppa=
 
-* Windows
-** Win 7
-Install KB3138612 and KB3145739 to boost Windows Update
-
 * Docker
 ** Docker Compose
 =docker-compose --version=
@@ -7046,6 +7058,17 @@ and
 - Change value to True
 
 ** Windows
+*** Win 7
+Install KB3138612 and KB3145739 to boost Windows Update
+
+*** Batch Script
+**** Setting
+Usually at the top of a .bat file. @ in front makes the command apply to itself only
+@echo off :: turn off output of the command itself
+
+**** Comment
+Rem Your comment in one line
+
 *** Windows Credential Store Panel
 <<<Windows Credential Store Panel>>>
 User Accounts > Your Account > Manage your credentials
@@ -7099,6 +7122,10 @@ Import from .csv you would need to Clear Map and Default Map.
 Create a new contact folder and put contacts with emails.
 Create a rule which can be triggered when anyone in the contact folder belongs to "From"
 The rule is called "Sender is in specified Address Book"
+
+**** Rebuild OST
+Make a copy of the .ost file before delete. Then open Outlook again.
+If you can't copy/delete .ost file, close Outlook, Skype for Business and Office applications.
 
 *** Troubleshooting
 **** Outlook CSV Import 
