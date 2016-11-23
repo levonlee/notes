@@ -6089,8 +6089,55 @@ If the first command not successful, 2nd command will not run: =lspci && lspci=
 |      |                 |                      |
 
 *** Replace String  =sed= 
-Replace all (g) Nick with John
-=cat report.txt | sed 's/Nick/John/g' > report_new.txt=
+<<<bash:sed>>>
+Replace all (g) Nick with John case-insensitive
+cat report.txt | sed 's/Nick/John/gi' > report_new.txt
+
+sed SCRIPT INPUTFILE...
+or 
+sed OPTIONS... [SCRIPT] [INPUTFILE...]
+
+SCRIPT
+- s command :: 's/{regexp}/{replacement}/{flags}'
+  - {regexp} :: For literal string, wrap each letter in [ and ] and for ^ do [\^]
+    - e.g. literal string '&#x1f;' =sed 's/[&][#][x][1][f][;]//gi' -i c.xml=
+    - literal string '&#^x1f;' =sed 's/[&][#][\v][x][1][f][;]//gi' -i c.xml=
+  - {replacement} :: You can use & to subsitute the whole matched portion of the pattern.
+
+Refer to [[https://stackoverflow.com/questions/29613304/is-it-possible-to-escape-regex-metacharacters-reliably-with-sed][regexp and replacement escape]]
+
+OPTIONS
+- -e SCRIPT :: run several inline SCRIPT's described above
+- -f SCRIPT-FILE :: Run commands in SCRIPT-FILE's
+- -i :: files are edited in-place
+  - -i :: original files are overwritten, no backup files are created
+  - -i.backup or -i .backup (only Mac) :: copy original to *.backup and change original files
+- :: 
+
+For deleting only
+sed "s/deletethis//g" -i input.txt
+sed 's/&#x1f;//gi' -i c.xml
+For multiple files
+sed 's/Nick/John/gi' *.txt
+No backup
+sed 's/Nick/John/gi' -i.backup *.txt
+create backup files
+
+[[https://www.gnu.org/software/sed/manual/sed.txt][man sed]]
+
+*** Concatenate String with File
+Append to the beginning
+echo returns a newline
+echo '<?xml version="1.0"?>' | cat - input.txt > output.txt
+
+'-' after 'cat' means to take the stdin from last command
+
+Append to the end
+echo 'end line' | cat input.txt - > output.txt
+
+*** Change Encoding
+Change from UCS-2 to UTF-8
+iconv -f UCS-2 -t UTF-8 input.xml > output.xml
 
 ** Interesting Commands
 *** sudo
@@ -6225,16 +6272,18 @@ You may encouter =file name too long= or =pathname too long= error.
 Change the git setting
 =git config --system core.longpaths true=
 
-** Local Ignore
+** Local Ignore, Global Ignore
 Add file or directory paths to
 - .git/info/exclude/ (will not be committed)
 - .gitignore file (will be commited)
 
 Just =touch .gitignore= in order to create a file with just the extension
 
-** Global Ignore
 Add global ignore file `~\.gitignore_global` 
 and run `git config --global core.excludesfile ~/.gitignore_global`
+
+Show all ignored files
+git status --ignored
 
 ** GUI gitk
 ** Multiple Github accounts and https
@@ -6392,7 +6441,9 @@ STUFF(aCol, 1,1, '')
 #+END_EXAMPLE
 
 *** Export as CSV - BCP
-bcp.exe is in =C:\Program Files\Microsoft SQL Server\90\Tools\Binn\=
+<<<mssql:bcp>>>
+bcp.exe is in 
+C:\Program Files\Microsoft SQL Server\90\Tools\Binn\
 
 #+BEGIN_EXAMPLE
 bcp "Select * from fullDatabasename.dbo.tableName" queryout "c:\aFolder\aFile.csv" -c -t"\",\"" -r"\"\n\"" -T
@@ -6572,6 +6623,7 @@ bcp "query..." queryout C:\file.xml -T -w -r
 
 | r | no value means don't add any newline character for every 2033 characters or new row |
 | w | Use Unicode characters                                                              |
+| S | server_name[\instance_name]                                                         |
 
 Save long query as stored procedure. You can't save FOR XML in Global Temporary Table.
 dev.todaystrucking is the database name. Inside the real SELECT, you can refer to table as
@@ -6601,15 +6653,24 @@ EXEC xp_cmdshell 'bcp "EXEC [dev.todaystrucking].dbo.usp_exporttr" queryout "c:\
 
 You may receive "SQL Server blocked access to procedure 'sys.xp_cmdshell' of component 'xp_cmdshell' because this component is turned off as part of the security configuration"
 
-Just go to bcp folder and run as a command line
+Just go to bcp folder and run as a command line mssql:bcp
 #+BEGIN_EXAMPLE
 bcp "EXEC [dev.todaystrucking].dbo.usp_exporttr" queryout "c:\a.xml" -S (local) -T -w -r
 #+END_EXAMPLE
 
 The exported xml file will have UCS-2 encoding which is a preceding version of UTF-16.
-This encoding is in BOM.
+This encoding is in BOM. For SQL Server lower than 2016, you can't set encoding to UTF-8.
 
-You will have to open other text editor to change the encoding to UTF-8.
+**** bcp clean up
+You can run these in Git Bash on Windows
+Change encoding to UTF-8
+iconv -f UCS-2 -t UTF-8 a.xml > b.xml
+
+Add xml declaration
+echo '<?xml version="1.0"?>' | cat - b.xml > c.xml
+
+Delete xml:invalid_characters bash:sed
+sed "s/&#x1f;//gi; s/&#x1e;//gi;" c.xml > d.xml
 
 *** Backup
 Export database to bak file.
@@ -6925,8 +6986,12 @@ Template and subtemplates
 </xsl:stylesheet>
 #+END_EXAMPLE
 
-** Invalid character &#x1F
-change to version 1.1
+** Invalid characters 
+<<<xml:invalid_characters>>>
+
+Characters :: &#x1F; &#x1E;
+
+change to version 1.1 or get rid of the characters
 #+BEGIN_EXAMPLE
 <?xml version="1.1" encoding="UTF-8" ?>
 #+END_EXAMPLE
@@ -7068,6 +7133,28 @@ Usually at the top of a .bat file. @ in front makes the command apply to itself 
 
 **** Comment
 Rem Your comment in one line
+
+*** FART
+<<<windows:FART>>> [[http://fart-it.sourceforge.net/][Download]]
+Replace text in files
+Replace original_text with new_text for all files
+fart.exe -i -r "C:\Dir\To\Files\*.txt" original_text new_text
+
+Remove original_text for all files under current folder
+fart.exe -i -r --remove *.txt "original text"
+
+Say you want to remove double quotes. You will need to escape " with \"
+And you need to use -C for using \, \t, \n etc.
+fart -i -C --remove *.txt "\""
+
+- -i :: case insensitive
+- -w :: whole word
+- -r :: recursive
+- -f :: Find and replace filename instead of contents
+- -B :: Also find and replace in binary files
+- -p :: preview. no action
+
+I realize fart sometimes cannot find files.. Use Linux
 
 *** Windows Credential Store Panel
 <<<Windows Credential Store Panel>>>
