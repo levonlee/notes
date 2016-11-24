@@ -1063,6 +1063,35 @@ function lili_menu() {
 }
 #+END_EXAMPLE
  
+*** Array to CSV
+page callback
+drupal_add_http_header('Content-Type', 'text/csv; utf-8');
+drupal_add_http_header('Content-Disposition', 'attachment;filename=csvfile.csv');
+
+$fp = fopen('php://output', 'w');
+fputcsv($fp, [$year. ' Ranking of Top 100 Carriers']);
+$_columns = '#,Company,Web Site,Total,Trucks,Tractors,Trailers,O/OS,Employees';
+$_columns = explode(',',$_columns);
+fputcsv($fp, $_columns);
+
+foreach ($data as $d) {
+  $line   = [ ];
+  $line[] = $d->this_rank;
+  $line[] = $d->company_name;
+  $line[] = $d->web_address;
+  $line[] = $d->total_vehicles;
+  $line[] = $d->trucks;
+  $line[] = $d->tractors;
+  $line[] = $d->trailers;
+  $line[] = $d->owner_operators;
+  $line[] = $d->full_time_employees;
+
+  fputcsv( $fp, $line );
+}
+
+fclose($fp);
+drupal_exit();
+
 ** Taxonomy
 #+BEGIN_EXAMPLE
 // Get taxonomy terms of a node, ready for display with language
