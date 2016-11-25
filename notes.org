@@ -484,13 +484,27 @@ Configuration > Search and metadata > URL Aliases > Patterns
 ** Link, Module Path, Theme Path
 *** Link
 Empty link
-=l('Link Text', '', array('fragment'=>' ', 'html'=>TRUE, 'external'=>TRUE))=
+#+BEGIN_EXAMPLE
+l($text, 
+  '', 
+  array('fragment'=>' ', 
+        'html'=>TRUE, // if $text is HTML, set this to true
+        'external'=>TRUE,
+  //    'attributes' => array('target'=> '_blank'),
+  )
+);
+#+END_EXAMPLE
+
 Function l add class="active" when the path is current_path(). Use url() instead.
 
-=url($path = NULL, $options = array())=
+#+BEGIN_EXAMPLE
+url($path = NULL, $options = array())
+#+END_EXAMPLE
 Get URL alias
 url() just returns a url. $options are the same as l().
 url('taxonomy/term/1');
+
+To embed a url directly to HTML href, you should check_url($url)
 
 *** Module Path, Theme Path
 global $base_url;
@@ -498,6 +512,19 @@ $mod_path =  $base_url.base_path().drupal_get_path('module', 'lili_mod_name');
 $theme_pat = $base_url.base_path().drupal_get_path('theme', 'lili_theme_name');
 
 Both have no trailing slash
+
+** Translate
+*** t()
+$text = t("This is !name's website", array('!name' => $username));
+$text = t("This is @name's website", array('@name' => $username));
+$text = t("This is %name's website", array('%name' => $username));
+$text = t(check_plain($text));
+$link = l(t("Link text"), "node/123");
+$link = t('Visit the <a href="@url">settings</a> page', array('@url' => url('admin')));
+
+// `%` and `@` use `check_plain()`
+// `%` adds `<em class="placehoder"></em>`
+// `!` straight output.
 
 ** Global Variables
 https://api.drupal.org/api/drupal/globals/7.x
@@ -3157,39 +3184,71 @@ for double quotes to push to the right of padding
 }
 #+END_EXAMPLE
 
+*** Text Label
+Flair is a fixed font-size squared tag.
+
+<span class="li-tag li-tag-color">Flair</span>
+.li-tag{
+  display:inline-block;
+  margin-right: .5em;
+  padding: 0 2px;
+  border:1px solid;
+  border-radius: 2px;
+  font-size:x-small;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+.li-tag-color{
+  background-color:#f5f5f5;
+  color: #555;
+  border-color: #ddd;
+}
+.li-tag-red{
+  background-color:#d9534f;
+  color: #ffffff;
+  border-color: #d9534f;
+}
+
+Vertical align inside h1, h2
+h1 .li-tag, h2 .li-tag, h3 .li-tag {
+  margin-top: -0.5em;
+}
+
+h1, h2 must have font-size defined
+
 *** Button with icon on the left
 #+BEGIN_EXAMPLE
 // No space in button
 <button class="li-button has-icon"><span><a href="">Youtube</a></span></button>
 
 <style>
-	.li-button {
-		display:inline-block;
-		padding:0 8px 0 5.5px;
-		border:solid 1px transparent;
-		border-radius:.25em;
-		background-color:#0072BC;
-		color:#ffffff;
-		vertical-align:middle;
-		/* Overwrite default button styles */
-		outline:0;
-		text-decoration:none;
-		cursor:none;
-	}
-	.li-button.has-icon::before {
-		margin-right:6px;
-		background:url(icon.svg) no-repeat;
-		background-size:16px 12px;
-		width:16px;
-		height:12px;
-		content:'';
-		display:inline-block;
-		vertical-align:middle;
-	}
-	.li-button span {
-		vertical-align:middle;
-		font-size:12px;
-	}
+.li-button {
+  display:inline-block;
+  padding:0 8px 0 5.5px;
+  border:solid 1px transparent;
+  border-radius:.25em;
+  background-color:#0072BC;
+  color:#ffffff;
+  vertical-align:middle;
+  /* Overwrite default button styles */
+  outline:0;
+  text-decoration:none;
+  cursor:none;
+}
+.li-button.has-icon::before {
+  margin-right:6px;
+  background:url(icon.svg) no-repeat;
+  background-size:16px 12px;
+  width:16px;
+  height:12px;
+  content:'';
+  display:inline-block;
+  vertical-align:middle;
+}
+.li-button span {
+  vertical-align:middle;
+  font-size:12px;
+}
 </style>
 #+END_EXAMPLE
 
