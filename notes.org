@@ -238,6 +238,29 @@ $_fr_time[] = strftime('%Y', $_u_time);
 $_fr_time = ucwords(implode(' ', $_fr_time));
 echo $_fr_time;
 
+** Multibyte
+*** Remove 4 byte characters
+<<<php:4byte>>>
+PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard change.
+mysql:charset d7:mysql:charset 
+
+Here's how to remove any 4 byte character.
+
+#+BEGIN_EXAMPLE
+function replace4byte( $string ) {
+  return preg_replace( '%(?:
+          \xF0[\x90-\xBF][\x80-\xBF]{2}      # planes 1-3
+        | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
+        | \xF4[\x80-\x8F][\x80-\xBF]{2}      # plane 16
+    )%xs', '', $string );
+}
+
+var_dump( 
+  replace4byte( 'd' ), 
+  replace4byte( 'd_Emoji_d' ) 
+);
+#+END_EXAMPLE
+
 ** Array
 *** array_merge, array_merge_recursive
 array_merge
@@ -247,14 +270,15 @@ array_merge
 array_merge_recursive
 - If key is the same, values will be appended as array
 - Very different from array_merge
-** Heredoc and Nowdoc
+** Heredoc, Nowdoc
+Heredoc result is a double-quoted string
 #+BEGIN_EXAMPLE
 $html = <<<HTML
 <span>{$obj->name[1]}</span>
 HTML;
 #+END_EXAMPLE
 
-Nowdoc can't expand variables
+Nowdoc can't expand variables and the result is single quoted string
 #+BEGIN_EXAMPLE
 echo <<<'EOT'
 <span>{$obj->name[1]}</span>
@@ -315,6 +339,9 @@ if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
 #+END_EXAMPLE
 
 * Drupal
+** Update Core
+pantheon:drupal:core
+
 ** Update Module
 - Read module README first
 - Usually just remove the module directory and put the new one in
@@ -445,6 +472,9 @@ If you are not clear about some rules, you can just search in code. e.g. search 
 
 ** Debug
 watchdog('LOG_TYPE','message');
+watchdog('LOG_TYPE', $message, array(), WATCHDOG_ERROR);
+array() is to t() $message. Don't forget to put empty array otherwise you will have to manually
+clean up the watchdog table!
 
 If error or warning messages are printed using drupal_set_message, 
 modify the `drupal_set_message` function so that it prints debug_backtrace
@@ -477,6 +507,29 @@ For assigning permissions to roles, e.g. enable anonymous for Devel, you have to
 - error_level :: "0"/"1"/"2", none/error and warnings/all messages. Logging and errors.
 
 If setting is an array, you have to override the whole array. Can't override a key value.
+
+<<<d7:mysql:charset>>>
+Since Drupal 7.50, Drupal now supports 4 byte UTF-8 with MySQL.
+You will first need to run a custom drush command provided by a [[https://www.drupal.org/project/utf8mb4_convert][utf8mb4_convert module]] to convert
+all Drupal database, tables and fields to charset utf8mb4 and collation utf8mb4_general_ci
+Then change the database connection settings in settings.php
+[[https://www.drupal.org/node/2754539][Drupal Doc]]
+
+The utf8mb4_convert module requires inno_large_prefix=true when MySQL server is bootup.
+Otherwise a test (->utf8mb4IsSupported) can't pass before any actions.
+To bypass the test, re-create any string index columns varchar(255) to varchar(191)
+For example:
+ALTER TABLE cache_block CHANGE cid cid VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+Do this for any problematic column the module returns.
+
+For new website, changing the database connectio settings in settings.php is good enough.
+
+If MySQL server doesn't bootup with inno_large_prefix=true, all indexed columns will have max varchar(191)
+
+As a quick workaround, you can remove all php:4byte characters.
+
+Refer to mysql:charset for important info
 
 ** URL Alias
 Setup pattern for each node type
@@ -636,6 +689,7 @@ echo theme('lili_flair',array('text'=>'hi'));
 *** Debug =-vd=
 *** Alias
 =drush sa= list all aliases
+pantheon:drupal:alias
 
 *** User
 drush user-login yourusername
@@ -656,6 +710,14 @@ drush up <modulename> = drush upc <modulename> + drush updb
 if (drupal_is_cli() && function_exists('drush_main')) return true;
 return false;
 #+END_EXAMPLE
+
+*** Watchdog
+# delete all logs
+drush wd-del all
+
+drush wd-del --type=cron
+
+drush wd-del --severity=notice
 
 *** Custom Drush
 drupal_set_message()
@@ -6410,15 +6472,44 @@ git config --global crendential.helper wincred
 terminus site deploy --site=<s> --env=<e> --sync-content --cc
 #+END_EXAMPLE
 
+** pantheon.yml
+In the code directory. You need to commit to take effect.
+
+PHP supported version :: 5.3, 5.5, 5.6, and 7.0.
+Drush version: 5, 7, or 8. 8 is recommended
+
 ** Drush
 <<<Pantheon Drush>>>
 #+BEGIN_EXAMPLE
 terminus drush "<drush command> <drush args>" --site=<> --env=<> 
 #+END_EXAMPLE
 
+<<<pantheon:drupal:alias>>>
+Download Pantheon Aliases
+terminus sites aliases
+
+Drush version (5, 7, or 8) 8 is recommended for all Drupal version.
+terminus drush "status" --site=<> --env=<>
+
+.drush folder is at one level higher than the code folder
+You can put custom drush commands into this folder. For example,
+drush @pantheon.SITE.ENV dl utf8mb4_convert-7.x
+Will put utf8mb4_convert/utf8mb4_convert.dursh.inc under .drush/ folder
+Then you clear drush cache before using the new command
+drush @pantheon.SITE.ENV cc drush
+
 ** WP CLI
 <<<WP CLI Pantheon>>>
 terminus wp 'option get home' --site=<site> --env=dev
+
+** Drupal Core Update
+<<<pantheon:drupal:core>>>
+Create a multidev of the current Live, then hit the upgrade button.
+Check everything. If it's ok, do this on Dev, then pull code from Dev to Test, and then Live
+Done!
+
+To update other multidevs, after Dev master is updated, pull code from Dev to multidev and run update.php
+Check Status from Pantheon.
 
 ** Determin Environment
 <<<pantheon:environment>>>
@@ -6450,6 +6541,42 @@ if (function_exists('newrelic_ignore_transaction')) {
 
 * Database
 ** MySQL
+*** Version, Settings
+# In console
+SHOW VARIABLES LIKE "%version%";
+
+# Default charset is utf8, collation is utf8_general_ci
+# which is 3 bytes. utf8mb4 is 4 bytes
+# MySQL server default charset and collation
+<<<mysql:charset>>> <<<mysql:collation>>>
+SELECT @@character_set_database, @@collation_database;
+ALTER DATABASE db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+# In order to enable utf8mb4, you need to change my.cnf setting and restart MySQL
+# mysqld (client) is used on Pantheon instead of libmysqlclient
+# The following settings becomes available on mysqld (MySQL) server version > 5.5.14 and default since 5.7.7
+# As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26 
+[mysqld]
+innodb_large_prefix=true
+innodb_file_format=barracuda
+innodb_file_per_table=true
+
+# mysqld (client) > 5.0.9, libmysqlclient > v. 5.5.3, has to support utf8mb4 charset
+
+The major problem here is that for an indexed string column (primary key column) MySQL has 767 bytes limit.
+In utf8, it's 767/3=255 characters varchar(255). In utf8mb4, it's 767/4=191 characters varchar(191).
+If MySQL server doesn't have the above setting, the indexed column should contain less than 191 characters.
+But those columns already have varchar(255) defined, you will need to re-create the indexes
+ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+That's actually what Wordpress does: resize the indexed columns for some tables and make every table and field utf8mb4.
+
+Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as Wordpress.
+
+Referred by d7:mysql:charset
+
 *** Data Types
 <<<MySQL Integer>>>
 SIGNED :: contains negative, 0 and positive
