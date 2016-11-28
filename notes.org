@@ -1431,14 +1431,17 @@ $.ajax({
 Define an email template using hook_mail()
 #+BEGIN_EXAMPLE
 function lili_mail($key, &$message, $params) {
+ // Need to overwrite headers content type if email is html
  $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+
  // $message['from'] is initially set by $from from drupal_mail(). 
  // If not provided, will use sidewide setting
- // $param['keys'] prefill $message['keys']
+ // $message['to'] and 'language' are set by $to from drupal_mail().
 
  switch ($key) {
   case 'template_1':
-    // Don't need to do this: $message['subject'] = $params['subject'];
+    // Use $params
+    $message['subject'] = 'This is subject';
     $message['body'][] = 'Extra';
     $message['headers']['Bcc'] = 'bcc@abc.com';
     break;
@@ -1451,8 +1454,15 @@ $to = 'to@abc.com';
 $from = 'from@abc.com'; // Default Null
 $language = language_default();
 $send = TRUE; // Default TRUE 
+$params = array(); // Extra params to pass to hook_mail() as $params
 // hook_mail_alter can change to false so that it doesn't get sent out
-drupal_mail($module, 'template_1', $to, $language, $params, $from, $send);
+$result = drupal_mail($module, 'template_1', $to, $language, $params, $from, $send);
+/*
+$result => array(
+ 'result' => NULL (cancelled by hook_mail_alter())
+            or $system->mail($message) (!$result['result'] is true means fail)
+)
+*/
 #+END_EXAMPLE
 
 * Wordpress
@@ -2550,7 +2560,7 @@ all, print, screen, speech
 
 <<<meta viewport>>>
 #+BEGIN_EXAMPLE
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 // Set the width of the page to follow the screen-width of the device
 // Initial zoom level 1.0
 
@@ -2633,6 +2643,37 @@ all, print, screen, speech
 
 **** Bootstrap
 
+Global
+- <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+- box-sizing is border-box including *:before and *:after
+- font-size 16px is declared on <html> and font-size:1rem on <body>
+- <body> also sets global font-family and line-height
+- <body> has background-color #fff
+- Native font stack is switched from Helvetica Neue, Helvetica and Arial to:
+  - -apply-system (Safari for OS X and iOS)
+  - BlinkMacSystemFont (Chrome for OS X)
+  - Segoe UI (Windows)
+  - Robot (Android)
+  - Helvetica Neue, Arial, sans-serif !default;
+- heading elements and <p> have margin-top removed
+  - heading elements :: margin-bottom: .5rem (p.h1, p.h2, etc.)
+  - <p> :: margin-bottom: 1rem
+- Lists <ul> <ol> <dl> :: have margin-top removed
+  - margin-bottom: 1rem
+  - Except nested lists
+- <pre> has margin-top removed and add margin-bottom: 1rem;
+- Add <small class="text-muted">secondary heading text</small> to <h1>
+  - inline with text in <h1>, light color
+- Add .display-1, ..., .display-4 to change the size and display for <h1>, <h2>, etc.
+- Add .lead to <p> to make it more standout.
+- bootstrap.js requries jQuery
+- By default, flexbox is not enabled
+- If flexbox is enabled:
+  - entire grid system switches from float to flex
+  - input groups move from table to flex
+  - media components move from table to flex
+  - After flex is enabled, you might have problems with IE9 and IE10
+
 #+BEGIN_EXAMPLE
 <div class="container">
   <div class="row">
@@ -2650,13 +2691,16 @@ all, print, screen, speech
 #+END_EXAMPLE
 
 For all sizes, 15px on each side of a column
-.container has a fixed width based on different viewports.
-Change it to .container-fluid then the container takes the full width
+.container has a fixed max-width based on different viewports.
+.container-fluid takes 100% of the viewport width
+.row is a horizontal group of columns. Only columns can be immediate children of rows.
 
-|           | <768px    | >=768px  | >=992px  | >=1200px |
-| Class     | .col-xs-  | .col-sm- | .col-md- | .col-lg- |
-| container | none/auto | 750px    | 970px    | 1170px   |
-|           |           |          |          |          |
+15px on each side of a column
+
+|           | <576px    | <=576px  | >=768px  | >=992px  | >=1200px |
+| Class     | .col-xs-  | .col-sm- | .col-md- | .col-lg- | .col-xg- |
+| container | none/auto | 540px    | 720px    | 960px    | 1140px   |
+|           |           |          |          |          |          |
 
 col-lg-9 :: non large size will have 100% width
 col-md-7 col-lg-9 :: small size and extra small will have 100% width
@@ -2670,19 +2714,67 @@ col-md-offset-* :: increase the left margin of a column by n columns
 Change Column Ordering
 col-sm-push-*, col-sm-pull-* :: col-sm-push-8, col-sm-pull-4
 
-class="img-circle" // border-radius: 50%
+- .hidden-*-down :: e.g. .hidden-md-down hides an element on xs, sm and md viewports
+- .hidden-*-up :: .hidden-md-up hides an element on md, lg and xg viewports
+- combine .hidden-*-down and .hidden-*-up to only show element for a specific viewport size
+- .hidden-print :: hide element for print device
+- .visible-print-block :: only visible in print as display: block
+- .visible-print-inline :: only visible in print as display: inline
+- .visible-print-inline-block :: only visible in print as display: inline-block
+
+Button with icon
 #+BEGIN_EXAMPLE
 <a href="#" class="btn btn-default btn-lg">
  <span class="glyphicon glyphicon-search"></span> Button Large
 </a>
+#+END_EXAMPLE
 
+Image
+#+BEGIN_EXAMPLE
 <!-- block, max-width: 100%; height: auto; -->
 <img src="" class="img-responsive">
 
-<!-- center an image -->
+<!-- center an image, round image border-radius: 50% -->
 <img src="" class="img-responsive img-circle" style="display:inline">
+#+END_EXAMPLE
 
-<!-- Nav Bar -->
+Media
+Align media (image, video, audio) to the left or right of a content block
+#+BEGIN_EXAMPLE
+<div class="media">
+  <!-- may add media-middle, media-bottom, default is top -->
+  <!-- media-left, media-right -->
+  <a class="media-left" href="#">
+    <img class="media-object" src="..." alt="...">
+  </a>
+  <div class="media-body">
+    <h4 class="media-heading">Media Heading</h4>
+    Some Description...
+    <!-- Nest another media object -->
+  </div>
+</div>
+#+END_EXAMPLE
+
+Table
+- Add class="table" to <table>
+  - add .table-inverse (dark) to inverse color
+  - add .table-striped to add color to even or odd row within <tbody>
+  - add .table-bordered
+  - add .table-hover
+  - add .table-sm to remove cell padding
+  - add .table-reflow to transpose
+- Add scope="row" to the first td (or th) in each <tr>
+- Add class="thead-inverse" or thead-default in <thead> to make table header dark or light
+- Add colors to rows or individual cells. If table-inverse, use bg-* or text-*
+  - .table-active :: light grey
+  - .table-success :: light green
+  - .table-info :: light blue
+  - .table-warning :: light yellow
+  - .table-danger :: light red
+- Wrap table.table inside div.table-responsive to make table horizontal scrollable on small devices (under 768px)
+
+Navigation
+#+BEGIN_EXAMPLE
 <nav class="navbar navbar-default">
  <div class="container">
 
@@ -2707,15 +2799,16 @@ class="img-circle" // border-radius: 50%
 
  </div>
 </nav>
+#+END_EXAMPLE
 
-<!-- Form fields -->
+Form fields
+#+BEGIN_EXAMPLE
 <form class="form-inline">
  <!-- all controls in this form are in one line -->
  <input type="email" class="form-control" size="50">
  <!-- form-control sets width:100% and other styles -->
  <button type="button" class="btn btn-danger">Subscribe</button>
 </form>
-
 #+END_EXAMPLE
 
 *** Viewport sizes of device
