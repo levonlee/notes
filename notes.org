@@ -4,15 +4,6 @@
 #+STARTUP: align
 #+TODO: TODO IN-PROGRESS WAITING DONE
 
-* DONE learn emacs org mode
-* TODO Chase Payment
-* TODO QUnit
-* TODO Learn Bootstrap CSS framework
-
-* TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
-
-* TODO Learn SPF and whitelabel
-
 * Emacs
 ** Install & Configuration
 Download for Windows https://ftp.gnu.org/pub/gnu/emacs/windows/
@@ -3515,32 +3506,85 @@ Button with icon
 #+END_EXAMPLE
 
 *** Form
-- Add .sr-only to <label> to hide it
-- add .form-control to <input>, <select>, <textarea> to make it width 100%
-- wrap each form field with div.form-group to add margin-bottom
-- By default, <form> doesn't have to have any class
-- add .form-inline to <form> and any form field to make it inline. Only works for md and above viewport sizes
+- .sr-only :: add to <label> to hide it
+- .form-group :: add to <div> which wraps each form field to add margin-bottom
+  - .form-group-lg, .form-group-sm :: sizing 
 
-Checkbox and radio (.radio, .radio-inline)
+**** .form-control
+- .form-control :: add to <input>, <select>, <textarea> to make it width 100%
+- .form-control-file :: add to <input type=file> for 100% width 
+  - input.form-control-lg, input.form-control-sm :: sizing (BS4)
+  - input.input-lg, input.input-sm :: sizing (BS3) 
+
+**** Help Text (after <input>)
+- .form-text (.help-block) :: block-level help text. p.form-text or div.form-text
+- .text-muted :: inline help text small.text-muted or span.text-muted
+- aria-describedby attribute (may also refer to the feedback)
+
+#+BEGIN_EXAMPLE
+<div class="form-group">
+  <label for="inputPassword">Password</label>
+  <input type="password" id="inputPassword" class="form-control" aria-describedby="passwordHelpInline">
+  <small id="passwordHelpInline" class="text-muted">
+    Must be 8-20 characters long.
+  </small>
+</div>
+#+END_EXAMPLE
+
+**** .form-inline
+- By default, <form> doesn't have to have any class
+- .form-inline :: add to <form> and any form field to make it inline. Only works for md and above viewport sizes
+
+**** Checkbox and Radio
+- div.checkbox (.form-check BS4), div.radio (BS3 only)
+- label.checkbox-inline (.form-check-inline BS4), label.radio-inline (BS3 only)
+- label.form-check-label (BS4 only)
+- input.form-check-input (BS4 only)
+
 <div class="checkbox">
   <label>
-    <input id="" type="checkbox">
+    <input id="a" type="checkbox">
     Only one checkbox
   </label>
 </div>
 
 <div class="form-group">
  <label class="checkbox-inline">
-    <input name="a" type="checkbox">
+    <input name="a" id="a1" type="checkbox">
     Checkbox #1
  </label>
  <label class="checkbox-inline">
-    <input name="a" type="checkbox">
+    <input name="a" id="a2" type="checkbox">
     Checkbox #2
   </label>
 </div>
 
+**** .input-group
+Group multiple inputs of different types (or even text) in one line. Good for making very short form
 
+#+BEGIN_EXAMPLE
+<div class="form-group">
+  <label class="sr-only" for="exampleInputAmount">Amount (in dollars)</label>
+  <div class="input-group">
+    <div class="input-group-addon">
+      <input type="checkbox" checked>
+    </div>
+    <input type="text" class="form-control" id="exampleInputAmount" placeholder="Amount">
+    <div class="input-group-addon">.00</div>
+  </div>
+</div>
+
+<div class="form-group">
+  <div class="input-group">
+    <input type="text" class="form-control" placeholder="Search terms">
+    <span class="input-group-btn">
+      <button class="btn btn-default" type="button">Search</button>
+    </span>
+  </div>
+</div>
+#+END_EXAMPLE
+
+**** Align fields in columns
 Add .col-*-* to <label> and container of form field. Also add .control-label to <label>
 <div class="form-group">
   <label class="col-sm-2 control-label" for="inputComments">Comments</label>
@@ -3549,7 +3593,7 @@ Add .col-*-* to <label> and container of form field. Also add .control-label to 
   </div>
 </div>
 
-Align the Submit buttn
+Align Submit button
 <div class="form-group">
   <div class="col-sm-10 col-sm-offset-2">
     <input type="submit" class="btn btn-default" value="submit">
@@ -3559,13 +3603,88 @@ Align the Submit buttn
 Align checkbox/radio
 <div class="form-group">
  <div class="col-sm-10 col-sm-offset-2">
-   
    <label class="checkbox-inline">
       <input name="a" type="checkbox">
       Checkbox #2
    </label>
  </div>
 </div>
+
+**** Validation and Feedback
+Add validation class to div.form-group to add color as a whole
+- .has-success
+- .has-warning
+- .has-error
+- .has-feedback
+
+Validation feedback with icon and/or text (only input type=text)
+- .has-feedback :: add to div.form-group
+- .control-label :: add to <label>
+- span.glyphicon.glyphicon-ok.form-control-feedback :: icon inside field (BS3)
+- input.form-control-warning, -success, -danger :: icon inside field (BS4)
+- div.form-control-feedback :: feedback in text
+
+#+BEGIN_EXAMPLE
+<div class="form-group has-feedback">
+  <label class="control-label" for="inputName">Name</label>
+  <input class="form-control" id="inputName" type="text" placeholder="Name">
+  <span class="glyphicon glyphicon-ok form-control-feedback"></span>
+</div>
+#+END_EXAMPLE
+
+*** Dropdown (js)
+For navigation purpose
+
+#+BEGIN_EXAMPLE
+<!-- .open :: dropdown state is always open -->
+<div class="dropdown open">
+  <!-- .dropdown-toggle turn something into a dropdown toggle -->
+  <!-- data-toggle :: attach js dropdown event -->
+  <button
+    type="button" id="dropdownMenuButton"
+    class="btn btn-secondary dropdown-toggle"
+    data-toggle="dropdown"
+    aria-haspopup="true"
+    aria-expanded="false">
+    Dropdown button
+  </button>
+  
+  <!-- BS4 no longer requires menu items to be <a> -->
+  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <h6 class="dropdown-header">Combo A (not selectable)</h6>
+    <a class="dropdown-item" href="#">1</a>
+    <a class="dropdown-item" href="#">2</a>
+    <a class="dropdown-item" href="#">3</a>
+    <!-- BS3 use .divider -->
+    <div role="separator" class="dropdown-divider"></div>
+    <h6 class="dropdown-header">Combo B (not selectable)</h6>
+    <a class="dropdown-item" href="#">4</a>
+    <!-- disabled -->
+    <a class="dropdown-item disabled" href="#">5 (Sold out!)</a>
+    <a class="dropdown-item" href="#">6</a>
+  </div>
+</div>
+#+END_EXAMPLE
+
+Split button and caret
+
+#+BEGIN_EXAMPLE
+<div class="btn-group">
+  <button type="button" class="btn btn-info">Action</button>
+  <button
+    type="button"
+    class="btn btn-info dropdown-toggle dropdown-toggle-split"
+    data-toggle="dropdown"
+    aria-haspopup="true"
+    aria-expanded="false">
+    <!-- .dropdown-toggle-split is BS4.
+          BS3 requires the line below to add caret -->
+    <!-- <span class="caret"></span> -->
+    <span class="sr-only">Toggle Dropdown</span>
+  </button>
+  <!-- Same as above -->
+</div>
+#+END_EXAMPLE
 
 *** Navigation
 #+BEGIN_EXAMPLE
@@ -4301,6 +4420,15 @@ FALLBACK
 
 # Change the manifest file to update cache
 #+END_EXAMPLE
+
+** ARIA
+<<<html:ARIA>>>
+https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques
+
+*** aria-* attributes
+- aria-label :: inside <button> where label text can't be displayed
+- aria-labelledby :: refer to an element's id where the element contains text for label purpose.
+  - Can be nested 'parentID child1ID'
 
 * Javascript
 ** Loading Sequence
@@ -7930,3 +8058,13 @@ Click "Your benefits & exams" then "Start a previously scheduled online proctore
 *** Remove Credentials
 - Windows Credential Store Panel
 - Chrome
+
+
+* TODO Chase Payment
+* TODO QUnit
+* TODO Learn Bootstrap CSS framework
+* TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
+* TODO Learn SPF and whitelabel
+* TODO Learn ARIA html:ARIA
+* TODO Learn Adobe Illustrator
+* DONE learn emacs org mode
