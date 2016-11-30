@@ -2370,6 +2370,10 @@ background-size: 50% auto; // sets the width of the bg image in percent of the p
 background-size: contain; // bg image might not cover all content area
 background-size: cover; // content area might not see the whole bg image
 
+Stretch on y-axis and repeat on x-axis
+background: url() center repeat-x;
+background-size: auto 100%;
+
 *** background-clip, background-origin
 background-clip: border-box; // default. largest area
 // padding-box, content-box
@@ -3405,17 +3409,24 @@ For all sizes, 15px on each side of a column
 
 15px on each side of a column
 
-|           | <576px    | >=576px  | >=768px  | >=992px  | >=1200px |
-| Class     | .col-xs-  | .col-sm- | .col-md- | .col-lg- | .col-xg- |
-| container | none/auto | 540px    | 720px    | 960px    | 1140px   |
-| max width |           |          |          |          |          |
+| BS4       |           |           |          |          |          |
+|           | <576px    | >=576px   | >=768px  | >=992px  | >=1200px |
+| Class     | .col-xs-  | .col-sm-  | .col-md- | .col-lg- | .col-xg- |
+| container | none/auto | 540px     | 720px    | 960px    | 1140px   |
+| max width |           |           |          |          |          |
+|           |           |           |          |          |          |
+| BS3       |           |           |          |          |          |
+|           |           | <768px    | >=768px  | >=992px  | >=1200px |
+| Class     |           | .col-xs-  | .col-sm- | .col-md- | .col-lg- |
+| container |           | none/auto | 750px    | 970px    | 1170px   |
+| max width |           |           |          |          |          |
 
 col-lg-9 :: non large size will have 100% width
 col-md-7 col-lg-9 :: small size and extra small will have 100% width
 col-xs-9 col-md-7 :: large size will have 7 columns, small size will have 9 columns
 
-728px :: requires md-12, lg-9, xg-8
-300px :: requries md-5, lg-4, xg-3
+728px :: requires (BS4) md-12, lg-9, xg-8; (BS3) sm-12, md-9, lg-8
+300px :: requries (BS4) md-5, lg-4, xg-3; (BS3) sm-5, lg-4
 
 When column has 100% width, margin-bottom is 25px
 
@@ -3485,6 +3496,8 @@ Wrap text in div with .alert and one of the alert color class
 - alert-danger
 
 *** Button
+<<<bs:button>>>
+Used in bs:nav bs:navbar
 Add .btn.btn-default to <a>, <button> and <input>
 Only button.btn can be used as button in nav
 
@@ -3503,6 +3516,7 @@ Button with icon
 </a>
 #+END_EXAMPLE
 
+<<<bs:btn-group>>>
 Use role="group" for .btn-group and .btn-group-vertical
 div.btn-group to align <button>s horizontally
 div.btn-group-vertical to align <button>s vertically
@@ -3510,9 +3524,10 @@ div.btn-group-vertical to align <button>s vertically
 Use role="toolbar" for .btn-toolbar
 When there're multiple div.btn-group or div.btn-group-vertical, use div.btn-toolbar to wrap them.
 
-To group a bs:dropdown with <button>s, use div.btn-group to wrap them all together.
+To group a bs:dropdown with <button>s, use div.btn-group to wrap the dropdown all together.
 
 *** Form
+<<<bs:form>>>
 - .sr-only :: add to <label> to hide it
 - .form-group :: add to <div> which wraps each form field to add margin-bottom
   - .form-group-lg, .form-group-sm :: sizing 
@@ -3567,6 +3582,7 @@ To group a bs:dropdown with <button>s, use div.btn-group to wrap them all togeth
 </div>
 
 **** .input-group
+<<<bs:form:input-group>>>
 Group multiple inputs of different types (or even text) in one line. Good for making very short form
 
 #+BEGIN_EXAMPLE
@@ -3585,7 +3601,7 @@ Group multiple inputs of different types (or even text) in one line. Good for ma
   <div class="input-group">
     <input type="text" class="form-control" placeholder="Search terms">
     <span class="input-group-btn">
-      <button class="btn btn-default" type="button">Search</button>
+      <button class="btn btn-default" type="submit">Go!</button>
     </span>
   </div>
 </div>
@@ -3640,7 +3656,8 @@ Validation feedback with icon and/or text (only input type=text)
 #+END_EXAMPLE
 
 *** Dropdown (js)
-<<<bs:dropdown>>> For navigation purpose
+<<<bs:dropdown>>> For navigation purpose. 
+Used in bs:nav bs:navbar bs:btn-group
 
 #+BEGIN_EXAMPLE
 <!-- .open :: dropdown state is always open -->
@@ -3653,10 +3670,12 @@ Validation feedback with icon and/or text (only input type=text)
     data-toggle="dropdown"
     aria-haspopup="true"
     aria-expanded="false">
-    Dropdown button
+    Dropdown button <span class="caret"></span>
+    <!-- BS4 does't have to define caret -->
   </button>
   
-  <!-- BS4 no longer requires menu items to be <a> -->
+  <!-- BS4 no longer requires menu items to be <li><a /></li> but you have to use .dropdown-item -->
+  <!-- <ul> <li> <a> are used in BS3 -->
   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
     <h6 class="dropdown-header">Combo A (not selectable)</h6>
     <a class="dropdown-item" href="#">1</a>
@@ -3673,51 +3692,152 @@ Validation feedback with icon and/or text (only input type=text)
 </div>
 #+END_EXAMPLE
 
-Split button and caret
+To group a bs:dropdown with <button>s, use div.btn-group to wrap the dropdown all together.
 
 #+BEGIN_EXAMPLE
-<div class="btn-group">
-  <button type="button" class="btn btn-info">Action</button>
-  <button
-    type="button"
-    class="btn btn-info dropdown-toggle dropdown-toggle-split"
-    data-toggle="dropdown"
-    aria-haspopup="true"
-    aria-expanded="false">
-    <!-- .dropdown-toggle-split is BS4.
-          BS3 requires the line below to add caret -->
-    <!-- <span class="caret"></span> -->
-    <span class="sr-only">Toggle Dropdown</span>
-  </button>
-  <!-- Same as above -->
+<div class="btn-group" role="group" aria-label="...">
+  <button type="button" class="btn btn-info">Button #1</button>
+  <button type="button" class="btn btn-info">Button #2</button>
+
+  <!-- dropdown starts here -->
+  <div class="btn-group" role="group">
+    <button
+      type="button"
+      class="btn btn-info dropdown-toggle"
+      data-toggle="dropdown"
+      aria-haspopup="true"
+      aria-expanded="false">
+      Button #3: Dropdown
+      <!-- BS4 doesn't need to manually add a caret -->
+      <!-- <span class="caret"></span> -->
+    </button>
+
+    <!-- add ul.dropdown-menu mentioned above -->
+  </div>
+
 </div>
 #+END_EXAMPLE
 
 *** Navigation
+**** Nav (tabs or pills)
+<<<bs:nav>>> :: May use bs:dropdown as a nav item
+Items are blocks float to left
+
 #+BEGIN_EXAMPLE
+<ul class="nav nav-tabs">
+  <!-- nav-tabs or nav-pills -->
+  <!-- .nav-stacked :: add to ul -->
+  <!-- .nav-justified :: add to ul. Center tabs/pills -->
+  <li role="presentation" class="active"><a href="#">Item 1</a></li>
+  <li role="presentation" class="disabled"><a href="#">Item 2</a></li>
+  <li role="presentation"><a href="#">Item 3</a></li>
+
+  <!-- Item can be a bs:dropdown -->
+  <li role="presentation" class="dropdown">
+    <button
+      class="dropdown-toggle"
+      data-toggle="dropdown"
+      aria-haspopup="true"
+      aria-expanded="false">
+      Item 4
+    </button>
+
+    <ul class="dropdown-menu">
+      ...
+    </ul>
+  </li>
+
+</ul>
+#+END_EXAMPLE
+
+**** Navbar (js)
+<<<bs:navbar>>> is responsive
+
+div.collapse collpses at viewport <768px which is xs in BS3 and sm in BS4
+
+Background image to navbar 
+#+BEGIN_EXAMPLE
+@media (min-width:768px) {
+  .navbar {
+    background:url('../images/nav-bg.jpg') center repeat-x #222;
+    background-size:auto 100%;
+  }
+}
+
+@media (max-width:768px) {
+  .navbar .navbar-header{
+    background:url('../images/nav-bg.jpg') center repeat-x #222;
+    background-size:auto 100%;
+  }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<!-- .navbar-fixed-bottom | .navbar-fixed-top :: add to <nav> if navbar is fixed -->
+<!-- .navbar-default | .navbar-inverse (black and white) -->
+<!-- customize color, border using .navbar-default -->
 <nav class="navbar navbar-default">
- <div class="container">
+  <!-- Without div.container, the navbar will align to left -->
+  <div class="container">
 
-  <div class="navbar-header">
-   <!-- 3 bars in the toggle button -->
-   <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
-    <span class="icon-bar"></span>
-    <span class="icon-bar"></span>
-    <span class="icon-bar"></span>    
-   </button>
-   <a class="navbar-brand" href="">Me</a>
+    <!-- Add branding -->
+    <div class="navbar-header">
+      <!-- Style toggle button -->
+      <button type="button"
+              class="navbar-toggle"
+              data-toggle="collapse"
+              data-target="#myNavbar"
+              aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+
+      <a class="navbar-brand" href="">Website Name</a>
+      <!-- Add a logo in a.navbar-brand. Height should 20px. -->
+      <p class="navbar-text">optional: extra text</p>
+    </div>
+
+    <!-- .collapse is display: none; -->
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+        <li><a href="#">Submenu 1</a></li>
+        <li><a href="#">Submenu 2</a></li>
+
+        <!-- bs:dropdown -->
+        <li>
+          <a href="#"
+             class="dropdown-toggle"
+             data-toggle="dropdown"
+             role="button"
+             aria-haspopup="true"
+             aria-expanded="false">Submenu 3</a>
+          <ul class="dropdown-menu">
+            ...
+          </ul>
+        </li>
+
+      </ul> <!-- ul.navbar-nav ends -->
+
+      <!-- Add extra text -->
+      <p class="navbar-text">optional: extra text</p>
+
+      <!-- Add a bs:button -->
+      <button type="button" class="btn btn-default navbar-btn">sign in</button>
+
+      <!-- Add a bs:form or bs:form:input-group -->
+      <form class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          ...
+        </div>
+      </form>
+
+    </div>
+    <!-- div.collapse ends -->
+
   </div>
-
-  <!-- .collapse is display: none; -->
-  <div class="collapse navbar-collapse" id="myNavbar">
-   <ul class="nav navbar-nav navbar-right">
-    <li><a href="#">Submenu 1</a></li>
-    <li><a href="#">Submenu 2</a></li>
-    <li><a href="#">Submenu 3</a></li>
-   </ul>
-  </div>
-
- </div>
+  <!-- div.container ends -->
 </nav>
 #+END_EXAMPLE
 
@@ -4436,6 +4556,7 @@ https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques
 - separator :: BS4 .dropdown-divider
 - group :: BS4 .btn-group 
 - button :: <a> without href
+- search :: <form> define purpose
 
 *** aria-* attributes
 - aria-label :: inside <button> where label text can't be displayed
@@ -7090,6 +7211,12 @@ UNSIGNED :: contains 0 and positive
 
 <<<MySQL Date and Time>>>
 - TIME :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
+
+1 Year ago
+post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)
+
+A specific date
+CAST(post_date AS DATE) > '2014-01-01'
 
 *** REGEXP
 <<<MySQL REGEX>>>
