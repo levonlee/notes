@@ -630,6 +630,23 @@ Default theme file is located at
 
 d7:View_Theming
 
+**** Fast detect if it's a node page
+if (arg(0)=='node') {
+  $node_id = arg(1);
+} 
+**** html.tpl.php
+Get node if it's a node page
+$node = menu_get_object();
+if (isset($node->type)) { ... }
+
+**** page.tpl.php
+Get node if it's a node page
+hook_preprocess_page(&$variables) {
+  if (!empty($variables['node']) && $variables['node']->type == 'NODETYPE') {
+    $variables['greeting'] = 'Custom Greeting';
+  }
+}
+
 *** Form Theme
 $form['#theme'][] = 'lili_form';
 If no custom theme function, d7:hook_theme d7:theme_*, is defined, then the default template file is
@@ -7645,6 +7662,22 @@ sqlcmd -S sqlservername -i C:\sqlFileName.sql
 #+END_EXAMPLE
 
 * DFP
+** Why async is required
+Video companion requires async
+pubService.refresh requires async
+POST request requires async. GET request with larger than 2048 bytes not supported.
+
+However, it's better to use sync mode for rich media creative unless the creative is in friendly frames
+
+** Competition Calculation
+- List of candidate line items
+- select the best line item
+- select the best creative associated with the winning line item
+- DFP remnant and Ad Exchange/Adsense line items are evaluated 
+to see if they have line items with a higher yield
+- the best creastive associated with the winning line item is selected
+- creative returned to the browser. Dynamic allocation.
+
 ** Key-Value Targeting
 Slot-level targeting is recommended
 #+BEGIN_EXAMPLE
@@ -7657,6 +7690,42 @@ Page-level targeting
 #+BEGIN_EXAMPLE
 googltag.pubads().setTargeting("topic", "basketball");
 #+END_EXAMPLE
+
+** Exclusive Ads on Specific Page
+Let's say there're 2 LBs and 2 BBs throughout the website.
+999/LB1, 999/LB2, 999/BB1, 999/BB2
+For a specific page, Line Item A takes over all ad units.
+For another specific page, Line Item B takes over all ad units.
+
+The perfect way
+Create multilevel ad units and make them Special Ad Units. 
+999/LB1/exclusive, 999/LB2/exclusive
+999/BB1/exclusive, 999/BB2/exclusive
+
+On those specific pages:
+- Use the new tags of multilevel and special ad units on HTML instead of the original ones.
+- setTargetting on HTML and on DFP so that Line Item A and B can be distinguished.
+
+The better way
+Multilevel and Special ad units are only avaiable in Premium. Here's the way for SBS
+- 999/LB1_exclusive, 999/LB2_exclusive
+- 999/BB1_exclusive, 999/BB2_exclusive
+- Use the new tags on HTML instead of the original ones
+- setTargetting on HTML and DFP so that Line Item A and B 
+
+The workaround way
+If you don't have control on HTML, you can:
+- For Line Item A and B
+  - On DFP
+    - add Key-Value pair exclusive is exclusive
+    - add Key-Value pair sponsor is lineitemA
+  - In HTML, for those specific pages
+    - setTargeting("exclusive","exclusive");
+    - setTargeting("sponsor","lineitemA");
+- For other normal line items
+  - On DFP
+    - add Key-Value par 'exclusive is not ~exclusive' (~ means contain and * means begin with)
+  - In HTML, do nothing (remain the same)
 
 ** DFP in email
 [[https://support.google.com/dfp_premium/answer/2623168?hl=en][Simplified URL tags on DFP Help]]
