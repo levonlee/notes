@@ -2244,12 +2244,30 @@ a:active {}
 
 ** Text
 *** Ellipsis
+Single Line
 #+BEGIN_EXAMPLE
 div.test {
  white-space: nowrap;
  width: 200px; // width has to be defined
  overflow: hidden; // needed
  text-overflow: ellipsis; // change to inherit when hover then the clipped text will show
+}
+#+END_EXAMPLE
+
+Multiple Lines (IE and Edge will not show 3 dots)
+
+#+BEGIN_EXAMPLE
+.excerpt {
+  display: block;
+  display: -webkit-box;
+  font-weight: normal;
+  font-size: 15px;
+  line-height: 1.4;
+  -webkit-line-clamp: 9;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 189px; /* 15*1.4*9 */
 }
 #+END_EXAMPLE
 
@@ -2993,6 +3011,8 @@ For text
 }
 #+END_EXAMPLE
 
+bs:Center Tags Vertically center span inside h1
+
 ** Column for text
 
 #+BEGIN_EXAMPLE
@@ -3290,6 +3310,7 @@ h1, h2 must have font-size defined
 ** Global, Content inside a column
 - box-sizing is border-box including *:before and *:after
 - font-size 16px is declared on <html> and font-size:1rem on <body>
+- BS3 default font-size is 14px
 - <body> also sets global font-family and line-height
 - <body> has background-color #fff
 - bootstrap.js requries jQuery
@@ -3301,6 +3322,8 @@ h1, h2 must have font-size defined
   - After flex is enabled, you might have problems with IE9 and IE10
 
 [[https://v4-alpha.getbootstrap.com/migration/][BS4 vs BS3]]
+
+[[http://www.bootply.com][Hands on different versions of Bootstrap]]
 
 *** Native font stack 
 Switched from Helvetica Neue, Helvetica and Arial to:
@@ -3381,6 +3404,8 @@ Font weight
 - Wrap table.table inside div.table-responsive to make table horizontal scrollable on small devices (under 768px)
 
 *** Image
+.img-responsive BS3 .img-fluid BS4
+
 #+BEGIN_EXAMPLE
 <!-- block, max-width: 100%; height: auto; -->
 <img src="" class="img-responsive">
@@ -3412,6 +3437,7 @@ text-muted, text-primary, -success, -info, -warning, -danger
 Not to be used in .navbar. Use .navbar-left or .navbar-right instead.
 
 ** Layout
+*** Grid
 #+BEGIN_EXAMPLE
 <div class="container">
   <div class="row">
@@ -3468,7 +3494,7 @@ Change Column Ordering
 col-sm-push-*, col-sm-pull-* :: col-sm-push-8, col-sm-pull-4. Only at sm the columns are pushed/pulled.
 This only works when elements can be floated in one row. When they are stacked, this trick doesn't work.
 
-Responsive Utility
+*** Responsive Utility
 <<<bs:responsive utility>>>
 - .hidden-*-down :: e.g. .hidden-md-down hides an element on xs, sm and md viewports
 - .hidden-*-up :: .hidden-md-up hides an element on md, lg and xg viewports
@@ -3480,12 +3506,13 @@ Responsive Utility
 - .visible-print-inline-block :: only visible in print as display: inline-block
 - .visible-*-block, -inline, -inline-block where * is xs, sm, lg, xl
 
-Media
+*** Media Object
 Align media (image, video, audio) to the left or right of a content block
+
 #+BEGIN_EXAMPLE
 <div class="media">
-  <!-- may add media-middle, media-bottom, default is top -->
-  <!-- media-left, media-right -->
+  <!-- .media-middle, .media-bottom, default is top -->
+  <!-- .media-left, .media-right -->
   <a class="media-left" href="#">
     <img class="media-object" src="..." alt="...">
   </a>
@@ -3496,6 +3523,8 @@ Align media (image, video, audio) to the left or right of a content block
   </div>
 </div>
 #+END_EXAMPLE
+
+Put multiple li.media inside ul.media-list. Good for layout comments
 
 ** Utilities
 *** Spacing Utility (Boostrap 4)
@@ -3512,6 +3541,25 @@ In Bootstrap 3, use .form-group to create margin-bottom: 15px
 
 *** Responsive Utility
 bs:responsive utility
+
+*** Responsive helpers (embed and float)
+Apply to <iframe>, <embed>, <video> and <object> to maintain media size ratio
+
+#+BEGIN_EXAMPLE
+<div class="embed-responsive embed-responsive-16by9">
+  <iframe class="embed-responsive-item" src="//www.youtube.com/embed/zpOULjyy-n8?rel=0" allowfullscreen></iframe>
+</div>
+#+END_EXAMPLE
+
+BS3 4by3 and 16by9. BS4 added 21by9 and 1by1
+
+Control floats based on viewport size breakpoint
+float-xs-left, float-xs-right, float-xs-none
+
+*** Border (BS4)
+- .rounded
+- .rounded-circle
+- .rounded-top, right, left, bottom
 
 ** Components
 *** Alerts
@@ -3952,6 +4000,180 @@ BS4 uses h.display-3, p.lead
     <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
   </p>
 </div>
+#+END_EXAMPLE
+
+*** Tag (BS4) Label (BS3)
+<<<bs:tag>>>
+Used in <button>, <h1> as inline element and in bs:list group 
+<span class="tag tag-default">New</span>
+<span class="label label-info">New</span>
+
+tag-pill or badge in BS3 can collapse when there's no content
+<span class="tag tag-pill tag-default">Default</span>
+
+<<<bs:Center Tags>>> Vertically center span inside h1
+h1,h2,h3 {
+  vertical-align:middle;
+}
+
+h1>.tag, h2>.tag, h3>.tag {
+  vertical-aign:middle;
+  margin-top:-0.5em;
+  font-size: 50%; /* default is 75%. Make the tag smaller */
+}
+
+*** Thumbnail (BS3)
+div.thumbnail is a block with padding 4px and border 1px.
+Place it inside a column for layout
+
+*** List group
+<<<bs:list group>>>
+
+- Parent and child can be any HTML elements.
+- <ul> <li> will not have hovering effect
+- Add contextual classes to li.list-group-item 
+  - list-group-item-success, info, warning, danger
+
+#+BEGIN_EXAMPLE
+<div class="list-group">
+  <!-- may use .disabled, .active -->
+  <li class="list-group-item disabled">
+    <!-- may use bs:tag -->
+    New Mails
+    <span class="tag tag-default tag-pill float-xs-right">14</span>
+  </li>
+
+  <!-- BS4: link as a button, use <div> as parent -->
+  <a class="list-group-item list-group-item-action">
+    Dapibus ac facilisis in
+  </a>
+
+  <!-- BS3: link as a button, use <div> as parent -->
+  <button type="button" class="list-group-item">
+    Dapibus ac facilisis in
+  </button>
+
+  <!-- Custom Content BS3 -->
+  <a href="#" class="list-group-item">
+    <h4 class="list-group-item-heading">Heading</h4>
+    <p class="list-group-item-text">...</p>
+  </a>
+
+  <!-- Custom Content BS4 -->
+  <a href="#" class="list-group-item list-group-item-action">
+    <h4 class="list-group-item-heading">Heading</h4>
+    <p class="list-group-item-text">...</p>
+  </a>
+
+</div>
+#+END_EXAMPLE
+
+*** Panel (BS3 only)
+3 rows layout
+
+Contextual classes: panel-success, ...
+
+#+BEGIN_EXAMPLE
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title">Title</h2>
+  </div>
+  <div class="panel-body">
+    <p>Panel Content</p>
+  </div>
+
+  <!-- may add any HTML or BS components -->
+
+  <div class="panel-footer">
+    <a href="#">Some Action</a>
+  </div>
+</div>
+#+END_EXAMPLE
+
+*** Carousel (js)
+Don't add data-ride if it's triggered by javascript
+
+#+BEGIN_EXAMPLE
+<!-- Options
+data-interval :: 5000
+data-pause :: "hover" | null
+data-wrap :: true
+keyboard :: true
+-->
+<div id="carousel-example-generic"
+     class="carousel slide"
+     data-ride="carousel">
+
+  <ol class="carousel-indicators">
+    <!-- An item must have .active -->
+    <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+    <li data-target="#carousel-example-generic" data-slide-to="1"></li>
+    <li data-target="#carousel-example-generic" data-slide-to="2"></li>
+  </ol>
+
+  <div class="carousel-inner" role="listbox">
+    <!-- An item must have .active -->
+    <!-- BS4 :: use .carousel-item instead of .item -->
+    <div class="item active">
+      <img src="..." alt="...">
+      <div class="carousel-caption">
+        <h3>...</h3>
+        <p>...</p>
+      </div>
+    </div>
+
+    <div class="item">
+      <img src="..." alt="...">
+      <div class="carousel-caption">
+        ...
+      </div>
+    </div>
+
+    <!--  more items -->
+  </div>
+
+  <!-- Controls -->
+  <!-- data-slide could be
+  prev, next, cycle, pause, number (integer starting from 0)
+  -->
+  <a class="left carousel-control"
+     href="#carousel-example-generic"
+     role="button"
+     data-slide="prev">
+    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+    <span class="sr-only">Previous</span>
+  </a>
+  <a class="right carousel-control"
+     href="#carousel-example-generic"
+     role="button"
+     data-slide="next">
+    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+    <span class="sr-only">Next</span>
+  </a>
+
+</div>
+
+<script>
+  $(function() {
+    $('#carousel-example-generic').carousel({
+      // options :: see above
+    });
+    /* Other methods refer to data-slide
+    e.g. .carousel('cycle') ...
+     */
+
+    // Catch events
+    // slide.bs.carousel :: start
+    // slid.bs.carousel :: complete
+    // Event object
+    // direction :: 'left' | 'right'
+    // relatedTarget :: DOM element that is about to be active
+    $('#carousel-example-generic').on('slide.bs.carousel', function(e) {
+     // do something
+    });
+
+  });
+</script>
 #+END_EXAMPLE
 
 * HTML
