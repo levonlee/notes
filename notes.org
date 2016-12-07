@@ -614,6 +614,13 @@ drupal_goto($path = '', array $options= array(), $http_response_code= 302)
 Redirect to homepage
 drupal_goto('<front>'); 
 
+*** drupal_valid_path($path, $dynamic_allow= TRUE)
+$_path = current_path();
+
+if (drupal_valid_path($_path)) {
+  // Current user has access to this path/page
+}
+
 ** Theme
 *** System Theme
 Default theme file is located at 
@@ -1128,6 +1135,17 @@ $_renderable_form = entityform_form_wrapper($_contact_form, $mode, $form_context
 Try to prefill entityform in hook_form_FORM_ID_alter(). Say the entityform is named dealer_contact
 The hook is lili_form_dealer_contact_entityform_edit_form_alter
 
+Use modal in CTools, you will need t:
+- [[https://www.drupal.org/project/entityform][Entityform]]
+- [[https://www.drupal.org/project/modal][Modal operations]]
+- [[https://www.drupal.org/project/modal_forms][Modal forms (with ctools)]]
+- Enable the Modal entityforms module
+- Create a link (e.g. in View)
+#+BEGIN_EXAMPLE
+<a href="/modal/entityform/YOUR_FORM_IDENTIFIER/nojs/0" 
+   class="ctools-use-modal ctools-modal-modal-popup-small">Open Entity Form in Popup!</a>
+#+END_EXAMPLE
+
 ** User
 *** user_access
 <<<d7:user_access>>>
@@ -1440,6 +1458,100 @@ $.ajax({
  },
  dataType: "json"
 });
+#+END_EXAMPLE
+
+** Javascript API
+[[https://www.drupal.org/docs/7/api/javascript-api/javascript-api-overview][Javascript API Overview]]
+
+{
+ 'settings': {},
+ 'behaviors': {},
+ 'themes': {},
+ 'locale': {}
+}
+
+*** Settings
+Pass PHP variable to javascript
+
+PHP. Use camelCasing.
+#+BEGIN_EXAMPLE
+$my_settings = array(
+  'basePath' => $base_path,
+  'animationEffect' => variable_get('effect', 'none')
+);
+drupal_add_js(array('myModule'=>$my_settings), 'setting');
+#+END_EXAMPLE
+
+Javascript
+#+BEGIN_EXAMPLE
+var basePath = Drupal.settings.myModule.basePath;
+var effect = Drupal.settings.myModule.animationEffect;
+#+END_EXAMPLE
+
+*** Behaviors
+https://www.lullabot.com/articles/understanding-javascript-behaviors-in-drupal
+https://www.amazeelabs.com/en/blog/drupal-behaviors-quick-how
+https://www.drupal.org/node/756722
+
+Any property defined in Drupal.behaviors will get called when DOM is ready or when Drupal.attachBehaviors() runs.
+Drupal.attachBehaviors(); means attach all behaviors. When DOM is ready, Drupal runs:
+
+#+BEGIN_EXAMPLE
+// Attach all behaviors.
+$(function () {
+  Drupal.attachBehaviors(document, Drupal.settings);
+});
+
+// Syntax: Drupal.attachBehanviors(context, settings);
+// When context is not defined, it's the document object in javascript
+// when settings is not defined, Drupal.settings is used
+// So Drupal.attachBehaviors(); is the same as Drupal.attachBehaviors(document, Drupal.settings);
+#+END_EXAMPLE
+
+Other modules might run multiple Drupal.attachBehaviors(); or Drupal.attachBehaviors(custom_context, custom_settings);
+
+All properties defined in Drupal.behaviors will get called when Drupa.attachBehaviors(..., ...); runs! Some common situations:
+
+- After an admin overlay has been loaded into the page.
+- After AJAX Form API has submitted a form
+- When an AJAX request returns a command that modifies HTML, such as ajax_command_replace()
+- CTools calls it after a modal has been loaded
+- Media calls it after media browser has been loaded
+- Panels calls it after in-place editing has been completed
+- Views calls it after loading a new page that uses AJAX
+- Views Load More calls it after loading the next chunk of items
+- Javascript from custom modules may call Drupal.attahcBehaviors() when they add or change parts of the page.
+  - Such as drupal_add_js('jQuery(document).ready(function () { Drupal.attachBehaviors(); });', 'inline'); 
+
+So you need to attach any event once using $('',context).once() !
+
+This is mymod_path/js/drupal.behaviors.js
+#+BEGIN_EXAMPLE
+(function ($) {
+  Drupal.behaviors.MODULENAME = {
+    attach: function (context, settings) {
+      console.log('This runs every time Drupal.attachBehaviors(); is called');
+      // Run something only once (e.g. set jQuery event)
+      $('.nav-flyout', context).once('remove-modals', function () {
+        // After this is run, all elements selected will have a new class 'remove-modals-processed'
+        $(document).keyup(function (e) {
+          if (e.keyCode == 27) {
+            $('.nav-flyout', context).removeClass('js-flyout-active');
+          }
+        });
+      });
+    }
+  }
+}(jQuery));
+#+END_EXAMPLE
+
+In Drupal
+#+BEGIN_EXAMPLE
+function hook_preprocess_page(&$vars) {
+  // Append a property in Drupal.settings only. And before a behavior is attached and it will be run e.g. when DOM is ready
+  drupal_add_js(array('MODULENAME' => array('php_var_1' => variable_get('php_var_1', ''))), 'setting');
+  drupal_add_js(drupal_get_path('module', 'MODULENAME') . '/js/drupal.behaviors.js');
+}
 #+END_EXAMPLE
 
 ** Email
@@ -2196,6 +2308,22 @@ If there's no positioned ancestors, document body is used.
 When elements are positioned, they can overlap other elements.
 
 box-sizing: border-box | padding-box | content-box (default); 
+
+** Horizontal Center Absolute
+The absolute element is positioned related to the first position:relative parent
+
+Center that abosulte element in relate to that parent
+
+Notice: any parents will not expand in width and height according to that absolute child element 
+#+BEGIN_EXAMPLE
+.grandchild {
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  right: 0;
+}
+#+END_EXAMPLE
 
 ** Transform, Transition
 css:animation
@@ -6975,10 +7103,32 @@ function resize_iframe(iframe) {
 #+END_EXAMPLE
 
 ** CSS Media Viewport Size
-=var w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth)=
-=var h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight)=
+<<<js:viewport size>>>
+window.innerWidth is width including scrollbars
+document.body.clientWidth is width excluding scrollbars
+
+=var w = Math.max(window.innerWidth || 0, document.body.clientWidth)=
+=var h = Math.max(window.innerHeight || 0, document.body.clientHeight)=
 
 * jQuery
+** Closure and document ready
+
+Closure
+#+BEGIN_EXAMPLE
+(function($){
+  // can do something like 
+  $.fn.function_name = function(x){};
+})(jQuery);
+#+END_EXAMPLE
+
+Document ready shorthand
+
+#+BEGIN_EXAMPLE
+$(function(){
+
+});
+#+END_EXAMPLE
+
 ** Ajax
 $.get(url[, data] [, success], [, dataType] )
 $.post(url[, data] [, success], [, dataType] )
@@ -7120,6 +7270,12 @@ $("html,body").animate({
 });
 #+END_EXAMPLE
 
+** Viewport Change Event
+js:viewport size
+$(window).resize(function() {
+  consoel.log($(window).width()); // integer without unit
+});
+
 * SEO
 ** Google Analytics
 Under Admin, you can build Views. Views can have Filters. Views collect data.
@@ -7127,6 +7283,139 @@ Changes on Views and Filters will affect future data only.
 
 Under Views, there're a lot of reports. Apply Segments to reports to filter out data 
 without destroying Views data.
+
+*** Tracking Code
+The most recent version is analytics.js
+[[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
+
+*** Regular Expressions
+https://support.google.com/analytics/answer/1034324?hl=en
+
+Use \ to escape. Need to escape .
+
+*** ga Object Methods
+
+*** Track Object Methods
+
+There're different methods in Tracker Object
+
+ga('method_name',...);
+
+*** send
+Used in ga:goal and funnel
+You can send an action of a hitType with corresponding fields
+
+ga('[trackerName.]send', [hitType], [...fields], [fieldsObject]);
+
+Use ga:fieldsObject
+
+**** hitType: pageview
+Used in ga:goal and funnel
+ga('send', 'pageview', [page], [fieldsObject]);
+
+*** get(fieldName)
+
+*** set(fieldName|fieldsObject, [fieldValue])
+
+*** fieldsObject
+<<<ga:fieldsObject>>>
+
+**** hitCallback
+
+#+BEGIN_EXAMPLE
+var form = document.getElementById('signup-form');
+
+// Adds a listener for the "submit" event.
+form.addEventListener('submit', function(event) {
+
+  // Prevents the browser from submitting the form
+  // and thus unloading the current page.
+  event.preventDefault();
+
+  // Sends the event to Google Analytics and
+  // resubmits the form once the hit is done.
+  ga('send', 'event', 'Signup Form', 'submit', {
+    hitCallback: function() {
+      form.submit();
+    }
+  });
+
+  // or 
+  ga('send', 'event', 'Signup Form', 'submit', {
+    transport: 'beacon'
+  });
+  
+  form.submit();
+});
+#+END_EXAMPLE
+
+*** Funnel and Goal (send pageview)
+<<<ga:goal and funnel>>>
+Goal is defined in Admin > Account > Property > View
+Funnel is step to a Goal.
+
+Goal or funnel must use the pageview hitType.
+
+When path is very dynamic, you may need to send pageview with a static path in order to capture goal or funnel destination URL.
+
+And you may need to filter out those destination URL's in another GA View. Don't filter the current GA View.
+
+View the Virtual Pageview in Reporting > Real-Time > Content
+View the converted goal in real time Reporting > Real-Time > Conversions
+
+#+BEGIN_EXAMPLE
+ga('send', 'pageview', '/ga_goal/goal1/goal1_variant1.html');
+ga('send', 'pageview', '/ga_goal/goal1/goal1_variant2.html');
+ga('send', 'pageview', '/ga_goal/goal1/step1/goal1_variant1.html');
+ga('send', 'pageview', '/ga_goal/goal1/step2/goal1_variant1.html');
+...
+#+END_EXAMPLE
+
+*** Scroll (send event)
+Reporting > Behavior > Events
+Category > Action > Label > Value
+
+Syntax: ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);
+
+#+BEGIN_EXAMPLE
+<script>
+// scroll depth compared to the root element
+var element_to_track = 'html';
+var scroll_reach = 0;
+var temp_scroll_reach = 0;
+var scroll_reach_pixels = 0;
+var temp_scroll_reach_pixels = 0;
+
+$(window).scroll(function(){
+  temp_scroll_reach = Math.floor(
+    100 *
+    ( $(window).scrollTop() + $(window).height() - $(element_to_track).position().top)
+    / $(element_to_track).height()
+  );
+  temp_scroll_reach_pixels =
+    Math.floor($(window).scrollTop() + $(window).height());
+  if(temp_scroll_reach > scroll_reach){
+    scroll_reach = temp_scroll_reach;
+    scroll_reach_pixels = temp_scroll_reach_pixels;
+  }
+});
+
+function sendGAreq() {
+  // Old ga.js
+  // _trackEvent(category, action, opt_label, opt_value, opt_noninteraction)
+  //_gaq.push(['_trackEvent', 'Scroll Depth', 'Percentage', '', scroll_reach]);
+  //_gaq.push(['_trackEvent', 'Scroll Depth', 'Pixels', '', scroll_reach_pixels]);
+  // New analytics.js
+  // ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);
+  ga('send', 'event', 'Scroll Depth', 'Percentage', '', scroll_reach);
+  ga('send', 'event', 'Scroll Depth', 'Pixels', '', scroll_reach);
+}
+
+/* report only after a user exists the website */
+$(window).bind('beforeunload', function() {sendGAreq();});
+</script>
+#+END_EXAMPLE
+
 *** Too Many Self-referrals
 Reporting > Acquisition > All Traffic > Referrals, you will find the website's url is the source
 And the percentage is high compared to other Referral Sources.
