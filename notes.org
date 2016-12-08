@@ -1656,10 +1656,130 @@ the_post_thumbnail_url($size) :: echo
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
 *** Translate
-echo __($text, 'textdomain'); // return
+Use tool:Poedit
+
+**** Translate Functions
+$text can't be a variable. And use single quotes instead of "".
+
+Use sprintf() and printf for subsitutions. The msgid is "You have chosen the %s theme"
+#+BEGIN_EXAMPLE
+echo sprintf( __( 'You have chosen the %s theme.' ) , the_color() );
+printf( __( 'You have chosen the %s theme.' ) , the_color() );
+#+END_EXAMPLE
+
+echo __('some text', 'textdomain'); // return
 'textdomain' is optional but it has to be a string not a variable! Default it's 'default'
 
-_e() is the same as __() but it echoes
+_e() is the same as __() but echoes
+
+Plural or single
+echo _n('There is a comment', 'There are comments', get_comments_number());
+
+Context
+echo _x('post a link', 'A link to the post');
+'A link to the post' matches msgctxt "A link to the post" in .po file.
+
+_ex is the same as _x but echoes
+echo _ex('post link', 'Submit a link');
+
+**** Setup, .po and .mo files
+Load textdomain in child theme which overwrites the textdomain defined in parent theme
+Do this in theme functions.php
+#+BEGIN_EXAMPLE
+function smart_mag_child_theme_locale() {
+  $_r = load_child_theme_textdomain( 'textdomain-name', get_stylesheet_directory() . '/languages' );
+  // textdomain-name can be defined in parent theme or a new textdomain
+  // if textdomain-name has been defined earlier, then this will overwrite
+
+  // Check if textdomain inclusion is successful
+  //if ( $_r ) var_dump( 'success!' );
+
+  if ( is_admin() ) {
+    // load another textdomain
+  }
+}
+add_action( 'after_setup_theme', 'smart_mag_child_theme_locale' );
+#+END_EXAMPLE
+
+Usually translate-ready theme will provide a .pot file which is a template file for .po and .mo files.
+Open .pot in tool:Poedit, generate a new translation. What Poedit saves is 2 files: .po and .mo.
+
+Open .po file later, make changes and save to overwrite .po and .mo files. File .pot is no longer needed.
+
+Catalog > Properties > Translation properties
+Specifiy the language
+Plural Forms by default is
+#+BEGIN_EXAMPLE
+nplurals=2; plural=n != 1;
+#+END_EXAMPLE
+
+Might need to specify the path in code for .po file. '.' means the current path.
+#+BEGIN_EXAMPLE
+"X-Poedit-SearchPath-0: .\n"
+#+END_EXAMPLE
+
+Catalog > Properties > Sources keywords contain all the Wordpress translation functions
+
+#+BEGIN_EXAMPLE
+__
+_e
+_n:1,2
+_x:1,2c
+_ex:1,2c
+#+END_EXAMPLE
+
+=:1,2= indicates the function has 2 parts. =2c= means the 2nd argument is a context/comment.
+
+tool:Poedit can help you change most of the fields except that it can't specify context msgctxt.
+
+For those situations, directly edit .po and open .po in Poedit and save to get the .mo file.
+
+Some examples
+
+Comments and reference
+#+BEGIN_EXAMPLE
+This is a reference
+#: woocommerce/loop/orderby.php:23
+This is a comment
+#. Author of the plugin/theme
+#+END_EXAMPLE
+
+Concatenate multiple lines
+#+BEGIN_EXAMPLE
+#: 404.php:18
+msgid ""
+"We're sorry, but we can't find the page you were looking for. It's probably "
+"some thing we've done wrong but now we know about it and we'll try to fix "
+"it. In the meantime, try one of these options:"
+msgstr ""
+#+END_EXAMPLE
+
+sprintf and printf subsitutions
+#+BEGIN_EXAMPLE
+#: archive.php:101
+msgid "Yearly Archives: %s"
+msgstr ""
+#+END_EXAMPLE
+
+Context
+#+BEGIN_EXAMPLE
+#: bbpress/auth-modal.php:69
+msgctxt "bbPress"
+msgid "Favorites"
+msgstr ""
+#+END_EXAMPLE
+
+Complex context
+#+BEGIN_EXAMPLE
+#: comments.php:53
+msgid ""
+"Logged in as <a href=\"%1$s\">%2$s</a>. <a href=\"%3$s\" title=\"Log out of "
+"this account\">Log out?</a>"
+msgstr ""
+#+END_EXAMPLE
+
+Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
+Settings > General > Site Lanuage to match fr_CA
 
 *** add_image_size
 <<<wp:f:add_image_size>>>
@@ -2289,6 +2409,11 @@ $args = array('output'=>'normal', 'url'=>'true', 'size'=>'medium', 'resize'=>'pr
 #+END_EXAMPLE
 
 Refer to WP Types Custom Field Checkbox and WP Meta Query
+
+** Installation Language
+Download additional language packs from [[https://make.wordpress.org/polyglots/teams/][here]]
+Upload thme to wp-content/languages
+Then change the language in each User Profile.
 
 * CSS
 ** Position, box-sizing
@@ -9642,11 +9767,20 @@ A file error has occured in the Comma Separated Values translator while initiali
 That's because the CSV file does not use CR+LF. Open it in Excel and Save As
 
 ** Image
-   Sample Image: http://placehold.it/350x150
+*** Sample Image
+http://placehold.it/350x150
+
+*** Convert image to favicon (.ico)
+https://converticon.com/
+
 ** Google
 *** Google Public DNS
 8.8.8.8
 8.8.4.4
+*** Google S2
+Get favicon of any website
+http://www.google.com/s2/favicons?domain=http://superuser.com/
+
 *** Google Material Icons
 https://material.io/icons/
 
@@ -9658,6 +9792,12 @@ Use it as font:
 // md-inactive
 
 It has svg!
+
+** Translation
+<<<tool:Poedit>>>
+Open .pot and .po files in [[https://poedit.net/][Poedit]]
+
+[[https://localise.biz/free/poeditor][Online Editor]]. Send .po file to customer who will translate online and they can save and send back the translated .po!
 
 ** Email
 *** SendGrid
