@@ -2973,6 +2973,28 @@ Insert a line break in flex items. Might not be easy..
 </div>
 #+END_EXAMPLE
 
+Flex is so powerful.
+
+You can flex-grow a child's width or height (depending on the flex-direction of the container),
+so that the child takes up the remaining width or height of the container.
+Just remember to set the width or height for the container.
+
+Combine with Bootstrap div.container and div.row, you can set a specific row to take the rest of the container height.
+You don't have to get height of any other rows.
+
+#+BEGIN_EXAMPLE
+.container.flex-column {
+  display:flex;
+  flex-direction:column;
+  height: 100%; /* Make sure the container has a height */
+  /* This is to take the height of the parent of the container */
+}
+
+.row.cover-row {
+  flex-grow:1;
+}
+#+END_EXAMPLE
+
 ** Grid
 Not yet supported. Only IE and Edge.
 
@@ -3843,8 +3865,8 @@ Button with icon
 
 <<<bs:btn-group>>>
 Use role="group" for .btn-group and .btn-group-vertical
-div.btn-group to align <button>s horizontally
-div.btn-group-vertical to align <button>s vertically
+div.btn-group to align <button>s horizontally without padding nor margin
+div.btn-group-vertical to align <button>s vertically without padding nor margin
 
 Use role="toolbar" for .btn-toolbar
 When there're multiple div.btn-group or div.btn-group-vertical, use div.btn-toolbar to wrap them.
@@ -7215,8 +7237,15 @@ var siblingDiv = parentDiv.prev(); // preceding sibling
 #+END_EXAMPLE
 
 ** Replace class
+
 #+BEGIN_EXAMPLE
 parentDiv.removeClass('col-md-9').addClass('col-md-12');
+#+END_EXAMPLE
+
+Or remove a class if it exists or add a class if it doesn't
+
+#+BEGIN_EXAMPLE
+$('#id').toggleClass('col-md-9 col-md-12');
 #+END_EXAMPLE
 
 ** Find inside an element
@@ -8830,6 +8859,358 @@ googletag.cmd.push(function() {
            .defineSizeMapping(leaderboard_mapping)
            .addService(googletag.pubads());
 });
+#+END_EXAMPLE
+
+** Wallpaper, Site Skin
+
+On DFP
+#+BEGIN_EXAMPLE
+<script type="text/javascript">
+  (function() {
+  'use strict';
+  parent.jQuery(document).ready(function() {
+  var backgroundAdwidth = 480; // TODO: find out the background image width
+  var backgroundAdheight = 860; // TODO: find out the background image height
+  var backgroundAdLeftImage = '%%VIEW_URL_UNESC%%%%FILE:JPG1%%';
+  var backgroundAdRightImage = '%%VIEW_URL_UNESC%%%%FILE:JPG2%%';
+  var backgroundAdLinkLeft = '%%CLICK_URL_UNESC%%%%DEST_URL%%';
+  var backgroundAdLinkRight = backgroundAdLinkLeft;
+  var backgroundAdMainContentDivWidth = 996;
+  var backgroundAdExtraTopSpace = 100; // Set to 0 if you don't want extra top space
+  parent.jQuery('body').prepend('<div id="background-ad-right"></div><div id="background-ad-left"></div>');
+  var jsLink1 = "<script type='text/javascript'>" +
+  "var backgroundAdwidth = " + backgroundAdwidth + ";" +
+  "var backgroundAdheight = " + backgroundAdheight +";" +
+  "var backgroundAdMainContentDivWidth = " + backgroundAdMainContentDivWidth + ";" +
+  "var backgroundAdExtraTopSpace = " + backgroundAdExtraTopSpace + ";" +
+  "</scr" + "ipt>";
+  parent.jQuery('head').append(jsLink1);
+  var jsLink2 = parent.jQuery("<script type='text/javascript' src='http://yours.com/js/backgroundskinad.js'>");
+  parent.jQuery('head').append(jsLink2);
+  var cssLink = parent.jQuery("<link rel='stylesheet' href='http://yours.com/css/media-w1200-w992.css'>");
+  parent.jQuery('head').append(cssLink);
+  parent.jQuery('#background-ad-left, #background-ad-right').css({
+  'position': 'fixed',
+  'z-index': '1',
+  'cursor': 'pointer',
+  'height': backgroundAdheight
+  });
+  parent.jQuery('#background-ad-left').css({
+  'background': 'url(' + backgroundAdLeftImage + ') no-repeat right top'
+  });
+  parent.jQuery('#background-ad-right').css({
+  'background': 'url(' + backgroundAdRightImage + ') no-repeat left top'
+  });
+  parent.jQuery('#background-ad-left').click(function() {
+  window.open(backgroundAdLinkLeft);
+  });
+  parent.jQuery('#background-ad-right').click(function() {
+  window.open(backgroundAdLinkRight);
+  });
+  });
+  })();
+</script>
+#+END_EXAMPLE
+
+On Web Server
+backgroundskinad.js
+#+BEGIN_EXAMPLE
+jQuery(document).ready(function($) {
+  var backgroundAdMainContentDivWidth = 996;
+  var backgroundAdExtraTopSpace = 0;
+  function setBackgroundAdPositionX() {
+    var adPosition = new Array();
+    var viewportWidth = $(window).width();
+    var leftSpace = (viewportWidth-backgroundAdMainContentDivWidth)/2;
+    if (leftSpace > 0) {
+      if (leftSpace <= backgroundAdwidth) {
+        adPosition['adWidthRealtime'] = leftSpace;
+        adPosition['adHorizontalSpacing'] = 0;
+      } else {
+        adPosition['adWidthRealtime'] = backgroundAdwidth;
+        adPosition['adHorizontalSpacing'] = leftSpace - backgroundAdwidth;
+      }
+    }
+    else {
+      adPosition['adWidthRealtime'] = 0;
+      adPosition['adHorizontalSpacing'] = 0;
+    }
+
+    $('#background-ad-left').css({
+      'left': adPosition['adHorizontalSpacing'],
+      'width': adPosition['adWidthRealtime']
+    });
+
+    $('#background-ad-right').css({
+      'right': adPosition['adHorizontalSpacing'],
+      'width': adPosition['adWidthRealtime']
+    });
+    return adPosition;
+  }
+
+  function setBackgroundAdPositionY() {
+    var topspace = backgroundAdExtraTopSpace - $(window).scrollTop();
+    // nav HTML element height
+    if ($('#newcom-header-masthead').length && $('#newcom-header-masthead').height()) {
+      topspace += $('#newcom-header-masthead').height();
+    }
+    topspace = (topspace > 0) ? topspace : 0;
+    $('#background-ad-left, #background-ad-right').css('top', topspace + 'px');
+  }
+
+  function wallpaperFixViewport() {
+    $('.cover-slogan, .cover-logo').addClass("m-clear");
+    $('#newcom-single-left').toggleClass("col-md-9 col-md-8");
+    $('#newcom-single-right').toggleClass("col-md-3 col-md-4");
+    $('#newcom-page-news-middle').toggleClass("col-md-7 col-md-6");
+    $('#newcom-page-news-right').toggleClass("col-md-3 col-md-4");
+    $('#newcom-taxonomy-videoseries-middle').toggleClass("col-md-7 col-md-6");
+    $('#newcom-content-sidebar-page-left').toggleClass("col-md-9 col-md-8");
+    $('#newcom-content-sidebar-page-right').toggleClass("col-md-3 col-md-4");
+    $('#newcom-page-middle').toggleClass("col-md-7 col-md-6");
+    $('#newcom-page-right').toggleClass("col-md-3 col-md-4");
+    $('#newcom-search-middle').toggleClass("col-md-7 col-md-6");
+    $('#newcom-search-right').toggleClass("col-md-3 col-md-4");
+
+    $('div.row div.col-md-8 div.row div.col-md-3 div.well').toggleClass("pa-sm");
+
+    $('#div-gpt-placeholder-1, #div-gpt-placeholder-2').toggleClass('center-block');
+
+    // Enlarge column of a parent if it has a child
+    var videoDiv = $( "#yourspecialchild" ).parent( ".the-content" ).parent( ".col-md-9" );
+    if (videoDiv.length) {
+      videoDiv.toggleClass("col-md-9 col-md-12");
+      // Move
+      var titleDiv = videoDiv.prev();
+      if (titleDiv.length) {
+        titleDiv.toggleClass("col-md-3 col-md-12");
+        titleDiv.insertAfter(videoDiv);
+      }
+    }
+
+  }
+
+  $(window).load(function() {
+    wallpaperFixViewport();
+    setBackgroundAdPositionX();
+    setBackgroundAdPositionY();
+    $("#div-gpt-placeholder-0-oop").hide();
+  });
+
+  $(window).resize(function() {setBackgroundAdPositionX();});
+  $(window).scroll(function() {setBackgroundAdPositionY();});
+
+});
+#+END_EXAMPLE
+
+media-w1200-w992.css
+#+BEGIN_EXAMPLE
+@media (min-width:1200px){
+  .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12{
+    width:auto;
+    float:none;
+  }
+
+  .container{
+    width:990px
+  }
+
+  .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11{
+    float:left
+  }
+
+  .col-md-12{
+    width:100%
+  }
+
+  .col-md-11{
+    width:91.66666666666666%
+  }
+
+  .col-md-10{
+    width:83.33333333333334%
+  }
+
+  .col-md-9{
+    width:75%
+  }
+
+  .col-md-8{
+    width:66.66666666666666%
+  }
+
+  .col-md-7{
+    width:58.333333333333336%
+  }
+
+  .col-md-6{
+    width:50%
+  }
+
+  .col-md-5{
+    width:41.66666666666667%
+  }
+
+  .col-md-4{
+    width:33.33333333333333%
+  }
+
+  .col-md-3{
+    width:25%
+  }
+
+  .col-md-2{
+    width:16.666666666666664%
+  }
+
+  .col-md-1{
+    width:8.333333333333332%
+  }
+
+  .col-md-pull-12{
+    right:100%
+  }
+
+  .col-md-pull-11{
+    right:91.66666666666666%
+  }
+
+  .col-md-pull-10{
+    right:83.33333333333334%
+  }
+
+  .col-md-pull-9{
+    right:75%
+  }
+
+  .col-md-pull-8{
+    right:66.66666666666666%
+  }
+
+  .col-md-pull-7{
+    right:58.333333333333336%
+  }
+
+  .col-md-pull-6{
+    right:50%
+  }
+
+  .col-md-pull-5{
+    right:41.66666666666667%
+  }
+
+  .col-md-pull-4{
+    right:33.33333333333333%
+  }
+
+  .col-md-pull-3{
+    right:25%
+  }
+
+  .col-md-pull-2{
+    right:16.666666666666664%
+  }
+
+  .col-md-pull-1{
+    right:8.333333333333332%
+  }
+
+  .col-md-push-12{
+    left:100%
+  }
+
+  .col-md-push-11{
+    left:91.66666666666666%
+  }
+
+  .col-md-push-10{
+    left:83.33333333333334%
+  }
+
+  .col-md-push-9{
+    left:75%
+  }
+
+  .col-md-push-8{
+    left:66.66666666666666%
+  }
+
+  .col-md-push-7{
+    left:58.333333333333336%
+  }
+
+  .col-md-push-6{
+    left:50%
+  }
+
+  .col-md-push-5{
+    left:41.66666666666667%
+  }
+
+  .col-md-push-4{
+    left:33.33333333333333%
+  }
+
+  .col-md-push-3{
+    left:25%
+  }
+
+  .col-md-push-2{
+    left:16.666666666666664%
+  }
+
+  .col-md-push-1{
+    left:8.333333333333332%
+  }
+
+  .col-md-offset-12{
+    margin-left:100%
+  }
+
+  .col-md-offset-11{
+    margin-left:91.66666666666666%
+  }
+
+  .col-md-offset-10{
+    margin-left:83.33333333333334%
+  }
+
+  .col-md-offset-9{
+    margin-left:75%
+  }
+
+  .col-md-offset-8{
+    margin-left:66.66666666666666%
+  }
+
+  .col-md-offset-7{
+    margin-left:58.333333333333336%
+  }
+
+  .col-md-offset-6{
+    margin-left:50%
+  }
+
+  .col-md-offset-5{
+    margin-left:41.66666666666667%
+  }
+
+  .col-md-offset-4{
+    margin-left:33.33333333333333%
+  }
+
+  .col-md-offset-3{
+    margin-left:25%
+  }
+
+  .col-md-offset-2{
+    margin-left:16.666666666666664%
+  }
+
+  .col-md-offset-1{
+    margin-left:8.333333333333332%
+  }
+}
 #+END_EXAMPLE
 
 * XML
