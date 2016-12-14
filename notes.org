@@ -567,6 +567,10 @@ $theme_pat = $base_url.base_path().drupal_get_path('theme', 'lili_theme_name');
 
 Both have no trailing slash
 
+*** global $base_url
+No trailing slash
+http://abc.com
+
 ** Translate
 *** t()
 $text = t("This is !name's website", array('!name' => $username));
@@ -1068,6 +1072,8 @@ $_r = $_q
 ->entityCondition('entity_type', 'node') // taxonomy_term, user
 ->entityCondition('bundle', 'newsletter') // node type or content type
 ->fieldCondition('field_active','value',1,'=') // boolean field
+->fieldCondition('field_news_publishdate', 'value', $year . '%', 'like') // Text LIKE
+->fieldOrderBy('field_ns_newsletter_unique_id', 'value', 'DESC') // Sort
 ->fieldCondition('field_dealer', 'target_id', 12345, '=') // field Entity Reference, single value
 ->fieldCondition('field_contacts', 'target_id', 12345) // field Entity Reference, multiple values have one 12345
 /* NOT IN
@@ -1089,6 +1095,7 @@ $_r = array_diff_key($_r_all, $_r_in_12345);
 // IN, NOT IN (does not work)
 // BETWEEN :: propertyCondtion('created', array($start, $end), 'BETWEEN')
 
+->range(0,10)
 // Random order. hook_query_TAG_alter
 ->addTag('random')
 
@@ -9524,6 +9531,38 @@ media-w1200-w992.css
     margin-left:8.333333333333332%
   }
 }
+#+END_EXAMPLE
+
+** Pre-roll or Linear Video Ad
+- The ad unit should have a Video (VAST) size: 640x360v
+- In the line item, select the same video size as the inventory size and also select the ad unit
+- Add a new Creative Set and select Linear then Video (not VPAID) for pre-roll, mid-roll or post-roll.
+-Upload the video file that a higher resolution e.g. 1920x1080. DFP will create all lower resolution videos.
+- Your video creative is setup. You need to generate the tag for the ad unit.
+- Use Video Suite Inspector to test the video ad. If the ad unit is newly created, it could take an hour to preview the video ad..
+
+DFP Video Tag
+#+BEGIN_EXAMPLE
+https://pubads.g.doubleclick.net/gampad/ads?sz=640x360&iu=/{network_id}/{VAST_code_name}&ciu_szs=640x90&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=[referrer_url]&description_url=[description_url]&correlator=[timestamp]
+#+END_EXAMPLE
+
+In the tag, use JW Player Targeting Macros to add values into these url parameters:
+The url of the page where the ad will appear
+`&url=__page-url__`
+`&correlator=__timestamp__`
+`&description_url=__referrer__`
+
+e.g. DFP tag in JW is
+#+BEGIN_EXAMPLE
+https://pubads.g.doubleclick.net/gampad/ads?sz=640x360&iu=/{network_id}/{VAST_code_name}&ciu_szs=640x90&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=__page-url__&description_url=__referrer__&correlator=__timestamp__
+#+END_EXAMPLE
+
+In JW, specify the div id which the companion ad will be in and on the website:
+#+BEGIN_EXAMPLE
+<div id="newcomjwplayerbanner" style="width:640px;height:90px;margin-bottom: 10px;"></div>
+<div id="newcomjwplayer">
+  <script type="application/javascript" src="//content.jwplatform.com/players/{video_id}-{player_id}.js"></script>
+</div>
 #+END_EXAMPLE
 
 * XML
