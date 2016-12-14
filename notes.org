@@ -266,6 +266,11 @@ array_merge
 array_merge_recursive
 - If key is the same, values will be appended as array
 - Very different from array_merge
+
+*** Last element
+$_last = end($target_array);
+reset($target_array);
+
 ** Heredoc, Nowdoc
 Heredoc result is a double-quoted string
 #+BEGIN_EXAMPLE
@@ -2019,9 +2024,12 @@ Use wp:plugin:acf
 *** <<<WP_Query>>>
 Generator: https://generatewp.com/wp_query/
 
-Used: WP_Meta_Query, WP Tax Query, WP Order and Orderby
-Used filters: wp:filter:post_limits or pre_option_posts_per_rss wp:filter:pre_option
-Used actions: wp:action:pre_get_posts
+Use: WP_Meta_Query, WP Tax Query, WP Order and Orderby
+Use filters: 
+- wp:filter:post_limits
+- pre_option_posts_per_rss wp:filter:pre_option
+- wp:filter:posts_clauses
+Use actions: wp:action:pre_get_posts
 
 #+BEGIN_EXAMPLE
 $args = array(
@@ -2233,6 +2241,61 @@ function lili_f_post_limits($limit, $query) {
  return $limit;
 }
 
+*** posts_clauses
+<<<wp:filter:posts_clauses>>>
+Modify WP_Query object before it runs
+#+BEGIN_EXAMPLE
+function lili_posts_clauses($clauses, $query) {
+  /*
+  $clauses => [
+    'where' => '...',
+    'groupby' => '',
+    'join' => '',
+    'orderby' => 'wp_posts.post_date DESC',
+    'distinct' => '',
+    'fields' => 'wp_posts.*',
+    'limits' => 'LIMIT 0, 20',
+  ]
+  $query is WP_Query object
+  */
+  // Identify a certain WP_Query
+  $_s = lili_request_cache('trigger_posts_clauses');
+  if ($_s == 'situationA') {
+    $_old = $clauses['where'];
+    $clauses['orderby'] = '';
+    $_limit = explode(",",$clauses['limits']);
+    $clauses['limits']='';
+    $_limit_feature = end($_limit) - 3;
+    reset($_limit);
+    $_features_and_news = <<<SQL
+SELECT * FROM
+(SELECT p2.ID
+FROM wp_posts p2
+WHERE p2.post_type IN ('en-vedette')
+ORDER BY p2.post_date DESC
+LIMIT {$_limit_feature}
+) AS sq1
+
+UNION
+
+SELECT * FROM
+(SELECT p2.ID
+FROM wp_posts p2
+INNER JOIN wp_term_relationships tr ON tr.object_id = p2.ID
+INNER JOIN wp_terms t ON t.term_id = tr.term_taxonomy_id
+WHERE p2.post_type = 'nouvelles' AND t.slug = 'homepage-3-squares'
+ORDER BY p2.post_date DESC
+LIMIT 3) AS sq2
+SQL;
+    $clauses['where'] = $_old." AND wp_posts.ID IN ($_features_and_news)";
+    // reset cache
+    lili_request_cache('trigger_posts_clauses', '');
+  }
+
+  return $clauses;
+}
+#+END_EXAMPLE
+
 *** pre_option_(option_name)
 <<<wp:filter:pre_option>>>
 Temporarily alter an option without changing in database.
@@ -2374,6 +2437,59 @@ function lili_wphead_dfp() {
 ** Transient API
 WordPress cache API in database.
 =DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
+
+** Custom Cache
+Same page request custom cache
+
+#+BEGIN_EXAMPLE
+function lili_request_cache($field, $set = NULL) {
+  static $custom_cache;
+  if (!isset($custom_cache)) {
+    $custom_cache = [];
+  }
+  if ($set !== NULL && $field !== NULL ) {
+    // $set_field_value = _f('field_name', 123);
+    $custom_cache[$field] = $set;
+  }
+  elseif ($field !==  NULL && $set == NULL &&
+          ( !isset($custom_cache[$field]) || $custom_cache[$field] == NULL )
+  ) {
+    // Set default
+    // $set_field_value = _f('field_name');
+    switch ($field) {
+      case "trigger_posts_clauses":
+        $custom_cache[$field] = '';
+        break;
+    }
+  }
+
+  if (!isset($custom_cache[$field])) {
+    $custom_cache[$field] = NULL;
+  }
+
+  return $custom_cache[$field];
+}
+#+END_EXAMPLE
+
+** Database
+[[https://codex.wordpress.org/Database_Description][Database Description]]
+
+*** wp_posts
+ID :: int
+post_type :: varchar(20), 'post'
+post_status :: varchar(20), 'publish'
+
+*** wp_terms, wp_term_relationships
+- wp_terms
+term_id :: int, auto_increment
+name :: varchar(200)
+slug :: varchar(200)
+term_group :: int
+
+- wp_term_relationships
+object_id :: int, (e.g. ID in wp_posts), 0
+term_taxonomy_id :: int, 0
+term_order :: int, 0
 
 ** Plugins
 *** Resize image on the fly
@@ -2901,7 +3017,10 @@ all, print, screen, speech
 |               |          |                                                             |
 
 *** Responsive Design
-**** Basic
+
+Progressive Method :: start from mobile layout, add content to bigger screen size
+Graceful Method :: start from desktop layout, remove content to smaller screen size
+
 #+BEGIN_EXAMPLE
 /* {
  box-sizing: border-box;
@@ -3584,6 +3703,23 @@ h1, h2 must have font-size defined
   font-size:12px;
 }
 </style>
+#+END_EXAMPLE
+
+*** Vertical Line Separator in <li>
+
+#+BEGIN_EXAMPLE
+<ul class="ul">
+  <li><a href="">1</a></li>
+  <li><a href="">2</a></li>
+</ul>
+
+.ul li:last-child {
+  margin-right: 5px;
+}
+.ul li:not(:first-child):before {
+  content: "|";
+  padding:0 5px;
+}
 #+END_EXAMPLE
 
 * Bootstrap
@@ -8559,6 +8695,29 @@ SET b.val = a.val+c.val,
 a.val2 = 'new'
 WHERE a.val > 10 AND c.val > 10
 #+END_EXAMPLE
+
+*** LIMIT in Sub Query
+Can't directly use LIMIT in sub query
+This doesn't work
+#+BEGIN_EXAMPLE
+SELECT *
+FROM wp_posts
+WHERE wp_posts.ID IN (
+SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts')
+LIMIT 5
+)
+#+END_EXAMPLE
+
+Do this
+#+BEGIN_EXAMPLE
+SELECT *
+FROM wp_posts
+WHERE wp_posts.ID IN (
+SELECT * FROM (SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts') LIMIT 5) AS sq1
+)
+#+END_EXAMPLE
+
+Remember if the outter query has LIMIT, then it will overwrite any subquery's LIMIT
 
 ** MSSQL
 *** Modify column values if exist (CASE WHEN)
