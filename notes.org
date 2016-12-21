@@ -904,6 +904,9 @@ $form['field_dealer'][LANGUAGE_NONE][0]['#printed'] = TRUE;
 
 lili_node_form_alter
 
+node type (content type) ad_listing, that node's new/edit form is
+lili_form_ad_listing_node_form_alter using hook_form_FORM_ID_alter hook
+
 #+BEGIN_EXAMPLE
 
 #+END_EXAMPLE
@@ -10110,6 +10113,71 @@ Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplifie
 ** E-commerce
 *** Chase E-xact Gateway
 Chase Paymentech
+
+Chase Payment Gateway
+Test mode form goes to https://rpm.demo.e-xact.com/payment
+Normal mode form goes to https://checkout.e-xact.com/payment
+
+Payment Page Settings
+General
+	Return to Your Site URL is hard coded. It's shown when a user comes to Payment Page and sees a Return to Website if the user doesn't want to proceed. And it also serves as a go back link when timeout happens.
+Receipt Page
+	AUTO-POST, AUTO-GET don't display a receipt on Chase Payment Gateway but instead post the transcaction result to your website
+	POST, GET display a receipt on chase Payment Gateway and a button including a link to GET or POST back to your website.
+	Unfortunately, this link cannot be dynamic.
+	
+	Relay Response
+	Transaction result is POST to your site and your site responds with HTML which E-xact later displays. The response is usually a custom receipt. If response is not received in 25 seconds, E-xact will display its own receipt.
+	You can give a dynamic relay response url in the submit form rather than a static url setup in E-xact Payment Page setting page. The form field is x_relay_url
+	If replay response is required, in submit form you should add a hidden form field
+	<input name="x_relay_response" value="TRUE" type="hidden">
+	Silent Post
+	Same as replay response but the response is ignored. The sequence of silent post and relay response is not guaranteed!
+
+Chase Payment Gateway Form
+Create a Payment Page and you will get transaction_key, page_id, response_key
+
+Do not expose transaction_key, page_id, response_key!!
+
+Form field for submit (required fields)
+x_login :: page_id
+x_invoice_num :: your internal order id $order_number
+x_fp_sequence :: Random number e.g. your internal order id. $order_number
+x_fp_timestamp :: Requests expire after 15 minutes. Time in seconds. php :: time(). $x_fp_timestamp
+x_amount :: positive number. $x_amount
+x_fp_hash :: string. 
+	HMAC-MD5 hash from the transaction_key and concatenation of the values for x_login, x_fp_sequence, x_fp_timestamp, x_amount and (if given) x_currency_code. Separated by ^.
+	php : 
+	hash_hmac('MD5', 
+	$page_id. '^' . $order_number. '^' . $x_fp_timestamp. '^' . $x_amount. '^CAD'
+	, $transaction_key);
+x_show_form :: 'PAYMENT_FORM', constant
+
+Post back data and fields
+https://hostedcheckout.zendesk.com/hc/en-us/articles/114094066114#10.1
+x_response_code
+	1 for approved, 2 for process but not approved, 3 for not processed including cancel
+	
+x_response_reason_code
+	1 for approved, 2 for declined, 3 for error
+x_response_reason_text
+
+x_invoice_num :: the same as x_fp_sequence in TandT case
+x_fp_sequence
+
+x_test_request
+	boolean. If it's in test mode, true
+exact_ctr
+	string. Receipt string. Successful or failed, always return a string. Always show!
+exact_issname
+	string. Issuing Bank name
+exact_issconf
+	string. Issuing Bank Confirmation Number
+x_fp_timestamp
+x_MD5_Hash
+
+You need to validate the post back value if 
+$_POST['x_MD5_Hash'] == md5($response_key. $_POST['x_login'] . $_POST['x_trans_id'] . $_POST['x_amount']);
 
 ** W3C
 <<<W3C>>>
