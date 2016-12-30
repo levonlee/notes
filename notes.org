@@ -8798,6 +8798,43 @@ if (function_exists('newrelic_ignore_transaction')) {
 #+END_EXAMPLE
 
 * Database
+** Basics
+*** Modeling Optimization
+First normal form (1NF) :: every field should have one value. (Not comma separated values)
+
+Second normal form (2NF) :: If you have multiple primary keys (composite keys) in a table, 
+every field should be unique to all of those composite keys.
+e.g. CourseID and Date are 2 primary keys in table A. Field CourseTitle is unique to courseID. courseTitle should not be in 
+table A. Create a new table B to include CourseID and CourseTitle.
+
+Third normal form (3NF) :: Say you have CourseID, Date, Room, Seats in table A.
+Seats is unique to Room. You should create table B to hold Room, Seats and include just Room in table A.
+
+*** Transaction and ACID
+- Atomic :: All parts involved should be either success or failure as a whole.
+- Consistent :: cannot result in a situation that violates any of the integrity rules.
+- Isolated :: all relevant data is locked until the transaction is finished. (Race condition)
+ - Pessimistic Locking :: Once locked, others can't even read (be refused or have to wait)
+ - Optimistic Locking :: Once one request lock data, other requests can read 
+but roll back when try to write to db while lock is encountered.
+- Durable :: Once success, always success.
+
+*** Index
+One table can have only one clustered index which is by default the primary key column.
+You may make another column as non-clustered index. 
+Each non-clustered index creates a new table which includes the clustered index column and the new column (sorted).
+When a new row is added to the main table, a new row is also added to each non-cluster indexed table.
+
+** Access
+*** Troubleshooting
+**** "Record is too large"
+This is because the size of a single record is around 2K. 
+You can change the data type for some of fields to Long Text (>Access 2013) or Memo (<= Access 2000)
+
+**** "Application uses a value of the wrong type for the current operation"
+It's possibly due to you are using Microsoft Access with Unicode driver in ColdFusion and you insert to a memo or long text field. 
+~cf_sql_longvarchar~ doesn't work. You should use ~<cfqueryparam cfsqltype="CF_SQL_CLOB" value="#description#">~ instead. 
+
 ** MySQL
 *** Version, Settings
 # In console
@@ -8965,10 +9002,10 @@ bcp "Select * from fullDatabasename.dbo.tableName" queryout "c:\aFolder\aFile.cs
 
 Table name in full :: DEDP225.[dev.todaystrucking].dbo.[tblDocument]
 
-| c | Ascii                    |
-| t | field terminator. Comma  |
-| r | row terminator. New line |
-| T | trusted connection       |
+| c | Ascii                            |
+| t | field terminator. Comma          |
+| r | row terminator. New line :: "\n" |
+| T | trusted connection               |
 
 **** Escape % if bcp is in batch file
 #+BEGIN_EXAMPLE
@@ -10720,6 +10757,8 @@ Click "Your benefits & exams" then "Start a previously scheduled online proctore
 * TODO Lynda Bootstrap 3: Advanced Web Development
 * TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
 * TODO Learn SPF and whitelabel
+* TODO Learn tool Zeplin
+* TODO Blowfish hashing algorithm using random salt which is stored in db
 * TODO Learn ARIA html:ARIA
 * TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
 * TODO Lynda Agile Project Management
