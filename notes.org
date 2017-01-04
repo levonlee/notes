@@ -8943,6 +8943,30 @@ SELECT * FROM (SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts') LIM
 
 Remember if the outter query has LIMIT, then it will overwrite any subquery's LIMIT
 
+*** EXISTS
+If only checking existance in other tables but not returning any data from other tables, always use `EXISTS` or `NOT EXISTS`
+
+The following returns nodes that have field_dealer = 101615 and field_ad_status = active but not returning any fields from 
+tables field_data_*.
+
+#+BEGIN_EXAMPLE
+SELECT count(*) FROM node AS n
+WHERE n.type='ad_listing'
+AND n.status = 1
+AND EXISTS (
+ SELECT *
+ FROM field_data_field_dealer d
+ INNER JOIN node nsub ON nsub.nid=d.entity_id AND d.bundle='ad_listing' AND d.field_dealer_target_id IN (101615)
+ WHERE nsub.nid=n.nid
+)
+AND EXISTS (
+ SELECT *
+ FROM field_data_field_ad_status s
+ INNER JOIN node nsub ON nsub.nid=s.entity_id AND s.bundle='ad_listing' AND s.field_ad_status_value = 'active'
+ WHERE nsub.nid=n.nid
+)
+#+END_EXAMPLE
+
 ** MSSQL
 *** Modify column values if exist (CASE WHEN)
 #+BEGIN_EXAMPLE
