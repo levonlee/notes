@@ -1148,8 +1148,38 @@ if (!empty($_r['node'])) {
 #+END_EXAMPLE
 
 *** Update a field of an entity only
-https://www.urbaninsight.com/2011/10/24/saving-nodes-fields-without-saving-node-itself
 
+node_save could invoke other hooks and hence cause errors in saving a field value
+#+BEGIN_EXAMPLE
+$node = node_load($nid);
+$node->field_fieldname[LANGUAGE_NONE][0]['value'] = 'some value';
+node_save($node);
+#+END_EXAMPLE
+
+Use field_attach_update() instead
+#+BEGIN_EXAMPLE
+$node = node_load($nid);
+$node->field_fieldname[LANGUAGE_NONE][0]['value'] = 'some value';
+
+unset($node->field_unwanted_1); // remove unwanted fields
+field_attach_update('node', $node);
+#+END_EXAMPLE
+
+Without node_load
+#+BEGIN_EXAMPLE
+$node = new stdClass();
+$node->id = $id_value; // node id
+$node->type = $content_type; // aka content type
+
+$node->field_fieldname[LANGUAGE_NONE][0]['value'] = 'some value';
+field_attach_update('node', $node);
+#+END_EXAMPLE
+
+May be better to call field_attach_presave which node_save does
+#+BEGIN_EXAMPLE
+field_attach_presave('node', $node);
+field_attach_update('node', $node);
+#+END_EXAMPLE
 
 ** Entityform
 D7 uses entityform module. D8 is called EForm.
