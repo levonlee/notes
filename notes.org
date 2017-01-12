@@ -784,15 +784,6 @@ drush_print_r($array);
 
 *** Pantheon Drush
 
-** Database
-*** Close Comment for Existing Nodes
-0 = No, 1 = Closed (read only), 2 = Open (Read/Write)
-#+BEGIN_EXAMPLE
-UPDATE node, node_revision
-SET node.comment = 1, node_revision.comment = 1
-WHERE node_revision.nid = node AND node.type = 'article'
-#+END_EXAMPLE
-
 ** Views
 *** UI 
 **** Contextual filter with term name not term id
@@ -986,6 +977,73 @@ $an_action :: array
 - 'behavior' :: array. VBO uses one of views_property, changes_property, creates_property, deletes_property
 
 [[https://www.drupal.org/node/2052067#permissions][VBO Permissions]]
+
+** Database
+*** Close Comment for Existing Nodes
+0 = No, 1 = Closed (read only), 2 = Open (Read/Write)
+#+BEGIN_EXAMPLE
+UPDATE node, node_revision
+SET node.comment = 1, node_revision.comment = 1
+WHERE node_revision.nid = node AND node.type = 'article'
+#+END_EXAMPLE
+
+*** Structure
+**** node
+nid* :: INT
+type :: string, e.g. article, 
+title
+
+**** field_data_body
+entity_type* :: string, e.g. node
+deleted* :: int, 0 not deleted
+entity_id* :: int, e.g. node id
+language* :: string
+delta* :: int, multiple values, start as 0
+bundle :: string, e.g. node type article
+revision_id :: int
+
+body_value :: longtext
+body_summary :: longtext
+
+**** field_data_field_custom_term_reference
+field_custom_term_referecen_tid :: int
+
+**** taxonomy_term_data
+tid* :: int
+name :: string, term name
+
+**** field_data_field_contributor (entity reference)
+field_contributor_target_id :: int
+
+**** url_alias
+pid* :: int, path id
+source :: string, e.g. node/2, taxonomy/term/11
+alias :: string
+language :: string, e.g. und
+
+**** Raw Query
+#+BEGIN_EXAMPLE
+SELECT n.title,
+  b.body_value,
+  GROUP_CONCAT(t.name SEPARATOR ', ') AS Category,
+  IFNULL(na.title,'') AS author,
+  CONCAT('http://domain.com/',u.alias) as url,
+  FROM_UNIXTIME(n.created) as post_date
+
+FROM node AS n
+  INNER JOIN field_data_body b ON b.entity_id=n.nid AND b.delta=0
+  INNER JOIN field_data_field_category c ON c.entity_id=n.nid AND c.deleted=0
+  LEFT JOIN taxonomy_term_data t ON t.tid = c.field_category_tid
+  INNER JOIN field_data_field_contributor a ON a.entity_id=n.nid AND a.deleted=0
+  LEFT JOIN node as na ON na.nid=a.field_contributor_target_id
+  INNER JOIN url_alias u ON u.source = concat('node/',n.nid)
+
+WHERE FROM_UNIXTIME(n.created)
+      BETWEEN '2014-01-01 00:00:00' AND '2014-12-31 23:59:59'
+  AND n.type ='article'
+GROUP BY n.title, b.body_value,na.title, u.alias, n.created
+ORDER BY n.created DESC
+#+END_EXAMPLE
 
 ** Query
 Use db_query as much as possible. db_select is slow because it calls alter hooks.
@@ -8922,8 +8980,30 @@ UNSIGNED :: contains 0 and positive
 1 Year ago
 post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)
 
-A specific date
+Date comparison
+
+#+BEGIN_EXAMPLE
 CAST(post_date AS DATE) > '2014-01-01'
+FROM_UNIXTIME(intTime) > '2014-01-01'
+FROM_UNIXTIME(intTime) BETWEEN '2014-01-01 00:00:00' AND '2014-12-31 23:59:00'
+#+END_EXAMPLE
+
+Unix Time
+#+BEGIN_EXAMPLE
+DATE_FORMAT(FROM_UNIXTIME(intTime),'%Y-%m-%d %H:%i:%s') :: default date format
+UNIX_TIMESTAMP(NOW())
+#+END_EXAMPLE
+
+<<<MySQL String>>>
+Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values.
+#+BEGIN_EXAMPLE
+CONCAT_WS(',', colA, colB, 'Column C Value')
+WHERE url_alias.source = CONCAT('node/', n.nid)
+#+END_EXAMPLE
+
+<<<MySQL Null>>>
+IFNULL(column_name, 0)
+WHERE column_name IS NOT NULL
 
 *** REGEXP
 <<<MySQL REGEX>>>
@@ -9000,6 +9080,19 @@ AND EXISTS (
  WHERE nsub.nid=n.nid
 )
 #+END_EXAMPLE
+
+*** Concatenate values of a column across multiple rows about the same record
+
+#+BEGIN_EXAMPLE
+SELECT s.id, s.name, s.otherColumn, 
+GROUP_CONCAT(DISTINCT testScore.score ORDER BY testScore.testDate SEPARATOR ', ') AS student_scores
+FROM student s 
+     LEFT JOIN testScore ON testScore.sid = s.id
+ORDER BY s.name
+GROUP BY s.id, s.name, s.otherColumn
+#+END_EXAMPLE
+
+GROUP_CONCAT only concatenates non-null values. If all values are null, null will be returned.
 
 ** MSSQL
 *** Modify column values if exist (CASE WHEN)
@@ -10258,6 +10351,8 @@ and
 Install KB3138612 and KB3145739 to boost Windows Update
 
 *** Batch Script
+F7 in command prompt to review command history for the current window
+
 **** Setting
 Usually at the top of a .bat file. @ in front makes the command apply to itself only
 @echo off :: turn off output of the command itself
