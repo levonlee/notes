@@ -1750,6 +1750,39 @@ $result => array(
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
 WP CLI Pantheon
 
+*** WP CLI Install, Upgrade
+
+#+BEGIN_EXAMPLE
+# Assuming you are at ~ folder
+curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+# Check phar
+php wp-cli.phar --info
+chmod +x wp-cli.phar
+# GoDaddy Shared Hosting doesn't allow sudo. Ignore this for GoDaddy
+# sudo mv wp-cli.phar /usr/local/bin/wp
+alias wp='~/wp-cli.phar'
+echo "alias wp='~/wp-cli.phar'" >> .bashrc
+source .bashrc
+#+END_EXAMPLE
+
+Set Global parameters in wp-cli.yml under Wordpress root folder http://wp-cli.org/config/
+Use -- in front for wp command
+#+BEGIN_EXAMPLE
+# Very important. To avoid error: $_SERVER['HTTP_HOST'] 
+url: http://www.yourwebsite.com
+#+END_EXAMPLE
+
+Use --skip-plugins to avoid errors while loading plugins that cause this kind of error
+Fatal error: Uncaught Error: Call to a member function xxx on null
+
+Check wp-cli installation
+~wp --info~, ~wp plugin list --debug~ or ~wp plugin list --skip-plugins --debug~
+
+If you see this error, time to upgrade WP CLI
+Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-includes/post.php on line 1031
+
+~sudo wp cli update~
+
 *** Global Parameters
 - --debug
 - --quiet
@@ -1762,7 +1795,7 @@ List users
 terminus wp 'user list' --site=<site> --env=<env>=
 
 Add a user
-wp user create lili li@newcom.ca --user_pass=letterandnumbers --role=administrator
+wp user create lili li@xxx.ca --user_pass=letterandnumbers --role=administrator
 
 Update password
 wp user update lili --user_pass=lettersandnumbers
@@ -1771,6 +1804,10 @@ Give role
 wp user add-role lili administrator
 #+END_EXAMPLE
 
+*** Core
+wp core version
+wp core update
+
 *** Plugin
 [[https://wordpress.org/plugins][Wordpress Official Plugin Directory]]
 
@@ -1778,6 +1815,15 @@ wp plugin install fly-dynamic-image-resizer
 
 Options
 - --activate :: activate after installation
+
+wp plugin status
+wp plugin update akismet
+wp plugin activate plugin_name
+wp plugin uninstall Plugin_name
+
+*** Theme
+wp theme status
+
 ** Template Tags
 wp-includes/xxx-template.php
 *** post-thumbnail <<<wp:t:thumbnail>>>
