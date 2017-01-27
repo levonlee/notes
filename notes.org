@@ -7929,6 +7929,74 @@ $(window).resize(function() {
   consoel.log($(window).width()); // integer without unit
 });
 
+** jQuery UI: Dialog
+#+BEGIN_EXAMPLE
+jQuery(function(){
+  jQuery("#interstitial").dialog({
+    width: 'auto', /* no scrollbar, auto fit content */
+    height:'auto',
+    resizable: false,
+    draggable: false, /* movable */
+    closeOnEscape: true,
+
+    /* Add extra buttons below the content
+    buttons: [{
+      text: 'ok',
+      icons: {primary: "ui-icon-closethick"},
+      click: function() {jQuery(this).dialog("close");}
+    }],
+    */
+
+    modal: true, /* add background to isolate the modal box */
+    create: function (event, ui) {
+      jQuery("#ui-dialog-title-dialog").hide();
+      /* custom background/overlay */
+      jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
+      /* title bar is transparent */
+      jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
+
+      jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
+      // Change the default title & close button to a custom link
+      //jQuery(".ui-dialog-titlebar").html('<a href="#" role="button"><span class="myCloseIcon" style="color:white;">X close</span></a>')
+    },
+    open: function() {
+      /* custom background */
+      jQuery('.ui-widget-overlay').addClass('custom-overlay');
+
+      /* Customize the default close button: only X displays */
+      jQuery(this).closest(".ui-dialog")
+        .find(".ui-dialog-titlebar-close")
+        .removeClass("ui-dialog-titlebar-close")
+        .html("<span class='ui-button-icon-primary ui-icon ui-icon-closethick'></span>");
+      jQuery(".ui-dialog-titlebar button").css({"border":"none"});
+
+      /* Close dialog when click outside */
+      jQuery('.ui-widget-overlay').bind('click',function(){
+        jQuery("#interstitial").dialog('close');
+      })
+    },
+    close: function() {
+      /* custom background/overlay */
+      /*
+      * .ui-widget-overlay.custom-overlay
+       {
+       background-color: black;
+       background-image: none;
+       opacity: 0.9;
+       }
+      * */
+      jQuery('.ui-widget-overlay').removeClass('custom-overlay');
+    }
+  });
+
+  /* bind events for custom buttons created
+  jQuery("span.myCloseIcon").click(function() {
+    jQuery("#interstitial").dialog( "close" );
+  });
+  */
+});
+#+END_EXAMPLE
+
 * SEO
 ** Google Analytics
 Under Admin, you can build Views. Views can have Filters. Views collect data.
