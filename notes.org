@@ -6145,6 +6145,30 @@ async="false" is needed.
 });
 #+END_EXAMPLE
 
+** External Script, document.write
+Loading external script use this
+
+#+BEGIN_EXAMPLE
+(function () {
+  var nodeScript = document.createElement('script');
+  nodeScript.type = 'text/javascript';
+  nodeScript.src = 'http://otherdomain.com/a.js';
+  var node = document.getElementById('interstitial');
+  node.appendChild(node);
+
+  // Add to <head>
+  // var node = document.getElementsByTagName('script')[0];
+  // node.parentNode.insertBefore(gads, node);
+})();
+#+END_EXAMPLE
+
+External script cannot use document.write to modify root DOM window (can be used to modify DOM in an iframe)
+You will need to use these to modify the root DOM window
+#+BEGIN_EXAMPLE
+// .appendChild(), .insertBefore(), .innerHTML
+// jQuery ~.html('html')~ is equivalent to javascript ~$('').innerHTML ='html'~
+#+END_EXAMPLE
+
 ** Initialization
 <<<js:Initialization>>>
 Always initialize variables at the top including vars in loops
@@ -7704,8 +7728,10 @@ timedCount();
 A parent window can have multiple iframes and iframes are loaded from other domain.
 
 #+BEGIN_EXAMPLE
+// Post message from iFrame to parent Window
 // In iframe
-parent.postMessage('the message');
+parent.postMessage('the message','*');
+// or window.top.postMessage
 
 // In parent window
 function receiveMessage(event) {
@@ -7713,6 +7739,24 @@ function receiveMessage(event) {
  console.log(event.data);
 }
 window.addEventListener("message", receiveMessage, false);
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+// Post message from parent window to iFrame
+// In parent window
+window.onload = function() {
+  var receiver = document.getElementById("#iFrameID").contentWindow;
+  receiver.postMessage('Hello', 'http://iframe.src.domain'); // '*' for any domain of any receiver
+}
+
+// In iFrame
+window.onload = function() {
+  function receiveMessage(e) {
+    if (e.origin !== "http://parent.window.domain") return;
+    alert(e.data);
+  }
+  window.addEventListener('message', receiveMessage);
+}
 #+END_EXAMPLE
 
 ** Dynamic iframe height
@@ -7838,6 +7882,11 @@ $('li').each(function(i) {
 });
 #+END_EXAMPLE
 
+First matched element
+#+BEGIN_EXAMPLE
+var iframeId = $("#div-iframe").find('iframe').get(0).id;
+#+END_EXAMPLE
+
 ** iFrame refer to parent
 #+BEGIN_EXAMPLE
 var parentVideoDiv = parent.jQuery('#videoplayer').parent('.the-content');
@@ -7930,6 +7979,15 @@ $(window).resize(function() {
 });
 
 ** jQuery UI: Dialog
+
+#+BEGIN_EXAMPLE
+<div id="interstitial">
+ <!-- script tag inside the container will be run twice! 
+      Consider remove script tag before .dialog and reattach javascript later
+ -->
+</div>
+#+END_EXAMPLE
+
 #+BEGIN_EXAMPLE
 jQuery(function(){
   jQuery("#interstitial").dialog({
@@ -9867,6 +9925,80 @@ googletag.cmd.push(function() {
 });
 #+END_EXAMPLE
 
+** Macro in Third Party Code, Custom Code
+CACHEBUSTER :: time in integer
+CLICK_URL_UNESC :: normal click macro
+CLICK_URL_ESC :: escaped click macro (&, ? , %)
+
+VIEW_URL_UNESC, VIEW_URL_ESC :: required in Custom Code
+
+<<<dfp:third party code>>>
+Third Party Code with macro automatically inserted
+#+BEGIN_EXAMPLE
+<!-- url parameter ncu is inserted, ord's [timestamp] is replaced by CACHEBUSTER -->
+<script src="http://bs.serving-sys.com/Serving/adServer.bs?c=28&cn=display&pli=1074030166&w=728&h=90&ncu=$$%%CLICK_URL_UNESC%%$$&ord=%%CACHEBUSTER%%&ifrm=-1&z=0"></script>
+<noscript>
+<!-- insert CLICK_URL_UNESC in href -->
+<a href="%%CLICK_URL_UNESC%%http://bs.serving-sys.com/Serving/adServer.bs?cn=brd&pli=1074030166&Page=&Pos=944448101" target="_blank">
+<img src="http://bs.serving-sys.com/Serving/adServer.bs?c=8&cn=display&pli=1074030166&Page=&Pos=944448101" border=0 width=728 height=90></a>
+</noscript>
+#+END_EXAMPLE
+
+Sometimes you need to have DFP inserted the macros in third party code mode, and then use that in Custom Code.
+
+** Creative Type: HTML5
+Upload zip file or single html file
+
+** Creative Type: DoubleClick Tag 
+Basic Redirect URL
+https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=320x548
+
+There's also a tag called DCM tag. Convert the URL in DCM tag to the basic Redirect URL.
+May also deploy DCM tag as a custom creative. But you have to add the DFP macros. [[https://support.google.com/dfp_premium/answer/1656861?hl%3Den&ref_topic%3D28160][Instructions]]
+
+#+BEGIN_EXAMPLE
+Iframe
+<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
+    data-dcm-rendering-mode='script'
+    data-dcm-https-only
+    data-dcm-resettable-device-id=''
+    data-dcm-app-id=''>
+  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+</ins>
+
+Javascript
+<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
+    data-dcm-rendering-mode='script'
+    data-dcm-https-only
+    data-dcm-resettable-device-id=''
+    data-dcm-app-id=''>
+  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+</ins>
+#+END_EXAMPLE
+
+DCM tag has a legacy form
+#+BEGIN_EXAMPLE
+Iframe
+<IFRAME SRC=""https://ad.doubleclick.net/ddm/adi/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" WIDTH=300 HEIGHT=250 MARGINWIDTH=0 MARGINHEIGHT=0 HSPACE=0 VSPACE=0 FRAMEBORDER=0 SCROLLING=no BORDERCOLOR='#000000'>
+<SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;abr=!ie;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
+</SCRIPT>
+<NOSCRIPT>
+<A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp]?"">
+<IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789/B10762433.143897886;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
+</NOSCRIPT>
+</IFRAME>
+
+Javascript
+<SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
+</SCRIPT>
+<NOSCRIPT>
+<A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp]?"">
+<IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
+</NOSCRIPT>
+#+END_EXAMPLE
+
 ** Wallpaper, Site Skin
 
 On DFP
@@ -10219,6 +10351,101 @@ media-w1200-w992.css
 }
 #+END_EXAMPLE
 
+** Interstitial Ad
+Load third party code into 1x1 floating ad unit. Insert DFP macro as a third party code first. Refer to dfp:third party code
+
+On DFP, Custom Code :: postMessage to website to create jQuery UI dialog and later receives a message to create content inside the iframe
+#+BEGIN_EXAMPLE
+<script type="text/javascript">
+  (function() {
+    'use strict';
+    var temp = '%%VIEW_URL_UNESC%%'; // Custom Code requires VIEW_URL_UNESC or VIEW_URL_ESC macro..
+    window.onload = function() {
+      function receiveMessage(e) {
+        if (e.data == 'load_interstitial_ad') {
+          var html = '<div style="width:640px;height:480px;">' +
+              '<script src="insert third party code"'+'>'+'</'+'script>'+
+              '<noscript>' +
+              '<a href="insert_third_party_code" target="_blank"><img src="insert_third_party_code" border=0 width=640 height=480></a>'+
+              '</noscript>'+ 
+            '</div>';
+          document.write(html);
+        }
+      }
+      window.addEventListener('message', receiveMessage);
+      var sendData = {action:"dfp_load_interstitial_ad", width:"640", height:"480"};
+      parent.postMessage(sendData,'*');
+    }
+  })();
+</script>
+#+END_EXAMPLE
+
+On website :: once received message from iframe, load internal script and only load it once
+#+BEGIN_EXAMPLE
+var dfpInterstitial = {};
+dfpInterstitial.loadCount=0;
+function newcomReceiveMessage(e) {
+  if (e.data == 'dfp_load_interstitial_ad' && dfpInterstitial.loadCount == 0) {
+    dfpInterstitial.loadCount++;
+    dfpInterstitial.width =e.data.width;
+    dfpInterstitial.height =e.data.height;
+    var jsLink = jQuery("<script type='text/javascript' src='http://yourwebsite.io/interstitial.js'>");
+    jQuery('head').append(jsLink);
+  }
+}
+window.addEventListener('message', newcomReceiveMessage, false);
+#+END_EXAMPLE
+
+On website, interstitial.js :: make ad unit div as a dialog using jQuery UI.
+jQuery UI Dialog runs script inside the container twice. The script is setup in DFP which only posts or receives message.
+Even though the same message is posted twice but the dfpInterstitialCount ensures this javascript only runs once.
+#+BEGIN_EXAMPLE
+jQuery(function(){
+  var targetDialog = '#div-gpt-ad-1403025754774-0-oop';
+  var iframeId = jQuery(targetDialog).find('iframe').get(0).id;
+  var adWidth = dfpInterstitial.width;
+  var adHeight = dfpInterstitial.height;
+
+  jQuery(targetDialog).dialog({
+    width: 'auto',
+    height: 'auto',
+    resizable: false,
+    draggable: false,
+    closeOnEscape: true,
+    modal: true,
+    create: function (event, ui) {
+      jQuery("#ui-dialog-title-dialog").hide();
+      jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
+      jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
+      jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
+      jQuery(targetDialog).find('iframe').width(adWidth);
+      jQuery(targetDialog).find('iframe').height(adHeight);
+    },
+    open: function() {
+      jQuery('.ui-widget-overlay').addClass('custom-overlay');
+      jQuery(this).closest(".ui-dialog")
+        .find(".ui-dialog-titlebar-close")
+        .removeClass("ui-dialog-titlebar-close")
+        .html("<span class='ui-button-icon-primary ui-icon ui-icon-closethick'></span>");
+      jQuery(".ui-dialog-titlebar button").css({"border":"none"});
+      jQuery('.ui-widget-overlay').bind('click',function(){
+        jQuery(targetDialog).dialog('close');
+      })
+    },
+    close: function() {
+      jQuery('.ui-widget-overlay').removeClass('custom-overlay');
+    }
+  });
+
+  setTimeout(function () {
+    jQuery(targetDialog).show();
+    var receiver = document.getElementById(iframeId).contentWindow;
+    receiver.postMessage('load_interstitial_ad', '*');
+  }, 3000);
+
+});
+#+END_EXAMPLE
+
 ** Pre-roll or Linear Video Ad
 - The ad unit should have a Video (VAST) size: 640x360v
 - In the line item, select the same video size as the inventory size and also select the ad unit
@@ -10259,56 +10486,6 @@ Associate this native format with an ad unit. A native format is basically a HTM
 which can be later defined when you upload a creative of Native type to a line item.
 Create a line item with Inventory sizes = Standard and Native format, and target the ad unit.
 Upload a creative of Native type. Specify the placeholders.
-
-** Creative Type: DoubleClick Tag 
-Basic Redirect URL
-https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=320x548
-
-There's also a tag called DCM tag. Convert the URL in DCM tag to the basic Redirect URL.
-May also deploy DCM tag as a custom creative. But you have to add the DFP macros. [[https://support.google.com/dfp_premium/answer/1656861?hl%3Den&ref_topic%3D28160][Instructions]]
-
-#+BEGIN_EXAMPLE
-Iframe
-<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
-    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
-    data-dcm-rendering-mode='script'
-    data-dcm-https-only
-    data-dcm-resettable-device-id=''
-    data-dcm-app-id=''>
-  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-</ins>
-
-Javascript
-<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
-    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
-    data-dcm-rendering-mode='script'
-    data-dcm-https-only
-    data-dcm-resettable-device-id=''
-    data-dcm-app-id=''>
-  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-</ins>
-#+END_EXAMPLE
-
-DCM tag has a legacy form
-#+BEGIN_EXAMPLE
-Iframe
-<IFRAME SRC=""https://ad.doubleclick.net/ddm/adi/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" WIDTH=300 HEIGHT=250 MARGINWIDTH=0 MARGINHEIGHT=0 HSPACE=0 VSPACE=0 FRAMEBORDER=0 SCROLLING=no BORDERCOLOR='#000000'>
-<SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;abr=!ie;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
-</SCRIPT>
-<NOSCRIPT>
-<A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp]?"">
-<IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789/B10762433.143897886;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
-</NOSCRIPT>
-</IFRAME>
-
-Javascript
-<SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
-</SCRIPT>
-<NOSCRIPT>
-<A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp]?"">
-<IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
-</NOSCRIPT>
-#+END_EXAMPLE
 
 ** Events
 
