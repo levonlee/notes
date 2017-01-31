@@ -7979,11 +7979,13 @@ $(window).resize(function() {
 });
 
 ** jQuery UI: Dialog
+<<<jqueryui:dialog>>>
 
 #+BEGIN_EXAMPLE
 <div id="interstitial">
- <!-- script tag inside the container will be run twice! 
-      Consider remove script tag before .dialog and reattach javascript later
+ <!-- script tag inside the container will be run every time the dialog is opend! 
+      Consider remove script tag before .dialog and reattach javascript later.
+      Content inside the container will be removed and then added to div.ui-dialog at the bottom of DOM.
  -->
 </div>
 #+END_EXAMPLE
@@ -8016,6 +8018,8 @@ jQuery(function(){
       jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
       // Change the default title & close button to a custom link
       //jQuery(".ui-dialog-titlebar").html('<a href="#" role="button"><span class="myCloseIcon" style="color:white;">X close</span></a>')
+     
+      // You can still load/modify the content here and the width/height will still be auto fit
     },
     open: function() {
       /* custom background */
@@ -10354,6 +10358,38 @@ media-w1200-w992.css
 ** Interstitial Ad
 Load third party code into 1x1 floating ad unit. Insert DFP macro as a third party code first. Refer to dfp:third party code
 
+#+BEGIN_EXAMPLE
+// Outside of the div
+var dfpSlots = {}; // non single request mode
+
+googletag.cmd.push(function() {
+ // non single request mode
+ dfpSlots.floating = googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads()); 
+
+ // single request mode
+ googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads());
+
+ googletag.pubads().addEventListener('slotRenderEnded', function (event) {
+   if (event.slot.getAdUnitPath() === '/123456/floating') {
+     document.getElementById('interstitial').style.display = 'none';
+   }
+ });
+
+ googletag.pubads().addEventListener('slotRenderEnded', function (event) {
+   if (event.slot.getAdUnitPath() === '/123456/TT_floating') {
+     document.getElementById('interstitial').style.display = 'none';
+   }
+ });
+
+});
+
+<div id='interstitial'>
+  <script type='text/javascript'>
+    googletag.cmd.push(function() { googletag.display('interstitial'); });
+  </script>
+</div>
+#+END_EXAMPLE
+
 On DFP, Custom Code :: postMessage to website to create jQuery UI dialog and later receives a message to create content inside the iframe
 #+BEGIN_EXAMPLE
 <script type="text/javascript">
@@ -10396,12 +10432,12 @@ function newcomReceiveMessage(e) {
 window.addEventListener('message', newcomReceiveMessage, false);
 #+END_EXAMPLE
 
-On website, interstitial.js :: make ad unit div as a dialog using jQuery UI.
+On website, interstitial.js :: make ad unit div as a dialog using jQuery UI. jqueryui:dialog
 jQuery UI Dialog runs script inside the container twice. The script is setup in DFP which only posts or receives message.
 Even though the same message is posted twice but the dfpInterstitialCount ensures this javascript only runs once.
 #+BEGIN_EXAMPLE
 jQuery(function(){
-  var targetDialog = '#div-gpt-ad-1403025754774-0-oop';
+  var targetDialog = '#interstitial';
   var iframeId = jQuery(targetDialog).find('iframe').get(0).id;
   var adWidth = dfpInterstitial.width;
   var adHeight = dfpInterstitial.height;
@@ -10418,6 +10454,14 @@ jQuery(function(){
       jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
       jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
       jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
+
+      // In Single Request Mode, every time .display() is called, the div will refilled with new ad
+      // In Non-Single-request mode, you need to do .refresh(). 
+      if (typeof dfpSlots !== "undefined" && typeof dfpSlots.floating !== "undefined") {
+        googletag.cmd.push(function() {
+          googletag.pubads().refresh([dfpSlots.floating]);
+        });
+      }
       jQuery(targetDialog).find('iframe').width(adWidth);
       jQuery(targetDialog).find('iframe').height(adHeight);
     },
