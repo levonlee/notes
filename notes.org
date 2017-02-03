@@ -2714,6 +2714,13 @@ term_taxonomy_id :: int, 0
 term_order :: int, 0
 
 ** Plugins
+*** Custom Plugin
+https://codex.wordpress.org/Plugin_Resources
+https://codex.wordpress.org/Writing_a_Plugin
+https://developer.wordpress.org/plugins/the-basics/#getting-started
+
+Use hyphen for plugin name and folder `wp_content/plugins/li-custom/li-custom.php` 
+
 *** Resize image on the fly
 <<<fly-dynamic-image-resizer>>>
 
@@ -2776,6 +2783,49 @@ $args = array('output'=>'normal', 'url'=>'true', 'size'=>'medium', 'resize'=>'pr
 #+END_EXAMPLE
 
 Refer to WP Types Custom Field Checkbox and WP Meta Query
+
+*** Super Cache (SuperCache)
+Warning: include(/var/www/html/wp-content/plugins/wp-super-cache/wp-cache-base.php): failed to open stream
+
+If you encounter this problem, your WP_CACHE cache folder is not set properly. Check `wp-config.php`. You should see 
+
+#+BEGIN_EXAMPLE
+define('WP_CACHE',true);
+define('WPCACHEHOME', ABSPATH. 'wp-content/plugins/wp-super-cache/');
+#+END_EXAMPLE
+
+There's another place where the cache folder is defined: `$cache_path` in `wp-content/wp-cache-config.php` 
+
+Uninstall
+To manually uninstall:
+
+	• Turn off caching on the plugin settings page and clear the cache.
+	• Deactivate the plugin on the plugins page.
+	• Remove the WP_CACHE define from wp-config.php. It looks like define( 'WP_CACHE', true );
+	• Remove the Super Cache mod_rewrite rules from your .htaccess file.
+	• Remove the files wp-content/advanced-cache.php and wp-content/wp-cache-config.php
+	• Remove the directory wp-content/cache/
+	• Remove the directory wp-super-cache from your plugins directory.
+
+If all else fails and your site is broken
+	• Remove the WP_CACHE define from wp-config.php. It looks like define( 'WP_CACHE', true );
+	• Remove the rules (see above) that the plugin wrote to the .htaccess file in your root directory.
+	• Delete the wp-super-cache folder in the plugins folder.
+	• Optionally delete advanced-cache.php, wp-cache-config.php and the cache folder in wp-content/.
+
+*** Yoast SEO (wordpress-seo)
+**** Open Graph
+Use at least 200x200 pixels image for `og:image`
+You need to resave the post/article on WP first (to prevent WP Super Cache as FB crawler gets to the page differently) and then run Facebook Open Graph Object Debugger
+
+*** Disqus
+If you receive a lot of errors about dsq_sync_forum in Apache logs, it is caused by Disqus tries to sync with WP comments so frequently.
+
+First in WP Disqus setting, check "Disable automated comment importing"
+
+Empty all cron rows in wp-options table `UPDATE wp_options SET option_value='' WHERE option_name='cron';"`
+
+https://wordpress.org/support/topic/high-server-load-and-dsq_sync_forum-problem?replies=6
 
 ** Installation Language
 Download additional language packs from [[https://make.wordpress.org/polyglots/teams/][here]]
@@ -5848,7 +5898,6 @@ Required properties for every page
 - og:url
 
 <meta property="og:title" content="" />
-...
 
 ** Email
 
