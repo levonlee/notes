@@ -1283,6 +1283,138 @@ field_attach_presave('node', $node);
 field_attach_update('node', $node);
 #+END_EXAMPLE
 
+*** entity_metadata_wrapper
+
+Get a field value of an entity (node). Add a wrapper first `$_wrapper=entity_metadata_wrapper('node',$node);`.
+$node can be a node/entity object or the node/entity id. Entity API module is needed.
+Then list all fields using `$_wrapper->getPropertyInfo();`
+Then get a specific field `$_wrapper->field_name->value();` or `->raw();`
+// Unified way of getting $node->title, $user->name, ...
+$wrapper->label(); or $wrapper->title->value();
+// Unified way of getting $node->nid, $user->uid, ...
+$wrapper->getIdentifier();
+// Unified way of getting $node->type, ...
+$wrapper->getBundle();
+
+// Text field
+$old_value = $wrapper->field_my_text->value();
+if (isset($old_value)) {
+// non-null, could be empty or 0
+}
+$wrapper->field_my_text = 'new value';
+
+// Longtext
+$wrapper->body->value(); // Array of: value, safe_value, format, and optionally summary + safe_summary.
+$wrapper->body->value->value(); // Filtered value.
+$wrapper->body->value->raw(); // Unfiltered value.
+$wrapper->body->format->value(); // The selected text format.
+$wrapper->body->value = 'new value';
+
+// Link
+$wrapper->field_my_link->value(); // Array of: url, title, attributes.
+$wrapper->field_my_link->url->value(); // Hyperlink destination.
+$wrapper->field_my_link->title->value(); // Hyperlink text.
+$wrapper->field_my_link->attributes->value(); // Array of: target, title, etc.
+$wrapper->field_my_link->url = 'http://mediacurrent.com';
+$wrapper->field_my_link->title = 'Do Drupal Right';
+
+// Radio and Checkbox
+$v = $wrapper->field_my_radio->value(); // on = 1, off = 0
+$info = field_info_field('field_my_radio'); // on = New, off = Used
+$allowed_values = $info['settings']['allowed_values'];
+$label = $allowed_values[$v]; // on = New, off = Used
+
+// Delete a value
+$wrapper->field_foobar = NULL;
+
+// Save
+$wrapper->save();
+
+// Select list of taxonomy or entity reference, General Usage
+Append index
+`$term = $_wrapper->field_taxonomy_a[0]->value();`
+If only one value is allowed, it doesn't have index.
+Loop
+foreach ($_wrapper->field_list_of_values as $item) {
+//  do something
+}
+
+// Taxonomy in select list
+For taxonomy term field which can be multiple values, you still need to specify the index
+`$term = $_wrapper->field_taxonomy_a[0]->value();` // this might be wrong..
+
+Multiple Tax Terms
+#+BEGIN_EXAMPLE
+$a = $wrapper->$field->value();
+if (isset($a)) {
+  echo $a[0]->name;
+  echo $a[0]->tid;
+}
+#+END_EXAMPLE
+
+Single Tax Term
+#+BEGIN_EXAMPLE
+$a = $wrapper->$field->value();
+if (isset($a)) {
+  $r=$a;
+  foreach ($r as $k => $v) {
+    $r[$k]['uri'] = file_create_url($r[$k]['uri']);
+  }
+  echo $r[0]['uri'];
+  echo $r[1]['uri'];
+}
+#+END_EXAMPLE
+
+Multiple Files
+#+BEGIN_EXAMPLE
+$a = $wrapper->$field->value();
+if (isset($a)) {
+  echo $a->name;
+  echo $a->tid;
+}
+#+END_EXAMPLE
+
+
+Term id of the first value of a multiple value field
+`$tid = $_wrapper->field_taxonomy_a[0]->raw();`
+For taxonomy term field which can only have one value:
+Term ID: `$_wrapper->field_tax_1->raw();`
+Check empty `if (isset($tid))`
+
+Term name: `$_wrapper->field_tax_1->name->value();`
+Or in a multi value list `$v = $_wrapper->field_tax_1[0]->value(); echo $v->name;`
+
+Add a term or entity reference: `$_w->field_tax_1[] = 42; $_w->save();`
+Set as a whole `$_w->field_tax_1->set(array(42,43)); $_w->save();`
+
+Loop
+```
+foreach ($_wrapper->field_industry as $taxonomy_wrapper) {
+$industry = $taxonomy_wrapper->tid->value();
+}
+```
+
+Get a text list
+```
+foreach ($wrapper->field_taxonomy_terms->getIterator() as $delta => $term_wrapper) {
+// $term_wrapper may now be accessed as a taxonomy term wrapper.
+$label = $term_wrapper->name->value();
+// list text, delta is 0, 1
+// List text value $term_wrapper->value();
+}
+// All values in a list text as an array
+$wrapper->field_list_text->value();
+```
+
+// Entity reference in select list
+Single value. Tid is $tid = $wrapper->field_list_entity->raw();
+Check empty `if (isset($tid)) { echo $wrapper->field_list_entity->value()->title}`
+Multiple values.
+
+https://www.drupal.org/documentation/entity-metadata-wrappers
+http://www.mediacurrent.com/blog/entity-metadata-wrapper
+
+
 ** Entityform
 D7 uses entityform module. D8 is called EForm.
 Load an entityform
