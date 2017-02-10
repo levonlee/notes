@@ -1434,13 +1434,14 @@ $a = $wrapper->$field->value();
 if (isset($a)) {
   $r=$a;
   foreach ($r as $k => $v) {
-    $r[$k]['uri'] = file_create_url($r[$k]['uri']);
+    $r[$k]['url'] = file_create_url($r[$k]['uri']);
+    // convert URI to public URL
+    // Drupal doesn't provide public 'url'
   }
   echo $r[0]['uri'];
   echo $r[1]['uri'];
 }
 #+END_EXAMPLE
-
 
 Term id of the first value of a multiple value field
 `$tid = $_wrapper->field_taxonomy_a[0]->raw();`
@@ -1484,7 +1485,6 @@ Multiple values.
 
 https://www.drupal.org/documentation/entity-metadata-wrappers
 http://www.mediacurrent.com/blog/entity-metadata-wrapper
-
 
 ** Entityform
 D7 uses entityform module. D8 is called EForm.
@@ -1806,6 +1806,33 @@ function _lili_save_file_with_extension( $url ) {
   }
 
   return $filename;
+}
+#+END_EXAMPLE
+
+** Image Handling (Core)
+*** Setting
+Define Image Styles ~/admin/config/media/image-style~
+Use it in image field display or in code.
+Image toolkit ~/admin/config/media/image-toolkit~ reduces the JPEG quality if Image Styles is applied.
+
+Both Image Styles and Image toolkit don't modify the original images but instead create new images in real time.
+
+*** Code
+An image is a file. Get a image field:
+#+BEGIN_EXAMPLE
+$w = entity_metadata_wrapper('node', $node);
+$images = $w->field_images->value();
+if (isset($images)) {
+  // If the image field is set to only hold one image, then
+  // $images is ['uri'=>'...']
+  foreach ($r as $k => $v) {
+    $r[$k]['url'] = file_create_url($v['uri']);
+    // convert internal URI to public URL. Drupal doens't provide public url by default.
+    // This step doesn't create a file, just create a link
+    // Get the image style public url
+    $r[$k]['thumbnail'] = image_style_url('thumbnail', $v['uri']);
+    // It creates an image styled link in db, when requesting the public url, the image will be created
+  }
 }
 #+END_EXAMPLE
 
