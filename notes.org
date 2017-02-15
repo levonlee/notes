@@ -8399,6 +8399,219 @@ jQuery(function(){
 });
 #+END_EXAMPLE
 
+* AngularJS
+** 1.x
+*** Structure
+https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js
+jquery
+common/common.module.js
+// angular.module('ajsNgComponents', []);
+common/config.js ng:config
+common/filters.js ng:filter
+common/fitlerableCategories.js ng:factory
+
+*** Config <<<ng:config>>>
+#+BEGIN_EXAMPLE
+angular
+  .module('ajsNgComponents')
+  .config(locatgionProviderConfig)
+  // .config is to run a Provider function
+  // ng:provider
+  .value('layout','boxed_fullwidth')
+  .value('layoutClass', {
+    boxed_fullwidth: 'col-lg-3 col-md-4 col-sm-6 col-xs-12',
+    boxed_left: 'col-lg-4 col-md-6 col-sm-6 col-xs-12',
+    boxed_right: 'col-lg-4 col-md-6 col-sm-6 col-xs-12'
+  });
+
+locatgionProviderConfig.$inject = ['$locationProvider'];
+function locatgionProviderConfig($locationProvider) {
+  $locationProvider.html5Mode({
+    enabled: true,
+    requireBase: false
+  });
+}
+
+#+END_EXAMPLE
+
+*** Filter <<<ng:filter>>>
+#+BEGIN_EXAMPLE
+angular
+  .module('ajsNgComponents')
+  .filter('singleListingFilter', singleListingFilter)
+  .filter('item_category_value', item_category_value)
+  .filter('ignore_empty_value', ignore_empty_value)
+  .filter('translate', translate);
+
+// $scope can't be injected to filter
+// Instead, pass scope.varname as a param into filter.
+// Or inject $rootScope
+
+// In view
+/*
+<tr ng-repeat="detail in details | ignore_empty_value:aListing"
+ ng-init="detail = aListing.post_meta.options[detailKey]">
+  <td ng-bind="(detail.name | translate:detail)"></td>
+  <td ng-bind="(detail.value | translate)"></td>
+</tr>
+*/
+
+function singleListingFilter() {
+  return function(items,var1) {
+    var r = [];
+    for (var i= 0, len=items.length; i< len; i++) {
+      if (items[i].id == var1){
+        r.push(items[i]);
+        break;
+      }
+    }
+    return r;
+  };
+}
+
+// <td ng-bind="((x.options | item_category_value:detail:lwp_options) | translate)"></td>
+function item_category_value() {
+  return function(options, category, lwp_options) {
+    var value = "";
+    return value;
+  };
+}
+
+function ignore_empty_value() {
+  return function(items, aListing) {
+    var r = [];
+    angular.forEach(items, function(item) {
+      if (aListing.post_meta.options[item].value) {
+        r.push(item);
+      }
+    });
+    return r;
+  };
+}
+
+translate.$inject = ['$rootScope'];
+function translate($rootScope) {
+  return function(word, languages) {
+    var r = word;
+    if (typeof $rootScope.lang !== "undefined") {
+      if ( typeof languages !== "undefined"
+        && typeof languages['lang'] !== "undefined"
+        && typeof languages['lang'][$rootScope.lang] !== "undefined") {
+        r = languages['lang'][$rootScope.lang];
+      }
+      else {
+        r = $rootScope.translate_text(word);
+      }
+    }
+    return r;
+  };
+}
+#+END_EXAMPLE
+
+*** Factory <<<ng:factory>>>
+Factory is better than app.value();
+#+BEGIN_EXAMPLE
+(function() {
+  'use strict';
+  angular
+    .module('ajsNgComponents')
+    .factory('filterableCategories', filterableCategories)
+    .factory('clientId', clientIdFactory)
+    .factory('apiToken', apiTokenFactory);
+
+  // Inject $rootScope so that any method defined here can use
+  filterableCategories.$inject = ['$rootScope'];
+  function filterableCategories($rootScope) {
+    return {
+      getFilters: getFilters,
+      getListingsFilterObjByURL: getListingsFilterObjByURL,
+      getSelectedFiltersObjByURL: getSelectedFiltersObjByURL,
+      getSearchInventoryDropdown: getSearchInventoryDropdown
+    };
+
+    function getFilters(filterable_categories, lwp_options) {
+      // $rootScope can be used here
+      var r = [];
+      return r;
+    }
+  }
+  
+  function clientIdFactory() {
+    return '123';
+  }
+
+  apiTokenFactory.$inject = ['clientId'];
+  function apiTokenFactory(clientId) {
+    var encrypt = function(data1, data2) {
+      return data1+data2;
+    }
+    var secret = window.localStorage.getItem('secret');
+    var apiToken = encrypt(clientId, secret);
+    return apiToken;
+  }
+
+})();
+#+END_EXAMPLE
+
+*** Service <<<ng:service>>>
+#+BEGIN_EXAMPLE
+app.service('unicornLauncher', UnicornLauncherService);
+UnicornLauncherService.$inject = ['apiToken'];
+function UnicornLauncherService(apiToken) {
+  this.launchedCount = 0;
+  this.launch = function () {
+    // Use apiToken to do something
+    this.launchedCount++;
+  }
+}
+#+END_EXAMPLE
+
+*** Provider
+Provider is a service and it's the only thing can be inserted to .config
+
+Instantiation happens in config
+#+BEGIN_EXAMPLE
+app.config(myProviderConfig);
+myProviderConfig.$inject = ['myProviderProvider'];
+function myProviderConfig(myProviderProvider){
+  myProviderProvider.thingFromConfig = 'This was set in config';
+});
+#+END_EXAMPLE
+
+Define myProvider
+#+BEGIN_EXAMPLE
+app.provider('myProvider', function(){
+ // app.config() can only access the next 2 lines
+ this._artist = '';
+ this.thingFromConfig = '';
+
+ this.$get = function(){
+   var that = this;
+
+   return {
+     getArtist: function(){
+       return that._artist;
+     },
+     thingOnConfig: that.thingFromConfig,
+     unicornLauncher: newUnicornLauncher
+   }
+
+   newUnicornLauncher.$inject = ['apiToken'];
+   function newUnicornLaunder(apiToken) {
+     return new UnicornLauncherService(apiToken);
+   }
+
+ }
+});
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+app.controller('myProvider', function($scope, myProvider){
+  $scope.artist = myProvider.getArtist();
+  $scope.data.thingFromConfig = myProvider.thingOnConfig;
+});
+#+END_EXAMPLE
+
 * SEO
 ** Google Analytics
 Under Admin, you can build Views. Views can have Filters. Views collect data.
