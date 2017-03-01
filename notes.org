@@ -8949,6 +8949,39 @@ Before logout, open another terminal to see if it works.
 
 Default SSH port is 22
 
+** fail2ban
+<<<linux:fail2ban>>>
+Ban access to services (e.g. SSH) for max tries and ban time.
+
+Check if it's installed ~ll /etc/fail2ban~
+
+Install ~sudo apt-get update~ ~sudo apt-get install fail2ban~
+Create jail.local based on jail.conf by commenting out every line
+#+BEGIN_EXAMPLE
+awk '{ printf "# "; print; }' /etc/fail2ban/jail.conf | sudo tee /etc/fail2ban/jail.local
+#+END_EXAMPLE
+
+Modify jail.local ~sudo nano /etc/fail2ban/jail.local~
+
+By default, fail2ban is enabled for sshd service only and disabled for every service (allow every access).
+#+BEGIN_EXAMPLE
+[DEFAULT]
+ignoreip = 127.0.0.1/8
+# 600 seconds = 10 minutes
+bantime = 600
+maxretry = 3
+# 3 tries within 10 minutes
+findtime = 600
+
+# For a service, fail2ban can search if a log file has certain text and mark it as a authentication failure
+[nginx-http-auth]
+enabled = true
+# regex pattern is defined in /etc/fail2ban/filter.d/ngix-http-auth.conf
+# You usually don't modify these .conf files
+#+END_EXAMPLE
+
+[[https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04][More info]]
+
 ** System 
 Resource Limits
 =sudoedit /etc/security/limits.conf=
@@ -9212,6 +9245,11 @@ Ethernet interface: eth0, eth1
 Wireless network interface: wlan0, wlan1
 Loopback interface for system internal communication: =lo=
 
+*** Get Server's Public IP
+#+BEGIN_EXAMPLE
+ip addr show eth0 | grep inet | awk '{ print $2; }' | sed 's/\/.*$//'
+#+END_EXAMPLE
+
 ** Firewall 
 <<<linux:firewall>>>
 Should be installed by default. ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
@@ -9259,6 +9297,19 @@ Private IPv4 address spaces
 - 10.0.0.0 - 10.255.255.255 = 10.0.0.0/8 (16 million number of addresses)
 - 172.16.0.0 - 172.31.255.255 = 172.16.0.0/12 (255.240.0.0) (1 million number of addresses)
 - 192.168.0.0 - 192.168.255.255 = 192.168.0.0/16 (65,536 number of addresses)
+
+** Timezone, NTP
+<<<linux:timezone>>>
+Set timezone first ~sudo dpkg-reconfigure tzdata~
+
+Make sure Network Time Protocol daemon (NTP) is installed ~which ntpd~
+Install ~sudo apt-get update~ ~sudo apt-get install ntp~
+Do a sync 
+~sudo service ntp stop~ 
+~sudo ntpd -gq~
+~sudo service ntp start~
+
+Port 123 has to be open (but I think the default ufw setting is ok)
 
 ** Hardware
 PCI devices: =lspci=
@@ -9655,6 +9706,14 @@ echo 'end line' | cat input.txt - > output.txt
 Change from UCS-2 to UTF-8
 iconv -f UCS-2 -t UTF-8 input.xml > output.xml
 
+*** Comment out every line in a file and save as a new file
+Add '# ' in front of every line
+jail.conf is the source file, and jail.local is the destination file.
+After it's run, jail.conf is not affected.
+#+BEGIN_EXAMPLE
+awk '{ printf "# "; print; }' /etc/fail2ban/jail.conf | sudo tee /etc/fail2ban/jail.local
+#+END_EXAMPLE
+
 ** Interesting Commands
 *** sudo
 Install sudo =apt-get update && apt-get install -y sudo less=
@@ -9692,7 +9751,7 @@ linux:user :: Add a normal user, add the user to sudo group
 linux:ssh :: Add ssh public key to the new user's .ssh folder
 linux:ssh:disallow_root :: Disallow SSH in as root
 linux:firewall :: configure firewall, open ports
-
+linux:timezone :: setup timezone and sync time
 
 * Docker
 ** Docker Compose
