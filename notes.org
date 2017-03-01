@@ -8869,7 +8869,7 @@ Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / 
 | =lsb_release -a=     | Ubuntu only  |
 |                      |              |
 
-** User Management & Superuser
+** User Management, Superuser, sudo
 *** Create and Delete User
 =sudo adduser corey=
 =sudo deluser corey=
@@ -8884,6 +8884,7 @@ gpasswd -a username sudo
 gpasswd is the same as to add user to a group
 #+BEGIN_EXAMPLE
 sudo usermod -aG agroupname ausername
+# -aG keeps the existing groups the user belongs to and add the user to another group
 #+END_EXAMPLE
 
 *** User Group
@@ -8900,6 +8901,8 @@ Start with % means is a group
 %sudo   ALL=(ALL:ALL) ALL 
 #+END_EXAMPLE
 
+Which group a user belongs to ~groups username~
+
 [[https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos][More info]]
 
 *** List all users =cut -d: -f1 /etc/passwd` or `cat /etc/passwd=
@@ -8914,6 +8917,21 @@ Start with % means is a group
 *** Switch to superuser 
 - Debian =sudo su=
 - RedHat =sudo -=
+
+*** Login to another user
+~/bin/su - username~
+
+
+
+
+*** Sudo run multiple commands
+~sudo bash -c 'apt-get update;apt-get install'~
+
+** SSH
+Generate a private key on your local machine ~ssh-keygen~
+Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
+Show the public key and later copy to cloud server
+~cat ~/.ssh/id_rsa.pub~
 
 ** System 
 Resource Limits
@@ -8958,6 +8976,34 @@ Search a word `warthog` in .gz files
 
 Disk usage in current folder including all sub folders but excluding one sub folder
 du --exclude=./wp-content/uploads --exclude=./wp-content/error_log -sh
+
+*** File permission
+Octal mode
+#+BEGIN_EXAMPLE
+chmod 400 ~/path/to/file.php
+#+END_EXAMPLE
+
+| Permissions | Binary | Octal | Description       |
+| ---         |    000 |     0 | No permissions    |
+| --x         |    001 |     1 | Execute only      |
+| -w-         |     10 |     2 | Write only        |
+| -wx         |     11 |     3 | Write and execute |
+| r--         |    100 |     4 | Read-only         |
+| r-x         |    101 |     5 | Read and execute  |
+| rw-         |    110 |     6 | Read and write    |
+| rwx         |    111 |     7 | full              |
+|             |        |       |                   |
+
+400 :: read for owner, 0 for group, 0 for other/public
+440 :: read for owner and group, but none for public
+555 :: read and execute (can't modify) for all
+700 :: full for owner
+777 :: Directory's full permission
+666 :: A file's full permission
+664 :: New file default permission. Read and Write for owner and group but only read for public
+
+By default, umask is 0002. A file's full permission is 666. So new file will have these permissions
+666-002 = 664
 
 ** Search Files or Directories
 By file or directory name
