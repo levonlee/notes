@@ -8870,11 +8870,11 @@ Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / 
 |                      |              |
 
 ** User Management, Superuser, sudo
-*** Create and Delete User
+*** Create and delete a user, Add user to sudo group
+<<<linux:user>>>
 =sudo adduser corey=
 =sudo deluser corey=
 
-*** Add user to sudo group
 sudo is a group
 As root user, run
 #+BEGIN_EXAMPLE
@@ -8918,20 +8918,36 @@ Which group a user belongs to ~groups username~
 - Debian =sudo su=
 - RedHat =sudo -=
 
-*** Login to another user
-~/bin/su - username~
+*** Login to another user, Run command as another user
+Login (need to type password) ~/bin/su - username~
+Run as a user (need to type password) ~/bin/su - username -c 'whoami'~
 
-
-
+As root user, run as another user without typing password ~sudo -H -u username bash -c 'whoami'~
+Where -H is to use the target user's home directory
 
 *** Sudo run multiple commands
 ~sudo bash -c 'apt-get update;apt-get install'~
 
 ** SSH
+<<<linux:ssh>>>
 Generate a private key on your local machine ~ssh-keygen~
 Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
 Show the public key and later copy to cloud server
 ~cat ~/.ssh/id_rsa.pub~
+
+On the remote server, login as a normal user ~sudo su - username~
+Create ~/.ssh directory ~mkdir .ssh~ ~chmod 700 .ssh~
+Create file and paste the public key ~nano .ssh/authorized_keys~
+Change permission ~chmod 600 .ssh/authorized_keys~
+
+*** Disallow SSH as root user, SSH Daemon Config
+<<<linux:ssh:disallow_root>>>
+~nano /etc/ssh/sshd_config~
+Change ~PermitRootLogin yes~ to no
+Restart SSH ~service ssh restart~
+Before logout, open another terminal to see if it works.
+
+Default SSH port is 22
 
 ** System 
 Resource Limits
@@ -9195,6 +9211,34 @@ View one NIC (interface): =ifconfig eth0=
 Ethernet interface: eth0, eth1
 Wireless network interface: wlan0, wlan1
 Loopback interface for system internal communication: =lo=
+
+** Firewall 
+<<<linux:firewall>>>
+Should be installed by default. ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
+~sudo ufw status verbose~
+~sudo ufw disable~ and ~sudo ufw enable~ to restart firewall
+~sudo ufw reset~
+
+Review setting ~sudo vi /etc/default/ufw~
+
+Default setting is no restriction on outgoing connection, deny all incoming connection
+
+Make sure ~IPV6=yes~ in setting.
+
+Allow a service ~sudo ufw allow ssh~
+Allow a port ~sudo ufw allow 22/tcp~
+Allow a port range ~sudo ufw allow 1000:2000/tcp~
+Allow an IP ~sudo ufw allow from 192.168.255.255~
+
+Allow HTTP web server ~sudo ufw allow 80/tcp~
+Allow SSL/TLS ~sudo ufw allow 443/tcp~
+Allow SMTP email ~sudo ufw allow 25/tcp~
+
+List all rules ~sudo ufw status numbered~
+Delete a rule ~sudo ufw delete [number]~
+
+Or you can see added rules in command style ~sudo ufw show added~
+Then you delete ~sudo ufw delete allow 22~
 
 *** Port
 If a port is in use =telnet localhost 9000=, if it's connected, it's in use.
@@ -9642,6 +9686,13 @@ Remove the package source
 
 Remove it and downgrade back to previous version before using PPA
 =sudo apt-get install ppa-purge=, =sudo ppa-purge ppa:libreoffice/ppa=
+
+** Production Server Setup
+linux:user :: Add a normal user, add the user to sudo group
+linux:ssh :: Add ssh public key to the new user's .ssh folder
+linux:ssh:disallow_root :: Disallow SSH in as root
+linux:firewall :: configure firewall, open ports
+
 
 * Docker
 ** Docker Compose
