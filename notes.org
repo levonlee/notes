@@ -9246,6 +9246,15 @@ Delay 1 second: =-s 1=
 =-t=: show Total
 =-l=: show Low and High
 
+** Service
+~service --status-all~
+- List all services (on '+', off '-', managed by Upstart '?') 
+
+~systemctl~ :: List running services only with more detail
+
+~service~ operates on the files in ~/etc/init.d~ which is an old init system.
+~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old init.
+
 ** Network
 All active NIC and IP addresses: =ifconfig=
 All enabled and disabled NIC: =ifconfig -a=
@@ -9267,6 +9276,7 @@ curl http://icanhazip.com
 Should be installed by default. ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
 ~sudo ufw status verbose~
 ~sudo ufw disable~ and ~sudo ufw enable~ to restart firewall
+Or just reload ~sudo ufw reload~
 ~sudo ufw reset~
 
 Review setting ~sudo vi /etc/default/ufw~
@@ -9274,6 +9284,7 @@ Review setting ~sudo vi /etc/default/ufw~
 Default setting is no restriction on outgoing connection, deny all incoming connection
 
 Make sure ~IPV6=yes~ in setting.
+Make sure DEFAULT_FORWARD_POLICY="ACCEPT" if docker is installed
 
 Allow a service ~sudo ufw allow ssh~
 Allow a port ~sudo ufw allow 22/tcp~
@@ -9780,6 +9791,101 @@ linux:firewall :: configure firewall, open ports
 linux:timezone :: setup timezone and sync time
 
 * Docker
+** Version, Info, Installation
+~docker --version~ ~sudo docker info~
+
+"Docker for Windows" needs Windows Hyper-V enabled. Command prompt is admin.
+
+After installation, make sure linux:firewall DEFAULT_FORWARD_POLICY="ACCEPT"
+
+Use ~systemctl~ for managing Docker service.
+
+Users in user group ~docker~ can run docker commands without sudo.
+
+** Command Help ~docker docker-subcommand --help~
+
+** Images
+List all images :: ~docker images~
+Download an image :: ~docker pull phusion/baseimage~ or with a tag ~docker pull phusion/baseimage:0.9.18~
+Remove an image :: ~docker rmi imageName~
+Save an image to tar file :: ~docker save -o /path/docker-image-file.tar docker-image-name~
+Import a tar to image :: ~docker load -i /path/docker-image-file.tar~
+
+Search image in Docker repository :: ~docker search ubuntu~
+
+*** Build an image based on Dockerfile
+With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name~
+
+Multiple Dockerfiles (Dockerfile1, Dockerfile2) in the current folder
+~docker build -t your-image-name -f Dockerfile2 .~
+
+Dockerfile and resource are in different folders
+~docker build -t your-image-name -f /path/Dockerfile.yourname /path/to/docker/~
+
+** run
+*** Interactive mode with tty ~-it~
+If there's an  error, ~cannot enable tty mode on non tty input~, try ~-i~ only.
+
+*** Run an image in a container and keep running in background
+#+BEGIN_EXAMPLE
+docker run --name wordpressdb -v=/vagrant/mydbdump:/tmp/mydbdump \
+-v=/mydbdata:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
+-d mysql:5.7.9
+#+END_EXAMPLE
+
+Container name :: wordpressdb
+Image name :: mysql:5.7.9
+Detached mode (in background) :: -d
+Insert environment variables :: -e
+
+*** Run an image in a temp container only once, then remove the container
+A MySQL container, wordpressdb, created by mysql:5.7.9 image, is already running.
+
+Start up another container using the same image
+In this temp container, wordpressdb container can be discovered as wpdb (alias).
+Then import a .sql file to wpdb
+The temp container is then removed.
+
+Refer to docker:link
+
+#+BEGIN_EXAMPLE
+docker run -it --rm \
+-v=/vagrant/mydbdump:/tmp/mydbdump \
+--link wordpressdb:wpdb mysql:5.7.9 \
+sh -c \
+'exec mysql -h"$WPDB_PORT_3306_TCP_ADDR" \
+-P"$WPDB_PORT_3306_TCP_PORT" \
+-uroot -p"$WPDB_ENV_MYSQL_ROOT_PASSWORD" \
+wordpress < /tmp/mydbdump/pantheon_db_sql'
+#+END_EXAMPLE
+
+*** Link
+<<<docker:link>>> is deprecated and it relies on Docker in default bridge network mode.
+
+** Containers
+List containers :: ~docker ps -a~
+Stop and Start :: ~docker stop containerName~ ~docker start containerName~
+Restart :: ~docker restart containerName~
+Stop and remove :: ~docker rm -f containerName~
+Stop and remove all containers :: ~docker rm -f $(docker ps -a -q)~
+
+Container log :: ~docker log containerName~
+
+Container network IP and settings :: ~docker inspect containerName~ and look at ~NetworkSetting > IPAddress~
+
+Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
+Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
+Where ~-L~ is to copy symbol link
+
+Login to container with bash open :: ~docker exec -it containerName bash -I~
+
+Save a container to an image :: first exit the container first
+~docker commit -m "added node.js" -a "Author Name" 123456 my/ubuntu-nodejs~
+
+Container id :: 123456. get this from ~docker ps -a~
+New image name :: my/ubuntu-nodejs
+
 ** Docker Compose
 =docker-compose --version=
 =docker-compose up -d=
