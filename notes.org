@@ -9792,7 +9792,9 @@ linux:timezone :: setup timezone and sync time
 
 * Docker
 ** Version, Info, Installation
-~docker --version~ ~sudo docker info~
+Brief :: ~docker --version~
+Server and Client :: ~sudo docker version~
+Full :: ~sudo docker info~
 
 "Docker for Windows" needs Windows Hyper-V enabled. Command prompt is admin.
 
@@ -9803,7 +9805,6 @@ Use ~systemctl~ for managing Docker service.
 Users in user group ~docker~ can run docker commands without sudo.
 
 ** Command Help ~docker docker-subcommand --help~
-
 ** Images
 List all images :: ~docker images~
 Download an image :: ~docker pull phusion/baseimage~ or with a tag ~docker pull phusion/baseimage:0.9.18~
@@ -9863,6 +9864,12 @@ wordpress < /tmp/mydbdump/pantheon_db_sql'
 *** Link
 <<<docker:link>>> is deprecated and it relies on Docker in default bridge network mode.
 
+*** --name and --hostname
+Specify the container name using --name
+Inside the container, the container is called --hostname=value
+~docker run --hostname=value~ OR ~docker run -h value~
+Combine --name and --hostname as much as you can
+
 ** Containers
 List containers :: ~docker ps -a~
 Stop and Start :: ~docker stop containerName~ ~docker start containerName~
@@ -9891,6 +9898,65 @@ New image name :: my/ubuntu-nodejs
 =docker-compose up -d=
 =docker-compose up -d --force-recreate= Force restart or recreate containers
 =docker-compose down -v= remove containers and volumes
+
+*** YML 
+It has to be this name ~docker-compose.yml~ and don't include this file in sub directories.
+
+Docker Engine version (docker version) 
+
+| Compose file format | Docker Engine release |
+| 3.0;3.1             | 1.13.0+               |
+| 2.1                 | 1.12.0+               |
+| 2.0                 | 1.10.0+               |
+| 1.0                 | 1.9.1+                |
+
+**** version (top level)
+#+BEGIN_EXAMPLE
+version: '2'
+#+END_EXAMPLE
+
+**** volumes (top level)
+Check volumes created by Docker =docker volume ls=
+Create a volume =docker volume create --name dbdata=
+Remove a volume =docker volume rm dbdatavolume=
+
+#+BEGIN_EXAMPLE
+volumes:
+# Named volume which can be used in all services
+# this volume isn't mapped to anything in docker host!
+# top-level volumes can't specify path to named volume.. You have to install other Docker plugin
+  dbdata:
+#+END_EXAMPLE
+
+**** networks
+Every time ~docker-compose up~ creates a single network (per app) which all services in the app are on.
+Let's say yml file is a folder called foldername
+This avoids the need to use links
+#+BEGIN_EXAMPLE
+networks:
+# network name is foldername_app_net
+  app_net:
+# bridge on a single host (default) and overlay on a Swarm
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.18.0.0/16
+        gateway: 172.18.0.1
+#+END_EXAMPLE
+
+Then in a service, specify the ip
+#+BEGIN_EXAMPLE
+services:
+ db:
+   image: mysql:5.7.9
+   container_name: db
+   hostname: db
+   networks:
+     app_net:
+       ipv4_address: 172.18.0.2
+   restart: always
+#+END_EXAMPLE
 
 * Git
 ** Working Tree
