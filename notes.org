@@ -9603,6 +9603,17 @@ Not floating-point values
 | not equal        | $n1 -ne $n2 |
 |                  |             |
 
+*** Bash: shell variable with default value
+./yourcustom.sh var1 var2
+
+#+BEGIN_EXAMPLE
+this_var1=$1
+this_var2=${10}
+# maximum 11 variables
+this_var3=${3:-"_"}
+# if var3 is not provided, then default is string _
+#+END_EXAMPLE
+
 *** <<<Bash if>>>
 #+BEGIN_EXAMPLE
  if [ conditions ]; then
@@ -9744,10 +9755,40 @@ After it's run, jail.conf is not affected.
 awk '{ printf "# "; print; }' /etc/fail2ban/jail.conf | sudo tee /etc/fail2ban/jail.local
 #+END_EXAMPLE
 
-** Interesting Commands
 *** sudo
 Install sudo =apt-get update && apt-get install -y sudo less=
 Run sudo interactive =sudo -i=
+
+*** SHA, salt hashing
+<<<image:lucee:salt>>>
+./luceehashing.sh UIloginPassword salt
+#+BEGIN_EXAMPLE
+#!/bin/bash
+
+SHA_ALGORITHM=256
+SHA_COUNT=5
+
+LUCEE_PASSWORD=${1:-"_"}
+LUCEE_SALT=${2:-"_"}
+
+if [ $LUCEE_PASSWORD == "_" ]; then
+  LUCEE_PASSWORD=topsecret
+fi
+if [ $LUCEE_SALT == "_" ]; then
+  LUCEE_SALT=$(uuidgen | tr a-z A-Z)
+fi
+
+COUNT=1
+LUCEE_HASH=$(echo -n "${LUCEE_PASSWORD}:${LUCEE_SALT}" | shasum -a $SHA_ALGORITHM | cut -f1 -d' ')
+while [ $COUNT -lt $SHA_COUNT ]; do
+  LUCEE_HASH=$(echo -n $LUCEE_HASH | shasum -a $SHA_ALGORITHM | cut -f1 -d' ')
+  COUNT=$((COUNT + 1))
+done
+
+echo "Lucee Admin Values"
+echo "  hspw = $LUCEE_HASH"
+echo "  salt = $LUCEE_SALT"
+#+END_EXAMPLE
 
 *** byobu
 Create multiple terminals and switch between.
@@ -9994,6 +10035,13 @@ storage="false" validate="false"/>
 
 Lucee server setting :: /opt/lucee/server/lucee-server/context/lucee-server.xml
 Individual website setting :: /opt/lucee/web/lucee-web.xml.cfm
+
+Custom tags (.cfm|.cfc) are placed in /opt/lucee/web/customtags/
+
+Change Lucee Admin UI password
+[[https://gist.github.com/jlamoree/6c1fc89ca3b8ce2581eb76dadeb1ee53][Use this with a salt]] to generate hspw in Lucee server setting <cfLuceeConfiguration hspw="" salt="" version="4.5">
+Refer to image:lucee:salt. It seems like you should use the salt that is in the default lucee-server.xml.
+Can't use a random salt.
 
 ** image:tomcat
 <<<docker:image:tomcat>>>
