@@ -9958,6 +9958,42 @@ services:
    restart: always
 #+END_EXAMPLE
 
+** image:lucee
+<<<docker:image:lucee>>>
+Image name: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
+Parent Images: lucee/lucee4 > tomcat:8.0.36-jre8
+
+Add ucanaccess db driver to TomCat. Refer to docker:image:tomcat
+
+Add Access datasource on yourdomain.com:8888/lucee/admin/server.cfm
+Type: Other - JDBC Driver
+Class: net.ucanaccess.jdbc.UcanaccessDriver
+Database: jdbc:ucanaccess:///home/MyName/www/database/MyMsAccessDB.mdb
+
+** image:tomcat
+<<<docker:image:tomcat>>>
+Image name: tomcat:8.0.36-jre8
+Install UcanAccess JDBC driver to enable M$ Access datasource
+
+Copy these jar files
+#+BEGIN_EXAMPLE
+COPY ucanaccess/* /usr/local/tomcat/lib/
+#+END_EXAMPLE
+ucanaccess-4.0.1.jar
+lib/*.jar (commons-lang, commons-logging, hsqldb, jackcess)
+
+Add these 2 lines to setenv.sh
+#+BEGIN_EXAMPLE
+UCANACCESS_HOME=/usr/local/tomcat/lib;
+export UCANACCESS_HOME;
+#+END_EXAMPLE
+
+docker:image:lucee
+#+BEGIN_EXAMPLE
+COPY setenv.sh /usr/local/tomcat/bin/
+RUN chmod a+x /usr/local/tomcat/bin/setenv.sh
+#+END_EXAMPLE
+
 * Git
 ** Working Tree
 <<<git:Working_Tree>>>
