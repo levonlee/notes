@@ -10139,6 +10139,28 @@ Add hosts in docker:image:tomcat:host
 <<<docker:image:tomcat>>>
 Image name: tomcat:8.0.36-jre8
 
+*** Settings
+The default webapps (including TomCat Admin Console, localhost:8080/manager/html and .jar files) is in /usr/local/tomcat/webapps
+The default connector port is 8080.
+
+docker:image:lucee deletes this webapps folder, place it under /usr/local/tomcat/lucee which contains all .jar files.
+
+Include that directory in catelina.properties in common.loader=${catalina.home}/lucee/*.jar
+
+Define a <web-app> with multiple servlets in ${catalina.home}/web.xml to handle all .html and .cf(m|c) files.
+
+When the web-app and Lucee servlet are built, new Lucee admin paths (context) are built :: 
+127.0.0.1:8888/lucee/admin/server.cfm and web.cfm
+Corresponding paths are /opt/lucee/server(/lucee-server) and opt/lucee/web
+
+In ${catalina.home}/server.xml, define Host(s) as usual. 
+Each <Host> has appBase="webapps" which is a folder under /usr/local/tomcat. Using the empty webapps folder is fine.
+
+Each <Host> can have multiple <Context> with different path/docBase. 
+The root directory of each Host can have:
+- META-INF folder :: context.xml (server-dependent config, e.g. datasource),
+- WEB-INF folder ::  web.xml (server-independent config, e.g. servlet mappings)
+
 *** Install UcanAccess JDBC driver to enable M$ Access datasource
 Copy these jar files
 #+BEGIN_EXAMPLE
@@ -10217,6 +10239,7 @@ If it's foo#bar.xml then ~http://127.0.0.1/foo/bar/abc.js~
 *** Add host
 <<<docker:image:tomcat:host>>>
 Host name should be 127/8 ip address otherwise you need to setup DNS.
+Refer to docker:image:tomcat:log
 
 #+BEGIN_EXAMPLE
 <Host name="127.0.0.2" appBase="webapps">
@@ -10245,6 +10268,39 @@ Host name should be 127/8 ip address otherwise you need to setup DNS.
 <Context docBase="/var/www/vd/legacy_js/" path="/legacy_js"></Context>
 </Host>
 #+END_EXAMPLE
+
+*** Restrict Access
+Refer to docker:image:tomcat:log
+
+#+BEGIN_EXAMPLE
+<!-- RemoteAddrValue is %a in log -->
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+       allow="allow.com" />
+<!-- RemoteHostValue is %h in log -->
+<Valve className="org.apache.catalina.valves.RemoteHostValve"
+       allow="127.0.0.1,10.100.1.2" />
+#+END_EXAMPLE
+
+*** Logging
+<<<docker:image:tomcat:log>>>
+Google :: tomcat access log value
+pattern
+- %h :: remote host name. Or IP if enableLookups for the connector is false
+        If request is passed from Nginx (proxy_pass), it's 127.0.0.1
+        If request is directly from Internet, it's the requester's IP
+
+- %a :: Remote IP address. Same as %h but IP only
+        If request is passed from Nginx (proxy_pass), it's 127.0.0.1
+        If request is directly from Internet, it's the requester's IP.
+
+- %v :: Local server name.
+        If request is passed from Nginx (proxy_pass), it's the name of <Host> in Tomcat
+        If request is directly from Internet, it's the request domain name
+- %A :: Local IP address. Tomcat server public IP
+- %{local}p :: local port. Which is 80 or 8888 where is set in <Connector>
+- %{remote}p :: remote port. IDK.. Maybe random
+- %{xxx}i :: incoming header value. e.g. %{X-Forwarded-Host}
+- %{xxx}o :: outgoing header value
 
 * Nginx
 ** Command Line
@@ -10295,13 +10351,14 @@ server {
 #+END_EXAMPLE
 
 ** Server
+Include directives :: listen, server_name, root, index
+Include blocks :: location
+
 #+BEGIN_EXAMPLE
 server {
   listen 80 default_server;
 # or without any default_server in listen, the first server with listen is the default server
 # listen 80;
-
-  server_name example.org www.example.org;
 
 # listen actually is a combo of ip and port 192.168.1.1:80
 # nginx first identify which ip:port has the incoming request, then try to match the server_name from the request
@@ -10309,6 +10366,9 @@ server {
 # If no ip is set in ip:port, then 0.0.0.0 is used
 # If no port is set in ip:port, then 80 is used
 # If no listen is set, then 0.0.0.0:80 is used
+# If only ip is specified (no port), it has a higher specificity than only port is specified.
+
+  server_name example.org www.example.org;
   
 # server_name :: can contain wildcards that either at start or end.
 # *.example.org matches www.example.org and www.sub.exmple.org as well.
@@ -10327,9 +10387,28 @@ server {
 # always use named capture as $1 will be passed down to any sub directives and server_name is usually
 # one of the top directives
 
+# Special server_name :: "" you can do this
+# server_name example.org "";
+# This matches any server name
+# server_name _;
+
   index index.cfm index.html index.htm;
   root /var/www;
 
+# root combines with uri to get a file. e.g. /var/www/uripart1/uripart2
+# If the result is a directory and doesn't have an index file (e.g. index.cfm set in index)
+# Then it will return 403 forbidden
+# Turn on autoindex will list files in directory
+# autoindex on; 
+
+# include any common config files. /etc/nginx/common/*.conf
+  include common/common.conf
+}
+#+END_EXAMPLE
+
+** location
+location blocks are usually under server blocks
+#+BEGIN_EXAMPLE
 # location syntax
 # location optional_modifier location_match {...}
 # location only matches URI without URL parameters
@@ -10389,13 +10468,38 @@ location / {
 location /another {
   root /var/www;
 }
-
-# include any common config files. /etc/nginx/common/*.conf
-include common/common.conf
-
 #+END_EXAMPLE
 
-** Rewrite
+** proxy_pass directive
+proxy_pass can have URI parts if it's under a non-regex location block
+#+BEGIN_EXAMPLE
+location / {
+  proxy_pass http://127.0.0.1:8888/long/uri;
+# There's no trailing '/'
+}
+#+END_EXAMPLE
+
+proxy_pass without URI under a regex location block will pass URI to the proxy
+#+BEGIN_EXAMPLE
+location ~* \.(cfm|...|html)$) {
+  proxy_pass http://127.0.0.1:8888;
+}
+#+END_EXAMPLE
+
+proxy_pass with URI under a regex location block will throw an error. 
+To avoid error, set a variable which holds the original or modified URI to pass
+
+#+BEGIN_EXAMPLE
+location ~* \.(cfm|...|html)$) {
+  set $request_url /site2$request_uri;
+  if ($request_uri ~* ^/legacy_js) {
+    set $request_url $request_uri;
+  }
+  proxy_pass http://127.0.0.1:8888$request_url;
+}
+#+END_EXAMPLE
+
+** Rewrite Directive
 Case insensitve match. Source folder is CMS, and any case variants of CMS can be redirected
 #+BEGIN_EXAMPLE
 rewrite (?i)^/cms/?$ /CMS/index.cfm last;
