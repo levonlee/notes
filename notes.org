@@ -10079,6 +10079,62 @@ location ~* /legacy_js {
 }
 #+END_EXAMPLE
 
+Add hosts
+
+#+BEGIN_EXAMPLE
+server {
+  listen 80 default_server;
+  server_name domain1.com;
+  index  index.cfm index.html index.htm;
+  root   /var/www/site1;
+  server_name_in_redirect off;
+
+  include allcf/common.conf;
+
+  location ~* (/legacy_js)|(\.(cfm|cfc|cfr|jpe?g|js|gif|css|png|html)$) {
+    proxy_pass http://127.0.0.2:8888;
+    proxy_redirect off;
+    proxy_set_header Host 127.0.0.2;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_connect_timeout 600;
+    proxy_send_timeout 600;
+    proxy_read_timeout 600;
+    send_timeout 600;
+  }
+
+}
+
+server {
+  listen 80;
+  server_name domain2.com;
+  index  index.cfm index.html index.htm;
+  root   /var/www/site2;
+  server_name_in_redirect off;
+
+  include allcf/common.conf;
+
+  location ~* (/legacy_js)|(\.(cfm|cfc|cfr|jpe?g|js|gif|css|png|html)$) {
+    proxy_pass http://127.0.0.3:8888;
+    proxy_redirect off;
+    proxy_set_header Host 127.0.0.3;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_connect_timeout 600;
+    proxy_send_timeout 600;
+    proxy_read_timeout 600;
+    send_timeout 600;
+  }
+
+}
+#+END_EXAMPLE
+
+Add hosts in docker:image:tomcat:host
+
 ** image:tomcat
 <<<docker:image:tomcat>>>
 Image name: tomcat:8.0.36-jre8
@@ -10133,6 +10189,10 @@ In /usr/local/tomcat/conf/server.xml, you can see how many hosts are defined. e.
         <Context path="" docBase="/var/www/">
           <JarScanner scanClassPath="false"/>
         </Context>
+        <!-- You can define virtual directory here or follow the way of adding vd.xml-->
+        <!-- 
+        <Context path="/legacy_js" docBase="/path/outside/var/www/legacy_js"></Context>
+        -->
       </Host>
     </Engine>
     
@@ -10153,6 +10213,38 @@ Where Catalina is the engine name and 127.0.0.1 is the Host name.
 ~http://127.0.0.1/legacy_js/abc.js~ points to ~/root/vd/legacy_js/abc.js~
 
 If it's foo#bar.xml then ~http://127.0.0.1/foo/bar/abc.js~
+
+*** Add host
+<<<docker:image:tomcat:host>>>
+Host name should be 127/8 ip address otherwise you need to setup DNS.
+
+#+BEGIN_EXAMPLE
+<Host name="127.0.0.2" appBase="webapps">
+  <Valve className="org.apache.catalina.valves.RemoteIpValve"
+         remoteIpHeader="X-Forwarded-For"
+         requestAttributesEnabled="true" />
+  <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+         prefix="localhost_access_log" suffix=".txt"
+         pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+
+  <Context path="" docBase="/var/www/site1/">
+    <JarScanner scanClassPath="false"/>
+  </Context>
+</Host>
+
+<Host name="127.0.0.3" appBase="webapps">
+<Valve className="org.apache.catalina.valves.RemoteIpValve"
+       remoteIpHeader="X-Forwarded-For"
+       requestAttributesEnabled="true" />
+<Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+       prefix="localhost_access_log" suffix=".txt"
+       pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+<Context path="" docBase="/var/www/site2/">
+  <JarScanner scanClassPath="false"/>
+</Context>
+<Context docBase="/var/www/vd/legacy_js/" path="/legacy_js"></Context>
+</Host>
+#+END_EXAMPLE
 
 * Nginx
 ** Command Line
@@ -10297,6 +10389,10 @@ location / {
 location /another {
   root /var/www;
 }
+
+# include any common config files. /etc/nginx/common/*.conf
+include common/common.conf
+
 #+END_EXAMPLE
 
 ** Rewrite
