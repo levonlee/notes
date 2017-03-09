@@ -10014,7 +10014,8 @@ services:
 Image name: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
 Parent Images: lucee/lucee4 > tomcat:8.0.36-jre8
 
-Add ucanaccess db driver to TomCat. Refer to docker:image:tomcat
+*** Add ucanaccess db driver to TomCat, Add M$ Access Datasources
+Refer to docker:image:tomcat
 
 Add Access datasource on yourdomain.com:8888/lucee/admin/server.cfm
 Type: Other - JDBC Driver
@@ -10034,16 +10035,18 @@ password="abc test password"
 storage="false" validate="false"/>
 #+END_EXAMPLE
 
+*** Lucee server and web settings
 Lucee server setting :: /opt/lucee/server/lucee-server/context/lucee-server.xml
 Individual website setting :: /opt/lucee/web/lucee-web.xml.cfm
 
-Custom tags (.cfm|.cfc) are placed in /opt/lucee/web/customtags/
+*** Custom tags (.cfm|.cfc) under /opt/lucee/web/customtags/
 
-Change Lucee Admin UI password
+*** Change Lucee Server Admin UI password
 [[https://gist.github.com/jlamoree/6c1fc89ca3b8ce2581eb76dadeb1ee53][Use this with a salt]] to generate hspw in Lucee server setting <cfLuceeConfiguration hspw="" salt="" version="4.5">
 Refer to image:lucee:salt. It seems like you should use the salt that is in the default lucee-server.xml.
 Can't use a random salt.
 
+*** How does it work with Nginx?
 Lucee operates on TomCat port 8888 using 127.0.0.1. Nginx forwards 80 incoming traffic to port 8888. 
 By default, only *.cfm|cfc|cfr files are forwarded to 8888. Add more files to /etc/nginx/conf.d/default.conf
 
@@ -10063,6 +10066,7 @@ location ~* \.(cfm|cfc|cfr|jpe?g|js|css|png|gif|html)$ {
   }
 #+END_EXAMPLE
 
+*** Virtual Directory and TomCat
 Virtual Directory. Setup docker:image:tomcat:vd first, then setup forwarding
 #+BEGIN_EXAMPLE
 location ~* /legacy_js {
@@ -10080,7 +10084,7 @@ location ~* /legacy_js {
 }
 #+END_EXAMPLE
 
-Add hosts
+*** Add hosts
 
 #+BEGIN_EXAMPLE
 server {
@@ -10136,6 +10140,8 @@ server {
 
 Add hosts in docker:image:tomcat:host
 
+
+
 ** image:tomcat
 <<<docker:image:tomcat>>>
 Image name: tomcat:8.0.36-jre8
@@ -10160,7 +10166,7 @@ Each <Host> has appBase="webapps" which is a folder under /usr/local/tomcat. Usi
 Each <Host> can have multiple <Context> with different path/docBase. 
 The root directory of each Host can have:
 - META-INF folder :: context.xml (server-dependent config, e.g. datasource),
-- WEB-INF folder ::  web.xml (server-independent config, e.g. servlet mappings)
+- WEB-INF folder ::  web.xml (server-independent config, e.g. servlet mappings, docker:image:lucee:tasks)
 
 *** Install UcanAccess JDBC driver to enable M$ Access datasource
 Copy these jar files
