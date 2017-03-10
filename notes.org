@@ -9176,6 +9176,16 @@ grep --color -HRi --exclude=\*.{pdf,jpg,JPG,mp3,png,bmp,sql} "abc" .
 - -i :: ignore case 
 - -I :: process binary files as if they don't contain matching data
 
+*** Folder structure
+#+BEGIN_EXAMPLE
+which tree
+# apt-get install tree
+# list only folders without files
+tree -d test/
+# list everything
+tree test/
+#+END_EXAMPLE
+
 *** Compare files in 2 directories
 #+BEGIN_EXAMPLE
 diff --brief -Nr dir1/ dir2/
@@ -9745,6 +9755,73 @@ fi
 | z          | cURL download only after or before a date                     |
 |            |                                                               |
  
+*** wget
+Compared to curl, wget's advantages are:
+- recursive
+- continue downloading after broken transfer
+- Specify cookies in get request
+- Has redirect-following
+- Capture response such as time stamping from the remote resource.
+
+Disadvantages are only HTTP/HTTPS/FTP, Basic auth over HTTP proxy, no SOCKS support
+
+wget [option]... [URL]...
+
+#+BEGIN_EXAMPLE
+http://[username:password@]host[:port]/directory/file
+ftp://[username:password@]host[:port]/directory/file
+#+END_EXAMPLE
+
+Download all subfolders and files of an FTP folder
+#+BEGIN_EXAMPLE
+cd ~
+wget --user=hello --password='mypassword' -cr ftp://server/path/to/test
+# Default depth is 5, change it
+wget -r -l 2 ftp://... 
+# for infinite depth :: -l inf
+
+# path/to/test is 3 depths, by default, 2 more levels can be downloaded
+
+# ~/server/path/to/test/* will be downloaded
+
+# -nH ~/path/to/test will be downloaded
+# -nH --cut-dirs=1 ~/to/test will be downloaded
+# -nH --cut-dirs=2 ~/test will be downloaded
+# --cut-dirs=1 ~/server/to/test will be downloaded
+
+# --ftp-user or --http-user can also be used. There's no difference
+
+# Ignore folders (not file)
+wget -cr -X path/to/folder/ignore/ ftp://server/path/to/folder/
+
+# folder path/to/folder/ignore/ will not be downloaded
+
+# wildcards can also be used
+wget -cr -X path/to/folder/ignore*/ ftp://server/path/to/folder/
+
+# ignore multiple folders
+-X path/to/folder/ignore1,path/to/folder/ignore2
+
+# Only include certain folders -I, exactly the same as -X
+
+# Only download files -A
+-A books*,zelazny*196[0-9],gif,jpg
+
+gif and jpg are normal letters, they match the ending part of a file (not exactly file extension)
+
+# Ignore certain files -R, exactly the same as -A
+
+# -N to retrieve timestamps so if local files are newer, skip download.
+# -c :: enable continue download
+#+END_EXAMPLE
+
+In summary, to download everything under ftp://server/path/to/test to ~/test
+
+#+BEGIN_EXAMPLE
+cd ~
+wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=2 ftp://server/path/to/test
+#+END_EXAMPLE
+
 ** Commands
 *** Run Sequentially
 =lspci; lsusb=
