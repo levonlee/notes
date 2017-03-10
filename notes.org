@@ -9065,9 +9065,13 @@ By default, umask is 0002. A file's full permission is 666. So new file will hav
 666-002 = 664
 
 *** Symbolic Link
-Symbolic link abc at user home folder, point it to xyz folder at user home folder
+Symbolic link abc at user home folder, point it to existing folder xyz at user home folder
 #+BEGIN_EXAMPLE
-ln -s ~/abc ~/xyz
+# ln -s source_file myfile
+ln -s ~/xyz ~/abc
+# Relative Path
+# you are at ~/abc/xyz, you want to creat ~/abc/xyz/sym to point to existing folder ~/abc/efg/source
+ln -s ../eft/source/ sym
 #+END_EXAMPLE
 
 Directly go to the actual folder by calling ~/abc
@@ -10166,8 +10170,6 @@ server {
 
 Add hosts in docker:image:tomcat:host
 
-
-
 ** image:tomcat
 <<<docker:image:tomcat>>>
 Image name: tomcat:8.0.36-jre8
@@ -10193,6 +10195,12 @@ Each <Host> can have multiple <Context> with different path/docBase.
 The root directory of each Host can have:
 - META-INF folder :: context.xml (server-dependent config, e.g. datasource),
 - WEB-INF folder ::  web.xml (server-independent config, e.g. servlet mappings, docker:image:lucee:tasks)
+
+If there's ${catalina.home}/context.xml, all hosts have these settings and 
+override <Context> set in <Host> in server.xml and override ~<Context>~ in any ~META-INF/context.xml~ under all hosts:
+${catalina_home}/[enginename]/[host]/META-INF/context.xml
+
+The only time ~path~ attribute in ~<Context>~ has any effect is in the server.xml
 
 *** Install UcanAccess JDBC driver to enable M$ Access datasource
 Copy these jar files
@@ -10256,8 +10264,12 @@ In /usr/local/tomcat/conf/server.xml, you can see how many hosts are defined. e.
 </Server>
 #+END_EXAMPLE
 
-To create a virtual directory that points to a directory outside of root folder (/var/www).
-Create a file legacy_js.xml under /usr/local/tomcat/conf/Catalina/127.0.0.1/
+Method 1 is to add a <Context> tag in a <Host> in server.xml. But for me it doesn't work when multiple hosts
+need to have the same vd and it creates a lot of other problems.
+
+General rule :: don't include more than 1 <Context> in each <Host> in server.xml
+
+Method 2 is to create a file legacy_js.xml under ${catalina_home}/conf/Catalina/127.0.0.1/
 Where Catalina is the engine name and 127.0.0.1 is the Host name.
 #+BEGIN_EXAMPLE
 # legacy_js.xml
@@ -10268,6 +10280,24 @@ Where Catalina is the engine name and 127.0.0.1 is the Host name.
 ~http://127.0.0.1/legacy_js/abc.js~ points to ~/root/vd/legacy_js/abc.js~
 
 If it's foo#bar.xml then ~http://127.0.0.1/foo/bar/abc.js~
+
+Method 2 is not tested for multiple hosts usage...
+
+Method 3 is tested.
+
+Create relative symbolic link for docker usage.
+/var/www/site2/legacy_js point to ../site1/source_legacy_js
+
+#+BEGIN_EXAMPLE
+cd /var/www/site2
+ln -s ../site1/source_legacy_js/ legacy_js
+#+END_EXAMPLE
+
+TomCat can't follow relative symbolic link..
+Add this line to ${catalina_home}/context.xml
+#+BEGIN_EXAMPLE
+<Resources allowLinking="true"></Resources>
+#+END_EXAMPLE
 
 *** Add host
 <<<docker:image:tomcat:host>>>
