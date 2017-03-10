@@ -9190,6 +9190,74 @@ find ~/www -iname WEB-INF -exec ls {} \;
 # Delete files in those folders
 find ~/www -iname WEB-INF -exec rm -rf {} \;
 #+END_EXAMPLE
+*** tar
+**** Compress and Read .tar file
+#+BEGIN_EXAMPLE
+# /home/targetFolder
+cd /home
+tar -zcvpf backup.tar.gz targetFolder
+
+# Read .tar file
+tar -tf backup.tar.gz
+
+# targetFolder/index.html
+# targetFolder/subfolder/index.html
+# ...
+
+# Exclude a folder
+tar -zcvpf backup.tar.gz targetFolder --exclude=wp-content/uploads
+
+# Compress the current folder and save the archive in current folder
+cd /home/targetFolder
+tar -zcvpf backup.tar.gz .
+
+# The archive structure is
+# ./index.html
+# ./subfolder/index.html
+# ...
+#+END_EXAMPLE
+
+Options
+- -z :: use gzip method
+- -c :: create a new archive
+- -v :: verbose
+- -p :: preserve permissions (default for superuser)
+- -f :: use archive file as result or input
+- --exclude :: wrap in '' if it contains spaces
+- --exclude='*/*/*' :: ignore 3 levels deep
+
+**** Uncompress
+#+BEGIN_EXAMPLE
+# Read the tar file first
+tar -tf backup.tar.gz
+
+# If file structure is
+# targetFolder/index.html
+# targetFolder/subfolder.html ...
+# And put targetFolder so that /anotherfolder/targetFolder
+# Copy .tar.gz to /anotherfolder
+cd /another
+tar -xvzf backup.tar.gz
+
+# If you don't want to copy .tar.gz to /anotherfolder, 
+tar -xvzf /any/path/to/backup.tar.gz -C /anotherfolder
+
+# If file structure is
+# ./index.html
+# ./subfolder/index.html ...
+# Then copy backup.tar.gz to /anotherfolder/targetFolder
+cd /anotherfolder/targetFolder
+tar -xvzf backup.tar.gz
+
+# tar -xvzf /any/path/to/backup.tag.gz -C /anotherFolder/targetFolder
+
+# Uncompress file.gz, not file.tar.gz, 
+gzip -d file.gz 
+# The gz file will disappear
+#+END_EXAMPLE
+
+Options
+- -x :: extract
 
 ** head, tail
 <<<linux:tail>>>
@@ -9208,39 +9276,6 @@ Used in chain
 #+BEGIN_EXAMPLE
 ls -t | tail -n3
 #+END_EXAMPLE
-
-** tar
-*** Compress
-/home/targetFolder
-cd /home
-tar -zcvpf backup.tar.gz targetFolder
-
-Or
-cd /home/targetFolder
-tar -zcvpf backup.tar.gz .
-
-Exclude a folder
-tar -zcvpf backup.tar.gz targetFolder --exclude=wp-content/uploads
-
-Options
-- -z :: use gzip method
-- -c :: create a new archive
-- -v :: verbose
-- -p :: preserve permissions (default for superuser)
-- -f :: use archive file as result or input
-- --exclude :: wrap in '' if it contains spaces
-- --exclude='*/*/*' :: ignore 3 levels deep
-
-*** Uncompress
-tar -xvzf backup.tar.gz
-
-If file is .gz not .tar.gz, uncompress gzip -d file.gz and the gz file will disappear
-
-Options
-- -x :: extract
-
-*** Read .tar file
-tar -tf file.tar
 
 ** Processes
 | =ps -ef=                   | List of running processes      |
