@@ -9487,46 +9487,78 @@ Repositories
 - Restricted: hardware drivers etc.
 
 *** Package Management
-**** =dpkg= lowest level
+**** =dpkg= lowest level Ubuntu, Debian
 List installed packages: =dpkg -l= 
 How to read dpkg output
 - First 3 columns show Desired action, Package status and Error flags
 - Desired action
-  - unknown (u), install (i), hold (h), remove ( r ), purge (p)
+  - unknown (u), install (i), hold (h), remove  (r), purge (p)
 - Package Status
-  - Not-installed	`n`
-  - Config-files	`c`
-  - Half-installed	H
-  - Unpacked	U
-  - Half-configured	F
-  - Triggers-awaiting	W
-  - Triggers-pending	`t`
-  - Installed	`i`
+  - Not-installed :: ~n~
+  - Config-files :: ~c~
+  - Half-installed :: ~H~
+  - Unpacked :: ~U~
+  - Half-configured :: ~F~
+  - Triggers-awaiting :: ~W~
+  - Triggers-pending ::	~t~
+  - Installed :: ~i~
 - Error flags
   - <empty> = (none), R = Reinst-required
 
 If a package is installed: =dpkg -l wget=
 Search if a package is installed: =dpkg -l | grep wget= or ~dpkg -l 'wget*'~
 
+More info of an installed package :: ~dpkg -s openssh-client~
+
+See forward/reverse dependencies of a package use ~apt-cache showpkg javacc~
+
 List files owned by a package =dpkg -L cron=
 
 Find which package owns a file =dpkg -S /etc/crontab=
 
-**** =apt-get= =apt-cache=
-Search package by name or title and read installation status: =apt-cache search php=
-- Before each package name, if you see `i` the package is installed
-- `v` the package is virtual (installed)
-- `c` the package is deleted but not configuration files
-- `p`, no trace at all or `v`, it's not installed.
-- There might be a second character which indicates the action to be performed on the package.
+**** =apt-get= =apt-cache= Ubuntu
+Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
 
-Find out dependencies: =apt-cache showpkg php5-xmlrpc=
+Install or upgrade a package :: ~apt-get install openssh-client~
+
+To simulate what would happen if you upgrade/install a package (press ~n~ to cancel)
+~apt-get -s install openssh-client~
+
+To upgrade all installed packages :: ~apt-get upgrade~
+
+To simulate what would happen if upgrade all (press ~n~ to cancel) :: ~apt-get -V -s upgrade~
+
+Remove previously downloaded packages (/var/cache/apt/archives)
+~apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*~ 
+
+For Ubuntu lower than 14.04, use ~dpkg -l~ to list all installed packages on Ubuntu
+Otherwise, use ~apt list --installed~
+
+To see if a package is installed :: ~apt list -a --installed openssh-client~
+
+Search package by regex name (return name and description only): =apt-cache search php=
+Search packages with name starting php (return names only) :: =apt-cache pkgnames php5=
+All packages' names (return names only) :: =apt-cache pkgnames=
+
+Find out dependencies of a package: =apt-cache showpkg php5-xmlrpc=
 - Other packages must be installed before php5-xmlrpc (under Dependencies)
 - Other packages depend on php5-xmlrpc (under Reverse Depends)
 - Different versions of this package you can install (under Provides)
 
-**** =aptitude= Highest Level
+To compare installed version of a package with remote version :: ~apt-cache policy openssh-client~
+
+**** =aptitude= Highest Level Debian
+It's not installed by default on Ubuntu
 It removes orphan packages automatically
+
+List installed packages :: ~aptitude~
+
+See if a package is installed :: ~aptitude search package_name~
+- Before each package name, if you see `i` the package is installed
+- package is virtual (installed) :: ~v~
+- package is deleted but not configuration files :: ~c~
+- no trace at all or ~v~, it's not installed :: ~p~
+- There might be a second character which indicates the action to be performed on the package.
 
 ** Input and Output
 *** File Descriptors
