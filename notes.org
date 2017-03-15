@@ -165,6 +165,8 @@ which escapes |
 
 [[http://orgmode.org/worg/org-symbols.html][Table of Symbols]]
 
+Insert a tab character =Ctrl+q tab=
+
 ** =TODO=
 #+BEGIN_EXAMPLE
 =** TODO=
@@ -10068,6 +10070,49 @@ echo "  salt = $LUCEE_SALT"
 Create multiple terminals and switch between.
 =apt-get install byobu=
 
+** Makefile
+Create a Makefile in current folder
+#+BEGIN_EXAMPLE
+include env_make
+# include a file which defines some variables
+
+NAME=myimagename
+VERSION=0.1.0
+REPO=mydockerreponame
+# define some variables
+
+.PHONY: default build
+# This tells make to not look elsewhere for commands default and build
+# Instead, run default and build as they are defined in this Makefile
+# Usually include all commands in this Makefile
+
+# command in Makefile is called target. Syntax of Makefile is
+# target ...: prerequisites ...
+#     recipe
+#     ...
+#     ...
+
+# A prerequisite is a file/command. It means to include a file
+
+# A recipe is an action (command). Every recipe line has to start with a tab character
+
+default:
+	@echo "Some description"
+# If you run `make` in current folder without specifying which command, the first command will be run
+# @echo means it doesn't print out the actual command
+
+all: build
+# the all command runs the build command
+build:
+	sudo docker build -t $(NAME):$(VERSION) --rm .
+push:
+	docker push $(NAME)/$(REPO):$(VERSION)
+release: build
+	make push -e VERSION=$(VERSION)
+# `make release` runs `build` first, then run `push` with a parameter
+# can't put push as a prerequisite after `build` because it has to be run using a parameter
+#+END_EXAMPLE
+
 ** Nano
 - Save :: Ctrl + O 
 - Exit :: Ctrl + x
@@ -10220,6 +10265,22 @@ Save a container to an image :: first exit the container first
 
 Container id :: 123456. get this from ~docker ps -a~
 New image name :: my/ubuntu-nodejs
+
+** Network
+#+BEGIN_EXAMPLE
+# List networks
+docker network ls
+# Info about a network
+docker network ls the_network_id
+#+END_EXAMPLE
+
+** Volume
+#+BEGIN_EXAMPLE
+# List all volumes
+docker volume ls
+# Info about a volume
+docker volume inspect the_vol_id
+#+END_EXAMPLE
 
 ** Docker Compose
 =docker-compose --version=
@@ -12740,6 +12801,12 @@ border
 bd5#0s
 
 s :: solid 
+
+*** Show unprintable characters (TAB)
+Find Action (Ctrl+Shift+A) > search Show Whitespaces
+
+*** Convert to Tab/Spaces for indentation
+Find Action > To Tab
 
 ** Chrome
 *** Get all events of an element in Console
