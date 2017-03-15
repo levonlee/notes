@@ -9897,14 +9897,36 @@ default:
 
 all: build
 # the all command runs the build command
+
 build:
 	sudo docker build -t $(NAME):$(VERSION) --rm .
+
 push:
 	docker push $(NAME)/$(REPO):$(VERSION)
+
 release: build
 	make push -e VERSION=$(VERSION)
 # `make release` runs `build` first, then run `push` with a parameter
 # can't put push as a prerequisite after `build` because it has to be run using a parameter
+
+testecho:
+	@echo $$FOO
+# make testecho FOO="a b c"
+
+testsub:
+	@echo otheraction $(filter-out $@,$(MAKECMDGOALS))
+
+# make testsub a b c
+# $@ is the target name, which is testsub
+# $(MAKECMDGOALS) is the list of targets, which is testsub a b c
+
+# This method requires you to put these 2 lines to the end of Makefile (remove leading #'s)
+
+#%:
+#	@:
+
+# %: is a target which matches every target
+# @: is a recipe in which @ is the same as @echo. : means do nothing
 #+END_EXAMPLE
 
 ** Nano
@@ -10052,13 +10074,17 @@ Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
 Where ~-L~ is to copy symbol link
 
-Login to container with bash open :: ~docker exec -it containerName bash -I~
-
-Save a container to an image :: first exit the container first
+*** Save a running container to an image
+First exit the container first
 ~docker commit -m "added node.js" -a "Author Name" 123456 my/ubuntu-nodejs~
 
 Container id :: 123456. get this from ~docker ps -a~
 New image name :: my/ubuntu-nodejs
+
+*** Execute commands inside a running container
+Login to container with bash open :: ~docker exec -it containerName bash -I~
+Long command (pure-pw only exists in container)
+~docker exec -it containerName pure-pw useradd bob2 -f longpathto/passwd -m -u ftpuser -d /home/ftpusers/bob2~
 
 ** Network
 #+BEGIN_EXAMPLE
@@ -10530,6 +10556,111 @@ pattern
 <<<docker:image:ftp>>>
 Image name: stilliard/pure-ftpd:hardened
 Parent image: debian:jessie
+
+https://github.com/stilliard/docker-pure-ftpd
+By default, it only supports FTP not SFTP
+
+Dockerfile
+#+BEGIN_EXAMPLE
+FROM stilliard/pure-ftpd:hardened
+
+# e.g. you could change the defult command run:
+CMD /run.sh -c 30 -C 5 -l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R
+
+# /usr/sbin/pure-ftpd
+
+# -c 50, --maxclientsnumber (no more than 50 people at once)
+# -C 10, --maxclientsperip (no more than 10 requests from the same ip)
+# -l puredb:/etc/pure-ftpd/pureftpd.pdb, --login (login file for virtual users)
+# -E, --noanonymous (only real users)
+# -j, --createhomedir (auto create home directory if it doesn't already exist)
+# -R, --nochmod (prevent usage of the CHMOD command)
+
+# -tls 1, Enables optional TLS support
+
+# In Compose
+
+# -P $PUBLICHOST, IP/Host setting for PASV support, passed in your the PUBLICHOST env var
+# -p 30000:30009, PASV port range
+#+END_EXAMPLE
+
+docker-compose.yml
+#+BEGIN_EXAMPLE
+version: '2'
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.3.0/24
+        gateway: 172.16.3.1
+services:
+  myftp:
+    build: .
+    image: myftp:latest
+    container_name: newcomftp
+    environment:
+      - PUBLICHOST=ftp.yourdomain.com
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+# open these many ports to support Passive Mode..
+    volumes:
+      - /host/storefiles/ftp:/home/ftpusers
+      - /host/config/ftp/passwd:/etc/pure-ftpd/passwd
+# a single `pureftps.passwd` file contains the user database
+#     - /host/config/ftp/ssl:/etc/ssl/private
+# a single `pure-ftpd.pem` file with server's SSL certificates for TLS support
+    networks:
+      app_net:
+        ipv4_address: 172.16.3.3
+#+END_EXAMPLE
+
+Makefile
+#+BEGIN_EXAMPLE
+FTPCONFIG=/etc/pure-ftpd/passwd/pureftpd.passwd
+
+.PHONY: default info start stop restart list adduser deluser
+
+default:
+	@echo "make [command]. Available commands are:"
+	@echo "info, start, stop, restart, list, adduser, deluser"
+
+info:
+	@echo "List all virutal user: make list"
+	@echo "Add a new user abc and make parent folder to /FTP"
+	@echo 'make adduser username="abc" folder="FTP"'
+	@echo 'Add a new user abc and make parent folder to root /'
+	@echo 'make adduser username="abc" folder=""'
+	@echo 'Delete a user abc: make deluser username="abc"'
+
+start:
+	sudo docker-compose up -d --build
+
+stop:
+	sudo docker-compose down -v
+
+restart:
+	sudo docker-compose down -v && sudo docker-compose up -d --build
+
+enter:
+	sudo docker exec -it newcomftp bash -I
+
+list:
+	@echo "<account>:<password>:<uid>:<gid>:<gecos>:<home directory>:<upload bandwidth>:<download bandwidth>:<upload ratio>:<download ratio>:<max number of connections>:<files quota>:<size quota>:<authorized local IPs>:<refused local IPs>:<authorized client IPs>:<refused client IPs>:<time restrictions>"
+	sudo cat ~/config/ftp/passwd/pureftpd.passwd
+
+adduser:
+	sudo docker exec -it myftp pure-pw useradd $$username -f $(FTPCONFIG) -m -u ftpuser -d /home/ftpusers/$$folder
+
+deluser:
+	sudo docker exec -it myftp pure-pw userdel $$username -f $(FTPCONFIG) -m
+#+END_EXAMPLE
+
+Pureftp Manual
+- [[https://download.pureftpd.org/pub/pure-ftpd/doc/README.Virtual-Users][Add User]]
+- [[https://download.pureftpd.org/pub/pure-ftpd/doc/FAQ][FAQ]]
 
 * Nginx
 ** Command Line
