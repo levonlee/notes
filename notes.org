@@ -2931,6 +2931,14 @@ Upload thme to wp-content/languages
 Then change the language in each User Profile.
 
 * ColdFusion
+** cfsetting
+Override the server setting for a particular page
+#+BEGIN_EXAMPLE
+<cfsetting enablecfoutputonly="yes|no" 
+           requesttimeout="300" 
+           showdebugoutput="yes|no">
+#+END_EXAMPLE
+
 ** Text
 #+BEGIN_EXAMPLE
 FindNoCase("the", "The sentence") returns integer position
@@ -9288,6 +9296,16 @@ Do a sync
 
 Port 123 has to be open (but I think the default ufw setting is ok)
 
+For Debian/Ubuntu, /etc/timezone file stores the timezone. Default :: Etc/UTC
+
+All timezones are stored in /usr/share/zoneinfo/$TZ
+
+For Toronto, it's /usr/share/zoneinfo/America/Toronto file but it's a link to Montreal file.
+
+Make this link to /etc/localtime and then change the timezone
+
+Refer to docker:timezone
+
 ** Hardware
 PCI devices: =lspci=
 USB devices: =lsusb=
@@ -10127,6 +10145,14 @@ CMD ["echo", "$HOME"] won't output $HOME variable
 
 Use shell form ~CMD [ "sh", "-c", "echo $HOME" ]~ or
 ~CMD echo $HOME~ at default shell of the running container
+
+*** Timezone
+<<<docker:timezone>>>
+
+#+BEGIN_EXAMPLE
+ENV TZ=America/Toronto
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+#+END_EXAMPLE
 
 ** Docker Compose
 =docker-compose --version=
@@ -13047,6 +13073,10 @@ or :: price=9.8 or price=9.7
 and
 
 *** Google Tag Assistant Chrome Extension
+*** Flush DNS Caches in Chrome
+Even ipconfig /flushdns is run, Chrome still caches the DNS
+Navigate to ~chrome://net-internals/#dns~ and press "Clear host cache" button
+
 ** Firefox
 *** Make all new windows open in Private Mode
 - Visit about:config and click "Yes, I'll be careful"
