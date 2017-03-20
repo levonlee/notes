@@ -5,6 +5,12 @@
 #+TODO: TODO IN-PROGRESS WAITING DONE
 
 * PHP
+** Configuration
+<<<php:config>>>
+
+Get php configuration files location ~php --ini~
+Get a php config variable ~grep memory_limit /etc/php.ini~
+
 ** Locale
 In Linux, you can run =locale -a= to get a list of codes
 Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a backup.
@@ -2953,6 +2959,30 @@ FindNoCase("the", "The sentence") returns integer position
 </cfmail>
 #+END_EXAMPLE
 
+** Function
+#+BEGIN_EXAMPLE
+<cffunction name="getSiteDetail" access="public" returntype="query">
+  <cfargument name="intID" type="numeric" default="0">
+  <cfset var getSite = "">
+  <cfquery name="getSite" datasource="..." dbtype="ODBC">
+     SELECT *
+     FROM Site
+     WHERE ID <> 7
+     <cfif argument.intID neq 0>
+       AND ID = <cfqueryparam value="#Arguments.intID#" CFSQLType="CF_SQL_NUMERIC">
+     </cfif>
+     ORDER BY Site.sname
+  </cfquery>
+  <cfreturn getSite>
+</cffunction>
+
+<cfinvoke component="functions.banner" 
+          method="getSiteDetail" 
+          returnvariable="getSite">
+  <cfinvokeargument name="intID" value="#Form.ssite2#">
+</cfinvoke>
+#+END_EXAMPLE
+
 ** Query
 #+BEGIN_EXAMPLE
 <!--- Access --->
@@ -2960,6 +2990,102 @@ FindNoCase("the", "The sentence") returns integer position
   SELECT *
   FROM tblOne
 </cfquery>
+#+END_EXAMPLE
+
+*** Get Identity After Insert
+Access
+#+BEGIN_EXAMPLE
+<cftransaction>
+  <cfquery name="insertQ" datasource="abc">
+    INSERT INTO aTable (col1, col2)
+    VALUES (1,2)
+  </cfquery>
+  <cfquery name="getID" datasource="abc">
+    SELECT @@identity AS RecordID;
+  </cfquery>
+</cftransaction>
+
+<cfoutput>#getID.recordID#</cfoutput>
+#+END_EXAMPLE
+
+TSQL
+
+#+BEGIN_EXAMPLE
+<cfquery>
+SET NOCOUNT ON;
+INSERT INTO aTable (col1,col2)
+VALUES (1,2)
+SELECT SCOPE_IDENTITY() AS RecordID;
+</cfquery>
+#+END_EXAMPLE
+
+** Fast form to Database
+#+BEGIN_EXAMPLE
+<!--- Insert --->
+<form action="site_new.cfm" method="post">
+  <input name="Sname" type="text" size="30" maxlength="255">
+</form>
+
+# site_new.cfm
+<cfinsert datasource="aDB" tablename="TableName">
+
+<!--- Update. cfupdate doesn't work... use cfquery --->
+<cfif isDefined("form.phone")> 
+    <cfupdate datasource="cfdocexamples" tablename="EMPLOYEES"> 
+</cfif> 
+ 
+<cfquery name="empTable" datasource="cfdocexamples"> 
+    SELECT * FROM EMPLOYEES 
+</cfquery> 
+ 
+<!--- This code shows the contents of the employee table and allows you to choose a row for updating. ---> 
+<table border="1"> 
+<cfoutput query="empTable"> 
+    <tr> 
+        <td>#firstName#</td> 
+        <td>#lastName#</td> 
+        <td>#phone#</td> 
+        <td><a href="cfupdate.cfm?id=#emp_id#">Edit</a></td> 
+    </tr> 
+</cfoutput> 
+</table> 
+ 
+<cfif isDefined("url.id")> 
+    <cfquery name="phoneQuery" datasource="cfdocexamples"> 
+        SELECT * FROM employees WHERE emp_id=#url.id# 
+    </cfquery> 
+<!--- This code displays the row to edit for update. ---> 
+    <cfoutput query="phoneQuery"> 
+        <form action="cfupdate.cfm" method="post"> 
+        #phoneQuery.firstName# #phoneQuery.lastName#  
+        <input name="phone" type="text" value="#phone#" size="12">  
+        <input type="submit" value="Update"> 
+        <input name="emp_id" type="hidden" value="#emp_id#"> 
+        <!--- The emp_id is passed as a hidden field to be used as a primary  
+            key in the CFUPDATE. ---> 
+        </form> 
+    </cfoutput> 
+</cfif>
+#+END_EXAMPLE
+
+** Loop
+<cfloop query="aQueryname" startRow="1" endRow="10" group="Customer_ID">
+  #aQueryName.CurrentRow#
+</cfloop>
+
+startRow, endRow and group are optional.
+
+** Remote Address
+<cfif cgi.REMOTE_ADDR eq "127.0.0.1">
+
+** cftry
+#+BEGIN_EXAMPLE
+<cftry>
+  <!--- Do something --->
+  <cfcatch type="any">
+    <cfdump var="#cfcatch#">
+  </cfcatch>
+</cftry>
 #+END_EXAMPLE
 
 * CSS
@@ -9026,6 +9152,9 @@ grep --color -HRi "abc" /root/dir | cut -d: -f1 | sort -u
 
 # Exclude file types
 grep --color -HRi --exclude=\*.{pdf,jpg,JPG,mp3,png,bmp,sql} "abc" .
+
+# Return 5 trailing lines and 10 leading lines for each match
+grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
 #+END_EXAMPLE
 
 - --color :: hightlight
@@ -9033,6 +9162,8 @@ grep --color -HRi --exclude=\*.{pdf,jpg,JPG,mp3,png,bmp,sql} "abc" .
 - -R :: recursive
 - -i :: ignore case 
 - -I :: process binary files as if they don't contain matching data
+- -A NUM :: number of trailing lines of text
+- -B NUM :: number of leading lines of text
 
 *** Folder structure
 #+BEGIN_EXAMPLE
@@ -9783,6 +9914,33 @@ wget -cr -l inf -N -nH --cut-dirs=3 -P test/ ftp://server/path/to/test/1
 [[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
 
 ** Commands
+*** screen
+Simply run ~screen~ creates a screen session.
+
+In a screen session, multiple shell windows can be open from a single SSH session.
+
+See if it's installed ~which screen~.
+
+For help :: ~C-a ?~ 
+Create a window :: ~C-a c~
+Switch between windows: ~C-a n~ or ~p~ for previous window
+Detach a window from the screen session and can be reattached later ::  ~C-a d~
+If network connection fails in one screen session, screen will automatically detach the session.
+Reattach (when connection drops or you have detached froma a screen) :: ~screen -r~ or a specific screen
+~screen -r 12345.pts-0.xxxx~ or simply ~screen -r 12345~
+
+To get an alert when there's output registered on a specific screen, on that screen run ~Ctrl-a M~ and then switch to other screen
+Or get an alert when there's no output ~C-a _~
+
+Lock a screen session when you need to go away ~C-a x~
+
+Stop the screen session :: ~C-a k~ or ~exit~ for each screen window.
+
+List all screen sessions and status :: ~screen -ls~
+
+See window list ~C-a "~ it's double quote ~S-'~
+Rename current window :: ~C-a A~
+
 *** Run Sequentially
 =lspci; lsusb=
 If the first command not successful, 2nd command will not run: =lspci && lspci=
@@ -10703,6 +10861,58 @@ Pureftp Manual
 - [[https://download.pureftpd.org/pub/pure-ftpd/doc/README.Virtual-Users][Add User]]
 - [[https://download.pureftpd.org/pub/pure-ftpd/doc/FAQ][FAQ]]
 
+* Apache
+** Production Setup
+<<<apache:production>>>
+
+This guide is for httpd. Optimize Webhost Setup
+~nano /etc/httpd/conf/httpd.conf~
+
+#+BEGIN_EXAMPLE
+Timeout 30
+KeepAlive on
+MaxKeepAliveRequests 50
+KeepAliveTimeout 15
+#Changes to prefork module
+<IfModule prefork.c>
+StartServers 3
+MinSpareServers 2
+MaxSpareServers 5
+ServerLimit 256
+MaxClients 10
+MaxRequestsPerChild 1000
+</IfModule>
+#+END_EXAMPLE
+
+Search ~AllowOverrride~ and set it to All for
+#+BEGIN_EXAMPLE
+<Directory />
+  Options FollowSymLinks
+  AllowOverride All
+</Directory>
+#+END_EXAMPLE
+
+And
+
+#+BEGIN_EXAMPLE
+# AllowOverride controls what directives may be placed in .htaccess files.
+# It can be "All", "None", or any combination of the keywords:
+# Options FileInfo AuthConfig Limit
+#
+AllowOverride All
+#+END_EXAMPLE
+
+Restart Apache ~service httpd restart~
+
+** Force to download a PDF file
+The path doesn't matter
+#+BEGIN_EXAMPLE
+<FilesMatch "aPDFfile.pdf">
+  ForceType application/octet-stream
+  Header add Content-Disposition "attachment"
+</filesMatch>
+#+END_EXAMPLE
+
 * Nginx
 ** Command Line
 stop, quit, reopen, reload :: ~nginx -s reload~
@@ -11218,6 +11428,52 @@ if (function_exists('newrelic_ignore_transaction')) {
  newrelic_ignore_transaction();
 }
 #+END_EXAMPLE
+
+* AWS
+** SSH
+Each instance has a Key Pair, shown as Key Name in Instance.
+
+When Key Pair is created for the first time, a .pem file is downloaded.
+
+Convert this pem file to ppk in PuttyGen. "Save private key" using RSA with 2048 bits.
+If RSA is not available in old PuttyGen, use SSH-2 RSA.
+
+Start up a Putty session using user_name@public_dns_name. For user_name, you can use root.
+If it's not right, it will prompt you to use the correct one. For Amazon Linux AMI (t2 micro image), use ec2-user
+
+Port is 22, type is SSH. Under Putty > Category > Connection > SSH > Auth, select the new .ppk file.
+
+** Amazon Linux AMI
+I use t2 micro image.
+
+#+BEGIN_EXAMPLE
+yum install php-mysql php-devel
+yum install php-mbstring
+chown -R root:www /var/www/html
+chmod -R 755 /var/www/html
+service httpd restart
+service mysqld start
+mysql_secure_installation
+#+END_EXAMPLE
+
+Then do apache:production setup
+
+Add these to MySQL config file ~nano /etc/my.cnf~
+
+#+BEGIN_EXAMPLE
+[mysqld]
+key_buffer_size = 16M
+read_buffer_size = 256K
+read_rnd_buffer_size = 512K
+query_cache_size = 16M
+#+END_EXAMPLE
+
+Restart MySQL ~service mysqld restart~
+Check php configuration php:config
+
+*** Update an instance
+Simply create a screen session and run ~sudo yum update~ and 'y'
+Reboot the instance.
 
 * Database
 ** Basics
