@@ -8880,14 +8880,48 @@ Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / 
 
 ** System Version, Distro
 
-| =uanme -a=           | all info     |
-| =uname -r=           | Kernal       |
-|                      |              |
-| =cat /etc/*-release= | Linux distro |
-| =cat /etc/issue=     |              |
-| =cat /proc/version=  |              |
-| =lsb_release -a=     | Ubuntu only  |
-|                      |              |
+| =uanme -a=          | all info     |
+| =uname -r=          | Kernal       |
+|                     |              |
+| =cat /etc/*release= | Linux distro |
+| =cat /etc/issue=    |              |
+| =cat /proc/version= |              |
+| =lsb_release -a=    | Ubuntu only  |
+|                     |              |
+
+** Environment and Shell Variables
+Child processes inherit the environmental variables of the parent process.
+
+List all env. variables :: ~printenv~ or ~env~
+Get an env. variable :: ~printenv HOME~ or ~echo $HOME~
+
+Set an env. variable :: ~export TERM=xterm-256color~
+Set an env. variable using a shell variable :: ~export TEST_VAR~
+
+Use ~env~ to modify the environment that programs run in
+#+BEGIN_EXAMPLE
+env VAR1="blahblah" command_to_run command_options
+#+END_EXAMPLE
+
+List all variables - shell, environmental, local and shell functions :: ~set~
+List only shell and environmental variables only :: ~(set -o posix; set)~
+
+Shell and env. variables should in uppercase while local variables should be in lowercase
+
+Set a shell variable :: ~TEST_VAR='Hello World!'~
+Confirm a variable is not an env. variable :: ~printenv | grep TEST_VAR~
+Search a variable :: ~set | grep TEST_VAR~
+
+Demote an env. variable to shell variable :: ~export -n TEST_VAR~
+Unset a shell or env. variable :: ~unset TEST_VAR~
+
+
+| PWD    | Current directory                           |
+| OLDPWD | Previous directory. ~cd -~                  |
+| _      | The most recent previously executed command |
+|        |                                             |
+|        | Shell Variables                             |
+|        |                                             |
 
 ** User Management, Superuser, sudo
 *** Create and delete a user, Add user to sudo group
@@ -10128,6 +10162,60 @@ echo "  salt = $LUCEE_SALT"
 *** byobu
 Create multiple terminals and switch between.
 =apt-get install byobu=
+
+** Cheat
+#+BEGIN_EXAMPLE
+sudo apt-get update && sudo apt-get upgrade
+sudo apt-get install python-pip
+sudo pip install cheat
+cheat -v
+#+END_EXAMPLE
+
+Modify ~/.bashrc
+#+BEGIN_EXAMPLE
+# If not running interactively, don't do anything
+case $- in
+  *i*) ;;
+    *) return;;
+esac
+
+export EDITOR="/usr/bin/nano"
+export CHEATCOLORS=true
+
+# don't put duplicate lines or lines starting with space in the history.
+HISTCONTROL=ignoreboth
+#+END_EXAMPLE
+
+Add to autocompletion
+#+BEGIN_EXAMPLE
+cd /etc/bash_completion.d/
+# sudo wget https://raw.githubusercontent.com/chrisallenlane/cheat/master/cheat/autocompletion/cheat.bash
+# cheat.bash is as follows
+function _cheat_autocomplete {
+    sheets=$(cheat -l | cut -d' ' -f1)
+    COMPREPLY=()
+    if [ $COMP_CWORD = 1 ]; then
+	COMPREPLY=(`compgen -W "$sheets" -- $2`)
+    fi
+}
+
+complete -F _cheat_autocomplete cheat
+#+END_EXAMPLE
+
+~cheat -d~ lists the directories that cheat sheets should be saved. One is ~/.cheat, the other is system
+Each cheat sheet is a file, like ~/.cheat/ping
+#+BEGIN_EXAMPLE
+# some comments
+ping -c 15 www.example.com
+
+# another usage
+ping ...
+#+END_EXAMPLE
+
+~cheat -s packets~ search all cheat sheets that has `packets` in commands and description.
+Also return cheat sheet name
+
+~cheat ping~ show the `ping` cheat sheet
 
 ** Makefile
 Create a Makefile in current folder
