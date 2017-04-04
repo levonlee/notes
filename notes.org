@@ -8464,6 +8464,168 @@ jQuery(function(){
 });
 #+END_EXAMPLE
 
+* NodeJS
+** Install on Ubuntu
+#+BEGIN_EXAMPLE
+apt-get update
+apt-get install build-essential libssl-dev
+#+END_EXAMPLE
+
+Get [[https://github.com/creationix/nvm/releases][nvm version number]] 0.33.1,
+#+BEGIN_EXAMPLE
+cd ~
+curl -sL https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh -o install_nvm.sh
+# check the install script
+nano install_nvm.sh
+bash install_nvm.sh
+#+END_EXAMPLE
+
+Directory ~/.nvm and ~/.profile file are created.
+
+Log out and back again or source the file so that current session knows changes
+=source ~/.profile=
+
+List Node.js available versions ~nvm ls-remote~
+#+BEGIN_EXAMPLE
+nvm install 7.1.0
+nvm use 7.1.0
+# What versions are installed
+nvm ls
+# Current in-use node version
+node -v
+# Make one version as default for new sessions
+nvm alias default 6.10.2
+# Use the default version
+nvm use default
+# Install npm package to./node_modules
+npm install express
+# Install package globally (available to other projects using the same Node.js version)
+# ~/.nvm/node_version/lib/node_modules/package_name
+npm install -g gulp
+# Link global package into local sphere
+npm link express
+#+END_EXAMPLE
+
+** Third Party Modules, Packages, Frameworks
+*** gulp
+Install gulp globally and locally.
+gulpfile.js
+#+BEGIN_EXAMPLE
+var gulp=require('gulp');
+gulp.task('default', function() {
+  console.log('hello from gulp');
+});
+#+END_EXAMPLE
+
+*** fs
+#+BEGIN_EXAMPLE
+var fs = require('fs');
+var data = require('./data1.json');
+console.log(data.name); // data is an object
+fs.readFile('./data1.json', 'utf-8', function(err, data) {
+  data = JSON.parse(data); // data is string
+  console.log(data.name); 
+});
+
+// Read directory
+fs.readdir('/root', function(err, data) {
+  console.log(data); // data is array
+});
+
+// Write file
+var tomString = '{ "name": "Tom" }';
+fs.writeFile('tom.json', tomString);
+var timmy = {
+  name: 'Timmy'
+};
+
+fs.writeFile('timmy.json', JSON.stringify(timmy));
+
+#+END_EXAMPLE
+
+*** express
+Create index.html first, save this file to web root
+#+BEGIN_EXAMPLE
+// my-express.js
+var express = require('express');
+var app = express();
+// default is index.html, static files
+app.use(express.static(__dirname));
+
+app.use('/message', function(req, res) {
+  console.log('user requested endpoint');
+  res.send('response is hello');
+});
+
+// visit localhost:3000/message
+
+app.listen(3000);
+
+// node my-express.js
+#+END_EXAMPLE
+
+*** sails
+#+BEGIN_EXAMPLE
+npm install sails -g
+mkdir sails
+cd sails
+# Create a sails project with backend only
+sails new --no-front-end
+# create an api
+sails generate api user
+# 2 files are created
+# ./sails/api/controllers/UserController.js
+# ./sails/api/models/User.js
+#+END_EXAMPLE
+
+Modify models/User.js, what attributes a user can have and the datatype?
+#+BEGIN_EXAMPLE
+module.exports = {
+  attributes: {
+    name: 'string'
+  }
+}
+#+END_EXAMPLE
+
+Start sails, default port is 1337 :: ~sails lift~
+
+Perform CRUD by visiting url
+#+BEGIN_EXAMPLE
+localhost:1337/user/create?name=John
+localhost:1336/user
+#+END_EXAMPLE
+
+*** koa
+ES6
+#+BEGIN_EXAMPLE
+npm install koa
+# koa-endpoint-demo.js
+var koa = require('koa');
+var app = new koa();
+app.use(function* () {
+  this.body = 'hello in the body tag';
+});
+
+app.listen(3000);
+#+END_EXAMPLE
+
+Run it in harmony
+#+BEGIN_EXAMPLE
+node --harmony koa-endpoint-demo.js
+#+END_EXAMPLE
+
+** Custom Module
+#+BEGIN_EXAMPLE
+# my-module.js
+exports.myText = 'hello';
+# module-demo.js
+var myModule= require('./my-module.js');
+console.log(myModule.myText);
+# node module-demo.js
+# Initiate the custom module, adding package.json file
+# npm init
+#+END_EXAMPLE
+
 * AngularJS
 ** 1.x
 *** Structure
@@ -10162,6 +10324,13 @@ echo "  salt = $LUCEE_SALT"
 *** byobu
 Create multiple terminals and switch between.
 =apt-get install byobu=
+
+*** =w3m= Command line web browser
+Ubuntu
+#+BEGIN_EXAMPLE
+apt-get install w3m
+# S-Q to quit
+#+END_EXAMPLE
 
 ** Cheat
 #+BEGIN_EXAMPLE
