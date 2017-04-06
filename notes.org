@@ -6215,6 +6215,12 @@ Required properties for every page
 | style     | use =display: none!important;=                              |
 |           |                                                             |
 
+Inline text full width separator. Change attribute size and style height when needed.
+#+BEGIN_EXAMPLE
+<hr noshade color="#FFFFFF" width="100%" size="1" 
+    style="padding:0; margin:8px 0 8px 0; border:none; width:100%; height: 1px; color:#FFFFFF; background-color: #FFFFFF" />
+#+END_EXAMPLE
+
 #+BEGIN_EXAMPLE
 <style>
 .sectionContainer {
@@ -6262,7 +6268,6 @@ Required properties for every page
     <td>
   </tr>
 </table>
-
 #+END_EXAMPLE
 
 ** Icons, Address Bar color
@@ -8464,6 +8469,117 @@ jQuery(function(){
 });
 #+END_EXAMPLE
 
+* ES6
+** Generator Function
+You can treat each yield is a stop, and later code could be started when gen.next() is called.
+You can assign variable = yield (async requests) and program like they are normal sync. Refer to last example
+Refer to nodejs:co for yielding promises
+#+BEGIN_EXAMPLE
+function* idMaker() {
+  var index = 0;
+  while (index <3)
+    yield index++;
+}
+
+var gen = idMaker();
+// Generator function is not contructable
+// don't use var gen = new idMaker;
+// When GF is called, an iterator object is returned and 
+// the body is not executed yet.
+
+console.log(gen.next().value);
+// when the iterator's next() is called for the first time, 
+// the GF body is executed until the 1st yield expression
+// when it's called the nth time, the nth yield expression is called.
+
+// Say there are 3 yields in total, when gen.next() is called the 4th time or more
+// it will be {value: undefined, done: true}
+
+// Use GF in another GF
+function* anotherGenerator(i) {
+  var index = 0;
+  while (index < 3) {
+    index++;
+    yield i + index;
+  }
+}
+function* generator(i) {
+  yield i;
+  yield* anotherGenerator(i);
+  yield i + 10;
+}
+var gen2 = generator(10);
+console.log(gen2.next().value); // ...
+// 10, 11, 12, 13, 20, done
+#+END_EXAMPLE
+
+Passing variable in next(). The variable passed will subsitute the whole yield statement for the previous iteration.
+(after the previous yield, and before the next/current yield)
+#+BEGIN_EXAMPLE
+function* consumer(){
+  while (true){
+    var val = yield null;
+    console.log('Got value', val);
+  }
+}
+
+var c = consumer();
+c.next(1)
+// No 'Got value'
+c.next(2)
+// Got value 2
+#+END_EXAMPLE
+
+Usage
+Without GF, you will write
+#+BEGIN_EXAMPLE
+fs.readFile('blog_post_template.html', function(err, tpContent){
+  fs.readFile('my_blog_post.md', function(err, mdContent){
+    console.log(tpContent, mdContent);
+  });
+});
+#+END_EXAMPLE
+
+With GF
+#+BEGIN_EXAMPLE
+function readFile(filepath) {
+  return function(callback) {
+    fs.readFile(filepath, callback);
+  }
+}
+
+function run(genfun) {
+  var gen = genfun();
+
+  function next(err, answer) {
+    var res;
+    if (err) {
+      return gen.throw(err);
+    }
+    else {
+      res = gen.next(answer);
+    }
+
+    if (!res.done) {
+      res.value(next);
+    }
+  }
+
+  next();
+
+}
+
+run(function* () {
+  try{
+    var tpContent = yield readFile('blog_post_template.html');
+    var mdContent = yield readFile('my_blog_post.md');
+    console.log(tpContent, mdContent);
+  }catch(e){
+    console.error(e.message);
+  }
+});
+#+END_EXAMPLE
+
 * NodeJS
 ** Install on Ubuntu
 #+BEGIN_EXAMPLE
@@ -8518,6 +8634,8 @@ gulp.task('default', function() {
 #+END_EXAMPLE
 
 *** fs
+Default fs is not a Promise although it is async with callback.
+They cannot be chained. Consider nodejs:bluebird or nodejs:co-fs
 #+BEGIN_EXAMPLE
 var fs = require('fs');
 var data = require('./data1.json');
@@ -8540,7 +8658,66 @@ var timmy = {
 };
 
 fs.writeFile('timmy.json', JSON.stringify(timmy));
+#+END_EXAMPLE
 
+*** co-fs, co <<<nodejs:co-fs>>> <<<nodejs:co>>>
+Default fs doesn't support Promise or Generator Function
+#+BEGIN_EXAMPLE
+npm install co-fs
+npm install co
+
+var fs = require('co-fs');
+co(function* () {
+  var data = yield fs.readFile('./data1.json', 'utf-8');
+  // fs.readFile is a promise by using co-fs
+  console.log(data);
+});
+#+END_EXAMPLE
+
+Before co@4.0.0, co() returned a thunk, which is a callback, after it returns a promise
+Chain
+#+BEGIN_EXAMPLE
+co(function* () {
+  var result = yield Promise.resolve(true);
+  return result;
+})
+.then(function (value) {
+  console.log(value);
+}, function (err) {
+  console.error(err.stack);
+});
+#+END_EXAMPLE
+
+Convert co-generator function into a regular function which returns a promise
+#+BEGIN_EXAMPLE
+var fn = co.wrap(function* (val) {
+  return yield Promise.resolve(val);
+});
+
+fn(true).then(function (val) {
+  // do something
+});
+#+END_EXAMPLE
+
+Yieldables are
+- promises
+- thunks (functions)
+- array (parallel execution)
+- objects (parallel execution)
+- generators (delegation)
+- generator functions (delegation)
+
+Resolve multiple promises in parallel
+#+BEGIN_EXAMPLE
+co(function* () {
+  var a = Promise.resolve(1);
+  var b = Promise.resolve(2);
+  var res = yield [a,b];
+}).catch(onerror);
+
+function onerror(err) {
+  console.error(err.stack);
+}
 #+END_EXAMPLE
 
 *** express
@@ -8615,9 +8792,8 @@ node --harmony koa-endpoint-demo.js
 #+END_EXAMPLE
 
 *** Promise
+Promise is native, refer to nodejs:bluebird
 #+BEGIN_EXAMPLE
-// Promise is native
-
 var promise = new Promise(function(res, rej) {
   resolve();
   // or
@@ -8633,7 +8809,7 @@ promise.then(function() {
 
 #+END_EXAMPLE
 
-*** bluebird
+*** bluebird <<<nodejs:bluebird>>>
 #+BEGIN_EXAMPLE
 npm install bluebird
 
