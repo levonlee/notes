@@ -8622,7 +8622,203 @@ npm install -g gulp
 npm link express
 #+END_EXAMPLE
 
-** Third Party Modules, Packages, Frameworks
+** Global Object
+console.log is actually global.console.log
+https://nodejs.org/api/globals.html
+
+*** __dirname, __filename
+Full path of the directory/file of the current module
+
+*** console
+Backtick
+#+BEGIN_EXAMPLE
+var a = "World";
+console.log(`Hello ${a}`); // Hello World
+#+END_EXAMPLE
+
+*** process
+**** process.argv
+node app.js --user li --greeting "Good Day Sir"
+console.log(process.argv);
+//['nodejs installation full path', 'full path to module', '--user', 'li', '--greeting', 'Good Day Sir']
+
+#+BEGIN_EXAMPLE
+function grab(flag) {
+  var index = process.argv.indexOf(flag);
+  return (index === 01) ? null : process.argv[index+1];
+}
+
+var greeting = grab('--greeting');
+#+END_EXAMPLE
+
+**** stdout
+#+BEGIN_EXAMPLE
+var q = ['Q1', 'Q2'];
+var a = [];
+function ask(i) {
+  process.stdout.write(`\n\n ${q[i]}`);
+  process.stdout.write(' > ');
+}
+
+process.stdin.on('data', function(data) {
+  answers.push(data.toString().trim());
+  if (a.length < q.length) {
+    ask(a.length);
+  }
+  else {
+    process.exit();
+  }
+});
+
+process.on('exit', function() {
+  process.stdout.write(`${a[0]}, ${a[1]}, ${a[2]}`);
+});
+
+ask(0);
+#+END_EXAMPLE
+
+*** module
+#+BEGIN_EXAMPLE
+// ./lib/Person.js
+// some code
+module.exports = Person;
+// literal object or any Javascript type
+// module.exports is the object that is returned by the require statement
+
+// ./app.js
+var Person = require('./lib/Person'); // do not include .js
+var ben = new Person('Ben');
+var george = new Person('George');
+#+END_EXAMPLE
+
+*** Timing
+#+BEGIN_EXAMPLE
+var currentTime = 0;
+var percentWaited = 0;
+
+function writePercent(p) {
+  process.stdout.clearLine();
+  process.stdout.cursorTo(0);
+  process.stdout.write(`waiting ... ${p}%`);
+}
+
+var interval = setInterval(functino() {
+  currentTime += 500;
+  percentWaited = Math.floor((currentTime/3000) * 100);
+  writePercent(percentWaited);
+}, 500);
+
+setTimeout(function() {
+  clearInterval(interval);
+  writePercent(100);
+  console.log("\n\n done \n\n");
+}, 3000);
+
+writePercent(percentWaited);
+#+END_EXAMPLE
+
+** Modules, Packages, Frameworks
+*** v8
+#+BEGIN_EXAMPLE
+var v8 = require('v8');
+console.log('v8.getHeapStatistics()');
+#+END_EXAMPLE
+
+*** readline
+#+BEGIN_EXAMPLE
+var readline = require('readline');
+var rl = readline.createInterface(process.stdin, process.stdout);
+var aPerson = {
+  name: '',
+  sayings: []
+}
+
+rl.question("What is the name of a real person? ", function(a) {
+  aPerson.name = a;
+  rl.setPrompt(`What would ${aPerson.name} say? `);
+  rl.prompt(); // display prompt
+  rl.on('line', function(saying) {
+    aPerson.sayings.push(saying.trim());
+    if (saying.toLowerCase().trim() === 'exit') {
+      rl.close();
+    }
+    else {
+      rl.setPrompt(`What else would ${aPerson.name} say?  ('exit' to leave) `);
+      rl.prompt();
+    }
+
+  });
+});
+
+rl.on('close', function() {
+  console.log("5s is a real person that says %j", aPerson.name, aPerson.sayings);
+  process.exit();
+});
+#+END_EXAMPLE
+
+*** events
+#+BEGIN_EXAMPLE
+var events = require('events');
+var emitter = new events.EventEmitter();
+
+emitter.on('customEvent', function(msg, status) {
+  console.log(`${status}: ${msg}`);
+});
+
+emitter.emit('customEvent', "Hello", 200);
+#+END_EXAMPLE
+
+*** util
+#+BEGIN_EXAMPLE
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
+var Person = function(name) {
+  this.name = name;
+};
+
+util.inherits(Person, EventEmitter);
+// Add EventEmitter to Person's prototype
+// Person inherits all from EventEmitter
+
+var ben = new Person("Ben");
+
+ben.on('speak', function(said) {
+  console.log(`${this.name} said ${said}`);
+});
+
+ben.emit('speak', "I'm Ben");
+#+END_EXAMPLE
+
+*** child_process
+Exec is for short process
+#+BEGIN_EXAMPLE
+var exec = require('child_process').exec;
+exec('ls', function(err, stdout) {
+  if (err) throw err;
+  console.log(stdout);
+});
+#+END_EXAMPLE
+
+Spawn for ongoing process
+#+BEGIN_EXAMPLE
+var spawn = require('child_process').spawn;
+var cp = spawn('node', ["app"]); // node app
+cp.stdout.on("data", function(data) {
+  // Output child process stdout
+  console.log(`STDOUT: ${data.toString()}`);
+});
+
+cp.on("close", function() {
+  console.log("Child process has ended.");
+  process.exit();
+});
+
+setTimeout(function() {
+  // maximum run time
+  cp.stdin.write("stop");
+}, 4000);
+#+END_EXAMPLE
+
 *** gulp
 Install gulp globally and locally.
 gulpfile.js
@@ -8633,14 +8829,26 @@ gulp.task('default', function() {
 });
 #+END_EXAMPLE
 
+*** path <<<nodejs:path>>>
+#+BEGIN_EXAMPLE
+var path = require('path');
+// path is native, get just the file name
+console.log(path.basename(__filename));
+
+// No trailing '/'
+var dirUploads = path.join(__dirname, 'www', 'files', 'uploads');
+#+END_EXAMPLE
+
 *** fs
 Default fs is not a Promise although it is async with callback.
+Every function has a sync version. Just append Sync at the end.
 They cannot be chained. Consider nodejs:bluebird or nodejs:co-fs
 #+BEGIN_EXAMPLE
 var fs = require('fs');
 var data = require('./data1.json');
 console.log(data.name); // data is an object
 fs.readFile('./data1.json', 'utf-8', function(err, data) {
+  // without specifying utf-8, file will be read as binary
   data = JSON.parse(data); // data is string
   console.log(data.name); 
 });
@@ -8648,16 +8856,73 @@ fs.readFile('./data1.json', 'utf-8', function(err, data) {
 // Read directory
 fs.readdir('/root', function(err, data) {
   console.log(data); // data is array
+  data.forEach(function(fname) {
+    var file = path.join(__dirname, "lib", fname);
+    var stats = fs.statSync(file);
+    if (stats.isFile() && fname !== '.DS_Store') {
+      fs.readFile(file, "UTF-8", function(err, data) {
+        console.log(data);
+      });
+    } 
+    
+  });
 });
 
 // Write file
 var tomString = '{ "name": "Tom" }';
-fs.writeFile('tom.json', tomString);
+fs.writeFile('tom.json', tomString, function(err) {});
 var timmy = {
   name: 'Timmy'
 };
 
 fs.writeFile('timmy.json', JSON.stringify(timmy));
+
+// Append file
+fs.appendFile('timmy.json', 'more text \n');
+
+// Rename file
+fs.rename('./lib/project-config.js', './lib/config.json');
+
+// Move file
+fs.rename('./lib/project-config.js', './config.json');
+
+// Remove file
+fs.unlink('./lib/config.json');
+
+// New folder
+if (!fs.existsSync("lib")) {
+  fs.mkdir("lib", function(err) {});
+}
+
+// Rename or move
+fs.rename('./assets/logs', './logs');
+
+// Remove folder, folder must be empty
+fs.rmdir('./logs');
+
+// Remove all files from a directory
+fs.readdirSync('./logs').forEach(function(fileName) {
+  fs.unlinkSync('./logs/' + fileName);
+});
+
+// File read stream
+var stream = fs.createReadStream('./chat.log', 'UTF-8');
+var data = "";
+stream.once('data', function() {
+  console.log('Start reading file');
+});
+stream.on("data", function(chunk) {
+  process.stdout.write(` chunk: ${chunk.length} |`);
+  data += chunk;
+});
+stream.on('end', function() {
+  console.log(data.length);
+});
+
+// File write stream
+var stream = fs.createWriteStream('result.md');
+stream.write(`${data}\n`);
+stream.close();
 #+END_EXAMPLE
 
 *** co-fs, co <<<nodejs:co-fs>>> <<<nodejs:co>>>
