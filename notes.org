@@ -9201,6 +9201,7 @@ var server = http
     if (req.url === '/') {
       fs.readFile("./public/index.html", "UTF-8", function (err, html) {
         res.writeHead(200, {"Content-Type": "text/html"});
+        // res.write(html); res.end();
         res.end(html);
       });
     }
@@ -9308,6 +9309,10 @@ var express = require('express');
 var app = express();
 var bodyParser =  require('body-parser');
 
+app.set('port', process.env.PORT || 3000);
+
+var skierTerms = [{},{}]; // javascript array/object
+app.set('appData', skierTerms);
 
 app.use(bodyParser.json()); // any data sent to this app (API) as .json, the data will be parsed
 app.use(bodyParser.urlencoded({ extended: false })); // also parse url encoded data
@@ -9318,8 +9323,6 @@ app.use(function(req, res, next) {
   next(); // eventually, res.send('output');, so here is next
 });
 
-var skierTerms = [{},{}]; // javascript array/object
-
 // default is index.html, server static files
 app.use(express.static(__dirname));
 
@@ -9328,28 +9331,100 @@ app.use('/message', function(req, res) {
   res.send('response is hello');
 });
 
-// same domain
-app.get('/dict-api', function(req, res) {
-  res.json(skierTerms); // send json variable, no need to stringify
-});
+app.use(require('./routes/index'));
+app.use(require('./routes/dict-api'));
 
-app.post('/dict-api', function(req, res) {
-  skierTerms.push(req.body); 
-  res.json(skierTerms); // send json variable, no need to stringify
-});
-
-app.delete('dict-api/:term', function(req, res) {
-  skierTerms = skierTerms.filter(function(def) {
-    return def.term.toLowerCase() !== req.params.term.toLowerCase();
-  });
-  res.json(skierTerms);
+app.listen(app.get('port'), function() {
+  // optional callback
 });
 
 // visit localhost:3000/message
-
-app.listen(3000);
-
 // node my-express.js
+// PORT=4000 node my-express.js
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+// ./routes/dict-api.js
+var express = require('express');
+var router = express.Router();
+
+router.use(bodyParser.json()); // any data sent to this app (API) as .json, the data will be parsed
+router.use(bodyParser.urlencoded({ extended: false })); // also parse url encoded data
+
+// same domain
+router.get('/dict-api', function(req, res) {
+  var skierTerms = req.app.get('appData');
+  res.json(skierTerms); // send json variable, no need to stringify
+});
+
+router.post('/dict-api', function(req, res) {
+  var skierTerms = req.app.get('appData');
+  skierTerms.push(req.body);
+  req.app.set('appData', skierTerms);
+  res.json(skierTerms); // send json variable, no need to stringify
+});
+
+router.delete('dict-api/:term', function(req, res) {
+  var skierTerms = req.app.get('appData');
+  skierTerms = skierTerms.filter(function(def) {
+    return def.term.toLowerCase() !== req.params.term.toLowerCase();
+  });
+  req.app.set('appData', skierTerms);
+  res.json(skierTerms);
+});
+
+module.exports = router;
+#+END_EXAMPLE
+
+**** View Engine (ejs)
+#+BEGIN_EXAMPLE
+npm install ejs --save
+
+# app.js
+app.set('view engine', 'ejs');
+app.set('view', './views'); // default
+
+app.locals.siteTitle = 'Website Name'; // available to all views
+// persist through the life of the app
+
+# ./routes/index.js
+router.get('/', function(req,res) {
+  var data = req.app.get('appData');
+  var pagePhotos = [];
+
+  data.speakers.forEach(function() {
+    pagePhotos = pagePhotos.concat(item.artwork);
+  });
+
+  res.render('index', {
+    pageTitle: 'Home',
+    artwork: pagePhotos,
+    pageID: 'home'
+  });
+});
+
+# ./views/index.ejs
+<!-- HTML Code -->
+<%= siteTitle %>
+<%= pageTitle %>
+
+<body id="<%= pageID %>">
+
+# if the variable is HTML, output as HTML
+<%- varHTML %>
+
+<% if (typeof pageTitle !== "undefined") { %>
+  <script src="abc.js"></script>
+<% } %>
+
+<% if (artwork.length > 0) { %>
+  <% for (i=0; i< artwork.length; i++) { %>
+  <img src="/images/artwork/<%= artwork[i] %>" alt="Artwork <%= i %>">
+  <% } %>
+<% } %>
+
+<% include partials/template/header.ejs %>
+# partial can use the parent view variables
 #+END_EXAMPLE
 
 *** sails
@@ -9441,12 +9516,33 @@ fs.readFileAsync('./data1.json')
   });
 #+END_EXAMPLE
 
-*** node-dev
+*** node-dev, nodemon, reload
 node-dev restart automatically when there's a change
 #+BEGIN_EXAMPLE
 npm install node-dev -g
+npm install nodemon -g
 node-dev app.js
 # vs node app.js
+
+# nodemon can watch on a list of file types or ignore a file/folder
+nodemon -e js,jade app --watch /another/folder/to/watch --ignore feedback.json --ignore aFolder/
+#+END_EXAMPLE
+
+Create a WebSocket on the client and reload the browser when Express server is reloaded
+#+BEGIN_EXAMPLE
+npm install -g reload
+npm install reload --save
+
+var reload = require('reload');
+
+# app.js
+# after app.listen();
+reload(server, app);
+
+# In each route, add reload client js file.
+router.get('/', function(req, rs) {
+  res.write('<script src="/reload/reload.js"></script>');
+});
 #+END_EXAMPLE
 
 *** jshint
@@ -9492,8 +9588,12 @@ var http = require('http'); // socket.io requires http
 var app = express();
 var server = http.createServer(app).listen(3000);
 var io = require('socket.io')(server); // change http server to a socket server
+// Or io can be attached later: require('socket.io')();
 
 app.use(express.static('./public'));
+
+// socket is attached later
+// io.attach(server);
 
 io.on('connection', function(socket) {
   socket.on('chat', function(msg) {
