@@ -7989,7 +7989,8 @@ while (result) {
 
 #+END_EXAMPLE
 
-** WebSocket
+** WebSocket <<<js:ws>>>
+Javascript on client (e.g. web browser)
 #+BEGIN_EXAMPLE
 var connection = new WebSocket('ws://abc.com/echo', ['soap', 'xmpp']);
 // ['soap', 'xmpp'] are subprotocols
@@ -7997,6 +7998,11 @@ var connection = new WebSocket('ws://abc.com/echo', ['soap', 'xmpp']);
 // When connection is open, send some data
 connection.onopen = function() {
  connection.send('Ping'); // send string
+};
+
+// When connection close
+connection.onclose = function() {
+  // do something
 };
 
 // Send ArrayBuffer as binary
@@ -8011,7 +8017,6 @@ connection.send(binary.buffer);
 var file = document.querySelector('input[type="file"]').files[0];
 connection.send(file);
 
-
 connection.onerror = function(error) {
  console.log('WebSocket Error ' + error);
 };
@@ -8025,7 +8030,6 @@ connection.binaryType = 'arraybuffer'; // or blob
 connection.onmessage = function(e) {
  console.log(e.data.byteLength);
 };
-
 #+END_EXAMPLE
 
 ** Mutation Observer
@@ -8613,13 +8617,22 @@ node -v
 nvm alias default 6.10.2
 # Use the default version
 nvm use default
-# Install npm package to./node_modules
+# Install npm package to ./node_modules
 npm install express
 # Install package globally (available to other projects using the same Node.js version)
 # ~/.nvm/node_version/lib/node_modules/package_name
 npm install -g gulp
 # Link global package into local sphere
 npm link express
+
+# Remove a package globally, just remove -g for locally
+npm remove async -g
+
+# What packages/modules are installed globally, just remove -g for locally
+npm ls -g
+
+# modules installed globally usually have an executable command for direct use
+# if it's installed locally, usually run ./node_modules/module_name/bin/exec_cmd
 #+END_EXAMPLE
 
 ** Global Object
@@ -8985,18 +8998,206 @@ function onerror(err) {
 }
 #+END_EXAMPLE
 
-*** express
-Create index.html first, save this file to web root
+*** http, https <<<nodejs:http>>>
+GET request
+#+BEGIN_EXAMPLE
+var https = require('https');
+var fs = require('fs');
+
+var options = {
+  hostname: "en.wikipedia.org",
+  port: 443,
+  path: "/wiki/George_Washington",
+  method: "GET"
+};
+
+var req = https.request(options, function(res) {
+  var responseBody = "";
+  console.log(`Server Status: ${res.statusCode}`);
+  console.log("Response Headers: %j", res.headers);
+  res.setEncoding("UTF-8");
+  res.once("data", function(chunk) {
+    console.log(chunk);
+  });
+
+  res.on("data", function(chunk) {
+    console.log(`--chunk-- ${chunk.length}`);
+    responseBody += chunk;
+  });
+
+  res.on("end", function() {
+    fs.writeFile("george-w.html", responseBody, function(err) {
+      if (err) throw err;
+    });
+    console.log("File downloaded");
+  });
+
+});
+
+req.on("error", function(err) {
+  console.log(`problem: ${err.message}`);
+});
+
+req.end();
+#+END_EXAMPLE
+
+Simple HTTP server which gives responses
+
+#+BEGIN_EXAMPLE
+
+var http = require('http');
+var fs = require('fs');
+var path = require('path');
+var jsonFile = require('./data/inventory'); //inventory.json
+// jsonFile is a json object, not string
+
+var server = http
+  .createServer(function (req, res) {
+    if (req.url === '/') {
+      fs.readFile("./public/index.html", "UTF-8", function (err, html) {
+        res.writeHead(200, {"Content-Type": "text/html"});
+        res.end(html);
+      });
+    }
+    else if (req.url.match(/.css$/)) {
+      var cssPath = path.join(__dirname, 'public', req.url);
+      var fileStream = fs.createReadStream(cssPath, "UTF-8");
+      res.writeHead(200, {"Content-Type": "text/css"});
+      fileStream.pipe(res);
+    }
+    else if (req.url.match(/.jpg$/)) {
+      var imgPath = path.join(__dirname, 'public', req.url);
+      var imgStream = fs.createReadStream(imgPath); // binary
+      res.writeHead(200, {"Content-Type": "image/jpeg"});
+      imgStream.pipe(res);
+    }
+    else if (req.url === 'getallorders') {
+      res.writeHead(200, {"Content-Type": "text/json"});
+      res.end(JSON.stringify(jsonFile));
+    }
+    else if (req.url === 'instock') {
+      listInStock(res);
+    }
+    else if (req.url === 'form') {
+
+      if (res.method === "GET") {
+        res.writeHead(200, {"Content-Type": "text/html"});
+        fs.createReadStream("./public/form.html", "UTF-8").pipe(res);
+      }
+      else if (req.method === "POST") {
+        var body = "";
+        // body will be a url encoded string with key-value pairs
+        req.on("data", function(chunk) {
+          body += chunk;
+        });
+
+        req.on("end", function() {
+          res.writeHead(200, {"Content-Type": "text/html"});
+          res.end(`${body}`);
+        });
+      }
+
+    }
+    else {
+      res.writeHead(200, {"Content-Type": "text/plain"});
+      res.end("404 File Not Found");
+    }
+  })
+  .listen(3000);
+
+function listInStock(res) {
+  var inStock = jsonFile.filter(function(item) {
+    return item.avail === "In Stock";
+  });
+  res.end(JSON.stringify(inStock));
+}
+#+END_EXAMPLE
+
+*** cors
+#+BEGIN_EXAMPLE
+npm install cors
+
+# Enable all CORS requests
+var express = require('express');
+var cors = require('cors');
+var app = express();
+
+app.use(cors());
+ 
+app.get('/products/:id', function (req, res, next) {
+  res.json({msg: 'This is CORS-enabled for all origins!'});
+});
+
+# Enable for one route
+app.get('/products/:id', cors(), function (req, res, next) {
+  res.json({msg: 'This is CORS-enabled for all origins!'})
+})
+
+# Options
+var corsOptions = {
+  origin: 'http://example.com';
+  optionsSuccessStatus: 200
+}
+cors(corOptions)
+#+END_EXAMPLE
+
+*** body-parser
+parse POST data. Refer to nodejs:express
+~npm install body-parser~
+
+var express = require('express');
+
+*** httpster
+#+BEGIN_EXAMPLE
+npm install httpster -g
+httpster -p 3000 -d ./public/
+
+# Or httpster is installed locally
+./node_modules/httpster/bin/httpster -p 3000 -d ./public/
+#+END_EXAMPLE
+
+*** express <<<nodejs:express>>>
 #+BEGIN_EXAMPLE
 // my-express.js
 var express = require('express');
 var app = express();
-// default is index.html, static files
+var bodyParser =  require('body-parser');
+
+
+app.use(bodyParser.json()); // any data sent to this app (API) as .json, the data will be parsed
+app.use(bodyParser.urlencoded({ extended: false })); // also parse url encoded data
+
+// log every request
+app.use(function(req, res, next) {
+  console.log(`${req.method} request for '${req.url}' - ${JSON.stringify(req.body)}`);
+  next(); // eventually, res.send('output');, so here is next
+});
+
+var skierTerms = [{},{}]; // javascript array/object
+
+// default is index.html, server static files
 app.use(express.static(__dirname));
 
 app.use('/message', function(req, res) {
   console.log('user requested endpoint');
   res.send('response is hello');
+});
+
+// same domain
+app.get('/dict-api', function(req, res) {
+  res.json(skierTerms); // send json variable, no need to stringify
+});
+
+app.post('/dict-api', function(req, res) {
+  skierTerms.push(req.body); 
+  res.json(skierTerms); // send json variable, no need to stringify
+});
+
+app.delete('dict-api/:term', function(req, res) {
+  skierTerms = skierTerms.filter(function(def) {
+    return def.term.toLowerCase() !== req.params.term.toLowerCase();
+  });
+  res.json(skierTerms);
 });
 
 // visit localhost:3000/message
@@ -9095,6 +9296,110 @@ fs.readFileAsync('./data1.json')
   });
 #+END_EXAMPLE
 
+*** node-dev
+node-dev restart automatically when there's a change
+#+BEGIN_EXAMPLE
+npm install node-dev -g
+node-dev app.js
+# vs node app.js
+#+END_EXAMPLE
+
+*** jshint
+Check javascript syntax
+#+BEGIN_EXAMPLE
+npm install jshint -g
+jshint app.js
+
+# In app.js, insert a comment at top to give extra instructions
+# Use ES6 standard
+/* jshint esnext: true */
+#+END_EXAMPLE
+
+*** ws
+Refer to js:ws for client
+#+BEGIN_EXAMPLE
+npm install ws --save
+
+var WebSocketServer = require('ws');
+var wss = new WebSocketServer({port:3000});
+wss.on('connection', function(ws) {
+  wss.on('message', function(msg) {
+    if (message === 'exit') {
+      ws.close();
+    }
+    else {
+      // broadcast
+      wss.clients.forEach(function(client) {
+        client.send(msg);
+      });
+    }
+  });
+  ws.send('Welcome to cyber chat');
+});
+#+END_EXAMPLE
+
+*** socket.io
+#+BEGIN_EXAMPLE
+npm install socket.io --save
+
+var express = require('express');
+var http = require('http'); // socket.io requires http
+var app = express();
+var server = http.createServer(app).listen(3000);
+var io = require('socket.io')(server); // change http server to a socket server
+
+app.use(express.static('./public'));
+
+io.on('connection', function(socket) {
+  socket.on('chat', function(msg) {
+    socket.broadcast.emit('message', message);
+  });
+  socket.emit('message', 'Welcome to cyber chat');
+});
+
+# socket.io-client.min.js
+# main.js
+var socket = io("http://localhost:3000");
+socket.on('disconnect', function() {
+  // do something
+});
+socket.on('connect', function() {
+  // do something
+});
+socket.on('message', function(msg) {
+  console.log(msg);
+});
+
+socket.emit('chat', input.value);
+#+END_EXAMPLE
+
+*** mocha, chai
+#+BEGIN_EXAMPLE
+npm install mocha -g
+npm install chai --save-dev
+
+# ./test/tools-spec.js
+var expect = require('chai').expect;
+var tools = require('../lib/tools'); // tools.js
+
+describe('function: printName()', function() {
+  it("test 1: should print the last name first", function() {
+    var results = tools.printName({ first: "Li", last: "Banks" });
+    expect(results).to.equal("Banks, Alex");
+  });
+});
+
+# ./lib/tools.js
+module.exports = {
+  printName(person) {
+    return `${person.last}, ${person.first}`;
+  }
+};
+
+# run mocha
+mocha
+#+END_EXAMPLE
+
 ** Custom Module
 #+BEGIN_EXAMPLE
 # my-module.js
@@ -9104,7 +9409,14 @@ var myModule= require('./my-module.js');
 console.log(myModule.myText);
 # node module-demo.js
 # Initiate the custom module, adding package.json file
-# npm init
+npm init
+
+# --save flag will add/remove dependency to package.js
+npm install cors --save
+npm remove cors --save
+
+# delete ./node_modules and run this to install all dependencies
+npm install
 #+END_EXAMPLE
 
 * AngularJS
