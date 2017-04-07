@@ -8834,12 +8834,95 @@ setTimeout(function() {
 
 *** gulp
 Install gulp globally and locally.
-gulpfile.js
 #+BEGIN_EXAMPLE
 var gulp=require('gulp');
 gulp.task('default', function() {
   console.log('hello from gulp');
 });
+#+END_EXAMPLE
+
+*** grunt
+Install grunt globally and locally
+#+BEGIN_EXAMPLE
+npm install grunt-cli -g
+npm install grunt-cli --save-dev
+
+npm install grunt-contrib-jshint --save-dev
+npm install grunt-contrib-less --save-dev
+npm install grunt-autoprefixer --save-dev
+npm install grunt-browserify --save-dev
+npm install grunt-contrib-watch --save-dev
+
+npm install jquery
+
+# GruntFile.js
+module.exports = function(grunt) {
+
+  grunt.initConfig({
+    jshint: {
+      files: ["*.js", "lib/*.js", "test/*.js"],
+      options: {
+        esnext: true,
+        globals: {
+          jQuery: true
+        }
+      }
+    },
+    less: {
+      production: {
+        files: {
+          "public/css/style.css": ["less/*.less"]
+        }
+      }
+    },
+    autoprefixer: {
+      single_file: {
+        src: "public/css/style.css",
+        dest: "public/css/style.css"
+      }
+    },
+    browserify: {
+      client: {
+        src: ["app-client.js"],
+        dest: "public/js/bundle.js"
+      }
+    },
+    watch: {
+      css: {
+        files: ["less/*.less"],
+        tasks: ["css"]
+      },
+      scripts: {
+        files: ["app-client.js", "lib/*.js"],
+        tasks: ["jshint", "browserify"]
+      }
+    }
+  });
+
+  grunt.loadNpmTasks("grunt-contrib-jshint");
+  grunt.loadNpmTasks("grunt-contrib-less");
+  grunt.loadNpmTasks("grunt-autoprefixer");
+  grunt.loadNpmTasks("grunt-browserify");
+  grunt.loadNpmTasks("grunt-contrib-watch");
+
+  grunt.registerTask("css", ["less", "autoprefixer"]);
+  grunt.registerTask("js", ["browserify"]);
+
+  grunt.registerTask("default", ["jshint", "css", "js"]);
+};
+
+# ./app-client.js
+var $ = require("jquery");
+var printTerms = require("./lib/printTerms");
+
+// jQuery code
+
+
+# run grunt
+grunt
+
+# open another session and run
+grunt watch
 #+END_EXAMPLE
 
 *** path <<<nodejs:path>>>
@@ -9373,41 +9456,347 @@ socket.on('message', function(msg) {
 socket.emit('chat', input.value);
 #+END_EXAMPLE
 
-*** mocha, chai
+*** mocha, chai, nock, rewire, sinon
 #+BEGIN_EXAMPLE
 npm install mocha -g
 npm install chai --save-dev
+npm install nock --save-dev
+npm install rewire --save-dev
+npm install sinon --save-dev
 
 # ./test/tools-spec.js
 var expect = require('chai').expect;
 var tools = require('../lib/tools'); // tools.js
+var nock = require('nock');
 
-describe('function: printName()', function() {
-  it("test 1: should print the last name first", function() {
+// Test function printName()
+describe('printName()', function() {
+  // Test 1
+  it("should print the last name first", function() {
     var results = tools.printName({ first: "Li", last: "Banks" });
     expect(results).to.equal("Banks, Alex");
   });
 });
 
+// Test async function loadWiki()
+describe('loadWiki()', function() {
+  this.timeout(5000); // default timeout is 2 seconds
+  // Test 1
+  it("Load Abraham Lincon's wiki page", function(done) {
+    tools.loadWiki({ first: 'Abraham', last: 'Lincooln'}, function(html) {
+      expect(html).to.be.ok;
+      done(); // if done() is not run, test will fail
+    });
+  });
+});
+var expect = require('chai').expect;
+var tools = require('../lib/tools'); // tools.js
+var nock = require('nock');
+var rewire = require('rewire');
+
+var order = rewire('../lib/order');
+// instead of require(), use rewire() which can change data later
+
+// Test function printName()
+describe('printName()', function() {
+  // Test 1
+  it("should print the last name first", function() {
+    var results = tools.printName({ first: "Li", last: "Banks" });
+    expect(results).to.equal("Banks, Alex");
+  });
+});
+
+// Test async function loadWiki()
+describe('loadWiki()', function() {
+  //this.timeout(5000); // default timeout is 2 seconds
+
+  before(function() {
+    // before runs before all tests in this block
+    // mock server, save testing time
+    nock('https://en.wikipedia.org')
+      .get('/wiki/Abraham_Lincoln')
+      .reply(200, `--html-code--`);
+  });
+
+  // Test 1
+  it("Load Abraham Lincon's wiki page", function(done) {
+    tools.loadWiki({ first: 'Abraham', last: 'Lincooln'}, function(html) {
+      //expect(html).to.be.ok;
+      expect(html).to.equal('--html-code--');
+      done(); // if done() is not run, test will fail
+    });
+  });
+});
+
+describe('Ordering Items', function() {
+  beforeEach(function() {
+    // beforeEach runs before each test in this block
+    this.testData = [
+      {sku: "AAA", qty: 10},
+      {sku: "BBB", qty: 10}
+    ];
+    // modify data for testing purpose
+    order.__set__("inventoryData", this.testData);
+  });
+
+  it('order an item when there are enough in stock', function(done) {
+    order.orderItem('BBB', 3, function() {
+      // orderItem subtracts 3 from inventory
+      done();
+    });
+  });
+
+});
+var expect = require('chai').expect;
+var tools = require('../lib/tools'); // tools.js
+var nock = require('nock');
+var rewire = require('rewire');
+var sinon = require('sinon');
+
+var order = rewire('../lib/order');
+// instead of require(), use rewire() which can change data later
+
+// Test function printName()
+describe('printName()', function() {
+  // Test 1
+  it("should print the last name first", function() {
+    var results = tools.printName({ first: "Li", last: "Banks" });
+    expect(results).to.equal("Banks, Alex");
+  });
+});
+
+// Test async function loadWiki()
+describe('loadWiki()', function() {
+  //this.timeout(5000); // default timeout is 2 seconds
+
+  before(function() {
+    // before runs before all tests in this block
+    // mock server, save testing time
+    nock('https://en.wikipedia.org')
+      .get('/wiki/Abraham_Lincoln')
+      .reply(200, `--html-code--`);
+  });
+
+  // Test 1
+  it("Load Abraham Lincon's wiki page", function(done) {
+    tools.loadWiki({ first: 'Abraham', last: 'Lincooln'}, function(html) {
+      //expect(html).to.be.ok;
+      expect(html).to.equal('--html-code--');
+      done(); // if done() is not run, test will fail
+    });
+  });
+});
+
+describe('Ordering Items', function() {
+  beforeEach(function() {
+    // beforeEach runs before each test in this block
+    this.testData = [
+      {sku: "AAA", qty: 10},
+      {sku: "BBB", qty: 10}
+    ];
+    // modify data for testing purpose
+    order.__set__("inventoryData", this.testData);
+
+    this.console = {
+      // overwrite a function with a fake function
+      log: sinon.spy()
+    };
+
+    order.__set__('console', this.console);
+
+    this.warehouse = {
+      packageAndShip: sinon.stub().yields(1098765)
+    };
+
+    order.__set__('warehouse', this.warehouse);
+
+  });
+
+  it('order an item when there are enough in stock', function(done) {
+    var _this = this;
+
+    order.orderItem('BBB', 3, function() {
+      // orderItem subtracts 3 from inventory
+
+      expect(_this.console.log.callCount).to.equal(2);
+
+      done();
+    });
+  });
+
+  describe('Warehouse interaction', function() {
+    beforeEach(function() {
+      this.callback = sinon.spy();
+      order.orderItem("BBB", 2, callback);
+    });
+
+    it('receives a tracking number', function() {
+      expect(this.callback.calledWith(1098765)).to.equal(true);
+    });
+
+    it('calls packageAndShip with the correct sku and quantity', function() {
+      expect(this.warehouse.packageAndShip.calledWith("BBB",2)).to.equal(true);
+    });
+
+  });
+
+});
+
 # ./lib/tools.js
+var https = require('https');
 module.exports = {
   printName(person) {
     return `${person.last}, ${person.first}`;
+  },
+  loadWiki(person, callback) {
+    var url = `https://en.wikipedia.org/wiki/${person.first}_${person.last}`;
+    https.get(url, function(res) {
+      var body = "";
+      res.setEncoding('UTF-8');
+      res.on("data", function(chunk) {
+        body += chunk;
+      });
+      res.on("end", function() {
+        callback(body);
+      });
+    });
   }
 };
 
+# ./lib/order.js
+var inventoryData = require('../data/inventory');
+var warehouse = require('./warehouse');
+
+function findItem(sku) {
+  var i = inventoryData.map(item => item.sku).indexOf(sku);
+  if (i === -1) {
+    console.log(`Item - ${sku} not found`);
+    return null;
+  } else {
+    return inventoryData[i];
+  }
+}
+
+function isInStock(sku, qty) {
+  var item = findItem(sku);
+  return item && item.qty >= qty;
+}
+
+function order(sku, quantity, complete) {
+  complete = complete || function () {};
+  if (isInStock(sku, quantity)) {
+    console.log(`ordering ${quantity} of item # ${sku}`);
+    warehouse.packageAndShip(sku, quantity, function (tracking) {
+      console.log(`order shipped, tracking - ${tracking}`);
+      complete(tracking);
+    });
+    return true;
+  } else {
+    console.log(`there are not ${quantity} of item '${sku}' in stock`);
+    return false;
+  }
+}
+
+module.exports.orderItem = order;
+
+
 # run mocha
 mocha
+#+END_EXAMPLE
+
+*** supertest, cheerio
+#+BEGIN_EXAMPLE
+npm install supertest --save-dev
+npm install cheerio --save-dev
+
+# ./app.js is an express app
+
+# ./test/app-spec.js
+var request = require("supertest");
+var expect = require('chai').expect;
+var cheerio = require("cheerio");
+var rewire = require('rewire');
+var app = rewire('../app');
+
+describe("Dictionary App", function () {
+
+    it("Loads the home page", function(done) {
+        request(app).get("/").expect(200).end(function(err, res) {
+          var $ = cheerio.load(res.text); // jQuery DOM!
+          var pageHeading = $("body>h1:first-child").text();
+          expect(pageHeading).to.equal("Skier Dictionary");
+          done();
+        });
+    });
+
+    describe("Dictionary API", function () {
+
+        beforeEach(function () {
+
+        	this.defs = [
+                {
+                    term: "One",
+                    defined: "Term One Defined"
+                },
+                {
+                    term: "Two",
+                    defined: "Term Two Defined"
+                }
+            ];
+
+            app.__set__("skierTerms", this.defs);
+        });
+
+        it("GETS dictionary-api", function(done) {
+            var defs = this.defs;
+            request(app).get("/dictionary-api").expect(200).end(function(err, res) {
+                var terms = JSON.parse(res.text);
+                expect(terms).to.deep.equal(defs);
+                done();
+            });
+        });
+
+        it("POSTS dictionary-api", function(done) {
+            request(app)
+               .post("/dictionary-api")
+               .send({ "term": "Three", "defined": "Term Three Defined"})
+               .expect(200)
+               .end(done);
+        });
+
+        it("DELETES dictionary-api", function(done) {
+            request(app)
+               .delete("/dictionary-api/One")
+               .expect(200)
+               .end(done);
+        });
+
+    });
+
+});
+#+END_EXAMPLE
+
+*** istanbul
+Code coverage report (testing).
+#+BEGIN_EXAMPLE
+npm install istanbul -g
+
+# at ./
+istanbul cover _mocha
+
+# ./coverage/lconv-report/index.html
 #+END_EXAMPLE
 
 ** Custom Module
 #+BEGIN_EXAMPLE
 # my-module.js
 exports.myText = 'hello';
+
 # module-demo.js
 var myModule= require('./my-module.js');
 console.log(myModule.myText);
 # node module-demo.js
+
 # Initiate the custom module, adding package.json file
 npm init
 
@@ -9417,6 +9806,52 @@ npm remove cors --save
 
 # delete ./node_modules and run this to install all dependencies
 npm install
+#+END_EXAMPLE
+
+*** package.json, node-inspector
+npm install node-inspector -g
+
+npm install
+npm start (or test, publish, install)
+npm run dev (custom process)
+npm run debug
+
+#+BEGIN_EXAMPLE
+{
+  "name": "ski-dictionary",
+  "version": "1.0.0",
+  "description": "A collection of skier terms and definitions",
+  "main": "app.js",
+  "scripts": {
+    "predebug": "grunt",
+    "debug": "open http://localhost:3000 & open http://localhost:8080/debug?port=5858",
+    "prestart": "grunt",
+    "start": "node app",
+    "predev": "grunt",
+    "dev": "open http://localhost:3000 & node-dev app & grunt watch"
+  },
+  "keywords": [
+    "ski",
+    "terms",
+    "dictionary"
+  ],
+  "author": "Alex Banks",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.14.1",
+    "cors": "^2.7.1",
+    "express": "^4.13.3",
+    "jquery": "^2.1.4"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-autoprefixer": "^3.0.3",
+    "grunt-browserify": "^4.0.1",
+    "grunt-contrib-jshint": "^0.11.3",
+    "grunt-contrib-less": "^1.0.1",
+    "grunt-contrib-watch": "^0.6.1"
+  }
+}
 #+END_EXAMPLE
 
 * AngularJS
@@ -12453,6 +12888,16 @@ SSH might be blocked in public internet networks though.
 Git has upgraded credential helper from manager to wincred.
 git config --global crendential.helper wincred
 
+** Clone to an empty folder
+#+BEGIN_EXAMPLE
+cd ~/expressjs
+# add .git at the end
+# --bare means to clone all branches
+git clone --bare https://githublink/express.git .git
+git config --bool core.bare false
+git reset --hard
+#+END_EXAMPLE
+
 ** Clone to existing repository
 The existing repository doesn't have git but it has some other files that need to keep but not version controlled.
 In the existing repository run
@@ -15392,7 +15837,7 @@ http://www.zdfans.com/6351.html
 * TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
 * TODO Lynda Agile Project Management
 * TODO Lynda Javascript: Enhancing the DOM
-
+* TODO Lynda Firebase, Travis CI, Heroku
 * DONE Chase Payment
 * DONE Lynda [[https://www.behance.net/][Behance.net]]
 * DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
