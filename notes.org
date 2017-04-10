@@ -8833,12 +8833,74 @@ setTimeout(function() {
 #+END_EXAMPLE
 
 *** gulp
-Install gulp globally and locally.
+
 #+BEGIN_EXAMPLE
-var gulp=require('gulp');
+# Install gulp globally and locally.
+
+npm install -g gulp
+npm install --save-dev gulp
+npm install gulp-util --save-dev
+npm install gulp-coffee --save-dev
+npm install gulp-concat --save-dev
+npm install gulp-browserify --save-dev
+npm install gulp-compass --save-dev
+npm install jquery --save-dev
+npm install mustache --save-dev
+
+# gulpfile.js
+var gulp=require('gulp'),
+    gutil = require('gulp-util'),
+    coffee = require('gulp-coffee'),
+    browserify = require('gulp-browserify'),
+    compase = require('gulp-compass'),
+    concat = require('gulp-concat');
+
+# run gulp will run this task
 gulp.task('default', function() {
   console.log('hello from gulp');
 });
+
+// gulp-util, run `gulp log`
+gulp.task('log', function() {
+  gutil.log('Workflow starts');
+});
+
+var coffeeSources = ['components/coffee/tagline.coffee'];
+var jsSources = [
+  'components/scripts/1.js',
+  'components/scripts/2.js'
+];
+var sassSources = ['components/sass/style.scss'];
+
+gulp.task('coffee', function() {
+  gulp.src(coffeeSources)
+      .pipe(coffee({ bare: true })
+         .on('error', gutil.log))
+      .pipe(gulp.dest('components/scripts'));
+});
+
+gulp.task('js', ['coffee'], function() {
+  gulp.src(jsSources)
+      .pipe(concat('script.js'))
+      .pipe(gulp.dest('builds/development/js'));
+});
+
+gulp.task('compass', function() {
+  gulp.src(sassSources)
+      .pipe(compoass({
+            sass: 'components/sass',
+            image: 'builds/development/images',
+            style: 'expanded'
+         })
+         .on('error', gutil.log)
+      )
+      .pipe(gulp.dest('builds/development/css'));
+});
+
+gulp.task('watch', function() {
+  gulp.watch(coffeeSources, ['coffee']);
+});
+
 #+END_EXAMPLE
 
 *** grunt
