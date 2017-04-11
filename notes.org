@@ -8651,6 +8651,8 @@ npm ls -g
 # if it's installed locally, usually run ./node_modules/module_name/bin/exec_cmd
 #+END_EXAMPLE
 
+https://github.com/nodejs/LTS
+
 ** Global Object
 console.log is actually global.console.log
 https://nodejs.org/api/globals.html
@@ -10509,6 +10511,16 @@ sudo usermod -aG agroupname ausername
 # -aG keeps the existing groups the user belongs to and add the user to another group
 #+END_EXAMPLE
 
+Use useradd for non-interactive (Docker)
+=--usergroup, -U= :: Create a group with the same nanme as the user. 
+=--create-home, -m= :: Create home directory if does not exist.
+=--shell, -s= :: Assign a default shell for this user. ~/bin/false~ returns false then exit (logout).
+#+BEGIN_EXAMPLE
+useradd --user-group --create-home --shell /bin/false newusername
+#+END_EXAMPLE
+
+=-o -u 1000= :: change UID to 1000, -o is to allow duplicate UID
+
 *** User Group
 Run ~visudo~ to see permissions given to each group
 And check sudo environment variable setting
@@ -11855,6 +11867,11 @@ testsub:
 
 # %: is a target which matches every target
 # @: is a recipe in which @ is the same as @echo. : means do nothing
+
+# Escaping $ might be needed for running sub command
+
+start:
+	docker rm -f $$(docker ps -a -q)
 #+END_EXAMPLE
 
 ** Nano
@@ -12069,6 +12086,10 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 =docker-compose up -d=
 =docker-compose up -d --force-recreate= Force restart or recreate containers
 =docker-compose down -v= remove containers and volumes
+
+=docker-compose build= build new image if there's any build directive
+=docker-compose up -d= doesn't build image, it will use existing image
+=docker-compose up -d --build= build new image and run
 
 *** YML 
 It has to be this name ~docker-compose.yml~ and don't include this file in sub directories.
