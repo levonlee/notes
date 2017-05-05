@@ -10564,6 +10564,8 @@ Where -H is to use the target user's home directory
 
 ** SSH
 <<<linux:ssh>>>
+
+*** Transfer Client Key to Host
 Generate a private key on your local machine ~ssh-keygen~
 Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
 Show the public key and later copy to cloud server
@@ -10572,16 +10574,44 @@ Show the public key and later copy to cloud server
 On the remote server, login as a normal user ~sudo su - username~
 Create ~/.ssh directory ~mkdir .ssh~ ~chmod 700 .ssh~
 Create file and paste the public key ~nano .ssh/authorized_keys~
+
+Or concatenate it onto ~authorized_keys~ file manually
+#+BEGIN_EXAMPLE
+# backup first
+cp authorized_keys authorized_keys_Backup
+cat id_rsa.pub >> authorized_keys
+#+END_EXAMPLE
+
 Change permission ~chmod 600 .ssh/authorized_keys~
+
+*** Use Private Key from SSH Server to connect
+AWS uses .pem file as the private key on its SSH server.
+Convert this .pem file in PuttyGen and later uses it to connect to AWS
+Refer to aws:ssh
+
+*** Restart SSH
+General :: ~service ssh restart~
+Ubuntu :: ~sudo restart ssh~ or ~sudo systemctl restart ssh~
+
+*** Backup sshd_config file
+#+BEGIN_EXAMPLE
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.factory-defaults
+sudo chmod a-w /etc/ssh/sshd_config.factory-defaults
+#+END_EXAMPLE
 
 *** Disallow SSH as root user, SSH Daemon Config
 <<<linux:ssh:disallow_root>>>
 ~nano /etc/ssh/sshd_config~
 Change ~PermitRootLogin yes~ to no
-Restart SSH ~service ssh restart~
+Restart SSH
 Before logout, open another terminal to see if it works.
 
 Default SSH port is 22
+
+*** Disable Password Authentication
+~nano /etc/ssh/sshd_config~
+Replace ~#PasswordAuthentication yes~ with ~PasswordAuthentication no~
+Restart SSH
 
 ** fail2ban
 <<<linux:fail2ban>>>
@@ -10692,11 +10722,23 @@ chmod 400 ~/path/to/file.php
 555 :: read and execute (can't modify) for all
 700 :: full for owner
 777 :: Directory's full permission
-666 :: A file's full permission
+600 :: owner can read and write file
+666 :: anyone can read and write
 664 :: New file default permission. Read and Write for owner and group but only read for public
 
 By default, umask is 0002. A file's full permission is 666. So new file will have these permissions
 666-002 = 664
+
+chmod a-w /path/to/afile
+
+u = user that owns the file
+g = group that owns the file
+o = other (everyone else)
+a = all (everybody)
+
+r = read, w = write, x = execute
+
+a-w :: remove write permission for all
 
 *** Symbolic Link
 Symbolic link abc at user home folder, point it to existing folder xyz at user home folder
@@ -13253,6 +13295,7 @@ if (function_exists('newrelic_ignore_transaction')) {
 
 * AWS
 ** SSH
+<<<aws:ssh>>>
 Each instance has a Key Pair, shown as Key Name in Instance.
 
 When Key Pair is created for the first time, a .pem file is downloaded.
