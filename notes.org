@@ -290,6 +290,37 @@ pantheon:drupal:core
 - And run update.php
 
 ** Module
+*** Custom Module
+**** .info file
+[[https://www.drupal.org/node/542202#files][Instructions]]
+
+Use ~;~ at the beginning of a line to mark as comment
+~name = A Human Readable Name~
+~description = More is <a href="">here</a>.~ It can only one line with 255 characters and it's HTML (e.g. accented characters)!
+~core = 7.x~ Can't specify minor version.
+~package = Views~ 
+If your module comes with other modules or it's meant to be used exclusively with other modules, provide the package name here. 
+More than 4 modules that depend on each other can make a package.
+
+~files[] = includes/context.inc~ This .inc file should be class or interface. To include .inc with plain functions
+
+**** Refactor, include .inc files
+#+BEGIN_EXAMPLE
+function ctools_include($file, $module = 'ctools', $dir = 'includes') {
+  static $used = array();
+
+  $dir = '/' . ($dir ? $dir . '/' : '');
+
+  if (!isset($used[$module][$dir][$file])) {
+    require_once DRUPAL_ROOT . '/' . drupal_get_path('module', $module) . "$dir$file.inc";
+    $used[$module][$dir][$file] = TRUE;
+  }
+}
+
+// ctools_include('utility', 'ctools', 'includes');
+// ctools_include('macro', 'mymodule', 'includes');
+#+END_EXAMPLE
+
 *** Feed Import
 
 #+BEGIN_EXAMPLE
