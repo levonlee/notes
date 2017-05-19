@@ -12278,6 +12278,16 @@ CMD ["echo", "$HOME"] won't output $HOME variable
 Use shell form ~CMD [ "sh", "-c", "echo $HOME" ]~ or
 ~CMD echo $HOME~ at default shell of the running container
 
+*** ADD vs COPY
+COPY <src>... <dest>
+COPY ["<src>",... "<dest>"] (this form is required for paths containing whitespace)
+
+ADD and COPY are the same except 
+- ADD allows src to be an URL
+- If the src is an archive (tar) it will be unpacked
+
+Always use COPY if it can do what you want
+
 *** Timezone
 <<<docker:timezone>>>
 
@@ -12291,6 +12301,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 =docker-compose up -d=
 =docker-compose up -d --force-recreate= Force restart or recreate containers
 =docker-compose down -v= remove containers and volumes
+=docker-compose down ---rmi local= remove only images that don't have a custom tag set by the `image` field
+=docker-compose down --rmi all= remove all images used by any service
 
 =docker-compose build= build new image if there's any build directive
 =docker-compose up -d= doesn't build image, it will use existing image
