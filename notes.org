@@ -9193,7 +9193,7 @@ function onerror(err) {
 #+END_EXAMPLE
 
 *** http, https <<<nodejs:http>>>
-GET request
+It's sync request.
 #+BEGIN_EXAMPLE
 var https = require('https');
 var fs = require('fs');
@@ -9352,6 +9352,7 @@ httpster -p 3000 -d ./public/
 #+END_EXAMPLE
 
 *** express <<<nodejs:express>>>
+**** Sample
 #+BEGIN_EXAMPLE
 // my-express.js
 var express = require('express');
@@ -9424,6 +9425,94 @@ router.delete('dict-api/:term', function(req, res) {
 
 module.exports = router;
 #+END_EXAMPLE
+
+**** Routing
+***** Callbacks
+Instead of ~next()~, ~next('route')~ can bypass all the remaining route callbacks.
+
+#+BEGIN_EXAMPLE
+app.get('/example/a', function (req, res) {
+  res.send('Hello from A!')
+})
+
+app.get('/example/b', function (req, res, next) {
+  console.log('the response will be sent by the next function ...')
+  next()
+}, function (req, res) {
+  res.send('Hello from B!')
+})
+
+var cb0 = function (req, res, next) {
+  console.log('CB0')
+  next()
+}
+
+var cb1 = function (req, res, next) {
+  console.log('CB1')
+  next()
+}
+
+var cb2 = function (req, res) {
+  res.send('Hello from C!')
+}
+
+app.get('/example/c', [cb0, cb1, cb2])
+
+var cb0 = function (req, res, next) {
+  console.log('CB0')
+  next()
+}
+
+var cb1 = function (req, res, next) {
+  console.log('CB1')
+  next()
+}
+
+app.get('/example/d', [cb0, cb1], function (req, res, next) {
+  console.log('the response will be sent by the next function ...')
+  next()
+}, function (req, res) {
+  res.send('Hello from D!')
+})
+#+END_EXAMPLE
+
+***** Response methods
+****** res.send res.sendFile
+#+BEGIN_EXAMPLE
+res.send(new Buffer('whoop'));
+res.send({ some: 'json' }); // Array or Object, Express responds with JSON
+res.send('<p>some html</p>'); // Content-Type text/html
+res.status(404).send('Sorry, we cannot find that!');
+res.status(500).send({ error: 'something blew up' });
+#+END_EXAMPLE
+
+****** res.end
+Quickly ends the response without any data.
+#+BEGIN_EXAMPLE
+res.end();
+res.status(404).end();
+#+END_EXAMPLE
+
+***** Parameters
+#+BEGIN_EXAMPLE
+Route path: /users/:userId/books/:bookId
+Request URL: http://localhost:3000/users/34/books/8989
+req.params: { "userId": "34", "bookId": "8989" }
+
+app.get('/users/:userId/books/:bookId', function (req, res) {
+  res.send(req.params)
+})
+
+Route path: /user/:userId(\d+)
+Request URL: http://localhost:3000/user/42
+req.params: {"userId": "42"}
+#+END_EXAMPLE
+
+The name of route parameters must be made up of “word characters” ([A-Za-z0-9_]).
+
+~-~ and ~.~ are literal characters - and .
+
+For using ~*~ as regex, use ~{0,}~ for Express 4.x, use ~*~ for Express 5.
 
 **** View Engine (ejs)
 #+BEGIN_EXAMPLE
@@ -12747,6 +12836,12 @@ services:
     
 tty: true
 #+END_EXAMPLE
+
+** image:node
+node:boron
+Latest version 6.x (LTS)
+
+Use ~docker logs -f container_name~ to tail log
 
 * Apache
 ** Production Setup
