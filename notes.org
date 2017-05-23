@@ -7320,6 +7320,14 @@ null can be used.
 MIME type: application/json
 
 var obj = JSON.parse(jsonString); // parse a json string
+
+**** Deep Keys
+#+BEGIN_EXAMPLE
+var r1 = (((test || {}).level1 || {}).level2 || {}).level3;
+if (typeof r1 !== 'undefined') {
+}
+#+END_EXAMPLE
+
 ** DOM Manipulation
 *** If an element exists
 #+BEGIN_EXAMPLE
@@ -8714,11 +8722,18 @@ https://nodejs.org/api/globals.html
 *** __dirname, __filename
 Full path of the directory/file of the current module
 
-*** console
+*** console <<<nodejs:console>>>
 Backtick
 #+BEGIN_EXAMPLE
 var a = "World";
 console.log(`Hello ${a}`); // Hello World
+#+END_EXAMPLE
+
+console.dir(obj[, options]) uses util.inspect()
+#+BEGIN_EXAMPLE
+showHidden <bool> true
+depth <number> 2, can be null
+colors <bool> false
 #+END_EXAMPLE
 
 *** process
@@ -8803,6 +8818,15 @@ writePercent(percentWaited);
 #+END_EXAMPLE
 
 ** Modules, Packages, Frameworks
+*** Get version
+~npm list~ for locally installed packages
+~npm list -g~ for globally installed packages
+
+~npm list express~
+
+~npm view PKG_NAME version~ The latest available version of a package
+view aliaes: info, show, v
+
 *** v8
 #+BEGIN_EXAMPLE
 var v8 = require('v8');
@@ -8856,7 +8880,7 @@ emitter.emit('customEvent', "Hello", 200);
 *** util
 #+BEGIN_EXAMPLE
 var EventEmitter = require('events').EventEmitter;
-var util = require('util');
+const util = require('util');
 var Person = function(name) {
   this.name = name;
 };
@@ -8872,6 +8896,12 @@ ben.on('speak', function(said) {
 });
 
 ben.emit('speak', "I'm Ben");
+
+// fully print an object
+console.log(util.inspect(myObj, {showHidden: false, depth: null}));
+// or this for short
+cosole.log(util.inspect(myObj, false, null));
+// console.dir actually uses util.inspect. See nodejs:console
 #+END_EXAMPLE
 
 *** child_process
@@ -9359,6 +9389,18 @@ var corsOptions = {
 cors(corOptions)
 #+END_EXAMPLE
 
+*** xml2js
+https://github.com/Leonidas-from-XIV/node-xml2js
+#+BEGIN_EXAMPLE
+npm install --save xml2js
+
+var parseString = require('xml2js').parseString;
+var xml = "<root>Hello xml2js!</root>"
+parseString(xml, function (err, result) {
+    console.dir(result);
+});
+#+END_EXAMPLE
+
 *** body-parser
 parse POST data. Refer to nodejs:express
 ~npm install body-parser~
@@ -9783,7 +9825,10 @@ socket.emit('chat', input.value);
 #+BEGIN_EXAMPLE
 npm install mocha -g
 npm install chai --save-dev
+# nock is an http mocking and expectations library
 npm install nock --save-dev
+# rewire adds special setter and getter to modules to modify their values
+# https://www.npmjs.com/package/rewire
 npm install rewire --save-dev
 npm install sinon --save-dev
 
@@ -9938,7 +9983,7 @@ describe('Ordering Items', function() {
   it('order an item when there are enough in stock', function(done) {
     var _this = this;
 
-    order.orderItem('BBB', 3, function() {
+    order.orderItem('BBB', 3, function(done) {
       // orderItem subtracts 3 from inventory
 
       expect(_this.console.log.callCount).to.equal(2);
@@ -10022,10 +10067,18 @@ function order(sku, quantity, complete) {
 
 module.exports.orderItem = order;
 
-
 # run mocha
 mocha
 #+END_EXAMPLE
+
+mocha command not found, add this to package.json
+#+BEGIN_EXAMPLE
+"scripts": {
+  "test": "mocha -R spec"
+}
+#+END_EXAMPLE
+
+~-R spec~ is used to console.log inside tests it()
 
 *** supertest, cheerio
 #+BEGIN_EXAMPLE
@@ -10113,11 +10166,28 @@ istanbul cover _mocha
 ** Custom Module
 #+BEGIN_EXAMPLE
 # my-module.js
+# Export one property at a time
 exports.myText = 'hello';
+
+# Variables local to the module will be private
+
+# my-square.js, square module
+# Root of this module is a function
+# Or you want to export a complete object in one assignment instead of building it one property at a time
+# Assign it to `module.exports` instead of `exports`
+module.exports = (width) => {
+  return {
+   area: () => width ** 2
+  }
+}
 
 # module-demo.js
 var myModule= require('./my-module.js');
+const square = require('./my-square.js');
+const mySquare = square(2);
 console.log(myModule.myText);
+console.log(`The area of my square is ${mySquare.area()}`);
+
 # node module-demo.js
 
 # Initiate the custom module, adding package.json file
@@ -10129,6 +10199,20 @@ npm remove cors --save
 
 # delete ./node_modules and run this to install all dependencies
 npm install
+#+END_EXAMPLE
+
+Call local functions
+#+BEGIN_EXAMPLE
+var _foo = function () {
+  return ('foo');
+}
+var _bar = function () {
+  return _foo();
+}
+module.exports = {
+  foo: _foo,
+  bar: _bar
+};
 #+END_EXAMPLE
 
 *** package.json, node-inspector
@@ -10176,6 +10260,8 @@ npm run debug
   }
 }
 #+END_EXAMPLE
+
+~npm install --production~ or when NODE_ENV environment variable is production, npm will not install modules listed in devDependencies
 
 * AngularJS
 ** 1.x
@@ -12239,7 +12325,7 @@ Restart :: ~docker restart containerName~
 Stop and remove :: ~docker rm -f containerName~
 Stop and remove all containers :: ~docker rm -f $(docker ps -a -q)~
 
-Container log :: ~docker log containerName~
+Container log :: ~docker logs -f containerName~ -f to follow log output
 
 Container network IP and settings :: ~docker inspect containerName~ and look at ~NetworkSetting > IPAddress~
 
