@@ -8918,6 +8918,35 @@ util.format('%s:%s', 'foo', 'bar', 'baz');
 // %% > percent sign '%'
 #+END_EXAMPLE
 
+*** lodash
+#+BEGIN_EXAMPLE
+# npm i -g npm
+npm i --save lodash
+
+var _ = require('lodash');
+
+var users = [
+  { 'user': 'barney',  'age': 36, 'active': true },
+  { 'user': 'fred',    'age': 40, 'active': false },
+  { 'user': 'pebbles', 'age': 1,  'active': true }
+];
+ 
+_.find(users, function(o) { return o.age < 40; });
+// => object for 'barney'
+ 
+// The `_.matches` shorthand.
+_.find(users, { 'age': 1, 'active': true });
+// => object for 'pebbles'
+ 
+// The `_.matchesProperty` shorthand.
+_.find(users, ['active', false]);
+// => object for 'fred'
+ 
+// The `_.property` shorthand.
+_.find(users, 'active');
+// => object for 'barney'
+#+END_EXAMPLE
+
 *** child_process
 Exec is for short process
 #+BEGIN_EXAMPLE
@@ -9442,11 +9471,15 @@ var bodyParser =  require('body-parser');
 
 app.set('port', process.env.PORT || 3000);
 
-var skierTerms = [{},{}]; // javascript array/object
+var skierTerms = [{},{}]; // javascript array/object. global to the project/app. Only reset when app is restarted.
 app.set('appData', skierTerms);
 
+// app.use() adds middlewares which run first
+
 app.use(bodyParser.json()); // any data sent to this app (API) as .json, the data will be parsed
-app.use(bodyParser.urlencoded({ extended: false })); // also parse url encoded data
+app.use(bodyParser.urlencoded({ extended: true })); // also parse url encoded data
+// false uses the `querystring` library which means the data could be string or array
+// true uses the `qs` library which means the data could be any type
 
 // log every request
 app.use(function(req, res, next) {
