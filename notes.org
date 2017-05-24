@@ -8901,7 +8901,16 @@ ben.emit('speak', "I'm Ben");
 console.log(util.inspect(myObj, {showHidden: false, depth: null}));
 // or this for short
 cosole.log(util.inspect(myObj, false, null));
-// console.dir actually uses util.inspect. See nodejs:console 
+// console.dir actually uses util.inspect. See nodejs:console
+
+util.format('%s:%s', 'foo'); // 'foo:%s'
+util.format('%s:%s', 'foo', 'bar', 'baz'); 
+// extra arguments are coerced into strings delimited by a space 
+// 'foo:bar baz'
+// %s > string, %d > integer or floating point value
+// %i > integer, %f > floating point value
+// %j > JSON
+// %% > percent sign '%'
 #+END_EXAMPLE
 
 *** child_process
@@ -11381,6 +11390,37 @@ Internal network Class A :: 10.0.0.0 - 10.255.255.254 (10.0.0.0/8, total hosts: 
 Internal network Class B :: 172.16.0.1 - 172.16.255.254 (127.16.0.0/16, total hosts: 65,534)
 Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total hosts: 254)
 
+*** Port
+If a port is in use =telnet localhost 9000=, if it's connected, it's in use.
+List all ports in use: =netstat -lp= or =netstat -nlp= to list in numeric form.
+Search a port =netstat -nlp | grep 8000=
+
+netstat options
+- l :: show only listening sockets
+- p :: show PID and name of the program to which each socket belongs.
+- n :: show numerical addresses instead of symbolic host, port or user names
+
+List all command files (open files) that are using an Internet address (-i)
+~lsof -i~
+
+Filter any address of port 80 :: ~lsof -i :80~
+Full format
+#+BEGIN_EXAMPLE
+[46][protocol][@hostname|hostaddr][:service|port]
+
+# 4 or 6 for IPv4 or IPv6
+#+END_EXAMPLE
+
+It's better to use telnet IP_address port_number in an external computer to connect to a port to check
+if it's in use.
+
+In Windows, to see if a port is being used in a local computer
+#+BEGIN_EXAMPLE
+netstat -an | find "8080"
+#+END_EXAMPLE
+
+*** Wireless network adapters =iwconfig=
+
 ** Firewall 
 <<<linux:firewall>>>
 Should be installed by default. ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
@@ -11410,29 +11450,6 @@ Delete a rule ~sudo ufw delete [number]~
 
 Or you can see added rules in command style ~sudo ufw show added~
 Then you delete ~sudo ufw delete allow 22~
-
-*** Port
-If a port is in use =telnet localhost 9000=, if it's connected, it's in use.
-List all ports in use: =netstat -lp= or =netstat -nlp= to list in numeric form.
-Search a port =netstat -nlp | grep 8000=
-
-netstat options
-- l :: show only listening sockets
-- p :: show PID and name of the program to which each socket belongs.
-- n :: show numerical addresses instead of symbolic host, port or user names
-
-List all command files (open files) that are using an Internet address (-i)
-~lsof -i~
-
-Filter any address of port 80 :: ~lsof -i :80~
-Full format
-#+BEGIN_EXAMPLE
-[46][protocol][@hostname|hostaddr][:service|port]
-
-# 4 or 6 for IPv4 or IPv6
-#+END_EXAMPLE
-
-Wireless network adapters =iwconfig=
 
 ** Timezone, NTP
 <<<linux:timezone>>>
@@ -12479,6 +12496,36 @@ services:
    restart: always
 #+END_EXAMPLE
 
+***** Use network defined in another docker-compose
+#+BEGIN_EXAMPLE
+# ./app1/docker-compose.yml
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.2.0/24
+        gateway: 172.16.2.1
+services:
+  lucee:
+    ...
+    networks:
+      app_net:
+        ipv4_address: 172.16.2.3
+
+# ./app2/docker-compose.yml
+networks:
+  app1_app_net:
+    external: true
+services:
+  nodejs:
+    ...
+    networks:
+      app1_app_net:
+        ipv4_address: 172.16.2.4
+#+END_EXAMPLE
+
 **** services
 
 #+BEGIN_EXAMPLE
@@ -13213,6 +13260,23 @@ location ~* \.(cfm|...|html)$) {
     set $request_url $request_uri;
   }
   proxy_pass http://127.0.0.1:8888$request_url;
+}
+#+END_EXAMPLE
+
+*** Sample
+#+BEGIN_EXAMPLE
+location / {
+  proxy_pass http://127.0.0.6:8888;
+  proxy_set_header Host 127.0.0.6;
+  proxy_redirect off;
+  proxy_set_header X-Forwarded-Host $host;
+  proxy_set_header X-Forwarded-Server $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_connect_timeout 600;
+  proxy_send_timeout 600;
+  proxy_read_timeout 600;
+  send_timeout 600;
 }
 #+END_EXAMPLE
 
