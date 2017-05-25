@@ -9609,6 +9609,7 @@ app.get('/example/d', [cb0, cb1], function (req, res, next) {
 ***** Response methods
 ****** res.send res.sendFile
 #+BEGIN_EXAMPLE
+// Content-Type is automatically sent when res.send is used
 res.send(new Buffer('whoop'));
 res.send({ some: 'json' }); // Array or Object, Express responds with JSON
 res.send('<p>some html</p>'); // Content-Type text/html
@@ -9616,11 +9617,15 @@ res.status(404).send('Sorry, we cannot find that!');
 res.status(500).send({ error: 'something blew up' });
 #+END_EXAMPLE
 
-****** res.end
+****** res.write res.end
 Quickly ends the response without any data.
 #+BEGIN_EXAMPLE
+// send multiple responses using res.write
+res.write('1');
+res.write('2');
+res.setHeader('Content-Type', 'text/html');
 res.end();
-res.status(404).end();
+// res.status(404).end();
 #+END_EXAMPLE
 
 ***** Parameters
@@ -12264,6 +12269,12 @@ testsub:
 
 start:
 	docker rm -f $$(docker ps -a -q)
+
+runrecipeinmiddle:
+	- echo do something
+	- $(MAKE) build
+
+# - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
 #+END_EXAMPLE
 
 ** Nano
@@ -12607,6 +12618,28 @@ services:
     networks:
       app_net:
         ipv4_address: 172.18.0.3
+#+END_EXAMPLE
+
+**** Pass arguments from Compose to Dockerfile
+docker-compose.yml
+#+BEGIN_EXAMPLE
+version: '2'
+services:
+  web:
+    build:
+      context: ./web
+      args:
+        REQUIREMENTS: "envs/dev.env"
+#+END_EXAMPLE
+
+Dockerfile
+#+BEGIN_EXAMPLE
+FROM python:3.5
+ENV PYTHONUNBUFFERED 1
+ENV APP_ROOT /usr/src/app
+ARG REQUIREMENTS
+...
+COPY $REQUIREMENTS $APP_ROOT/
 #+END_EXAMPLE
 
 ** image:lucee
