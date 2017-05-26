@@ -12422,6 +12422,8 @@ Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
 Where ~-L~ is to copy symbol link
 
+Memory usage for all containers ~docker stats -a~
+
 *** Save a running container to an image
 First exit the container first
 ~docker commit -m "added node.js" -a "Author Name" 123456 my/ubuntu-nodejs~
@@ -12506,7 +12508,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 =docker-compose up -d= doesn't build image, it will use existing image
 =docker-compose up -d --build= build new image and run
 
-*** YML 
+*** YML
 It has to be this name ~docker-compose.yml~ and don't include this file in sub directories.
 
 Docker Engine version (docker version) 
@@ -12619,6 +12621,17 @@ services:
       app_net:
         ipv4_address: 172.18.0.3
 #+END_EXAMPLE
+
+~EXPOSE~ in Dockerfile and ~-p~ in ~docker run -p 8080~
+- Neither specify EXPOSE nor -p
+  - service in container will not be accessible from anywhere except from the container itself
+- Only specify EXPOSE
+  - The service in the container is not accessible from outside Docker, but from inside other Docker containers.
+  - Good for inter-container communication
+- Specify EXPOSE and -p
+ - The service in the container is accessible from anywhere, even outside Docker
+- Specify -p but not EXPOSE
+ - It's like only specify EXPOSE
 
 **** Pass arguments from Compose to Dockerfile
 docker-compose.yml
@@ -13102,6 +13115,8 @@ tty: true
 ** image:node
 node:boron
 Latest version 6.x (LTS)
+Parent image: buildpack-deps:jessie
+Available: git, openssh-client
 
 Use ~docker logs -f container_name~ to tail log
 
@@ -13631,7 +13646,7 @@ Create a new repo on Github.com without creating any .gitignore, README nor lice
 On local, git init, add .gitignore, git add . and check if files are ignored, git commit -m "1st commit"
 
 Add a remote
-git remote add origin ssh_or_github_https_link
+git remote add origin ssh_or_github_https_link_with_.git_at_the_end
 
 List all remotes ~git remote -v~
 Remove a remote 'origin' ~git remote rm origin~
