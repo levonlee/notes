@@ -9558,7 +9558,8 @@ module.exports = router;
 
 **** Routing
 ***** Callbacks
-Instead of ~next()~, ~next('route')~ can bypass all the remaining route callbacks.
+Instead of ~next()~ which skips to the next callback, ~next('route')~ can bypass all the remaining route callbacks of the current app.METHOD() or router.METHOD().
+~next('router')~ to skip the rest of the router's middleware functions the router instance
 
 #+BEGIN_EXAMPLE
 app.get('/example/a', function (req, res) {
@@ -9651,6 +9652,70 @@ The name of route parameters must be made up of “word characters” ([A-Za-z0-
 ~-~ and ~.~ are literal characters - and .
 
 For using ~*~ as regex, use ~{0,}~ for Express 4.x, use ~*~ for Express 5.
+
+**** Error-handling middleware
+Error-handling middleware are defined last.
+A built-in error handler is added at the end.
+If ~next(err)~ is called and there're no custom error handler, it'll be handled by the built-in error handler.
+In non-production environment (NODE_ENV=production), stack trace is printed.
+
+For a custom error handler, if the headers have already been sent to the client, you'll need to call next(err) to let
+the built-in error handler to close the connection and fail the request.
+
+~next(err)~ can be only called once otherwise there is an error
+
+#+BEGIN_EXAMPLE
+function errorHandler(err, req, res, next) {
+  if (res.headersSent) {
+    return next(err)
+  }
+  res.status(500)
+  res.render('error', {error: err})
+}
+#+END_EXAMPLE
+
+Simple sample:
+#+BEGIN_EXAMPLE
+// 4 arguments
+app.use(function (err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send('Error!');
+})
+#+END_EXAMPLE
+
+Multiple error handlers
+#+BEGIN_EXAMPLE
+# /index.js
+app.use(logErrors)
+app.use(clientErrorHandler)
+app.use(errorHandler)
+
+function logErrors (err, req, res, next) {
+  console.error(err.stack)
+  next(err)
+}
+
+function clientErrorHandler (err, req, res, next) {
+  if (req.xhr) {
+    res.status(500).send({ error: 'Something failed!' })
+  } else {
+    next(err)
+  }
+}
+
+function errorHandler (err, req, res, next) {
+  res.status(500)
+  res.render('error', { error: err })
+}
+#+END_EXAMPLE
+
+**** Built-in middleware
+***** express.static for serving static assets
+#+BEGIN_EXAMPLE
+# syntax: express.static(root, [options])
+# serve static files in /public directory
+app.use(express.staic('public'));
+#+END_EXAMPLE
 
 **** View Engine (ejs)
 #+BEGIN_EXAMPLE
