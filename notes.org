@@ -9558,7 +9558,8 @@ module.exports = router;
 
 **** Routing
 ***** Callbacks
-Instead of ~next()~, ~next('route')~ can bypass all the remaining route callbacks.
+Instead of ~next()~ which skips to the next callback, ~next('route')~ can bypass all the remaining route callbacks of the current app.METHOD() or router.METHOD().
+~next('router')~ to skip the rest of the router's middleware functions the router instance
 
 #+BEGIN_EXAMPLE
 app.get('/example/a', function (req, res) {
@@ -9651,6 +9652,70 @@ The name of route parameters must be made up of “word characters” ([A-Za-z0-
 ~-~ and ~.~ are literal characters - and .
 
 For using ~*~ as regex, use ~{0,}~ for Express 4.x, use ~*~ for Express 5.
+
+**** Error-handling middleware
+Error-handling middleware are defined last.
+A built-in error handler is added at the end.
+If ~next(err)~ is called and there're no custom error handler, it'll be handled by the built-in error handler.
+In non-production environment (NODE_ENV=production), stack trace is printed.
+
+For a custom error handler, if the headers have already been sent to the client, you'll need to call next(err) to let
+the built-in error handler to close the connection and fail the request.
+
+~next(err)~ can be only called once otherwise there is an error
+
+#+BEGIN_EXAMPLE
+function errorHandler(err, req, res, next) {
+  if (res.headersSent) {
+    return next(err)
+  }
+  res.status(500)
+  res.render('error', {error: err})
+}
+#+END_EXAMPLE
+
+Simple sample:
+#+BEGIN_EXAMPLE
+// 4 arguments
+app.use(function (err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send('Error!');
+})
+#+END_EXAMPLE
+
+Multiple error handlers
+#+BEGIN_EXAMPLE
+# /index.js
+app.use(logErrors)
+app.use(clientErrorHandler)
+app.use(errorHandler)
+
+function logErrors (err, req, res, next) {
+  console.error(err.stack)
+  next(err)
+}
+
+function clientErrorHandler (err, req, res, next) {
+  if (req.xhr) {
+    res.status(500).send({ error: 'Something failed!' })
+  } else {
+    next(err)
+  }
+}
+
+function errorHandler (err, req, res, next) {
+  res.status(500)
+  res.render('error', { error: err })
+}
+#+END_EXAMPLE
+
+**** Built-in middleware
+***** express.static for serving static assets
+#+BEGIN_EXAMPLE
+# syntax: express.static(root, [options])
+# serve static files in /public directory
+app.use(express.staic('public'));
+#+END_EXAMPLE
 
 **** View Engine (ejs)
 #+BEGIN_EXAMPLE
@@ -11374,7 +11439,7 @@ ps options
 - e :: all processes. same as -A
 - p :: PID. same as p and --pid
 
-*** =top=
+*** top <<<linux:top>>>
 First line: current time, system up time, number of users logged in, load average (1, 5, 15 minutes; >2 is busy). 
 Second line: total processes: running, sleeping, stopped and zombie (have finished but parent process hasn't responded)
 
@@ -11403,13 +11468,16 @@ Detailed for each process
 
 Type `f` for interaction: set sort, display more fields/columns
 
-*** Memory
+** Memory
 Total memory: =grep MemTotal /proc/meminfo=
-Memory usage: =free -ltm -s 1=
-Delay 1 second: =-s 1=
+More info: =cat /proc/meminfo=
+Memory usage: =free -ltm -c 2 -s 2= or just =free -m=
+Delay 2 seconds and repeat 2 times: =-c 2 -s 2=
 =-m=: in megabyte. e.g. -g
 =-t=: show Total
 =-l=: show Low and High
+Another way: =vmstat -s=
+To see memory usage for each process, use linux:top or =htop=
 
 ** Service
 ~service --status-all~
@@ -13104,6 +13172,11 @@ Pureftp Manual
 - Start running ~/usr/sbin/pure-ftpd $some_flags~
 
 ** image:ubuntu
+~docker run -it --rm ubuntu /bin/bash~
+
+trusty: 14.04
+xenial (latest): 16.04
+
 #+BEGIN_EXAMPLE
 services:
   nodejs:
@@ -13119,6 +13192,23 @@ Parent image: buildpack-deps:jessie
 Available: git, openssh-client
 
 Use ~docker logs -f container_name~ to tail log
+
+** image:golang
+golang:1.8
+Parent image: buildpack-deps:jessie-scm
+Available: make
+
+~docker run -it --rm golang:1.8 /bin/bash -I~ to go in
+
+Running ~exec hello~ inside container will exit the container
+
+To download, compile and run and exit the container:
+#+BEGIN_EXAMPLE
+docker run --rm golang:1.8 sh -c "go get github.com/golang/example/hello/... && exec hello"
+#+END_EXAMPLE
+
+To download the compiled hello command to host directory /tmp/bin:
+~docker run -v /tmp/bin:/go/bin golang:1.8 go get github.com/golang/example/hello/...~
 
 * Apache
 ** Production Setup
