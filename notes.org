@@ -11439,7 +11439,7 @@ ps options
 - e :: all processes. same as -A
 - p :: PID. same as p and --pid
 
-*** =top=
+*** top <<<linux:top>>>
 First line: current time, system up time, number of users logged in, load average (1, 5, 15 minutes; >2 is busy). 
 Second line: total processes: running, sleeping, stopped and zombie (have finished but parent process hasn't responded)
 
@@ -11468,13 +11468,16 @@ Detailed for each process
 
 Type `f` for interaction: set sort, display more fields/columns
 
-*** Memory
+** Memory
 Total memory: =grep MemTotal /proc/meminfo=
-Memory usage: =free -ltm -s 1=
-Delay 1 second: =-s 1=
+More info: =cat /proc/meminfo=
+Memory usage: =free -ltm -c 2 -s 2= or just =free -m=
+Delay 2 seconds and repeat 2 times: =-c 2 -s 2=
 =-m=: in megabyte. e.g. -g
 =-t=: show Total
 =-l=: show Low and High
+Another way: =vmstat -s=
+To see memory usage for each process, use linux:top or =htop=
 
 ** Service
 ~service --status-all~
@@ -13156,6 +13159,11 @@ Pureftp Manual
 - Start running ~/usr/sbin/pure-ftpd $some_flags~
 
 ** image:ubuntu
+~docker run -it --rm ubuntu /bin/bash~
+
+trusty: 14.04
+xenial (latest): 16.04
+
 #+BEGIN_EXAMPLE
 services:
   nodejs:
@@ -13169,6 +13177,23 @@ node:boron
 Latest version 6.x (LTS)
 
 Use ~docker logs -f container_name~ to tail log
+
+** image:golang
+golang:1.8
+Parent image: buildpack-deps:jessie-scm
+Available: make
+
+~docker run -it --rm golang:1.8 /bin/bash -I~ to go in
+
+Running ~exec hello~ inside container will exit the container
+
+To download, compile and run and exit the container:
+#+BEGIN_EXAMPLE
+docker run --rm golang:1.8 sh -c "go get github.com/golang/example/hello/... && exec hello"
+#+END_EXAMPLE
+
+To download the compiled hello command to host directory /tmp/bin:
+~docker run -v /tmp/bin:/go/bin golang:1.8 go get github.com/golang/example/hello/...~
 
 * Apache
 ** Production Setup
