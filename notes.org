@@ -11439,6 +11439,28 @@ ps options
 - e :: all processes. same as -A
 - p :: PID. same as p and --pid
 
+*** jobs
+#+BEGIN_EXAMPLE
+# Add ~&~ to put process list into background
+(tar -cf 1.tar /home/1; tar -cf 2.tar /home/2)&
+
+# run a script file in background
+./test5.sh &
+
+# If terminal session is ended (SIGHUP), background processes will be stopped, too
+# Use nohup to block SIGHUP signals being sent to the process
+nohup ./test1.sh &
+# It produeces a file `nohup.out` in the directory that the script is in which contains STDOUT and STDERR.
+# No output to any terminals.
+
+# To prevent background processes from seding error to terminal
+./test5.sh 2> /dev/null &
+#+END_EXAMPLE
+
+Run ~jobs~ to show what processes are running in background
+Use ~jobs -l~ to list the PID
+~kill PID~ or ~kill -KILL PID~
+
 *** top <<<linux:top>>>
 First line: current time, system up time, number of users logged in, load average (1, 5, 15 minutes; >2 is busy). 
 Second line: total processes: running, sleeping, stopped and zombie (have finished but parent process hasn't responded)
@@ -11532,7 +11554,8 @@ netstat options
 - n :: show numerical addresses instead of symbolic host, port or user names
 
 List all command files (open files) that are using an Internet address (-i)
-~lsof -i~
+~-P~ is to print port number
+~lsof -Pi~
 
 Filter any address of port 80 :: ~lsof -i :80~
 Full format
@@ -12348,6 +12371,8 @@ runrecipeinmiddle:
 ** Nano
 - Save :: Ctrl + O 
 - Exit :: Ctrl + x
+- Display line number and cursor position: C-c
+- Uncut or paste text C-u
 
 - Turn off word wrap :: Esc, release, then $ (shift+4)
 
@@ -12722,6 +12747,10 @@ ARG REQUIREMENTS
 ...
 COPY $REQUIREMENTS $APP_ROOT/
 #+END_EXAMPLE
+
+** image:buildpack-deps:jessie-scm
+Parent: buildpack-deps:jessie-curl
+Available: git, curl, wget, openssh-client
 
 ** image:lucee
 <<<docker:image:lucee>>>
@@ -13197,6 +13226,8 @@ Use ~docker logs -f container_name~ to tail log
 golang:1.8
 Parent image: buildpack-deps:jessie-scm
 Available: make
+Environment vars: GOPATH=/go
+Go executables: /usr/local/bin/
 
 ~docker run -it --rm golang:1.8 /bin/bash -I~ to go in
 
@@ -13209,6 +13240,231 @@ docker run --rm golang:1.8 sh -c "go get github.com/golang/example/hello/... && 
 
 To download the compiled hello command to host directory /tmp/bin:
 ~docker run -v /tmp/bin:/go/bin golang:1.8 go get github.com/golang/example/hello/...~
+
+* Go
+** Basics
+Go is just an executable script file. Uninstall on Windows, go to Control Panel
+On Linux, uninstall by just replacing the bin folder
+#+BEGIN_EXAMPLE
+echo $GOPATH
+go version
+
+# godoc <package_name>
+godoc fmt
+
+gofmt main.go
+# -w write file
+gofmt -w main.go
+
+# List environment variables
+go env
+
+# GOROOT = usr/local/go
+# GOARCH and GOOS possible values
+# cat $GOROOT/src/go/build/syslist.go
+ 
+# Compile packages and dependencies based on 1 go file
+go build main.go
+
+# A package file name should be only lowercase letters
+
+# Folder structure in GOPATH directory
+# ./bin holds executables (compiled
+# ./pkg
+# ./src holds packages. In this folder, run go install
+# to compile and executables in ./bin
+# Change GOOS and GOARCH then go install again
+
+# Builtin packages are under $GOROOT/src, e.g. $GOROOT/src/fmt
+# Or go online https://golang.org/pkg/fmt/
+
+#+END_EXAMPLE
+
+http://play.golang.org
+
+[[https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins][Supported IDEs]]
+
+** Builtin package
+It's always already imported.
+http://golang.org/pkg/builtin/
+
+*** fmt package
+Output
+#+BEGIN_EXAMPLE
+package main
+import (
+  fmt
+)
+func main() {
+  str1 := "one"
+  str2 := "two"
+  aNumber := 42
+  // var aNumber int
+  // default aNumber is zero
+  // Implicit typing using :=
+  isTrue := true
+  
+  // Explicit: const anInteger int = 42
+  // Implicit const aString = ".."
+   
+  fmt.Println(str1, str2) // "one two"
+  
+  stringLength, err := fmt.Println(str1, str2)
+  // function can return multiple values, a string and an error
+
+  if err == nil {
+    fmt.Println("String Length", stringLength)
+  }
+
+  // Without the if err == nil, it will throw an error because error is not defined
+  // Use _ to ignore the err variable even if it's not returned
+  stringLength, _ := fmt.Println(str1, str2)
+  fmt.Println("String Length", stringLength)
+
+  fmt.Printf("Value of aNumber: %v\n", aNumber)
+  fmt.Printf("Value of isTrue: %v\n", isTrue)
+  fmt.Printf("Value of aNumber as float: %.2f\n", float64(aNumber)) // 42.00
+  fmt.Printf("Data types: %T, %T, %T, %T",
+     str1, str2, aNumber, isTrue
+  )
+  // string, string, int, bool
+  
+
+  // Return a string
+  myString := fmt.Sprintf("data types: %T, %T, %T, %T", str1, str2, aNumber, isTrue)
+  fmt.Print(myString)
+}
+#+END_EXAMPLE
+
+Input
+#+BEGIN_EXAMPLE
+import ("fmt")
+  
+func main() {
+  var s1,s2 string
+  fmt.Scanln(&s1, &s2)
+  // Scan one line from terminal input, demilited by space
+  fmt.Println(s1, s2)
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+import (
+  "fmt"
+  "bufio"
+  "os"
+  "strconv"
+  "strings"
+)
+
+func main() {
+  // := is to declare and assign value to a new variable
+  reader := bufio.NewReader(os.stdin)
+  fmt.Print("Enter text: ")
+  str, _ := reader.ReadString('\n')
+  // Single quote means it's a byte not a string
+  fmt.Print(str)
+  // one two three
+
+  fmt.Print("Enter text: ")
+  str, _ = reader.ReadString('\n')
+  f, err := strconv.ParseFloat(strings.TrimSpace(str), 64)
+  if err != nill {
+    fmt.Println(err)
+  }
+  else {
+    fmt.Println("Value of number: ", f);
+  }
+}
+#+END_EXAMPLE
+
+*** strings
+strings.ToUpper(str)
+strings.Title(str) // Initial capped
+strings.EqualFold(str1, str2) // case-insensitive compare
+// default == is case-sensitive
+strings.Contains(str, "exp") // true/false
+
+*** math
+#+BEGIN_EXAMPLE
+import (
+  "fmt"
+  "math/big"
+  "math"
+)
+i1, i2, i3 := 12, 45, 68
+intSum := i1 + i2 + i3 // Good!
+
+f1, f2, f3 := 23.5, 65.1, 76.3
+floatSum := f1 + f2 + f3 // Not good
+
+var b1, b2, b3, bigSum big.Float
+b1.SetFloat64(23.5)
+b2.SetFloat64(65.1)
+b3.SetFloat64(76.3)
+bigSum.Add(&b1, &b2).Add(&bigSum, &b3)
+fmt.Printf("BigSum = %.10g\n", &bigSum)
+
+circleradius := 15.5
+circumference := circleRadius * math.Pi
+fmt.Printf("Circumference: %.2f\n", circumference)
+#+END_EXAMPLE
+
+*** time
+#+BEGIN_EXAMPLE
+import (
+  "fmt"
+  "time"
+)
+
+t := time.Date(2009, time.November, 10, 23, 0,0,0, time.UTC)
+now := time.Now()
+fmt.Printf("Go launched at %s\n", t)
+now.Month()
+now.Day()
+now.Weekday()
+
+tomorrow := now.AddDate(0,0,1)
+
+longFormat := "Monday, January 2, 2006"
+fmt.Println("Tomorrow is ", tomorrow.Format(longFormat))
+
+shortFormat := "1/2/06"
+
+#+END_EXAMPLE
+
+** Custom package
+$GOPATH/src/mypkg
+#+BEGIN_EXAMPLE
+// captital P means this method is public instead of private in this package
+func Println() {
+}
+# mypkg.Println(...)
+#+END_EXAMPLE
+
+** Types
+float32 float54
+complex64 complex128
+Integers:
+ int8 int16 int32 int64
+ only positive numbers and zero (unsigned): uint8 uint16 uint32 uint64
+ byte uint int uintptr
+
+Data collections:
+ Arrays Slices Maps Structs
+
+Language organization:
+ Functions Interfaces Channels
+
+Data management
+ Pointers
+
+Type conversion
+#+BEGIN_EXAMPLE
+var int1 int = 5
+var float1 float64 = 42
+sum := float64(int1) + float1
+#+END_EXAMPLE
 
 * Apache
 ** Production Setup
