@@ -13522,6 +13522,157 @@ shortFormat := "1/2/06"
 *** sort
 http://golang.org/pkg/sort
 
+*** io, os, path
+#+BEGIN_EXAMPLE
+import (
+  "io"
+  "os"
+  "io/ioutil"
+  "path/filepath"
+)
+
+func main() {
+  content := "Hello from Go!"
+  file, err :=os.Create("./fromString.txt")
+  checkError(err)
+  
+  defer file.Close()
+
+  ln, err := io.WriteString(file, content)
+
+  checkError(err)
+  
+  fmt.Printf("All done with file of %v characters", ln)
+  
+  // convert a string to binary
+  bytes := []byte(content)
+  // 0644 is file permission
+  ioutil.WriteFile("./fromBytes.txt", bytes, 0644)
+  
+  // Read a file
+  fileName := "./hello.txt"
+  // read as binary
+  content, err := ioutil.ReadFile(fileName)
+  checkError(err) 
+  // binary/byte
+  fmt.Println(content)
+  result := string(content)
+  fmt.Println(result)
+
+  // Reader a directory
+  root, _ := filepath.Abs(".")
+  
+  fmt.Println(root)
+
+  err := filepath.Walk(root, processPath)
+  checkError(err)
+
+}
+
+func checkError(err error) {
+  if err != nil {
+    // Stop if there's an error
+    panic(err)
+  }
+}
+
+func processPath(path string, info os.Fileinfo, err error) error {
+  if err != nil {
+    return err
+  }
+
+  // not root
+  if path != "." {
+    if info.IsDir() {
+      fmt.Println("Directory:", path)
+    } else {
+      fmt.Println("File:", path)
+    }
+  }
+  
+  return nil
+}
+#+END_EXAMPLE
+
+*** net/http
+#+BEGIN_EXAMPLE
+import (
+  "io/ioutil"
+  "net/http"
+  "encoding/json"
+  "strings"
+  "math/big"
+)
+
+type Tour struct {
+  Name, Price string
+}
+
+func main() {
+  url := "http://..."
+  resp, err := http.Get(url)
+  checkError(err)
+  fmt.Pritnf("Response type: %T\n", resp)
+
+  defer resp.Body.Close()
+
+  bytes, err := ioutil.ReadAll(resp.body)
+  checkError(err)
+  content := string(bytes)
+  fmt.Pritnln(content)
+  
+  tours := toursFromJson(content)
+  fmt.Println(tours)
+ 
+  for _, tour := range tours {
+    // price is a string and convert to float
+    price, _, _ := big.ParseFloat(tour.Price, 10, 2, big.ToZero)
+    fmt.Printf("%v $%.2f\n", tour.Name, price)
+  }
+}
+
+func toursFromJson(content string) []Tour {
+  tours := make([]Tour, 0, 20)
+
+  decoder := json.NewDecoder(strings.NewReader(content))
+  
+  _, err := decoder.Token()
+  checkError(err)
+
+  var tour Tour
+  for decoder.More() {
+    err := decoder.Decode(&tour)
+    checkError(err)
+    tours = append(tours, tour)
+  }
+
+  return tours
+}
+
+#+END_EXAMPLE
+
+**** http server
+#+BEGIN_EXAMPLE
+import (
+  "fmt"
+  "net/http"
+)
+
+type Hello struct{}
+
+func (h Hello) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+  fmt.Fprint(w, "<h1>hello</h1>")
+}
+
+func main() {
+  var h Hello
+  err := http.ListenAndServer("localhost:4000", h)
+  // or :4000
+  checkError(err)
+}
+
+#+END_EXAMPLE
+
 ** Custom package
 $GOPATH/src/mypkg
 #+BEGIN_EXAMPLE
@@ -13684,29 +13835,87 @@ for i := range keys {
 }
 #+END_EXAMPLE
 
-*** struct
+*** struct, interface
 Struct is a data structure. Similar to Java's classes: encapsulate data and methods. No inheritance.
+
+Every value in Go is an instance of a type, and every type is an implementation of at least one interface, the interface without any methods.
+
+You may see function like this.
+#+BEGIN_EXAMPLE
+func Errorf(format string, a ...interface{}) {}
+
+// ...interface{} means it can be multiple values of all types
+#+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
 type Dog struct {
   Breed string
-  Weight int  
+  Weight int
+  Sound string
+}
+
+// Define method for a Struct
+func (d Dog) Speak() {
+  // d is a reference (copy) of the original object
+  // changing d here doesn't affect the variable in global scope
+  fmt.Println(d.Sound)
+}
+
+func (d *Dog) SpeakThreeTimes() {
+  // d is a point to the original object
+  // Changing d here also changes the variable in global scope
+  d.Sound = fmt.Sprintf("%v! %v! %v!", d.Sound, d.Sound, d.Sound)
+  fmt.Println(d.Sound)
+}
+
+// Define an interface
+type Animal interface {
+  SpeakWord() string
+}
+
+func (d Dog) Speak() string {
+  return "Woof!"
+}
+
+// Attach interface to other class
+
+type Cat struct {
+  // ...
+}
+
+func (c Cat) Speak() string {
+  return "Meow!"
 }
 
 func main() {
-  poodle := Dog{"Poodle", 34}
+  poodle := Dog{"Poodle", 34, "Woof"}
   // fmt.Println(poodle)
-  // {Poodle, 34}
+  // {Poodle, 34, Woof}
 
   // dump field name and values
   fmt.Printf("%+v\n", poodle)
-  // {Breed:Poodle Weight:34}
-  // poodle.Breed, poodle.Weight
+  // {Breed:Poodle Weight:34 Sound:Woof}
   
+  poodle.Sound = "Arf"
+  
+  poodle.Speak()
+
+  poodle2 := Animal(Dog{})
+  // This dog has an interface!
+  // Or this dog is converted to interface Animal
+  fmt.Println(poodle2)
+
+  // Attach interface to multiple objects of different types
+  animals := []Animal{Dog{}, Cat{}}
+  for _, animal := range animals {
+    // _ means to throw away the index
+    fmt.Println(animal.Speak())
+  }
+
 }
 #+END_EXAMPLE
 
-*** Pointer
+*** pointer
 #+BEGIN_EXAMPLE
 // craete a pointer
 var p *int
@@ -13727,6 +13936,67 @@ fmt.Println(*p)
 // both value1
 fmt.Println(*pointer, value1)
 #+END_EXAMPLE
+
+*** error
+#+BEGIN_EXAMPLE
+import "errors"
+
+myError := errors.New("My error string")
+fmt.Println(myError)
+// string -> myError.Error()
+
+attendance := map[string]bool{
+  "Ann": true,
+  "Mike": true}
+
+attended, ok := attendance["Mike"]
+if ok {
+  // do things  
+} else {
+  // return error
+}
+#+END_EXAMPLE
+
+** Structure
+#+BEGIN_EXAMPLE
+# $GOPATH
+./src/libraries
+./src/palindrome
+./src/stringutil
+
+# Go to the directory that has a go file that has main() function
+# and run go install
+#+END_EXAMPLE
+
+Defer
+defer keyword only works within a function
+Deferred statements are FILO and are run at the end of the current function, 
+rather than waiting for the entire application
+Good for disconnect database
+#+BEGIN_EXAMPLE
+defer fmt.Println("Statement 1")
+defer fmt.Println("Statement 2")
+defer fmt.Println("Statement 3")
+defer fmt.Println("Undeferred statement")
+// Undeferred statement, 3, 2, 1
+#+END_EXAMPLE
+
+** To Learn
+Concurrency in Go
+Goroutine
+- a lightweight synchronized thread managed by the runtime
+Channel
+- a typed conduit for msgs between goroutines
+Select
+- Lets a goroutine wait for multiple communication operations
+
+Web Frameworks (REST)
+- Beego, Martini, Gorilla, Gocraft, Revel
+
+Database Drivers
+- Standard db functions: database/sql
+- Driver interfaces: database/sql/driver
+- https://github.com/golang/go/wiki/SQLDrivers
 
 * Apache
 ** Production Setup
