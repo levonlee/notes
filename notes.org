@@ -13275,20 +13275,107 @@ go build main.go
 # to compile and executables in ./bin
 # Change GOOS and GOARCH then go install again
 
-# Builtin packages are under $GOROOT/src, e.g. $GOROOT/src/fmt
+# Standard library including builtin package are under $GOROOT/src, e.g. $GOROOT/src/fmt
 # Or go online https://golang.org/pkg/fmt/
-
 #+END_EXAMPLE
 
+In Go Playground, the system time is always the same
 http://play.golang.org
 
 [[https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins][Supported IDEs]]
 
-** Builtin package
-It's always already imported.
+** Syntax, Program Flow
+Opening and closing brackets have to be in one line
+#+BEGIN_EXAMPLE
+// for ... {
+// } else if x ==0 {
+// } else {
+#+END_EXAMPLE
+
+Define variable in block
+#+BEGIN_EXAMPLE
+if x :=-42; x < 0 {
+  // x will only be available in the if block
+}
+#+END_EXAMPLE
+
+Switch
+#+BEGIN_EXAMPLE
+import (
+  "math/rand"
+  "time"
+)
+
+rand.Seed(time.Now().Unix())
+
+result := ""
+
+switch dow := rand.Intn(6) + 1; dow {
+// between 0 and 6. Result is between 1 and 7
+  case 1:
+    result = "Sunday!"
+  case 7:
+    result = "Saturday!"
+  default:
+    result = "Weekday!"
+}
+fmt.Println(result)
+
+// Conditional expression in switch!
+x := -42;
+switch {
+  case x < 0:
+    result = "Less than zero"
+  case x == 0:
+    result = "Equal to zero"
+  default:
+    result = "Greater than zero"
+}
+// By default, it breaks and goes to the end of switch if there's one case matched.
+// break is not necessary but `fallthrough` replaces `break` in an opposite way
+#+END_EXAMPLE
+
+for
+#+BEGIN_EXAMPLE
+sum = 0
+for i := 0; i < 10; i++ {
+  sum += i
+}
+
+for sum < 1000 {
+ sum += sum
+ fmt.Println(sum)
+ if sum > 200 {
+   goto endofprogram
+ }
+}
+
+endofprogram : fmt.Println("end of program")
+// Use `break` or `continue` statements just like other language
+#+END_EXAMPLE
+
+** Standard Library of packages
+*** builtin
 http://golang.org/pkg/builtin/
 
-*** fmt package
+**** new(), make()
+new() :: Allocate but not initial memory. Results in 0 storage but return a memory address
+make() :: Allocate and initialize memory. Results in non-zeroed storage and return a memory address
+
+Zeroed storage means it can't accept value
+
+Initialize complex objects before adding values. Declarations without make() can cause a panic
+#+BEGIN_EXAMPLE
+m := make(map[string]int)
+m["key"] = 42
+// map[key:42]
+#+END_EXAMPLE
+
+Memory is deallocated by garbage collector (GC).
+
+GC clears objects that are out of scope or set to nil
+
+*** fmt
 Output
 #+BEGIN_EXAMPLE
 package main
@@ -13371,8 +13458,7 @@ func main() {
   f, err := strconv.ParseFloat(strings.TrimSpace(str), 64)
   if err != nill {
     fmt.Println(err)
-  }
-  else {
+  } else {
     fmt.Println("Value of number: ", f);
   }
 }
@@ -13433,16 +13519,61 @@ shortFormat := "1/2/06"
 
 #+END_EXAMPLE
 
+*** sort
+http://golang.org/pkg/sort
+
 ** Custom package
 $GOPATH/src/mypkg
 #+BEGIN_EXAMPLE
+package main
+// define a package name.
+
+// main() is the starting point in go run
+func main() {
+  n1, l1 := FullName("Zaphod", "Beeblerox")
+}
+
 // captital P means this method is public instead of private in this package
 func Println() {
 }
+
+func addValues(value1 int, value2 int) int {
+// can also be value1, value2 int
+  return value1 + value2
+}
+
+func addAllValues(values ...int) int {
+  sum := 0
+  for i := range values {
+    sum += values[i]
+  }
+  return sum
+}
+
+func FullName(f, l string) (string, int) {
+  full := f + " " + l
+  length := len(full)
+  return full, length
+}
+
+func FullNameNakedReturn(f, l string) (full string, length int) {
+  // The returned variables have already been declared
+  // Don't use :=
+  full = f + " " + l
+  length = len(full)
+  return
+}
+
 # mypkg.Println(...)
+
+import (
+  // github.com/username/reponame/foldername/example.go
+  "github.com/username/reponame/foldername"
+)
 #+END_EXAMPLE
 
 ** Types
+*** Basic
 float32 float54
 complex64 complex128
 Integers:
@@ -13464,6 +13595,137 @@ Type conversion
 var int1 int = 5
 var float1 float64 = 42
 sum := float64(int1) + float1
+#+END_EXAMPLE
+
+*** array
+Array can't be sorted or resized
+#+BEGIN_EXAMPLE
+var colors [3]string
+colors[0] = "Red"
+colors[1] = "Green"
+fmt.Println(colors)
+// [Red Green]
+fmt.Println(colors[1])
+// Green
+
+// Define in one line
+var numbers = [5]int{5,3,1,2,4}
+
+// Array length
+// len(colors)
+
+for i := 0; i < len(colors); i++ {
+  fmt.Println(colors[i])
+}
+
+for i := range colors {
+  fmt.Pritnln(colors[i])
+}
+#+END_EXAMPLE
+
+*** slice
+slice is built on top of array
+#+BEGIN_EXAMPLE
+var colors = []string{"Red", "Green", "Blue"}
+fmt.Println(colors)
+// The same as array
+
+// Add item to end of slice
+colors = append(colors, "Purple")
+// Remove the first item in slice
+colors = append(colors[1:len(colors)])
+// Below is the same to remove the firs item in slice
+// as the default on the right of : is the length of the slice
+colors = append(colors[1:])
+// Remove the last item in slice
+// the default on the left of : is 0
+colors = append(colors[:len(colors)-1])
+
+// Declare a slice using make
+numbers := make([]int, 5, 10)
+// 5 is inital size, 10 is capacity (optional)
+// Current capacity cap(numbers)
+// Define 5 values, then add another item, 
+numbers = append(numbers, 123)
+// cap(numbers) is 2+10 = 12
+
+// import("sort")
+sort.Ints(numbers) // ascending
+#+END_EXAMPLE
+
+*** map
+Map is an unorderd collection of key-value pairs
+
+#+BEGIN_EXAMPLE
+states := make(map[string]string)
+// empty: map[]
+states["WA"] = "Washington"
+states["OR"] = "Oregon"
+// map[WA:Washington OR:Oregon]
+
+delete(states, "OR")
+
+for k, v := range states {
+  fmt.Printf("%v: %v\n", k, v)
+}
+
+// create a slice to hold keys of a map
+keys :=make([]string, len(states))
+i := 0
+for k := range states {
+  keys[i] = k
+  i++
+}
+
+sort.Strings(keys)
+
+for i := range keys {
+  fmt.Println(states[keys[i]])
+}
+#+END_EXAMPLE
+
+*** struct
+Struct is a data structure. Similar to Java's classes: encapsulate data and methods. No inheritance.
+
+#+BEGIN_EXAMPLE
+type Dog struct {
+  Breed string
+  Weight int  
+}
+
+func main() {
+  poodle := Dog{"Poodle", 34}
+  // fmt.Println(poodle)
+  // {Poodle, 34}
+
+  // dump field name and values
+  fmt.Printf("%+v\n", poodle)
+  // {Breed:Poodle Weight:34}
+  // poodle.Breed, poodle.Weight
+  
+}
+#+END_EXAMPLE
+
+*** Pointer
+#+BEGIN_EXAMPLE
+// craete a pointer
+var p *int
+if p != nil {
+  fmt.Println(*p)
+} else {
+  fmt.Println("p is nil")
+}
+
+var v int = 42
+p = &v
+// explict
+var value1 float64 = 42.13
+pointer1 := &value1
+fmt.Println(*p)
+
+*pointer1 = *pointer1 / 42
+// both value1
+fmt.Println(*pointer, value1)
 #+END_EXAMPLE
 
 * Apache
@@ -13992,7 +14254,7 @@ Create a new repo on Github.com without creating any .gitignore, README nor lice
 On local, git init, add .gitignore, git add . and check if files are ignored, git commit -m "1st commit"
 
 Add a remote
-git remote add origin ssh_or_github_https_link_with_.git_at_the_end
+~git remote add origin ssh_or_github_https_link_with_.git_at_the_end~
 
 List all remotes ~git remote -v~
 Remove a remote 'origin' ~git remote rm origin~
@@ -14012,6 +14274,48 @@ You may encounter 403 Forbidden and HTTP request failed errors. Try to use SSH o
 https://[GITHUB_USERNAME]@github.com/[GITHUB_USERNAME]/[REPO_NAME].git
 Instead of the original
 https://github.com/[GITHUB_USERNAME]/[REPO_NAME].git
+#+END_EXAMPLE
+
+** Push to 2 remotes
+An existing remote: origin
+#+BEGIN_EXAMPLE
+git remote add origin ssh_or_github_https_link_with_.git_at_the_end
+# check remotes
+git remote -v
+# cat .git/config
+[remote "origin"]
+  url=ssh://.../repo.git
+  fetch= +refs/heads/*:refs/remotes/origin/*
+#+END_EXAMPLE
+
+Method 1: Configure Origin as a Multi-Remote Destination
+Add another push URL for origin within ~.git/config~
+Commits will be pushed to both remote destinations automatically on ~git push origin~
+#+BEGIN_EXAMPLE
+[remote "origin"]
+  url=ssh://.../repo.git
+  url = git@github.com:username/reponame.git
+  fetch= +refs/heads/*:refs/remotes/origin/*
+#+END_EXAMPLE
+
+Method 2: Add another remote github
+#+BEGIN_EXAMPLE
+git remote add github git@githubm.com:username/reponame.git
+# or a https directly from github
+# Push and track the current local branch master
+git push -u github master
+#+END_EXAMPLE
+
+** Github API
+REST API v3 :: https://developer.github.com/v3/
+
+Get repo size
+#+BEGIN_EXAMPLE
+# for public repo, auth is not required
+curl https://api.github.com/repos/:owner/:reponame | grep size
+
+# for private repo
+curl -u ownername:password https://api.github.com/repos/:owner/:reponame | grep size
 #+END_EXAMPLE
 
 ** Github Pages
