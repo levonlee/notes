@@ -9426,11 +9426,11 @@ function listInStock(res) {
 #+BEGIN_EXAMPLE
 npm install cors
 
-# Enable all CORS requests
 var express = require('express');
 var cors = require('cors');
 var app = express();
 
+// Enable CORS for all routes/requests
 app.use(cors());
  
 app.get('/products/:id', function (req, res, next) {
@@ -9438,16 +9438,29 @@ app.get('/products/:id', function (req, res, next) {
 });
 
 # Enable for one route
-app.get('/products/:id', cors(), function (req, res, next) {
+app.get('/products/:id', cors(corOptions), function (req, res, next) {
   res.json({msg: 'This is CORS-enabled for all origins!'})
 })
 
 # Options
 var corsOptions = {
-  origin: 'http://example.com';
+  origin: 'http://example.com',
   optionsSuccessStatus: 200
 }
-cors(corOptions)
+
+# Multiple domains
+var whitelist = ['http://example1.com', 'http://example2.com']
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+// use the same cors(corsOptions)
 #+END_EXAMPLE
 
 *** xml2js
