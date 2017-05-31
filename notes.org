@@ -13394,7 +13394,7 @@ Memory is deallocated by garbage collector (GC).
 GC clears objects that are out of scope or set to nil
 
 *** fmt
-Output
+**** Output
 #+BEGIN_EXAMPLE
 package main
 import (
@@ -13441,7 +13441,18 @@ func main() {
 }
 #+END_EXAMPLE
 
-Input
+%v :: only values
+%+v :: add field names when printing struct
+%#v :: add field names and name of the struct type when printing struct
+%T :: type
+%% :: literal %
+
+Sprintf(format string, a ...interface{}) string :: format and return a string
+Use this to convert a struct into string ~str := fmt.Sprintf("%#v", val)~
+
+Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error)
+
+**** Input
 #+BEGIN_EXAMPLE
 import ("fmt")
   
@@ -13796,7 +13807,7 @@ func toursFromJson(content string) []Tour {
 #+END_EXAMPLE
 
 **** HTTP server
-Use http.Handle
+***** Use http.Handle
 #+BEGIN_EXAMPLE
 import (
   "fmt"
@@ -13827,18 +13838,18 @@ func main() {
 }
 #+END_EXAMPLE
 
-Use http.HandleFunc
+***** Use http.HandleFunc
 #+BEGIN_EXAMPLE
 // HandleFunc add handlers to DefaultServeMux
 http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-  // fmt.Fprintf(w, "hello html")
+  fmt.Fprintf(w, "hello html")
 })
 
 fmt.Println(http.ListenAndServe(":4000", h))
 checkError(err)
 #+END_EXAMPLE
 
-Template
+***** Template
 #+BEGIN_EXAMPLE
 import "html/template"
 
@@ -13864,6 +13875,22 @@ index.html
 {{.Name}}
 #+END_EXAMPLE
 If url.name is defined, then that will be displayed
+
+***** Read POST data
+#+BEGIN_EXAMPLE
+
+func test(w http.ResponseWriter, r *http.Request) {
+  r.ParseForm()
+  result := fmt.Sprintf("%#v", r.Form)
+  // r.Form is map[{"field1": "value"}:[]]
+  fmt.Fprintf(w, result)
+  
+}
+
+func main() {
+  http.HandleFunc("/test", test)
+}
+#+END_EXAMPLE
 
 ** Custom package
 $GOPATH/src/mypkg
