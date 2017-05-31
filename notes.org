@@ -12509,7 +12509,10 @@ Stop and remove all containers :: ~docker rm -f $(docker ps -a -q)~
 
 Container log :: ~docker logs -f containerName~ -f to follow log output
 
-Container network IP and settings :: ~docker inspect containerName~ and look at ~NetworkSetting > IPAddress~
+- docker inspect
+~docker inspect containerName~
+Container network IP and settings :: ~NetworkSetting > IPAddress~
+Volume :: ~Config > Volumes~ and ~Mounts~
 
 Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
@@ -13228,8 +13231,9 @@ Parent image: buildpack-deps:jessie-scm
 Available: make
 Environment vars: GOPATH=/go
 Go executables: /usr/local/bin/
+WORKDIR $GOPATH
 
-~docker run -it --rm golang:1.8 /bin/bash -I~ to go in
+~docker run -it --rm --name testgo golang:1.8 /bin/bash -I~ to go in
 
 Running ~exec hello~ inside container will exit the container
 
@@ -13594,10 +13598,123 @@ func processPath(path string, info os.Fileinfo, err error) error {
 }
 #+END_EXAMPLE
 
+*** os/exec
+**** Basics
+#+BEGIN_EXAMPLE
+import (
+  "fmt"
+  "os"
+  "os/exec"
+)
+
+func main() {
+  cmd := "curl"
+  args := []string{"https://..."}
+  
+  // Simply run
+  if err := exec.Command(cmd, args...).Run(); err != nil {
+    fmt.Println(os.Stderr, err)
+    os.Exit(1)
+  }
+  fmt.Println("Success!")
+  // Simply run.
+
+  // Run and catch STDOUT
+  var (
+    cmdOut []byte
+    err error
+  )
+
+  if cmdOut, err = exec.Command(cmd, args...).Output(); err != nil {
+    fmt.Fprintln(os.Stderr, "An error: ", err)
+    os.Exit(1)
+  }
+  
+  result := string(cmdOut)
+  // Run and catch STDOUT
+  
+  // Catch output line by line as a stream
+  // Use cmd.Start() and cmd.Wait()
+  // Catch stdout by adding pipe
+
+  cmd2 := exec.Command(cmd, args...)
+  cmdReader, err := cmd2.StdoutPipe()
+  if err != nil {
+    fmt.Fprintln(os.Stderr, "Error creating StdoutPipe for cmd", err)
+    os.Exit(1)
+  }
+  
+  // import "bufio"
+  scanner := bufio.NewScanner(cmdReader)
+  go func() {
+    for scanner.Scan() {
+      fmt.Printf("Output header | %s\n", scanner.Text())
+    }
+  }()
+
+  err = cmd2.Start()
+  if err != nil {
+    fmt.Fprintln(os.Stderr, "Error starting Cmd", err)
+  }
+  
+  err = cmd2.Wait()
+  if err != nil {
+    fmt.Fprintln(os.Stderr, "Error waiting for Cmd", err)
+    os.Exit(1) 
+  }
+  // Catch output line by line as a stream.
+}
+#+END_EXAMPLE
+
+**** SSH command
+#+BEGIN_EXAMPLE
+type SSHCommander struct {
+	User string
+	IP   string
+}
+
+func (s *SSHCommander) Command(cmd ...string) *exec.Cmd {
+	arg := append(
+		[]string{
+			fmt.Sprintf("%s@%s", s.User, s.IP),
+		},
+		cmd...,
+	)
+	return exec.Command("ssh", arg...)
+}
+
+func main() {
+	commander := SSHCommander{"root", "50.112.213.24"}
+
+	cmd := []string{
+		"apt-get",
+		"install",
+		"-y",
+		"jq",
+		"golang-go",
+		"nginx",
+	}
+
+	if err := commander.Command(cmd...); err != nil {
+		fmt.Fprintln(os.Stderr, "There was an error running SSH command: ", err)
+		os.Exit(1)
+	}
+}
+#+END_EXAMPLE
+
+**** Cmd
+Customize a command before it gets run by Run, Output or CombinedOutput methods
+#+BEGIN_EXAMPLE
+cmd := "git"
+args := []string{"status"}
+
+cmd2 := exec.Command(cmd, arg...)
+// Working directory otherwise is the process's current dir
+cmd2.Dir = "/home/user/"
+#+END_EXAMPLE
+
 *** net/http
-
 **** HTTP request
-
 #+BEGIN_EXAMPLE
 resp, err := http.Get("http://example.com/")
 ...
@@ -13664,7 +13781,7 @@ func toursFromJson(content string) []Tour {
 
 #+END_EXAMPLE
 
-**** http server
+**** HTTP server
 Use http.Handle
 #+BEGIN_EXAMPLE
 import (
@@ -14335,6 +14452,21 @@ rewrite (?i)^/cms/(.*)$ /CMS/$1 last;
 Flag ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
 
 * Git
+** Show config
+#+BEGIN_EXAMPLE
+# List all active config for the current folder
+git config --list
+
+# List global config only
+git config --global --list
+
+# Get all files that forms each config
+git config --list --show-origin
+
+# Find path to git.exe
+which git.exe
+#+END_EXAMPLE
+
 ** Working Tree
 <<<git:Working_Tree>>>
 - untracked :: it was never staged nor committed
