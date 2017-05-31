@@ -13595,6 +13595,18 @@ func processPath(path string, info os.Fileinfo, err error) error {
 #+END_EXAMPLE
 
 *** net/http
+
+**** HTTP request
+
+#+BEGIN_EXAMPLE
+resp, err := http.Get("http://example.com/")
+...
+resp, err := http.Post("http://example.com/upload", "image/jpeg", &buf)
+...
+resp, err := http.PostForm("http://example.com/form",
+	url.Values{"key": {"Value"}, "id": {"123"}})
+#+END_EXAMPLE
+
 #+BEGIN_EXAMPLE
 import (
   "io/ioutil"
@@ -13614,6 +13626,7 @@ func main() {
   checkError(err)
   fmt.Pritnf("Response type: %T\n", resp)
 
+  // Important!!!
   defer resp.Body.Close()
 
   bytes, err := ioutil.ReadAll(resp.body)
@@ -13652,26 +13665,74 @@ func toursFromJson(content string) []Tour {
 #+END_EXAMPLE
 
 **** http server
+Use http.Handle
 #+BEGIN_EXAMPLE
 import (
   "fmt"
   "net/http"
+  "html/template"
 )
 
+// default Handler
 type Hello struct{}
 
+// Implement handler that is an interface
 func (h Hello) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-  fmt.Fprint(w, "<h1>hello</h1>")
+  fmt.Fprintf(w, "<h1>hello</h1>")
 }
+
+// func Handle(pattern string, handler Handler)
+// type Handler interface {
+//  ServeHTTP(resp, *request)
+// }
 
 func main() {
   var h Hello
-  err := http.ListenAndServer("localhost:4000", h)
+  err := http.ListenAndServe("localhost:4000", h)
+  // addr string, handler Handler
+  // if handler is nil, DefaultServeMux is used
   // or :4000
   checkError(err)
 }
-
 #+END_EXAMPLE
+
+Use http.HandleFunc
+#+BEGIN_EXAMPLE
+// HandleFunc add handlers to DefaultServeMux
+http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+  // fmt.Fprintf(w, "hello html")
+})
+
+fmt.Println(http.ListenAndServe("localhost:4000", h))
+checkError(err)
+#+END_EXAMPLE
+
+Template
+#+BEGIN_EXAMPLE
+import "html/template"
+
+type Page struct {
+  Name string
+}
+
+func main() {
+  templates := template.Must(template.ParseFiles("templates/index.html"))
+
+  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    p := Page{Name: "Gopher"}
+
+    if err := templates.ExecuteTemplate(w, "index.html", p); err !=  nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
+  })
+}
+#+END_EXAMPLE
+
+index.html
+#+BEGIN_EXAMPLE
+{{.Name}}
+#+END_EXAMPLE
+If url.name is defined, then that will be displayed
 
 ** Custom package
 $GOPATH/src/mypkg
