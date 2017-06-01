@@ -13630,6 +13630,12 @@ func processPath(path string, info os.Fileinfo, err error) error {
 }
 #+END_EXAMPLE
 
+*** encoding/json
+#+BEGIN_EXAMPLE
+json.NewDecoder(r io.Reader) *Decoder
+json.Unmarshal(data []byte, v interface{}) error
+#+END_EXAMPLE
+
 *** log
 Output to stdout
 
@@ -13966,12 +13972,13 @@ func test(w http.ResponseWriter, r *http.Request) {
   // Read body as a whole
   body, err := ioutil.ReadAll(r.Body)
   checkError(err)
+  log.Println(string(body))
   
-  decoder := json.NewDecoder(r.Body)
+  //decoder := json.NewDecoder(r.Body)
   var t test_struct
-  if err != nuil {
-    panic(err)
-  }
+  err = json.Unmarshal(body, &t)
+  checkError(err)
+  fmt.Fprintf(w, t.Test)
 }
 
 func main() {
@@ -14060,7 +14067,10 @@ Type conversion
 #+BEGIN_EXAMPLE
 var int1 int = 5
 var float1 float64 = 42
+var s := `{ "votes": { "option": "3"} }`
 sum := float64(int1) + float1
+// convert string to byte
+bytevar := []byte(s)
 #+END_EXAMPLE
 
 *** array
