@@ -10878,8 +10878,14 @@ Child processes inherit the environmental variables of the parent process.
 List all env. variables :: ~printenv~ or ~env~
 Get an env. variable :: ~printenv HOME~ or ~echo $HOME~
 
-Set an env. variable :: ~export TERM=xterm-256color~
+Set an env. variable for the current shell and all processes started from current shell :: ~export TERM=xterm-256color~
 Set an env. variable using a shell variable :: ~export TEST_VAR~
+
+Set variable only for current shell :: VARNAME="value"
+
+Set permanently for all future bash sessions, add such line to .bashrc file in $HOME
+Set permanently and system wide (all users, all processes) add set variable in /etc/environment
+~sudo nano /etc/environment~, then logout from current user and login again.
 
 Use ~env~ to modify the environment that programs run in
 #+BEGIN_EXAMPLE
@@ -13630,6 +13636,27 @@ func processPath(path string, info os.Fileinfo, err error) error {
 }
 #+END_EXAMPLE
 
+Print OS environments
+#+BEGIN_EXAMPLE
+// To set a key/value pair, use `os.Setenv`. To get a
+// value for a key, use `os.Getenv`. This will return
+// an empty string if the key isn't present in the
+// environment.
+os.Setenv("FOO", "1")
+fmt.Println("FOO:", os.Getenv("FOO"))
+fmt.Println("BAR:", os.Getenv("BAR"))
+
+// Use `os.Environ` to list all key/value pairs in the
+// environment. This returns a slice of strings in the
+// form `KEY=value`. You can `strings.Split` them to
+// get the key and value. Here we print all the keys.
+fmt.Println()
+for _, e := range os.Environ() {
+     pair := strings.Split(e, "=")
+     fmt.Println(pair[0])
+}
+#+END_EXAMPLE
+
 *** encoding/json
 #+BEGIN_EXAMPLE
 json.NewDecoder(r io.Reader) *Decoder
@@ -13979,6 +14006,13 @@ func test(w http.ResponseWriter, r *http.Request) {
   err = json.Unmarshal(body, &t)
   checkError(err)
   fmt.Fprintf(w, t.Test)
+
+  // Get Header
+  if a := r.Header.Get("x-hub-signature"); len(a) == 0 {
+    panic()
+  }
+  
+  
 }
 
 func main() {
