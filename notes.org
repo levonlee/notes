@@ -9423,6 +9423,7 @@ function listInStock(res) {
 #+END_EXAMPLE
 
 *** cors
+You don't need to config Nginx!
 #+BEGIN_EXAMPLE
 npm install cors
 
@@ -9438,6 +9439,7 @@ app.get('/products/:id', function (req, res, next) {
 });
 
 # Enable for one route
+# Don't put cors() in app.route()
 app.get('/products/:id', cors(corOptions), function (req, res, next) {
   res.json({msg: 'This is CORS-enabled for all origins!'})
 })
@@ -11997,6 +11999,11 @@ else
 fi
 #+END_EXAMPLE
 
+**** HTTP POST
+#+BEGIN_EXAMPLE
+curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http://..
+#+END_EXAMPLE
+
 **** Options
 
 | L          | Follow through all redirects                                  |
@@ -13623,6 +13630,78 @@ func processPath(path string, info os.Fileinfo, err error) error {
 }
 #+END_EXAMPLE
 
+*** log
+Output to stdout
+
+#+BEGIN_EXAMPLE
+import ( "log" )
+log.Println(string(body))
+#+END_EXAMPLE
+
+Write to os.Stdout os.Stderr
+#+BEGIN_EXAMPLE
+import (
+"io"
+"io/ioutil"
+"log"
+"os"
+)
+var (
+  Trace *log.Logger
+  Info *log.Logger
+  Warning *log.Logger
+  Error *log.Logger
+)
+func Init(
+  traceHandle io.Writer,
+  infoHandle io.Writer,
+  warningHandle io.Writer,
+  errorHandle io.Writer) {
+  Trace = log.New(traceHandle, 
+     "TRACE: ",
+     log.Ldate|log.Ltime|log.Lshortfile)
+
+  Info = log.New(infoHandle, 
+     "INFO: ",
+     log.Ldate|log.Ltime|log.Lshortfile)
+
+  Warning = log.New(warningHandle, 
+     "WARNING: ",
+     log.Ldate|log.Ltime|log.Lshortfile)
+
+  Error = log.New(errorHandle, 
+     "ERROR: ",
+     log.Ldate|log.Ltime|log.Lshortfile)
+
+  // log.New(out io.Writer, prefix string, flag int)
+}
+
+func main() {
+  // system devices that support io.Writer interface
+  Init(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+  
+  // write to stdout
+  Info.Pringln("...")
+}
+#+END_EXAMPLE
+
+Write to file
+#+BEGIN_EXAMPLE
+file, err := os.OpenFile("file.txt", os.O_CREATE|os.WRONLY|os.O_APPEND, 0666)
+if err != nil {
+  log.Fatalln("Failed to open log file", output, ":", err)
+}
+
+multi := io.MultiWriter(file, os.Stdout)
+
+MyFile := log.New(multi,
+       "PREFIX: ",
+       log.Ldate|log.Ltime|log.shortfile)
+#+END_EXAMPLE
+
+log.Fatalln("...") same as Println() but followed by a call to os.Exit(1)
+log.Panicln() same as Println() but followed by panic()
+
 *** os/exec
 **** Basics
 #+BEGIN_EXAMPLE
@@ -13766,7 +13845,7 @@ func main() {
   url := "http://..."
   resp, err := http.Get(url)
   checkError(err)
-  fmt.Pritnf("Response type: %T\n", resp)
+  fmt.Printf("Response type: %T\n", resp)
 
   // Important!!!
   defer resp.Body.Close()
@@ -13877,19 +13956,36 @@ index.html
 If url.name is defined, then that will be displayed
 
 ***** Read POST data
+Content-Type json
 #+BEGIN_EXAMPLE
+type test_struct struct {
+  Test string
+}
 
 func test(w http.ResponseWriter, r *http.Request) {
-  r.ParseForm()
-  result := fmt.Sprintf("%#v", r.Form)
-  // r.Form is map[{"field1": "value"}:[]]
-  fmt.Fprintf(w, result)
+  // Read body as a whole
+  body, err := ioutil.ReadAll(r.Body)
+  checkError(err)
   
+  decoder := json.NewDecoder(r.Body)
+  var t test_struct
+  if err != nuil {
+    panic(err)
+  }
 }
 
 func main() {
   http.HandleFunc("/test", test)
 }
+#+END_EXAMPLE
+
+See linux:curl:post
+
+Content-Type:application/x-www-form-urlencoded
+#+BEGIN_EXAMPLE
+r.ParseForm()
+r.Form.Get("key")
+res := r.FormValue("<your param name>")
 #+END_EXAMPLE
 
 ** Custom package
