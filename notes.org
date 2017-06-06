@@ -13265,7 +13265,7 @@ golang:1.8
 Parent image: buildpack-deps:jessie-scm
 Available: make
 Environment vars: GOPATH=/go
-Go executables: /usr/local/bin/
+GOROOT: /usr/local/bin/
 WORKDIR $GOPATH
 
 ~docker run -it --rm --name testgo golang:1.8 /bin/bash -I~ to go in
@@ -13281,9 +13281,13 @@ To download the compiled hello command to host directory /tmp/bin:
 ~docker run -v /tmp/bin:/go/bin golang:1.8 go get github.com/golang/example/hello/...~
 
 * Go
-** Basics
-Go is just an executable script file. Uninstall on Windows, go to Control Panel
+** Basics, Command
+Go is just an executable script file. Uninstall on Windows, go to Control Panel if you install using msi
 On Linux, uninstall by just replacing the bin folder
+
+Install on Windows using zip, extract it to C:\go so C:\go\bin exists. Add C:\go\bin to PATH. GOPATH is C:\Users\username\go
+Refer to phpstorm:golang
+
 #+BEGIN_EXAMPLE
 echo $GOPATH
 go version
@@ -13294,6 +13298,9 @@ godoc fmt
 gofmt main.go
 # -w write file
 gofmt -w main.go
+
+# Format all files in directory
+go fmt ./...
 
 # List environment variables
 go env
@@ -13322,6 +13329,25 @@ In Go Playground, the system time is always the same
 http://play.golang.org
 
 [[https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins][Supported IDEs]]
+
+*** go run -race *.go
+-race is to detect data race
+./compare.go
+#+BEGIN_EXAMPLE
+package main
+import (...)
+func f1
+func f2
+#+END_EXAMPLE
+
+./main.go
+#+BEGIN_EXAMPLE
+package main
+import (...)
+func main() {
+  f1()
+}
+#+END_EXAMPLE
 
 ** Syntax, Program Flow
 Opening and closing brackets have to be in one line
@@ -13569,6 +13595,15 @@ shortFormat := "1/2/06"
 
 #+END_EXAMPLE
 
+#+BEGIN_EXAMPLE
+start := time.Now()
+// ...
+end := time.Now()
+delta := end.Sub(start)
+// Or
+fmt.Println(time.Since(start).Seconds())
+#+END_EXAMPLE
+
 *** sort
 http://golang.org/pkg/sort
 
@@ -13665,10 +13700,41 @@ for _, e := range os.Environ() {
 }
 #+END_EXAMPLE
 
-*** encoding/json
+*** path/filepath
+#+BEGIN_EXAMPLE
+filepath.Walk("../images/", func(path string, info os.FileInfo, err error) {
+  if info.IsDir() {
+    return nil
+  }
+  fmt.Println(path)
+  return nil
+})
+#+END_EXAMPLE
+
+*** encoding/json, encoding/csv
 #+BEGIN_EXAMPLE
 json.NewDecoder(r io.Reader) *Decoder
 json.Unmarshal(data []byte, v interface{}) error
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+import (
+ "os"
+ "encoding/csv"
+)
+
+f, err := os.Open("../abc.txt")
+checkError(err)
+defer f.Close()
+
+rdr := csv.NewReader(f)
+rdr.Comma = '\t'
+rdr.TrimLeadingSpace = true
+rows, err := rdr.ReadAll()
+checkError(err)
+for i, row := range rows {
+  fmt.Println(row[i])
+}
 #+END_EXAMPLE
 
 *** log
@@ -14036,7 +14102,9 @@ r.Form.Get("key")
 res := r.FormValue("<your param name>")
 #+END_EXAMPLE
 
-** Custom package
+** Custom package, Third Party Package
+For third-party packages, godoc.org and github.com/avelino/awesome-go
+https://www.lynda.com/Go-tutorials/What-you-should-know-before-watching-course/439416/472998-4.html?srchtrk=index%3a1%0alinktypeid%3a2%0aq%3ago+language%0apage%3a1%0as%3arelevance%0asa%3atrue%0aproducttypeid%3a2
 $GOPATH/src/mypkg
 #+BEGIN_EXAMPLE
 package main
@@ -14083,7 +14151,10 @@ func FullNameNakedReturn(f, l string) (full string, length int) {
 import (
   // github.com/username/reponame/foldername/example.go
   "github.com/username/reponame/foldername"
+  // alias
+  stdimage "image"
 )
+
 #+END_EXAMPLE
 
 ** Types
@@ -14116,6 +14187,9 @@ bytevar := []byte(s)
 // convert string array to string
 stringArray := []string {"Hello","world","!"}
 justString := strings.Join(stringArray," ")
+
+// Convert string to float golang:strconv
+f, err := strconv.ParseFloat(strings.TrimSpace(str), 64)
 #+END_EXAMPLE
 
 *** array
@@ -14324,6 +14398,27 @@ if ok {
   // do things  
 } else {
   // return error
+}
+#+END_EXAMPLE
+
+** Concurrency
+#+BEGIN_EXAMPLE
+
+// Avoid race condition
+var mu sync.Mutex
+var wg sync.WaitGroup
+wg.Add(len(paths))
+
+for _, path := range paths {
+  go func(path string) {
+    pixels := getPixels(path)
+    mu.Lock()
+    {
+      images = append(images, pixels)
+    }
+    mu.Unlock()
+    wg.Done()
+  }(path)
 }
 #+END_EXAMPLE
 
@@ -14857,6 +14952,15 @@ git:Working_Tree
 =git stash apply= Apply latest stash
 =git stash apply stash@{2}= Apply 2nd latest stash
 =git stash drop stash@{0}= Remove latest stash
+
+** Commit an empty folder
+In the empty folder add .gitignore file
+#+BEGIN_EXAMPLE
+# Not to ignore .gitignore
+!.gitignore
+# Or you intend to keep the folder empty, exclude everything
+*
+#+END_EXAMPLE
 
 ** Branch
 *** Duplicate current branch and switch to it 
@@ -17009,6 +17113,10 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 *** Convert to Tab/Spaces for indentation
 Find Action > To Tab
+
+*** Golang Plugin <<<phpstorm:golang>>>
+Search for Go, install plugin and restart phpStorm
+Setup SDK, which is c:\go
 
 ** Emacs
 *** Install & Configuration
