@@ -12023,7 +12023,19 @@ fi
 
 **** HTTP POST
 #+BEGIN_EXAMPLE
+# default POST is application/x-www-form-urlencoded
+curl -X POST -d "test=that&test2=that2" http://..
+
+# explict -H 'Content-Type: application/x-www-form-urlencoded'
+
+# with a data file
+curl -X POST -d "@data.txt" http://..
+
+# json
 curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http://..
+
+# with a data file
+curl -X POST -d "@data.json" http://..
 #+END_EXAMPLE
 
 **** Options
@@ -13740,9 +13752,34 @@ filepath.Walk("../images/", func(path string, info os.FileInfo, err error) {
 #+END_EXAMPLE
 
 *** encoding/json, encoding/csv
+Refer to golang:net/http:json
 #+BEGIN_EXAMPLE
 json.NewDecoder(r io.Reader) *Decoder
 json.Unmarshal(data []byte, v interface{}) error
+
+// convert any json string to struct
+import ("encoding/json" "fmt" "reflect") 
+
+var input = `
+{
+  "response_type": "in_channel",
+  "text": "hello text",
+  "attachments": [
+    { "text": "attachment text" }
+  ]
+}
+`
+var val map[string]interface{}
+
+if err := json.Unmarshal([]byte(input), $val); err != nil {
+  panic(err)
+}
+
+fmt.Println(val)
+// map[response_type:in_channel text:hello text attachments:[map[text:attachment text]]]
+for k, v := range val {
+  fmt.Println(k, reflect.TypeOf(v))
+}
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
@@ -14091,10 +14128,15 @@ index.html
 If url.name is defined, then that will be displayed
 
 ***** Read POST data
-Content-Type json
+****** Content-Type json <<<golang:net/http:json>>>
 #+BEGIN_EXAMPLE
 type test_struct struct {
   Test string
+  IsNew bool // JSON booleans
+  Age float64 // JSON numbers
+  myArray []interface{} // JSON arrays
+  myObj map[string]interface{} // JSON objects
+  isNull nil // JSON null
 }
 
 func test(w http.ResponseWriter, r *http.Request) {
@@ -14123,11 +14165,70 @@ func main() {
 
 See linux:curl:post
 
-Content-Type:application/x-www-form-urlencoded
+****** Content-Type:application/x-www-form-urlencoded
 #+BEGIN_EXAMPLE
 r.ParseForm()
 r.Form.Get("key")
 res := r.FormValue("<your param name>")
+#+END_EXAMPLE
+
+****** Return Json as application/json
+#+BEGIN_EXAMPLE
+func testjson(w http.ResponseWriter, r *http.Request) {
+  body, err := ioutil.ReadAll(r.Body)
+  checkError(err)
+  type slackResponse struct {
+    ResponseType string `json:"response_type"`
+    Text string `json:"text"`
+    Attachments []map[string]string `json:"attachments"`
+  }
+  a2 := []map[string]string{map[string]string{"text": string(body)}}
+  resp := slackResponse{"in_channel", a2}
+  js, err := json.Marshal(resp)
+  checkError(err)
+  w.Header().Set("Content-Type", "application/json")
+  w.Write(js)
+
+  /* Or you can just output a json string
+  var p = `{
+  "response_type": "in_channel",
+  "attachments": [
+     {  "text": "%s" }
+   ]
+}`
+   resp := fmt.Sprintf(p, string(body))
+   w.Header().Set("Content-Type", "application/json")
+   fmt.Fprintf(w, resp)
+  */
+
+}
+func main() {
+  http.HandleFunc("/json", testjson)
+}
+#+END_EXAMPLE
+
+More complicated value `attachments`
+#+BEGIN_EXAMPLE
+// this is the json to construct
+// {"response_type":"in_channel","text":"hello text","attachments":[{"text":"attachment text"},{"text2":{"name":"hello"}}]}
+
+type Profile struct {
+	Response_type string `json:"response_type"`
+	Text          string `json:"text"`
+	Attachments []interface{} `json:"attachments"`
+}
+
+func main() {
+	a2 := make([]interface{}, 2)
+	a2[0] = map[string]string{"text": "attachment text"}
+	a2[1] = map[string]map[string]string{"text2": map[string]string{"name": "hello"}}
+	profile := Profile{"in_channel", "hello text", a2}
+        js, err := json.Marshal(profile)
+        checkError(err)
+	fmt.Println(string(js))
+	str := fmt.Sprintf("%#v", profile)
+	fmt.Println(str)
+}
 #+END_EXAMPLE
 
 ** Custom package, Third Party Package
@@ -14415,7 +14516,7 @@ import "errors"
 
 myError := errors.New("My error string")
 fmt.Println(myError)
-// string -> myError.Error()
+// str := myError.Error()
 
 attendance := map[string]bool{
   "Ann": true,
