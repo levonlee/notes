@@ -10981,6 +10981,30 @@ Where -H is to use the target user's home directory
 *** Sudo run multiple commands
 ~sudo bash -c 'apt-get update;apt-get install'~
 
+*** Pass password as a file to sudo
+<<<linux:sudo:password>>>
+~sudo -S your_script -var1 </path/to/file.txt~
+
+*** Require no password when sudo is run as another user
+User abc has sudo privilege. When abc is signed in and run a script/command that requires sudo, system will ask for password
+~sudo ./path/to/script.sh~
+
+Bypass so password input is not required
+
+Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoers.d/mybypass~
+#+BEGIN_EXAMPLE
+# See if there are some sample
+sudo ls -al /etc/sudoers.d/
+sudo cat /etc/sudoers.d/mybypass
+sudo visudo -f /etc/sudoers.d/mybypass
+# Add this line
+abc ALL = (root) NOPASSWD: /path/to/script.sh
+# allow user abc on ALL hosts to run a specific command without entering password
+# all other sudo commands will still require a password
+
+# ~/etc/sudoers.d/mybypass file should have permission 0440 and owner:group is root:root
+#+END_EXAMPLE
+
 ** SSH
 <<<linux:ssh>>>
 
@@ -14325,6 +14349,12 @@ go get github.com/gitusername/reponame/...
 # Build one package
 go get github.com/gitusername/reponame/pkg1/...
 # ~/go/bin/pkg1 (executable)
+
+# At ~/go/src/github.com/gitusername/reponame, run this to see if there's compile error
+go build ...
+
+# At ~/go/src/github.com/gitusername/reponame, run this to format all .go files
+go fmt ./...
 #+END_EXAMPLE
 
 ** Types
