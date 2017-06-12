@@ -14066,6 +14066,18 @@ func toursFromJson(content string) []Tour {
 
 #+END_EXAMPLE
 
+HTTP POST json
+#+BEGIN_EXAMPLE
+tmp := `{"text": "delayed response", "attachments": [{ "text": "test"}]}`
+// or
+// tmp, err := json.Marshal(myStruct)
+req := bytes.NewBuffer([]byte(tmp))
+resp, err := http.Post(sc.ResponseURL, "application/json", req)
+checkError(err)
+body, _ := ioutil.ReadAll(resp.Body)
+fmt.Println(string(body))
+#+END_EXAMPLE
+
 **** HTTP server
 ***** Use http.Handle
 #+BEGIN_EXAMPLE
@@ -14293,6 +14305,26 @@ import (
   stdimage "image"
 )
 
+#+END_EXAMPLE
+
+All packages and codes should be under one go workspace which the folder at GOPATH.
+Assuming GOPATH is ~/go in Windows installation.
+
+#+BEGIN_EXAMPLE
+cd ~/go
+mkdir -p src/github.com
+git clone ../gitusername/myreponame
+~/go/src/github.com/gitusername/reponame/pkg1/pkg1.go
+~/go/src/github.com/gitusername/reponame/pkg2/pkg2.go
+
+# build all necessary packages
+go get github.com/gitusername/reponame/...
+# ~/go/bin/pkg1 (executable)
+# ~/go/bin/pkg2 (executable)
+
+# Build one package
+go get github.com/gitusername/reponame/pkg1/...
+# ~/go/bin/pkg1 (executable)
 #+END_EXAMPLE
 
 ** Types
@@ -15158,6 +15190,19 @@ github:gh-pages
 *** Abort merge
 git merge --abort
 
+** Fork
+Sync a fork with original repo
+Add a remote: upstream
+#+BEGIN_EXAMPLE
+git clone git@github.com:YOUR-USERNAME/YOUR-FORKED-REPO.git
+cd into/cloned/fork-repo
+git remote -v
+git remote add upstream git://github.com/ORIGINAL-DEV-USERNAME/REPO-YOU-FORKED-FROM.git
+git remote -v
+git fetch upstream
+git pull upstream master
+#+END_EXAMPLE
+
 ** Remove tracking for commited files
 A file is commited but you don't want to track it anymore in the future.
 Remember the file will still be in Git but future clone won't grab the file.
@@ -15270,6 +15315,8 @@ If you want to commit, ~.gitattributes~ file in the root ~$GIT_DIR~ or any sub f
 ** Git Windows
 GUI gitk
 ~start path/to/filename~ to tell Windows to open a file
+
+Run tree command ~cmd //c tree~
 
 *** Line Feed, Long Path
 Always don't do any conversion when files are added to local index or codes are checked out to local filesystem.
