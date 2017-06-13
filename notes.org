@@ -14848,6 +14848,246 @@ Database Drivers
 - Driver interfaces: database/sql/driver
 - https://github.com/golang/go/wiki/SQLDrivers
 
+* Vagrant
+** Install
+Install Oracle VM Virtualbox first
+https://www.virtualbox.org/wiki/Downloads
+VirtualBox Oracle VM VirtualBox Extension Pack is needed
+https://www.vagrantup.com/docs/virtualbox/
+VirtualBox version 5.0.x and 5.1.x are supported by Vagrant 1.x
+
+Simply install the latest version of VirtualBox to upgrade
+
+Error: "VT-x/AMD-V hardware acceleration is not available"
+On Windows, check if Hyper-V is on by going to Windows Features.
+Turn it off. As Windows takes over the hardware acceleration.
+
+~optionalfeatures.exe~ goes directly to Windows Features.
+
+Then reboot and change UEFI or BIOS setting
+- name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration.
+
+Simply install the latest version to upgrade
+https://www.vagrantup.com/downloads.html
+
+#+BEGIN_EXAMPLE
+vagrant --version
+# 1.x
+where vagrant
+
+# download image and create Vagrantfile
+vagrant init hashicorp/precise64
+vagrant up && vagrant ssh
+#+END_EXAMPLE
+
+** Vagrant VM, VirtualBox
+#+BEGIN_EXAMPLE
+# Status of all Vagrant VM's
+vagrant global-status --prune
+
+# List all running VirtualBox VMs
+# vboxmanage.exe is not in PATH, change directory
+cd /c/Program Files/Oracle/VirtualBox
+vboxmanage list runningvms
+
+# VirtualBox version
+vboxmanage --version
+#+END_EXAMPLE
+
+** Frequent commands
+#+BEGIN_EXAMPLE
+# force to run provision
+vagrant up --provision
+# or
+vagrant reload --provision
+
+# remove the current vagrant VM
+vagrant destroy -f
+
+# shut down and boot up
+vagrant halt
+vagrant up
+
+# Hibernate
+vagrant suspend
+
+# Shut down and up
+vagrant reload
+
+# current vagrant vm running status
+vagrant status
+
+# Show current vagrant vm ssh config
+vagrant ssh-config
+# Usually it's 127.0.0.1:2222, notice the port may change as vagrant will auto select port if it's in use
+#+END_EXAMPLE
+
+** Vagrantfile
+ruby language
+#+BEGIN_EXAMPLE
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+ENV["LC_ALL"] = "en_US.UTF-8"
+# In case host couldn't pass locale into vagrant
+
+hostname = livagrantdev
+cpus = 2
+memory = 2048
+
+@importmysql = <<SCRIPT
+echo "docker run -it --rm -v /vagrant/mydbdump:/tmp/mydbdump"\
+" --link wordpressdb:wpdb mysql:5.7.9 sh -c"\
+" 'exec mysql"\
+' -h"$WPDB_PORT_3306_TCP_ADDR" -P"$WPDB_PORT_3306_TCP_PORT"'\
+' -uroot -p"$WPDB_ENV_MYSQL_ROOT_PASSWORD"'\
+' wordpress < /tmp/mydbdump/pantheon_db.sql'\
+"'" >> /home/vagrant/import_db.sh
+chmod +x /home/vagrant/import_db.sh
+SCRIPT
+
+Vagrant.configure(2) do |config|
+# config.vm
+	config.vm.box = username/boxname
+# optional
+# config.vm.box_version = "1.1.0"
+# config.vm.box_url = "http://"
+
+# hostname, appears when you vagrant ssh - vagrant@yourhostname
+config.vm.hostname = hostname
+
+# network
+	config.vm.network "private_network", ip: "192.168.33.10"
+# VMs in the the private network (VirtualBox) can communicate
+# Give a static IP
+	config.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh"
+	config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
+# On local host (windows), 192.168.33.10:8080
+
+# Synced folder
+# default /vagrant
+# Create a root folder (readonly) in guest machine to hold Dockerfiles for docker provisioner
+# Create that folder if it doesn't exist in guest machine
+	config.vm.synced_folder "./build/docker", "/docker_builds", create: true, mount_options: ["ro"]
+
+	config.vm.provider "virtualbox" do |vb|
+	 vb.memory = memory
+	 vb.cpus = cpus
+	 vb.name = hostname
+	 # The name appears on VirtualBox GUI
+	 #  Can override any settings config.vm, config.ssh, config.winrm and config.vagrant
+	end
+
+# Provision
+# Upload File using SSH user (vagrant)
+	config.vm.provision "file", source: "~/.gitconfig", destination ".gitconfig"
+
+
+# In line Shell
+	config.vm.provision "shell", inline: @importmysql
+# Path to script file Shell
+# config.vm.provision "shell",
+
+# Provisioner docker - install docker on the VM and pull images!
+config.vm.provision "install_docker", type: "docker" do |d|
+	d.pull_images "mysql:5.7.9"
+	d.pull_images "wordpress"
+# Need to create a root folder in guest machine to pull Dockerfile
+	d.build_image "/docker_builds", args: "-t li-nginx-alpine -f /docker_builds/Dockerfile.li-nginx-alpine"
+# This is the same as
+# docker build -t li-nginx-alpine -f /docker_builds/Dockerfile.li-nginx-alpine /docker_builds/
+
+end
+
+# Provisioner docker_compose: install docker_compose on the VM!
+# Require plugin `vagrant-docker-compose`
+config.vm.provision "docker_compose_plugin", type: "docker_compose"
+
+# config.ssh
+# config.winrm
+# config.vagrant
+
+end
+#+END_EXAMPLE
+
+Do a loop
+#+BEGIN_EXAMPLE
+(1..3).each do |i|
+	config.vm.define "node-#{i}" do |node|
+		node.vm.provision "shell",
+			inline: "echo hello from node #{i}"
+	end
+end
+#+END_EXAMPLE
+
+** Vagrant plugin
+Install vagrant-docker-compose plugin which installs Docker Compose as a provisioner 
+~vagrant plugin install vagrant-docker-compose~
+
+https://github.com/leighmcculloch/vagrant-docker-compose
+
+Install vagrant-vbguest which automatically installs VirtualBox Guest Additions (VBGA) on Vagrant VM.
+~vagrant plugin install vagrant-vbguest~
+
+To prevent updating VBGA when ~vagrant up~, add ~config.vbguest.auto_update = false~ in Vagrantfile
+
+Update all installed plugins ~vagrant plugin update~
+
+List all installed plugins ~vagrant plugin list~
+
+Uninstall a plugin ~vagrant plugin uninstall vagrant-docker-compose~
+
+** Box
+A VirtualBox, ~.box~ file, is a compressed box on top of which a VM can run.
+Box has a namespace ~username/boxname~ as in ~hashicorp/precise64~
+
+#+BEGIN_EXAMPLE
+# export the running VM to a new box file
+vagrant package --output boxfile.box
+
+# decompress a box file to ~/.vagrant.d/boxes
+vagrant box add boxname boxfile.box
+
+# boxname is an installed Vagrant box
+# destroy current running Vagrant box
+vagrant destroy -f
+# and
+rm Vagrantfile
+# Setup another Vagrantfile which uses the newly created box
+cofnig.vm.box = "boxname"
+
+# To package an installed Vagrant box (of a specific provider and version)
+# into a .box file
+vagrant box repackage <boxname> <provider> <version>
+
+# remove a vagrant box
+vagrant box remove boxname
+# or
+vagrant box remove boxname --box-version=0.1.7
+
+# List all installed Vagrant boxes
+vagrant box list
+
+# Check if the box used in the current folder is up-to-date
+vagrant box outdated
+
+# if it's not outdated and before destroy current Vagrant machine, update the box
+vagrant box update
+# Destroy the current Vagrant machine and up again.
+#+END_EXAMPLE
+
+** Custom Box
+https://github.com/levonlee/vagrant/tree/master/wordpress
+https://blog.engineyard.com/2014/building-a-vagrant-box
+https://scotch.io/tutorials/how-to-create-a-vagrant-base-box-from-an-existing-one
+
+** SSH using Putty
+Download PuttyGen to accept OpenSSH key as vagrant provides.
+
+PuttyGen > Load > ~/.vagrant.d/ folder and select browse all files, select insecure_public_key
+PuttyGen > Save public key file as insecure_public_key.ppk and save it to the same folder. Close PuttyGen and go back to Putty
+Putty > Connection > SSH > Auth, browse and select that ppk file.
+Connect using Putty!
+
 * Apache
 ** Production Setup
 <<<apache:production>>>
