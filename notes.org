@@ -15457,6 +15457,8 @@ git branch -m new-branch-name
 *** Commit difference between 2 branches 
 =git log master..li=
 
+For a specific file ~git log master..li path/to/file~
+
 *** File difference between 2 branches 
 =git diff --name-status master..origin/master= or 
 =git diff --stat --color master..origin/master=
@@ -15464,10 +15466,19 @@ git branch -m new-branch-name
 | New file or line in remote branch     | A or + |
 | Both are modified                     | M      |
 
+*** Find authors of all remote/local branches and tags
+#+BEGIN_EXAMPLE
+git for-each-ref --format='%(committerdate) %09 %(authorname) %09 %(refname)' | sort -k5n -k2M -k3n -k4n
+#+END_EXAMPLE
+
 *** Orphan Branch with no parent
 github:gh-pages
 
 ** Merge
+*** --no-commit vs --squash
+--no-commit creates a merge commit if it can be fast-forwarded. If not, fix the conflict and git add files then commit.
+--squash merges and modifies working tree but doesn't make a commit at all. Commit after is not a merge commit. Just a normal commit.
+
 *** Abort merge
 git merge --abort
 
@@ -15636,9 +15647,10 @@ git config --bool core.bare false
 git reset --hard
 #+END_EXAMPLE
 
-** Clone to existing repository
-The existing repository doesn't have git but it has some other files that need to keep but not version controlled.
-In the existing repository run
+** Clone or Pull to existing repository
+*** Existing repo is not git initialized
+The existing repo has some other files that need to keep but not version controlled.
+In the existing repo run
 #+BEGIN_EXAMPLE
 git init
 git remote add origin PATH/TO/REPO
@@ -15646,6 +15658,15 @@ git remote add origin PATH/TO/REPO
 git fetch --all
 git reset --hard origin/master
 # dump all untracked changes and checkout remote master branch
+#+END_EXAMPLE
+
+*** Existing repo is git initialized
+Pull from remote and put changes to staged without commit (ready to commit)
+#+BEGIN_EXAMPLE
+git pull --no-rebase --squash -Xtheirs origin master
+# origin can be a different upstream in URL format
+# git://github.com/pantheon-systems/drops-7.git
+# the remote that's pulled from usually has the same codebase as your current local repo
 #+END_EXAMPLE
 
 ** Track local branch with a remote branch
