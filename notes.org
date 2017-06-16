@@ -1998,6 +1998,9 @@ the_post_thumbnail_url($size) :: echo
 *** category <<<wp:t:category>>>
 *** general <<<wp:t:general>>>
 ** Functions
+*** get_bloginfo
+retrieves info about the current site
+
 *** get_the_ID() - ID of current item or false
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
@@ -2568,6 +2571,9 @@ query_posts($args);
 <?php endwhile; ?>
 #+END_EXAMPLE
 
+** Default filters and actions 
+<<<wp:default filters>>> wp-includes/default-filters.php
+
 ** add_filter
 *** Syntax, remove_filter
 Modify internal data / function returned
@@ -2580,7 +2586,7 @@ add_filter(
  'tagname', 
  'lili_funct',
   10, // int. Priority, lower number sooner
-  1, // int. Accepted args, default is 1! Be careful
+  2, // int. Accepted args, default is 1! Be careful
 )
 
 apply_filters('tagname', $result, $var1);
@@ -2589,6 +2595,25 @@ apply_filters('tagname', $result, $var1);
 function lili_funct($result, $var1) {
  return $result;
 }
+
+remove_filter(
+  'tagname',
+  'lili_funct',
+  10 // priority, must match the add_filter priority, default is 10
+)
+
+#+BEGIN_EXAMPLE
+function remove_filter_the_title() {
+	remove_filter('the_title', 'before_post_title', 10);
+}
+add_action( 'wp_head', 'remove_filter_the_title', 1 );
+
+function add_filter_the_title() {
+	add_filter('the_title', 'before_post_title', 10, 2);
+}
+add_action( 'wp_head', 'add_filter_the_title', 3 );
+#+END_EXAMPLE
+
 *** post_limits
 <<<wp:filter:post_limits>>>
 For feed, use pre_option_posts_per_rss wp:filter:pre_option
@@ -2669,7 +2694,7 @@ int $accepted_args = 1 // number of args the function accepts
 add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
 
 *** wp_head, wp_footer
-Refer to Wordpress Theme > Functions used in template
+Refer to wp:default filters
 
 *** wp_enqueue_scripts
 Can use wp_enqueue_style and wp_enqueue_script. Priority might be needed to change to greater 10
