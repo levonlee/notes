@@ -2315,6 +2315,31 @@ remove_meta_box( $id, $page, $context);
 *** get_template_part
 wp:f:get_template_part
 
+*** wp_localize_script
+This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
+#+BEGIN_EXAMPLE
+wp_register_script('unique_handle', 'path/to/myscript.js' );
+
+$translation_array = array(
+  'some_string' => 'hello';
+  'a_value' => '10'
+);
+
+// Pass vars in $translation_array to file path/to/myscript.js
+wp_localize_script( 'unique_handle', 'object_name', $translation_array );
+
+wp_enqueue_script( 'unique_handle' );
+
+<script>
+  console.log( object_name.some_string);
+</script>
+#+END_EXAMPLE
+
+If you just want to define pass PHP variables and don't want to create empty js files
+#+BEGIN_EXAMPLE
+wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+#+END_EXAMPLE
+
 ** Current URL
 Current URL on your website
 <<<php:parse_url>>>
@@ -2781,6 +2806,78 @@ add_shortcode( 'bartag', 'bartag_func' );
 /wp-admin/options.php
 
 [[https://codex.wordpress.org/Option_Reference][Option Reference]]
+
+** Ajax <<<wp:ajax>>>
+*** Ajax on wp admin pages
+Javascript global variable ajaxurl is defined on admin pages
+
+functions.php
+#+BEGIN_EXAMPLE
+add_action( 'admin_enqueue_scripts', 'add_ajax_file');
+function add_ajax_file() {
+  wp_enqueue_script( 'ajax_custom_script', plugins_url( '/js/my.js' , __FILE___), array('jquery') );
+}
+
+add_action( 'wp_ajax_my_action', 'my_action');
+
+function my_action() {
+  global $wpdb;
+  $data = intval($_POST['data']);
+  echo $data;
+  // echo json_encde($data);
+  wp_die();
+} 
+#+END_EXAMPLE
+
+my.js
+#+BEGIN_EXAMPLE
+jQuery(document).ready(function($) {
+  var data = {
+    'action': 'my_action',
+    'data': 'some data'
+  }
+  $.post(ajaxurl, data, function(r) {
+    console.log('response:', r);
+  });
+})
+#+END_EXAMPLE
+
+*** Ajax on wp front end pages
+Define global variable mynamespace.ajaxurl
+functions.php
+#+BEGIN_EXAMPLE
+add_action( 'wp_enqueue_scripts', 'add_custom_namespace' );
+
+function add_custom_namespace() {
+  wp_localize_script( 'jquery', 'mynamespace', 
+   array(
+    'ajaxurl' => admin_url('admin-ajax.php'),
+    'data' => 'some data'
+   ) 
+  );
+}
+#+END_EXAMPLE
+
+my.js
+#+BEGIN_EXAMPLE
+jQuery(document).ready(function($) {
+  var data = {
+    'action': 'my_action',
+    'data': mynamespace.data
+  }
+  $.post(mynamespace.ajaxurl, data, function(r) {
+    console.log('response:', r);
+  });
+})
+#+END_EXAMPLE
+
+functions.php
+#+BEGIN_EXAMPLE
+add_action( 'wp_ajax_my_action', 'my_action');
+add_action( 'wp_ajax_nopriv_my_action', 'my_action'); // non-logged in users
+
+// same my_action
+#+END_EXAMPLE
 
 ** Wordpress Theme
 *** Template Files
@@ -7420,6 +7517,21 @@ console.log(window.location.href);
 // + window.location.pathname (/xyz/ijk.php, if homepage, '/')
 // + window.location.search (?m=123)
 // +  window.location.hash; (#def)
+#+END_EXAMPLE
+
+** Cookie
+https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
+#+BEGIN_EXAMPLE
+cookieVal = "abc";
+cookieKeyValPair = "litest=" + encodeURIComponent(cookieVal); 
+// only one single cookie can be set/updated at a time
+document.cookie = cookieKeyValPair;
+
+// Optional cookie attribute values, preceded by a semi-colon separator
+cookieKeyValPair += "; path='/mydir'"
+
+// or
+cookieKeyValPair += "; path=/"
 #+END_EXAMPLE
 
 ** Object only, no Class
@@ -15922,6 +16034,16 @@ if (function_exists('newrelic_ignore_transaction')) {
  newrelic_ignore_transaction();
 }
 #+END_EXAMPLE
+
+** Cookie
+https://pantheon.io/docs/cookies
+
+cookies set by javascript or at client side must have this name structure :: STYXKEY[a-zA-Z0-9_-]
+e.g. STYXKEY_my-key-name
+
+So that php can read them. And cookies set in this way should change the value on client side once it's been set.
+
+Content pages with same cookies and same url will be cached.
 
 * AWS
 ** SSH
