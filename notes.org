@@ -152,6 +152,25 @@ echo $numbers[0];
 echo(mt_rand(10,100)); // min: 0, max: 100
 #+END_EXAMPLE
 
+** encrypt, decrypt
+<<<php:openssl_decrypt>>>
+Refer to nodejs:decrypt
+#+BEGIN_EXAMPLE
+$fromNode = 'encryptedString$intializedVector';
+$fromNode = explode('$', $fromNode);
+$key = '64 hex characters'; // same as in nodejs
+
+$data = hex2bin($fromNode[0]);
+$keyAES = hex2bin($key);
+$iv = hex2bin($fromNode[1]);
+$options = OPENSSL_RAW_DATA;
+
+$decrypted = openssl_decrypt($data, 'aes-256-cbc', $keyAES, $options, $iv);
+
+// If $data, $keyAES and $iv are raw data (bytes), use OPENSSL_RAW_DATA as $options
+// if all 3 of them are string, use 0 as $options
+#+END_EXAMPLE
+
 ** Heredoc, Nowdoc
 Heredoc result is a double-quoted string
 #+BEGIN_EXAMPLE
@@ -7073,8 +7092,10 @@ callback has 4 arguments
 var date1 = new Date();
 var date2 = new Date(77978); // milliseconds since 1970 01 01 GMT
 var date3 = new Date(2017,0,31,15,35,20,20); // 2017 Jan 1 at 15:35:20 at 20 ms
-var date4 = new Date("31 January 2016"); // "31 Jan 2016" "Jan 31 2016" "01-31-2016"
+var date4 = new Date("31 January 2016"); 
+// "31 Jan 2016" "Jan 31 2016" "01-31-2016"
 
+// Get and Set
 var dayofmonth = date4.getDate(); // setDate
 var dayofweek = date4.getDau(); // int, Sunday as 0. You can't set day
 var month = date4.getMonth(); // int, January as 0. setMonth
@@ -7086,6 +7107,17 @@ date4.setDate(currentDay + 28 ); // Plus 28 days
 
 getHours(), getMinutes(), getSeconds(), getMilliseconds(), toTimeString()
 setHours(), setMinutes(), setSeconds(), setMilliseconds()
+
+// Date difference
+var date1 = new Date();
+var date2 = new Date('01-31-2016');
+var timeDiff = date2.getTime() - date1.getTime(); // milliseconds
+var diff Days = timeDiff / (1000*3600*24);
+
+// Conversion getter
+date4.toISOString()
+// e.g. 2011-10-05T14:48:00.000Z
+// timezone is always zero UTC offset. 24 or 27 (I haven't seen one..) characters.
 
 *** Math
 <<<js:Math>>>
@@ -9636,6 +9668,76 @@ var xml = "<root>Hello xml2js!</root>"
 parseString(xml, function (err, result) {
     console.dir(result);
 });
+#+END_EXAMPLE
+
+*** crypto
+**** HMAC
+SSL certificate changes from SHA1 to SHA256 which is SHA2 algorithm.
+
+One ASCII character is 8 bits.
+One UTF-8 character is between 8 bits to 32 bits.
+
+One character is 2 hex characters (UTF-8, etc.)
+
+Output size of SHA256 is 256 bits, which is 256/8*2 = 64 hex characters
+Output size of SHA1 is 160, which is 40 hex characters
+
+The secret/key of SHA256 should at least contain 256 bits. But I use 128 bits.. Which is 32 hex characters.
+
+#+BEGIN_EXAMPLE
+var crypto = require('crypto')
+ , text = 'hello'
+ , key = 'abcdeg' // better to have 32 hex characters, but length could be any
+ , hash
+
+let hmac = crypto.createHmac('sha256', key);
+hmac.write(text);
+hmac.end();
+let hash = hmac.read().toString('hex');
+#+END_EXAMPLE
+
+**** encrypt, decrypt
+<<<nodejs:decrypt>>>
+Refer to php:openssl_decrypt
+
+#+BEGIN_EXAMPLE
+const crypto = require('crypto');
+
+const KEYAES = '64 hex characters'
+const ALGORITHM = 'aes-256-cbc';
+
+// store this keyAES256.toString('hex')
+// convert hex to bytes
+// keyAES256 = new buffer(keyAES256, 'hex');
+
+function encrypt(plain_text) {
+  var iv = crypto.randomBytes(16); // 16 text characters, 16 bytes or 32 hex characters
+  // iv should be different every time
+
+  var keyAES = new Buffer(KEYAES, 'hex');
+  // var keyAES = crypto.randomBytes(32); // 32 text characters, 32 bytes or 64 hex characters
+  // global KEYAES is keyAES.toString('hex')
+
+  var cipher = crypto.createCipheriv(ALGORITHM, keyAES, iv);
+  cipher.write('text to encrypt');
+  cipher.end();
+  
+  var cipher_text = cipher.read().toString('hex');
+  
+  return cipher_text + '$' + iv.toString('hex');
+}
+
+function decrypt(cipher_text) {
+  var cipher_blob = cipher_text.split("$");
+  var ct = cipher_blob[0];
+  var iv = new Buffer(cipher_blob[1], 'hex'); // get iv
+  var keyAES = new Buffer(KEYAES, 'hex');
+
+  decryptor = crypto.createDecipheriv(ALGORITHM, keyAES, iv);
+  decryptor.write(ct, 'hex');
+  decryptor.end();
+  console.log(decryptor.read().toString('utf-8'));
+}
 #+END_EXAMPLE
 
 *** body-parser
