@@ -9456,6 +9456,7 @@ function onerror(err) {
 
 *** http, https <<<nodejs:http>>>
 It's sync request.
+**** request
 #+BEGIN_EXAMPLE
 var https = require('https');
 var fs = require('fs');
@@ -9490,17 +9491,29 @@ var req = https.request(options, function(res) {
 
 });
 
+// Set timeout
+req.on('socket', function(socket) {
+  socket.setTimeout(8000);
+  socket.on('timeout', () => {
+    req.abort();
+    console.log('timeout');
+  });
+});
+
 req.on("error", function(err) {
+  if (err.code === 'ECONNRESET') {
+    console.log("Timeout occurs");
+  }
   console.log(`problem: ${err.message}`);
 });
 
 req.end();
 #+END_EXAMPLE
 
+**** server
 Simple HTTP server which gives responses
 
 #+BEGIN_EXAMPLE
-
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
@@ -9982,6 +9995,7 @@ node --harmony koa-endpoint-demo.js
 #+END_EXAMPLE
 
 *** Promise
+**** Basics
 Promise is native, refer to nodejs:bluebird
 #+BEGIN_EXAMPLE
 var promise = new Promise(function(res, rej) {
@@ -9996,7 +10010,68 @@ promise.then(function() {
 .catch(function() {
   console.error('failed');
 });
+#+END_EXAMPLE
 
+**** http server example
+#+BEGIN_EXAMPLE
+const parseString = require('xml2js').parseString;
+
+route.get('/auth/:site/:emailkey', function(req, res) {
+  try {
+    getUserInfo(req.params.site, req.params.emailkey, res);
+  }
+  catch (e) {
+    res.json(e.message);
+  } 
+});
+
+function getUserInfo(site, emailkey, res) {
+  httpsRequest(httpsOptions)
+    .then(function(body) {
+      parseString(body, (err, result) => {
+        res.json(result);
+      });
+    });
+}
+
+function httpsRequest(params) {
+  return new Promise(function(resolve, reject) {
+    let req = https.request(params, function(res) {
+      let body = '';
+
+      res.on('data', (chunk) => {
+        body += chunk;
+      });
+
+      res.on('end', () => {
+        promisesParser(body)
+          .then((result) => {
+            resolve(body);
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      });
+
+    }); // https.request
+    
+    req.end();
+
+  }); // Promise
+}
+
+function promiseParser(string) {
+   return new Promise(function(resolve, reject) {
+     parseString(string, function(err, result) {
+       if (err) {
+         reject(err);
+       }
+       else {
+         resolve(result);
+       }
+     });
+   });
+}
 #+END_EXAMPLE
 
 *** bluebird <<<nodejs:bluebird>>>
@@ -12679,8 +12754,12 @@ Users in user group ~docker~ can run docker commands without sudo.
 ** Images
 List all images :: ~docker images~
 List all dangling images which can be removed :: ~docker images -f "dangling=true"~
+
 Remove all dangling images (-q is to return IDs only)
-~docker rmi $(docker images -f "dangling=true" -q)~
+~docker rmi $(docker images -f "dangling=true" -q --no-trunc)~
+
+Remove all none images
+~docker rmi $(docker images | grep "none" | awk '/ / { print $3 }')~
 
 Download an image :: ~docker pull phusion/baseimage~ or with a tag ~docker pull phusion/baseimage:0.9.18~
 Remove an image :: ~docker rmi imageName~
@@ -12754,8 +12833,10 @@ Combine --name and --hostname as much as you can
 List containers :: ~docker ps -a~
 Stop and Start :: ~docker stop containerName~ ~docker start containerName~
 Restart :: ~docker restart containerName~
+
 Stop and remove :: ~docker rm -f containerName~
 Stop and remove all containers :: ~docker rm -f $(docker ps -a -q)~
+Stop and remove all exited containers :: ~docker rm $(docker ps -qa --no-trunc --filter "status=exited")~
 
 Container log :: ~docker logs -f containerName~ -f to follow log output
 
@@ -12786,16 +12867,25 @@ Long command (pure-pw only exists in container)
 #+BEGIN_EXAMPLE
 # List networks
 docker network ls
+
 # Info about a network
 docker network inspect the_network_id
+
+# Remove networks
+# returns error when last bridge is removed. It's normal
+docker network rm $(docker network ls | grep "bridge" | awk '/ / { print $1 }')
 #+END_EXAMPLE
 
 ** Volume
 #+BEGIN_EXAMPLE
 # List all volumes
 docker volume ls
+
 # Info about a volume
 docker volume inspect the_vol_id
+
+# Remove volumes
+docker volume rm $(docker volume ls -qf dangling=true)
 #+END_EXAMPLE
 
 ** Dockerfile
