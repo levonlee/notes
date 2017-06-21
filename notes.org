@@ -168,6 +168,25 @@ echo(mt_rand(10,100)); // min: 0, max: 100
 #+END_EXAMPLE
 
 ** encrypt, decrypt
+
+#+BEGIN_EXAMPLE
+$data = "hello";
+$method = "aes-256-cbc";
+$key = "123455";
+$iv = "1234567890123456"; // has to be 16 bytes or 16 text characters
+$iv = openssl_random_pseudo_bytes(16); // $iv should be different every time
+
+$options = 0; // If $data, $key and $iv are normal text like above, 0 can be used. Output is base64 encoded string
+// Otherwise use OPENSSL_RAW_DATA. Output is binary
+
+$encryptedMessage = openssl_encrypt($data, $method, $key, $options, $iv);
+
+echo $encryptedMessage.PHP_EOL; // because $options is 0, the encrypted message is base64 encoded
+
+$decryptedMessage = openssl_decrypt($encryptedMessage, $method, $key, $options, $iv);
+#+END_EXAMPLE
+
+If $encryptedMessage, $key and $iv are all hex, you need to convert them to binary to decrypt
 <<<php:openssl_decrypt>>>
 Refer to nodejs:decrypt
 #+BEGIN_EXAMPLE
@@ -178,7 +197,8 @@ $key = '64 hex characters'; // same as in nodejs
 $data = hex2bin($fromNode[0]);
 $keyAES = hex2bin($key);
 $iv = hex2bin($fromNode[1]);
-$options = OPENSSL_RAW_DATA;
+$options = OPENSSL_RAW_DATA; // Input are all binary, output is binary, too. 
+// But because the encrypted message is a string, the decrypted message is a string.
 
 $decrypted = openssl_decrypt($data, 'aes-256-cbc', $keyAES, $options, $iv);
 
@@ -9715,6 +9735,9 @@ let hash = hmac.read().toString('hex');
 **** encrypt, decrypt
 <<<nodejs:decrypt>>>
 Refer to php:openssl_decrypt
+
+All AES, regardless 128/256 or key length, the output size depends on the input size
+(floor(Input size / 16 bytes) + 1) * 16 bytes
 
 #+BEGIN_EXAMPLE
 const crypto = require('crypto');
