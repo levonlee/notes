@@ -15838,6 +15838,20 @@ In the empty folder add .gitignore file
 *
 #+END_EXAMPLE
 
+** Checkout vs Reset vs Revert
+Let's current branch has c1, c2 and c3 commits in order
+
+~git checkout c1~ :: sets branch to commit 1 in a detached HEAD state. 
+HEAD is not at tip of branch. It's at that commit. Not changing anything. git checkout <branchname> to go back to HEAD
+
+~git checkout c1 .~ or ~git checkout -f c1 -- .~ sets branch to commit c1 but about to make a commit c4 (Changes to be committed) that is after c3.
+c4 contains all the necessary changes for going back to c1.
+
+~git reset c1~ :: sets branch to commit 1.
+Reset rewrites history. Only use it for local changes that are never pushed to remote.
+
+~git revert c1~ undoes commit 1 and creates a commit.
+
 ** Branch
 *** Duplicate current branch and switch to it 
 #+BEGIN_EXAMPLE
@@ -15876,6 +15890,54 @@ For a specific file ~git log master..li path/to/file~
 #+BEGIN_EXAMPLE
 git for-each-ref --format='%(committerdate) %09 %(authorname) %09 %(refname)' | sort -k5n -k2M -k3n -k4n
 #+END_EXAMPLE
+
+*** Make current branch exactly as another branch
+Make current branch li exactly the same as remote branch origin/master
+#+BEGIN_EXAMPLE
+git checkout li
+git reset --hard origin/master
+#+END_EXAMPLE
+
+*** Find most recent ancestor of 2 branches
+#+BEGIN_EXAMPLE
+git merge-base branch2 branch3
+#+END_EXAMPLE
+
+*** Revert to common ancestor
+You have a feature branch and master branch. Both have remote branches and are in sync.
+Branch feature has some commits that master doesn't have and master are ahead of feature.
+
+Keep the commits in feature but undo those commits and make a new commit in feature.
+
+Find the most recent ancestor of feature and master
+git merge-base feature master
+
+Say the commit is common1
+Make a new branch to test if it's a real common ancestor
+git checkout feature
+git checkout -b featuretest common1
+git log master..featuretest // You should see nothing and featuretest is not ahead of master
+
+Then make feature to go back to that commit without changing history
+
+=== Method 1 ===
+git checkout feature
+~git checkout common1 .~ or ~git checkout -f c1 --.~
+git commit -m "reset to common1"
+Now you can merge master into feature
+git merge --no-commit master
+
+=== Method 2 ===
+// Revert commits one by one
+// Get commits from an old commit to HEAD
+git log common1..HEAD
+// or
+git rev-list common1..HEAD
+git revert --no-commit D
+git revert --no-commit C
+git revert --no-commit B
+...
+git commit -m "reset to common1"
 
 *** Orphan Branch with no parent
 github:gh-pages
