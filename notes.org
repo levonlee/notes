@@ -710,7 +710,7 @@ Module theme: =theme('modname_theme-name',$data)=
 - $path :: the directory path of theme or module
 
 Return an array
-- variables :: 
+- variables :: theme function takes no parameter array(). Assign null to key-value for default values.
 - path :: Use with 'template'
   - If theme_* function is used, you don't need to specify 'path' and 'template'
   - if hook_theme is defined in template.php, the default path is sites/all/themes/your_theme/templates/
@@ -6386,6 +6386,39 @@ transitionend
  <source srcset="fallback.jpg">
  <img src="fallback.jpg">
 </picture>
+#+END_EXAMPLE
+
+img tag with srcset
+small is 500x100, medium is 1000x200, and large is 2000x400
+Device with screen width of 320px and 1x display (non-retina)
+Then chooses the one that is closest to 1
+500  / 320 = 1.5625
+1000 / 320 = 3.125
+2000 / 320 = 6.25
+
+#+BEGIN_EXAMPLE
+<img src="small.jpg" srcset="medium.jpg 1000w, large.jpg 2000w">
+#+END_EXAMPLE
+
+By default sizes="100vw", which is 100% viewport (320px in the above example)
+Extra media query can be added 
+#+BEGIN_EXAMPLE
+sizes="(max-width: 300px) 100vw, 300px"
+#+END_EXAMPLE
+
+Which means if media query matches, use 100vw. If not match, use 300px
+
+Responsive image which takes 100% width. Define the largest width image first
+This is the wordpress way.
+#+BEGIN_EXAMPLE
+<img src="medium.jpg" width="1000" height="200" 
+     srcset="large.jpg 2000w, small.jpg 500w"
+     sizes="(max-width: 1000px) 100vw, 1000px">
+// make sure img tag is responsive
+img {
+  max-width:100%;
+  height:auto;
+}
 #+END_EXAMPLE
 
 *** Term/name in a list
