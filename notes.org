@@ -8961,7 +8961,12 @@ Refer to phpstorm:nodejs
 
 #+BEGIN_EXAMPLE
 npm cache clean
+# Check which global packages are outdated
+npm outdated -g
+# Update all global packages
 npm update -g
+# Update one global package
+npm install -g <packagename>
 #+END_EXAMPLE
 
 ** Global Object
@@ -9080,6 +9085,23 @@ view aliaes: info, show, v
 ~npm outdated --global~ for globally installed packages
 
 Update npm ~sudo npm install -g npm~
+
+*** Global package and Scoped package
+npm install -g @angular/cli
+@ indicates angular/cli is a scoped package. 
+Without @, package is installed in ~node_modules/packagename~
+Scoped package is installed in ~node_modules/@angular/cli~
+Thus, scoped package can group packages under one namespace
+
+#+BEGIN_EXAMPLE
+// package.json
+"dependencies": {
+  "@angular/cli": "^1.3.0"
+}
+
+// In code
+require('@angular/cli')
+#+END_EXAMPLE
 
 *** v8
 #+BEGIN_EXAMPLE
@@ -10815,8 +10837,8 @@ npm run debug
 
 ~npm install --production~ or when NODE_ENV environment variable is production, npm will not install modules listed in devDependencies
 
-* AngularJS
-** 1.x
+* Angular
+** 1.x AngularJS
 *** Structure
 https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js
 jquery
@@ -11050,7 +11072,6 @@ app.controller('myProvider', function($scope, myProvider){
 });
 #+END_EXAMPLE
 
-
 *** Change URL without reloading page
 First enable ng:html5mode
 
@@ -11061,6 +11082,80 @@ $location.url(myNewUrl);
 $location.replace();
 $window.history.pushState(null, 'any', $location.absUrl());
 #+END_EXAMPLE
+
+** 2.x Angular
+https://github.com/planetoftheweb/learnangular
+
+*** QuickStart
+[[https://embed.plnkr.co/?show%3Dpreview&show%3Dapp%252Fapp.component.ts][Online playground]]
+#+BEGIN_EXAMPLE
+git clone https://github.com/angular/quickstart.git quickstart
+cd quickstart
+npm install
+npm start
+// Default port is localhost:3000
+#+END_EXAMPLE
+
+Remove git-related artifacts
+#+BEGIN_EXAMPLE
+# OS/X
+xargs rm -rf < non-essential-files.osx.txt
+rm src/app/*.spec*.ts
+rm non-essential-files.osx.txt
+
+# Windows
+for /f %i in (non-essential-files.txt) do del %i /F /S /Q
+rd .git /s /q
+rd e2e /s /q
+#+END_EXAMPLE
+
+*** Style Guide
+**** File name
+Use dashes to separate words in file names (hero-list)
+Use a dot to separate the descriptive name from the type (.component)
+app/heroes/hero-list.component.ts
+
+A file should have no more than 400 lines of code.
+A small function should have no more than 75 lines.
+
+**** Symbol name and file name
+
+Use upper camel case for class names
+#+BEGIN_EXAMPLE
+// hero-list.component.ts
+@Component({ ... })
+export class HeroListComponent { }
+
+// validation.directive.ts
+@Directive({ ... })
+export class ValidationDirective { }
+
+// app.module.ts
+@NgModule({ ... })
+export class AppModule
+
+// init-caps.pipe.ts
+@Pipe({ name: 'initCaps' })
+export class InitCapsPipe implements PipeTransform {}
+
+// user-profile.service.ts
+@Injectable()
+export class UserProfileService { }
+#+END_EXAMPLE
+
+**** Bootstrapping
+Use main.ts as the file name
+Include error handling
+Don't put logic in this file.
+#+BEGIN_EXAMPLE
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule }              from './app/app.module';
+platformBrowserDynamic().bootstrapModule(AppModule)
+  .then(success => console.log(`Bootstrap success`))
+  .catch(err => console.error(err));
+#+END_EXAMPLE
+
+**** Directive selectors (lower camel case)
 
 * SEO
 ** Google Analytics
@@ -16054,6 +16149,12 @@ wp-content/cache/
 wp-content/backups/
 sitemap.xml
 sitemap.xml.gz
+#+END_EXAMPLE
+
+*** NodeJS, NPM .gitignore
+#+BEGIN_EXAMPLE
+node_modules
+npm-debug.log
 #+END_EXAMPLE
 
 ** Customize Settings per folder
