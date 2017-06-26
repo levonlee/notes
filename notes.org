@@ -9076,6 +9076,8 @@ writePercent(percentWaited);
 ~npm list~ for locally installed packages
 ~npm list -g~ for globally installed packages
 
+~npm list -g --depth=0~ global installed packages at first level
+
 ~npm list express~
 
 ~npm view PKG_NAME version~ The latest available version of a package
@@ -11102,8 +11104,10 @@ $window.history.pushState(null, 'any', $location.absUrl());
 ** 2.x Angular
 https://github.com/planetoftheweb/learnangular
 
-*** QuickStart
-[[https://embed.plnkr.co/?show%3Dpreview&show%3Dapp%252Fapp.component.ts][Online playground]]
+*** QuickStart seed
+**** Install
+Local dev env which is the same as [[https://embed.plnkr.co/?show%3Dpreview&show%3Dapp%252Fapp.component.ts][Online playground]]
+https://angular.io/guide/setup
 
 #+BEGIN_EXAMPLE
 git clone https://github.com/angular/quickstart.git quickstart
@@ -11114,6 +11118,7 @@ npm start
 #+END_EXAMPLE
 
 Backup ~.gitignore~ 
+
 And remove git-related artifacts
 #+BEGIN_EXAMPLE
 # OS/X
@@ -11121,11 +11126,124 @@ xargs rm -rf < non-essential-files.osx.txt
 rm src/app/*.spec*.ts
 rm non-essential-files.osx.txt
 
-# Windows
+# Windows cmd
 for /f %i in (non-essential-files.txt) do del %i /F /S /Q
 rd .git /s /q
 rd e2e /s /q
 #+END_EXAMPLE
+
+**** .gitignore
+#+BEGIN_EXAMPLE
+.idea
+node_modules
+jspm_packages
+npm-debug.log
+debug.log
+src/**/*.js
+!src/systemjs.config.extras.js
+!src/systemjs.config.js
+!src/systemjs-angular-loader.js
+*.js.map
+e2e/**/*.js
+e2e/**/*.js.map
+_test-output
+_temp
+#+END_EXAMPLE
+
+**** Files
+https://angular.io/guide/setup-systemjs-anatomy
+
+src/main.ts
+It's loaded in index.html as in
+~System.import('main.js').catch(function(err){ console.error(err); });~
+Refer to ng:bootstrap
+
+src/systemjs.config.js
+It's loaded in index.html. Tells systemJS module loader where to find modules referenced in JS ~import~ statements.
+e.g. ~import { Component } from '@angular/core'~
+
+src/tsconfig.json :: how to transpile TypeScript files into JS files
+
+src/app/app.module.ts :: ng:root module
+src/app/app.component.ts :: tree of components ng:component
+
+package.json
+tslint.json :: Inspect TypeScript code and complains when there's violation
+bs-config.json :: lite-server BrowserSync setting
+
+*** package.json
+https://angular.io/guide/npm-packages
+
+**** devDependencies
+#+BEGIN_EXAMPLE
+"devDependencies": {
+    "concurrently": "^3.2.0",
+    "lite-server": "^2.2.2", // static file server
+    "typescript": "~2.1.0", // tsc TypeScript compiler
+
+    "canonical-path": "0.0.2",
+    "tslint": "^3.15.1",
+    "lodash": "^4.16.4",
+    "jasmine-core": "~2.4.1",
+    "karma": "^1.3.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-cli": "^1.0.1",
+    "karma-jasmine": "^1.0.2",
+    "karma-jasmine-html-reporter": "^0.2.2",
+    "protractor": "~4.0.14",
+    "rimraf": "^2.5.4",
+
+    "@types/node": "^6.0.46",
+    "@types/jasmine": "2.5.36"
+}
+#+END_EXAMPLE
+
+**** dependencies
+#+BEGIN_EXAMPLE
+"dependencies": {
+    "@angular/common": "~4.0.0", // common services, pipes, and directives provided by Angular
+    "@angular/compiler": "~4.0.0", // Angular Template Compiler
+    "@angular/core": "~4.0.0", // e.g. all metadata decorators, Component, Directive, dependency injection and component lifecycle hooks
+    "@angular/forms": "~4.0.0",
+    "@angular/http": "~4.0.0", // Angular's HTTP client.
+    "@angular/platform-browser": "~4.0.0", // DOM and browser related. Help render into DOM.
+    "@angular/platform-browser-dynamic": "~4.0.0", 
+    // Include Providers and a bootstrap method for apps that compile templates on the client.
+    // Don't use offline compilation, use this for bootstrapping during dev and for bootstrapping plunker samples
+    "@angular/router": "~4.0.0", // Component router
+
+    "angular-in-memory-web-api": "~0.3.0", // Angular simulates a remote server's web api without requiring an actual server or real HTTP calls.
+    "systemjs": "0.19.40", // A dynamic module loader compatible with ES2015 module specs. Alternative webpack
+    "core-js": "^2.4.1", // polyfill
+    "rxjs": "5.0.1", // polyfill
+    "zone.js": "^0.8.4" // polyfill
+}
+#+END_EXAMPLE
+
+**** scripts
+#+BEGIN_EXAMPLE
+"scripts": {
+    "build": "tsc -p src/",
+    "build:watch": "tsc -p src/ -w",
+    "build:e2e": "tsc -p e2e/",
+    "serve": "lite-server -c=bs-config.json",
+    "serve:e2e": "lite-server -c=bs-config.e2e.json",
+    "prestart": "npm run build",
+    "start": "concurrently \"npm run build:watch\" \"npm run serve\"",
+    "pree2e": "npm run build:e2e",
+    "e2e": "concurrently \"npm run serve:e2e\" \"npm run protractor\" --kill-others --success first",
+    "preprotractor": "webdriver-manager update",
+    "protractor": "protractor protractor.config.js",
+    "pretest": "npm run build",
+    "test": "concurrently \"npm run build:watch\" \"karma start karma.conf.js\"",
+    "pretest:once": "npm run build",
+    "test:once": "karma start karma.conf.js --single-run",
+    "lint": "tslint ./src/**/*.ts -t verbose"
+}
+#+END_EXAMPLE
+
+*** lite-server
+https://www.npmjs.com/package/lite-server
 
 *** CLI
 https://github.com/angular/angular-cli
@@ -11140,7 +11258,344 @@ npm install -g @angular/cli
 <script src="node_modules/core-js/client/shim.min.js"></script>
 #+END_EXAMPLE
 
+*** Bootstrap
+<<<ng:bootstrap>>>
+
+Create a browser platform for dynamic compilation (JIT) and bootstraps the AppModule by referring to the root module app.module.ts
+Refer to ng:root module
+#+BEGIN_EXAMPLE
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+
+import { AppModule } from './app/app.module';
+
+platformBrowserDynamic().bootstrapModule(AppModule);
+#+END_EXAMPLE
+
+*** Root Module
+<<<ng:root module>>> <<<ng:FormsModule>>>
+
+#+BEGIN_EXAMPLE
+import { NgModule }      from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent }  from './app.component';
+// import { FormsModule } from '@angular/forms';
+
+// This decorator makes AppModule as an Angular module class (NgModule class).
+// a metadata object to tell Angular how to compile and launch the app
+@NgModule({
+  // Only put NgModule classes in imports array
+  imports:      [ BrowserModule
+    // , FormsModule
+  ],
+  // Only declarables - components, directives and pipes - belong in declarations array. Not NgModule classes
+  declarations: [ AppComponent ],
+  // Create components listed in the bootstrap array and insert each one into browser DOM
+  // It's common to only include one tree of components, which is one file: app.component.ts
+  bootstrap:    [ AppComponent ]
+})
+export class AppModule { }
+#+END_EXAMPLE
+
+*** Component
+<<<ng:component>>>
+Refer to ng:api:component
+
+src/app/app.component.ts
+#+BEGIN_EXAMPLE
+import { Component } from '@angular/core';
+
+// Decorator
+@Component({
+  selector: 'my-app',
+  template: `<h1>Hello {{name}}</h1>`,
+})
+export class AppComponent  { name = 'Angular'; }
+#+END_EXAMPLE
+
+*** Template
+src/app/[component-name]/[component-name].component.html
+src/app/[component-name]/[component-name].component.css
+src/app/[component-name]/[component-name].component.ts
+
+src/app/heroes/heroes.component.ts
+Use component-relative URLs, prefixed with ~./~
+#+BEGIN_EXAMPLE
+@Component({
+  selector: 'toh-heroes',
+  templateUrl: './heroes.component.html', // template or templateUrl, can't be both
+  styleUrls:  ['./heroes.component.css']
+  // , styles: [ ".btn {background-color: green;}", ".btn:hover {background-color: pink;}"]
+})
+
+export class HeroesComponent implements OnInit {
+  /* name = 'abc'; 
+     artists: string[]; // could be any
+  */
+  /* or 
+     name: string;
+     constructor() {
+       this.name = 'abc';
+       this.artists = ["1", "2"]
+     }
+  */
+
+  heroes: Observable<Hero[]>;
+  selectedHero: Hero;
+  
+ onClick(e) {
+  // event
+  // console.log(e);
+  this.name = e.target.innerHTML;
+ }
+
+ addArtist(v) {
+   if (v!=='') {
+     this.artists.push({
+       name: v,
+       school: 'abc'
+     });
+   } 
+ } 
+  
+ constructor(private heroService: HeroService) { }
+ 
+  ngOnInit() {
+    this.heroes = this.heroService.getHeroes();
+  }
+}
+#+END_EXAMPLE
+
+src/app/heroes/heroes.component.html
+#+BEGIN_EXAMPLE
+<div>
+  <h2>My Heroes</h2>
+  <ul class="heroes">
+    <li *ngFor="let hero of heroes | async" (click)="selectedHero=hero">
+      <span class="badge">{{hero.id}}</span> {{hero.name}}
+    </li>
+  </ul>
+  <div *ngIf="selectedHero">
+    <h2>{{selectedHero.name | uppercase}} is my hero</h2>
+  </div>
+</div>
+#+END_EXAMPLE
+
+**** Event
+https://angular.io/guide/template-syntax#event-binding
+
+#+BEGIN_EXAMPLE
+(click)="onClick($event)"
+#+END_EXAMPLE
+
+**** User input
+#+BEGIN_EXAMPLE
+<input #newArtist (keyup.enter)="addArtist(newArtist.value); newArtist.value=''">
+<button (click)="addArtist(newArtist.value); newArtist.value=''">Add</button>
+#+END_EXAMPLE
+
+**** Bind DOM properties to a variable, or the other way around
+#+BEGIN_EXAMPLE
+// Instead of
+<lable>Search <span *ngIf="name">for: {{ name }}</span></label>
+
+<lable>Search <span *ngIf="name" [innerHTML]="' for: ' + name"></span></lable>
+// [innerHTML] can be bind-innerHTML
+
+// Bind clicked DOM element to a variable
+<ul class="heroes">
+  <li #selectedHero *ngFor="let hero of heroes | async" (click)="onClick(hero, selectedHero)">
+    <span class="badge">{{hero.id}}</span> {{hero.name}}
+  </li>
+</ul>
+
+// inside export class
+onClick(item, myElement) {
+  this.name = item.name;
+  myElement.style.backgroundColor="red";
+}
+#+END_EXAMPLE
+
+Two-way binding
+#+BEGIN_EXAMPLE
+<input #newArtist 
+[value]="name"
+(input)="name=$event.target.value"
+(keyup.enter)="addArtist(newArtist.value); newArtist.value=''">
+
+// It's equivalent to
+<input #newArtist 
+[(ngModel)]="name"
+(keyup.enter)="addArtist(newArtist.value); newArtist.value=''">
+#+END_EXAMPLE
+
+Need to add ng:FormsModule
+
+*** Model and Custom Component
+src/app/app.component.ts
+#+BEGIN_EXAMPLE
+import { Component } from '@angular/core';
+import { ArtistItemComponent } from './artists/artist-item/artist-item.component';
+
+// Model
+export class Artist {
+  name: string,
+  shortname: string,
+  reknown: string,
+  bio: string
+}
+
+@Component({
+  selector: 'my-app',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent { 
+  artists = ARTISTS;
+  currentArtist: Artist;
+}
+
+var ARTISTS: Artist[] = [...]
+#+END_EXAMPLE
+
+src/app/app.component.html
+#+BEGIN_EXAMPLE
+<div class="card search">
+  <h1 class="search-headline">Artist Directory</h1>
+  <label class="search-label">search
+    <span *ngIf="query"
+      [innerHTML]="' for: ' + query"></span></label>
+    <input class="search-input"
+      [(ngModel)]="query" placeholder="type in search term here">
+</div><!-- card search -->
+
+<ul class="artistlist cf">
+  <li class="artistlist-item cf"
+    *ngFor="let item of artists">
+    <artist-item class="content" [artist]=item></artist-item>
+  </li>
+</ul>
+#+END_EXAMPLE
+
+src/app/app.module.ts
+#+BEGIN_EXAMPLE
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+
+import { AppComponent } from './app.component';
+import { ArtistItemComponent } from './artists/artist-item/artist-item.component';
+
+@NgModule({
+  imports: [
+    BrowserModule, FormsModule
+  ],
+  declarations: [
+    AppComponent, ArtistItemComponent
+  ],
+  bootstrap: [
+    AppComponent
+  ]
+})
+
+export class AppModule {}
+#+END_EXAMPLE
+
+src/app/artists/artist-item/artist-item.component.ts
+#+BEGIN_EXAMPLE
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'artist-item',
+  templateUrl: './artist-item.component.html',
+  styleUrls: ['./artist-item.component.css'],
+  inputs: ['artist']
+})
+
+export class ArtistItemComponent {}
+#+END_EXAMPLE
+
+src/app/artists/artist-item/artist-item.component.html
+#+BEGIN_EXAMPLE
+<img class="artist-img" 
+  src="images/{{artist.shortname}}_tn.jpg"
+  alt="{{artist.name}} photo">
+<div class="artist-info">
+  <h2 class="artist-name">{{ artist.name }}</h2>
+  <h3 class="artist-reknown">{{ artist.reknown }}</h3>
+</div>
+#+END_EXAMPLE
+
+*** API
+Search https://angular.io/api
+
+<<<ng:api:component>>> https://angular.io/api/core/Component
+
 *** Style Guide
+**** File Structure <<<ng:file structure>>>
+https://angular.io/guide/styleguide#file-tree
+
+
+src/app/heroes/hero.component.ts
+#+BEGIN_EXAMPLE
+@Component({
+  selector: 'toh-hero'
+})
+export class HeroComponent {}
+#+END_EXAMPLE
+
+src/app/heroes/hero-list/hero-list.component.ts
+#+BEGIN_EXAMPLE
+import { Component, OnInit } from '@angular/core';
+ 
+import { Hero, HeroService } from '../shared';
+ 
+@Component({
+  selector: 'toh-heroes',
+  template: `
+      <pre>{{heroes | json}}</pre>
+    `
+})
+export class HeroListComponent implements OnInit {
+  heroes: Hero[] = [];
+ 
+  constructor(private heroService: HeroService) { }
+ 
+  ngOnInit() {
+    this.heroService.getHeroes().subscribe(heroes => this.heroes = heroes);
+  }
+}
+#+END_EXAMPLE
+
+src/app/heroes/shared/hero.service.ts|spec.ts
+#+BEGIN_EXAMPLE
+import { Injectable } from '@angular/core';
+import { Http }       from '@angular/http';
+
+import { Hero } from './hero.model';
+import { ExceptionService, SpinnerService, ToastService } from '../../core';
+export class HeroService {
+  constructor(private http: Http) { }
+
+  getHeroes() {
+    return this.http.get('api/heroes')
+      .map((response: Response) => <Hero[]>response.json().data);
+  }
+}
+#+END_EXAMPLE
+
+src/app/heroes/shared/hero.model.ts
+#+BEGIN_EXAMPLE
+export class Hero {
+  id: number;
+  name: string;
+}
+#+END_EXAMPLE
+
+src/app/heroes/shared/hero-button.component.ts|html|css|spec.ts
+
+
+
+
 **** File name
 Use dashes to separate words in file names (hero-list)
 Use a dot to separate the descriptive name from the type (.component)
