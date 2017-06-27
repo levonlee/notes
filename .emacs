@@ -1,8 +1,10 @@
 (setq-default org-catch-invisible-edits 'smart
-	      line-move-visual nil)
+	      line-move-visual nil
+)
 (setq inhibit-startup-message t
       backup-directory-alist '(("." . "~/.saves"))
 )
+(add-hook 'text-mode-hook 'turn-on-visual-line-mode)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
