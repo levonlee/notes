@@ -11103,6 +11103,7 @@ $window.history.pushState(null, 'any', $location.absUrl());
 
 ** 2.x Angular
 https://github.com/planetoftheweb/learnangular
+https://github.com/coursefiles/angular2-essential-training
 
 *** QuickStart seed
 **** Install
@@ -11206,7 +11207,7 @@ https://angular.io/guide/npm-packages
     "@angular/core": "~4.0.0", // e.g. all metadata decorators, Component, Directive, dependency injection and component lifecycle hooks
     "@angular/forms": "~4.0.0",
     "@angular/http": "~4.0.0", // Angular's HTTP client.
-    "@angular/platform-browser": "~4.0.0", // DOM and browser related. Help render into DOM.
+    "@angular/platform-browser": "~4.0.0", // DOM and browser related. Native directives, pipes, etc. Help render into DOM.
     "@angular/platform-browser-dynamic": "~4.0.0", 
     // Include Providers and a bootstrap method for apps that compile templates on the client.
     // Don't use offline compilation, use this for bootstrapping during dev and for bootstrapping plunker samples
@@ -11296,8 +11297,11 @@ import { AppComponent }  from './app.component';
 export class AppModule { }
 #+END_EXAMPLE
 
+*** ngModule
+https://angular.io/guide/ngmodule
+
 *** Component
-<<<ng:component>>>
+<<<ng:component>>> is to create a new html element. It's also a directive with a template
 Refer to ng:api:component
 
 src/app/app.component.ts
@@ -11313,6 +11317,7 @@ export class AppComponent  { name = 'Angular'; }
 #+END_EXAMPLE
 
 *** Template
+**** Files
 src/app/[component-name]/[component-name].component.html
 src/app/[component-name]/[component-name].component.css
 src/app/[component-name]/[component-name].component.ts
@@ -11323,7 +11328,7 @@ Use component-relative URLs, prefixed with ~./~
 @Component({
   selector: 'toh-heroes',
   templateUrl: './heroes.component.html', // template or templateUrl, can't be both
-  styleUrls:  ['./heroes.component.css']
+  styleUrls:  ['./heroes.component.css'] // each css file is independent! Don't worry about CSS conflicts
   // , styles: [ ".btn {background-color: green;}", ".btn:hover {background-color: pink;}"]
 })
 
@@ -11380,6 +11385,89 @@ src/app/heroes/heroes.component.html
 </div>
 #+END_EXAMPLE
 
+**** ~{{ }}~
+Nonsupported in ~{{ }}~
+- Assignments
+- Newing up variables
+- Chaining expressions
+- Incrementing/decrementing
+
+A function can be run
+#+BEGIN_EXAMPLE
+<div>{{ wasWatched() }}</div>
+
+export class MediaItemComponent { 
+  wasWatched() {
+    return true;
+  }
+}
+#+END_EXAMPLE
+
+**** Styles
+Module bundler like Webpack can load sytles from external files at build time.
+~styles: [require('my.component.css')]~
+
+Use ~:host~ to target the host element (one element)
+
+~:host-context()~ looks for a CSS class in any ancestor of the component host element, up to the document root. 
+The :host-context() selector is useful when combined with another selector.
+
+This applies a background-color style to all <h2> elements inside the component, 
+only if some ancestor element has the CSS class theme-light.
+
+#+BEGIN_EXAMPLE
+:host-context(.theme-light) h2 {
+  background-color: #eef;
+}
+#+END_EXAMPLE
+
+~/deep/~ or ~>>>~ works to any depth of nested components, and it applies to both the view children and content children of the component.
+
+This targets all <h3> elements, from the host element down through this component to all of its child elements in the DOM.
+#+BEGIN_EXAMPLE
+:host /deep/ h3 {
+  font-style: italic;
+}
+#+END_EXAMPLE
+
+Use ~/deep/~ and ~>>>~ selectors only with emulated view encapsulation. 
+Emulated is the default and most commonly used [[https://angular.io/guide/component-styles#view-encapsulation][view encapsulation]]. Refer to ng:view encapsulation
+
+Use ~<link>~ in template, path is relative to the root.
+#+BEGIN_EXAMPLE
+@Component({
+  selector: 'hero-team',
+  template: `
+    <link rel="stylesheet" href="app/hero-team.component.css">
+    <h3>Team</h3>
+    <ul>
+      <li *ngFor="let member of hero.team">
+        {{member}}
+      </li>
+    </ul>`
+})
+#+END_EXAMPLE
+
+Use ~@imports~ inside my.component.css
+#+BEGIN_EXAMPLE
+@import 'hero-details-box.css';
+#+END_EXAMPLE
+
+<<<ng:view encapsulation>>>
+Default is ViewEncapsulation.Emulated, rename CSS code to scope the CSS to the component's view.
+ViewEncapsulation.None adds CSS to the global styles.
+ViewEncapsulation.Native uses browser's native shadow DOM to attach a shadow DOM to the component's host element.
+
+If the encapsulation is set to ViewEncapsulation.Emulated and the component has no styles nor styleUrls, the encapsulation will automatically be switched to ViewEncapsulation.None.
+#+BEGIN_EXAMPLE
+@Component({
+  selector: 'toh-heroes',
+  templateUrl: './heroes.component.html',
+  styleUrls:  ['./heroes.component.css'],
+  encapsulation: ViewEncapsulation.Emulated
+})
+#+END_EXAMPLE
+
 **** Event
 https://angular.io/guide/template-syntax#event-binding
 
@@ -11429,6 +11517,49 @@ Two-way binding
 #+END_EXAMPLE
 
 Need to add ng:FormsModule
+
+*** Pipe
+It's a filter. All pipes https://angular.io/api?query=pipe
+https://angular.io/guide/pipes
+
+src/app/search.pipe.ts
+#+BEGIN_EXAMPLE
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'search'
+})
+
+export class SearchPipe implements PipeTransform {
+  transform(pipeData, pipeModifier) {
+    return  pipeData.filter((eachItem)=> {
+    return  eachItem['name'].toLowerCase().includes(pipeModifier.toLowerCase()) ||
+            eachItem['reknown'].toLowerCase().includes(pipeModifier.toLowerCase());
+    });
+  }
+
+ /* Another transform interface example */
+ /*
+ transform(value: number, exponent: string): number {
+    let exp = parseFloat(exponent);
+    return Math.pow(value, isNaN(exp) ? 1 : exp);
+ }
+ */
+
+}
+#+END_EXAMPLE
+
+app.html
+#+BEGIN_EXAMPLE
+<ul class="artistlist cf"
+  *ngIf="query">
+  <li class="artistlist-item cf"
+    (click)="showArtist(item); query=''"
+    *ngFor="let item of (artists | search: query)">
+    <artist-item class="content" [artist]=item></artist-item>
+  </li>
+</ul>
+#+END_EXAMPLE
 
 *** Model and Custom Component
 src/app/app.component.ts
@@ -11534,7 +11665,6 @@ Search https://angular.io/api
 **** File Structure <<<ng:file structure>>>
 https://angular.io/guide/styleguide#file-tree
 
-
 src/app/heroes/hero.component.ts
 #+BEGIN_EXAMPLE
 @Component({
@@ -11593,9 +11723,6 @@ export class Hero {
 
 src/app/heroes/shared/hero-button.component.ts|html|css|spec.ts
 
-
-
-
 **** File name
 Use dashes to separate words in file names (hero-list)
 Use a dot to separate the descriptive name from the type (.component)
@@ -11605,7 +11732,6 @@ A file should have no more than 400 lines of code.
 A small function should have no more than 75 lines.
 
 **** Symbol name and file name
-
 Use upper camel case for class names
 #+BEGIN_EXAMPLE
 // hero-list.component.ts
@@ -16758,7 +16884,7 @@ List all remotes ~git remote -v~
 Remove a remote 'origin' ~git remote rm origin~
 
 Local branch is not set to sync with remote until you do the first push with '-u'
-git push -u origin master
+~git push -u origin master~
 
 Finally check ~cat .git/config~ to see if local branch "master" has setup a remote
 #+BEGIN_EXAMPLE
