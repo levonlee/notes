@@ -11312,6 +11312,8 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'my-app',
   template: `<h1>Hello {{name}}</h1>`,
+  inputs: ['inputVar1'],  // Use this or @Input. Refer to ng:input output
+  outputs: ['outputVar1'], // Use this or @Output. Refer to ng:input output
 })
 export class AppComponent  { name = 'Angular'; }
 #+END_EXAMPLE
@@ -11468,26 +11470,39 @@ If the encapsulation is set to ViewEncapsulation.Emulated and the component has 
 })
 #+END_EXAMPLE
 
-**** Event
+**** Event ~(eventType)~
 https://angular.io/guide/template-syntax#event-binding
 
 #+BEGIN_EXAMPLE
 (click)="onClick($event)"
+(input)="name=$event.target.value"
+(keyup.enter)="addArtist(newArtist.value); newArtist.value=''"
 #+END_EXAMPLE
 
-**** User input
+$event is a DOM event object
+
+**** Template Reference variable ~#var~
 #+BEGIN_EXAMPLE
 <input #newArtist (keyup.enter)="addArtist(newArtist.value); newArtist.value=''">
 <button (click)="addArtist(newArtist.value); newArtist.value=''">Add</button>
 #+END_EXAMPLE
 
-**** Bind DOM properties to a variable, or the other way around
+~#newArtist~ can be used anywhere in the template.
+
+**** One-way binding
 #+BEGIN_EXAMPLE
 // Instead of
 <lable>Search <span *ngIf="name">for: {{ name }}</span></label>
 
+// Use
 <lable>Search <span *ngIf="name" [innerHTML]="' for: ' + name"></span></lable>
 // [innerHTML] can be bind-innerHTML
+
+// Or use
+<span innerHTML="{{ ' for: ' + name }}"
+
+// DOM element attribute
+<img [src]="iconUrl"/>
 
 // Bind clicked DOM element to a variable
 <ul class="heroes">
@@ -11503,7 +11518,8 @@ onClick(item, myElement) {
 }
 #+END_EXAMPLE
 
-Two-way binding
+**** Two-way binding ~[(x)]~ ~[(ngModel)]~ ~[ngModel]~ ~(ngModelChange)~
+
 #+BEGIN_EXAMPLE
 <input #newArtist 
 [value]="name"
@@ -11516,10 +11532,222 @@ Two-way binding
 (keyup.enter)="addArtist(newArtist.value); newArtist.value=''">
 #+END_EXAMPLE
 
-Need to add ng:FormsModule
+#+BEGIN_EXAMPLE
+<input
+  [ngModel]="currentHero.name"
+  (ngModelChange)="setUppercaseName($event)">
+#+END_EXAMPLE
 
-*** Pipe
-It's a filter. All pipes https://angular.io/api?query=pipe
+ngModel needs ng:FormsModule
+
+**** @Input, @Output
+<<<ng:input output>>>
+
+media-item.component.ts
+#+BEGIN_EXAMPLE
+import { Component, Input } from '@angular/core';
+
+@Component({
+    selector: 'mw-media-item',
+    templateUrl: './media-item.component.html',
+    styleUrls: ['./media-item.component.css']
+})
+export class MediaItemComponent {
+    // @Input('mediaItemToWatch') mediaItem;
+    // The mediaItemToWatch is an alias of mediaItem
+    // It's not recommended to have alias
+    @Input() mediaItem;
+
+    // strict typing
+    @Input()  size: number | string;
+
+    @Output() delete = new EventEmitter();
+    // Notice delete is defined in sub component and exists inside mw-media-item DOM element
+
+    onDelete() {
+       // emit an event to the parent app.component.ts
+       this.delete.emit(this.mediaItem);
+    }
+
+}
+#+END_EXAMPLE
+
+app.component.ts
+#+BEGIN_EXAMPLE
+export class AppComponent {
+  onMediaItemDelete(mediaItem) {
+    
+  }
+
+  firstMediaItem = {
+    id: 1,
+    name: "Firebug",
+    medium: "Series",
+    category: "Science Fiction",
+    year: 2010,
+    watchedOn: 1294166565384,
+    isFavorite: false
+  };
+}
+#+END_EXAMPLE
+
+mediaItem can be used as a new property for binding ~[mediaItem]~ or ~{{mediaItem}}~
+app.component.html
+#+BEGIN_EXAMPLE
+<section>
+  <header>
+    <h1>Media Watch List</h1>
+    <p class="description">Keeping track of the media I want to watch.</p>
+  </header>
+  <mw-media-item 
+    [mediaItem]="firstMediaItem"
+    (delete)="onMediaItemDelete($event)"></mw-media-item>
+</section>
+#+END_EXAMPLE
+
+media-item.component.html
+#+BEGIN_EXAMPLE
+<h2>{{ mediaItem.name }}</h2>
+<div>Watched on {{ mediaItem.watchedOn }}</div>
+<div>{{ mediaItem.category }}</div>
+<div>{{ mediaItem.year }}</div>
+<div class="tools">
+  <a class="delete" (click)="onDelete()">
+    remove
+  </a>
+  <a class="details">
+    watch
+  </a>
+</div>
+#+END_EXAMPLE
+
+**** Structural directives (builtin) ~ngIf~ ~ngFor~ ~ngSwitch~ ~<ng-container>~
+
+#+BEGIN_EXAMPLE
+<div *ngIf="mediaItem.watchedOn">Watched on {{ mediaItem.watchedOn }} </div>
+#+END_EXAMPLE
+
+Even though ngIf is true, only <div> will display
+#+BEGIN_EXAMPLE
+<template [ngIf]="mediaItem.watchedOn">
+  <div>Watched on {{ mediaItem.watchedOn }} </div>
+</template>
+#+END_EXAMPLE
+
+ngFor :: refer to ng:pipe
+
+ngSwitch
+#+BEGIN_EXAMPLE
+<div [ngSwitch]="hero?.emotion">
+  <happy-hero    *ngSwitchCase="'happy'"    [hero]="hero"></happy-hero>
+  <sad-hero      *ngSwitchCase="'sad'"      [hero]="hero"></sad-hero>
+  <confused-hero *ngSwitchCase="'confused'" [hero]="hero"></confused-hero>
+  <unknown-hero  *ngSwitchDefault           [hero]="hero"></unknown-hero>
+</div>
+#+END_EXAMPLE
+
+Only one structural directive can be applied to one host element
+
+~<ng-container>~
+This is almost works like ~<template>~
+#+BEGIN_EXAMPLE
+<p>
+  I turned the corner
+  <span *ngIf="hero">
+    and saw {{hero.name}}. I waved
+  </span>
+  and continued on my way.
+</p>
+#+END_EXAMPLE
+
+In <select>, before we do and dropdown is empty because a browser won't display an <option> within a <span>.
+#+BEGIN_EXAMPLE
+<div>
+  Pick your favorite hero
+  (<label><input type="checkbox" checked (change)="showSad = !showSad">show sad</label>)
+</div>
+<select [(ngModel)]="hero">
+  <span *ngFor="let h of heroes">
+    <span *ngIf="showSad || h.emotion !== 'sad'">
+      <option [ngValue]="h">{{h.name}} ({{h.emotion}})</option>
+    </span>
+  </span>
+</select>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<div>
+  Pick your favorite hero
+  (<label><input type="checkbox" checked (change)="showSad = !showSad">show sad</label>)
+</div>
+<select [(ngModel)]="hero">
+  <ng-container *ngFor="let h of heroes">
+    <ng-container *ngIf="showSad || h.emotion !== 'sad'">
+      <option [ngValue]="h">{{h.name}} ({{h.emotion}})</option>
+    </ng-container>
+  </ng-container>
+</select>
+#+END_EXAMPLE
+
+**** Attribute directives (builtin) ~ngClass~ ~ngStyle~
+
+media-list.component.html
+#+BEGIN_EXAMPLE
+<section>
+  <mw-media-item
+    [ngClass]="{'medium-movies': mediaItem.medium==='Movies', 'medium-series':mediaItem.medium==='Series'}" 
+    *ngFor="let mediaItem of mediaItems"
+    [mediaItem]="mediaItem"
+    (delete)="onMediaItemDelete($event)"></mw-media-item>
+</section>
+#+END_EXAMPLE
+
+~[class]~ or ~[style]~ with a string can also be used
+#+BEGIN_EXAMPLE
+<!-- Reset class to badCurly only -->
+<div class="bad curly special"
+     [class]="badCurly">Bad curly</div>
+
+<!-- toggle the "special" class on/off with a property -->
+<div [class.special]="isSpecial">The class binding is special</div>
+
+
+<button [style.color]="isSpecial ? 'red': 'green'">Red</button>
+<button [style.background-color]="canSave ? 'cyan': 'grey'" >Save</button>
+<button [style.font-size.em]="isSpecial ? 3 : 1" >Big</button>
+<button [style.font-size.%]="!isSpecial ? 150 : 50" >Small</button>
+#+END_EXAMPLE
+
+*** Pipe <<<ng:pipe>>>
+**** Builtin pipes
+https://angular.io/api?query=pipe
+
+uppercase, lowercase, titlecase
+***** [[https://angular.io/api/common/DatePipe][Date]]
+~date_expression | date[:format]~
+format
+'medium': equivalent to 'yMMMdjms' (e.g. Sep 3, 2010, 12:05:08 PM for en-US)
+'short': equivalent to 'yMdjm' (e.g. 9/3/2010, 12:05 PM for en-US)
+'fullDate': equivalent to 'yMMMMEEEEd' (e.g. Friday, September 3, 2010 for en-US)
+'longDate': equivalent to 'yMMMMd' (e.g. September 3, 2010 for en-US)
+'mediumDate': equivalent to 'yMMMd' (e.g. Sep 3, 2010 for en-US)
+'shortDate': equivalent to 'yMd' (e.g. 9/3/2010 for en-US)
+'mediumTime': equivalent to 'jms' (e.g. 12:05:08 PM for en-US)
+'shortTime': equivalent to 'jm' (e.g. 12:05 PM for en-US)
+
+#+BEGIN_EXAMPLE
+<p>Today is {{today | date}}</p>
+<p>Or if you prefer, {{today | date:'fullDate'}}</p>
+<p>The time is {{today | date:'jmZ'}}</p>
+#+END_EXAMPLE
+
+***** slice
+slice:start[:end]
+#+BEGIN_EXAMPLE
+<h2>{{ mediaItem.name | slice:0:10 }}</h2>
+#+END_EXAMPLE
+
+**** Custom pipe
 https://angular.io/guide/pipes
 
 src/app/search.pipe.ts
@@ -11527,15 +11755,29 @@ src/app/search.pipe.ts
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'search'
+  name: 'search',
+  // Default is pure, which means the pipe doesn't change the data
+  // pure: true,
 })
 
 export class SearchPipe implements PipeTransform {
+  // pipe is used in ngFor, the first parameter is the pipe data without specifying in template
   transform(pipeData, pipeModifier) {
     return  pipeData.filter((eachItem)=> {
-    return  eachItem['name'].toLowerCase().includes(pipeModifier.toLowerCase()) ||
-            eachItem['reknown'].toLowerCase().includes(pipeModifier.toLowerCase());
+      return eachItem['name'].toLowerCase().includes(pipeModifier.toLowerCase()) 
+          || eachItem['reknown'].toLowerCase().includes(pipeModifier.toLowerCase());
     });
+  }
+
+  // Another example for ngFor pipe. It returns an array
+  transform(mediaItems) {
+    var categories = [];
+    mediaItems.forEach(mediaItem => {
+      if (categories.indexOf(mediaItem.category) <= -1) {
+        categories.push(mediaItem.category);
+      }
+    });
+    return categories.join(', ');
   }
 
  /* Another transform interface example */
@@ -11559,6 +11801,107 @@ app.html
     <artist-item class="content" [artist]=item></artist-item>
   </li>
 </ul>
+#+END_EXAMPLE
+
+*** Directive <<<ng:directive>>>
+**** Custom attribute directive ~HostListener~ ~HostBinding~
+It's better to add prefix 'my' to selector name
+hightlight.directive.ts
+#+BEGIN_EXAMPLE
+import { Directive, ElementRef, HostListener, Input } from '@angular/core';
+
+@Directive({
+  selector: '[myHighlight]'
+})
+export class HighlightDirective {
+
+  constructor(private el: ElementRef) { }
+
+  @Input() defaultColor: string;
+
+  @Input('myHighlight') highlightColor: string;
+
+  @HostListener('mouseenter') onMouseEnter() {
+    this.highlight(this.highlightColor || this.defaultColor || 'red');
+  }
+
+  @HostListener('mouseleave') onMouseLeave() {
+    this.highlight(null);
+  }
+
+  private highlight(color: string) {
+    this.el.nativeElement.style.backgroundColor = color;
+  }
+}
+#+END_EXAMPLE
+
+app.component.html
+#+BEGIN_EXAMPLE
+<h1>My First Attribute Directive</h1>
+
+<h4>Pick a highlight color</h4>
+<div>
+  <input type="radio" name="colors" (click)="color='lightgreen'">Green
+  <input type="radio" name="colors" (click)="color='yellow'">Yellow
+  <input type="radio" name="colors" (click)="color='cyan'">Cyan
+</div>
+<p [myHighlight]="color">Highlight me!</p>
+
+<p [myHighlight]="color" defaultColor="violet">
+  Highlight me too!
+</p>
+
+<hr>
+<p><i>Mouse over the following lines to see fixed highlights</i></p>
+
+<p [myHighlight]="'yellow'">Highlighted in yellow</p>
+<p myHighlight="orange">Highlighted in orange</p>
+#+END_EXAMPLE
+
+Another example using HostBinding which binds host (DOM) property to a getter or another property
+favorite.directive.ts
+#+BEGIN_EXAMPLE
+import { Directive, HostBinding, Input } from '@angular/core';
+
+@Directive({
+  selector: '[mwFavorite]'
+})
+export class FavoriteDirective {
+  @HostBinding('class.is-favorite') isFavorite; 
+  // Use ~isFavorite = true~ to set a default
+  @Input() set mwFavorite(value) {
+    this.isFavorite = value;
+  }
+  /*
+ @HostBinding('attr.something') get something() { 
+    return this.somethingElse; 
+ }
+ */
+}
+#+END_EXAMPLE
+
+media-item.component.html
+#+BEGIN_EXAMPLE
+<h2>{{ mediaItem.name }}</h2>
+<template [ngIf]="mediaItem.watchedOn">
+  <div>Watched on {{ mediaItem.watchedOn }}</div>
+</template>
+<div>{{ mediaItem.category }}</div>
+<div>{{ mediaItem.year }}</div>
+<div class="tools">
+  <svg
+    [mwFavorite]="mediaItem.isFavorite"
+    class="favorite" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M12 9.229c.234-1.12 1.547-6.229 5.382-6.229 2.22 0 4.618 1.551 4.618 5.003 0 3.907-3.627 8.47-10 12.629-6.373-4.159-10-8.722-10-12.629 0-3.484 2.369-5.005 4.577-5.005 3.923 0 5.145 5.126 5.423 6.231zm-12-1.226c0 4.068 3.06 9.481 12 14.997 8.94-5.516 12-10.929 12-14.997 0-7.962-9.648-9.028-12-3.737-2.338-5.262-12-4.27-12 3.737z"
+    />
+  </svg>
+  <a class="delete" (click)="onDelete()">
+    remove
+  </a>
+  <a class="details">
+    watch
+  </a>
+</div>
 #+END_EXAMPLE
 
 *** Model and Custom Component
