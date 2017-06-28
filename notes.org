@@ -12236,7 +12236,6 @@ const lookupLists = {
   mediums: ['Movies', 'Series']
 };
 
-
 @NgModule({
   imports: [ ... ],
   declarations: [ ... ],
@@ -12315,7 +12314,9 @@ export class MediaItemListComponent {
 
 media-item-form.component.ts
 #+BEGIN_EXAMPLE
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
+// Inject is for injecting the ValueProvider
+
 import { Validators, FormBuilder } from '@angular/forms';
 
 import { MediaItemService } from './media-item.service';
@@ -12330,7 +12331,11 @@ export class MediaItemFormComponent {
 
   constructor(
     private formBuilder: FormBuilder,
-    private mediaItemService: MediaItemService) {}
+    private mediaItemService: MediaItemService,
+    @Inject('lookupListToken') public lookupLists) {}
+
+  // private can be used inside the class here as this.xxx
+  // public can be used outside the class such as in template as xxx
 
   ngOnInit() {
     this.form = this.formBuilder.group({ ... });
@@ -12341,6 +12346,176 @@ export class MediaItemFormComponent {
   onSubmit(mediaItem) {
     this.mediaItemService.add(mediaItem);
   }
+}
+#+END_EXAMPLE
+
+media-item-form.component.html
+#+BEGIN_EXAMPLE
+<form
+  [formGroup]="form"
+  (ngSubmit)="onSubmit(form.value)">
+  <ul>
+    <li>
+      <label for="medium">Medium</label>
+      <select name="medium" id="medium" formControlName="medium">
+        <option *ngFor="let medium of lookupLists.mediums" value="{{medium}}">{{medium}}</option>
+      </select>
+    </li>
+    ...li
+  </ul>
+</form>
+#+END_EXAMPLE
+
+**** OpaqueToken, InjectionToken
+Use this rather than ValueProvider
+OpaqueToken is deprecated, use InjectionToken
+https://angular.io/guide/dependency-injection#injection-token
+
+providers.ts
+#+BEGIN_EXAMPLE
+import { OpaqueToken } from '@angular/core';
+
+export const lookupListToken = new OpaqueToken('lookupListToken');
+
+export const lookupLists = {
+  mediums: ['Movies', 'Series']
+};
+#+END_EXAMPLE
+
+app.module.ts
+#+BEGIN_EXAMPLE
+import { lookupListToken, lookupLists } from './providers';
+
+@NgModule({
+  imports: [ ...  ],
+  declarations: [ ... ],
+  providers: [
+    MediaItemService,
+    { provide: lookupListToken, useValue: lookupLists }
+  ],
+  bootstrap: [
+    AppComponent
+  ]
+})
+export class AppModule {}
+#+END_EXAMPLE
+
+media-item-form.component.ts
+#+BEGIN_EXAMPLE
+import { lookupListToken } from './provders';
+
+ constructor(
+    private formBuilder: FormBuilder,
+    private mediaItemService: MediaItemService,
+    @Inject(lookupListToken) public lookupLists) {}
+#+END_EXAMPLE
+
+**** Http
+https://angular.io/guide/http
+
+http.get() returns an Observable<Response>
+Observable.map() is one of RxJS operators needed to be imported
+
+RxJS is a 3rd party library implements async Observable pattern.
+
+app.module.ts
+#+BEGIN_EXAMPLE
+import { HttpModule, XHRBackend } from '@angular/http';
+import { MockXHRBackend } from './mock-xhr-backend';
+
+@NgModule({
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    HttpModule
+  ],
+  declarations: [ ... ],
+  providers: [
+    MediaItemService,
+    { provide: lookupListToken, useValue: lookupLists },
+    { provide: XHRBackend, useClass: MockXHRBackend }
+  ],
+  bootstrap: [
+    AppComponent
+  ]
+})
+export class AppModule {}
+#+END_EXAMPLE
+
+media-item.service.ts
+#+BEGIN_EXAMPLE
+import { Injectable } from '@angular/core';
+import { Http } from '@angular/http';
+import 'rxjs/add/operator/map';
+
+@Injectable()
+export class MediaItemService {
+  constructor(private http: Http) {}
+
+  get() {
+    return this.http.get('mediaitems')
+      .map(response => {
+        return response.json().mediaItems;
+      });
+  }
+  
+  add(mediaItem) {
+    this.mediaItems.push(mediaItem);
+  }
+  
+  delete(mediaItem) {
+    let index = this.mediaItems.indexOf(mediaItem);
+    if(index >= 0) {
+      this.mediaItems.splice(index, 1);
+    }
+  }
+
+  mediaItems = [ {}, ... ];
+}
+#+END_EXAMPLE
+
+media-item-list.component.ts
+#+BEGIN_EXAMPLE
+ngOnInit() {
+    this.getMediaItems(this.medium);
+}
+getMediaItems(medium) {
+    this.medium = medium;
+    this.mediaItemService.get()
+      .subscribe(mediaItems => {
+        this.mediaItems = mediaItems;
+      });
+}
+#+END_EXAMPLE
+
+***** URLSearchParams
+media-item.service.ts
+#+BEGIN_EXAMPLE
+import { Injectable } from '@angular/core';
+import { Http, URLSearchParams } from '@angular/http';
+import 'rxjs/add/operator/map';
+// Other Observable operators
+// import 'rxjs/add/operator/catch'
+
+@Injectable()
+export class MediaItemService {
+  constructor(private http: Http) {}
+
+  get(medium) {
+    let searchParams = new URLSearchParams();
+    searchParams.append('medium', medium);
+    // searchParams.set('medium', medium);
+    return this.http.get('mediaitems', { search: searchParams })
+      .map(response => {
+        return response.json().mediaItems;
+      });
+  }
+  
+  add(mediaItem) { ... }
+  
+  delete(mediaItem) { ... }
+
+  mediaItems = [ {}, ... ];
 }
 #+END_EXAMPLE
 
