@@ -14844,6 +14844,83 @@ Available: git, curl, wget, openssh-client
 Image name: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
 Parent Images: lucee/lucee4 > tomcat:8.0.36-jre8
 
+*** docker-compose.yml Dockerfile
+docker-compose.yml
+#+BEGIN_EXAMPLE
+version: '2'
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.2.0/24
+        gateway: 172.16.2.1
+services:
+  lucee:
+    build: .
+    image: cflucee:latest
+    container_name: lucee
+    ports:
+      - "80:80"
+      - "8888:8888"
+    volumes:
+      - /home/you/db/access:/root/db/
+      - /home/you/www:/var/www
+      # Scheduled tasks are setup in http://127.0.0.1:8888/lucee/admin/web.cfm
+      # /home/you/www/WEB-INF/lucee/scheduler/scheduler.xml > /var/wwww/WEB-INF/lucee/scheduler/scheduler.xml
+      - /home/you/logs/tomcat:/usr/local/tomcat/logs
+      - /home/you/logs/nginx:/var/log/nginx
+      - /home/you/logs/lucee:/opt/lucee/web/logs
+    networks:
+      app_net:
+        ipv4_address: 172.16.2.3
+
+#+END_EXAMPLE
+
+Dockerfile
+#+BEGIN_EXAMPLE
+FROM lucee/lucee4-nginx:4.5.1.024
+
+ENV TZ=America/Toronto
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Copy UcanAccess
+COPY ucanaccess/* /usr/local/tomcat/lib/
+
+# Custom tags
+# Custom tags are manually copied to each host's root folder...
+COPY config/customtags/* /opt/lucee/web/customtags/
+# COPY config/customtags/* /opt/lucee/server/lucee-server/context/library/
+
+# Tomcat configs
+# COPY catalina.properties server.xml web.xml /usr/local/tomcat/conf/
+COPY config/tomcat/server.xml /usr/local/tomcat/conf/
+COPY config/tomcat/context.xml /usr/local/tomcat/conf/
+# COPY config/tomcat/legacy_js.xml /usr/local/tomcat/conf/Catalina/127.0.0.1/legacy_js.xml
+
+# Custom setenv.sh to load Lucee
+COPY setenv.sh /usr/local/tomcat/bin/
+RUN chmod a+x /usr/local/tomcat/bin/setenv.sh
+
+# Default setenv.sh https://github.com/lucee/lucee-dockerfiles/blob/master/4.5/setenv.sh
+# Added UcanAccess
+
+# NGINX configs
+COPY config/nginx/ /etc/nginx/
+# /etc/nginx/nginx.conf :: Default not modified https://github.com/lucee/lucee-dockerfiles/blob/master/lucee-nginx/4.5/nginx.conf
+# /etc nginx/default.conf :: https://github.com/lucee/lucee-dockerfiles/blob/master/lucee-nginx/4.5/default.conf
+
+# Add datasources. Default https://github.com/lucee/lucee-dockerfiles/blob/master/4.5/lucee-server.xml
+COPY config/lucee/lucee-server.xml /opt/lucee/server/lucee-server/context/lucee-server.xml
+
+# Lucee server PRODUCTION configs
+# COPY config/lucee/lucee-web.xml.cfm /opt/lucee/web/lucee-web.xml.cfm
+
+# Deploy codebase to container
+# COPY index.cfm /var/www
+#+END_EXAMPLE
+
 *** Add ucanaccess db driver to TomCat, Add M$ Access Datasources
 Refer to docker:image:tomcat
 
@@ -14870,7 +14947,6 @@ Lucee server setting :: /opt/lucee/server/lucee-server/context/lucee-server.xml
 Individual website setting :: /opt/lucee/web/lucee-web.xml.cfm
 
 *** Custom tags (.cfm|.cfc) under /opt/lucee/web/customtags/
-
 *** Change Lucee Server Admin UI password
 [[https://gist.github.com/jlamoree/6c1fc89ca3b8ce2581eb76dadeb1ee53][Use this with a salt]] to generate hspw in Lucee server setting <cfLuceeConfiguration hspw="" salt="" version="4.5">
 Refer to image:lucee:salt. It seems like you should use the salt that is in the default lucee-server.xml.
@@ -14969,6 +15045,10 @@ server {
 #+END_EXAMPLE
 
 Add hosts in docker:image:tomcat:host
+
+*** Scheduled Tasks
+Create them in /lucee/admin/web.cfm
+Checkout this file /var/www/WEB-INF/lucee/scheduler/scheduler.xml
 
 ** image:tomcat
 <<<docker:image:tomcat>>>
