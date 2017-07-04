@@ -12108,14 +12108,12 @@ src/app/artists/artist-item/artist-item.component.html
 #+END_EXAMPLE
 
 *** Form
-<<<ng:FormsModule>>> <<<ng:ReactiveFormsModule>>> <<<ng:FormGroup>>> <<<ng:FormControl>>> <<<ng:Validators>>>
-~ngModel~ ~ngSubmit~
-
-// app.module.ts
-import { FormsModule } from '@angular/forms';
-
-**** Template driven
+**** Template driven ~ngModel~ ~ngSubmit~
 The form element has a name, then directly use ngModel
+Template driven form requires <<<ng:FormsModule>>>
+https://github.com/coursefiles/angular2-essential-training/blob/04_03b/app
+
+https://github.com/coursefiles/angular2-essential-training/blob/04_03b/app/app.module.ts
 
 src/app/media-item-form.component.ts
 #+BEGIN_EXAMPLE
@@ -12174,6 +12172,14 @@ src/app/media-item-form.component.html
 #+END_EXAMPLE
 
 **** Model driven, Validation
+Model driven form requires <<<ng:ReactiveFormsModule>>> instead of FormsModule. Both can be loaded at the same time
+
+<<<ng:FormGroup>>> <<<ng:FormControl>>> <<<ng:Validators>>>
+
+https://github.com/coursefiles/angular2-essential-training/tree/04_04b/app
+
+https://github.com/coursefiles/angular2-essential-training/blob/04_04b/app/app.module.ts
+
 media-item-form.component.ts
 #+BEGIN_EXAMPLE
 import { Component } from '@angular/core';
@@ -12274,9 +12280,11 @@ media-item-form.component.html
 #+END_EXAMPLE
 
 *** Service, Dependency Injection
-Either use constructor or @Inject.
+Either use constructor or @Inject to include a service.
 Define services in a provider, when service is injected, if it has been created before, reuse it. If not, create it.
 Service is singleton and once it's been created, it will be injectable across the app's life time.
+
+Unlike componet, directive and pipe, if a service needs other dependencies, the service needs @Injectable decorator. Refer to ng:http:get
 
 Angular services :: Http, FormBuilder, Router
 
@@ -12334,7 +12342,10 @@ export class MediaItemFormComponent {
 }
 #+END_EXAMPLE
 
-**** Custom service
+**** Custom service and inject variable
+https://github.com/coursefiles/angular2-essential-training/tree/05_06b/app
+https://github.com/coursefiles/angular2-essential-training/tree/05_07b/app
+
 app.module.ts
 #+BEGIN_EXAMPLE
 import { MediaItemService } from './media-item.service'; // inject as a class
@@ -12480,6 +12491,8 @@ Use this rather than ValueProvider
 OpaqueToken is deprecated, use InjectionToken
 https://angular.io/guide/dependency-injection#injection-token
 
+https://github.com/coursefiles/angular2-essential-training/tree/06_01b/app
+
 providers.ts
 #+BEGIN_EXAMPLE
 import { OpaqueToken } from '@angular/core';
@@ -12522,14 +12535,27 @@ import { lookupListToken } from './provders';
 **** Http
 https://angular.io/guide/http
 
-http.get() returns an Observable<Response>
-Observable.map() is one of RxJS operators needed to be imported
-
-RxJS is a 3rd party library implements async Observable pattern.
+***** mock back end <<<ng:mock back end>>>
+https://angular.io/guide/http#in-mem-web-api
+https://angular.io/api/http/XHRBackend
+https://github.com/coursefiles/angular2-essential-training/tree/06_03b/app
 
 app.module.ts
 #+BEGIN_EXAMPLE
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { ReactiveFormsModule } from '@angular/forms';
 import { HttpModule, XHRBackend } from '@angular/http';
+
+import { AppComponent } from './app.component';
+import { MediaItemComponent } from './media-item.component';
+import { MediaItemListComponent } from './media-item-list.component';
+import { FavoriteDirective } from './favorite.directive';
+import { CategoryListPipe } from './category-list.pipe';
+import { MediaItemFormComponent } from './media-item-form.component';
+import { MediaItemService } from './media-item.service';
+import { lookupListToken, lookupLists } from './providers';
+// new
 import { MockXHRBackend } from './mock-xhr-backend';
 
 @NgModule({
@@ -12538,10 +12564,18 @@ import { MockXHRBackend } from './mock-xhr-backend';
     ReactiveFormsModule,
     HttpModule
   ],
-  declarations: [ ... ],
+  declarations: [
+    AppComponent,
+    MediaItemComponent,
+    MediaItemListComponent,
+    FavoriteDirective,
+    CategoryListPipe,
+    MediaItemFormComponent
+  ],
   providers: [
     MediaItemService,
     { provide: lookupListToken, useValue: lookupLists },
+    // new
     { provide: XHRBackend, useClass: MockXHRBackend }
   ],
   bootstrap: [
@@ -12551,17 +12585,33 @@ import { MockXHRBackend } from './mock-xhr-backend';
 export class AppModule {}
 #+END_EXAMPLE
 
+https://github.com/coursefiles/angular2-essential-training/blob/06_03b/app/mock-xhr-backend.ts
+mock-xhr-backend.ts
+
+***** get <<<ng:http:get>>>
+http.get() returns an Observable<Response>
+Observable.map() is one of RxJS operators needed to be imported
+
+RxJS is a 3rd party library implements async Observable pattern.
+
+https://github.com/coursefiles/angular2-essential-training/tree/06_04b/app
+
+It uses the paths defined in ng:mock back end
+
 media-item.service.ts
 #+BEGIN_EXAMPLE
+// new
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
 
+// This custom service class needs dependency injection, so it needs a decorator Injectable
 @Injectable()
 export class MediaItemService {
   constructor(private http: Http) {}
 
   get() {
+    // new
     return this.http.get('mediaitems')
       .map(response => {
         return response.json().mediaItems;
@@ -12597,7 +12647,9 @@ getMediaItems(medium) {
 }
 #+END_EXAMPLE
 
-***** URLSearchParams
+***** get with URLSearchParams
+https://github.com/coursefiles/angular2-essential-training/tree/06_05b/app
+
 media-item.service.ts
 #+BEGIN_EXAMPLE
 import { Injectable } from '@angular/core';
@@ -12627,6 +12679,181 @@ export class MediaItemService {
   mediaItems = [ {}, ... ];
 }
 #+END_EXAMPLE
+
+media-item-list.component.ts
+#+BEGIN_EXAMPLE
+ngOnInit() {
+    this.getMediaItems(this.medium);
+}
+getMediaItems(medium) {
+    this.medium = medium;
+    this.mediaItemService.get(medium)
+      .subscribe(mediaItems => {
+        this.mediaItems = mediaItems;
+      });
+}
+#+END_EXAMPLE
+
+***** post, put, delete
+https://github.com/coursefiles/angular2-essential-training/tree/07_01b/app
+
+media-item.service.ts
+#+BEGIN_EXAMPLE
+import { Injectable } from '@angular/core';
+import { Http, URLSearchParams } from '@angular/http';
+import 'rxjs/add/operator/map';
+
+@Injectable()
+export class MediaItemService {
+  constructor(private http: Http) {}
+
+  get(medium) {
+    let searchParams = new URLSearchParams();
+    searchParams.append('medium', medium);
+    return this.http.get('mediaitems', { search: searchParams })
+      .map(response => {
+        return response.json().mediaItems;
+      });
+  }
+  
+  add(mediaItem) {
+    // new
+    return this.http.post('mediaitems', mediaItem)
+      .map(response => {});
+  }
+  
+  delete(mediaItem) {
+    // new
+    return this.http.delete(`mediaitems/${mediaItem.id}`)
+      .map(response => {});
+  }
+}
+#+END_EXAMPLE
+
+media-item-form.component.ts
+#+BEGIN_EXAMPLE
+import { Component, Inject } from '@angular/core';
+import { Validators, FormBuilder } from '@angular/forms';
+
+import { MediaItemService } from './media-item.service';
+import { lookupListToken } from './providers';
+
+@Component({
+  selector: 'mw-media-item-form',
+  templateUrl: 'app/media-item-form.component.html',
+  styleUrls: ['app/media-item-form.component.css']
+})
+export class MediaItemFormComponent {
+  form;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private mediaItemService: MediaItemService,
+    @Inject(lookupListToken) public lookupLists) {}
+
+  ngOnInit() {
+    this.form = this.formBuilder.group({
+      medium: this.formBuilder.control('Movies'),
+      name: this.formBuilder.control('', Validators.compose([
+        Validators.required,
+        Validators.pattern('[\\w\\-\\s\\/]+')
+      ])),
+      category: this.formBuilder.control(''),
+      year: this.formBuilder.control('', this.yearValidator),
+    });
+  }
+
+  yearValidator(control) {
+    if (control.value.trim().length === 0) {
+      return null;
+    }
+    let year = parseInt(control.value);
+    let minYear = 1800;
+    let maxYear = 2500;
+    if (year >= minYear && year <= maxYear) {
+      return null;
+    } else {
+      return {
+        'year': {
+          min: minYear,
+          max: maxYear
+        }
+      };
+    }
+  }
+
+  onSubmit(mediaItem) {
+    // new
+    this.mediaItemService.add(mediaItem)
+      .subscribe();
+  }
+}
+#+END_EXAMPLE
+
+media-item-list.component.ts
+#+BEGIN_EXAMPLE
+import { Component } from '@angular/core';
+
+import { MediaItemService } from './media-item.service';
+
+@Component({
+  selector: 'mw-media-item-list',
+  templateUrl: 'app/media-item-list.component.html',
+  styleUrls: ['app/media-item-list.component.css']
+})
+export class MediaItemListComponent {
+  medium = '';
+  mediaItems = [];
+
+  constructor(private mediaItemService: MediaItemService) {}
+
+  ngOnInit() {
+    this.getMediaItems(this.medium);
+  }
+
+  onMediaItemDelete(mediaItem) {
+    // new
+    this.mediaItemService.delete(mediaItem)
+      .subscribe(() => {
+        this.getMediaItems(this.medium);
+      });
+  }
+
+  getMediaItems(medium) {
+    this.medium = medium;
+    this.mediaItemService.get(medium)
+      .subscribe(mediaItems => {
+        this.mediaItems = mediaItems;
+      });
+  }
+}
+#+END_EXAMPLE
+
+*** Route
+**** base href and config routes
+https://github.com/coursefiles/angular2-essential-training/tree/07_02b/app
+
+index.html
+#+BEGIN_EXAMPLE
+<base href="/">
+#+END_EXAMPLE
+
+app.routing.ts
+#+BEGIN_EXAMPLE
+import { Routes } from '@angular/router';
+
+import { MediaItemFormComponent } from './media-item-form.component';
+import { MediaItemListComponent } from './media-item-list.component';
+
+const appRoutes: Routes = [
+  { path: 'add', component: MediaItemFormComponent },
+  { path: ':medium', component: MediaItemListComponent },
+  { path: '', pathMatch: 'full', redirectTo: 'all' }
+];
+#+END_EXAMPLE
+
+**** Register routing in the app module
+https://github.com/coursefiles/angular2-essential-training/tree/07_03b/app
 
 *** API
 Search https://angular.io/api
