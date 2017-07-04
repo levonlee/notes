@@ -942,7 +942,11 @@ View, named foobar. Style: unformatted. Row styel: Fields. Display: Page.
 - views-view-fields.tpl.php
 
 ** Form
+*** Form API
+https://api.drupal.org/api/drupal/developer%21topics%21forms_api_reference.html/7.x
+
 *** Form alter hooks
+Called in order, from general to specific
 =hook_form_alter= 
 =hook_form_BASE_FORM_ID_alter=, Refer BASE_FORM_ID to =$form_state['build_info']['base_form_id']=
 =hook_form_FORM_ID_alter=. Refer FORM_ID to =$form['#id']=
@@ -952,6 +956,10 @@ Set default value and hide a form from display or filling
 // Entity reference form field
 $form['field_dealer'][LANGUAGE_NONE][0]['target_id']['#default_value'] = 123;
 $form['field_dealer'][LANGUAGE_NONE][0]['#printed'] = TRUE;
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+hook_form_FORM_ID_alter(&$form, &$form_state, $form_id)
 #+END_EXAMPLE
 
 *** Form IDs of system forms
@@ -1018,6 +1026,84 @@ function lili_user_has_delete_right($uid = 0, array $roles) {
 	}
 }
 #+END_EXAMPLE
+
+*** form_load_include
+Include files whenever a form is loaded.
+form_load_include(&$form_state, $type, $module, $name = NULL) {}
+// if name is omitted, then $module.$type is loaded.
+// return The filepath of the loaded include file, or FALSE if the include file was
+// not found or has been loaded already.
+// file is always included even the form is cached.
+form_load_include($form_state, 'inc', 'tnt', 'tnt.pages');
+
+*** Form Ajax
+https://www.drupal.org/docs/7/api/javascript-api/ajax-forms-in-drupal-7
+
+https://api.drupal.org/api/drupal/developer%21topics%21forms_api_reference.html/7.x#ajax
+
+#+BEGIN_EXAMPLE
+/**
+ * Ajax-enabled select element causes replacement of a set of checkboxes
+ * based on the selection.
+ */
+function ajax_example_autocheckboxes($form, &$form_state) {
+
+  $default = !empty($form_state['values']['howmany_select']) ? $form_state['values']['howmany_select'] : 1;
+
+  $form['howmany_select'] = array(
+    '#title' => t('How many checkboxes do you want?'),
+    '#type' => 'select',
+    '#options' => array(1 => 1, 2 => 2, 3 => 3, 4 => 4),
+    '#default_value' => $default,
+    '#ajax' => array(
+      'callback' => 'ajax_example_autocheckboxes_callback',
+      'wrapper' => 'checkboxes-div',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+
+  );
+
+
+  $form['checkboxes_fieldset'] = array(
+    '#title' => t("Generated Checkboxes"),
+    // The prefix/suffix provide the div that we're replacing, named by
+    // #ajax['wrapper'] above.
+    '#prefix' => '<div id="checkboxes-div">',
+    '#suffix' => '</div>',
+    '#type' => 'fieldset',
+    '#description' => t('This is where we get automatically generated checkboxes'),
+  );
+
+  $num_checkboxes = !empty($form_state['values']['howmany_select']) ? $form_state['values']['howmany_select'] : 1;
+  for ($i = 1; $i <= $num_checkboxes; $i++) {
+    $form['checkboxes_fieldset']["checkbox$i"] = array(
+      '#type' => 'checkbox',
+      '#title' => "Checkbox $i",
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+/**
+ * Callback element needs only select the portion of the form to be updated.
+ * Since #ajax['callback'] return can be HTML or a renderable array (or an
+ * array of commands), we can just return a piece of the form.
+ */
+function ajax_example_autocheckboxes_callback($form, $form_state) {
+  return $form['checkboxes_fieldset'];
+}
+#+END_EXAMPLE
+
+#ajax['event'] :: which jquery event triggers AJAX. Don't need to set. Default is fine.
+#ajax['callback'] :: return HTML or renderable array to replace #ajax['wrapper']. By the time it gets called, the form is recalculated/rebuilt in PHP and you can return $form['the_field_name'] directly. The callback function can't change any state or form settings. Do it in form builder functions: hook_form, hook_form_alter. Callback function is called after all the form processing fuctions.
+#ajax['wrapper'] :: HTML container.
 
 ** Action
 hook_info_action
@@ -20299,6 +20385,9 @@ I realize fart sometimes cannot find files.. Use Linux
 User Accounts > Your Account > Manage your credentials
 Or Credential Manager
 Instead of Web Credentials, choose Windows Credentials
+
+OneNote needs a password to sync this notebook. Delete any records MicrosoftOffice15_Data:Live:cid=some set of numbers
+Which have no username and restart OneNote.
 
 *** MAC address
 ~getmac /v /fo list~
