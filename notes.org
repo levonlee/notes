@@ -8281,6 +8281,12 @@ getJSON('story.json')
   .then(function() { /* ... */ });
 #+END_EXAMPLE
 
+** Observable <<<js:observable>>>
+A promise is a push mechanism that calls some code after the promise has been resolved or rejected with a single value.
+An observable is like a promise, but it calls some code every time a new value becomes available, and can emit many values over time.
+
+
+
 ** Worker
 IE 10 and above supports worker.
 Workers are independent and separated from parent window. 
@@ -12685,7 +12691,7 @@ https://github.com/coursefiles/angular2-essential-training/blob/06_03b/app/mock-
 mock-xhr-backend.ts
 
 ***** get <<<ng:http:get>>>
-http.get() returns an Observable<Response>
+http.get() returns an Observable<Response>. Refer to js:observable
 Observable.map() is one of RxJS operators needed to be imported
 
 RxJS is a 3rd party library implements async Observable pattern.
@@ -12926,8 +12932,8 @@ export class MediaItemListComponent {
 #+END_EXAMPLE
 
 *** Route
-**** base href and config routes
-https://github.com/coursefiles/angular2-essential-training/tree/07_02b/app
+**** base href, config and register routes
+https://github.com/coursefiles/angular2-essential-training/tree/07_03b/app
 
 index.html
 #+BEGIN_EXAMPLE
@@ -12936,7 +12942,7 @@ index.html
 
 app.routing.ts
 #+BEGIN_EXAMPLE
-import { Routes } from '@angular/router';
+import { Routes, RouterModule } from '@angular/router';
 
 import { MediaItemFormComponent } from './media-item-form.component';
 import { MediaItemListComponent } from './media-item-list.component';
@@ -12946,10 +12952,193 @@ const appRoutes: Routes = [
   { path: ':medium', component: MediaItemListComponent },
   { path: '', pathMatch: 'full', redirectTo: 'all' }
 ];
+
+export const routing = RouterModule.forRoot(appRoutes);
 #+END_EXAMPLE
 
-**** Register routing in the app module
-https://github.com/coursefiles/angular2-essential-training/tree/07_03b/app
+app.module.ts
+#+BEGIN_EXAMPLE
+import { routing } from './app.routing';
+
+@NgModule({
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    HttpModule,
+    routing
+  ],
+  ...
+})
+#+END_EXAMPLE
+
+**** router-outlet
+app.component.html
+Before, both form and list are loaded.
+#+BEGIN_EXAMPLE
+<section>
+  <header>
+    <h1>Media Watch List</h1>
+    <p class="description">Keeping track of the media I want to watch.</p>
+  </header>
+  <mw-media-item-form></mw-media-item-form>
+  <mw-media-item-list></mw-media-item-list>
+</section>
+#+END_EXAMPLE
+
+After, form or list is loaded based on the current router state. The loaded component is the next sibling of the router-outlet HTML element.
+#+BEGIN_EXAMPLE
+<section>
+  <header>
+    <h1>Media Watch List</h1>
+    <p class="description">Keeping track of the media I want to watch.</p>
+  </header>
+  <router-outlet></router-outlet>
+</section>
+#+END_EXAMPLE
+
+https://angular.io/api/router/RouterOutlet
+
+**** routerLink
+app.component.html
+#+BEGIN_EXAMPLE
+<nav>
+  <a routerLink="/">
+    <img src="media/04.png" class="icon" />
+  </a>
+  <a routerLink="/Movies">
+    <img src="media/03.png" class="icon" />
+  </a>
+  <a routerLink="/Series">
+    <img src="media/02.png" class="icon" />
+  </a>
+</nav>
+#+END_EXAMPLE
+
+**** read route in component
+media-item-list.component.ts
+#+BEGIN_EXAMPLE
+import { Component } from '@angular/core';
+import { ActivatedRoute } from '@angular/router'; // new
+
+import { MediaItemService } from './media-item.service';
+
+@Component({
+  selector: 'mw-media-item-list',
+  templateUrl: 'app/media-item-list.component.html',
+  styleUrls: ['app/media-item-list.component.css']
+})
+export class MediaItemListComponent {
+  medium = '';
+  mediaItems = [];
+  paramsSubscription; // new
+
+  constructor(
+    private mediaItemService: MediaItemService,
+    private activatedRoute: ActivatedRoute // new
+  ) {}
+
+  ngOnInit() {
+    // before 
+    // this.getMediaItems(this.medium);
+
+    // now
+    this.paramsSubscription = this.activatedRoute.params
+      .subscribe(params => {
+        let medium = params['medium'];
+        if(medium.toLowerCase() === 'all') {
+          medium = '';
+        }
+        this.getMediaItems(medium);
+      });
+  }
+  
+  // new
+  ngOnDestroy() {
+    this.paramsSubscription.unsubscribe();
+  }
+
+  onMediaItemDelete(mediaItem) {
+    this.mediaItemService.delete(mediaItem)
+      .subscribe(() => {
+        this.getMediaItems(this.medium);
+      });
+  }
+
+  getMediaItems(medium) {
+    this.medium = medium;
+    this.mediaItemService.get(medium)
+      .subscribe(mediaItems => {
+        this.mediaItems = mediaItems;
+      });
+  }
+}
+#+END_EXAMPLE
+
+**** Navigate in code
+Form submit and navigate in code
+media-item-form.component.ts
+#+BEGIN_EXAMPLE
+import { Component, Inject } from '@angular/core';
+import { Validators, FormBuilder } from '@angular/forms';
+import { Router } from '@angular/router'; // new
+
+import { MediaItemService } from './media-item.service';
+import { lookupListToken } from './providers';
+
+@Component({
+  selector: 'mw-media-item-form',
+  templateUrl: 'app/media-item-form.component.html',
+  styleUrls: ['app/media-item-form.component.css']
+})
+export class MediaItemFormComponent {
+  form;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private mediaItemService: MediaItemService,
+    @Inject(lookupListToken) public lookupLists,
+    private router: Router) {}
+
+  ngOnInit() {
+    this.form = this.formBuilder.group({
+      medium: this.formBuilder.control('Movies'),
+      name: this.formBuilder.control('', Validators.compose([
+        Validators.required,
+        Validators.pattern('[\\w\\-\\s\\/]+')
+      ])),
+      category: this.formBuilder.control(''),
+      year: this.formBuilder.control('', this.yearValidator),
+    });
+  }
+
+  yearValidator(control) {
+    if (control.value.trim().length === 0) {
+      return null;
+    }
+    let year = parseInt(control.value);
+    let minYear = 1800;
+    let maxYear = 2500;
+    if (year >= minYear && year <= maxYear) {
+      return null;
+    } else {
+      return {
+        'year': {
+          min: minYear,
+          max: maxYear
+        }
+      };
+    }
+  }
+
+  onSubmit(mediaItem) {
+    this.mediaItemService.add(mediaItem)
+      .subscribe(() => {
+        // new
+        this.router.navigate(['/', mediaItem.medium]);
+      });
+  }
+}
+#+END_EXAMPLE
 
 *** API
 Search https://angular.io/api
