@@ -338,6 +338,43 @@ Then search ~<? ~ with a space and replace them with ~<?php~
 ** Update Core
 pantheon:drupal:core
 
+https://www.drupal.org/docs/7/updating-your-drupal-site/how-to-update-drupal-core
+Summary
+- Make backup
+- Download and Extract
+- Set website on maintenance mode
+- Delete all files and folders except /sites. 
+- If you make changes else where, reapply them after copy and paste.
+ - Such as /profile folder if Drupal installation is built from a distribution
+- Some updates don't include settings.php. If it includes, replace the old one in /sites/default/ with the new one and apply your previous changes
+- If you have modified files such as .htaccess or robots.txt, reapply those changes
+- replace favicon.ico
+- Login as user 1 and run update.php
+- Disable maintenance mode
+
+*** 7.x
+Legend
+- If no changes for .htaccess, web.config, robots.txt nor settings.php, then there's no description. Otherwise, it will indicate which ones to update.
+7.50 :: d7:ts:module is missing
+[[https://www.drupal.org/project/drupal/releases/7.53][7.53]] :: update jQuery to 1.7-1.11.0
+[[https://www.drupal.org/project/drupal/releases/7.54][7.54]]
+[[https://www.drupal.org/project/drupal/releases/7.55][7.55]]
+[[https://www.drupal.org/project/drupal/releases/7.56][7.56]] :: security
+
+*** Troubleshoot
+**** The following module is missing from the file system
+<<<d7:ts:module is missing>>>
+https://www.drupal.org/node/2487215
+
+My situation is that a module is installed but removed from file system without disabling and uninstalling it
+Because the module code no longer exists, so I need to manually remove traces in db.
+D7
+#+BEGIN_EXAMPLE
+drush sql-query "DELETE from system where name = 'old_module1' AND type = 'module';"
+#+END_EXAMPLE
+
+If module name is not found in db, most likely the code incorrectly refers to a non-existing module such as drupal_get_path('module', 'deletedmodname'). Do backtrace to identify.
+
 ** Update Module
 - Read module README first
 - Usually just remove the module directory and put the new one in
@@ -357,6 +394,11 @@ If your module comes with other modules or it's meant to be used exclusively wit
 More than 4 modules that depend on each other can make a package.
 
 ~files[] = includes/context.inc~ This .inc file should be class or interface. To include .inc with plain functions
+
+#+BEGIN_EXAMPLE
+dependencies[] = entity
+dependencies[] = views (>=3.12)
+#+END_EXAMPLE
 
 **** Refactor, include .inc files
 #+BEGIN_EXAMPLE
@@ -507,11 +549,53 @@ A simple use case would be defining a custom “Article teaser" field that is sh
 
 It works on AJAX node edit/new form
 
+*** Entity API
+[[https://www.drupal.org/project/entity][entity]] : sub module entity_token <<<d7:entity>>>
+
+*** Chaos Tools - ctools
+[[https://www.drupal.org/project/ctools][ctools]] :: no dependencies <<<d7:ctools>>>
+From [[https://www.drupal.org/project/ctools/releases/7.x-1.10][7.x-1.10]] to [[https://www.drupal.org/project/ctools/releases/7.x-1.12][7.x-1.12]]
+
+*** Panels
+[[https://www.drupal.org/project/panels][panels]] :: drag-and-drop layout for admin
+Requires: d7:ctools
+Has a lot of security updates
+From 7.x-3.6 to 7.x-3.9
+
+*** File Entity
+[[https://www.drupal.org/project/file_entity][file_entity]] <<<d7:file entity>>>
+Requires: d7:ctools, core: Field, Field SQL storage, File
+
+From 7.x-2.0-beta2 to 7.x-2.3
+
+*** Views
+[[https://www.drupal.org/project/views][Views]], sub module Views UI <<<d7:views>>>
+Requires d7:ctools
+From [[https://www.drupal.org/project/views/releases/7.x-3.12][7.x-3.12]] to [[https://www.drupal.org/project/views/releases/7.x-3.15][7.x-3.16]]
+
+*** Better Exposed Filters
+[[https://www.drupal.org/project/better_exposed_filters][better_exposed_filters]]
+Requires d7:ctools d7:views
+Group under Views
+[[https://www.drupal.org/project/better_exposed_filters/releases/7.x-3.3][7.x-3.3]], [[https://www.drupal.org/project/better_exposed_filters/releases/7.x-3.4][7.x-3.4]]
+
+*** Views Bulk Operations
+[[https://www.drupal.org/project/views_bulk_operations][views_bulk_operations]] : sub module actions_permissions <<<d7:views_bulk_operations>>>
+Requires: d7:entity d7:views
+
+*** Administration views
+[[https://www.drupal.org/project/admin_views][admin_views]]: d7:views d7:views_bulk_operations
+
+*** Media
+[[https://www.drupal.org/project/media][media]]
+Requires: d7:file entity, d7:ctools, d7:views
+
+From 7.x-2.0-beta1 to 7.x-2.9
+
 ** Debug
 watchdog('LOG_TYPE','message');
 watchdog('LOG_TYPE', $message, array(), WATCHDOG_ERROR);
-array() is to t() $message. Don't forget to put empty array otherwise you will have to manually
-clean up the watchdog table!
+array() is to t() $message. Don't forget to put empty array otherwise you will have to manually clean up the watchdog table!
 
 If error or warning messages are printed using drupal_set_message, 
 modify the `drupal_set_message` function so that it prints debug_backtrace
@@ -778,6 +862,7 @@ drush user-login yourusername
 =drush dis devel= Disable a module
 =drush pmu devel= Uninstall a module
 =drush up <modulename> -y= Update a module. Don't need to visit update.php
+=drush up --no-core= Update all modules.
 
 #+BEGIN_EXAMPLE
 drush up <modulename> = drush upc <modulename> + drush updb
@@ -1189,6 +1274,9 @@ WHERE FROM_UNIXTIME(n.created)
 GROUP BY n.title, b.body_value,na.title, u.alias, n.created
 ORDER BY n.created DESC
 #+END_EXAMPLE
+
+**** system
+d7:ts:module is missing
 
 ** Query
 Use db_query as much as possible. db_select is slow because it calls alter hooks.
@@ -17950,6 +18038,17 @@ github:gh-pages
 *** Abort merge
 git merge --abort
 
+** Rebase
+feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
+#+BEGIN_EXAMPLE
+git checkout feature
+git rebase master
+git checkout master
+git merge feature
+#+END_EXAMPLE
+
+The result is feature and master are exactly the same: C2 -> C3 -> C4
+
 ** Fork
 Sync a fork with original repo
 Add a remote: upstream
@@ -18301,6 +18400,7 @@ https://cdn.rawgit.com/ + RawGit Path
 ** Deploy
 #+BEGIN_EXAMPLE
 terminus site deploy --site=<s> --env=<e> --sync-content --cc
+terminus env:deploy my-site.test --sync-content --note="Deploy core and contrib updates" --cc
 #+END_EXAMPLE
 
 ** pantheon.yml
@@ -18313,7 +18413,11 @@ Drush version: 5, 7, or 8. 8 is recommended
 <<<Pantheon Drush>>>
 #+BEGIN_EXAMPLE
 terminus drush "<drush command> <drush args>" --site=<> --env=<> 
+terminus remote:drush site-name.env-name drush-command
+terminus remote:drush site-name.env-name -- ws --tail
 #+END_EXAMPLE
+
+If a module is updated via Pantheon terminus drush up, original module folder will be saved to /drush-backups/pantheon/date/modules/modulename
 
 <<<pantheon:drupal:alias>>>
 Download Pantheon Aliases
@@ -18337,12 +18441,43 @@ terminus wp 'option get home' --site=<site> --env=dev
 
 ** Drupal Core Update
 <<<pantheon:drupal:core>>>
+*** UI
 Create a multidev of the current Live, then hit the upgrade button.
 Check everything. If it's ok, do this on Dev, then pull code from Dev to Test, and then Live
 Done!
 
 To update other multidevs, after Dev master is updated, pull code from Dev to multidev and run update.php
 Check Status from Pantheon.
+
+*** Manual pull from upstream to resolve conflicts
+Check on Pantheon UI to find out the Upstream : Settings > About site
+e.g. https://github.com/pantheon-systems/drops-7
+
+#+BEGIN_EXAMPLE
+# add a remote
+git remote add pantheon-drops-7 git://github.com/pantheon-systems/drops-7.git
+git fetch pantheon-drops-7
+git rebase pantheon-drops-7/master
+# resolve conflicts
+git add .
+git rebase --continue
+git push origin branchname(e.g. master)
+#+END_EXAMPLE
+
+I found that the UI pull from upstream can resolve the following error while in manual pull
+So use UI pull whenever possible.
+#+BEGIN_EXAMPLE
+First, rewinding head to replay your work on top of it...
+Applying: Adding project shell
+fatal: mode change for modules/pantheon/pantheon_api/pantheon_api.install, which is not in current HEAD
+error: could not build fake ancestor
+Patch failed at 0001 Adding project shell
+The copy of the patch that failed is found in: .git/rebase-apply/patch
+
+When you have resolved this problem, run "git rebase --continue".
+If you prefer to skip this patch, run "git rebase --skip" instead.
+To check out the original branch and stop rebasing, run "git rebase --abort".
+#+END_EXAMPLE
 
 ** Determine Environment
 <<<pantheon:environment>>>
