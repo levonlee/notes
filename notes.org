@@ -355,7 +355,8 @@ Summary
 *** 7.x
 Legend
 - If no changes for .htaccess, web.config, robots.txt nor settings.php, then there's no description. Otherwise, it will indicate which ones to update.
-7.50 :: d7:ts:module is missing
+7.50 :: d7:ts:module is missing robots.txt, default.settings.php, add .editorconfig file
+7.51, 7.52
 [[https://www.drupal.org/project/drupal/releases/7.53][7.53]] :: update jQuery to 1.7-1.11.0
 [[https://www.drupal.org/project/drupal/releases/7.54][7.54]]
 [[https://www.drupal.org/project/drupal/releases/7.55][7.55]]
@@ -540,7 +541,8 @@ You can switch to a different based on some rules!
 If you are not clear about some rules, you can just search in code. e.g. search 'system:query_string'
 
 *** [[https://www.drupal.org/project/conditional_fields][Conditional Fields]]
-<<<d7:module:conditional fields>>>
+[[https://www.drupal.org/project/conditional_fields][conditional_fields]] :: <<<d7:module:conditional fields>>>
+
 Conditional Fields for Drupal 7 is an user interface to the new [[https://api.drupal.org/api/drupal/includes%2521common.inc/function/drupal_process_states/7.x][States API]], plus the ability to modify fields appearance and behavior on certain conditions when viewing content.
 
 Conditional Fields allows you to manage sets of dependencies between fields. When a field is “dependent”, it will only be available for editing and displayed if the state of the “dependee” field matches the right condition.
@@ -549,12 +551,34 @@ A simple use case would be defining a custom “Article teaser" field that is sh
 
 It works on AJAX node edit/new form
 
+*** Search404
+[[https://www.drupal.org/project/search404][search404]] :: requires core search
+
+If a user goes to http://example.com/does/not/exist, this module will do a search for "does not exist" and shows the result of the search instead of the 404 page. 
+
+*** Google Analytics
+[[https://www.drupal.org/project/google_analytics][google_analytics]] :: requires nothing
+
+*** Elysia Cron
+[[https://www.drupal.org/project/elysia_cron][elysia_cron]] :: Requires nothing.
+Don't put a cron key in Elysia otherwise the cron run in drush will not work.
+
+*** SMTP Authentication Support
+[[https://www.drupal.org/project/smtp][smtp]] :: requires nothing
+
 *** Entity API
 [[https://www.drupal.org/project/entity][entity]] : sub module entity_token <<<d7:entity>>>
+Requires nothing
 
 *** Chaos Tools - ctools
 [[https://www.drupal.org/project/ctools][ctools]] :: no dependencies <<<d7:ctools>>>
 From [[https://www.drupal.org/project/ctools/releases/7.x-1.10][7.x-1.10]] to [[https://www.drupal.org/project/ctools/releases/7.x-1.12][7.x-1.12]]
+
+*** Webform
+<<<d7:webform>>> [[https://www.drupal.org/project/webform][webform]] :: 7.x-3.x requires nothing. 7.x-4.x requries d7:ctools d7:views 3
+
+*** Webform Validation
+[[https://www.drupal.org/project/webform_validation][webform_validation]] :: requires d7:webform
 
 *** Panels
 [[https://www.drupal.org/project/panels][panels]] :: drag-and-drop layout for admin
@@ -857,16 +881,22 @@ pantheon:drupal:alias
 drush user-login yourusername
 
 *** Module
+=drush vset maintenance_mode 1= set to maintenance mode
+=drush vset maintenance_mode 0= remove maintenance mode
 =drush dl devel= Download a module
 =drush en devel= Enable a module
 =drush dis devel= Disable a module
 =drush pmu devel= Uninstall a module
 =drush up <modulename> -y= Update a module. Don't need to visit update.php
 =drush up --no-core= Update all modules.
+=drush pml= List all modules that are enabled, disabled, not installed, installed.
+=drush pml --pipe= list modules in code name
 
 #+BEGIN_EXAMPLE
 drush up <modulename> = drush upc <modulename> + drush updb
 #+END_EXAMPLE
+
+Remove incorrectly removed modules in db d7:ts:module is missing
 
 *** Detect if it's drush
 #+BEGIN_EXAMPLE
@@ -18646,6 +18676,18 @@ git merge feature
 
 The result is feature and master are exactly the same: C2 -> C3 -> C4
 
+** Show merge commit
+After merge or rebase happened, a merge commit is created. 
+git status gives :: C0 > C1 > merge commit abc
+
+See what this merge commit abc consists of. Take a look at the git status of abc, you will find 
+Merge: C1 xyz
+
+Show file names only :: git diff --name-only C1..abc
+Show commits in a merge commit :: git log C1..abc
+Show file names in each commit in a merge commit :: git show --name-only C1..abc
+Show changes of a file that is caused by the merge commit :: git diff C1..abc -- path/to/file
+
 ** Fork
 Sync a fork with original repo
 Add a remote: upstream
@@ -19075,6 +19117,12 @@ When you have resolved this problem, run "git rebase --continue".
 If you prefer to skip this patch, run "git rebase --skip" instead.
 To check out the original branch and stop rebasing, run "git rebase --abort".
 #+END_EXAMPLE
+
+** Drupal Cron
+Pantheon run cron in this way. It is generally within 5 to 10 minutes of half past each hour: 4:30pm, 5:30pm, 6:30pm, etc.
+=drush pantheon_cron 3600=
+
+This bootstraps the site and invokes drupal_cron_run.
 
 ** Determine Environment
 <<<pantheon:environment>>>
