@@ -418,6 +418,9 @@ function ctools_include($file, $module = 'ctools', $dir = 'includes') {
 // ctools_include('macro', 'mymodule', 'includes');
 #+END_EXAMPLE
 
+**** lili.api.php
+Just include this in module root directory and all hooks will be defined
+
 *** Feed Import
 
 #+BEGIN_EXAMPLE
@@ -540,6 +543,20 @@ Uncheck /Prefetch URL aliases during sitemap generation/
 You can switch to a different based on some rules!
 If you are not clear about some rules, you can just search in code. e.g. search 'system:query_string'
 
+*** Devel
+devel requires nothing
+sub modules :: devel_generate, devel_node_access (off)
+
+http://ratatosk.net/drupal/tutorials/debugging-drupal.html
+
+dpm($input, $name = null) use drupal_set_message and Krumo to dispaly in 'message' area
+kpr($input, $return = FALSE, $name=NULL) uses Krumo print in page header not 'message' area.
+dvm($input, $name = NULL) use Krumo to var_dump in 'message' area. Good for copy and paste
+dpr($input, $return = FALSE, $name = NULL) print in page header not in 'message' area.
+
+*** Module Filter
+[[https://www.drupal.org/project/module_filter][module_filter]] :: requires nothing
+
 *** Block Group
 [[https://www.drupal.org/project/blockgroup][blockgroup]] :: requires core Block <<<d7:blockgroup>>>
 This module extends the standard drupal block system with block groups. Each block group provides a new block as well as a corresponding region. Child blocks can be moved into any group region. The position and the settings of the parent block are propagated to its children. Also block groups are nestable.
@@ -604,8 +621,88 @@ From 7.x-2.0-beta2 to 7.x-2.3
 
 *** Search API
 search_api requires entity
+sub modules :: search_api_views (views), search_api_facetapi (facetapi)
+https://www.drupal.org/docs/7/modules/search-api
+https://www.youtube.com/watch?v=hcAM0HrEk4c
 
-[[https://www.drupal.org/docs/7/modules/search-api/getting-started/search-forms-and-results-pages/search-api-views/creating-a][Create a search view]]
+**** Glossary
+For example, a "Node index" for indexing nodes. It would contain the fields that should be indexed and their types, the data alterations and processors to use and some other settings. The details of how to index data are independent of these settings, and server-specific. Index settings are independent of the inner mechanics of the search server.
+
+A server is a concrete way to index and search data. It could, e.g., represent a certain database, a connection to an external search server, etc.
+How exactly the data is stored is determined by the server's service class, but is not important for the overall functionality of the Search API.
+A server can have an arbitrary number of indexes attached to it, whose search data is then indexed on that server.
+
+When creating a server, a service class has to be chosen
+
+**** Index
+If an index is updated, reindex all content.
+***** Select index fields
+Indexed for those fields for which you want to store data on the search server. These fields can then be searched, used for filtering and sorting, and maybe also used for other purposes.
+
+Note that only fields of type Fulltext can be used in fulltext searches. So when you want to find individual words contained in this field, not just the whole field value, use this type. Other types can be used, e.g., for filtering and sorting.
+
+Fields indexed with type "Fulltext" and multi-valued fields (marked with 1) cannot be used for sorting. The boost is used to give additional weight to certain fields, e.g. titles or tags. It only takes effect for fulltext fields.
+
+***** Add Related Fields
+Items of a certain type might be connected to, or might reference, other kinds of data. For instance, content will always have an author, could also contain references to taxonomy terms, etc. With the Add related fields form at the bottom of the page you can add the fields of those related items to the list, so they can be indexed, too. Use this if you want, e.g., to index the user roles of a node's author. You can also add nested related fields, e.g., the node's author's profile's image's file type.
+
+***** Customize Workflow (Filters Tab)
+https://www.drupal.org/node/1254452
+
+****** Data alterations
+Bundle filter
+Lets you to prevent entities from being indexed based on their bundle (content type for nodes, vocabulary for taxonomy terms, etc.). This way you can, for instance, create an index solely for news.
+Language control
+Allows you to control the language of items stored in the index. This is done by providing two different functionalities:
+Normally, the content of the Item language property (which is automatically added by the Search API for all indexed items) is determined by the item's language property, if available, and otherwise set to undefined. With this data alteration, you can select any other property as an alternative source for the item language, which will then be used instead. Note that the selected field has to contain a single valid ISO language code for each item for this to work, though.
+You can then also select the languages items in this index may have. Items with any other language (defined by the Item language property) will be rejected during indexing.
+
+Node access
+Adds node access checks to searches on this index. This is done by adding a new field, Node access information that stores the relevant access data. When the Node access information, author, and Status fields are present and indexed, appropriate filters will be automatically added to all searches so that they only return results that the current user is allowed to view. Some searches (e.g., search views) provide the option to override this behaviour on a per-search basis, though. Check the corresponding module's documentation for details.
+In any case, you have to keep in mind that these access checks are solely based on the indexed data. If a node is edited in a way that changes its accessibility (e.g., by being unpublished), this change will only take effect once the node is indexed in its latest state. This means that there is potentially a gap between changing the node and the update of the access checks on search results, meaning that—depending on the data displayed for search results—users could in that time see data that should not be accessible to them. If you need to avoid that, use the index's Index items immediately option.
+
+Also note that access on the individual fields is never checked — don't include them in the display, if they contain sensitive data. Refer to hook_node_access_records() and hook_node_grants() on implementing node access checks. The node access data stored in the index is based on the node_access table which is affected by hook_node_access_records().
+The data alteration is only available for node indexes.
+
+Search views do not filter based on node access by default. There is a simple option in the query settings called "Additional access checks on result entities" that will do an access check after the actual query is run, but this option should only be used as a last result. Search results counts and facets will not reflect the further restriction applied by views.
+
+The proper way to do the node access checks in views is to add a filter on Indexed Node: Node access information. This can be complicated because it is important to know what values the field will hold, and this information can not be output through fields in the view itself. One must look to the data stored in the search server. In the case of Solr, this can be accomplished by examining the sm_search_api_access_node field in the schema browser. A sample value for one configuration of taxonomy access control was node_access_taxonomy_access_role:2. One could make a views search display for authenticated users for example that included all results, and a display for anonymous users that checked that the Node Access Information value is not equal to node_access_taxonomy_access_role:2 in the example above. A brief example can be found in this Drupal Answers answer
+
+URL field
+Adds a field containing the URL at which the entity can be displayed. For some item types, like nodes, this URL is already available, but this data alteration can be used to also add them for other types.
+
+Aggregated fields
+Offers the ability to add additional fields to the entity, containing the data from one or more other fields. Use this, e.g., to have a single field containing all data that should be searchable, or to make the text from a string field, like a taxonomy term, also fulltext-searchable.
+The type of aggregation can be selected from a set of values: you can, e.g., collect the text data of all contained fields, or add them up, count their values, etc.
+
+Complete entity view
+Adds a field containing the whole HTML content of the entity as it is viewed on the site. The view mode used can be selected. This allows you to index exactly „what the user sees“, which is often what is expected, but might differ from just indexing the contents of other fields.
+Note that this might not work for items of all types. All core entity types except files are supported, though.
+
+Index hierarchy
+Allows you to index hierarchical fields along with all their parents. Most importantly, this can be used to index taxonomy term references along with all parent terms. This way, when an item, e.g., has the term New York, it will also be matched when filtering for USA or North America.
+
+****** Processors
+A processor can do preprocess data that is being indexed, preprocess search queries, and postprocess search results
+Refer to service class documentation of the server.
+
+Ignore case
+Makes searches on selected fields case-insensitive. Some servers might do this automatically, for all others this should probably always be activated, at least for fulltext fields.
+
+HTML filter
+Strips HTML tags from selected fields and decodes HTML entities. If you are indexing HTML content (like node bodies) and the search server doesn't handle HTML on its own, this should be activated to avoid indexing HTML tags, as well as to give e.g. terms appearing in a heading a higher boost.
+
+Tokenizer
+This processor allows you to specify how indexed fulltext content is split into seperate tokens – which characters are ignored and which treated as white-space that seperates words.
+
+Stopwords
+Enables the admin to specify a stopwords file, the words contained in which will be filtered out of the text data indexed. This can be used to exclude too common words from indexing, for servers not supporting this natively.
+
+Highlighting
+Adds highlighting of search terms to the search results.
+
+**** [[https://www.drupal.org/docs/7/modules/search-api/getting-started/search-forms-and-results-pages/search-api-views/creating-a][Create a search view]] or a search page
+https://www.drupal.org/docs/7/modules/search-api/getting-started/search-forms-and-results-pages/search-api-views
 Admin > Structure > Views > Add new view (admin/structure/views/add)
 
 View name: Search
@@ -668,6 +765,34 @@ $handler->display->display_options['fields']['field_FOO']['table'] = 'TABLE'
 If TABLE is 'views', don't change.
 If TABLE is 'node' (or your base table) or 'field_data_FOO', change to 'search_api_index_<name_of_your_index>'
 
+**** Configure Facet
+A block is created for each facet configured. Even though it's set to appear on all pages, it won't display for a search view or a search page.
+
+**** Developer Documentation
+https://www.drupal.org/docs/7/modules/search-api/developer-documentation
+***** Execute a search in code
+#+BEGIN_EXAMPLE
+// Replace "node_index" with you index's machine name.
+$query = search_api_query('node_index');
+
+$query->condition('type', 'product', '=');
+$filter = $query->createFilter('OR');
+$filter->condition('field_category', 'book', '=');
+$filter->condition('field_category', 'magazine', '=');
+$query->filter($filter); 
+
+$data=$query->execute();
+$results=$data['results'];
+print_r($results);
+#+END_EXAMPLE
+
+**** API of Search API
+http://www.drupalcontrib.org/api/drupal/contributions%21search_api%21search_api.api.php/7
+path-to-mod/search_api/search_api.api.php
+
+Search search_api*.api.php
+search_api_solr.api.php
+
 *** Search API Solr
 [[https://www.drupal.org/project/search_api_solr][search_api_solr]] requires search_api and core Search
 It's more powerful than module apachesolr
@@ -681,8 +806,26 @@ https://opensolr.com/blog/2011/09/how-to-use-with-drupal
 Lucene version :: search lucene in solr-conf/4.x, e.g. solr.luceneMatchVersion=LUCENE_40
 <luceneMatchVersion>${solr.luceneMatchVersion:LUCENE_40}</luceneMatchVersion>
 
+In bundle (e.g. node type abc), setup Manage Display for the Search Index.
+
+**** Debug
+In OpenSolr UI for an index (tnt_dev), there's a button Browse Data.
+https://path-to-aws.opensolr.com/solr/tnt_dev/select?q=*:*&wt=json&indent=true&start=0&rows=5
+
+Insert a key-value pair to search
+https://path-to-aws.opensolr.com/solr/tnt_dev/select?q=im_field_industry:337&wt=json&indent=true&start=0&rows=5
+
+Retrieve the request made to Solr and response from Solr
+In =search_api_solr/includes/solr_connection.inc= add a line below ~protected function makeHttpRequest~
+
+#+BEGIN_EXAMPLE
+drupal_set_message(check_plain($url)); // <-- Add this line to retrieve request
+$result = drupal_http_request($url, $options);
+drupal_set_message(check_plain($result->data)); // <-- Add this line to retrieve response
+#+END_EXAMPLE
+
 *** Views
-[[https://www.drupal.org/project/views][Views]], sub module Views UI <<<d7:views>>>
+[[https://www.drupal.org/project/views][Views]], sub module Views UI <<<d7:views>>> d7:viewsapi
 Requires d7:ctools
 From [[https://www.drupal.org/project/views/releases/7.x-3.12][7.x-3.12]] to [[https://www.drupal.org/project/views/releases/7.x-3.15][7.x-3.16]]
 
@@ -696,7 +839,7 @@ hook_views_pre_render
 hook_views_post_render
 
 *** Better Exposed Filters
-[[https://www.drupal.org/project/better_exposed_filters][better_exposed_filters]]
+[[https://www.drupal.org/project/better_exposed_filters][better_exposed_filters]] d7:better exposed filters
 Requires d7:ctools d7:views
 Group under Views
 [[https://www.drupal.org/project/better_exposed_filters/releases/7.x-3.3][7.x-3.3]], [[https://www.drupal.org/project/better_exposed_filters/releases/7.x-3.4][7.x-3.4]]
@@ -1235,8 +1378,8 @@ drush_print_r($array);
 
 *** Pantheon Drush
 
-** Views
-*** UI 
+** Views <<<d7:viewsapi>>>
+*** UI
 **** Contextual filter with term name not term id
 Choose =Content: Has taxonomy term ID=
 Check =Specify validation criteria=
@@ -1257,6 +1400,22 @@ current_display :: 'page'
 **** Methods
 $v->get_items_per_page(); // Return nothong in hook_views_pre_build
 $v->set_items_per_page(10); // hook_views_pre_build
+
+*** hook_views_api
+#+BEGIN_EXAMPLE
+Views 3.x
+/**
+ * Implements hook_views_api().
+ */
+function my_module_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+#+END_EXAMPLE
+
+All Views hook code should be placed in my_module.views.inc which is located in module root directory if 'path' is not defined.
+All hooks' callbacks (Class definition) such as plugin and cutom filter callback should be included in my_module.info as separate files
 
 *** hook_views_pre_build
 *** hook_views_pre_render
@@ -1306,16 +1465,95 @@ function lili_views_pre_render(&$view) {
 }
 #+END_EXAMPLE
 
-*** Better Exposed Filters
-better_exposed_filters. Require views and ctools
+*** Custom View Filter hook_views_data_alter
+http://precessionmedia.com/blog/how-create-custom-filter-handler-views
+
+#+BEGIN_EXAMPLE
+/**
+ * Implements hook_views_data_alter().
+ */
+function my_module_views_data_alter(&$data) {
+  $data['node']['title_count']['title'] = 'Title word count';
+  $data['node']['title_count']['help'] = 'Count the number of words in titles.';
+  $data['node']['title_count']['filter']['handler'] = 'my_module_handler_filter_field_count';
+}
+#+END_EXAMPLE
+
+my_module.info
+#+BEGIN_EXAMPLE
+files[] = my_module_handler_filter_field_count.inc
+#+END_EXAMPLE
+
+my_module_handler_filter_field_count.inc
+#+BEGIN_EXAMPLE
+class my_module_handler_filter_field_count extends views_handler_filter_numeric {
+  function operators() {
+    $operators = parent::operators();
+    // We won't be using regex in our example
+    unset($operators['regular_expression']);
+ 
+    return $operators;
+  }
+ 
+  // Helper function to return a sql expression
+  // for counting words in a field.
+  function field_count() {
+    // Set the real field to the title of the node
+    $this->real_field = 'title';
+ 
+    $field = "$this->table_alias.$this->real_field";
+    return "LENGTH($field)-LENGTH(REPLACE($field,' ',''))+1";
+  }
+ 
+  // Override the op_between function
+  // adding our field count function as parameter
+  function op_between($field) {
+    $field_count = $this->field_count();
+ 
+    $min = $this->value['min'];
+    $max = $this->value['max'];
+ 
+    if ($this->operator == 'between') {
+      $this->query->add_where_expression($this->options['group'], "$field_count BETWEEN $min AND $max");
+    }
+    else {
+      $this->query->add_where_expression($this->options['group'], "($field_count <= $min) OR ($field_count >= $max)");
+    }
+  }
+ 
+  // Override the op_simple function
+  // adding our field count function as parameter
+  function op_simple($field) {
+    $field_count = $this->field_count();
+ 
+    $value = $this->value['value'];
+ 
+    $this->query->add_where_expression($this->options['group'], "$field_count $this->operator $value");
+  }
+}
+#+END_EXAMPLE
+
+In Views UI, add a filter with name "Title word count" with descript "Count the number of words in titles."
+
+*** Better Exposed Filters Module
+<<<d7:better exposed filters>>>
 If you want checkboxes or radio buttons instead of the Views Basic Exposed Form which is dropdown select.
 
 Change BEF form hook_form_views_exposed_form_alter
 #+BEGIN_EXAMPLE
 function lili_form_views_exposed_form_alter(&$form, &$form_state) {
+  if (isset($form['#id'])) {
+    switch ($form['#id']) {
+      case 'views-exposed-form-your-form-name':
+        // ...
+        break;
+    }
+  }
 }
 #+END_EXAMPLE
+The form id is views-exposed-form-view--machine-name-display-machine-name
 
+*** Custom Views Plugin hook_views_plugins
 *** Embed View
 views_embed_view('view_name','display_id');
 $arg1 = $arg2 = '123';
@@ -21581,7 +21819,11 @@ mod (division remainder) :: 5 mod 2
 or :: price=9.8 or price=9.7
 and
 
-*** Google Tag Assistant Chrome Extension
+*** Extension - Google Tag Assistant
+*** Extension - [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
+Fire GET and POST requests.
+For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
+
 *** Flush DNS Caches in Chrome
 Even ipconfig /flushdns is run, Chrome still caches the DNS
 Navigate to ~chrome://net-internals/#dns~ and press "Clear host cache" button
