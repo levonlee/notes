@@ -540,6 +540,13 @@ Uncheck /Prefetch URL aliases during sitemap generation/
 You can switch to a different based on some rules!
 If you are not clear about some rules, you can just search in code. e.g. search 'system:query_string'
 
+*** Block Group
+[[https://www.drupal.org/project/blockgroup][blockgroup]] :: requires core Block <<<d7:blockgroup>>>
+This module extends the standard drupal block system with block groups. Each block group provides a new block as well as a corresponding region. Child blocks can be moved into any group region. The position and the settings of the parent block are propagated to its children. Also block groups are nestable.
+
+*** MultiBlock
+<<<d7:multiblock>>> [[https://www.drupal.org/project/multiblock][multiblock]] :: Built-in in D8. Requires core Block
+
 *** [[https://www.drupal.org/project/conditional_fields][Conditional Fields]]
 [[https://www.drupal.org/project/conditional_fields][conditional_fields]] :: <<<d7:module:conditional fields>>>
 
@@ -577,6 +584,9 @@ From [[https://www.drupal.org/project/ctools/releases/7.x-1.10][7.x-1.10]] to [[
 *** Webform
 <<<d7:webform>>> [[https://www.drupal.org/project/webform][webform]] :: 7.x-3.x requires nothing. 7.x-4.x requries d7:ctools d7:views 3
 
+hook_form_alter, hook_form_webform_client_form_alter, (> 7.x-4.4 use hook_form_webform_client_form_NID_alter) 
+Modify in $form['submitted']
+
 *** Webform Validation
 [[https://www.drupal.org/project/webform_validation][webform_validation]] :: requires d7:webform
 
@@ -592,10 +602,98 @@ Requires: d7:ctools, core: Field, Field SQL storage, File
 
 From 7.x-2.0-beta2 to 7.x-2.3
 
+*** Search API
+search_api requires entity
+
+[[https://www.drupal.org/docs/7/modules/search-api/getting-started/search-forms-and-results-pages/search-api-views/creating-a][Create a search view]]
+Admin > Structure > Views > Add new view (admin/structure/views/add)
+
+View name: Search
+Show: [the name of the Search index] (in the case of fuzzysearch the default is "Default fuzzysearch index")
+Create a page [tick]
+Page title: Search
+Path: search
+Display format: Unformatted list of Rendered entity
+Items to display: 10, use pager
+Continue & edit (the new View)
+
+Format: Show: Rendered entity | Settings
+
+View mode: Search results
+Filter criteria
+
+Fulltext search: Expose this filter, Required, Remember the last selection, Use as: search keys
+Sort criteria
+
+Search: Relevance, descending (if you don’t have an order with fuzzysearch you will get a PDO exception)
+Page settings
+
+Access: Permission: view published content
+Advanced
+
+No results behaviour: Global: Text area “No results matched your search.”
+Exposed form
+
+Exposed form in block: Yes (This option will only show up on Page displays.)
+Exposed form style settings: Submit button text: Search
+Save the View. Add the exposed form block to a region.
+Note that you will only receive results for partial matches that are longer than the minimum word length specified in the Index configuration.
+
+Views based on Search API use as base table a search_api_index_* table, not the usual node table or other ones supported by Views. That is why the Search views are selected at the views' creation moment, and it can not be changed later.
+
+**** [[https://www.drupal.org/docs/7/modules/search-api/getting-started/search-forms-and-results-pages/search-api-views/convert-an][Convert an existing view to search api]]
+If the views to be converted use the row plugins Content (node), Fields or Rendered entity, the conversion may be easier (see further). If not (the selected row plugins were others), then unfortunately the views should be fully recreated manually: create a brand new search_api view and recreate all the elements from your old view by hand.
+
+For views using Content, Fields or Rendered entity row plugins:
+Export the view to be converted. Save this code as a backup.
+Modify the view, removing all the Filters (contextual or not), all the Sort criteria and all the Relationships. Write down the removed items: you will need to recreate them manually using the indexed versions.
+When the view is clean of filters and sort criteria, export it again.
+In the export code, the 5th line will contain the
+$view->base_table
+variable. Change it to the search api index to be used in the view (the index must have been created before):
+
+$view->base_table = 'search_api_index_<name_of_your_index>';
+Maybe fiddle around with fields (see below).
+Go to admin/structure/views/import and import the modified code. Do not forget to select the option Replace an existing view if one exists with the same name. (NOTE: currently there is a bug in Ctools 1.x that makes the Import option not to be shown for administrator users different than uid=1, here is the issue: #870938: Add new permission for controlling imports ).
+Add the previously removed Filters, Sort criteria and Relationships, selecting them from the now available indexed versions.
+Process will be easy if the views to be converted used the Rendered entity row plugin, since no changes will be required for the row contents.
+
+Field fiddling
+
+For fields there is no general recipe, although these hints should catch most cases:
+
+Care that your index contains all needed fields or create them when import errors bug you.
+Look for lines that look like this:
+$handler->display->display_options['fields']['field_FOO']['table'] = 'TABLE'
+If TABLE is 'views', don't change.
+If TABLE is 'node' (or your base table) or 'field_data_FOO', change to 'search_api_index_<name_of_your_index>'
+
+*** Search API Solr
+[[https://www.drupal.org/project/search_api_solr][search_api_solr]] requires search_api and core Search
+It's more powerful than module apachesolr
+
+Setup an account and create an index on Opensolr.com
+
+On OpenSolr UI, upload the 4.x or corresponding Solr version based on OpenSolr version.
+path-to-mod/search_api_solr/solr-conf/4.x
+https://opensolr.com/blog/2011/09/how-to-use-with-drupal
+
+Lucene version :: search lucene in solr-conf/4.x, e.g. solr.luceneMatchVersion=LUCENE_40
+<luceneMatchVersion>${solr.luceneMatchVersion:LUCENE_40}</luceneMatchVersion>
+
 *** Views
 [[https://www.drupal.org/project/views][Views]], sub module Views UI <<<d7:views>>>
 Requires d7:ctools
 From [[https://www.drupal.org/project/views/releases/7.x-3.12][7.x-3.12]] to [[https://www.drupal.org/project/views/releases/7.x-3.15][7.x-3.16]]
+
+**** Views API Order
+hook_views_pre_view
+hook_views_pre_build
+hook_views_post_build
+hook_views_pre_execute
+hook_views_post_execute
+hook_views_pre_render
+hook_views_post_render
 
 *** Better Exposed Filters
 [[https://www.drupal.org/project/better_exposed_filters][better_exposed_filters]]
@@ -818,6 +916,183 @@ hook_preprocess_page(&$variables) {
 $form['#theme'][] = 'lili_form';
 If no custom theme function, d7:hook_theme d7:theme_*, is defined, then the default template file is
 /sites/all/themes/your_theme/templates/form/lili_form.tpl.php
+
+*** Region
+Region can hold multiple blocks. If module d7:blockgroup is installed, a block group is a region but it can be included in other region or block group.
+Define a region in mytheme.info e.g. ~regions[header] = Header~
+Render a region in template files ~print render($page['header'])~
+
+*** Block
+**** [[https://api.drupal.org/api/drupal/modules%2521block%2521block.api.php/function/hook_block_info/7.x][hook_block_info]]
+#+BEGIN_EXAMPLE
+function hook_block_info() {
+  $blocks             = array();
+  $blocks['my_block'] = array(
+    'info'  => t( 'My Custom Block' ),
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+
+  return $blocks;
+}
+#+END_EXAMPLE
+
+Use `DRUPAL_NO_CACHE` for development, then `DRUPAL_CACHE_GLOBAL`. Default is `DRUPAL_CACHE_PER_ROLE`
+
+If `Cache Block` is disabled and unchecked in Drupal Performance setting, all blocks will not be cached. Refer to d7:cache block
+
+The delta `my_block` only needs to be unique within the module. HTML ID is `block-MODULENAME-DELTA`
+
+Now the block can be seen in the default theme Blocks admin page /admin/structure/block
+Place the new block to a region. To assign a block to multiple regions, install d7:MultiBlock module:
+Then go /admin/structure/block/instances to create another instance of the newly created block type.
+
+**** [[https://api.drupal.org/api/drupal/modules%2521block%2521block.api.php/function/hook_block_view/7.x][hook_block_view]]
+#+BEGIN_EXAMPLE
+<?php
+/**
+ * Implements hook_block_view().
+ */
+function lili_block_view( $delta = '' ) {
+  $block = array();
+
+  switch ( $delta ) {
+    case 'my_block' :
+      $block['content'] = _lili_my_block_view();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Custom function to assemble renderable array for block content.
+ * Returns a renderable array with the block content.
+ * @return
+ *   returns a renderable array of block content.
+ */
+function _lili_my_block_view() {
+  $block = array();
+
+  // Capture the image file path and form into HTML with attributes
+  $image_file = file_load( variable_get( 'block_image_fid', '' ) );
+  $image_path = '';
+
+  if ( isset( $image_file->uri ) ) {
+    $image_path = $image_file->uri;
+  }
+
+  $image = theme_image( array(
+    'path'       => ( $image_path ),
+    'alt'        => t( 'Image description here.' ),
+    'title'      => t( 'This is our block image.' ),
+    'attributes' => array( 'class' => 'class_name' ),
+  ) );
+
+  // Capture WYSIWYG text from the variable
+  $text = variable_get( 'text_variable', '' );
+
+  // Block output in HTML with div wrapper
+  $block = array(
+    'image'   => array(
+      '#prefix' => '',
+      '#type'   => 'markup',
+      '#markup' => $image,
+    ),
+    'message' => array(
+      '#type'   => 'markup',
+      '#markup' => $text,
+      '#suffix' => '',
+    ),
+  );
+  
+  // directly return a form as block
+  // return drupal_get_form('lili_another_form');
+  // or return ['some thing' => drupal_get_form('lili_another_form')];
+  return $block;
+}
+#+END_EXAMPLE
+
+**** [[https://api.drupal.org/api/drupal/modules%2521block%2521block.api.php/function/hook_block_view_alter/7.x][hook_block_view_alter]]
+#+BEGIN_EXAMPLE
+function lili_block_view_alter( &$data, $block ) {
+  if ( $block->module == 'block' && $block->delta == '3' ) {
+    // $data['subject']: title of the block
+
+    $data['content'] = '';
+  }
+}
+#+END_EXAMPLE
+
+**** Configurable Block: [[https://api.drupal.org/api/drupal/modules%2521block%2521block.api.php/function/hook_block_configure/7.x][hook_block_configure]], [[https://api.drupal.org/api/drupal/modules%2521block%2521block.api.php/function/hook_block_save/7.x][hook_block_save]]
+hook_block_configure
+#+BEGIN_EXAMPLE
+/**
+ * Implements hook_block_configure().
+ */
+function lili_block_configure( $delta = '' ) {
+  $form = array();
+
+  switch ( $delta ) {
+    case 'my_block' :
+      // Text field form element
+      $form['text_body'] = array(
+        '#type'          => 'text_format',
+        '#title'         => t( 'Enter your text here in WYSIWYG format' ),
+        '#default_value' => variable_get( 'text_variable', '' ),
+      );
+
+      // File selection form element
+      $form['file'] = array(
+        '#name'              => 'block_image',
+        '#type'              => 'managed_file',
+        '#title'             => t( 'Choose an Image File' ),
+        '#description'       => t( 'Select an Image for the custom block.  Only *.gif, *.png, *.jpg, and *.jpeg images allowed.' ),
+        '#default_value'     => variable_get( 'block_image_fid', '' ),
+        '#upload_location'   => 'public://block_image/',
+        '#upload_validators' => array(
+          'file_validate_extensions' => array( 'gif png jpg jpeg' ),
+        ),
+      );
+      break;
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function lili_block_save( $delta = '', $edit = array() ) {
+  switch ( $delta ) {
+    case 'my_block' :
+      // Saving the WYSIWYG text
+      variable_set( 'text_variable', $edit['text_body']['value'] );
+
+      // Saving the file, setting it to a permanent state, setting a FID variable
+      $file         = file_load( $edit['file'] );
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save( $file );
+      $block = block_load( 'lili', $delta );
+      file_usage_add( $file, 'lili', 'block', $block->bid );
+      variable_set( 'block_image_fid', $file->fid );
+      break;
+  }
+}
+#+END_EXAMPLE
+
+**** Block API Sequence
+hook_block_configure: Define a configuration form for a block.
+hook_block_info: Define all blocks provided by the module.
+hook_block_info_alter: Change block definition before saving to the database.
+hook_block_save: Save the configuration options from hook_block_configure().
+block_list
+  - _block_load_blocks
+    - hook_block_list_alter
+  - _block_render_blocks: render a set of blocks for one region. Check if it's cacheable, then get and set cache_block
+    - _block_get_cache_id
+    - hook_block_view: Return a rendered or renderable view of a block.
+    - hook_block_view_alter: Perform alterations to the content of a block.
+    - hook_block_view_MODULE_DELTA_alter: Perform alterations to a specific block.
 
 *** Custom Theme Function
 Module theme: =theme('modname_theme-name',$data)=
@@ -1668,6 +1943,9 @@ Use modal in CTools, you will need t:
 #+END_EXAMPLE
 
 ** User
+*** Get user fields
+global $user is not enough to get all fields. Use user_load($user->uid).
+
 *** user_access
 <<<d7:user_access>>>
 user_access($string, $account = NULL)
@@ -1859,7 +2137,19 @@ $_terms_with_all_fields = taxonomy_get_tree($_vocab->vid, $parent, $max_depth= N
 #+END_EXAMPLE
 
 ** Cache
-Same page request
+*** Setting
+Configuration > Peformance (/admin/config/development/performance)
+Always check `Cache pages for anonymous users`
+Check `Cache blocks` for logged-in users.
+Set 0 for `Minimum Cache Lifetime` (cache_lifetime)
+`cache_set()` with no $expire time will have cache_lifetime. Set $expire in cache_set to overide.
+When cache_lifetime is reached in Redis, cache key and value will be removed from Redis.
+Start with 15 mins and go up as you need for `Expiration of cached pages`
+Bandwidth Optimization: 
+- `Compress cached pages` if your server (Pantheon) already delivers content in gzip, then don't check it
+-  Always check `Aggregate and compress CSS files` and `Aggregate JavaScript files`
+
+*** Same page request
 #+BEGIN_EXAMPLE
 function lili_cache($field, $set = NULL) {
   $custom_cache = &drupal_static(__FUNCTION__);
@@ -1894,6 +2184,47 @@ function lili_cache($field, $set = NULL) {
 lili_cache('current_node',$node);
 // Get lili_cache('current_node');
 #+END_EXAMPLE
+
+*** Cache variables in cache table, and clear them
+#+BEGIN_EXAMPLE
+function my_module_function() {
+  $my_data = &drupal_static( __FUNCTION__ );
+  if ( ! isset( $my_data ) ) {
+    if ( $cache = cache_get( 'my_module_data' ) ) {
+      $my_data = $cache->data;
+    } else {
+      // Do your expensive calculations here, and populate $my_data
+      // with the correct stuff..
+      cache_set( 'my_module_data', $my_data, 'cache' );
+      // Set cache with an expiry time
+      // cache_set('my_module_data', $my_data, 'cache', time() + 360);
+    }
+  }
+  return $my_data;
+}
+#+END_EXAMPLE
+
+Clear one variable cache ~cache_clear_all('my_module_data', 'cache');~
+Clear all variables start with `my_module`: ~cache_clear_all('my_module', 'cache', TRUE);~
+
+*** Cache block <<<d7:cache block>>>
+If there're modules setup node_grants, variable block_cache in Performance will be FALSE and disabled. 
+You will see table cache_block is empty. In Pantheon, cache is in Redis
+Here's how to Enable caching for specific blocks only.
+In settings.php
+#+BEGIN_EXAMPLE
+$conf['block_cache_bypass_node_grants'] = "TRUE";
+$conf['block_cache'] = "TRUE";
+#+END_EXAMPLE
+
+Set all blocks to DRUPAL_NO_CACHE (_block_get_cache_id($block))
+Set the blocks to cache to have any one of
+- DRUPAL_CACHE_GLOBAL
+- DRUPAL_CACHE_PER_PAGE
+- DRUPAL_CACHE_PER_ROLE
+- DRUPAL_CACHE_PER_USER
+- DRUPAL_CACHE_CUSTOM (in this case you need to setup own caching in hook_block_view or hook_block_view_MODULE_DELTA)
+But not DRUPAL_NO_CACHE
 
 ** File
 Read local or remote file to an object of strings
