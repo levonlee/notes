@@ -1370,13 +1370,16 @@ function li_drush_command() {
     'description' => '...',
     'options' => [
       'feed-id' => ['description' => dt('Feed ID to import') ]
-    ],
+    ], // if there is no param, don't include 'options'
+    'examples' => [
+      'drush feeds-import-tnt --feed-id=123' => "Test example",
+    ]
   ];
   return $items;
 }
 
 function drush_li_feeds_import_tnt() {
-  //
+  $feed_id = drush_get_option('feed-id');
 }
 // drush feeds-import-tnt --feed-id=123
 #+END_EXAMPLE
@@ -1398,6 +1401,26 @@ drush_print_r($array);
 ** Node API <<<d7:api:node>>>
 https://api.drupal.org/api/drupal/modules%21node%21node.api.php/7.x
 https://api.drupal.org/api/drupal/modules%21node%21node.api.php/group/node_api_hooks/7.x
+
+[[https://www.drupal.org/node/49768][Node object]]
+
+Update a node
+#+BEGIN_EXAMPLE
+$node = node_load($nid);
+$node->fieldname['und'][0]['value'] = 'field value';
+node_save($node);
+#+END_EXAMPLE
+
+This doens't trigger hook_node_presave and other node hooks
+#+BEGIN_EXAMPLE
+$article_nodes = node_load_multiple(array(), array('type' => 'article'));
+foreach ($article_nodes as $article_node) {
+  $article_node->body[LANGUAGE_NONE][0]['value'] = 'body value';
+  field_attach_update('node', $article_node);
+}
+#+END_EXAMPLE
+
+Recommended: use d7:entity_metadata_wrapper to update to avoid putting language code
 
 ** Views <<<d7:viewsapi>>>
 *** UI
@@ -1852,11 +1875,13 @@ ORDER BY n.created DESC
 d7:ts:module is missing
 
 ** Query
-Use db_query as much as possible. db_select is slow because it calls alter hooks.
+Use [[https://www.drupal.org/docs/7/api/database-api/static-queries][db_query]] as much as possible. db_select is slow because it calls alter hooks.
 Both can only be looped once using foreach
 
 Use db_query or db_select to get all nids, load all nodes at once and then manipulate fields.
 
+db_query is meant for simple select query. [[https://www.drupal.org/node/310075][db_select]] is dynamic query
+*** db_select
 #+BEGIN_EXAMPLE
 $q = db_select( 'node', 'n' );
 $q->join( 'field_data_body', 'b', 'n.nid=b.entity_id AND b.delta=0' );
@@ -1925,6 +1950,71 @@ function lili_getFieldSafe( $node, $field ) {
 
   return $s;
 }
+#+END_EXAMPLE
+
+*** db_query
+https://www.drupal.org/docs/7/api/database-api/static-queries
+https://api.drupal.org/api/drupal/includes%21database%21database.inc/function/db_query/7.x
+
+#+BEGIN_EXAMPLE
+$query = db_query("SELECT nid, title FROM {node}");
+$records = $query->fetchAll(); // get all records into an indexed array of stdClass
+$records = $query->rowCount();
+foreach ($records as $record) {
+  // Do something.
+}
+
+// placeholders should not be escaped or quoted
+$result = db_query("SELECT nid, title FROM {node} WHERE created > :created", 
+array(
+  ':created' => REQUEST_TIME - 3600,
+));
+
+db_query("SELECT * FROM {node} WHERE nid IN (:nids)", array(':nids' => array(13, 42, 144)));
+
+// query options, use 'target' and 'fetch' only
+'target' => 'default', // or 'slave'
+'fetch' => PDO::FETCH_OBJ // or PDO::FETCH_ASSOC, PDO::FETCH_NUM, PDO::FETCH_BOTH or a string of a class name
+
+$sql = "SELECT name, quantity FROM goods WHERE vid = :vid";
+$result = db_query($sql, array(':vid' => $vid));
+if ($result) {
+  while ($row = $result->fetchAssoc()) {
+    // fetch next row as an associative array
+    // vs fetch next row as an object $result->fetchObject()
+    // Do something with:
+    // $row['name']
+    // $row['quantity']
+  }
+}
+
+// Get the first column result set as one single array
+$nids = $result->fetchCol();
+// Column number can be specified otherwise default to first column
+$nids = $result->fetchCol(2);
+
+// say first column is node id, then load all nodes
+$nodes = node_load_multiple( $nids );
+#+END_EXAMPLE
+
+Other fetch usage
+#+BEGIN_EXAMPLE
+// Fetch data from specific column from next row
+// Defaults to first column if not specified as argument
+$data = $result->fetchColumn(1); // Grabs the title from the next row
+
+// Retrieve all records as stdObjects into an associative array 
+// keyed by the field in the result specified. 
+// (in this example, the title of the node)
+$result->fetchAllAssoc('title');
+
+// Retrieve a 2-column result set as an associative array of field 1 => field 2.
+$result->fetchAllKeyed();
+// Also good to note that you can specify which two fields to use
+// by specifying the column numbers for each field
+$result->fetchAllKeyed(0,2); // would be nid => created
+$result->fetchAllKeyed(1,0); // would be title => nid
+
 #+END_EXAMPLE
 
 ** Entity
@@ -2046,7 +2136,7 @@ field_attach_presave('node', $node);
 field_attach_update('node', $node);
 #+END_EXAMPLE
 
-*** entity_metadata_wrapper
+*** entity_metadata_wrapper <<<d7:entity_metadata_wrapper>>>
 
 Get a field value of an entity (node). Add a wrapper first `$_wrapper=entity_metadata_wrapper('node',$node);`.
 $node can be a node/entity object or the node/entity id. Entity API module is needed.
@@ -2087,7 +2177,7 @@ $info = field_info_field('field_my_radio'); // on = New, off = Used
 $allowed_values = $info['settings']['allowed_values'];
 $label = $allowed_values[$v]; // on = New, off = Used
 
-// Delete a value
+// Delete a value, unset a field, taxonomy in selectlist is different
 $wrapper->field_foobar = NULL;
 
 // Save
@@ -2150,6 +2240,27 @@ Or in a multi value list `$v = $_wrapper->field_tax_1[0]->value(); echo $v->name
 
 Add a term or entity reference: `$_w->field_tax_1[] = 42; $_w->save();`
 Set as a whole `$_w->field_tax_1->set(array(42,43)); $_w->save();`
+
+Change a term for a single tax field $_w->field_tax_1->set(42); $_w->save();
+
+Unset a term for a single tax field unset($_w->field_tax_1)
+Unset a term for a multi tax field 
+#+BEGIN_EXAMPLE
+foreach($wrapper->field_foobar as $delta => $item)  {
+  if ($item->nid->value() == $my_id) {
+    unset($wrapper->field_foobar[$delta]);
+    $wrapper->save();
+    break;
+  }
+}
+#+END_EXAMPLE
+
+Set empty value for tax term field
+#+BEGIN_EXAMPLE
+$wrapper->field_example_multiple->set();
+$wrapper->field_example_multiple = array();
+$wrapper->field_example_multiple = NULL;
+#+END_EXAMPLE
 
 Loop
 #+BEGIN_EXAMPLE
@@ -2437,6 +2548,19 @@ function lili_cache($field, $set = NULL) {
       case "field_name":
         // complicated
         $custom_cache[$field] = '';
+        break;
+      case "truck_makes_array":
+        $_terms = lili_cache('truck_makes_obj');
+        $a = [];
+        foreach ($_terms as $k => $v) {
+          $a[$v->name] = (tid) $v->tid;
+        }
+        $custom_cache[$field] = $a;
+        break;
+      case "truck_makes_obj":
+        $vocab = taxonomy_vocabulary_machine_name_load('truck_makes');
+        $terms = taxonomy_get_tree($vocab->vid);
+        $custom_cache[$field] = (!empty($terms)) ? $terms : [];
         break;
     } 
   }
