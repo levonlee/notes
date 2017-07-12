@@ -1905,6 +1905,11 @@ $q->fields( 'n', array( 'nid', 'title', 'created' ) )
   ->range( $i_start, $i_length )
   ->groupBy( 'n.nid' )
   ->orderBy( 'created', 'DESC' );
+
+// debug a query
+print_r($query->__toString());
+print_r($query->arguments());
+
 $r = $q->execute();
 
 $nids = [ ];
@@ -2015,6 +2020,23 @@ $result->fetchAllKeyed();
 $result->fetchAllKeyed(0,2); // would be nid => created
 $result->fetchAllKeyed(1,0); // would be title => nid
 
+#+END_EXAMPLE
+
+*** db_delete
+Same syntax as db_select
+
+#+BEGIN_EXAMPLE
+$num_deleted = db_delete('node')
+  ->condition('nid', 5)
+  ->execute();
+#+END_EXAMPLE
+
+Clear cache is needed if field_data_field_xxx are deleted.
+Delete a required field for node (nid) <<<d7:db:delete required field>>>
+#+BEGIN_EXAMPLE
+$q = db_delete('field_data_field_trailer_make');
+$q->condition('entity_id', $node->nid);
+$r = $q->execute();
 #+END_EXAMPLE
 
 ** Entity
@@ -2243,6 +2265,7 @@ Set as a whole `$_w->field_tax_1->set(array(42,43)); $_w->save();`
 
 Change a term for a single tax field $_w->field_tax_1->set(42); $_w->save();
 
+A required field can't be unset. Refer to d7:db:delete required field
 Unset a term for a single tax field unset($_w->field_tax_1)
 Unset a term for a multi tax field 
 #+BEGIN_EXAMPLE
