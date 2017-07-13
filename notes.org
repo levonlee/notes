@@ -554,6 +554,9 @@ kpr($input, $return = FALSE, $name=NULL) uses Krumo print in page header not 'me
 dvm($input, $name = NULL) use Krumo to var_dump in 'message' area. Good for copy and paste
 dpr($input, $return = FALSE, $name = NULL) print in page header not in 'message' area.
 
+*** Variable
+[[https://www.drupal.org/project/variable][variable]] requires nothing <<<d7:m:variable>>>
+
 *** Module Filter
 [[https://www.drupal.org/project/module_filter][module_filter]] :: requires nothing
 
@@ -868,6 +871,9 @@ Requires: d7:entity d7:views
 Requires: d7:file entity, d7:ctools, d7:views
 
 From 7.x-2.0-beta1 to 7.x-2.9
+
+*** i18n
+[[https://www.drupal.org/project/i18n][i18n]] requires core locale and d7:m:variable
 
 ** Debug
 watchdog('LOG_TYPE','message');
@@ -1404,14 +1410,14 @@ https://api.drupal.org/api/drupal/modules%21node%21node.api.php/group/node_api_h
 
 [[https://www.drupal.org/node/49768][Node object]]
 
-Update a node
+*** Update a node
 #+BEGIN_EXAMPLE
 $node = node_load($nid);
 $node->fieldname['und'][0]['value'] = 'field value';
 node_save($node);
 #+END_EXAMPLE
 
-This doens't trigger hook_node_presave and other node hooks
+d7:field_attach_update doens't trigger hook_node_presave and other node hooks
 #+BEGIN_EXAMPLE
 $article_nodes = node_load_multiple(array(), array('type' => 'article'));
 foreach ($article_nodes as $article_node) {
@@ -1794,6 +1800,33 @@ function ajax_example_autocheckboxes_callback($form, $form_state) {
 #ajax['callback'] :: return HTML or renderable array to replace #ajax['wrapper']. By the time it gets called, the form is recalculated/rebuilt in PHP and you can return $form['the_field_name'] directly. The callback function can't change any state or form settings. Do it in form builder functions: hook_form, hook_form_alter. Callback function is called after all the form processing fuctions.
 #ajax['wrapper'] :: HTML container.
 
+*** Form field loaded with terms of a taxonomy fields
+<<<d7:form:taxonomy field>>>
+#+BEGIN_EXAMPLE
+$parts_makes = ['0' => t('Make')]; // First option
+$_terms = taxonomy_allowed_values(field_info_field('field_parts_make'));
+
+// [123] => term123_name, [345] => term345_name, ...
+
+if ($language->language == 'en') {
+  $parts_makes += $_terms;
+}
+else {
+  $parts_make_terms = $_terms;
+  foreach ($parts_make_terms as $tid => $name) {
+    $i18n_object = i18n_get_object('taxonomy_term', $tid);
+    if ($translated_term = $i18n_object->localize($language->language)) {
+      $parts_makes[$tid] = (!empty($translated_term->name)) ? $translated_term->name : $parts_make_terms[$tid];
+    }
+  }
+}
+
+$form['make'] = [
+  '#type' => 'select',
+  '#options' => $parts_makes,
+];
+#+END_EXAMPLE
+
 ** Action
 hook_info_action
 return ['action_name' => $an_action];
@@ -2125,7 +2158,7 @@ if (!empty($_r['node'])) {
 #+END_EXAMPLE
 
 *** Update a field of an entity only
-
+<<<d7:field_attach_update>>> Recommend d7:entity_metadata_wrapper
 node_save could invoke other hooks and hence cause errors in saving a field value
 #+BEGIN_EXAMPLE
 $node = node_load($nid);
@@ -2154,7 +2187,7 @@ field_attach_update('node', $node);
 
 May be better to call field_attach_presave which node_save does
 #+BEGIN_EXAMPLE
-field_attach_presave('node', $node);
+field_attach_presave('node', $node); // call hook_field_attach_presave
 field_attach_update('node', $node);
 #+END_EXAMPLE
 
@@ -2458,44 +2491,56 @@ function _lili_archive_by_newsletter_json($pub_id,$newsletter_name, $page = 1, $
 #+END_EXAMPLE
 
 ** Taxonomy
+*** Get taxonomy terms of a node, ready for display with language
 #+BEGIN_EXAMPLE
-// Get taxonomy terms of a node, ready for display with language
 $categories = field_get_items('node', $node, 'field_category');
-/* array(
+array(
 0 => array(
   'tid' => 17,
   'taxonomy_term' => obj
 ),
 ...
 )
-*/
+#+END_EXAMPLE
 
-
-// Get multiple terms
+*** Get multiple terms
+#+BEGIN_EXAMPLE
 $tids = array(1,2,3); // Default:array()
 $conditions = array(); // Default
 taxonomy_term_load_multiple($tids, $conditions);
-/* array(
+array(
 17 => obj(
   tid => '17',
   ...
 )
 ...
 )
-*/
+#+END_EXAMPLE
 
-// Get term by name
+*** Get term by name
+#+BEGIN_EXAMPLE
+$_limit_to_vocab = 'vocab_name'; // Default NULL.
+$term_is_parent = taxonomy_get_term_by_name('video', $_limit_to_vocab);
+#+END_EXAMPLE
+
+*** Get all children of a term
+Get a term that is parent
+#+BEGIN_EXAMPLE
 $_limit_to_vocab = 'vocab_name'; // Default NULL.
 $term_is_parent = taxonomy_get_term_by_name('video', $_limit_to_vocab);
 
 // Get the first item in array
 $term_is_parent = reset($term_is_parent);
-echo $term_is_parent->tid; // Term id
+
+echo $term_is_parent->tid; // parent term id
+
 // Get all children of a term
 $children = taxonomy_get_children($term-tid);
 $children_tids = array_keys($children);
+#+END_EXAMPLE
 
-// Get a vocabulary by name
+*** Get a vocabulary by name and all terms
+#+BEGIN_EXAMPLE
 $_vocab = taxonomy_vocabulary_machine_name_load('vocab_name');
 
 // Get all terms of a vocabulary without extra fields
@@ -2523,20 +2568,22 @@ $_terms_with_all_fields = entity_load('taxonomy_term', FALSE, array('vid' => $_v
 */
 
 // Or
+
 $parent = 0; // Default
 $max_depth = NULL; // Default
 $load_entities = TRUE; // Default:False
-$_terms_with_all_fields = taxonomy_get_tree($_vocab->vid, $parent, $max_depth= NULL, $load_entities);
-/* array(
+$_terms_with_all_fields = taxonomy_get_tree($_vocab->vid, $parent, $max_depth, $load_entities);
+array(
 0 => obj(
   tid => '17',
   ...
 )
 ...
 )
-*/
-
 #+END_EXAMPLE
+
+*** Get terms of a vocabulary ready for form
+d7:form:taxonomy field
 
 ** Cache
 *** Setting
@@ -4983,7 +5030,8 @@ Good for vertical and horizontal center a child element inside a container (pare
  /* align-items: flex-start | flex-end | center | baseline | stretch; */
  /* This is for aligning items on one line (default x axis) on cross axis (y axis) */
  /* relative to the same line. e.g. you have 3 lines of items and each line holds 3 items. 
-  * how do the 3 items align on the y axis on each line?
+  * 3 items on each line have different height
+  * how do the 3 items align on y axis on every line?
   * default is stretch
   */ 
 
@@ -4994,6 +5042,9 @@ Good for vertical and horizontal center a child element inside a container (pare
   * default is stretch
   * It only works when there are multiple lines and the container height is larger than total children height
   */
+
+  /* It's always to set width and height in container */
+  width: 100%;
 }
 
 .item {
@@ -5382,6 +5433,15 @@ Embedded CSS in SVG only affects the SVG not other elements in the global HTML i
  width:100%;
 }
 #+END_EXAMPLE
+
+*** Image inside a div
+Div's height is greater than img. add display:block in <img>
+#+BEGIN_EXAMPLE
+<div class="item">
+    <img src="http://placehold.it/230x20/?text=6" style="display:block">
+</div>
+#+END_EXAMPLE
+
 *** Transparent Image
 #+BEGIN_EXAMPLE
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
@@ -22327,6 +22387,16 @@ Use this as a query keyword #resolved or #unresolved
 ** Image
 *** Sample Image
 http://placehold.it/350x150
+
+http://via.placeholder.com/300x250/?text=hello+world
+
+http://via.placeholder.com/300/ffffff/000000/?text=hello+world
+
+Hex, first is background color and then text color
+
+http://via.placeholder.com/300/ffffff/?text=hello+world
+
+Auto text color
 
 *** Convert image to favicon (.ico)
 https://converticon.com/
