@@ -557,6 +557,9 @@ dpr($input, $return = FALSE, $name = NULL) print in page header not in 'message'
 *** Variable
 [[https://www.drupal.org/project/variable][variable]] requires nothing <<<d7:m:variable>>>
 
+*** Libraries
+requires nothing
+
 *** Module Filter
 [[https://www.drupal.org/project/module_filter][module_filter]] :: requires nothing
 
@@ -874,6 +877,55 @@ From 7.x-2.0-beta1 to 7.x-2.9
 
 *** i18n
 [[https://www.drupal.org/project/i18n][i18n]] requires core locale and d7:m:variable
+
+*** S3 File System s3fs
+requires module libraries, library =AWS SDK for PHP 2.x=, PHP 5.3.3+ with ~allow_url_fopen = On~ in =php.ini=
+
+#+BEGIN_EXAMPLE
+drush dl s3fs
+drush en s3fs
+# update.php is not necessary
+#+END_EXAMPLE
+
+Download library
+#+BEGIN_EXAMPLE
+# In Pantheon, 
+drush make --no-core code/sites/all/modules/s3fs/s3fs.make code
+
+# Or 
+drush make --no-core sites/all/modules/s3fs/s3fs.make
+#+END_EXAMPLE
+
+Check if library is downloaded =sites/all/libraries/awssdk2/aws-autoloader.php=
+
+Drupal setting :: /admin/config/media/s3fs/settings or in settings.php
+Set Cache-Control header to be ~public, max-age=604800~
+
+`no-store` - do no cache in browser.
+`no-cache` - browser has to check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
+`max-age` indicates how only to check renew cache.
+`public` indicates the file requested can be cached in all devices.
+`private` indicates the file requested can be cached in user's personal device (browser) but not public CDN.
+
+#+BEGIN_EXAMPLE
+no-store // do no cache in browser.
+no-cache // browser has to check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
+max-age // indicates how only to check renew cache.
+public // indicates the file requested can be cached in all devices.
+private // indicates the file requested can be cached in user's personal device (browser) but not public CDN.
+#+END_EXAMPLE
+
+settings.php
+#+BEGIN_EXAMPLE
+$conf['awssdk2_access_key'] = 'YOUR ACCESS KEY'; 
+$conf['awssdk2_secret_key'] = 'YOUR SECRET KEY'; 
+$conf['s3fs_root_folder'] = 'thenyourroot'; // bucketroot/thenyourroot/*
+$conf['s3fs_bucket'] = 'YOUR BUCKET NAME'; 
+$conf['s3fs_region'] = 'YOUR REGION'';
+#+END_EXAMPLE
+
+Go to =admin/config/media/file-system= and set the Default download method to Amazon Simple Storage Service
+Refer to aws:s3 about how to setup user with correct permission policy
 
 ** Debug
 watchdog('LOG_TYPE','message');
@@ -1903,9 +1955,25 @@ FROM node AS n
 WHERE FROM_UNIXTIME(n.created)
       BETWEEN '2014-01-01 00:00:00' AND '2014-12-31 23:59:59'
   AND n.type ='article'
-GROUP BY n.title, b.body_value,na.title, u.alias, n.created
+GROUP BY n.nid
 ORDER BY n.created DESC
 #+END_EXAMPLE
+
+**** Export File URI, file_managed
+<<<d7:db:file uri>>>
+#+BEGIN_EXAMPLE
+SELECT n.nid, n.title,
+ds_i_fm.uri AS splash_image -- e.g. public://abc.jpg
+FROM node AS n
+LEFT JOIN field_data_field_image ds_i ON ds_i.entity_id=n.nid AND ds_i.deleted=0
+LEFT JOIN file_managed ds_i_fm ON ds_i_fm.fid = ds_i.field_image_fid
+WHERE n.type = 'article'
+  AND n.nid = 123
+#+END_EXAMPLE
+
+**** file_usage
+fid
+id :: e.g. node id
 
 **** system
 d7:ts:module is missing
@@ -2785,6 +2853,7 @@ if (isset($images)) {
 }
 #+END_EXAMPLE
 
+*** Get File URI from db d7:db:file uri
 ** Basic Ajax
 #+BEGIN_EXAMPLE
 // Create a menu to receive ajax
@@ -20031,6 +20100,40 @@ Check php configuration php:config
 Simply create a screen session and run ~sudo yum update~ and 'y'
 Reboot the instance.
 
+** S3 <<<aws:s3>>>
+By default, the maximum number of buckets is 100. Creating bucket and enable logging in bucket doesn't cost anything. Create a user in IAM with access key and assign the following policy and assign the policy:
+
+First create a group policy with ListAllMyBuckets permission then add a new user to that group. 
+The user policy is Allow All for 2 resources =arn:aws:s3:::<bucket_name>= and =arn:aws:s3:::<bucket_name>/*=
+
+#+BEGIN_EXAMPLE
+{
+    "Effect": "Allow",
+    "Action": [
+        "s3:ListAllMyBuckets"
+    ],
+    "Resource": "arn:aws:s3:::*"
+},
+{
+    "Effect": "Allow",
+    "Action": [
+        "s3:*"
+    ],
+    "Resource": [
+        "arn:aws:s3:::<bucket_name>",
+        "arn:aws:s3:::<bucket_name>/*",
+    ]
+}
+#+END_EXAMPLE
+
+For the properties of the bucket, you can set a tag with key =application= and value is the website name.
+
+*** Storage Classes
+STANDARD: 
+STANDARD_IA (infrequent class): Retrieval fee. Real-time retrieval. Good for larger objects (>128kb).
+GLACIER: Retrieval fee. Retrieval time is hours.
+REDUCED_REDUNDANCY: less durability and availability. Best for storing thumbnail images.
+
 * Database
 ** Basics
 *** Modeling Optimization
@@ -20102,8 +20205,10 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 
 ** MySQL
 *** Version, Settings
-# In console
-SHOW VARIABLES LIKE "%version%";
+In console
+=SHOW VARIABLES LIKE "%version%";=
+
+To check if it's MariaDB, just =SELECT VERSION();=
 
 # Default charset is utf8, collation is utf8_general_ci
 # which is 3 bytes. utf8mb4 is 4 bytes
@@ -20138,7 +20243,7 @@ Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you
 Referred by d7:mysql:charset
 
 *** Data Types
-<<<MySQL Integer>>>
+**** <<<MySQL Integer>>>
 SIGNED :: contains negative, 0 and positive
 UNSIGNED :: contains 0 and positive
 - TINYINT
@@ -20147,7 +20252,7 @@ UNSIGNED :: contains 0 and positive
 - INT
 - BIGINT
 
-<<<MySQL Date and Time>>>
+**** <<<MySQL Date and Time>>>
 - TIME :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
 
 1 Year ago
@@ -20167,14 +20272,24 @@ DATE_FORMAT(FROM_UNIXTIME(intTime),'%Y-%m-%d %H:%i:%s') :: default date format
 UNIX_TIMESTAMP(NOW())
 #+END_EXAMPLE
 
-<<<MySQL String>>>
+**** <<<MySQL String>>>
 Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values.
 #+BEGIN_EXAMPLE
 CONCAT_WS(',', colA, colB, 'Column C Value')
 WHERE url_alias.source = CONCAT('node/', n.nid)
 #+END_EXAMPLE
 
-<<<MySQL Null>>>
+replace all occurances, case-sensitve. multibyte safe
+#+BEGIN_EXAMPLE
+SELECT REPLACE('www.mysql.com', 'w', 'Ww');
+#+END_EXAMPLE
+
+Use regex_replace to do more complicated find and replace. MariaDB driver on host is required.
+#+BEGIN_EXAMPLE
+SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3')
+#+END_EXAMPLE
+
+**** <<<MySQL Null>>>
 IFNULL(column_name, 0)
 WHERE column_name IS NOT NULL
 
