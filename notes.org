@@ -1851,6 +1851,9 @@ WHERE node_revision.nid = node AND node.type = 'article'
 nid* :: INT
 type :: string, e.g. article, 
 title
+created :: 
+sticky :: int, 0. 1 means to show on top of query result
+promote :: int, 0. 1 means to show on homepage
 
 **** field_data_body
 entity_type* :: string, e.g. node
@@ -1880,7 +1883,7 @@ source :: string, e.g. node/2, taxonomy/term/11
 alias :: string
 language :: string, e.g. und
 
-**** Raw Query
+**** Export Query
 #+BEGIN_EXAMPLE
 SELECT n.title,
   b.body_value,
@@ -20252,17 +20255,65 @@ AND EXISTS (
 #+END_EXAMPLE
 
 *** Concatenate values of a column across multiple rows about the same record
-
+mysqlfiddle
 #+BEGIN_EXAMPLE
-SELECT s.id, s.name, s.otherColumn, 
-GROUP_CONCAT(DISTINCT testScore.score ORDER BY testScore.testDate SEPARATOR ', ') AS student_scores
+SELECT s.id, s.firstname, s.lastname
+,GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
+,GROUP_CONCAT(c.course SEPARATOR ', ') AS courses
 FROM student s 
-     LEFT JOIN testScore ON testScore.sid = s.id
-ORDER BY s.name
-GROUP BY s.id, s.name, s.otherColumn
+     LEFT JOIN testScore ts ON ts.sid = s.id
+     LEFT JOIN s_course c ON c.sid = s.id
+GROUP BY s.id
+ORDER BY s.lastname
 #+END_EXAMPLE
 
 GROUP_CONCAT only concatenates non-null values. If all values are null, null will be returned.
+
+*** SQL Fiddle <<<mysqlfiddle>>>
+http://sqlfiddle.com/
+
+Schema
+#+BEGIN_EXAMPLE
+CREATE TABLE student (
+`id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
+`firstname` VARCHAR(20) NOT NULL,
+`lastname` VARCHAR(20) NOT NULL,
+`reg_date` TIMESTAMP
+);
+
+INSERT INTO student ( firstname, lastname, reg_date )
+VALUES 
+( 'first1', 'last1', current_timestamp),
+( 'first2', 'last2', current_timestamp),
+( 'first3', 'last3', current_timestamp)
+;
+
+CREATE TABLE testScore (
+`id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
+`sid` INT(6) UNSIGNED NOT NULL,
+`score` INT(3) UNSIGNED NOT NULL
+);
+
+INSERT INTO testScore ( sid, score )
+VALUES 
+( 1, 20 ),
+( 1, 30 ),
+( 2, 40 )
+;
+
+CREATE TABLE s_course (
+`id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
+`sid` INT(6) UNSIGNED NOT NULL,
+`course` VARCHAR(20)
+);
+
+INSERT INTO s_course ( sid, course )
+VALUES 
+( 1, 'Math'),
+( 1, 'English' ),
+( 2, 'PHP' )
+;
+#+END_EXAMPLE
 
 ** MSSQL
 *** Modify column values if exist (CASE WHEN)
