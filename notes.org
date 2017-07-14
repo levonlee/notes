@@ -20379,13 +20379,51 @@ AND EXISTS (
 )
 #+END_EXAMPLE
 
+*** UNION
+#+BEGIN_EXAMPLE
+select_statement_1
+UNION [ALL]
+select_statement_2
+UNION [ALL]
+select_statement_3
+...
+...
+#+END_EXAMPLE
+
+- In a UNION query, there are at least two SELECT statements.
+
+- The two SELECT statements must have the same number of columns and the the columns must have compatible data types.
+
+- The column headings in each of the SELECT statements do not have to have the same name. The column headings in the result of a UNION query are always taken from the first SELECT statement.
+
+- If you want to sort the result set of the UNION operation, you can only put an ORDER BY clause after the last SELECT statement. ORDER BY clause can't be specified in any other SELECT statements in the UNION query.
+
+- The column(s) used in ORDER BY clause can only be taken from the first SELECT statement.
+
+- If you don't specify an ORDER BY clause in the UNION query, the result set is always sorted by the first column.
+
+- If you use UNION ALL, the entire result set from the second SELECT statement is appended to the first SELECT statement. In this case, there could be duplicate records in the unioned result set.
+
+- If you only use UNION, MySQL removes duplicate rows from the final result set.
+
+#+BEGIN_EXAMPLE
+select s.id as id, score.score, course.course, null as certificate
+from student s
+  left join s_score score on score.sid = s.id
+  left join s_course course on score.sid = s.id
+union all
+select s.id as id, null, null, cert.certificate
+from student s
+  left join s_certificate cert on cert.sid = s.id
+order by id
+#+END_EXAMPLE
+
 *** Concatenate values of a column across multiple rows about the same record
 <<<mysql:concat columns>>> mysqlfiddle
 #+BEGIN_EXAMPLE
 SELECT s.id, s.firstname, s.lastname
 ,GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
-,GROUP_CONCAT(c.course SEPARATOR ', ') AS courses
-
+,GROUP_CONCAT(DISTINCT CONCAT(c.course, 0x1F, c.year) SEPARATOR 0x1E) AS courses
 FROM student s 
      LEFT JOIN testScore ts ON ts.sid = s.id
      LEFT JOIN s_course c ON c.sid = s.id
@@ -20394,10 +20432,18 @@ ORDER BY s.lastname
 #+END_EXAMPLE
 
 GROUP_CONCAT only concatenates non-null values. If all values are null, null will be returned.
-Also concatenate null values as empty values:
-~GROUP_CONCAT(IFNULL(c.course,'') SEPARATOR ', ') AS courses~
 
-If column values are strings, use this
+If there're multiple fields that have multiple values, e.g. a student can have multiple scores and multiple courses, and they are joined,
+
+Total number of rows are for one student is: N(courses of student) X N(scores of student),
+N(x) is number of x, when x is zero, N(0) = 1.
+
+When you do GROUP_CONCAT on course, use DISTINCT inside.
+
+Concatenate multiple fields
+~GROUP_CONCAT(DISTINCT CONCAT(c.course, 0x1F, c.year) SEPARATOR 0x1E) AS courses~
+
+**** Concatenate strings, use a different separator
 - 0x1F (31): unit (fields) separator
 - 0x1E (30): record separator
 - 0x1D (29): group separator
@@ -20412,8 +20458,49 @@ SET @s3 = 'http://s3.amazon.com/abc/';
 SELECT @s3
 #+END_EXAMPLE
 
+*** User Defined Function <<<mysql:udf>>>
+A UDF always returns a value.
+
+#+BEGIN_EXAMPLE
+SET @lis3 = 'http://s3.amazonaws.com/abc/';
+SET @lifs = 'http://abc.com/sites/default/files/';
+SET @litt = 'http://abc.com/';
+SET @lir1 = '^(s3://)(.*)';
+SET @lir2 = CONCAT(@lis3, '\\2');
+SET @lir3 = '^(public://)(.*)';
+SET @lir4 = CONCAT(@lifs, '\\2');
+
+DROP FUNCTION IF EXISTS `liFileUri`;
+
+CREATE FUNCTION `liFileUri` (`uri` VARCHAR(255)) 
+  RETURNS VARCHAR(255)
+DETERMINISTIC
+NO SQL
+  BEGIN
+    RETURN REGEXP_REPLACE(REGEXP_REPLACE(uri, @lir1, @lir2), @lir3, @lir4);
+  END;
+#+END_EXAMPLE
+
+Non-deterministic functions are functions that modify data (i.e. have update, insert or delete statement(s)).
+Default without ~SET GLOBAL log_bin_trust_function_creators = 1;~ is ~NOT DETERMINISTIC~
+Without specifying DETERMINISTIC and with the default setting, this error throws:
+
+#+BEGIN_EXAMPLE
+This function has none of DETERMINISTIC, NO SQL, or READS SQL DATA in its declaration and binary logging is enabled (you *might* want to use the less safe log_bin_trust_function_creators variable)
+#+END_EXAMPLE
+
+{ CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+
+- CONTAINS SQL Default, indicates that the routine does not contain statements that read or write data. Examples of such statements are SET @x = 1 or DO RELEASE_LOCK('abc'), which execute but neither read nor write data.
+
+- NO SQL indicates that the routine contains no SQL statements.
+
+- READS SQL DATA indicates that the routine contains statements that read data (for example, SELECT), but not statements that write data.
+
+- MODIFIES SQL DATA indicates that the routine contains statements that may write data (for example, INSERT or DELETE).
+
 *** SQL Fiddle <<<mysqlfiddle>>>
-http://sqlfiddle.com/
+http://sqlfiddle.com/ http://dbfiddle.uk/
 
 Schema
 #+BEGIN_EXAMPLE
@@ -20431,13 +20518,13 @@ VALUES
 ( 'first3', 'last3', current_timestamp)
 ;
 
-CREATE TABLE testScore (
+CREATE TABLE s_score (
 `id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
 `sid` INT(6) UNSIGNED NOT NULL,
 `score` INT(3) UNSIGNED NOT NULL
 );
 
-INSERT INTO testScore ( sid, score )
+INSERT INTO s_score ( sid, score )
 VALUES 
 ( 1, 20 ),
 ( 1, 30 ),
@@ -21926,6 +22013,20 @@ Finally, edit the shortcut to use PhpStorm64.exe
 *** Open big file
 Ensure phpStorm is running in 64bit.
 
+Create a custom idea.properties file in one these locations
+For Windows: in %USERPROFILE%\.IntelliJIdeaXX or %USERPROFILE%\.IdeaICXX
+For *NIX: in ~/.IntelliJIdeaXX or ~/.IdeaICXX
+For macOS: in ~/Library/Preferences/IntelliJIdeaXX or ~/Library/Preferences/IdeaICXX
+
+Or Help > Edit Custom Properties to create it and edit
+
+Don't change the system idea.properties at install-path/bin
+e.g.
+#+BEGIN_EXAMPLE
+# in kb
+idea.max.intellisense.filesize=50000
+#+END_EXAMPLE
+
 *** HTML (CSS and Javascript)
 **** Show Applied Styles
 Right click on element and select _Show Applied Sytles for Tag_
@@ -21983,6 +22084,13 @@ When there're multiple statements (multiple ;), Ctrl + Enter (or to Execute from
 - Whole script. All the statements are executed. (This item always appears and always appear last)
 
 You can also Ctrl + A to select all statements and Ctrl + Enter to run all of them.
+
+*** Return all query results
+Click on the Wrench icon on the toolbar of the Database Console tool window.
+Switch to Database | Data Views page, specify 0 in the Result set page size field, and click OK.
+Default is 500.
+
+That way you can export all rows to csv file.
 
 *** nodejs <<<phpstorm:nodejs>>>
 Enable ES6 for Settings > Languages & Frameworks > Javascript > JavaScript language version > ECMAScript 6
