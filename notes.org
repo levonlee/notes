@@ -20380,11 +20380,12 @@ AND EXISTS (
 #+END_EXAMPLE
 
 *** Concatenate values of a column across multiple rows about the same record
-mysqlfiddle
+<<<mysql:concat columns>>> mysqlfiddle
 #+BEGIN_EXAMPLE
 SELECT s.id, s.firstname, s.lastname
 ,GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
 ,GROUP_CONCAT(c.course SEPARATOR ', ') AS courses
+
 FROM student s 
      LEFT JOIN testScore ts ON ts.sid = s.id
      LEFT JOIN s_course c ON c.sid = s.id
@@ -20393,6 +20394,17 @@ ORDER BY s.lastname
 #+END_EXAMPLE
 
 GROUP_CONCAT only concatenates non-null values. If all values are null, null will be returned.
+Also concatenate null values as empty values:
+~GROUP_CONCAT(IFNULL(c.course,'') SEPARATOR ', ') AS courses~
+
+If column values are strings, use this
+- 0x1F (31): unit (fields) separator
+- 0x1E (30): record separator
+- 0x1D (29): group separator
+#+BEGIN_EXAMPLE
+GROUP_CONCAT(foo SEPARATOR 0x1D)
+$array = explode(chr(29),$s);
+#+END_EXAMPLE
 
 *** User Variable
 #+BEGIN_EXAMPLE
