@@ -1962,8 +1962,9 @@ ORDER BY n.created DESC
 **** Export File URI, file_managed
 <<<d7:db:file uri>>>
 #+BEGIN_EXAMPLE
-SELECT n.nid, n.title,
-ds_i_fm.uri AS splash_image -- e.g. public://abc.jpg
+SELECT n.nid, n.title
+,ds_i_fm.uri AS splash_image -- e.g. public://abc.jpg
+,REGEXP_REPLACE(ds_i_fm.uri, "^(s3://)(.*)", 'http://s3.amazonaws.com/abc.com/\\2') AS splash_image, -- s3://abc.jpg
 FROM node AS n
 LEFT JOIN field_data_field_image ds_i ON ds_i.entity_id=n.nid AND ds_i.deleted=0
 LEFT JOIN file_managed ds_i_fm ON ds_i_fm.fid = ds_i.field_image_fid
@@ -20273,6 +20274,15 @@ UNIX_TIMESTAMP(NOW())
 #+END_EXAMPLE
 
 **** <<<MySQL String>>>
+https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
+
+Concatenate user variable
+#+BEGIN_EXAMPLE
+SET @s3 = 'http://s3.amazonaws.com/abc/';
+SET @r2 = CONCAT(@s3,'\\2');
+SELECT REGEXP_REPLACE(thumbnail.uri, "^(s3://)(.*)", CONCAT(@s3,'\\2')) AS thumbnail
+#+END_EXAMPLE
+
 Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values.
 #+BEGIN_EXAMPLE
 CONCAT_WS(',', colA, colB, 'Column C Value')
@@ -20383,6 +20393,12 @@ ORDER BY s.lastname
 #+END_EXAMPLE
 
 GROUP_CONCAT only concatenates non-null values. If all values are null, null will be returned.
+
+*** User Variable
+#+BEGIN_EXAMPLE
+SET @s3 = 'http://s3.amazon.com/abc/';
+SELECT @s3
+#+END_EXAMPLE
 
 *** SQL Fiddle <<<mysqlfiddle>>>
 http://sqlfiddle.com/
@@ -21942,6 +21958,19 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 *** Convert to Tab/Spaces for indentation
 Find Action > To Tab
+
+*** MySQL
+When there're multiple statements (multiple ;), Ctrl + Enter (or to Execute from Menu) prompts a list of statements to run:
+- Smallest statement. 
+  - The smallest of the possible statements is executed. For example, when the cursor is inside a subquery, the subquery is executed.
+- Largest statement. 
+  - The largest possible statement is executed. 
+  - e.g., when the cursor is inside a subquery, an outer statement is executed.
+- Largest statement or batch. 
+  - For Transact-SQL (SQL Server and Sybase), the current batch of statements is executed. For all other dialects - the same as the previous option.
+- Whole script. All the statements are executed. (This item always appears and always appear last)
+
+You can also Ctrl + A to select all statements and Ctrl + Enter to run all of them.
 
 *** nodejs <<<phpstorm:nodejs>>>
 Enable ES6 for Settings > Languages & Frameworks > Javascript > JavaScript language version > ECMAScript 6
