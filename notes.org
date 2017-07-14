@@ -20287,6 +20287,11 @@ Concatenate columns or strings of one row. It doesn't skip empty string but it d
 #+BEGIN_EXAMPLE
 CONCAT_WS(',', colA, colB, 'Column C Value')
 WHERE url_alias.source = CONCAT('node/', n.nid)
+
+-- if there any value that is NULL, CONCAT returns NULL
+CONCAT_WS(',', NULL, '123', NULL) -- 123
+CONCAT_WS(',', NULL, NULL) -- empty value
+CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
 #+END_EXAMPLE
 
 replace all occurances, case-sensitve. multibyte safe
@@ -20418,12 +20423,21 @@ from student s
 order by id
 #+END_EXAMPLE
 
+*** IF(), IFNULL(), NULLIF()
+https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
+
+#+BEGIN_EXAMPLE
+SELECT IF(1>2,2,3); // 3
+SELECT IF(1=1,2,3); // 2
+SELECT IF(STRCMP('1', '1') = 0, 2, 3); // 2
+#+END_EXAMPLE
+
 *** Concatenate values of a column across multiple rows about the same record
 <<<mysql:concat columns>>> mysqlfiddle
 #+BEGIN_EXAMPLE
 SELECT s.id, s.firstname, s.lastname
 ,GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
-,GROUP_CONCAT(DISTINCT CONCAT(c.course, 0x1F, c.year) SEPARATOR 0x1E) AS courses
+,GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses
 FROM student s 
      LEFT JOIN testScore ts ON ts.sid = s.id
      LEFT JOIN s_course c ON c.sid = s.id
@@ -20441,7 +20455,7 @@ N(x) is number of x, when x is zero, N(0) = 1.
 When you do GROUP_CONCAT on course, use DISTINCT inside.
 
 Concatenate multiple fields
-~GROUP_CONCAT(DISTINCT CONCAT(c.course, 0x1F, c.year) SEPARATOR 0x1E) AS courses~
+~GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses~
 
 **** Concatenate strings, use a different separator
 - 0x1F (31): unit (fields) separator
@@ -20479,6 +20493,22 @@ NO SQL
   BEGIN
     RETURN REGEXP_REPLACE(REGEXP_REPLACE(uri, @lir1, @lir2), @lir3, @lir4);
   END;
+
+DROP FUNCTION IF EXISTS `liConCat2`;
+CREATE FUNCTION `liConCat2`(`v1` TEXT, `v2` TEXT)
+  RETURNS TEXT
+DETERMINISTIC
+NO SQL
+  BEGIN
+    DECLARE s TEXT;
+    IF (v1 IS NULL AND v2 IS NULL)
+    THEN SET s = NULL;
+    ELSE SET s = CONCAT_WS(0x1F, v1, v2);
+    END IF;
+    RETURN s;
+  END;
+
+-- UDF can't have optional parameter. e.g. have to create liConCat3 to concat 3 fields
 #+END_EXAMPLE
 
 Non-deterministic functions are functions that modify data (i.e. have update, insert or delete statement(s)).
