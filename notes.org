@@ -1924,7 +1924,14 @@ field_custom_term_referecen_tid :: int
 
 **** taxonomy_term_data
 tid* :: int
+vid :: int, vocabulary id. see taxonomy_vocabulary
 name :: string, term name
+weight :: int
+
+**** taxonomy_vocabular
+vid* ::
+name ::
+machine_name
 
 **** field_data_field_contributor (entity reference)
 field_contributor_target_id :: int
@@ -1957,6 +1964,32 @@ WHERE FROM_UNIXTIME(n.created)
   AND n.type ='article'
 GROUP BY n.nid
 ORDER BY n.created DESC
+#+END_EXAMPLE
+
+Export taxonomy vocabular
+#+BEGIN_EXAMPLE
+SELECT
+  t.tid                                         AS tid,
+  t.name,
+  h.parent                                      AS parent_tid,
+  t.weight,
+  CONCAT('http://yourweb.com/', u.alias)                        AS url
+
+FROM taxonomy_vocabulary v
+  LEFT JOIN taxonomy_term_data t ON t.vid = v.vid
+  LEFT JOIN taxonomy_term_hierarchy h ON h.tid = t.tid
+  LEFT JOIN field_data_field_mega_title mega_title
+    ON mega_title.entity_id = t.tid
+  LEFT JOIN field_data_field_mega_story_title mega_story_title
+    ON mega_story_title.entity_id = t.tid
+  LEFT JOIN field_data_field_landing_page_type splash
+    ON splash.entity_id = t.tid
+  LEFT JOIN url_alias u ON u.source = concat('taxonomy/term/', t.tid)
+WHERE
+  0 = 0
+  AND v.machine_name = 'articles'
+
+ORDER BY h.parent, t.weight
 #+END_EXAMPLE
 
 **** Export File URI, file_managed
@@ -20423,13 +20456,24 @@ from student s
 order by id
 #+END_EXAMPLE
 
-*** IF(), IFNULL(), NULLIF()
+*** CASE, IF(), IFNULL(), NULLIF()
 https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
 
 #+BEGIN_EXAMPLE
 SELECT IF(1>2,2,3); // 3
 SELECT IF(1=1,2,3); // 2
 SELECT IF(STRCMP('1', '1') = 0, 2, 3); // 2
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+mysql> SELECT CASE 1 WHEN 1 THEN 'one'
+    ->     WHEN 2 THEN 'two' ELSE 'more' END;
+        -> 'one'
+mysql> SELECT CASE WHEN 1>0 THEN 'true' ELSE 'false' END;
+        -> 'true'
+mysql> SELECT CASE BINARY 'B'
+    ->     WHEN 'a' THEN 1 WHEN 'b' THEN 2 END;
+        -> NULL
 #+END_EXAMPLE
 
 *** Concatenate values of a column across multiple rows about the same record
@@ -20509,6 +20553,18 @@ NO SQL
   END;
 
 -- UDF can't have optional parameter. e.g. have to create liConCat3 to concat 3 fields
+
+DROP FUNCTION IF EXISTS `liFixNull`;
+CREATE FUNCTION `liFixNull`(`text` TEXT)
+  RETURNS TEXT
+DETERMINISTIC
+  BEGIN
+    RETURN CASE text
+           WHEN 'NULL' THEN NULL
+           WHEN '' THEN NULL
+           ELSE text
+           END;
+  END;
 #+END_EXAMPLE
 
 Non-deterministic functions are functions that modify data (i.e. have update, insert or delete statement(s)).
