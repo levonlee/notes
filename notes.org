@@ -15549,6 +15549,57 @@ Ethernet interface: eth0, eth1
 Wireless network interface: wlan0, wlan1
 Loopback interface for system internal communication: =lo=
 
+*** /etc/network/interfaces file
+For Ubuntu and Debian.
+#+BEGIN_EXAMPLE
+iface eth0 inet static
+# only one address, call static
+  address 192.168.1.5
+# netmask defines ip's within this range is considered under the same LAN
+  netmask 255.255.255.0
+# When this machine talks to an ip out of this LAN, a gateway is needed
+  gateway 192.168.1.254
+# DNS
+  dns-nameservers 192.168.1.254 8.8.8.8
+#+END_EXAMPLE
+
+Set interface to dhcp
+#+BEGIN_EXAMPLE
+auto eth0
+iface eth0 inet dhcp
+#+END_EXAMPLE
+
+After changing interfaces file, turn off and on the interface
+#+BEGIN_EXAMPLE
+sudo ifdown eth0 && sudo ifup eth0
+#+END_EXAMPLE
+
+*** DNS
+~/etc/nsswitch.conf~ and the line starting with ~hosts: ~ defines which files Linux should look for the IP of a domain.
+
+#+BEGIN_EXAMPLE
+hosts: files mdns4_minimal [NOTFOUND=return] dns
+#+END_EXAMPLE
+
+First, ~/etc/hosts~ file.
+#+BEGIN_EXAMPLE
+127.0.0.1 localhost
+127.0.1.1 your-computer-name
+# 127.0.1.1 is fine when the computer is a client
+# If the machine is a server and it has a static IP, should set it
+#+END_EXAMPLE
+
+Second, it's a list of DNS nameservers you define. 
+There's a package called ~resolvconf~ which handles the DNS nameservers. I guess if you change /etc/network/interfaces file to use ~dns-nameservers~, it will add nameservers to ~/etc/resolv.conf~ which cannot be changed manually.
+Thus, a list of DNS nameservers that are being used can be retrieved ~cat /etc/resolv.conf~
+
+To check if a domain is resovled
+#+BEGIN_EXAMPLE
+getent hosts google.com
+host google.com
+dig google.com
+#+END_EXAMPLE
+
 *** Get Server's Public IP
 #+BEGIN_EXAMPLE
 ip addr show eth0 | grep inet | awk '{ print $2; }' | sed 's/\/.*$//'
