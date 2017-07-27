@@ -1910,6 +1910,8 @@ WHERE node_revision.nid = node AND node.type = 'article'
 *** Structure
 **** node
 nid* :: INT
+vid :: The current node_revision.vid version id
+uid :: author id
 type :: string, e.g. article, 
 title
 created :: 
@@ -2031,6 +2033,15 @@ created :: int(11), unix time
 access :: int(11), unix time. previous time user accessed the site
 login :: int(11), unix time
 status :: tinyint(4)
+
+**** users_role
+uid
+rid
+
+**** role
+rid*
+name
+weight
 
 ** Query
 Use [[https://www.drupal.org/docs/7/api/database-api/static-queries][db_query]] as much as possible. db_select is slow because it calls alter hooks.
@@ -16450,7 +16461,14 @@ Remove the package source
 Remove it and downgrade back to previous version before using PPA
 =sudo apt-get install ppa-purge=, =sudo ppa-purge ppa:libreoffice/ppa=
 
-** Domain Server, DNS Server
+** Production Server Setup
+linux:user :: Add a normal user, add the user to sudo group
+linux:ssh :: Add ssh public key to the new user's .ssh folder
+linux:ssh:disallow_root :: Disallow SSH in as root
+linux:firewall :: configure firewall, open ports
+linux:timezone :: setup timezone and sync time
+
+* Domain Server, DNS Server
 A hostname :: a sub domain. e.g. www
 
 A records :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
@@ -16463,13 +16481,6 @@ MX records
 - HOSTNAME :: e.g. use @ for barebone
 - Mail Providers Mail Server (or Value) :: always end with "." e.g. alt4.aspmx.l.google.com.
 - Priority :: the smaller the more important
-
-** Production Server Setup
-linux:user :: Add a normal user, add the user to sudo group
-linux:ssh :: Add ssh public key to the new user's .ssh folder
-linux:ssh:disallow_root :: Disallow SSH in as root
-linux:firewall :: configure firewall, open ports
-linux:timezone :: setup timezone and sync time
 
 * Docker
 ** Version, Info, Installation
@@ -16835,14 +16846,18 @@ ARG REQUIREMENTS
 COPY $REQUIREMENTS $APP_ROOT/
 #+END_EXAMPLE
 
+** image:debian:stretch - Debian 9 <<<image:debian:stretch>>>
 ** image:buildpack-deps:jessie-scm
 Parent: buildpack-deps:jessie-curl
 Available: git, curl, wget, openssh-client
 
+** image:buildpack-deps:stretch-curl
+Parent: image:debian:stretch
+
 ** image:lucee
 <<<docker:image:lucee>>>
 Image name: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
-Parent Images: lucee/lucee4 > tomcat:8.0.36-jre8
+Parent Images: lucee/lucee4 > tomcat:8.0.36-jre8 > openjdk:8-jre > buildpack-deps:stretch-curl
 
 *** docker-compose.yml Dockerfile
 docker-compose.yml
@@ -20106,6 +20121,13 @@ e.g. STYXKEY_my-key-name
 So that php can read them. And cookies set in this way should change the value on client side once it's been set.
 
 Content pages with same cookies and same url will be cached.
+
+** Domain
+Connect Domain: www.example.com and example.com
+In your DNS:
+A @ ip_from_pantheon
+AAAA @ value_from_pantheon
+CNAME www live-example.pantheonsite.io (Pantheon live URL)
 
 * AWS
 ** SSH
