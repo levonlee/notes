@@ -15622,6 +15622,8 @@ DNS Reverse Look-up
 dig -x 72.30.38.140
 #+END_EXAMPLE
 
+[[https://www.whatsmydns.net/][DNS Propagation Checker]]
+
 *** Get Server's Public IP
 #+BEGIN_EXAMPLE
 ip addr show eth0 | grep inet | awk '{ print $2; }' | sed 's/\/.*$//'
@@ -20245,6 +20247,100 @@ CNAME www live-example.pantheonsite.io (Pantheon live URL)
 
 ** Global CDN
 Fastly's edge cloud platform. 36 global points of presence (POPs). Cache entire pages at the edge not just static assets.
+
+** HTTPS
+*** Redirect to HTTPS
+#+BEGIN_EXAMPLE
+// wordpress
+if (isset($_SERVER['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
+  // Redirect to https://$primary_domain/ in the Live environment
+  if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live'):
+    /** Replace www.example.com with your registered domain name */
+    $primary_domain = 'www.example.com';
+  else:
+    // Redirect to HTTPS on every Pantheon environment.
+    $primary_domain = $_SERVER['HTTP_HOST'];
+  endif;
+  $base_url = 'https://'. $primary_domain;
+  define('WP_SITEURL', $base_url);
+  define('WP_HOME', $base_url);
+  if ($_SERVER['HTTP_HOST'] != $primary_domain
+      || !isset($_SERVER['HTTP_X_SSL'])
+      || $_SERVER['HTTP_X_SSL'] != 'ON' ) {
+    header('HTTP/1.0 301 Moved Permanently');
+    header('Location: '. $base_url . $_SERVER['REQUEST_URI']);
+    exit();
+  }
+}
+
+// D7
+if (isset($_SERVER['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
+  // Redirect to https://$primary_domain/ in the Live environment
+  if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live'):
+    /** Replace www.example.com with your registered domain name */
+    $primary_domain = 'www.example.com';
+  else:
+    // Redirect to HTTPS on every Pantheon environment.
+    $primary_domain = $_SERVER['HTTP_HOST'];
+  endif;
+  $base_url = 'https://'. $primary_domain;
+  if ($_SERVER['HTTP_HOST'] != $primary_domain
+      || !isset($_SERVER['HTTP_X_SSL'])
+      || $_SERVER['HTTP_X_SSL'] != 'ON' ) {
+    header('HTTP/1.0 301 Moved Permanently');
+    header('Location: '. $base_url . $_SERVER['REQUEST_URI']);
+    exit();
+  }
+}
+
+// D8
+if (isset($_SERVER['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
+  // Redirect to https://$primary_domain/ in the Live environment
+  if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live'):
+    /** Replace www.example.com with your registered domain name */
+    $primary_domain = 'www.example.com';
+  else:
+    // Redirect to HTTPS on every Pantheon environment.
+    $primary_domain = $_SERVER['HTTP_HOST'];
+  endif;
+  if ($_SERVER['HTTP_HOST'] != $primary_domain
+      || !isset($_SERVER['HTTP_X_SSL'])
+      || $_SERVER['HTTP_X_SSL'] != 'ON' ) {
+    header('HTTP/1.0 301 Moved Permanently');
+    header('Location: '. 'https://'. $primary_domain . $_SERVER['REQUEST_URI']);
+    exit();
+  }
+  // Drupal 8 Trusted Host Settings
+  if (is_array($settings)) {
+    $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
+  }
+}
+#+END_EXAMPLE
+
+*** HSTS: HTTP Header
+After redirection to HTTPS is setup, set the HTTP Strict Transport Security (HSTS) header to stop client communicating to HTTP.
+A+ SSL rating will be achieved in [[https://www.ssllabs.com/ssltest/][SSL Labs]].
+
+Wordpress: install LH HSTS plugin
+#+BEGIN_EXAMPLE
+terminus remote:wp <site>.<env> -- plugin install lh-hsts --activate
+# Once enabled, this header will be sent in response
+Strict-Transport-Security: max-age=15984000; includeSubDomains; preload
+
+# D7
+terminus remote:drush <site>.<env> -- pm-enable hsts --yes
+# Visit the module configuration page (/admin/config/security/hsts).
+# Check the Enable HTTP Strict Transport Security checkbox, set Max Age to 15552000 and click Save Configuration.
+# Once installed and configured, the following header will be sent in responses:
+strict-transport-security: max-age=15552000
+
+# D8
+terminus remote:drush <site>.<env> -- pm-enable hsts --yes
+# Visit the module configuration page (/admin/config/system/hsts).
+# Check the Enable HTTP Strict Transport Security checkbox, set Max Age to at least 1 year and click Save Configuration.
+# Once installed and configured, the following header will be sent in responses:
+strict-transport-security: max-age=31536000
+#+END_EXAMPLE
 
 ** Varnish <<<pantheon:varnish>>>
 [[https://wordpress.org/plugins/pantheon-advanced-page-cache/][Wordpress plugin Pantheon Advanced Page Cache]]
