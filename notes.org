@@ -20185,7 +20185,7 @@ if (function_exists('newrelic_ignore_transaction')) {
 }
 #+END_EXAMPLE
 
-** Cookie
+** Cookie <<<pantheon:cookie>>>
 https://pantheon.io/docs/cookies
 
 cookies set by javascript or at client side must have this name structure :: STYXKEY[a-zA-Z0-9_-]
@@ -20193,7 +20193,48 @@ e.g. STYXKEY_my-key-name
 
 So that php can read them. And cookies set in this way should change the value on client side once it's been set.
 
-Content pages with same cookies and same url will be cached.
+Content pages with same cookies (with this name structure) and same url will be cached.
+
+A cookie can be set in PHP in a response to prevent caching
+#+BEGIN_EXAMPLE
+if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
+  $domain =  $_SERVER['HTTP_HOST'];
+  setcookie('NO_CACHE', '1', time()+0, '/path-to-page', $domain);
+}
+#+END_EXAMPLE
+
+See pantheon:varnish to prevent caching on certain pages by setting http header.
+
+Cookie limit for Pantheon Edge is 10K. Any larger cookies are dropped as if there is no cookie and header ~X-Cookies-Dropped: 1~ will be added.
+
+Varnish will not try to respond to the request from its cache or store the response if any of these cookies is present:
+- Cookies beginning with ~SESS~ that are followed by numbers and lowercase letters.
+- Drupal uses SESS-prefixed cookies for its own session tracking
+- Make sure you use different SESS-prefixed cookies for ignoring caching so that there's no conflict with Drupal
+- Correct: SESSfollowbylowercasewordwithnumbers123
+- Incorrect: SESS_hello, SESS-123, mycustomSESS, Sessone, sess123testing, SESSFIVE
+- Wordpress doesn't use PHP session cookies. Plugin [[https://wordpress.org/plugins/wp-native-php-sessions/][Wordpress Native PHP Sessions]] allows custom code to use ~$_SESSIONS~ but it's pulled from db.
+- Other [[https://pantheon.io/docs/caching-advanced-topics/][cache-busting cookie patterns]]
+#+BEGIN_EXAMPLE
+NO_CACHE
+S+ESS[a-z0-9]+
+fbs[a-z0-9_]+
+SimpleSAML[A-Za-z]+
+PHPSESSID
+wordpress[A-Za-z0-9_]*
+wp-[A-Za-z0-9_]+
+comment_author_[a-z0-9_]+
+duo_wordpress_auth_cookie
+duo_secure_wordpress_auth_cookie
+bp_completed_create_steps # BuddyPress cookie used when creating groups
+bp_new_group_id # BuddyPress cookie used when creating groups
+wp-resetpass-[A-Za-z0-9_]+
+(wp_)?woocommerce[A-Za-z0-9_-]+
+#+END_EXAMPLE
+
+Default cookie lifetime is 2,000,000 seconds and session lifetime is 200,000 seconds in Drupal's default.settings.php
+
+Any logged in pages will not be cached. If different content is shown based on a user's location, either use frontend or use STYXKEY cookie as described above so that caching is possible.
 
 ** Domain
 Connect Domain: www.example.com and example.com
@@ -20201,6 +20242,148 @@ In your DNS:
 A @ ip_from_pantheon
 AAAA @ value_from_pantheon
 CNAME www live-example.pantheonsite.io (Pantheon live URL)
+
+** Global CDN
+Fastly's edge cloud platform. 36 global points of presence (POPs). Cache entire pages at the edge not just static assets.
+
+** Varnish <<<pantheon:varnish>>>
+[[https://wordpress.org/plugins/pantheon-advanced-page-cache/][Wordpress plugin Pantheon Advanced Page Cache]]
+[[https://pantheon.io/docs/wordpress-cache-plugin/][Clear cache functions on Wordpress]]
+[[https://www.varnish-software.com/wiki/content/tutorials/wordpress/wp_step_by_step.html][Varnish step-by-step guide to making a wordpress site fly]]
+
+Varnish doesn't cache page requests with cookies and it respects the HTTP header that you set in PHP.
+Pantheon sets Varnish to ignore most cookies so that pages can be cached.
+
+To troubleshoot whether a page is cached, examine the response HTTP header Age. If Age stays at 0, means the page is not cached.
+
+If there's a HTTP header ~Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0~, Varnish will not cache the page.
+e.g. drupal_set_message sets ~no-cache~ in HTTP header.
+
+Set HTTP header for preventing certain pages from caching
+#+BEGIN_EXAMPLE
+// wordpress
+if (preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
+    add_action( 'send_headers', 'add_header_nocache', 15 );
+}
+function add_header_nocache() {
+  header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
+}
+
+// D7
+  if (preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
+    drupal_page_is_cacheable(FALSE);
+    $conf['page_cache_maximum_age'] = 0;
+  }
+
+// D8
+$build['#cache']['max-age'] = 0;
+#+END_EXAMPLE
+See pantheon:cookie to prevent caching on certain pages by setting NO_CACHE cookie
+
+Pantheon Varnish will ignore the following GET parameters when caching:
+- Prefixed with 2 underscores ~__~
+- Prefixed with ~utm_~
+
+PHP read values of these GET parameter as ~PANTHEON_STRIPPED~
+
+Varnish configuration file (.vcl) is not supposed to edit.
+
+** Object Cache - Redis
+Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
+For Wordpress, no more is needed because the WP Redis plugin is loaded via drop-in file
+Install Redis module https://www.drupal.org/project/redis or run terminus to install
+#+BEGIN_EXAMPLE
+terminus remote:drush <site>.<env> -- en redis -y
+#+END_EXAMPLE
+
+Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
+#+BEGIN_EXAMPLE
+// D7
+/ All Pantheon Environments.
+if (defined('PANTHEON_ENVIRONMENT')) {
+  // Use Redis for caching.
+  $conf['redis_client_interface'] = 'PhpRedis';
+
+  // Point Drupal to the location of the Redis plugin.
+  $conf['cache_backends'][] = 'sites/all/modules/redis/redis.autoload.inc';
+  // If you've installed your plugin in a contrib directory, use this line instead:
+  // $conf['cache_backends'][] = 'sites/all/modules/contrib/redis/redis.autoload.inc';
+
+  $conf['cache_default_class'] = 'Redis_Cache';
+  $conf['cache_prefix'] = array('default' => 'pantheon-redis');
+
+  // Do not use Redis for cache_form (no performance difference).
+  $conf['cache_class_cache_form'] = 'DrupalDatabaseCache';
+
+  // Use Redis for Drupal locks (semaphore).
+  $conf['lock_inc'] = 'sites/all/modules/redis/redis.lock.inc';
+  // Or if you've installed the redis module in a contrib subdirectory, use:
+  // $conf['lock_inc'] = 'sites/all/modules/contrib/redis/redis.lock.inc';
+
+}
+
+// D8
+if (defined('PANTHEON_ENVIRONMENT')) {
+  // Include the Redis services.yml file. Adjust the path if you installed to a contrib or other subdirectory.
+  $settings['container_yamls'][] = 'modules/redis/example.services.yml';
+
+  //phpredis is built into the Pantheon application container.
+  $settings['redis.connection']['interface'] = 'PhpRedis';
+  // These are dynamic variables handled by Pantheon.
+  $settings['redis.connection']['host']      = $_ENV['CACHE_HOST'];
+  $settings['redis.connection']['port']      = $_ENV['CACHE_PORT'];
+  $settings['redis.connection']['password']  = $_ENV['CACHE_PASSWORD'];
+
+  $settings['cache']['default'] = 'cache.backend.redis'; // Use Redis as the default cache.
+  $settings['cache_prefix']['default'] = 'pantheon-redis'; 
+
+  // Always set the fast backend for bootstrap, discover and config, otherwise this gets lost when redis is enabled.
+  $settings['cache']['bins']['bootstrap'] = 'cache.backend.chainedfast';
+  $settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
+  $settings['cache']['bins']['config']    = 'cache.backend.chainedfast';
+}
+#+END_EXAMPLE
+
+Install Redis locally https://redis.io/download
+Use Redis Connection Info from Dashboard
+#+BEGIN_EXAMPLE
+redis> keys *
+ 1) "pantheon-rediscache_menu:links:management:tree-data:en:27cbcc1096e9daf2c319c2c"
+ 2) "pantheon-rediscache:features_module_info"
+ 3) "pantheon-rediscache_bootstrap:bootstrap_modules"
+ 4) "pantheon-rediscache_menu:menu_item:b38e608d4f709b7c1fcb6ac5f6dd2ab72a9a034"
+
+# set and check
+redis> SET key1 "Hello"
+OK
+redis> EXISTS key1
+(integer) 1
+redis> EXISTS key2
+(integer) 0
+redis>
+
+# find a key
+redis> KEYS *a*
+$17
+englash bigkahuna
+redis> KEYS engl?sh
+$23
+englosh englash english
+redis> KEYS engl[ia]sh
+$15
+englash english
+
+# clear cache
+redis> flushall
+OK
+
+# Number of keys in cache
+redis> DBSIZE
+:0
+#+END_EXAMPLE
+
+** Clear Cache
+Use ~terminus env:clear-cache~ to debug clear cache failure.
 
 * AWS
 ** SSH
@@ -21838,9 +22021,10 @@ jQuery(function(){
 - The ad unit should have a Video (VAST) size: 640x360v
 - In the line item, select the same video size as the inventory size and also select the ad unit
 - Add a new Creative Set and select Linear then Video (not VPAID) for pre-roll, mid-roll or post-roll.
--Upload the video file that a higher resolution e.g. 1920x1080. DFP will create all lower resolution videos.
+- Upload the video file that a higher resolution e.g. 1920x1080. DFP will create all lower resolution videos.
 - Your video creative is setup. You need to generate the tag for the ad unit.
-- Use Video Suite Inspector to test the video ad. If the ad unit is newly created, it could take an hour to preview the video ad..
+- Use [[https://developers.google.com/interactive-media-ads/docs/sdks/html5/vastinspector][Video Suite Inspector]] to test the video ad. If the ad unit is newly created, it could take an hour to preview the video ad..
+- Delivery > Troubleshoot > Video simulates the request taking under/over delivery into account.
 
 DFP Video Tag
 #+BEGIN_EXAMPLE
