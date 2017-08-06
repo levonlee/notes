@@ -8009,10 +8009,20 @@ $_css_section_column = 'background-color:#ffffff;padding-right:10px !important;p
 // If td will display:block, then wrap content with <table><tr><td style="padding: 1em"></td></tr></table> to set padding.
 $_css_section_table = 'max-width:640px;';
 $_css_section_top = 'padding-top:15px;';
+$_css_p = 'line-height: 20px !important;margin: 1em 0;font-family: Arial, Helvetica, sans-serif;';
 $_css_h3 = 'color:#333333;font-weight:bold;font-size:20px;font-family:Arial,Helvetica,sans-serif !important;';
 $_css_h3_a = 'text-decoration: none;color:#333333';
 ?>
 <style type="text/css">
+@media only screen and (max-width: 480px) {
+p {
+    padding-left: 0px !important;
+    padding-right: 10px !important;
+}
+td[class="mobilecenter"] {
+  text-align: center !important;
+}
+}
 </style>
 #+END_EXAMPLE
 
@@ -8078,6 +8088,7 @@ $html_default = [
   'row' => 'articleBlockFullColumn',
   'h3' => $_css_h3,
   'h3 a' => $_css_h3_a,
+  'p' => $_css_p,
   'img' => [
     'enable'  => 1, // To show article thumbnail if it has one?
     'class'   => 'articleImg',
@@ -8147,6 +8158,97 @@ $html_default = [
   </tr>
   <tr><td>&nbsp;</td></tr>
 </table>
+#+END_EXAMPLE
+
+Table with 1 col wrapper
+#+BEGIN_EXAMPLE
+$h_default = [
+	'spacer' => '', // '' no spacer, top or bottom
+	'content' => '',
+	'align' => ['','right'], // first one is table then td
+	'valign' => ['','top'],
+	'class' => ['','mobilecenter'],
+	'style' => ['',''],
+];
+?>
+<table border="0" cellpadding="0" cellspacing="0" width="100%"
+	<?php if ($h['align'][0]) {echo ' align="'.$h['align'][0].'"'; } ?>
+	<?php if ($h['valign'][0]) {echo ' valign="'.$h['valign'][0].'"'; } ?>
+	<?php if ($h['class'][0]) {echo ' class="'.$h['class'][0].'"'; } ?>
+	<?php if ($h['style'][0]) {echo ' style="'.$h['style'][0].'"'; } ?>>
+	<?php if (isset($h['spacer']) && $h['spacer'] == 'top'): ?>
+		<tr><td>&nbsp;</td></tr>
+	<?php endif; ?>
+	<tr>
+		<td <?php if ($h['align'][1]) {echo ' align="'.$h['align'][1].'"'; } ?>
+			<?php if ($h['valign'][1]) {echo ' valign="'.$h['valign'][1].'"'; } ?>
+			<?php if ($h['class'][1]) {echo ' class="'.$h['class'][1].'"'; } ?>
+			<?php if ($h['style'][1]) {echo ' style="'.$h['style'][1].'"'; } ?>><?php echo $h['content']; ?></td>
+	</tr>
+	<?php if (isset($h['spacer']) && $h['spacer'] == 'bottom'): ?>
+		<tr><td>&nbsp;</td></tr>
+	<?php endif; ?>
+</table>
+#+END_EXAMPLE
+
+Table with 2 cols
+#+BEGIN_EXAMPLE
+$_partnership_left  = theme(
+  'nc_custom_templates_component_col_1',
+  [
+    'h' => [
+      'spacer'  => '',
+// '' no spacer, top or bottom
+      'content' => "<a href='${_dfp_txt_1['href']}' target='_blank' style='ouline:none;display:inline-block;'><img src='${_dfp_txt_1['img']}' alt='' style='${_dfp_txt_1['img_style']}'></a>",
+      'align'   => [ '', 'center' ],
+// first one is table then td
+      'valign'  => [ '', 'top' ],
+      'class'   => [ '', 'mobilecenter' ],
+      'style'   => [ '', 'padding: 0.4em' ],
+    ],
+  ]
+);
+$_partnership_right = theme(
+  'nc_custom_templates_component_col_1',
+  [
+    'h' => [
+      'spacer'  => '',
+// '' no spacer, top or bottom
+      'content' => "<h3 style='${_css_h3}'><a href='${_dfp_txt_1['href']}' target='_blank' style='${_css_h3_a}'>${_dfp_txt_1['title']}</a></h3>${_dfp_txt_1['content']}",
+      'align'   => [ '', 'left' ],
+// first one is table then td
+      'valign'  => [ '', 'top' ],
+      'class'   => [ '', '' ],
+      'style'   => [ '', 'padding: 0.4em' ],
+    ],
+  ]
+);
+print theme(
+  'nc_custom_templates_component_col_2',
+  [
+    'h' => [
+      'table'   => [
+        'align'  => '',
+        'valign' => '',
+        'class'  => '',
+        'style'  => '',
+      ],
+      'spacer'  => '',
+      'fixed'   => FALSE,
+      'content' => [
+        $_partnership_left,
+        $_partnership_right
+      ],
+      'align'   => [ 'center', 'left' ],
+      'valign'  => [ 'top', 'top' ],
+      'class'   => [
+        'partnershipBlockContentLeft',
+        'partnershipBlockContentRight'
+      ],
+      'style'   => [ '', '' ], // padding: 0.4em
+    ],
+  ]
+);
 #+END_EXAMPLE
 
 ** Icons, Address Bar color
