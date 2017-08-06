@@ -23404,6 +23404,42 @@ It consumes a lot of CPU and slows down the server. 2017/07/07. It's a hack..
 The batch files are referring to bitcoin mining website.. 
 Ctrl+Alt+Del > Task Manager to stop Update_Windows.exe, then delete Update_Windows.exe, debug.exe, debug.bat, dll.bat
 
+*** Wireless hotspot
+Tested with Win10
+First, check if wireless adapter supports ~Hosted Network supported: Yes~
+#+BEGIN_EXAMPLE
+netsh wlan show drivers
+# Create a wireless Hosted Network
+netsh wlan set hostednetwork mode=allow ssid=WindowsCentral key="yourkey"
+# Start the newly created Microsoft Hosted Virtual Adapter
+netsh wlan start hostednetwork  
+#+END_EXAMPLE
+
+WinKey + x and select Network Connections, select any network adapter (LAN or wireless) currently have an internet connection,
+Properties > Sharing > Allow ohter network users to connect through this computer's Internet connection > Home networking connection select the newly created "Local Area Connection* 13 (or other numbers)"
+
+Start and stop the Microsoft Hosted Virtual Adapter
+#+BEGIN_EXAMPLE
+netsh wlan stop hostednetwork
+netsh wlan start hostednetwork
+netsh wlan set hostednetwork mode=disallow
+netsh wlan set hostednetwork mode=allow
+#+END_EXAMPLE
+
+Change setting
+#+BEGIN_EXAMPLE
+netsh wlan set hostednetwork ssid=Your_New_SSID
+netsh wlan set hostednetwork key="abc"
+# View
+netsh wlan show hostednetwork
+netsh wlan show hostednetwork setting=security
+#+END_EXAMPLE
+
+It's not easy to delete the hostednetwork setting
+HKEY_LOCAL_MACHINE\system\currentcontrolset\services\wlansvc\parameters\hostednetworksettings
+Right-click the HostedNetworkSettings DWORD key, select Delete, and click Yes to confirm deletion.
+Reboot
+
 *** Windows Virtual PC
 Install XP Mode on Windows 10 Pro and only Pro version can install
 - Google Windows XP Mode and download the en-us version
