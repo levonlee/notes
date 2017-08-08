@@ -206,6 +206,16 @@ $decrypted = openssl_decrypt($data, 'aes-256-cbc', $keyAES, $options, $iv);
 // if all 3 of them are string, use 0 as $options
 #+END_EXAMPLE
 
+** HTML encode and decode
+#+BEGIN_EXAMPLE
+$t = '<a href="http://expample.com">Hello L\'automobile from "Me"</a>';
+var_dump(htmlentities($t, ENT_QUOTES, 'UTF-8'));
+var_dump(html_entity_decode($t, ENT_QUOTES, 'UTF-8'));
+// The same as D7 decode_entities($t)
+#+END_EXAMPLE
+
+ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
+
 ** Heredoc, Nowdoc
 Heredoc result is a double-quoted string
 #+BEGIN_EXAMPLE
@@ -1703,7 +1713,10 @@ View, named foobar. Style: unformatted. Row styel: Fields. Display: Page.
 - views-view-fields--foorbar.tpl.php
 - views-view-fields.tpl.php
 
-*** Ellipsis
+** Ellipsis <<<d7:ellipsis>>>
+This can be used in custom module. Trim first, then remove scraps of html
+e.g. ~<a>fda</~, ~<a>fda</a~ and ~<a>fda<~ will become ~<a>fda~
+'html' => true will close any unclosed html tags.
 #+BEGIN_EXAMPLE
 views_trim_text(array(
             'max_length' => 200,
@@ -1713,6 +1726,96 @@ views_trim_text(array(
           ), 'Long String');
 // Output
 Long String<span class="ellipsis">...</span>
+#+END_EXAMPLE
+
+Source code
+#+BEGIN_EXAMPLE
+function views_trim_text($alter, $value) {
+  if (drupal_strlen($value) > $alter['max_length']) {
+    $value = drupal_substr($value, 0, $alter['max_length']);
+    // TODO: replace this with cleanstring of ctools
+    if (!empty($alter['word_boundary'])) {
+      $regex = "(.*)\b.+";
+      if (function_exists('mb_ereg')) {
+        mb_regex_encoding('UTF-8');
+        $found = mb_ereg($regex, $value, $matches);
+      }
+      else {
+        $found = preg_match("/$regex/us", $value, $matches);
+      }
+      if ($found) {
+        $value = $matches[1];
+      }
+    }
+    // Remove scraps of HTML entities from the end of a strings
+    $value = rtrim(preg_replace('/(?:<(?!.+>)|&(?!.+;)).*$/us', '', $value));
+
+    if (!empty($alter['ellipsis'])) {
+      $value .= t('...');
+    }
+  }
+  if (!empty($alter['html'])) {
+    $value = _filter_htmlcorrector($value);
+  }
+
+  return $value;
+}
+
+function _filter_htmlcorrector($text) {
+  return filter_dom_serialize(filter_dom_load($text));
+}
+function filter_dom_load($text) {
+  $dom_document = new DOMDocument();
+  // Ignore warnings during HTML soup loading.
+  @$dom_document->loadHTML('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head><body>' . $text . '</body></html>');
+
+  return $dom_document;
+}
+
+function filter_dom_serialize($dom_document) {
+  $body_node = $dom_document->getElementsByTagName('body')->item(0);
+  $body_content = '';
+
+  if ($body_node !== NULL) {
+    foreach ($body_node->getElementsByTagName('script') as $node) {
+      filter_dom_serialize_escape_cdata_element($dom_document, $node);
+    }
+
+    foreach ($body_node->getElementsByTagName('style') as $node) {
+      filter_dom_serialize_escape_cdata_element($dom_document, $node, '/*', '*/');
+    }
+
+    foreach ($body_node->childNodes as $child_node) {
+      $body_content .= $dom_document->saveXML($child_node);
+    }
+    return preg_replace('|<([^> ]*)/>|i', '<$1 />', $body_content);
+  }
+  else {
+    return $body_content;
+  }
+}
+
+// Adds comments around the <!CDATA section in a dom element.
+function filter_dom_serialize_escape_cdata_element($dom_document, $dom_element, $comment_start = '//', $comment_end = '') {
+  foreach ($dom_element->childNodes as $node) {
+    if (get_class($node) == 'DOMCdataSection') {
+      // See drupal_get_js().  This code is more or less duplicated there.
+      $embed_prefix = "\n<!--{$comment_start}--><![CDATA[{$comment_start} ><!--{$comment_end}\n";
+      $embed_suffix = "\n{$comment_start}--><!]]>{$comment_end}\n";
+
+      // Prevent invalid cdata escaping as this would throw a DOM error.
+      // This is the same behavior as found in libxml2.
+      // Related W3C standard: http://www.w3.org/TR/REC-xml/#dt-cdsection
+      // Fix explanation: http://en.wikipedia.org/wiki/CDATA#Nesting
+      $data = str_replace(']]>', ']]]]><![CDATA[>', $node->data);
+
+      $fragment = $dom_document->createDocumentFragment();
+      $fragment->appendXML($embed_prefix . $data . $embed_suffix);
+      $dom_element->appendChild($fragment);
+      $dom_element->removeChild($node);
+    }
+  }
+}
 #+END_EXAMPLE
 
 ** Form
