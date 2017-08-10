@@ -7775,7 +7775,11 @@ https://litmus.com/community/templates
     img{border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;}
     table{border-collapse: collapse !important;}
     body{font-family: 'Montserrat', Arial, sans-serif; height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important;}
+    
+    /* https://github.com/seanpowell/Email-Boilerplate */
+
     div[style*="margin: 16px 0;"] { margin:0 !important; }
+
     a[x-apple-data-detectors] {
       color: inherit !important;
       text-decoration: none !important;
@@ -7840,12 +7844,16 @@ Style
   @import url(http://fonts.googleapis.com/css?family=Roboto:300); /*Calling our web font*/
 
   /* Some resets and issue fixes */
+body, table, td, a{-webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;}
+      table, td{mso-table-lspace: 0pt; mso-table-rspace: 0pt;}
+      img{border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;}
+      table{border-collapse: collapse !important;}
+      body{font-family: 'Montserrat', Arial, sans-serif; height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important;}
+
   #outlook a{ padding:0; }
-  body{ width:100% !important; -webkit-text; size-adjust:100%; -ms-text-size-adjust:100%; margin:0; padding:0; }
   .ReadMsgBody{ width:100%; }
   .ExternalClass{ width:100%; }
   .backgroundTable{ margin:0 auto; padding:0; width:100%; !important; }
-  table td{ border-collapse:collapse; }
   .ExternalClass *{ line-height:115%; }
   /* End reset */
 
@@ -8110,16 +8118,33 @@ $html_default = [
 Presets
 #+BEGIN_EXAMPLE
 <?php
+$_css_body = '-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;width:100% !important; margin:0;padding:0';
+$_css_preheader = 'display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;';
+
 $_css_section_column = 'background-color:#ffffff;padding-right:10px !important;padding-left:10px !important;';
 // It's ok to set td with padding-right and left if td will not display:block when it's in mobile
 // If td will display:block, then wrap content with <table><tr><td style="padding: 1em"></td></tr></table> to set padding.
 $_css_section_table = 'max-width:640px;';
 $_css_section_top = 'padding-top:15px;';
-$_css_p = 'line-height: 20px !important;margin: 1em 0;font-family: Arial, Helvetica, sans-serif;';
-$_css_h3 = 'color:#333333;font-weight:bold;font-size:20px;font-family:Arial,Helvetica,sans-serif !important;';
-$_css_h3_a = 'text-decoration: none;color:#333333';
+
+ $_css_text_small = 'font-size:10px;color:#555555;font-family:Arial,Helvetica,sans-serif !important;';
+  $_css_p = 'font-size:16px;line-height: 20px !important;margin: 1em 0;font-family: Arial, Helvetica, sans-serif;';
+  $_css_h1 = 'font-family:Arial,Helvetica,sans-serif !important; font-size:30px; line-height:36px; font-weight:bold; color:#ffffff;padding:0; margin:0;';
+  $_css_h2 = 'font-family:Arial,Helvetica,sans-serif !important;font-size:20px;line-height:26px; font-weight:bold; color:#ffffff;padding:0; margin:0;';
+  $_css_h3 = 'font-family:Arial,Helvetica,sans-serif !important;font-size:16px;line-height:22px;font-weight:bold;color:#333333;padding:0; margin:0;';
+  $_css_h3_a = 'font-family:Arial,Helvetica,sans-serif !important;font-size:16px;line-height:22px;font-weight:bold;color:#333333;padding:0; margin:0;text-decoration: none;';
+  $_css_h4 = 'font-family:Arial,Helvetica,sans-serif !important;font-size:14px;line-height:20px;font-weight:bold;color:#333333;padding:0; margin:0;';
+  $_css_h4_a = 'font-family:Arial,Helvetica,sans-serif !important;font-size:14px;line-height:20px;font-weight:bold;color:#333333;padding:0; margin:0;text-decoration: none;';
 ?>
 <style type="text/css">
+td[class="articleBlockFullColumn"] {
+    padding-bottom:10px !important;
+}
+
+@media screen and (max-width:640px) {
+
+}
+
 @media only screen and (max-width: 480px) {
 p {
     padding-left: 0px !important;
@@ -8128,15 +8153,22 @@ p {
 td[class="mobilecenter"] {
   text-align: center !important;
 }
+td[class="articleImg"],
+td[class="articleDiv"] {
+      display:none;
+}
+
 }
 </style>
 #+END_EXAMPLE
 
 Global
 #+BEGIN_EXAMPLE
+<body style="margin:0;padding:0;">
 <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F1F1F1">
   <tr>
     <td width="100%" valign="top" align="center">
+      <div style="<?php echo $_css_preheader; ?>"><?php echo $_preview_text; ?></div>
       <center>
         <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td>Section 1</td></tr>
@@ -8145,6 +8177,7 @@ Global
     </td>
   </tr>
 </table>
+</body>
 #+END_EXAMPLE
 
 Per section
@@ -8190,11 +8223,25 @@ Per section
 
 Section content
 #+BEGIN_EXAMPLE
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Li Li
+ * Date: 8/3/2017 2:28 PM
+ *
+ * $html => [
+ *   'row' => 'articleBlockFullColumn',
+ *   'img' => [
+ * 'class' => 'articleImg'],
+ *   'ad' => 'bigAds',
+ * ]
+ */
+
 $html_default = [
   'row' => 'articleBlockFullColumn',
-  'h3' => $_css_h3,
-  'h3 a' => $_css_h3_a,
-  'p' => $_css_p,
+  'h3' => 'color:#333333;font-weight:bold;font-size:20px;font-family:Arial,Helvetica,sans-serif !important;',
+  'h3 a' => 'text-decoration: none;color:#333333',
+	'p' => 'line-height: 20px !important;margin: 1em 0;font-family: Arial, Helvetica, sans-serif;',
   'img' => [
     'enable'  => 1, // To show article thumbnail if it has one?
     'class'   => 'articleImg',
@@ -8232,13 +8279,13 @@ $html_default = [
             <h3 style="<?php echo $html['h3']; ?>"><a
                 href="<?php echo $item['url']; ?>"
                 target="_blank"
-                style="<?php echo $html['h3']; ?>"><?php
+                style="<?php echo $html['h3 a']; ?>"><?php
                 print theme('nc_custom_templates_inline_native_article',
                   ['article' => $item]
                 );
                 echo $item['title'];
                 ?></a></h3>
-            <p><?php echo $item['summary']; ?> <?php
+            <p style="<?php echo $html['p']; ?>"><?php echo $item['summary']; ?> <?php
               if ($readmore['inline']) {
                 print theme(
                   'nc_custom_templates_inline_read_more',
