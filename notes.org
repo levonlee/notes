@@ -21407,7 +21407,6 @@ https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
 Concatenate user variable
 #+BEGIN_EXAMPLE
 SET @s3 = 'http://s3.amazonaws.com/abc/';
-SET @r2 = CONCAT(@s3,'\\2');
 SELECT REGEXP_REPLACE(thumbnail.uri, "^(s3://)(.*)", CONCAT(@s3,'\\2')) AS thumbnail
 #+END_EXAMPLE
 
@@ -21431,6 +21430,18 @@ Use regex_replace to do more complicated find and replace. MariaDB driver on hos
 #+BEGIN_EXAMPLE
 SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3')
 #+END_EXAMPLE
+
+String delimited list
+#+BEGIN_EXAMPLE
+substring_index ( substring_index ( context,',',1 ), ',', -1) ) 
+substring_index ( substring_index ( context,',',2 ), ',', -1) ) 
+substring_index ( substring_index ( context,',',3 ), ',', -1) ) 
+substring_index ( substring_index ( context,',',4 ), ',', -1) )
+it means 1st value, 2nd, 3rd, etc.
+#+END_EXAMPLE
+Explanation: original string is "34,7,23,89", substring_index( context,',', 3) returns "34,7,23". The outer substring_index takes the value returned by the inner substring_index and the -1 allows you to take the last value. So you get "23" from the "34,7,23".
+
+See mysql:string:list:temp table for more
 
 **** <<<MySQL Null>>>
 IFNULL(column_name, 0)
@@ -21647,7 +21658,7 @@ This function has none of DETERMINISTIC, NO SQL, or READS SQL DATA in its declar
 The parameter list enclosed within parentheses must always be present. If there are no parameters, an empty parameter list of () should be used. Parameter names are not case sensitive.
 
 *** Procedure
-Syntax
+**** Syntax
 #+BEGIN_EXAMPLE
 CREATE
     [DEFINER = { user | CURRENT_USER }]
@@ -21689,6 +21700,41 @@ mysql> SELECT @a;
 | 3    |
 +------+
 1 row in set (0.00 sec)
+#+END_EXAMPLE
+
+**** Prepare Statement, Convert delimited string into temp table
+A prepare statement is unique to a session. If it's not deallocated, it will be deallocated automatically when the session ends.
+<<<mysql:string:list:temp table>>>
+#+BEGIN_EXAMPLE
+DROP PROCEDURE IF EXISTS `getArticlesByCats`;
+CREATE PROCEDURE getArticlesByCats(IN pDelim VARCHAR(32), IN pStr TEXT )
+DETERMINISTIC
+MODIFIES SQL DATA
+  BEGIN
+    DROP TABLE IF EXISTS li_temp_explode;
+    CREATE TEMPORARY TABLE li_temp_explode (id INT AUTO_INCREMENT PRIMARY KEY NOT NULL, word VARCHAR(40));
+    SET @sql := CONCAT('INSERT INTO li_temp_explode (word) VALUES (', REPLACE(QUOTE(pStr), pDelim, '\'), (\''), ')');
+    PREPARE myStmt FROM @sql;
+    EXECUTE myStmt;
+    DEALLOCATE PREPARE myStmt;
+    -- Later use the temp table in IN statement
+    SELECT *
+    FROM node n
+    WHERE EXISTS(
+      SELECT * 
+      FROM cats c
+      WHERE c.cid IN (
+        SELECT CAST(word AS UNSIGNED)
+        FROM li_temp_explode
+      )
+    )
+  END;
+#+END_EXAMPLE
+word column is string
+
+#+BEGIN_EXAMPLE
+CALL `getArticlesByCats`(',', '1,31,5,6,7,8,9,10');
+SELECT * FROM li_temp_explode;
 #+END_EXAMPLE
 
 *** User Defined Function <<<mysql:udf>>>
