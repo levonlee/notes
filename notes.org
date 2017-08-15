@@ -1575,7 +1575,102 @@ function my_module_views_api() {
 #+END_EXAMPLE
 
 All Views hook code should be placed in my_module.views.inc which is located in module root directory if 'path' is not defined.
-All hooks' callbacks (Class definition) such as plugin and cutom filter callback should be included in my_module.info as separate files
+All hooks' callbacks (Class definition) such as plugin and custom filter callback should be included in my_module.info as separate files
+
+*** hook_views_query_alter
+Put it in MODULENAME.views.inc based on hook_views_api. But I had success to just include this hook in .module file
+One way to avoid setup the *.views.inc is to use Views GUI to assign an Query Tag then use hook_query_TAG_alter but it runs twice.. So stick with hook_views_query_alter
+
+#+BEGIN_EXAMPLE
+// dpm($query->where);
+// One condition
+$c1 = [
+ 'field' => 'node.status',
+ 'value' => 1,
+ 'operator' => '='
+];
+
+$c2 = [
+ 'field' => 'node_search_index.word',
+ 'value' => '% burger %',
+ 'operator' => 'LIKE'
+];
+
+$c3 = [
+ 'field' => 'node.uid = :node_uid',
+ 'value' => [':node_uid' => '5'],
+ 'operator' => 'formula'
+];
+
+$c4 = [
+ 'field' => 'node.type',
+ 'value' => ['ns_newsletter'],
+ 'operator' => 'in'
+];
+
+// a condition group
+$cg1 = [
+  'field' => object::Drupal\Core\Database\Query\Condition
+];
+
+[ 'conditions' => [ $c1, $c2 ]
+  'args' => [],
+  'type' => 'AND'
+],
+[ 'conditions' => [ $c3, $c4 ]
+  'args' => [],
+  'type' => 'AND'
+],
+[ 'conditions' => [ $cg1 ]
+  'args' => [],
+  'type' => 'AND'
+]
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+function mymod_views_query_alter(&$view, &$query) {
+  dpm($view, __FUNCTION__);
+  dpm($query, __FUNCTION__);
+  if ($view->name == 'lili_view' && $view->current_display == 'page') {
+    foreach ($query->where as &$condition_group) {
+      _recursively_alter_query_conditions($condition_group['conditions']);
+    }
+  }
+  // add a where condition group
+  // views_plugin_query_default::add_where($group, $field, $value = NULL, $operator = NULL)
+  $cg_count = count($query->where);
+  $query->add_where($cg_count, '0', '1', '=');
+}
+
+// helper function: (takes in conditions group argument)
+function _recursively_alter_query_conditions(&$conditions) {
+  // foreach condition in condition group
+  foreach ($conditions as &$condition) {
+    // if condition is itself a condition group
+    if (isset($condition['field']) && is_a($condition['field'], 'Drupal\Core\Database\Query\Condition')) {
+      // call the helper function on it
+      _recursively_alter_query_conditions($condition['field']->conditions());
+    }
+    else {
+      // check if we want to alter the condition and if so alter it
+      _alter_query_condition($condition);
+    }
+  }
+}
+
+// separate helper function to determine if the condition is one we want to alter
+function _alter_query_condition(&$condition) {
+  if (isset($condition['field']) && ($condition['field'] === 'node_search_index.word')) {
+    $condition['value'] = "%{$condition['value']}%";
+    $condition['operator'] = 'LIKE';
+  }
+  if (isset($condition['field']) && ($condition['field'] === 'node_search_dataset.data')) {
+    // here we're using trim to eliminate both the unwanted whitespace and the '%' symbols,
+    // which then get added back via string concatenation
+    $condition['value'] = "%" . trim($condition['value'], " \t\n\r\0\x0B%") . "%";
+  }
+}
+#+END_EXAMPLE
 
 *** hook_views_pre_build
 *** hook_views_pre_render
@@ -2362,6 +2457,15 @@ $q->condition('entity_id', $node->nid);
 $r = $q->execute();
 #+END_EXAMPLE
 
+*** hook_query_TAG_alter
+<<<hook_query_TAG_alter>>>
+#+BEGIN_EXAMPLE
+function mymod_query_node_is_not_tagged_alter(QueryAlterableInterface $query) {
+  $query->leftJoin('field_data_field_tags', 'o', 'node.nid = o.entity_id AND o.entity_type = :entity_type');
+  $query->isNull('o.field_tags_tid');
+}
+#+END_EXAMPLE
+
 ** Entity
 Node, user, taxonomy are all entities.
 
@@ -2391,6 +2495,7 @@ $_r = $_q
 ->fieldCondition('field_news_publishdate', 'value', $year . '%', 'like') // Text LIKE
 ->fieldOrderBy('field_ns_newsletter_unique_id', 'value', 'DESC') // Sort
 ->fieldCondition('field_a_term_reference_field', 'tid', 123) // field Term Reference
+->fieldCondition('field_a_term_reference_field', 'tid', $tids) // field Term Reference multiple has at least one value in array $tids
 ->fieldCondition('field_dealer', 'target_id', 12345, '=') // field Entity Reference, single value
 ->fieldCondition('field_contacts', 'target_id', 12345) // field Entity Reference, multiple values have one 12345
 /* NOT IN
@@ -2431,6 +2536,7 @@ $_r = array_diff_key($_r_all, $_r_in_12345);
 )
 */
 
+// or $_r['user']
 if (!empty($_r['node'])) {
   $nodes = node_load_multiple(array_keys($_r['node']));
   // If you just want to load a handful of fields, you don't have to load the whole nodes
@@ -2669,13 +2775,28 @@ Use modal in CTools, you will need t:
 
 ** User
 *** Get user fields
-global $user is not enough to get all fields. Use user_load($user->uid).
+global $user
+
+~$account = user_load($user->uid)~ to load all fields
+
+or use d7:entity_metadata_wrapper to get a couple fields
+
+$user_wrapper = entity_metadata_wrapper('user', $user);
+drupal_set_message('<pre>'.var_export($user_wrapper->field_node->raw(),1).'</pre>'); // Raw value
+drupal_set_message('<pre>'.var_export($user_wrapper->field_node->value(),1).'</pre>'); 
 
 *** user_access
 <<<d7:user_access>>>
 user_access($string, $account = NULL)
 $account
 - NULL. current logged in user
+
+*** user_is_logged_in, user_has_role
+user_is_logged_in && user_has_role(3) :: check if current user is admin
+
+anonymous :: 1
+authenticated user :: 2
+administrator :: 3
 
 ** Menu
 *** hook_menu: 'page callback'
