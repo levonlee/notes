@@ -165,6 +165,7 @@ echo $numbers[0];
 
 #+BEGIN_EXAMPLE
 echo(mt_rand(10,100)); // min: 0, max: 100
+$rnd = rand(pow(10, 8-1), pow(10, 8)-1); // random 7 digits integer
 #+END_EXAMPLE
 
 ** encrypt, decrypt
@@ -284,8 +285,9 @@ if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
 }
 #+END_EXAMPLE
 
-** PHPDoc
+** PHPDoc <<<PHPDoc>>>
 https://www.drupal.org/coding-standards/docs
+https://www.drupal.org/node/1354
 The docblock has to be immediately above the code.
 
 #+BEGIN_EXAMPLE
@@ -307,10 +309,84 @@ The docblock has to be immediately above the code.
  */
 #+END_EXAMPLE
 
+Order of sections
+- One-line summary ending in a period .
+- Addtional paragraphs of explanation
+- @var :: PHPDoc:@var
+- @param :: only for function
+- @return
+- @throws
+- @ingroup
+- @deprecated
+- @see
+- @todo
+- @Plugin
+
+Separate different-type sections by a blank line
+#+BEGIN_EXAMPLE
+// blank line
+@param first param
+@param second param
+// blank line
+@return
+#+END_EXAMPLE
+
+*** Tag reference
+**** @code
+#+BEGIN_EXAMPLE
+ * Example usage:
+ * @code
+ * mymodule_print('Hello World!');
+ * @endcode
+ * Text to immediately follow the code block.
+#+END_EXAMPLE
+
+*** datatype <<<PHPDoc:datatype>>>
+#+BEGIN_EXAMPLE
+int
+string|bool
+\Drupal\Core\Database\StatementInterface
+int[]
+\Drupal\node\NodeInterface[]
+$this
+static
+null
+object
+resource
+true
+false
+float
+#+END_EXAMPLE
+
+Examples
+#+BEGIN_EXAMPLE
+@return $this
+@return static
+#+END_EXAMPLE
+
+*** @var <<<PHPDoc:@var>>>
+@var [PHPDoc:datatype]
+#+BEGIN_EXAMPLE
+class FooBar {
+
+  /**
+   * The database connection object for this statement's DatabaseConnection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  public $dbh;
+
+}
+#+END_EXAMPLE
+
 ** OOP
 
 #+BEGIN_EXAMPLE
 $rest = new RestJson('12345', 'trucks', 'new');
+// Class name should use UpperCamel
+// SampleXmlClass, not SampleXMLClass
+// Names should not include Drupal, Class
+// Interface should always prefix "Interface"
 class RestJson {
   public $lwp_options, $listings; // can be different for each instance
   public static $filterables;
@@ -318,7 +394,7 @@ class RestJson {
   // singleton. same for every instance.
   // Can only be updated by static function/method
   
-  public function __construct($did, $industry, $condition)  {
+  public function __construct($did, array $industry, $condition)  {
     // Call a static function
     $this->lwp_options = self::getLwpOptions();
     // Call a instance function
@@ -326,6 +402,7 @@ class RestJson {
    
   }
 
+  // function name is lowerCamel
   public static getLwpOptions() {
     // A static function can return a value
     // can change a static property
@@ -1844,6 +1921,11 @@ View, named foobar. Style: unformatted. Row styel: Fields. Display: Page.
 - views-view-fields.tpl.php
 
 ** Ellipsis <<<d7:ellipsis>>>
+Use truncate_utf8 for plain text string
+#+BEGIN_EXAMPLE
+truncate_utf8($string, $max_length, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1)
+#+END_EXAMPLE
+
 This can be used in custom module. Trim first, then remove scraps of html
 e.g. ~<a>fda</~, ~<a>fda</a~ and ~<a>fda<~ will become ~<a>fda~
 'html' => true will close any unclosed html tags.
@@ -3371,6 +3453,12 @@ $result => array(
 */
 #+END_EXAMPLE
 
+** OOP
+D7 refers to [[https://www.drupal.org/project/oop_examples][oop_examples module]].
+
+One quick way to include a class is to put the class inside any file e.g. $moddir/lib/reader.inc
+And include when it's needed using module_load_include('inc', 'modename', 'lib/reader');
+
 * Wordpress
 ** CLI
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
@@ -3796,6 +3884,10 @@ remove_meta_box( $id, $page, $context);
 *** get_template_part
 wp:f:get_template_part
 
+*** get_the_excerpt, the_excerpt
+the_excerpt() echoes current post and it calls get_the_excerpt($post=null)
+If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text.
+
 *** wp_localize_script
 This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
 #+BEGIN_EXAMPLE
@@ -4188,6 +4280,76 @@ SQL;
 <<<wp:filter:pre_option>>>
 Temporarily alter an option without changing in database.
 
+*** template_include
+<<<wp:filter:template_include>>>
+
+#+BEGIN_EXAMPLE
+function pubx_cuw_template_include($template) {
+  global $wp;
+  try {
+    $_url = explode('/',$wp->request);
+    if (!empty($_url) && count($_url) == 3) {
+      $adunit=$_url[1];
+      $adsize=$_url[2];
+      $dfp = array(
+        'em_CUW_BB_1' => ['95740733/'.$adunit, '300x250'],
+        'em_CUW_BB_2' => ['95740733/'.$adunit, '300x250'],
+        'em_CUW_BB_3' => ['95740733/'.$adunit, '300x250'],
+        'em_CUW_LB_1' => ['95740733/'.$adunit, $adsize], // 640x90, 300x90
+        'em_CUW_LB_2' => ['95740733/'.$adunit, $adsize], // 640x90, 300x90
+      );
+
+      if (isset($dfp[$adunit]) && strlen($adsize) < 10) {
+        $_ad_unit = $dfp[$adunit][0];
+        $_ad_size = $dfp[$adunit][1];
+        $htmlFile = <<<HTML
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Canadian Underwriter Partnership</title>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+  <script>
+    var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
+    var theUrl="//pubads.g.doubleclick.net/gampad/adx?iu=/{$_ad_unit}&sz={$_ad_size}&c=" + rnd;
+    var xmlHttp = null;
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl );
+    xmlHttp.send();
+    xmlHttp.onreadystatechange = function() {
+      if (xmlHttp.readyState==4 && xmlHttp.status==200) {
+        var xmlDoc = $.parseHTML( xmlHttp.response );
+        var adlink = $(xmlDoc).find('a').attr('href');
+        if (typeof adlink == "undefined") adlink = "//www.example.com";
+        window.location = adlink;
+      }
+    }
+  </script>
+</body>
+</html>
+HTML;
+
+        global $wp_query;
+        $wp_query->is_404 = false;
+        status_header(200);
+        echo $htmlFile;
+        $new_template = locate_template( ['empty_page.php'] );
+        return $new_template;
+      }
+    }
+  }
+  catch (Exception $e) {
+    return $template;
+  }
+
+  return $template;
+
+}
+add_filter('template_include', 'pubx_cuw_template_include',99);
+#+END_EXAMPLE
+
 ** add_action, do_action, do_action_ref_array
 *** Basic
 Event based
@@ -4447,6 +4609,9 @@ function lili_request_cache($field, $set = NULL) {
   return $custom_cache[$field];
 }
 #+END_EXAMPLE
+
+** Custom page
+wp:filter:template_include
 
 ** Database
 [[https://codex.wordpress.org/Database_Description][Database Description]]
@@ -22482,6 +22647,8 @@ if ($json !== FALSE) {
   $link = ( isset($lines[0]) ) ? trim($lines[0]) : 'default';
 }
 #+END_EXAMPLE
+
+Wordpress example wp:filter:template_include
 
 ** Responsive
 Add a size to the ad unit /networkid/adunitname
