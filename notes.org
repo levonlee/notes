@@ -154,6 +154,10 @@ $arr = ['nice_item', 'remove_me', 'another_liked_item', 'remove_me', 'remove_me_
 $arr = array_diff($arr, ['remove_me', 'remove_me_also']);
 #+END_EXAMPLE
 
+** String
+*** String to HTML
+Refer to d7:ellipsis
+
 ** Random Integer Number
 There're several ways
 
@@ -3888,6 +3892,45 @@ wp:f:get_template_part
 the_excerpt() echoes current post and it calls get_the_excerpt($post=null)
 If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text.
 
+*** wp_remote_get, wp_remote_post, wp_remote_head, wp_remote_request
+#+BEGIN_EXAMPLE
+$response = wp_remote_get( 'http://www.example.com/index.html' );
+// url has to include protocal e.g. http://
+if ( is_array( $response ) ) {
+  $header = $response['headers']; // array of http header lines
+  $body = $response['body']; // use the content
+}
+
+wp_remote_get( 'http://www.example.com/index.php?action=foo', array( 'timeout' => 120, 'httpversion' => '1.1' ) );
+#+END_EXAMPLE
+
+Methods to work with $response
+- wp_remote_retrieve_body() - Retrieves just the body from the response.
+- wp_remote_retrieve_header() - Gives you a single HTTP header based on name from the response.
+- wp_remote_retrieve_headers() - Returns all of the HTTP headers in an array for processing.
+- wp_remote_retrieve_response_code() - Gives you the number for the HTTP response. This should be 200, but could be 4xx or even 3xx on failure.
+- wp_remote_retrieve_response_message() - Returns the response message based on the response code.
+
+Default options
+#+BEGIN_EXAMPLE
+global $wp_version;
+$args = array(
+    'timeout'     => 5, // seconds
+    'redirection' => 5, // how many times
+    'httpversion' => '1.0',
+    'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
+    'blocking'    => true, // php will stop until the request is processed. false to just ping
+    'headers'     => array(),
+    'cookies'     => array(),
+    'body'        => null,
+    'compress'    => false,
+    'decompress'  => true,
+    'sslverify'   => true,
+    'stream'      => false,
+    'filename'    => null
+); 
+#+END_EXAMPLE
+
 *** wp_localize_script
 This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
 #+BEGIN_EXAMPLE
@@ -4746,6 +4789,16 @@ First in WP Disqus setting, check "Disable automated comment importing"
 Empty all cron rows in wp-options table `UPDATE wp_options SET option_value='' WHERE option_name='cron';"`
 
 https://wordpress.org/support/topic/high-server-load-and-dsq_sync_forum-problem?replies=6
+
+** WP_Error
+https://codex.wordpress.org/Function_Reference/WP_Error
+Function may return WP_Error object. Catch error
+#+BEGIN_EXAMPLE
+$post = wp_insert_post([]);
+if ( is_wp_error($post) ) {
+ echo $post->get_error_message();
+}
+#+END_EXAMPLE
 
 ** Installation Language
 Download additional language packs from [[https://make.wordpress.org/polyglots/teams/][here]]
