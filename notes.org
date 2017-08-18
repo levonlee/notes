@@ -309,6 +309,7 @@ header('Content-Type: image/jpg');
 header("Content-length: " . ob_get_length()); 
 // images do not compression e.g. gzip
 
+imagedestroy($im);
 // send it
 ob_flush();
 #+END_EXAMPLE
@@ -3983,7 +3984,7 @@ $args = array(
     'redirection' => 5, // how many times
     'httpversion' => '1.0',
     'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
-    'blocking'    => true, // php will stop until the request is processed. false to just ping
+    'blocking'    => true, // php will stop until the request is processed. false to just ping but wp_remote_get will return false
     'headers'     => array(),
     'cookies'     => array(),
     'body'        => null,
@@ -4445,6 +4446,12 @@ HTML;
         $new_template = locate_template( ['empty_page.php'] );
         return $new_template;
       }
+    }
+    elseif (other_situation) {
+      // you can just flush a buffer or output something 
+      // then set some headers
+      // and a response code
+      // then exit();
     }
   }
   catch (Exception $e) {
@@ -23547,6 +23554,20 @@ Also now a new metric called Request Type to divide:
 - GPT Simple URL
 - GPT Light
 - Amp Ad Tag
+
+For Simple URL Tags, used in email, which do not allow javascript
+- Use ~ad~ request type to get the image with ~&d_imp=1&d_imp_hdr=1~ appended
+- Use ~adx~ request type to get the URL from http header ~google-delayed-impression~ or ~google-3rdparty-delayed-impression~
+  with ~&d_imp=1&d_imp_hdr=1~ appended in the ~adx~ request
+- Ping the URL
+- Return or output the image as raw
+
+Notes
+- ~&d_imp=1&d_imp_hdr=1~ does not return downloaded impression tracking link from ~ad~ request
+- ~adx~ does not return a useful ~img src~ because its response is supposed to put into iframe where javascript is used
+
+Wordpress Gist
+https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 
 ** Benchmarks
 Sizmek Benchmarks
