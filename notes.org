@@ -155,8 +155,22 @@ $arr = array_diff($arr, ['remove_me', 'remove_me_also']);
 #+END_EXAMPLE
 
 ** String
-*** String to HTML
+*** String to HTML, <<<php:DOMDocument>>>
 Refer to d7:ellipsis
+
+#+BEGIN_EXAMPLE
+$dom = new DOMDocument;
+$dom->loadHTML($xml);
+$imgs = $dom->getElementsByTagName('img');
+foreach ( $imgs as $img ) {
+  echo $img->nodeValue, PHP_EOL;
+  echo $img->getAttribute('src');
+}
+// To get the first img
+$_first_img = $imgs->item(0);
+
+echo $_first_img->getAttribute('src');
+#+END_EXAMPLE
 
 ** Random Integer Number
 There're several ways
@@ -234,6 +248,69 @@ Nowdoc can't expand variables and the result is single quoted string
 echo <<<'EOT'
 <span>{$obj->name[1]}</span>
 EOT;
+#+END_EXAMPLE
+
+** Buffer
+http://php.net/manual/en/book.outcontrol.php
+Send headers to browser after php has begun outputting data.
+
+#+BEGIN_EXAMPLE
+// set header
+ob_start();
+echo "Hello\n";
+
+setcookie("cookiename", "cookiedata");
+
+// the same header cannot be set because it's already been sent
+ob_end_flush();
+#+END_EXAMPLE
+
+ob_start() can be stacked
+
+Flush means send
+
+ob_end_flush :: send and turn off output buffering
+ob_get_flush :: send, return and turn off
+ob_flush :: send
+ob_clean :: erase the output buffer
+ob_end_clean :: erase and turn off
+ob_get_clean :: return and erase
+ob_get_contents :: return
+
+ob_get_length
+
+** Image
+*** Create image in memory and output
+#+BEGIN_EXAMPLE
+$data = 'iVBORw0KGgoAAAANSUhEUgAAABwAAAASCAMAAAB/2U7WAAAABl'
+       . 'BMVEUAAAD///+l2Z/dAAAASUlEQVR4XqWQUQoAIAxC2/0vXZDr'
+       . 'EX4IJTRkb7lobNUStXsB0jIXIAMSsQnWlsV+wULF4Avk9fLq2r'
+       . '8a5HSE35Q3eO2XP1A1wQkZSgETvDtKdQAAAABJRU5ErkJggg==';
+$data = base64_decode($data);
+
+$im = imagecreatefromstring($data);
+if ($im !== false) {
+  header('Content-Type: image/png');
+  imagepng($im);
+  imagedestroy($im);
+}
+else {
+    echo 'An error occurred.';
+}
+#+END_EXAMPLE
+
+I think header:cache-control is automatically set to no cache
+To set Content-Length, do this
+#+BEGIN_EXAMPLE
+ob_start();
+imagejpeg($img);
+
+header('Content-Type: image/jpg');
+header("Content-length: " . ob_get_length()); 
+// images do not compression e.g. gzip
+
+// send it
+ob_flush();
 #+END_EXAMPLE
 
 ** Apply XSLT on XML
@@ -1032,20 +1109,7 @@ Check if library is downloaded =sites/all/libraries/awssdk2/aws-autoloader.php=
 
 Drupal setting :: /admin/config/media/s3fs/settings or in settings.php
 Set Cache-Control header to be ~public, max-age=604800~
-
-`no-store` - do no cache in browser.
-`no-cache` - browser has to check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
-`max-age` indicates how only to check renew cache.
-`public` indicates the file requested can be cached in all devices.
-`private` indicates the file requested can be cached in user's personal device (browser) but not public CDN.
-
-#+BEGIN_EXAMPLE
-no-store // do no cache in browser.
-no-cache // browser has to check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
-max-age // indicates how only to check renew cache.
-public // indicates the file requested can be cached in all devices.
-private // indicates the file requested can be cached in user's personal device (browser) but not public CDN.
-#+END_EXAMPLE
+Refer to header:cache-control
 
 settings.php
 #+BEGIN_EXAMPLE
@@ -8127,6 +8191,36 @@ Required properties for every page
 - og:url
 
 <meta property="og:title" content="" />
+
+** HTTP Header
+All headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+
+*** Age
+A non-negative integer of seconds that the object (response) has been in a proxy cache (CDN, Varnish)
+
+*** Cache-Control
+<<<header:cache-control>>>
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+
+- Directives
+must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
+no-cache :: browser has to check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
+no-store :: no cache should be stored in request or response
+no-transform
+public :: response can be cached in all devices
+private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish)
+proxy-revalidate
+max-age=<seconds> :: 
+post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
+
+- Common usage
+  - public, max-age=2592000 :: cache for a month
+  - no-cache, must-revalidate, post-check=0, pre-check=0 :: no cache and always ask from server
+
+*** Expires
+When the response is considered stale.
+Set to 0 means the response is expired.
+If Cache-Control has max-age or s-max-age, Expires is ignored.
 
 ** Email
 *** Doctype
