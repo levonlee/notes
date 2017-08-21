@@ -172,6 +172,9 @@ $_first_img = $imgs->item(0);
 echo $_first_img->getAttribute('src');
 #+END_EXAMPLE
 
+*** String Ellipsis, Trim
+wp:ellipsis d7:ellipsis
+
 ** Random Integer Number
 There're several ways
 
@@ -4580,6 +4583,68 @@ add_shortcode( 'bartag', 'bartag_func' );
 /wp-admin/options.php
 
 [[https://codex.wordpress.org/Option_Reference][Option Reference]]
+
+** Ellipsis and trim
+<<<wp:ellipsis>>>
+wp_trim_words($text) :: strip HTML and PHP tags and truncate string in words
+#+BEGIN_EXAMPLE
+function wp_trim_words( $text, $num_words = 55, $more = null ) {
+  if ( null === $more ) {
+    $more = __( '&hellip;' );
+  }
+
+  $original_text = $text;
+  $text = wp_strip_all_tags( $text );
+
+  /*
+   * translators: If your word count is based on single characters (e.g. East Asian characters),
+   * enter 'characters_excluding_spaces' or 'characters_including_spaces'. Otherwise, enter 'words'.
+   * Do not translate into your own language.
+   */
+  if ( strpos( _x( 'words', 'Word count type. Do not translate!' ), 'characters' ) === 0 && preg_match( '/^utf\-?8$/i', get_option( 'blog_charset' ) ) ) {
+    $text = trim( preg_replace( "/[\n\r\t ]+/", ' ', $text ), ' ' );
+    preg_match_all( '/./u', $text, $words_array );
+    $words_array = array_slice( $words_array[0], 0, $num_words + 1 );
+    $sep = '';
+  } else {
+    $words_array = preg_split( "/[\n\r\t ]+/", $text, $num_words + 1, PREG_SPLIT_NO_EMPTY );
+    $sep = ' ';
+  }
+
+  if ( count( $words_array ) > $num_words ) {
+    array_pop( $words_array );
+    $text = implode( $sep, $words_array );
+    $text = $text . $more;
+  } else {
+    $text = implode( $sep, $words_array );
+  }
+
+  /**
+   * Filters the text content after words have been trimmed.
+   *
+   * @since 3.3.0
+   *
+   * @param string $text          The trimmed text.
+   * @param int    $num_words     The number of words to trim the text to. Default 55.
+   * @param string $more          An optional string to append to the end of the trimmed text, e.g. &hellip;.
+   * @param string $original_text The text before it was trimmed.
+   */
+  return apply_filters( 'wp_trim_words', $text, $num_words, $more, $original_text );
+}
+#+END_EXAMPLE
+
+wp_strip_all_tags($string)
+#+BEGIN_EXAMPLE
+function wp_strip_all_tags($string, $remove_breaks = false) {
+  $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
+  $string = strip_tags($string);
+
+  if ( $remove_breaks )
+    $string = preg_replace('/[\r\n\t ]+/', ' ', $string);
+
+  return trim( $string );
+}
+#+END_EXAMPLE
 
 ** Ajax <<<wp:ajax>>>
 *** Ajax on wp admin pages
@@ -15825,7 +15890,7 @@ without destroying Views data.
 The most recent version is analytics.js
 [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
 
-*** Regular Expressions
+*** Regular Expressions <<<ga:regex>>>
 https://support.google.com/analytics/answer/1034324?hl=en
 
 Use ~\~ to escape. Need to escape ~.~
