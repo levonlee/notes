@@ -742,7 +742,7 @@ Allows the use of client-side editors to edit content
 
 **** Installation & Config
 Setup assign text format to trusted roles: admin/config/content/formats
-Follow README.md
+Follow README.md to config Text Format (e.g. Full HTML). Basically remove any restrictions.
 Installation Instructions on config page: /admin/config/content/wysiwyg
 TinyMCE installation instructions are missing.. Refer to this https://www.drupal.org/docs/7/modules/wysiwyg/installation
 Basically, download from TinyMCE and put it in sites/all/libraries/tinymce
@@ -753,12 +753,25 @@ You need to save the profile after the TinyMCE editor is updated.
 
 Supported editor versions: https://www.drupal.org/project/wysiwyg
 
+***** [[https://www.tinymce.com/docs/configure/][All TinyMCE settings]]
+To config other TinyMCE settings and the Wysiwyg module UI doesn't provide, use hook_wysiwyg_editor_settings_alter()
+
+****** HTML elements are stripped off
+In /admin/config/content/wysiwyg/profile/full_html/edit, keep Verify HTML on.
+#+BEGIN_EXAMPLE
+function lili_wysiwyg_editor_settings_alter( &$settings, $context ) {
+  dpm($settings,  'settings');
+  dpm($context, 'context');
+  $settings['extended_valid_elements'] .= ',script[language|type|src]';
+}
+#+END_EXAMPLE
+
+verify_html (bool) :: clean up HTML elements that are allowed for ~valid_elements~, ~extended_valid_elements~ and ~invalid_elements~
+valid_elements (string) :: there're some but <script> is not allowed
+
 **** Troubleshoot
 Fields in node or block configuration might be empty or some elements are missing after save. 
-To see the HTML, disable javascript in Chrome. 
-To force to save stripped elements (even though you will not see them if you edit node again but all stripped ones will be saved anyway..), do the following:
-- Edit the Wysiwyg Editor for a Text Format (e.g. Full HTML) /admin/config/content/wysiwyg. Uncheck "Apply source formatting"
-Then go back to the node and click Source in Wysiwyg and paste the HTML code and save the node directly.
+To see the HTML, disable javascript in Chrome.
 
 *** IMCE Wysiwyg bridge: imce_wysiwyg
 https://www.drupal.org/project/imce_wysiwyg
