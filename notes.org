@@ -21423,10 +21423,11 @@ To check out the original branch and stop rebasing, run "git rebase --abort".
 #+END_EXAMPLE
 
 ** Drupal Cron
-Pantheon run cron in this way. It is generally within 5 to 10 minutes of half past each hour: 4:30pm, 5:30pm, 6:30pm, etc.
+Pantheon runs cron within 5 to 10 minutes of half past each hour: 4:30pm, 5:30pm, 6:30pm, etc.
 =drush pantheon_cron 3600=
-
 This bootstraps the site and invokes drupal_cron_run.
+
+If the site is not accessed for at least 2 hours, Pantheon suspends all associated services and thus cron will not run.
 
 ** Determine Environment
 <<<pantheon:environment>>>
@@ -22965,38 +22966,34 @@ frameborder="0" scrolling="no" allowTransparency="true"></iframe>
 ** Creative Type: HTML5
 Upload zip file or single html file
 
-** Creative Type: DoubleClick Tag 
-Basic Redirect URL
-https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=320x548
+** Creative Type: DoubleClick Tag, DCM Tag
+DCM, previously known as DFA (for advertisers), is DoubleClick Campaign Manager, part of the DoubleClick Marketing Solutions.
 
-There's also a tag called DCM tag. Convert the URL in DCM tag to the basic Redirect URL.
-May also deploy DCM tag as a custom creative. But you have to add the DFP macros. [[https://support.google.com/dfp_premium/answer/1656861?hl%3Den&ref_topic%3D28160][Instructions]]
+[[https://support.google.com/dcm/partner/answer/2826636][DCM placement tags]]
 
+Always use Internal redirect tag for DFP. Sometimes this tag is not given by agency, you will need to convert it to this type.
+Ins tag is recommended for ad servers other than DFP because it has active view capability.
+
+ddm/jump tag (redirect to final destination) has to be loaded with ddm/ad tag.
+
+Other tags like ddm/trackimp, ddm/trackclk, ddm/clk don't have to be loaded with ddm/ad tag.
+
+*** Standard tags (ddm/jump, ddm/ad)
 #+BEGIN_EXAMPLE
-Iframe
-<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
-    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
-    data-dcm-rendering-mode='script'
-    data-dcm-https-only
-    data-dcm-resettable-device-id=''
-    data-dcm-app-id=''>
-  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-</ins>
-
-Javascript
-<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
-    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
-    data-dcm-rendering-mode='script'
-    data-dcm-https-only
-    data-dcm-resettable-device-id=''
-    data-dcm-app-id=''>
-  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-</ins>
+<A HREF="https://ad.doubleclick.net/ddm/jump/Nxxxx.site-keyname/Byyyyyyy.Pzzzz;sz=widthxheight;kw=[keyword];ord=[timestamp]?">
+ 
+<IMG SRC="https://ad.doubleclick.net/ddm/ad/Nxxxx.site-keyname/Byyyyyyy.Pzzzz;sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I?" BORDER=0 WIDTH=X HEIGHT=Y ALT="Click Here"></A>
 #+END_EXAMPLE
 
-DCM tag has a legacy form
+Nxxx: DCM account id
+Byyyy: DCM campaign ID
+.Pzzzz: DCM placement ID
+dc_lat=N: key-value pair for mobile app to pass if the user has enabled "Limit Ad Tracking"
+dc_rdid=Czzz: key-value pair for mobile app to pass resettable device identifiers in the form of IDFA for iOS or advertising ID (AdID) for Android
+tag_for_child_directed_treatment=I: key-value pair for mobile app to pass info about if a request may come from a user under the age of 13
+
+*** iframe/javascript tags  (ddm/adi, ddm/adj)
 #+BEGIN_EXAMPLE
-Iframe
 <IFRAME SRC=""https://ad.doubleclick.net/ddm/adi/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" WIDTH=300 HEIGHT=250 MARGINWIDTH=0 MARGINHEIGHT=0 HSPACE=0 VSPACE=0 FRAMEBORDER=0 SCROLLING=no BORDERCOLOR='#000000'>
 <SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;abr=!ie;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
 </SCRIPT>
@@ -23005,8 +23002,10 @@ Iframe
 <IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789/B10762433.143897886;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
 </NOSCRIPT>
 </IFRAME>
+#+END_EXAMPLE
 
-Javascript
+*** javascript (ddm/adj)
+#+BEGIN_EXAMPLE
 <SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
 </SCRIPT>
 <NOSCRIPT>
@@ -23015,9 +23014,65 @@ Javascript
 </NOSCRIPT>
 #+END_EXAMPLE
 
-ddm/jump tag (redirect to final destination) has to be loaded with ddm/ad tag.
+*** Pre-fetch tags (ddm/pfadx)
+#+BEGIN_EXAMPLE
+# VAST 2.0
+https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml
 
-Other tags like ddm/trackimp, ddm/trackclk, ddm/clk don't have to be loaded with ddm/ad tag.
+# VAST 3.0
+https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml;dc_vast=3
+
+# VAST 4.0
+https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml;dc_vast=4
+#+END_EXAMPLE
+
+*** Click tracker (ddm/clk)
+#+BEGIN_EXAMPLE
+https://ad.doubleclick.net/ddm/clk/[ad ID];[placement ID];[verifier]?[click-through URL]
+#+END_EXAMPLE
+
+*** Internal redirect tag
+https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=320x548
+
+#+BEGIN_EXAMPLE
+# Image URL
+https://ad.doubleclick.net/ddm/ad/Nxxxx.site-keyname/Byyyyyyy.n;sz=widthxheight;dc_expa=URL
+
+# Click-through URL
+https://ad.doubleclick.net/ddm/jump/Nxxxx.site-keyname/Byyyyyyy.n;sz=widthxheight
+#+END_EXAMPLE
+
+dc_expa: Ping an encoded URL in order to track real-time expansions of rich media display expanding creatives.
+
+Grab the attribute data-dcm-placement value from either iframe or Ins tag and also the size
+#+BEGIN_EXAMPLE
+https://ad.doubleclick.net/ddm/ad/[data-dcm-placement];sz=widthxheight
+#+END_EXAMPLE
+
+*** Ins tag
+In DFP, always use internal redirect tag. May also deploy DCM tag as a custom creative by adding DFP macros. [[https://support.google.com/dfp_premium/answer/1656861?hl%3Den&ref_topic%3D28160][Instructions]]
+
+#+BEGIN_EXAMPLE
+Iframe
+<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
+    data-dcm-rendering-mode='script'
+    data-dcm-https-only
+    data-dcm-resettable-device-id=''
+    data-dcm-app-id=''>
+  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+</ins>
+
+Javascript
+<ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+    data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
+    data-dcm-rendering-mode='script'
+    data-dcm-https-only
+    data-dcm-resettable-device-id=''
+    data-dcm-app-id=''>
+  <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+</ins>
+#+END_EXAMPLE
 
 ** Wallpaper, Site Skin
 
