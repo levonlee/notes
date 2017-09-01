@@ -465,20 +465,31 @@ class FooBar {
 #+END_EXAMPLE
 
 ** OOP
+OOP Features
+- Abstraction
+- Encapsulation (expose functionality and access control)
+  - protected :: accessed within class, inherited (parent) / inheriting (child) classes
+  - private :: only the current class can access
+  - prefix underscore for protected and private properties' names
+- Hierarchy (inheritance)
+- Modularity (accomplish one task)
+- Polymorphism (interact with classes without knowing what class it is) 
 
 #+BEGIN_EXAMPLE
 $rest = new RestJson('12345', 'trucks', 'new');
-// Class name should use UpperCamel
+// Class name should use UpperCamel, can have underscores and numbers
 // SampleXmlClass, not SampleXMLClass
 // Names should not include Drupal, Class
 // Interface should always prefix "Interface"
 class RestJson {
   public $lwp_options, $listings; // can be different for each instance
-  public static $filterables;
-
-  // singleton. same for every instance.
+  public static $filterables; // singleton. same for every instance.
   // Can only be updated by static function/method
-  
+
+  // variable and function names should be lowerCamel and avoid underscores
+
+  // variable can have default value that is static. e.g. value of time() is not allowed or reference to another varialbe $a = $b
+
   public function __construct($did, array $industry, $condition)  {
     // Call a static function
     $this->lwp_options = self::getLwpOptions();
@@ -487,7 +498,6 @@ class RestJson {
    
   }
 
-  // function name is lowerCamel
   public static getLwpOptions() {
     // A static function can return a value
     // can change a static property
@@ -496,6 +506,42 @@ class RestJson {
     // Can't modify instance value $this->aPropertyName
     // Can't call instance method $this->aMethod();
   }
+}
+#+END_EXAMPLE
+
+*** Magic Methods
+http://php.net/manual/en/language.oop5.magic.php
+Starts with 2 underscores. They are for:
+- Trigger custom behavior
+- Customize object creation
+- Ignore scope :: access or change hidden properties
+- With magic method, the performance is about 3 to 10 times slower..
+
+**** Overloading
+These are to dynamically "create" a property or method of an instance that has not been declared, or is not visible in the current scope.
+
+Can't be used in static properties.
+
+__set() is triggered when writing data to inaccessible properties
+__get() is triggered when reading data from inaccessible properties.
+
+They are all public functions
+
+#+BEGIN_EXAMPLE
+protected $_postal_code;
+
+function __get($name) {
+  
+  if (!$this->_postal_code) {
+    $this->_postal_code = $this->_postal_code_guess();
+  }
+  $protected_property_name = '_' . $name;
+  if (property_exists($this, $proteced_property_name)) {
+   return $this->$protected_property_name;
+  }
+
+  trigger_error('Undefined property via __get:' . $name);
+  return NULL;
 }
 #+END_EXAMPLE
 
@@ -25473,6 +25519,7 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Lynda Agile Project Management
 * TODO Lynda Javascript: Enhancing the DOM
 * TODO Lynda Firebase, Travis CI, Heroku
+* TODO Lynda: Foundations of Programming: Object-Oriented Design
 * DONE Chase Payment
 * DONE Lynda [[https://www.behance.net/][Behance.net]]
 * DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
