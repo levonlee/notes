@@ -1518,6 +1518,11 @@ From 7.x-2.0-beta1 to 7.x-2.9
 *** i18n
 [[https://www.drupal.org/project/i18n][i18n]] requires core locale and d7:m:variable
 
+<<<d7:m:i18n>>>
+
+- Add a language :: admin/config/regional/language
+- Go to pages that use t('string to translate', [], ['langcode'=>"fr"]) with non default options
+
 *** S3 File System s3fs
 requires module libraries, library =AWS SDK for PHP 2.x=, PHP 5.3.3+ with ~allow_url_fopen = On~ in =php.ini=
 
@@ -1669,6 +1674,32 @@ $link = t('Visit the <a href="@url">settings</a> page', array('@url' => url('adm
 // `%` and `@` use `check_plain()`
 // `%` adds `<em class="placehoder"></em>`
 // `!` straight output.
+
+t('Thursday',[],['langcode'=>'fr']);
+t('Thursday',[],['context'=> 'some context', 'langcode'=>'fr']);
+
+d7:m:i18n
+
+*** Translate Date and Time
+#+BEGIN_EXAMPLE
+// Have to load all terms then Translate Interface can show up admin/config/regional/translate/translate
+
+$_fr_days_translation = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+$_fr_months_translation = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+foreach ($_fr_days_translation as $_t_i) {
+  t($_t_i, [],['langcode'=>'fr']);
+}
+
+// format_date with F (long month name) adds context..
+foreach ($_fr_months_translation as $_t_i) {
+  t($_t_i, [],['context'=>'Long month name','langcode'=>'fr']);
+}
+
+$_u_time = mktime (11, 0, 0, $_u_time['month'], $_u_time['day'], $_u_time['year']);
+$_fr_time = format_date($_u_time, 'custom', 'l j F Y', NULL, 'fr');
+
+echo $_fr_time;
+#+END_EXAMPLE
 
 ** Global Variables
 https://api.drupal.org/api/drupal/globals/7.x
