@@ -473,8 +473,9 @@ OOP Features
   - prefix underscore for protected and private properties' names
 - Hierarchy (inheritance)
 - Modularity (accomplish one task)
-- Polymorphism (interact with classes without knowing what class it is) 
+- Polymorphism (interface :: interact with classes without knowing what class it is) 
 
+*** Sample
 #+BEGIN_EXAMPLE
 $rest = new RestJson('12345', 'trucks', 'new');
 // Class name should use UpperCamel, can have underscores and numbers
@@ -482,8 +483,17 @@ $rest = new RestJson('12345', 'trucks', 'new');
 // Names should not include Drupal, Class
 // Interface should always prefix "Interface"
 class RestJson {
-  public $lwp_options, $listings; // can be different for each instance
+  // constant: strings, booleans, integers
+  const MY_CONSTANT_VAR = 1;
+
+  public static $valid_address_types = [
+     RestJson::MY_CONSTANT_VAR => 'Residence',
+  ];
+
   public static $filterables; // singleton. same for every instance.
+
+  public $lwp_options, $listings; // can be different for each instance
+
   // Can only be updated by static function/method
 
   // variable and function names should be lowerCamel and avoid underscores
@@ -507,6 +517,53 @@ class RestJson {
     // Can't call instance method $this->aMethod();
   }
 }
+
+// Class::method()
+// Class::$property
+#+END_EXAMPLE
+
+*** Inheritance
+Child can override parent's constants but not constants declared in interface
+Child can override parent's methods but with the same name and arguments (except constructors)
+Child can override parent's methods and make them have the same or less restricted visibility
+#+BEGIN_EXAMPLE
+// class ParentChild extends Parent {}
+class AddressResidence extends Address {}
+#+END_EXAMPLE
+
+*** Abstract Class
+Abstract class cannot be instantiated
+If a method is abstract, any class (not abstract class) that extends that abstract class containing the method must also declare a method with the same name and arguments.
+If a class has an abstract method, then the class itself must be abstract.
+
+#+BEGIN_EXAMPLE
+abstract class Address {
+  public function __construct() {
+    $this->_init();
+  }
+
+  /**
+   * Force extending classes to implement init method.
+   */
+  abstract protected function _init();
+}
+
+class AddressBusiness extends Address {
+  // Methods that implement abastract method
+  // must have the same scope OR less restrictive
+  protected function _init() {
+    $this->_setAddressTypeId(Address::ADDRESS_TYPE_BUSINESS);
+  }
+}
+#+END_EXAMPLE
+
+*** Interface
+Specify what methods must be implemented but not how
+A class can implement multiple interfaces
+Use ~final~ in parent class to prevent child class from overriding the method/property
+
+#+BEGIN_EXAMPLE
+final public function load() {}
 #+END_EXAMPLE
 
 *** Magic Methods
@@ -542,6 +599,284 @@ function __get($name) {
 
   trigger_error('Undefined property via __get:' . $name);
   return NULL;
+}
+#+END_EXAMPLE
+
+**** __construct, __destruct
+#+BEGIN_EXAMPLE
+class BaseClass {
+  function __construct() {
+    print "In BaseClass constructor\n";
+  }
+}
+
+class SubClass extends BaseClass {
+  function __construct() {
+    parent::__construct();
+    print "In SubClass constructor\n";
+  }
+}
+#+END_EXAMPLE
+
+**** __toString()
+Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within __toString() method.
+
+**** __clone()
+
+#+BEGIN_EXAMPLE
+class SubObject
+{
+  static $instances = 0;
+  public $instance;
+
+  public function __construct() {
+    $this->instance = ++self::$instances;
+  }
+
+  public function __clone() {
+    $this->instance = ++self::$instances;
+  }
+}
+
+class MyCloneable
+{
+  public $object1;
+  public $object2;
+
+  function __clone()
+  {
+    // Force a copy of this->object, otherwise
+    // it will point to same object. (shallow copy)
+    $this->object1 = clone $this->object1;
+  }
+}
+
+$obj = new MyCloneable();
+
+$obj->object1 = new SubObject();
+$obj->object2 = new SubObject();
+
+$obj2 = clone $obj;
+
+
+print("Original Object:\n");
+print_r($obj);
+
+print("Cloned Object:\n");
+print_r($obj2);
+
+
+Original Object:
+MyCloneable Object
+(
+  [object1] => SubObject Object
+(
+  [instance] => 1
+        )
+
+    [object2] => SubObject Object
+(
+  [instance] => 2
+        )
+
+)
+Cloned Object:
+MyCloneable Object
+(
+  [object1] => SubObject Object
+(
+  [instance] => 3
+        )
+
+    [object2] => SubObject Object
+(
+  [instance] => 2
+        )
+
+)
+#+END_EXAMPLE
+
+*** Clone, copy and reference
+$obj1 == $obj2 :: do 2 objects have the same property names and values
+$obj1 === $obj2 :: do 2 objects have the same properties and also are those 2 instances of the same class
+get_class($obj1) ::
+$obj1 instanceof AddressBusiness ::
+
+Clone, rather than just $obj1=$obj2, __clone magic method can be used.
+Reference is faster than clone and direct copy. But when ~===~ is used to compare the two, they are different.
+
+#+BEGIN_EXAMPLE
+$address_business = new AddressBusiness(array(
+  'street_address_1' => '123 Phony Ave',
+  'city_name' => 'Villageland',
+  'subdivision_name' => 'Region',
+  'country_name' => 'Canada',
+));
+
+$address_park = new AddressPark(array(
+  'street_address_1' => '789 Missing Circle',
+  'street_address_2' => 'Suite 0',
+  'city_name' => 'Hamlet',
+  'subdivision_name' => 'Territory',
+  'country_name' => 'Australia',
+));
+echo $address_park;
+
+echo '<h2>Cloning AddressPark</h2>';
+
+$address_park_clone = clone $address_park;
+
+echo '$address_park_clone is ' . ($address_park == $address_park_clone ?
+  '' : 'not ') . ' a copy of $address_park.';
+// $address_park_clone is a copy of $address_park
+
+echo '<h2>Copying AddressBusiness reference</h2>';
+
+$address_business_copy = &$address_business;
+
+echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
+  '' : 'not ') . ' a copy of $address_business.';
+// $address_business_copy is a copy of $address_business
+
+echo '<h2>Setting address_business_copy as a new AddressPark</h2>';
+$address_business = new AddressPark();
+
+echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
+  '' : 'not ') . ' a copy of $address_business.';
+
+// $address_business_copy is not a copy of $address_business
+
+echo '<br/>$address_business is class ' . get_class($address_business) . '.';
+
+// $address_business is class AddressPark.
+
+echo '<br/>$address_business_copy is ' . ($address_business_copy instanceof
+AddressBusiness ? '' : 'not ') . ' an AddressBusiness.';
+
+// $address_business_copy is an AddressPark
+#+END_EXAMPLE
+
+*** Autoload Classes
+#+BEGIN_EXAMPLE
+function my_autoloader($class) {
+    include 'classes/' . $class . '.class.php';
+}
+
+spl_autoload_register('my_autoloader');
+
+// Or, using an anonymous function as of PHP 5.3.0
+spl_autoload_register(function ($class) {
+    include 'classes/' . $class . '.class.php';
+});
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+namespace Foobar;
+
+class Foo {
+    static public function test($name) {
+        print '[['. $name .']]';
+    }
+}
+
+spl_autoload_register(__NAMESPACE__ .'\Foo::test'); // As of PHP 5.3.0
+#+END_EXAMPLE
+
+*** Design Pattern
+Singleton Pattern :: database connection
+
+Lazy Initialization
+- at the beginning properties are null and populated on demand
+- If null, set and return
+- If value, just return
+
+Factory Method
+- Creat objects without specifying class
+#+BEGIN_EXAMPLE
+final public static function getInstance($address_type_id, $data = []) {
+  $class_name = 'Address'. self::$valid_address_types[$address_type_id];
+  if (!class_exists($class_name)) {
+    throw new ExceptionAddress('Address subclass not found. cannot create: ', self::ADDRESS_ERROR_UNKNOWN_SUBCLASS);
+  }
+  return new $class_name($data);
+}
+
+// end class
+
+$address_residence = Address::getInstance(Address::ADDRESS_TYPE_RESIDENCE);
+#+END_EXAMPLE
+
+Strategy Pattern
+- Finite number of strategies, check each one if it can be satisfied in a loop, the last strategy is the best preferred one
+- Each strategy implements a common interface which has a check method: isAvailable and a action-method: display
+- Each strategy is singleton
+- The best strategy is chosen in an Lazy Initialization process
+
+#+BEGIN_EXAMPLE
+class Address {
+  const ADDRESS_ERROR_NO_DISPLAY_STRATEGY = 1002;
+
+  private static $_display_strategies = [
+    'AddressDisplayNoCountry', 'AddressDisplayFull', 'AddressDisplayPark'
+  ];
+
+  private $_display_strategy;
+
+  function display() {
+    // Lazy initialization
+    if (is_null($this->_display_strategy)) {
+      foreach (self::$_display_strategies as $strategy_class_name) {
+        if ($strategy_class_name::isAvailable($this)) {
+          $this->_display_strategy = $strategy_class_name;
+        }
+      }
+    }
+    if (!$this->_display_strategy) {
+      throw new Exception('No display strategy found', self::ADDRESS_ERROR_NO_DISPLAY_STRATEGY);
+    }
+    $display_strategy = $this->_display_strategy;
+    return $display_strategy::display($this);
+
+  }
+
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+interface AddressDisplay {
+  /**
+   * AddressDisplay an Address.
+   * @return string
+   */
+  public static function display($address);
+
+  /**
+   * Is this method of display available?
+   * @return boolean
+   */
+  public static function isAvailable($address);
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+class AddressDisplayFull implements AddressDisplay {
+  /**
+   * Display an addess with a country.
+   */
+  public static function display($address) {
+    $output = AddressDisplayNoCountry::display($address);
+    $output .= '<br/>';
+    $output .= $address->country_name;
+    return $output;
+  }
+
+  /**
+   * Is this method of display available?
+   * @return boolean
+   */
+  public static function isAvailable($address) {
+    return $address->country_name ? TRUE : FALSE;
+  }
 }
 #+END_EXAMPLE
 
@@ -25584,6 +25919,9 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Lynda Javascript: Enhancing the DOM
 * TODO Lynda Firebase, Travis CI, Heroku
 * TODO Lynda: Foundations of Programming: Object-Oriented Design
+* TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
+* TODO Book: Design Patterns: Elements of Reusable Object-Oriented Software (Addison-Wesley)
+* TODO Book: Code Complete (2nd Edition, Microsoft Press)
 * DONE Chase Payment
 * DONE Lynda [[https://www.behance.net/][Behance.net]]
 * DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
