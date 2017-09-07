@@ -1149,6 +1149,16 @@ requires nothing
 *** Module Filter
 [[https://www.drupal.org/project/module_filter][module_filter]] :: requires nothing
 
+*** Geocoder
+Requires d7:geophp d7:ctools d7:entity <<<d7:geocoder>>>
+An API and widget to geocode text field into GIS data types.
+
+*** Entity View Modes - entity_view_mode
+Requires nothing <<<d7:entity_view_mode>>>
+Recommends d7:field_ui
+Create custom View Mode: Default, Teaser under Manage Display
+d7:ds can also create view mode
+
 *** wysiwyg
 requires nothing
 Allows the use of client-side editors to edit content
@@ -1238,6 +1248,80 @@ Requires nothing
 [[https://www.drupal.org/project/ctools][ctools]] :: no dependencies <<<d7:ctools>>>
 From [[https://www.drupal.org/project/ctools/releases/7.x-1.10][7.x-1.10]] to [[https://www.drupal.org/project/ctools/releases/7.x-1.12][7.x-1.12]]
 
+$modulepath/help/
+$modulepath/help/plugins-creating.html :: all plugin types
+
+*** Address Field - addressfield - Package: Fields
+Requires d7:ctools
+
+Field List: admin/reports/fields
+
+/moduels/field/field.api.php
+https://api.drupal.org/api/drupal/modules%21field%21field.api.php/7.x
+
+*** Email - email - Package: Fields
+Requires nothing
+
+*** Geofield - Package: Fields
+Requires d7:geophp d7:ctools
+Used with d7:geocoder
+
+*** Viewfield - Package: Fields
+Requires d7:views
+e.g. An order has multiple items, store those items into a field
+
+*** Field collection - field_collection - Package: Fields
+Requires d7:entity
+Test require d7:entity_translation
+Any number of fields can be attached to a field-collection field which is an entity.
+
+*** Social Field - socialfield - Package: Fields
+Requires nothing
+
+*** Video Embed Field - video_embed_field - Package: Media
+Requires d7:ctools core image
+New field type
+Used with video_embed_* modules
+
+Have to install other modules to support different providers e.g. video_embed_facebook, video_embed_brightcove
+
+*** Display Suite - ds - Package: Display Suite
+Requires d7:ctools <<<d7:ds>>>
+Submoduels
+- ds_devel :: requires devel
+- ds_extras :: admin/structure/ds/list/extras
+ - Field Templates :: theme a field. To theme a display field, you don't need to enable it
+ - Extra Fields
+ - Other
+  - Region to block ::
+    Create a region and move fields into that region Content Type > Manage Display > Block regions
+    This will create a block which can be used in other places/regions in Blocks setting
+  - View mode per node :: specify a view mode for each node
+- ds_format
+- ds_forms
+- ds_search
+  Integrate search engine such as module apachesolr and d7:search_api_solr to display the search results for a content type
+- ds_ui
+
+https://www.youtube.com/playlist?list=PL7E361A55994F1648
+
+Can display fields of a content type into a layout which has several regions under Manage Display
+
+A display field can be created for a content type display. This field is for theming only not physically create a field in db.
+Field value can be PHP code and Token can be used.
+- Field :: custom field with PHP and Token
+- Block field :: display a block
+- Dynamic field :: choose a variable to display e.g. node_body, menu
+- Preprocess field :: display a variable e.g. Node Url (machine name node_url)
+
+Later theme that display field using ds_extras 
+
+View Mode :: Default, Teaser
+Create a view mode. d7:entity_view_mode can also create view modes.
+To display a view that returns multiple nodes of a content type, go to Format > Show > Display suite > Settings
+Choose the custom view mode and also specify the first item to use View Mode #1 and the second item to use View Mode #2, etc.
+Custom hook can be selected in this setting to make customization
+
 *** Entity Reference - entityreference
 entityreference :: requires d7:ctools d7:entity <<<d7:entityreference>>>
 In D8 core
@@ -1269,8 +1353,8 @@ From 7.x-2.0-beta2 to 7.x-2.3
 <<<d7:facetapi>>> facetapi :: requires d7:ctools
 Sub modules: current_search, facetapi_bonus
 
-*** Search API
-search_api requires entity
+*** Search API - search_api
+Requires entity <<<d7:search_api>>>
 sub modules :: search_api_views (views), search_api_facetapi (d7:facetapi)
 https://www.drupal.org/docs/7/modules/search-api
 https://www.youtube.com/watch?v=hcAM0HrEk4c
@@ -1460,9 +1544,10 @@ path-to-mod/search_api/search_api.api.php
 Search search_api*.api.php
 search_api_solr.api.php
 
-*** Search API Solr
-[[https://www.drupal.org/project/search_api_solr][search_api_solr]] requires search_api and core Search
+*** Search API Solr - search_api_solr - Package: Search
+[[https://www.drupal.org/project/search_api_solr][search_api_solr]] requires d7:search_api and core Search <<<d7:search_api_solr>>>
 It's more powerful than module apachesolr
+It creates View Mode called Search Index in each content type
 
 Setup an account and create an index on Opensolr.com
 
@@ -1490,6 +1575,10 @@ drupal_set_message(check_plain($url)); // <-- Add this line to retrieve request
 $result = drupal_http_request($url, $options);
 drupal_set_message(check_plain($result->data)); // <-- Add this line to retrieve response
 #+END_EXAMPLE
+
+*** Search API Solr Overrides - search_api_solr_overrides
+Requires d7:search_api_solr
+Provides site/environment specific overrides for search_api_solr configuration in settings.php
 
 *** Views
 [[https://www.drupal.org/project/views][Views]], sub module Views UI <<<d7:views>>> d7:viewsapi
@@ -2021,6 +2110,13 @@ echo theme('lili_flair',array('text'=>'hi'));
 // In xxx.tpl.php use $text directly
 #+END_EXAMPLE
 
+*** Contributed themes
+**** Omega
+https://www.drupal.org/project/omega
+
+**** Corolla
+https://www.drupal.org/project/corolla
+
 ** Drush
 *** Debug =-vd=
 *** Alias
@@ -2080,6 +2176,13 @@ Clear all Drupal Cache
 #+BEGIN_EXAMPLE
 drush cc all
 #+END_EXAMPLE
+
+*** Fields
+// Field Name, Feild Type, Bundles
+drush field-info fields
+
+// Field type, Default widget, Widgets
+drush field-info types
 
 *** Custom Drush
 hook_drush_command() and drush_hook_your_command() in hook.drush.inc
@@ -24234,6 +24337,9 @@ Notes
 Wordpress Gist
 https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 
+** Anti Adblocke
+https://gist.github.com/levonlee/da658dd8d6c91f093fc90aeca4653ae7
+
 ** Benchmarks
 Sizmek Benchmarks
 Based on 2016 H1 report, CTR (click-through rate = clicks / impressions) is around 0.14% in North America and South Asia is the highest 0.28% for standard banner.
@@ -25955,6 +26061,7 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Lynda Javascript: Enhancing the DOM
 * TODO Lynda Firebase, Travis CI, Heroku
 * TODO Lynda: Foundations of Programming: Object-Oriented Design
+* TODO JavaScript HTML5 Animation Framework: GSAP or Tween https://greensock.com/
 * TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
 * TODO Book: Design Patterns: Elements of Reusable Object-Oriented Software (Addison-Wesley)
 * TODO Book: Code Complete (2nd Edition, Microsoft Press)
