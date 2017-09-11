@@ -2893,6 +2893,138 @@ $an_action :: array
 
 [[https://www.drupal.org/node/2052067#permissions][VBO Permissions]]
 
+** Field API <<<d7:api:field>>>
+*** Field Formatter
+Content Type > Manage Display > Format for a field
+hook_field_formatter_info tells Drupal a new field formatter that will apply to what field types.
+If a formatter has a setting, a summary and a form needs to be defined in order to show a gear icon next to summary in Manage Display
+
+hook_field_formatter_info :: hook_field_formatter_info_alter
+
+#+BEGIN_EXAMPLE
+function text_field_formatter_info() {
+  return array(
+    'text_default' => array(
+      'label' => t('Default'),
+      'field types' => array('text', 'text_long', 'text_with_summary'),
+    ),
+    'text_plain' => array(
+      'label' => t('Plain text'),
+      'field types' => array('text', 'text_long', 'text_with_summary'),
+    ),
+
+    'text_trimmed' => array(
+      'label' => t('Trimmed'),
+      'field types' => array('text', 'text_long', 'text_with_summary'),
+      'settings' => array('trim_length' => 600),
+    ),
+
+    'text_summary_or_trimmed' => array(
+      'label' => t('Summary or trimmed'),
+      'field types' => array('text_with_summary'),
+      'settings' => array('trim_length' => 600),
+    ),
+  );
+}
+#+END_EXAMPLE
+
+hook_field_formatter_settings_summary
+
+#+BEGIN_EXAMPLE
+function text_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = '';
+
+  if (strpos($display['type'], '_trimmed') !== FALSE) {
+    $summary = t('Trimmed limit: @trim_length characters', array('@trim_length' => $settings['trim_length']));
+  }
+
+  return $summary;
+}
+#+END_EXAMPLE
+
+hook_field_formatter_settings_form
+
+#+BEGIN_EXAMPLE
+function text_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $element = array();
+
+  if (strpos($display['type'], '_trimmed') !== FALSE) {
+    $element['trim_length'] = array(
+      '#title' => t('Trimmed limit'),
+      '#type' => 'textfield',
+      '#field_suffix' => t('characters'),
+      '#size' => 10,
+      '#default_value' => $settings['trim_length'],
+      '#element_validate' => array('element_validate_integer_positive'),
+      '#description' => t('If the summary is not set, the trimmed %label field will be shorter than this character limit.', array('%label' => $instance['label'])),
+      '#required' => TRUE,
+    );
+  }
+
+  return $element;
+}
+#+END_EXAMPLE
+
+hook_field_formatter_view :: use settings to return result (HTML). Use hook_field_formatter_prepare_view to add info for field values being displayed.
+
+#+BEGIN_EXAMPLE
+function text_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    case 'text_default':
+    case 'text_trimmed':
+      foreach ($items as $delta => $item) {
+        $output = _text_sanitize($instance, $langcode, $item, 'value');
+        if ($display['type'] == 'text_trimmed') {
+          $output = text_summary($output, $instance['settings']['text_processing'] ? $item['format'] : NULL, $display['settings']['trim_length']);
+        }
+        $element[$delta] = array('#markup' => $output);
+      }
+      break;
+
+    case 'text_summary_or_trimmed':
+      foreach ($items as $delta => $item) {
+        if (!empty($item['summary'])) {
+          $output = _text_sanitize($instance, $langcode, $item, 'summary');
+        }
+        else {
+          $output = _text_sanitize($instance, $langcode, $item, 'value');
+          $output = text_summary($output, $instance['settings']['text_processing'] ? $item['format'] : NULL, $display['settings']['trim_length']);
+        }
+        $element[$delta] = array('#markup' => $output);
+      }
+      break;
+
+    case 'text_plain':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array('#markup' => strip_tags($item['value']));
+      }
+      break;
+  }
+
+  return $element;
+}
+#+END_EXAMPLE
+
+Usage
+
+#+BEGIN_EXAMPLE
+$node = node_load($view->result[0]->_field_data['nid']['entity']->nid);
+$settings = array(
+  'label'    => 'hidden',
+  'type'     => 'text_summary_or_trimmed',
+  'settings' => array('trim_length' => 800),
+);
+$node_summary = field_view_field('node', $node, 'body', $settings);
+#+END_EXAMPLE
+
 ** Database
 *** Close Comment for Existing Nodes
 0 = No, 1 = Closed (read only), 2 = Open (Read/Write)
