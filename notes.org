@@ -2559,10 +2559,23 @@ hook_views_post_execute
 hook_views_pre_render
 hook_views_post_render
 
-*** Embed View
-views_embed_view('view_name','display_id');
+*** Embed View and Display
+views_embed_view('view_name','display_id'); Doesn't display view title
+#+BEGIN_EXAMPLE
 $arg1 = $arg2 = '123';
-views_embed_view('view_name','display_id',$arg1,$arg2);
+print views_embed_view('view_name','display_id',$arg1,$arg2);
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+$my_view_name = 'magazines';
+$my_display_name = 'block_1';
+$my_view = views_get_view($my_view_name);
+if (is_object($my_view)) {
+  $my_view->set_display($my_display_name);
+  $my_view->pre_execute();
+  echo $my_view->render($my_display_name);
+}
+#+END_EXAMPLE
 
 *** View Theming
 <<<d7:View_Theming>>>
@@ -3023,6 +3036,7 @@ $settings = array(
   'settings' => array('trim_length' => 800),
 );
 $node_summary = field_view_field('node', $node, 'body', $settings);
+print render($node_summary);
 #+END_EXAMPLE
 
 ** Database
@@ -9984,14 +9998,38 @@ Loading external script use this
 })();
 #+END_EXAMPLE
 
-External script cannot use document.write to modify root DOM window (can be used to modify DOM in an iframe)
-You will need to use these to modify the root DOM window
+document.write inside external script (asynchronously loaded) cannot modify DOM 
+You will need to use these to modify the DOM
 #+BEGIN_EXAMPLE
 // .appendChild(), .insertBefore(), .innerHTML
 // jQuery ~.html('html')~ is equivalent to javascript ~$('').innerHTML ='html'~
 #+END_EXAMPLE
 
 Refer to tool:html:document.write
+
+Example
+https://support.jwplayer.com/customer/portal/articles/1406723#fndtn-method-1
+
+Default JW player embed is single-line embed:
+<script src="//content.jwplatform.com/players/MEDIAID-PLAYERID.js"> </script>
+
+If this is async loaded, the player will not show because it has document.write
+
+Instead, load this in <head>
+<script src="//content.jwplatform.com/libraries/PLAYERID.js"> </script>
+
+And a container :: <div id="myElement"></div>
+Then dynamically load this
+#+BEGIN_EXAMPLE
+<script type="text/javaScript">
+var playerInstance = jwplayer("myElement");
+playerInstance.setup({
+    file: "//content.jwplatform.com/videos/MEDIAID-TEMPLATEID.mp4"
+    mediaid: "xxxxYYYY"
+});
+</script>
+#+END_EXAMPLE
+Where TEMPLATEID is the Source file name for a video content in JW UI (under Sources).
 
 ** Initialization
 <<<js:Initialization>>>
@@ -24254,12 +24292,6 @@ googletag.cmd.push(function() {
    }
  });
 
- googletag.pubads().addEventListener('slotRenderEnded', function (event) {
-   if (event.slot.getAdUnitPath() === '/123456/TT_floating') {
-     document.getElementById('interstitial').style.display = 'none';
-   }
- });
-
 });
 
 <div id='interstitial'>
@@ -24304,8 +24336,17 @@ function newcomReceiveMessage(e) {
     dfpInterstitial.loadCount++;
     dfpInterstitial.width =e.data.width;
     dfpInterstitial.height =e.data.height;
-    var jsLink = jQuery("<script type='text/javascript' src='http://yourwebsite.io/interstitial.js'>");
-    jQuery('head').append(jsLink);
+    var cssLink = parent.jQuery("<link rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-lightness/jquery-ui.css'>");
+    jQuery('head').append(cssLink);
+    [ 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js','/sites/all/themes/abc/js/interstitial.js'
+    ].forEach(function(src) {
+      var script = document.createElement('script');
+      script.src = src;
+      script.async = false;
+      document.head.appendChild(script);
+    });
+    // var jsLink = jQuery("<script type='text/javascript' src='http://yourwebsite.io/interstitial.js'>");
+    // jQuery('head').append(jsLink);
   }
 }
 window.addEventListener('message', newcomReceiveMessage, false);
@@ -24368,6 +24409,8 @@ jQuery(function(){
 
 });
 #+END_EXAMPLE
+
+Interstitial as JW Player is a bit complicated. [[https://gist.github.com/levonlee/1e162c34af377d04364295d027a33c96][Gist]]
 
 ** Pre-roll or Linear Video Ad
 - The ad unit should have a Video (VAST) size: 640x360v
