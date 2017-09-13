@@ -566,6 +566,55 @@ Use ~final~ in parent class to prevent child class from overriding the method/pr
 final public function load() {}
 #+END_EXAMPLE
 
+*** Interface vs Abstract Class
+- Interfaces  can have no state or implementation
+- a class that implements an interface must provide an implementation of all the methods of the interface
+- abstract classes may contain state (data members) and/or implementation (methods)
+- abstract classes can be inherited without implementing the abstract methods
+- interfaces may be multiple-inherited, abstract classes may not. Biggest difference.
+
+*** Use trait with interface
+Always use a trait that fulfils one, all or extra capabilities that are
+- required by an interface that the current class implements
+- or required by an abstract class that the current class extends
+
+#+BEGIN_EXAMPLE
+interface Person {
+    public function greet();
+    public function eat($food);
+}
+
+trait EatingTrait {
+    public function eat($food)
+    {
+        $this->putInMouth($food);
+    }
+
+    private function putInMouth($food)
+    {
+        // digest delicious food
+    }
+}
+
+class NicePerson implements Person {
+    use EatingTrait;
+
+    public function greet()
+    {
+        echo 'Good day, good sir!';
+    }
+}
+
+class MeanPerson implements Person {
+    use EatingTrait;
+
+    public function greet()
+    {
+        echo 'Your mother was a hamster!';
+    }
+}
+#+END_EXAMPLE
+
 *** Magic Methods
 http://php.net/manual/en/language.oop5.magic.php
 Starts with 2 underscores. They are for:
@@ -783,30 +832,41 @@ spl_autoload_register(__NAMESPACE__ .'\Foo::test'); // As of PHP 5.3.0
 #+END_EXAMPLE
 
 *** Design Pattern
-Singleton Pattern :: database connection
+**** Singleton Pattern
+e.g. database connection
 
-Lazy Initialization
+**** Lazy Initialization
 - at the beginning properties are null and populated on demand
 - If null, set and return
 - If value, just return
 
-Factory Method
-- Creat objects without specifying class
+**** Factory Method
+Creat objects without specifying class
 #+BEGIN_EXAMPLE
-final public static function getInstance($address_type_id, $data = []) {
-  $class_name = 'Address'. self::$valid_address_types[$address_type_id];
-  if (!class_exists($class_name)) {
-    throw new ExceptionAddress('Address subclass not found. cannot create: ', self::ADDRESS_ERROR_UNKNOWN_SUBCLASS);
+class Address {
+  const ADDRESS_TYPE_RESIDENCE = 2;
+  
+  static public $valid_address_types = array(
+    Address::ADDRESS_TYPE_RESIDENCE => 'Residence',
+    Address::ADDRESS_TYPE_BUSINESS => 'Business',
+    Address::ADDRESS_TYPE_PARK => 'Park',
+  );
+
+  final public static function getInstance($address_type_id, $data = []) {
+    $class_name = 'Address'. self::$valid_address_types[$address_type_id];
+    if (!class_exists($class_name)) {
+      throw new ExceptionAddress('Address subclass not found. cannot create: ', self::ADDRESS_ERROR_UNKNOWN_SUBCLASS);
+    }
+    return new $class_name($data);
   }
-  return new $class_name($data);
 }
 
 // end class
 
-$address_residence = Address::getInstance(Address::ADDRESS_TYPE_RESIDENCE);
+$address_residence = AddressFactory::getInstance(Address::ADDRESS_TYPE_RESIDENCE);
 #+END_EXAMPLE
 
-Strategy Pattern
+**** Strategy Pattern
 - Finite number of strategies, check each one if it can be satisfied in a loop, the last strategy is the best preferred one
 - Each strategy implements a common interface which has a check method: isAvailable and a action-method: display
 - Each strategy is singleton
@@ -877,6 +937,134 @@ class AddressDisplayFull implements AddressDisplay {
   public static function isAvailable($address) {
     return $address->country_name ? TRUE : FALSE;
   }
+}
+#+END_EXAMPLE
+
+**** Dependency Injection
+
+#+BEGIN_EXAMPLE
+class StoreService {
+    private $geolocationService;
+
+    public function __construct(GeolocationService $geolocationService) {
+        $this->geolocationService = $geolocationService;
+    }
+
+    public function getStoreCoordinates($store) {
+        return $this->geolocationService->getCoordinatesFromAddress($store->getAddress());
+    }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+interface GeolocationService {
+    public function getCoordinatesFromAddress($address);
+}
+
+class GoogleMaps implements GeolocationService { ...
+
+class OpenStreetMap implements GeolocationService { ...
+#+END_EXAMPLE
+
+**** Decorator
+Class Book has 3 methods: getAuthor, getTitle, getAuthorAndTitle
+
+Decorator BookTitleDecorator adds methods: resetTitle and showTitle. When it instaniates, it resets the title of an instance of Book (in this example, the original title is not changed)
+Decorator BookTitleStarDecorator extends BookTitleDecorator and adds method ~starTitle~ which outputs title in a different format
+Decorator BookTitleExclaimDecorator extends BookTitleDecorator and adds metod ~exclaimTitle~ which outputs title in another different format
+
+Decorator adds a wrapper on top of the original class Book with extra functions. This way it doesn't change other instances of the Book class.
+
+Because the base decorator BookTitleDecorator has dependency injection of class Book, it also has Dependency Injection design pattern.
+
+Moreover, a decorator has to know which class the decorator decorates. But this class can be abstract (superclass).
+
+#+BEGIN_EXAMPLE
+$patternBook = new Book('Gamma, Helm, Johnson, and Vlissides', 'Design Patterns');
+$decorator = new BookTitleDecorator($patternBook);
+$starDecorator = new BookTitleStarDecorator($decorator);
+$exclaimDecorator = new BookTitleExclaimDecorator($decorator);
+ 
+  writeln('showing title : ');
+  writeln($decorator->showTitle());
+  writeln('');
+ 
+  writeln('showing title after two exclaims added : ');
+  $exclaimDecorator->exclaimTitle();
+  $exclaimDecorator->exclaimTitle();
+  writeln($decorator->showTitle());
+  writeln('');
+ 
+  writeln('showing title after star added : ');
+  $starDecorator->starTitle();
+  writeln($decorator->showTitle());
+  writeln('');
+ 
+  writeln('showing title after reset: ');
+  writeln($decorator->resetTitle());
+  writeln($decorator->showTitle());
+  writeln('');
+
+  writeln('END TESTING DECORATOR PATTERN');
+
+  function writeln($line_in) {
+    echo $line_in."<br/>";
+  }
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+class Book {
+    private $author;
+    private $title;
+    function __construct($title_in, $author_in) {
+        $this->author = $author_in;
+        $this->title  = $title_in;
+    }
+    function getAuthor() {
+        return $this->author;
+    }
+    function getTitle() {
+        return $this->title;
+    }
+    function getAuthorAndTitle() {
+      return $this->getTitle().' by '.$this->getAuthor();
+    }
+}
+
+class BookTitleDecorator {
+    protected $book;
+    protected $title;
+    public function __construct(Book $book_in) {
+        $this->book = $book_in;
+        $this->resetTitle();
+    }   
+    //doing this so original object is not altered
+    function resetTitle() {
+        $this->title = $this->book->getTitle();
+    }
+    function showTitle() {
+        return $this->title;
+    }
+}
+
+class BookTitleExclaimDecorator extends BookTitleDecorator {
+    private $btd;
+    public function __construct(BookTitleDecorator $btd_in) {
+        $this->btd = $btd_in;
+    }
+    function exclaimTitle() {
+        $this->btd->title = "!" . $this->btd->title . "!";
+    }
+}
+
+class BookTitleStarDecorator extends BookTitleDecorator {
+    private $btd;
+    public function __construct(BookTitleDecorator $btd_in) {
+        $this->btd = $btd_in;
+    }
+    function starTitle() {
+        $this->btd->title = Str_replace(" ","*",$this->btd->title);
+    }
 }
 #+END_EXAMPLE
 
@@ -1635,13 +1823,15 @@ Requires: d7:file entity, d7:ctools, d7:views
 
 From 7.x-2.0-beta1 to 7.x-2.9
 
-*** i18n
+*** Internationalization - i18n
 [[https://www.drupal.org/project/i18n][i18n]] requires core locale and d7:m:variable
 
 <<<d7:m:i18n>>>
 
 - Add a language :: admin/config/regional/language
 - Go to pages that use t('string to translate', [], ['langcode'=>"fr"]) with non default options
+
+Once a language is added (default language is chosen), node created will have $node->language = 'en'
 
 *** S3 File System s3fs
 requires module libraries, library =AWS SDK for PHP 2.x=, PHP 5.3.3+ with ~allow_url_fopen = On~ in =php.ini=
