@@ -2339,6 +2339,7 @@ https://www.drupal.org/project/omega
 https://www.drupal.org/project/corolla
 
 ** Drush
+*** version =drush version=
 *** Debug =-vd=
 *** Alias
 =drush sa= list all aliases
@@ -2346,6 +2347,8 @@ pantheon:drupal:alias
 
 *** User
 drush user-login yourusername
+drush user-create newuser --mail="a@b.com" --password="password"
+drush user-add-role "administrator" newuser
 
 *** Module
 =drush vset maintenance_mode 1= set to maintenance mode
@@ -22093,15 +22096,30 @@ git push --tags --force
 --ignore-unmatch :: prevent ~git rm~ from failing if the file isn't there
 HEAD :: to remove from the start
 
-Remove a folder
-#+BEGIN_EXAMPLE
-git filter-branch --tree-filter 'rm -rf vendor/gems' HEAD
-#+END_EXAMPLE
-
 Say git filter-branch is run once, and the backup ~refs/original~ is not deleted, the subsequent filter-branch will not run
 Add -f to force it to run and overwrite ~refs/original~
 #+BEGIN_EXAMPLE
-git filter-branch -f --tree-filter 'rm -rf vendor/gems' HEAD
+git filter-branch -f --index-filter [...]
+#+END_EXAMPLE
+
+~git filter-branch [...] HEAD~ just shrinks the current branch and leave the other branches intact. 
+Say feature branch is a copy of master, then run filter-branch on feature. master branch and others are not affected. But now feature branch diverged from master.
+The get-top-10-biggest-files command returns the same files after filter-branch and the cleanup mentioned above are done. Because it's just one branch that you cleaned up, big files are still in other branches.
+You won't notice a big change in total git:repo size, as it's just one branch that had the big files removed.
+I didn't try ~git push --force~ to update a real remote branch.
+Let's say the repo is at /path/to/repo, and you duplicate master branch to shrinksize branch. Run filter-branch and the cleanup.
+Then you create another folder /path/to/duplicaterepo, and clone only the shrinksize branch from the original repo
+
+#+BEGIN_EXAMPLE
+cd /path/to
+mkdir duplicaterepo
+cd duplicaterepo
+git clone file:///path/to/repo --branch shrinksize --single-branch
+cd repo
+du -sh .git/objects
+# push branch shrinksize to another remote as master branch
+git remote add anotherremote ...
+git push anotherremote shrinksize:master
 #+END_EXAMPLE
 
 ** Commit History
@@ -22261,7 +22279,7 @@ git branch -vv
 git remote -v
 #+END_EXAMPLE
 
-** Repo size, maintenance
+** Repo size, maintenance <<<git:repo size>>>
 #+BEGIN_EXAMPLE
 git gc
 git count-objects -vH
@@ -22298,6 +22316,13 @@ You may encounter 403 Forbidden and HTTP request failed errors. Try to use SSH o
 https://[GITHUB_USERNAME]@github.com/[GITHUB_USERNAME]/[REPO_NAME].git
 Instead of the original
 https://github.com/[GITHUB_USERNAME]/[REPO_NAME].git
+#+END_EXAMPLE
+
+** Add a remote, remove a remote and its branches
+#+BEGIN_EXAMPLE
+git remote add origin https://...
+git remote -v
+git remote rm origin
 #+END_EXAMPLE
 
 ** Push to 2 remotes
@@ -26525,6 +26550,7 @@ Click "Your benefits & exams" then "Start a previously scheduled online proctore
 *** Remove Credentials
 - Windows Credential Store Panel
 - Chrome
+- Git remove remotes ~git remote rm abc~ this also deletes all branches of the remote
 
 ** TeamViewer
 1）完整卸载并删除现有TeamViewer安装过的版本
