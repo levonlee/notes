@@ -4990,8 +4990,7 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
 
-** Wordpress The Loop
-<<<wp:The_Loop>>>
+** Wordpress The Loop <<<wp:The_Loop>>>
 *** Syntax
 
 #+BEGIN_EXAMPLE
@@ -5043,6 +5042,9 @@ $query = new WP_Query($args);
 #+END_EXAMPLE
 
 *** <<<WP_Meta_Query>>>
+**** Fields for WP_Query
+Use these fields directly in WP_Query
+
 **** Nesting
 Nested: key1=value1 OR (key2=value2 AND key3=value3)
 
@@ -22045,14 +22047,67 @@ Remove a folder
 Add file to local or global ignore so that the file won't appear as Untracked File and prevent 
 from staging the file when =git add .=
 
+** Remove large files and folders
+
+#+BEGIN_EXAMPLE
+git gc
+# Get the top 10 biggest files. It will take about a minute for it to run
+git rev-list --objects --all | grep "$(git verify-pack -v .git/objects/pack/*.idx | sort -k 3 -n | tail -10 | awk '{print$1}')"
+
+# path/to/bigfile1, path/to/bigfile2
+# filter-branch runs on the current branch and filter through from top (HEAD) to oldest
+git filter-branch --index-filter 'git rm --cached --ignore-unmatch path/to/bigfile1' HEAD
+# repeat for every file
+
+# To remove a directory
+git filter-branch --index-filter 'git rm -r --cached --ignore-unmatch path/to/folder1' HEAD
+
+# To remove files and subdirectories (except hidden files) of a directory
+git filter-branch --index-filter 'git rm -r --cached --ignore-unmatch sites/default/files/*' HEAD
+
+# filter-branch creates backups of your original refs namespaced under ~refs/original~
+# Run this to delete the backed up refs, allowing the large objects to be garbage collected
+git for-each-ref --format="%(refname)" refs/original/ | xargs -n 1 git update-ref -d
+
+# if all big files are in one branch only, just delete the branch will remove all the references
+# git branch -D branch-name
+# Prune all reflog references from the branch on back.
+# git reflog expire --expire=now branch-name
+
+# Prune all reflog references from now to the first commit
+git reflog expire --expire=now --all
+
+# Repack the repo by running gc and pruning old objects
+git gc --prune=now
+
+# Push changes back to remote repo. All branches (refs under ~refs/heads~)
+# I found I can push one branch only
+git push --all --force
+
+# Make sure tags are current and pushed to remote
+git push --tags --force
+#+END_EXAMPLE
+
+--index-filter :: modify a repo's staging
+--cached :: remove a file from the index not the disk
+--ignore-unmatch :: prevent ~git rm~ from failing if the file isn't there
+HEAD :: to remove from the start
+
+Remove a folder
+#+BEGIN_EXAMPLE
+git filter-branch --tree-filter 'rm -rf vendor/gems' HEAD
+#+END_EXAMPLE
+
+Say git filter-branch is run once, and the backup ~refs/original~ is not deleted, the subsequent filter-branch will not run
+Add -f to force it to run and overwrite ~refs/original~
+#+BEGIN_EXAMPLE
+git filter-branch -f --tree-filter 'rm -rf vendor/gems' HEAD
+#+END_EXAMPLE
+
 ** Commit History
 =git log --graph=
 =git log -3= Last 3 commits
 =git log --grep=<pattern>= Search commit message
-
-** Number of tracked files
-Doesn't include directories. Only files
-~git ls-files | wc -l~
 
 ** Local Ignore, Global Ignore
 Add file or directory paths to
@@ -22190,9 +22245,14 @@ git pull --no-rebase --squash -Xtheirs origin master
 # the remote that's pulled from usually has the same codebase as your current local repo
 #+END_EXAMPLE
 
-** Track local branch with a remote branch
+** Track local branch with a remote branch <<<git:upstream>>>
 #+BEGIN_EXAMPLE
 git branch --set-upstream master origin/master
+#+END_EXAMPLE
+
+List all local branches' upstream remotes
+#+BEGIN_EXAMPLE
+git branch -vv
 #+END_EXAMPLE
 
 ** List all remote repo
@@ -22205,7 +22265,13 @@ git remote -v
 #+BEGIN_EXAMPLE
 git gc
 git count-objects -vH
+# I found this better
+du -hs .git/objects
 #+END_EXAMPLE
+
+** Number of tracked files
+Doesn't include directories. Only files
+~git ls-files | wc -l~
 
 ** GitHub Push to New Repo with local repo
 Create a new repo on Github.com without creating any .gitignore, README nor license
@@ -22343,6 +22409,43 @@ https://cdn.rawgit.com/ + RawGit Path
 
 *** Markdown
 ![Alt text](http://url/to/img.png)
+
+* BitBucket
+** Basic
+BitBucket can create priviate repo for free! Limit each repo to 1gb.
+
+Create a private repo on BitBucket UI.
+
+For existing local Git repo, add a remote
+
+#+BEGIN_EXAMPLE
+cd /path/to/local/repo
+git remote add bb https://username@bitbucket.org/username/reponame.git
+# git push -u bb localbranch
+# e.g. git push -u bb master
+# git push -u bb localbranch:repobranch
+# e.g. git push -u bb master:masteronbb
+#+END_EXAMPLE
+
+~git push -u remotename localbranch~ pushes the code to a remote and set the remote as upstream remote.
+
+By default, ~git push~ pushes code at current local branch to the same branch on upstream remote.
+
+See git:upstream to change local branch's upstream remote branch
+
+.git/config
+#+BEGIN_EXAMPLE
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+#+END_EXAMPLE
+
+git branch -vv
+#+BEGIN_EXAMPLE
+   localbranch1 hexcode [origin/localbranch1] last commit msg
+ * master       hexcode [origin/master] last commit msg
+   localbranch2 hexcode [origin/localbranch2] last commit msg
+#+END_EXAMPLE
 
 * Pantheon
 ** Deploy
