@@ -24602,7 +24602,7 @@ googletag.cmd.push(function() {
  dfpSlots.floating = googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads()); 
 
  // single request mode
- googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads());
+ // googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads());
 
  googletag.pubads().addEventListener('slotRenderEnded', function (event) {
    if (event.slot.getAdUnitPath() === '/123456/floating') {
@@ -24649,13 +24649,24 @@ On website :: once received message from iframe, load internal script and only l
 #+BEGIN_EXAMPLE
 var dfpInterstitial = {};
 dfpInterstitial.loadCount=0;
+
 function newcomReceiveMessage(e) {
   if (e.data == 'dfp_load_interstitial_ad' && dfpInterstitial.loadCount == 0) {
     dfpInterstitial.loadCount++;
     dfpInterstitial.width =e.data.width;
     dfpInterstitial.height =e.data.height;
-    var cssLink = parent.jQuery("<link rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-lightness/jquery-ui.css'>");
-    jQuery('head').append(cssLink);
+    // var cssLink = parent.jQuery("<link rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-lightness/jquery-ui.css'>");
+    // jQuery('head').append(cssLink);
+
+    ['//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-darkness/jquery-ui.css',
+     '/wp-content/themes/pubx-oralhealth/css/interstitial.css'].forEach(function (src) {
+      var _css = document.createElement("link");
+      _css.rel = 'stylesheet';
+      _css.type = 'text/css';
+      _css.href = src;
+      document.head.appendChild(_css);
+    });
+
     [ 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js','/sites/all/themes/abc/js/interstitial.js'
     ].forEach(function(src) {
       var script = document.createElement('script');
@@ -24675,7 +24686,7 @@ jQuery UI Dialog runs script inside the container twice. The script is setup in 
 Even though the same message is posted twice but the dfpInterstitialCount ensures this javascript only runs once.
 #+BEGIN_EXAMPLE
 jQuery(function(){
-  var targetDialog = '#interstitial';
+  var targetDialog = '#interstitial'; // TODO
   var iframeId = jQuery(targetDialog).find('iframe').get(0).id;
   var adWidth = dfpInterstitial.width;
   var adHeight = dfpInterstitial.height;
