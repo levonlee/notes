@@ -6879,14 +6879,22 @@ You don't have to get height of any other rows.
 #+END_EXAMPLE
 
 ** Grid
-Not yet supported. Only IE and Edge.
+https://css-tricks.com/snippets/css/complete-guide-grid/
 
-*** container: grid-template-columns, grid-template-rows
+
+*** container: display, grid-template-columns, grid-template-rows
+<<<css:grid-template-columns>>> <<<css:grid-template-rows>>>
+
 #+BEGIN_EXAMPLE
+<!-- div.container has to be the direct parent of all grid items -->
 <div class="container">
  <!-- .item are direct descendants -->
  <div class="item item-1"></div>
- <div class="item item-2"></div>
+ <div class="item item-2">
+  <div class="sub-item">
+    <!-- .sub-item is not a grid item! -->
+  </div>
+ </div>
  <div class="item item-3"></div>
 </div>
 
@@ -6895,7 +6903,16 @@ Not yet supported. Only IE and Edge.
  /* subgrid to indicate the grid container is a grid item of another grid container and 
     it should take the parent's sizes of rows/columns  
  */
+
  /* Don't use column, float, clear and vertical-align in grid container as they have no effect */
+
+ /*
+ grid-template-columns: <track-size> ... | <line-name> <track-size> ...;
+ grid-template-rows: <track-size> ... | <line-name> <track-size> ...;
+
+ <track-size> - can be a length, a percentage, or a fraction of the free space in the grid (unit is fr)
+ <line-name> - an arbitrary name
+ */
 
  grid-template-columns: 40px 50px auto 50px 40px; /* 5 columns */
  grid-template-rows: 25% 100px auto; /* 3 rows */
@@ -6904,18 +6921,21 @@ Not yet supported. Only IE and Edge.
  grid-template-columns: [first] 40px [line2] 50px [line3] auto [col4-start] 50px [five] 40px [end];
  grid-template-rows: [row1-start] 25% [row1-end row2-start] 100px [third-line] auto [last-line];
 
- /* Any row or column line can have multiple names: [row1-end row-start] */
- /* Any row or column line can have the same name */
+ /* Any row or column line can have multiple names: [row1-end row-start]
+    Any row or column line can have the same name */
+
  grid-template-columns: repeat(3, 20px [col-start]) 5%;
  /* equivalent to */
  grid-template-columns: 20px [col-start] 20px [col-start] 20px [col-start] 5%;
  
  /* Free space is defined as total space minus any fixed size items */
  grid-template-columns: 1fr 50px 1fr 1fr;
+ /* each column will take (total width - 50px) * (1/3) */
 }
 #+END_EXAMPLE
 
 *** <<<container: grid-template-areas>>>, items: grid-area
+<<<css:grid-template-areas>>>
 
 #+BEGIN_EXAMPLE
 .item-a{
@@ -6940,24 +6960,40 @@ Not yet supported. Only IE and Edge.
 }
 /* . means that single cell is empty. You can have multiple dots without space ".." */
 /*
-The first row line and column line of footer area have the same name "footer-start"
-The last row line and column line of footer aree have the same name "footer-end"
+The first row line and column line of footer area have an extra name "footer-start"
+The last row line and column line of footer aree have an extra name "footer-end"
 */
 #+END_EXAMPLE
 
-*** container: grid-gap
+*** container: grid-template
+Shorthand for setting css:grid-template-rows, css:grid-template-columns and css:grid-template-areas
+
+#+BEGIN_EXAMPLE
+.container {
+  grid-template: none | subgrid | <grid-template-rows> / <grid-template-columns>;
+}
+#+END_EXAMPLE
+
+*** container: grid-column-gap, grid-row-gap, grid-gap
+<<<css:grid-gap>>>
 Gutter size: space inbetween 2 row lines or column lines. But start and end space is always 0.
 
 #+BEGIN_EXAMPLE
-grid-grap: <grid-column-gap> <grid-row-gap>;
+grid-column-gap: 10px;
+grid-row-gap: 15px;
+grid-gap: <grid-column-gap> <grid-row-gap>;
 #+END_EXAMPLE
 
 *** container: justify-items, items: justify-self
+
 #+BEGIN_EXAMPLE
 justify-items: start | end | center | stretch (default);
-/* Adjust content in cell 
-   start: align to left column line
+/* Adjust content in a grid item along the row axis
+   start: align to left end of the grid area
+   end: right
+   stretch: fills the whole width of the grid area
 */
+
 .item {
  justify-self: /* To overwrite .container: justify-items */
 }
@@ -6966,19 +7002,33 @@ justify-items: start | end | center | stretch (default);
 *** container: align-items, items: align-self
 #+BEGIN_EXAMPLE
 align-items: start | end | center | stretch (default);
-/* Adjust content in cell 
-   start: align to top of row line
+/* Adjust content in a grid item along the column axis
+   start: align content to the top of the grid area
+   end: bottom
+   stretch: fills the whole height of the grid area
 */
+
+.item {
+  align-self: start | end | center | stretch (default);
+}
 #+END_EXAMPLE
 
 *** container: justify-content
+Align the grid along the row axis.
+If all grid items are sized with non-flexible units like px, the total size of grid might be less than the size of its grid container.
 Total width of all grids is less than width of its grid container.
 start: align all grids to the left of the grid container
+end: right
+stretch: resize the grid items to allow the grid to fill the full width of the grid container
+space-around: place an even amount of space between each grid item, with half-sized spaces on the far ends
+space-between: place an even amount of space between each grid item, with no space at the far ends
+space-evenly: place an even amount of space between each grid item, including the far ends
 #+BEGIN_EXAMPLE
 justify-content: start | end | center | stretch | space-around | space-between | space-evenly
 #+END_EXAMPLE
 
 *** container: align-content
+Align the grid along the column axis.
 Total height of all grids is less than height of its grid container.
 start: align all grids to the top of the grid container
 #+BEGIN_EXAMPLE
