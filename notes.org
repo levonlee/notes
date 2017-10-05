@@ -18038,6 +18038,7 @@ dig -x 72.30.38.140
 [[https://www.whatsmydns.net/][DNS Propagation Checker]]
 
 *** Get Server's Public IP
+<<<linux:get public ip>>>
 #+BEGIN_EXAMPLE
 ip addr show eth0 | grep inet | awk '{ print $2; }' | sed 's/\/.*$//'
 # or
@@ -21863,12 +21864,166 @@ The path doesn't matter
 #+END_EXAMPLE
 
 * Nginx
+** Install on Ubuntu 16.04
+#+BEGIN_EXAMPLE
+sudo apt-get update
+sudo apt-get install nginx
+#+END_EXAMPLE
+
+*** Config Firewall
+This is optional if firewall ~ufw~ doesn't exist.
+
+Nginx registers itself as a service with firewall ~ufw~
+~sudo ufw app list~
+
+Output
+#+BEGIN_EXAMPLE
+Available applications:
+  Nginx Full
+  Nginx HTTP
+  Nginx HTTPS
+  OpenSSH
+#+END_EXAMPLE
+
+Nginx Full: This profile opens both port 80 (normal, unencrypted web traffic) and port 443 (TLS/SSL encrypted traffic)
+Nginx HTTP: This profile opens only port 80 (normal, unencrypted web traffic)
+Nginx HTTPS: This profile opens only port 443 (TLS/SSL encrypted traffic)
+
+Eanble Nginx HTTP
+#+BEGIN_EXAMPLE
+sudo ufw allow 'Nginx HTTP'
+sudo ufw status
+#+END_EXAMPLE
+
+Output
+#+BEGIN_EXAMPLE
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere                  
+Nginx HTTP                 ALLOW       Anywhere                  
+OpenSSH (v6)               ALLOW       Anywhere (v6)             
+Nginx HTTP (v6)            ALLOW       Anywhere (v6)
+#+END_EXAMPLE
+
+*** Service Check
+Use service if systemctl doesn't exist.
+
+systemctl status nginx
+
+Output
+#+BEGIN_EXAMPLE
+● nginx.service - A high performance web server and a reverse proxy server
+   Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+   Active: active (running) since Mon 2016-04-18 16:14:00 EDT; 4min 2s ago
+ Main PID: 12857 (nginx)
+   CGroup: /system.slice/nginx.service
+           ├─12857 nginx: master process /usr/sbin/nginx -g daemon on; master_process on
+           └─12858 nginx: worker process
+#+END_EXAMPLE
+
+systemctl stop/start/restart/reload/disable/enable nginx
+
+restart drops connection, use reload to not drop connection
+disable nginx service, default the nginx service is to start automatically
+
+** /etc/nginx /var/log
+Config directory.
+
+*** /etc/nginx/sites-available/
+The directory where per-site "server blocks" can be stored.
+Nginx will not use config files in this directory unless they are linked to the ~sites-enabled~ directory.
+
+There should be a default file you can use. /etc/nginx/sites-available/default
+#+BEGIN_EXAMPLE
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name _;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}
+#+END_EXAMPLE
+
+ATTENTION! Only one server block can have default_server
+Search if there is any file has default_server
+#+BEGIN_EXAMPLE
+grep -R default_server /etc/nginx/sites-enabled/
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/example.com
+sudo nano /etc/nginx/sites-available/example.com
+#+END_EXAMPLE
+
+/etc/nginx/sites-available/example.com
+#+BEGIN_EXAMPLE
+server {
+        listen 80;
+        listen [::]:80;
+
+        root /var/www/example.com/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name example.com www.example.com;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}
+#+END_EXAMPLE
+
+Enable the server block and restart Nginx
+
+sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
+
+In order to avoid a possible hash bucket memory problem that can arise from adding additional server names, we will go ahead and adjust a single value within our /etc/nginx/nginx.conf file. Open the file now:
+#+BEGIN_EXAMPLE
+sudo nano /etc/nginx/nginx.conf
+#+END_EXAMPLE
+
+Within the file, find the server_names_hash_bucket_size directive. Remove the # symbol to uncomment the line:
+#+BEGIN_EXAMPLE
+http {
+    . . .
+
+    server_names_hash_bucket_size 64;
+
+    . . .
+}
+#+END_EXAMPLE
+
+Check syntax
+#+BEGIN_EXAMPLE
+sudo nginx -t
+sudo systemctl restart nginx
+#+END_EXAMPLE
+
+*** /etc/nginx/sites-enabled/
+The directory where enabled per-site "server blocks" are stored.
+
+*** /etc/nginx/snippets/
+This directory contains config fragments that can be included elsewhere in the Nginx config.
+
+*** /var/log/nginx/access.log
+Every request to your web server is recorded
+
+*** /var/log/nginx/error.log
+
 ** Command Line
 stop, quit, reopen, reload :: ~nginx -s reload~
 Version in short :: ~nginx -v~
 
-** Config
-Main config /etc/nginx/nginx.conf
+** Config nginx.conf
+Main global config /etc/nginx/nginx.conf
+
 #+BEGIN_EXAMPLE
 user www-data;
 worker_processes 4;
