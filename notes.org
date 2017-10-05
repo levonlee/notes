@@ -22186,6 +22186,22 @@ location /another {
 #+END_EXAMPLE
 
 ** proxy_pass directive
+
+If proxy_pass is specified with a URI, then when a request is passed to the server, the part of a normalized request URI matching the location is replaced by a URI specified in the directive
+#+BEGIN_EXAMPLE
+location /name/ {
+    proxy_pass http://127.0.0.1/remote/;
+# or http://127.0.0.1/
+}
+#+END_EXAMPLE
+
+If proxy_pass is specified without a URI, the request URI is passed to the server in the same form as sent by a client when the original request is processed, or the full normalized request URI is passed when processing the changed URI
+#+BEGIN_EXAMPLE
+location /some/path/ {
+    proxy_pass http://127.0.0.1;
+}
+#+END_EXAMPLE
+
 proxy_pass can have URI parts if it's under a non-regex location block
 #+BEGIN_EXAMPLE
 location / {
@@ -22228,6 +22244,26 @@ location / {
   proxy_send_timeout 600;
   proxy_read_timeout 600;
   send_timeout 600;
+}
+#+END_EXAMPLE
+
+*** Sample: Redirect a path to a different proxy
+#+BEGIN_EXAMPLE
+server {
+  listen 80;
+  server_name abc.com;
+  
+  location ^~ /directpath {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Host $http_host;
+    proxy_pass http://127.0.0.1:8787/;
+  }
+  
+  location / {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Host $http_host;
+    proxy_pass http://127.0.0.1:9977;
+  }
 }
 #+END_EXAMPLE
 
