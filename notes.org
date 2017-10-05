@@ -4470,6 +4470,38 @@ One quick way to include a class is to put the class inside any file e.g. $moddi
 And include when it's needed using module_load_include('inc', 'modename', 'lib/reader');
 
 * Wordpress
+** Migrate database
+At your previous host, access phpMyAdmin.
+Load your WordPress database by clicking the database name in the left hand menu pane.
+Click the "export" tab at the top right.
+Under "export, highlight all the tables and select "SQL". These are the default settings.
+Under "options" make sure that "add DROP TABLE/ VIEW/ PROCEDURE/ FUNCTION" is selected.
+Ensure that "Save as File" towards the bottom of the page is selected.
+Click Go
+
+For import, just hit Import tab and import. Watch out for the timeout limit.
+
+Change website url
+Open wp_options table, change siteurl to http://yourwebsite.com
+
+Do it on code level
+#+BEGIN_EXAMPLE
+define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/');
+define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
+#+END_EXAMPLE
+
+** Redirect a path a Wordpress website
+<<<wp:redirect path to wp>>>
+abc.com/enterprise to another Wordpress website
+Do this first nginx:redirect path to proxy
+
+Refer to http://www.ur-ban.com/2015/07/27/nginx-proxy_pass-wordpress-in-a-sub-directory/
+Change WP_HOME and WP_SITEURL
+#+BEGIN_EXAMPLE
+define( 'WP_SITEURL', '/enterprise' );
+define( 'WP_HOME', '/enterprise' );
+#+END_EXAMPLE
+
 ** CLI
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
 WP CLI Pantheon
@@ -17774,6 +17806,9 @@ find ~/www -iname WEB-INF -exec rm -rf {} \;
 #+BEGIN_EXAMPLE
 # Copy a sub folder abc/ in the current directory to a new directory ~/xyz with everything preserved
 cp -a abc/ ~/xyz
+
+# Duplicate subfolder abc and name it xyz
+cp -a abc xyz
 #+END_EXAMPLE
 
 *** tar
@@ -19139,6 +19174,8 @@ Volume :: ~Config > Volumes~ and ~Mounts~
 
 Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
+Copy a folder, result /var/www/transfer/web :: ~docker cp web/. ghost:/var/www/transfer/web~
+Copy a folder, result /var/www/transfer/web :: ~docker cp web/ ghost:/var/www/transfer~
 Where ~-L~ is to copy symbol link
 
 Memory usage for all containers ~docker stats -a~
@@ -22255,6 +22292,7 @@ location / {
 #+END_EXAMPLE
 
 *** Sample: Redirect a path to a different proxy
+<<<nginx:redirect path to proxy>>>
 #+BEGIN_EXAMPLE
 server {
   listen 80;
