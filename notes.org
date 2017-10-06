@@ -4490,10 +4490,80 @@ define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/');
 define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
 #+END_EXAMPLE
 
+Go to wp-admin > Settings > Permalink and save to update the permalink
+
+
 ** Redirect a path a Wordpress website
 <<<wp:redirect path to wp>>>
-abc.com/enterprise to another Wordpress website
-Do this first nginx:redirect path to proxy
+abc.com/enterprise to another Wordpress website abc.com
+DB is abc_enterprise and abc
+
+abc.com is inside a docker container using apache2
+
+abc.com uses Nginx and initial setup is
+#+BEGIN_EXAMPLE
+server {
+   listen 80;
+   server_name abc.com www.abc.com;
+
+   location / {
+      proxy_set_header   X-Real-IP   $remote_addr;
+      proxy_set_header   Host        $http_host;
+      proxy_pass         http://127.0.0.1:9977;
+   }
+
+}
+#+END_EXAMPLE
+
+*** Method 1: Apache
+Directly create or copy a sub directory under abc.com root
+/var/www/html/enterprise
+
+Create a new database called abc_enterprise and import the db
+/var/www/html/enterprise/wp-config.php
+
+If the enterprise site is a complete new wp installation, you don't need to do this
+#+BEGIN_EXAMPLE
+define( 'WP_HOME', '/enterprise' );
+define( 'WP_SITEURL', '/enterprise' );
+
+// Change the db setting
+define('DB_NAME', 'abc_enterprise');
+#+END_EXAMPLE
+
+Then go to wp-admin and save the permalink
+
+Fix image urls
+#+BEGIN_EXAMPLE
+UPDATE wp_posts SET post_content=(REPLACE (post_content, '<old url>','<new url>'));
+UPDATE wp_posts SET post_content=(REPLACE (post_content, 'abc-ent-dev.com','abc.com/enterprise'));
+#+END_EXAMPLE
+
+*** Method 2: (Not working..) Nginx proxy to another
+
+Refer to nginx:redirect path to proxy
+
+abc.com Nginx becomes
+#+BEGIN_EXAMPLE
+
+server {
+   listen 80;
+   server_name alectraconservation.com www.alectraconservation.com;
+
+   location ^~ /enterprise/ {
+     proxy_set_header   X-Real-IP   $remote_addr;
+     proxy_set_header   Host        $http_host;
+     proxy_pass http://127.0.0.1:8787/;
+   }
+
+    location / {
+      proxy_set_header   X-Real-IP   $remote_addr;
+      proxy_set_header   Host        $http_host;
+      proxy_pass         http://127.0.0.1:9977;
+   }
+
+}
+#+END_EXAMPLE
 
 Refer to http://www.ur-ban.com/2015/07/27/nginx-proxy_pass-wordpress-in-a-sub-directory/
 Change WP_HOME and WP_SITEURL
