@@ -21940,12 +21940,12 @@ MaxKeepAliveRequests 50
 KeepAliveTimeout 15
 #Changes to prefork module
 <IfModule prefork.c>
-StartServers 3
-MinSpareServers 2
-MaxSpareServers 5
-ServerLimit 256
-MaxClients 10
-MaxRequestsPerChild 1000
+  StartServers 3
+  MinSpareServers 2
+  MaxSpareServers 5
+  ServerLimit 256
+  MaxClients 10
+  MaxRequestsPerChild 1000
 </IfModule>
 #+END_EXAMPLE
 
@@ -21976,6 +21976,25 @@ The path doesn't matter
   ForceType application/octet-stream
   Header add Content-Disposition "attachment"
 </filesMatch>
+#+END_EXAMPLE
+
+** Wordpress Redirect
+Redirect /dealdays to /DealDays
+#+BEGIN_EXAMPLE
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
+# If redirect to another url, use
+Redirect 301 /dealdays2 http://yoursite.com/dealdays2/
+</IfModule>
+
+# END WordPress
 #+END_EXAMPLE
 
 * Nginx
