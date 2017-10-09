@@ -17489,6 +17489,9 @@ Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is 
 Show the public key and later copy to cloud server
 ~cat ~/.ssh/id_rsa.pub~
 
+When using private key you might encounter ~Permissions 0777 for '~/.ssh/id_rsa_your_private_key' are too open~
+Use ~chmod 400 ~/.ssh/id_rsa_your_private_key~ to fix it
+
 **** Manual way
 On the remote server, login as a normal user ~sudo su - username~
 Create ~/.ssh directory ~mkdir .ssh~ ~chmod 700 .ssh~
@@ -17517,6 +17520,29 @@ rm ~/.ssh/id_rsa
 openssl rsa -in ~/.ssh/id_rsa -out ~/.ssh/id_rsa_new
 # enter old passphrase
 cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
+#+END_EXAMPLE
+
+*** ssh config
+Create ssh host alias and the private key to use in =~/.ssh/config= file
+cd ~/.ssh && nano config, ~chmod 600 ~/.ssh/config~
+#+BEGIN_EXAMPLE
+Host scotch
+    HostName scotch.io
+    User nick
+
+Host example2
+    HostName example.com
+    User root
+
+Host example3
+    HostName 64.233.160.0
+    User userxyz123
+    Port 56000
+
+Host amazon1
+    HostName ec2.amazon.com
+    User ec2-user
+    IdentityFile /path/to/special/privatekey/amazon.pem
 #+END_EXAMPLE
 
 *** Use Private Key from SSH Server to connect
@@ -17902,6 +17928,8 @@ tar -cvzpf backup.tar.gz targetFolder --exclude='wp-content/uploads' --exclude='
 # Compress the current folder and save the archive in current folder
 cd /home/targetFolder
 tar -cvzpf backup.tar.gz .
+# Compress the current folder and save the archive in one level above
+tar -cvzpf ../backup.tar.gz .
 
 # The archive structure is
 # ./index.html
@@ -18349,6 +18377,13 @@ See if a package is installed :: ~aptitude search package_name~
 - package is deleted but not configuration files :: ~c~
 - no trace at all or ~v~, it's not installed :: ~p~
 - There might be a second character which indicates the action to be performed on the package.
+
+*** Ubuntu Packages
+**** openssh-client
+Includes scp
+#+BEGIN_EXAMPLE
+apt-get update && apt-get -y install openssh-client
+#+END_EXAMPLE
 
 ** Input and Output
 *** File Descriptors
@@ -19498,6 +19533,33 @@ ENV APP_ROOT /usr/src/app
 ARG REQUIREMENTS
 ...
 COPY $REQUIREMENTS $APP_ROOT/
+#+END_EXAMPLE
+
+** Docker for Windows
+*** PowerShell Auto Complete
+Win + x > PowerShell (Admin)
+Run these
+#+BEGIN_EXAMPLE
+# To allow downloaded scripts signed by trusted publishers to run on this computer
+Set-ExecutionPolicy RemoteSigned
+# Type y, check if this return RemoteSigned
+get-executionpolicy
+# Install PowerShell module posh-docker, it may also install NuGet package manager
+Install-Module posh-docker
+
+# Enable autocompletion for the current PowerShell only
+Import-Module post-docker
+
+# To make it persistent across all PowerShell sessions, we need to import the module to ~$PROFILE~
+# Run this directly on PowerShell to create a profile if not exists and add the line
+if (-Not (Test-Path $PROFILE)) {
+    New-Item $PROFILE –Type File –Force
+}
+
+Add-Content $PROFILE "`nImport-Module posh-docker"
+
+# check
+cat $PROFILE
 #+END_EXAMPLE
 
 ** image:debian:stretch - Debian 9 <<<image:debian:stretch>>>
