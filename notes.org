@@ -19144,11 +19144,40 @@ A records :: redirect hostname.domainname.com to an IP address. For the barebone
 
 AAAA records :: same as A records but they are IPv6. Nowadays, both AAAA and A are needed
 
-CNAME records :: point another subdomain (hostname) to an A record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name.
+CNAME records :: point another subdomain (hostname) to an A record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in CNAME on the left hand side.
 
 ALIAS records :: same as CNAME but it can coexist with other records on that name.
 
 URL records :: redirect the name to the target name using HTTP 301 status code.
+
+If URL record is not available, use CNAME and [[http://redirect.center/][redirect.center]] and redirect.name
+Instructions: https://milanaryal.com/domain-redirecting-and-url-forwarding-with-a-simple-dns-record/
+#+BEGIN_EXAMPLE
+# redirect google.example.com to google.com
+google.example.com IN CNAME google.com.redirect.center
+
+# redirect google.example.com to google.com with a 302 status code
+google.example.com IN CNAME google.com.opts-statuscode-302.redirect.center
+
+# If a user try to visit www.oldwebsite.com/about/ will redirect to path www.newwebsite.com/about/:
+www.oldwebsite.com  IN  CNAME  www.newwebsite.com.opts-uri.redirect.center
+
+# opts-statuscode-{code} :: HTTP Status Code to be used in the redirect. 302, HTTP Status Code
+# opts-uri :: Append URI (if any) to the target URL
+
+# Use redirect.name instead of readirect.center
+# redirect google.example.com to google.com
+google.example.com            IN  CNAME  alias.redirect.name
+_redirect.google.example.com  IN  TXT    Redirects to https://www.google.com
+
+# redirect google.example.com to google.com with options
+google.example.com            IN  CNAME  alias.redirect.name
+_redirect.google.example.com  IN  TXT    Redirects from /* to https://www.google.com/*
+
+# Redirects to [target], where target is the target URL
+# Redirects from [path] to [target], where path is a path to match on the hostname
+# Redirects permanently to [target], where permanently redirects with a 301 status code (defaults to 302 otherwise)
+#+END_EXAMPLE
 
 The ~A~, ~CNAME~, ~ALIAS~ records causes a name to resolve to an IP. Vice-versa, the ~URL~ record redirects the name to a destination. The ~URL~ record is simple and effective way to apply a redirect for a name to another name, e.g. to redirect www.example.com to example.com
 
