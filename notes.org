@@ -1068,6 +1068,50 @@ class BookTitleStarDecorator extends BookTitleDecorator {
 }
 #+END_EXAMPLE
 
+** Http Request
+cURL-less method for PHP5 but requires file_get_contents. Some host might disable file_get_contents. Use cURL method
+#+BEGIN_EXAMPLE
+$url = 'http://server.com/path';
+$data = array('key1' => 'value1', 'key2' => 'value2');
+
+// use key 'http' even if you send the request to https://...
+$options = array(
+    'http' => array(
+        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+        'method'  => 'POST',
+        'content' => http_build_query($data)
+    )
+);
+$context  = stream_context_create($options);
+$result = file_get_contents($url, false, $context);
+if ($result === FALSE) { /* Handle error */ }
+
+var_dump($result);
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+$url = 'http://www.someurl.com';
+$myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
+
+$ch = curl_init();
+// use curl_setopt to set each one
+// curl_setopt( $ch, CURLOPT_POST, 1);
+
+// use curl_setopt_array to set multiple
+$options = array(
+ CURLOPT_URL => $url,
+ CURLOPT_POSTFIELDS => $myvars,
+ CURLOPT_FOLLOWLOCATION =>  1,
+ CURLOPT_HEADER => 0,
+ CURLOPT_RETURNTRANSFER => 1
+);
+
+curl_setopt_array($ch, $options);
+
+$response = curl_exec( $ch );
+curl_close($ch);
+#+END_EXAMPLE
+
 ** Troubleshooting
 *** Parse error: syntax error, unexpected end of file
 Or ~Parse error: syntax error, unexpected 'endwhile' (t_endwhile)~
@@ -4492,7 +4536,6 @@ define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
 
 Go to wp-admin > Settings > Permalink and save to update the permalink
 
-
 ** Redirect a path a Wordpress website
 <<<wp:redirect path to wp>>>
 abc.com/enterprise to another Wordpress website abc.com
@@ -6050,6 +6093,418 @@ if ( is_wp_error($post) ) {
 Download additional language packs from [[https://make.wordpress.org/polyglots/teams/][here]]
 Upload thme to wp-content/languages
 Then change the language in each User Profile.
+
+** UC: Simple HTML page with form submit
+Create a url path /abc which points to index.html (can't have php files)
+*** /abc/index.html
+#+BEGIN_EXAMPLE
+<script src='https://www.google.com/recaptcha/api.js'></script>
+
+<div id="form-frame" class="form">
+  <div class="form-input">
+    <div id="err-message"></div>
+  </div>
+  <div class="form-input">
+    <label for="li-fname">Full Name</label>
+    <input type="text" name="li-fname" id="li-fname">
+  </div>
+  <div class="form-input news-input">
+    <label for="li-sub-promo">How did you hear about this promotion?</label>
+    <select name="li-sub-promo" id="li-sub-promo">
+      <option value="Website">Website</option>
+      <option value="Radio">Radio</option>
+      <option value="TV">TV</option>
+      <option value="Referral">Referral</option>
+      <option value="Brochure">Brochure</option>
+      <option value="Email">Email</option>
+      <option value="Newsletter">Newsletter</option>
+      <option value="Online Ads">Online Ads</option>
+      <option value="Social Media">Social Media</option>
+    </select>
+  </div>
+  <div class="form-input news-input">
+    <label for="small-business-lighting">Programs of Interest
+      <br>(Check all that apply)</label>
+    <div class="li-newsbox">
+      <input type="checkbox" name="li-newsbox" id="small-business-lighting">Small
+      Business Lighting<br>
+      <input type="checkbox" name="li-newsbox"
+             id="business-registration-incentives">Business Refrigeration
+      Incentives
+    </div>
+  </div>
+  <div class="form-input">
+    <label>&nbsp;</label>
+    <div class="g-recaptcha" data-sitekey="[[your_google_recaptcha_public_key]]"></div>
+    <div id="captcha-verify"></div>
+  </div>
+
+  <div class="form-input submit-input" id="form-submit">
+    <label>&nbsp;</label>
+    <a href="javascript:;" onclick="javascript:submit_form();">Submit</a>
+  </div>
+
+</div>
+<script type="text/javascript"
+        src="/abc/lb/js/app.js"></script>
+<script type="text/javascript"
+        src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+#+END_EXAMPLE
+
+*** /abc/lb/js/app.js
+#+BEGIN_EXAMPLE
+function submit_form(){
+
+  var send_msg = document.getElementById('form-submit');
+  var pre_send = ('<label>&nbsp;</label><a href="javascript:;" onclick="javascript:submit_form();">Submit</a>');
+  var post_send =  ('<label>&nbsp;</label><a id="send-blank">Sending...</a>');
+
+  var validate_form = pre_validate_cf();
+  var message = document.getElementById('err-message');
+  var form_data = '';
+  var form_return = '';
+
+  send_msg.innerHTML = post_send;
+
+  if (validate_form!=0) {
+
+    send_msg.innerHTML = pre_send;
+    message.innerHTML = 'Please correct the following errors: <ul>'+validate_form+'</ul>';
+    message.style.display = 'block';
+
+  }
+  else {
+
+    message.style.display = 'none';
+
+    /* -- SEND TO SERVER -- */
+    var name = encodeURIComponent(document.getElementById('li-fname').value);
+    var email = encodeURIComponent(document.getElementById('li-email').value);
+    var phone = encodeURIComponent(document.getElementById('li-phone').value);
+    var company = encodeURIComponent(document.getElementById('li-company').value);
+    var address = encodeURIComponent(document.getElementById('li-address').value);
+    var promo = encodeURIComponent(document.getElementById('li-sub-promo').value);
+
+    var bus_lighting = is_checked('small-business-lighting');
+    var bus_reg_incentives = is_checked('business-registration-incentives');
+
+    form_data = 'name='+name+'&email='+email+'&phone='+phone+'&company='+company+'&address='+address+'&promo_hear='+promo+'&bus_lighting='+bus_lighting+'&bus_reg_incentives='+bus_reg_incentives;
+
+    cf_form_req(form_data);
+
+  }
+}
+
+function cf_form_req(params){
+
+  var send_msg = document.getElementById('form-submit');
+  var pre_send = ('<label>&nbsp;</label><a href="javascript:;" onclick="javascript:submit_form();">Submit</a>');
+  var post_send =  ('<label>&nbsp;</label><a id="send-blank">Sending...</a>');
+  var message = document.getElementById('err-message');
+  var recaptcha = '';
+  recaptcha = grecaptcha.getResponse();
+  var params_full = params +'&recaptcha='+ recaptcha;
+
+  send_msg.innerHTML = post_send;
+
+  var url = "/wp-content/themes/li-cdm-lp/lb/api-localbusiness/cf-form-post.php";
+
+  $.ajax({
+    url : url,
+    type: "POST",
+    data : params_full,
+    success: function(data)
+    {
+
+      console.log(data);
+
+      if(data=='true'){
+        document.getElementById('form-validated').style.display = 'block';
+        ga('send', 'event', {
+          eventCategory: 'Form Submit Success',
+          eventAction: 'click',
+          eventLabel: event.target.href
+        });
+
+        console.log('submit');
+      }else {
+        message.style.display = 'block';
+        send_msg.innerHTML = pre_send;
+        message.innerHTML = 'Please correct the following errors: <ul>'+data+'</ul>';
+      }
+
+    }
+  });
+}
+
+function google_captcha_verify(){
+  var v = grecaptcha.getResponse();
+  if(v.length == 0) { return false; }
+  else { return true; }
+}
+
+function pre_validate_cf(){
+
+  var name = document.getElementById('li-fname');
+  var email = document.getElementById('li-email');
+  var phone = document.getElementById('li-phone');
+  var company = document.getElementById('li-company');
+  var address = document.getElementById('li-address');
+
+  var bus_lighting = is_checked('small-business-lighting');
+  var bus_reg_incentives = is_checked('business-registration-incentives');
+  var google_captcha = google_captcha_verify();
+
+  //var captcha = document.getElementById('captcha-verify');
+
+  var clean_css = 'border:1px #2ac158 solid';
+  var err_css = 'border:1px #FF0000 solid';
+
+  var check = '';
+  var log_data = '';
+
+  if(name.value == null || name.value==''){
+    check = '<li>Please enter your name.</li>';
+    log_data = '[ Empty First Name ],';
+    name.style.cssText = err_css;
+  }else {
+    log_data = '[ First Name: '+name.value+' ],';
+    name.style.cssText = clean_css;
+  }
+
+  if(email.value == null || email.value==''){
+    check += '<li>Please enter your email.</li>';
+    log_data += '[ Empty Email ],';
+    email.style.cssText = err_css;
+  }else if(validate_email(email.value)=='false'){
+    check += '<li>Please enter a valid email.</li>';
+    log_data += '[ Invalid Email: '+email.value+' ],';
+    email.style.cssText = err_css;
+  }else {
+    log_data += '[ Email: '+email.value+' ],';
+    email.style.cssText = clean_css;
+  }
+
+  if(phone.value == null || phone.value==''){
+    check += '<li>Please enter your phone number.</li>';
+    phone.style.cssText = err_css;
+  }else if(validate_phone(phone)!=true){
+    check += '<li>Please enter a valid phone number. Format: 000-000-0000</li>';
+    phone.style.cssText = err_css;
+  }else {
+    phone.style.cssText = clean_css;
+  }
+
+  if(company.value == null || company.value==''){
+    check += '<li>Please enter your company name.</li>';
+    company.style.cssText = err_css;
+  }else {
+    company.style.cssText = clean_css;
+  }
+
+  if(address.value == null || address.value == ''){
+    check += '<li>Please enter your company address</li>';
+    address.style.cssText = err_css;
+  }else {
+    address.style.cssText = clean_css;
+  }
+
+  if(google_captcha!== true ){
+    check += '<li>Please verify you are not a robot.</li>';
+  }
+
+  if(bus_lighting!== 'Checked'){
+    if(bus_reg_incentives!=='Checked'){
+      check += '<li>Please select a program of interest.</li>';
+    }else {
+
+    }
+  }
+
+  /* IF VALID -- Clear Check, Set to 0 */
+  if(check==''){check=0;}
+
+  return check;
+}
+
+function is_checked(id){
+  if(document.getElementById(id).checked) {
+    return( "Checked" );
+  }else {
+    return( "Not Checked" );
+  }
+}
+#+END_EXAMPLE
+
+*** /wp-content/themes/li-cdm-lp/lb/api-localbusiness/cf-form-post.php
+#+BEGIN_EXAMPLE
+<?php
+/* --- CLASS INCLUSION --- */
+include('form-clean.php');
+$FORMCLEAN = new FORM_CLEAN();
+
+session_start();
+
+$recipients_sbl = array('iamadmin@abc.com');
+
+/* --- PARAMS (Pre-Clean) --- */
+$C_NAME 			= $FORMCLEAN->clean($_POST['name']);
+$C_EMAIL 			= $FORMCLEAN->clean($_POST['email']);
+$C_PHONE			= $FORMCLEAN->clean($_POST['phone']);
+$C_COMPANY 			= $FORMCLEAN->clean($_POST['company']);
+$C_ADDRESS			= $FORMCLEAN->clean($_POST['address']);
+$C_PROMO			= $FORMCLEAN->clean($_POST['promo_hear']);
+$C_BUS_LIGHTING = $FORMCLEAN->clean($_POST['bus_lighting']);
+$C_BUS_INCENTIVES = $FORMCLEAN->clean($_POST['bus_reg_incentives']);
+
+/* --- VALIDATE --- */
+$C_NAME_VALIDATE 				= 	$FORMCLEAN->validate($C_NAME,'Name');
+$C_EMAIL_VALIDATE 				= 	$FORMCLEAN->validate($C_EMAIL,'Email');
+$C_PHONE_VALIDATE				=	$FORMCLEAN->validate($C_PHONE,'Phone');
+$C_COMPANY_VALIDATE				=	$FORMCLEAN->validate($C_COMPANY,'Company');
+$C_ADDRESS_VALIDATE				=	$FORMCLEAN->validate($C_ADDRESS,'Address');
+
+
+// validate reCaptcha
+$C_CAPTCHA_VALIDATE = '';
+$C_CAPTCHA = $_POST['recaptcha'];
+$C_CAPTCHA_google_request = array(
+  'url' => 'https://www.google.com/recaptcha/api/siteverify',
+  'options' => array(
+    'secret' => 'your_recaptcha_secret_key',
+    'response' => $C_CAPTCHA,
+  ));
+
+$ch = curl_init();
+$options = array(
+  CURLOPT_URL => $C_CAPTCHA_google_request['url'],
+  CURLOPT_POSTFIELDS => http_build_query($C_CAPTCHA_google_request['options']),
+  CURLOPT_FOLLOWLOCATION =>  1,
+  CURLOPT_HEADER => 0,
+  CURLOPT_RETURNTRANSFER => 1
+);
+curl_setopt_array($ch, $options);
+$C_CAPTCHA_google_result = json_decode(curl_exec( $ch ), true);
+curl_close($ch);
+
+if (!(is_array($C_CAPTCHA_google_result) && $C_CAPTCHA_google_result['success'] === true)) {
+  $C_CAPTCHA_VALIDATE = ('<li>reCaptcha Match Fails </li>');
+}
+// validate reCaptcha.
+
+$EMAIL_TO = '';
+
+$SOURCE_CODE = 'Li-Local-Business';
+
+$VALIDATE = str_replace('0','',$C_NAME_VALIDATE.$C_EMAIL_VALIDATE.$C_PHONE_VALIDATE.$C_COMPANY_VALIDATE.$C_ADDRESS_VALIDATE.$C_CAPTCHA_VALIDATE);
+
+if($VALIDATE==''){
+
+  if($C_BUS_LIGHTING=='Checked'){
+
+    /* --- SEND EMAIL (TO ADMINISTRATOR) --- */
+    $EMAIL_TO = implode(',', $recipients_sbl);
+    //$EMAIL_TO .= 'joseph.alonzi@cleversamurai.com';
+    $SUBJECT = '[ Li ] - Small Business Lighting Signup';
+    $EMAIL_FROM = 'donotreply@abc.com';
+
+    $MESSAGE = ('
+					<html>
+						<head>
+							<title>[ Li ] - Small Business Lighting Signup</title>
+						</head>
+						<body>
+
+						 <h1>[ Li ] - Small Business Lighting Signup</h1>
+
+						 <b>Name:</b> '.$C_NAME.'<br />
+						 <b>Email:</b> '.$C_EMAIL.'<br />
+						 <b>Phone:</b> '.$C_PHONE.'<br /><br />
+
+						<b>How Did You Hear About Us?</b> '.$C_PROMO.'<br /><br />
+
+						 <b>Business Name:</b> '.$C_COMPANY.'<br />
+						 <b>Business Address:</b> '.$C_ADDRESS.'<br /><br />
+
+						 The following email: '.$C_EMAIL.' has shown interest in Small Business Lighting.
+
+						<br />
+						---
+						<br />
+						Source Code: '.$SOURCE_CODE.$_debug.'
+
+						</body>
+					</html>
+					');
+
+    $HEADERS  = 'MIME-Version: 1.0' . "\r\n";
+    $HEADERS .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+    $HEADERS .= 'From: Li <'.$EMAIL_FROM.'>' . "\r\n";
+    mail($EMAIL_TO, $SUBJECT, $MESSAGE, $HEADERS);
+
+  }
+
+  unset($_SESSION['C_CAPTCHA']);
+  session_destroy();
+
+  /* --- IF ALL VALIDATES, AND THE EMAIL HAS BEEN SENT --- */
+  echo 'true';
+
+}
+else {
+  echo $VALIDATE;
+}
+#+END_EXAMPLE
+
+*** /wp-content/themes/li-cdm-lp/lb/api-localbusiness/form-clean.php
+#+BEGIN_EXAMPLE
+<?php
+
+class FORM_CLEAN{
+
+  public function clean($input){
+
+    /* -- Simple Clean -- */
+    $input = preg_replace('#<script(.*?)>(.*?)</script>#is', '', $input);
+    $input = str_replace('<?php','',$input);
+    $input = str_replace('?>','',$input);
+    $input = str_replace("1=1;--",'',$input);
+    $input = strip_tags($input);
+
+    return $input;
+
+  }
+
+  public function validate($input,$name){
+
+    $error=0;
+
+    if($input==''){
+      $error++;
+    }
+
+    if($error!=0){
+      return '<li> '.$name.' field is empty or invalid.';
+    }else {
+      return $error;
+    }
+
+  }
+
+  public function check_convert($str){
+
+    if($str=='true'){
+      $str='YES';
+    }else {
+      $str='NO';
+    }
+
+    return $str;
+
+  }
+  
+}
+#+END_EXAMPLE
 
 * ColdFusion
 ** cfsetting
