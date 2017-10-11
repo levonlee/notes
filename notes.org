@@ -22135,13 +22135,45 @@ RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.php [L]
-RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
-# If redirect to another url, use
-Redirect 301 /dealdays2 http://yoursite.com/dealdays2/
 </IfModule>
 
 # END WordPress
+
+RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
+# If redirect to another url, use
+# Redirect is prefix match and append additional path info beyond the matched URL-path to the new/target URL.
+# a.com/dealdays2 to b.com/dealdays2, a.com/dealdays2/foo.txt to b.com/dealdays2/foo.txt, a.com/dealdays2/xyz to b.com/dealdays2/xyz
+# Redirect syntax :: Redirect [status] [URL-path] URL
+# [URL-path] is case-sensitive beginning with slash. relative path is not allowed
+# URL may be either an absolute URL beginning with scheme and hostname or a URL-path beginning with a slash
+Redirect 301 /dealdays2 http://b.com/dealdays2
+
+# Redirect without appending additional path info
+# RedirectMatch is like Redirect but regex
+# syntax :: RedirectMatch [status] regex URL
+RedirectMatch 301 ^/dealdays2/?$ http://b.com/dealdays2
 #+END_EXAMPLE
+
+Redirect root domain only but not other URI. e.g. mysite.com or www.mysite.com redirect to abc.com but not mysite.com/xyz to abc.com/xyz
+#+BEGIN_EXAMPLE
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^(www\.)?mysite\.com [NC]
+# no www :: RewriteCond %{HTTP_HOST} ^mysite\.com [NC]
+
+RewriteCond %{REQUEST_URI} ^/$
+# Rewriterule ^(.*)$ http://abc.com/ [L,R=301]
+Rewriterule ^$ http://abc.com/ [L,R=301]
+#+END_EXAMPLE
+
+Redirect www.abc.com to abc.com
+#+BEGIN_EXAMPLE
+RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
+RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
+#+END_EXAMPLE
+
+** Rewrite flags
+L|last :: stop processing other rules
+NC|nocase
 
 * Nginx
 ** Install on Ubuntu 16.04
@@ -26851,6 +26883,177 @@ Use it as font:
 // md-inactive
 
 It has svg!
+
+*** Google reCaptcha
+https://developers.google.com/recaptcha/intro
+
+**** Client - Basic
+#+BEGIN_EXAMPLE
+<html>
+  <head>
+    <title>reCAPTCHA demo: Simple page</title>
+     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  </head>
+  <body>
+    <form action="?" method="POST">
+      <div class="g-recaptcha" data-sitekey="your_site_key"></div>
+      <br/>
+      <input type="submit" value="Submit">
+    </form>
+  </body>
+</html>
+#+END_EXAMPLE
+
+**** Client - Defer loading, explict rendering one widget/instance
+#+BEGIN_EXAMPLE
+<script type="text/javascript">
+  var onloadCallback = function() {
+    alert("grecaptcha is ready!");
+    grecaptch.render('html_element', {
+      'sitekey' : 'your_site_key'
+    });
+  };
+</script>
+
+<form action="?" method="POST">
+      <div id="html_element"></div>
+      <br>
+      <input type="submit" value="Submit">
+</form>
+
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit"
+        async defer>
+</script>
+#+END_EXAMPLE
+
+**** Client - Multiple reCaptcha widgets/instance
+#+BEGIN_EXAMPLE
+<html>
+  <head>
+    <title>reCAPTCHA demo: Explicit render for multiple widgets</title>
+    <script type="text/javascript">
+      var verifyCallback = function(response) {
+        alert(response);
+      };
+      var widgetId1;
+      var widgetId2;
+      var onloadCallback = function() {
+        // Renders the HTML element with id 'example1' as a reCAPTCHA widget.
+        // The id of the reCAPTCHA widget is assigned to 'widgetId1'.
+        widgetId1 = grecaptcha.render('example1', {
+          'sitekey' : 'your_site_key',
+          'theme' : 'light'
+        });
+        widgetId2 = grecaptcha.render(document.getElementById('example2'), {
+          'sitekey' : 'your_site_key'
+        });
+        grecaptcha.render('example3', {
+          'sitekey' : 'your_site_key',
+          'callback' : verifyCallback,
+          'theme' : 'dark'
+        });
+      };
+    </script>
+  </head>
+  <body>
+    <!-- The g-recaptcha-response string displays in an alert message upon submit. -->
+    <form action="javascript:alert(grecaptcha.getResponse(widgetId1));">
+      <div id="example1"></div>
+      <br>
+      <input type="submit" value="getResponse">
+    </form>
+    <br>
+    <!-- Resets reCAPTCHA widgetId2 upon submit. -->
+    <form action="javascript:grecaptcha.reset(widgetId2);">
+      <div id="example2"></div>
+      <br>
+      <input type="submit" value="reset">
+    </form>
+    <br>
+    <!-- POSTs back to the page's URL upon submit with a g-recaptcha-response POST parameter. -->
+    <form action="?" method="POST">
+      <div id="example3"></div>
+      <br>
+      <input type="submit" value="Submit">
+    </form>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit"
+        async defer>
+    </script>
+  </body>
+</html>
+#+END_EXAMPLE
+
+**** api.js options
+| onload |                    | Optional. The name of your callback function to be executed once all the dependencies have loaded. |
+| render | explict onload     | Optional. Whether to render the widget explicitly.                                                 |
+|        |                    | Defaults to onload, which will render the widget in the first g-recaptcha tag it finds.            |
+| hl     | See language codes | Optional. Forces the widget to render in a specific language.                                      |
+|        |                    | Auto-detects the user's language if unspecified.                                                   |
+
+**** class="g-recaptcha" tag attributes
+| tag attribute         | grecaptcha.render parameter | Value   | Default | Description                                 |
+| data-sitekey          | sitekey                     |         |         | Your sitekey.                               |
+| data-theme            | theme                       | dark    | light   | Optional. Color                             |
+|                       |                             | light   |         |                                             |
+| data-type             | type                        | audio   | image   | Optional.                                   |
+|                       |                             | image   |         |                                             |
+| data-size             | size                        | compact | normal  | Optional.                                   |
+|                       |                             | normal  |         |                                             |
+| data-tabindex         | tabindex                    |         | 0       | Optional.                                   |
+| data-callback         | callback                    |         |         | Optional.                                   |
+|                       |                             |         |         | To execute when the user submits            |
+|                       |                             |         |         | a successful response: g-recaptcha-response |
+| data-expired-callback | expired-callback            |         |         | Optional.                                   |
+|                       |                             |         |         | To execute when recaptcha response expires  |
+|                       |                             |         |         | and the user needs to solve a new CAPTCHA   |
+
+**** JavaScript API
+***** grecaptcha.render(container,parameters)	
+Renders the container as a reCAPTCHA widget and returns the ID of the newly created widget.
+container :: The HTML element to render the reCAPTCHA widget.  Specify either the ID of the container (string) or the DOM element itself.
+parameters :: An object containing parameters as key=value pairs, for example, {"sitekey": "your_site_key", "theme": "light"}. See grecaptcha.render parameters.
+
+***** grecaptcha.reset(opt_widget_id)	
+Resets the reCAPTCHA widget.
+opt_widget_id
+  Optional widget ID, defaults to the first widget created if unspecified.
+
+***** grecaptcha.getResponse(opt_widget_id)
+Gets the response for the reCAPTCHA widget.
+opt_widget_id
+  Optional widget ID, defaults to the first widget created if unspecified.
+
+**** Server Validation
+For web users, a new field (g-recaptcha-response) will be populated in HTML and you can get the user’s response in one of three ways:
+
+1. g-recaptcha-response POST parameter when the user submits the form on your site
+2. grecaptcha.getResponse(opt_widget_id) after the user completes the CAPTCHA challenge
+3. As a string argument to your callback function if data-callback is specified in either the g-recaptcha tag attribute or the callback parameter in the grecaptcha.render method
+
+URL: https://www.google.com/recaptcha/api/siteverify
+METHOD: POST
+
+Parameters
+secret :: Required. The shared key between your site and reCAPTCHA.
+response :: Required. The user response token provided by reCAPTCHA, verifying the user on your site.
+remoteip :: Optional. The user's IP address.
+
+API Response
+#+BEGIN_EXAMPLE
+{
+  "success": true|false,
+  "challenge_ts": timestamp,  // timestamp of the challenge load (ISO format yyyy-MM-dd'T'HH:mm:ssZZ)
+  "hostname": string,         // the hostname of the site where the reCAPTCHA was solved
+  "error-codes": [...]        // optional
+}
+#+END_EXAMPLE
+
+Error codes
+missing-input-secret :: The secret parameter is missing.
+invalid-input-secret :: The secret parameter is invalid or malformed.
+missing-input-response :: The response parameter is missing.
+invalid-input-response :: The response parameter is invalid or malformed.
+bad-request :: The request is invalid or malformed.
 
 ** Translation
 <<<tool:Poedit>>>
