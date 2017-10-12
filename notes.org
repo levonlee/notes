@@ -6097,6 +6097,15 @@ Download additional language packs from [[https://make.wordpress.org/polyglots/t
 Upload thme to wp-content/languages
 Then change the language in each User Profile.
 
+** File Permissions
+All files should be chmod:644 and all folders chmod:755
+wp-config.php should be chmod:660 or chmod:664
+#+BEGIN_EXAMPLE
+find . -type f -exec chmod 644 {} +
+find . -type d -exec chmod 755 {} +
+chmod 660 wp-config.php
+#+END_EXAMPLE
+
 ** UC: Simple HTML page with form submit
 Create a url path /abc which points to index.html (can't have php files)
 *** /abc/index.html
@@ -18124,7 +18133,8 @@ Disk usage in current folder including all sub folders but excluding one sub fol
 du --exclude=./wp-content/uploads --exclude=./wp-content/error_log -sh
 
 *** File permission
-Octal mode
+**** Change permission - chmod
+Octal mode. [[https://chmod-calculator.com/][Convert to Octal Mode]] [[http://permissions-calculator.org/decode/][Convert to Permissions Bit]]
 #+BEGIN_EXAMPLE
 chmod 400 ~/path/to/file.php
 #+END_EXAMPLE
@@ -18140,14 +18150,19 @@ chmod 400 ~/path/to/file.php
 | rwx         |    111 |     7 | full              |
 |             |        |       |                   |
 
+owner-group-public
+
 400 :: read for owner, 0 for group, 0 for other/public
 440 :: read for owner and group, but none for public
 555 :: read and execute (can't modify) for all
 700 :: full for owner
+755 :: rwxr-xr-x (e.g. wordpress directory) <<<chmod:755>>>
 777 :: Directory's full permission
 600 :: owner can read and write file
-666 :: anyone can read and write
-664 :: New file default permission. Read and Write for owner and group but only read for public
+644 :: -rw-r--r-- (e.g. wordpress .php file <<<chmod:644>>>
+660 :: rw-rw---- (e.g. wp-config.php) <<<chmod:660>>>
+666 :: anyone can read and write. File full permission. <<<chmod:666>>>
+664 :: rw-rw-r-- New file default permission. <<<chmod:664>>>
 
 By default, umask is 0002. A file's full permission is 666. So new file will have these permissions
 666-002 = 664
@@ -18163,7 +18178,7 @@ r = read, w = write, x = execute
 
 a-w :: remove write permission for all
 
-Change owner:group for a folder
+**** Change owner:group for a folder - chown
 #+BEGIN_EXAMPLE
 sudo chown -R user:group aFolder
 #+END_EXAMPLE
@@ -18183,7 +18198,7 @@ Directly go to the actual folder by calling ~/abc
 cd -P ~/abc
 #+END_EXAMPLE
 
-*** Search Files or Directories, Sort by size
+*** Search Files or Directories, Sort by size <<<bash:find>>>
 By file or directory name
 #+BEGIN_EXAMPLE
 ls -l my_scr?pt
@@ -18364,7 +18379,7 @@ find ~/www -iname WEB-INF -exec ls {} \;
 find ~/www -iname WEB-INF -exec rm -rf {} \;
 #+END_EXAMPLE
 
-*** cp
+*** cp <<<bash:cp>>>
 #+BEGIN_EXAMPLE
 # Copy a sub folder abc/ in the current directory to a new directory ~/xyz with everything preserved
 cp -a abc/ ~/xyz
@@ -18372,6 +18387,11 @@ cp -a abc/ ~/xyz
 # Duplicate subfolder abc and name it xyz
 cp -a abc xyz
 #+END_EXAMPLE
+
+-a :: -dR --preserve=all
+-d :: --no-dereference --preserve=links
+-P, --no-dereference :: never follow symbolic links in SOURCE
+-R :: recursive
 
 *** tar
 **** Compress and Read .tar file
@@ -18457,7 +18477,9 @@ Dry run first: ~rsync -rlvzun --size-only --progress $SOURCE $DESTINATION~
 -u: skip files that are newer in $DESTINATION
 -v: verbose
 -n: dry run
+
 --size-only: only compare with file size
+
 -t: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. A missing -t or -a will cause the next transfer to behave as if it used -I, causing all files to be updated.
 	
 This command will not sync files with different permissions, ownership and modification time.
