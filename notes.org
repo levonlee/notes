@@ -18158,7 +18158,7 @@ chmod 400 ~/path/to/file.php
 
 owner-group-public
 
-400 :: read for owner, 0 for group, 0 for other/public
+400 :: r-------- e.g. ssh private keys in ~/.ssh/
 440 :: read for owner and group, but none for public
 555 :: read and execute (can't modify) for all
 700 :: full for owner
@@ -18490,22 +18490,32 @@ Options
 - -x :: extract
 
 *** rsync
-Dry run first: ~rsync -rlvzun --size-only --progress $SOURCE $DESTINATION~
+Dry run first: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
+
+By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated.
+
+-I, --ignore-times: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated.
+
+--size-only: This modifies rsync’s “quick check” algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly.
+
+-u: skip files that are newer in $DESTINATION
+
+--delete: To delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side.
+
 -r: recursive
 -l: symlink
 -z: compress
--u: skip files that are newer in $DESTINATION
 -v: verbose
+-i: Very useful! Display change-summary for all updates
+-P: --progress --partial, show progress and to resume interrupted transfers 
 -n: dry run
 
---size-only: only compare with file size
-
--t: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. A missing -t or -a will cause the next transfer to behave as if it used -I, causing all files to be updated.
+-t: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless --size-only is used, missing -t or -a will cause the next transfer to behave as if it used -I, causing all files to be updated.
 	
 This command will not sync files with different permissions, ownership and modification time.
 Review the results and remove dry run `-n` before running again.
 
--a: is -rlptgoD
+-a: -rlptgoD
 -p: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
 -g: To set the group of the destination file to be the same as the source file.
 -o: To set the owner of the destination file to be the same as the source file.
@@ -18513,7 +18523,78 @@ Review the results and remove dry run `-n` before running again.
 
 --devices: To transfer character and block device files to the remote system to recreate these devices.
 --specials: To transfer special files such as named sockets and fifos.
---delete: To delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized.
+
+**** Change summary, compare 2 directories
+rsync -rlvzPitn --size-only wp-content/themes/my-theme/ sshconfighostname:/var/www/mylivesite/wp-content/themes/my-theme/
+#+BEGIN_EXAMPLE
+.d..t...... ./
+<f.st...... footer.php
+<f.st...... front-page.php
+.f..t...... functions.php
+<f.st...... header.php
+.f..t...... index.php
+.f..t...... page--coupon-image_tpl.php
+.f..t...... page--coupons_tpl.php
+.f..t...... style.css
+.d..t...... lb/
+cd+++++++++ lb/api-localbusiness/
+<f+++++++++ lb/api-localbusiness/cf-form-post.php
+<f+++++++++ lb/api-localbusiness/cf-form-post_rel0.php
+<f+++++++++ lb/api-localbusiness/cf-form-post_rel2.php
+.d..t...... lb/css/
+.f..t...... lb/css/font.css
+<f.st...... lb/css/style.css
+.d..t...... lb/font/
+.d..t...... lb/font/trade-gothic/
+.f..t...... lb/font/trade-gothic/bold.eot
+.f..t...... lb/font/trade-gothic/bold.otf
+.d..t...... lb/img/
+.f..t...... lb/img/alectra-logo.eps
+.d..t...... lb/img/bg/
+.f..t...... lb/img/bg/lp-bg_001.jpg
+.f..t...... lb/img/bg/lp-bg_002.jpg
+.d..t...... lb/img/icons/
+.f..t...... lb/img/icons/contact.png
+.f..t...... lb/img/icons/social-facebook.png
+.d..t...... lb/img/icons/coupon/
+.f..t...... lb/img/icons/coupon/icon-01.svg
+.f..t...... lb/img/icons/coupon/icon-02.svg
+.d..t...... lb/img/logos/
+.f..t...... lb/img/logos/brampton-hydro.png
+.f..t...... lb/img/logos/enersource.png
+.d..t...... lb/js/
+.f..t...... lb/js/app.js
+.f..t...... lb/js/bicubic-interpolation.js
+#+END_EXAMPLE
+
+YXcstpoguax
+
+Y is update type
+- < means a file is being transferred to the remote
+- > means a file is being transferred to the local
+- c means a local change/creation is occuring for the item (on the receiving side)
+- h means the item is a hard link to another item
+- . means the item is not being updated (though it might have attributes that are modified)
+- * means the rest of the itemized-output area contains a message (e.g. "deleting")
+
+X is file-type :: f for a file, d for directory, L for symlink, D for a device, S for a special file (named sockets and fifos)
+
+cstpoguax are attributes. 
+- "." stands for no change. 
+- A newly created item replaces each letter with a "+"
+- An identical item replaces the dots with spaces
+- An unknown attribute replaces each letter with a "?" (could happen when talking to an older rsync)
+
+- c: checksum is different
+- s: file size is different and will be updated
+- t: modification time is different and is being updated to the sender's value (requires -t or --times)
+- T: modification time will be set to the transfer time
+- p: permissions are different and are being updated to the sender's value (requires --perms)
+- o: owner is different and is being updated to the sender's value (requires --owner)
+- g: group is different and is being updated to the sender's value (requires --group)
+- u: reserved for future use
+- a: ACL information changed
+- x: Extended attribute information changed.
 
 ** head, tail
 <<<linux:tail>>>
