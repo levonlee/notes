@@ -6110,6 +6110,7 @@ Run this to check which files are not 644 and which directories are not 755
 <<<wp:check file permissions>>>
 #+BEGIN_EXAMPLE
 find . -type d -not -perm 755 -o -type f -not -perm 644
+find . -type d -not -perm 755 -not -path "./.git/*" -o -type f -not -perm 644 -not -path "./.git/*"
 #+END_EXAMPLE
 
 ** UC: Simple HTML page with form submit
@@ -19162,6 +19163,17 @@ multiple_commands_output="$multiple_commands_output""$output"$'\n'
 # read -r :: to ignore all backslashes
 #+END_EXAMPLE
 
+*** Date format <<<bash:date>>>
+date +%F :: YYYY-MM-DD
+date +%H :: 00..23
+date +%M :: minute 00..59
+date +%S :: second 00..60
+date +%T :: HH:MM:SS
+date +%Z :: time zone e.g. EDT
+
+date +%FT%T%Z :: 2017-10-13T16:39:02UTC
+date +%FT%H%M%S :: 2017-10-13T16-39-02 use this as it is filename safe
+
 *** String Operators
 #+BEGIN_EXAMPLE
 # A string is delimited by :
@@ -19614,6 +19626,8 @@ Also return cheat sheet name
 ~cheat ping~ show the `ping` cheat sheet
 
 ** Makefile
+Install in Ubuntu :: sudo apt-get update && sudo apt-get install make
+
 Create a Makefile in current folder
 #+BEGIN_EXAMPLE
 include env_make
@@ -19623,6 +19637,9 @@ NAME=myimagename
 VERSION=0.1.0
 REPO=mydockerreponame
 # define some variables
+
+# Define dynamic variable
+filename := file_$(shell date +%FT%T%Z).log
 
 .PHONY: default build
 # This tells make to not look elsewhere for commands default and build
@@ -19661,6 +19678,7 @@ release: build
 testecho:
 	@echo $$FOO
 # make testecho FOO="a b c"
+# actually @echo $(foo) then ~make testecho foo="a b c"~
 
 testsub:
 	@echo otheraction $(filter-out $@,$(MAKECMDGOALS))
@@ -19689,6 +19707,10 @@ runrecipeinmiddle:
 # - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
 #+END_EXAMPLE
 
+Makefile :: make your-recipe
+Makefile.test :: make -f Makefile.test your-recipe
+Makefile.live :: make -f Makefile.live your-recipe
+
 ** Nano
 - Save :: Ctrl + O 
 - Exit :: Ctrl + x
@@ -19701,6 +19723,8 @@ runrecipeinmiddle:
  - C-u to paste
 
 - Turn off word wrap :: Esc, release, then $ (shift+4)
+
+By default, nano covert tab to 4 spaces. Turn off ~Shift + Alt + Q~
 
 ** Ubuntu Unity
 
@@ -19955,6 +19979,27 @@ Copy a folder, result /var/www/transfer/web :: ~docker cp web/ ghost:/var/www/tr
 -L :: copy symbol link
 -a :: copy file permissions as well as userid:groupid
 
+SRC_PATH specifies a file
+- DEST_PATH does not exist
+  the file is saved to a file created at DEST_PATH
+- DEST_PATH does not exist and ends with /
+  Error condition: the destination directory must exist.
+- DEST_PATH exists and is a file
+  the destination is overwritten with the source file’s contents
+- DEST_PATH exists and is a directory
+  the file is copied into this directory using the basename from SRC_PATH
+
+SRC_PATH specifies a directory
+- DEST_PATH does not exist
+  DEST_PATH is created as a directory and the contents of the source directory are copied into this directory
+- DEST_PATH exists and is a file
+  Error condition: cannot copy a directory to a file
+- DEST_PATH exists and is a directory
+ - SRC_PATH does not end with /. (that is: slash followed by dot)
+   the source directory is copied into this directory
+ - SRC_PATH does end with /. (that is: slash followed by dot)
+   the content of the source directory is copied into this directory
+
 Memory usage for all containers ~docker stats -a~
 
 *** Save a running container to an image
@@ -19968,6 +20013,8 @@ New image name :: my/ubuntu-nodejs
 Login to container with bash open :: ~docker exec -it containerName bash -I~
 Long command (pure-pw only exists in container)
 ~docker exec -it containerName pure-pw useradd bob2 -f longpathto/passwd -m -u ftpuser -d /home/ftpusers/bob2~
+Run multiple commands
+~docker exec -it containerName bash -c 'cd /var/log; tar -cv ./file.log'~
 
 ** Network
 #+BEGIN_EXAMPLE
