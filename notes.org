@@ -18037,12 +18037,18 @@ Host example3
     HostName 64.233.160.0
     User userxyz123
     Port 56000
+    ServerAliveInterval 240
+    ServerAliveCountMax 2
 
 Host amazon1
     HostName ec2.amazon.com
     User ec2-user
     IdentityFile /path/to/special/privatekey/amazon.pem
 #+END_EXAMPLE
+
+Sends a packet to the server every 240 seconds (4 minutes). If the client does not receive a response after 2 tries, it closes the connection.
+
+In Putty, under Connection > Seconds between keepalives > 240
 
 *** Use Private Key from SSH Server to connect
 AWS uses .pem file as the private key on its SSH server.
@@ -18161,12 +18167,25 @@ Search a word `warthog` in .gz files
 | =df -h=                 | Disk usage on OS                                    |
 |                         | h for human-readable.                               |
 | =du -sh=                | Current folder size. -s shows total only            |
-| =du -sh ./*=            | List sizes of 1st level child folders               |
+| =du -sh ./*=            | List sizes of 1st level child folders and files     |
 | =du -sh ./wp-content/*= | List sizes of 1st level child folders of one folder |
 |                         |                                                     |
 
 Disk usage in current folder including all sub folders but excluding one sub folder
 du --exclude=./wp-content/uploads --exclude=./wp-content/error_log -sh
+
+du --exclude-from 'path/to/files.txt'
+
+#+BEGIN_EXAMPLE
+# Only get down to 1 level. When max-depth > 0, -s cannot be used.
+du --max-depth=1 -h
+
+# sort by size
+du --max-depth=1 -h | sort -h
+
+# Do not count subdirectories size
+du --max-depth=1 -Sh
+#+END_EXAMPLE
 
 *** File permission
 **** Change permission - chmod
