@@ -17885,9 +17885,11 @@ Unset a shell or env. variable :: ~unset TEST_VAR~
 =sudo deluser corey=
 
 sudo is a group
-As root user, run
+As root user, run this to add the user to the sudo group
 #+BEGIN_EXAMPLE
 gpasswd -a username sudo
+# or
+# usermod -aG sudo username
 #+END_EXAMPLE
 
 gpasswd is the same as to add user to a group
@@ -17952,6 +17954,7 @@ Where -H is to use the target user's home directory
 ~sudo -S your_script -var1 </path/to/file.txt~
 
 *** Require no password when sudo is run as another user
+<<<linux:sudo:nopassword>>>
 User abc has sudo privilege. When abc is signed in and run a script/command that requires sudo, system will ask for password
 ~sudo ./path/to/script.sh~
 
@@ -17961,7 +17964,10 @@ Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoe
 #+BEGIN_EXAMPLE
 # See if there are some sample
 sudo ls -al /etc/sudoers.d/
+# found one sample
 sudo cat /etc/sudoers.d/mybypass
+# have to use visudo to edit /etc/sudoers and /etc/sudoers.d/anyfile files.
+# -f is to specify a file, otherwise is the default /etc/sudoers file
 sudo visudo -f /etc/sudoers.d/mybypass
 # Add this line
 abc ALL = (root) NOPASSWD: /path/to/script.sh
@@ -18000,6 +18006,8 @@ Change permission ~chmod 600 .ssh/authorized_keys~
 **** Fast way
 This will append the client public key to remote host's ~/.ssh/authorized_keys
 ~ssh-copy-id remoteusername@123.45.56.78~
+Or specify a public key file
+~ssh-copy-id -i ~/.ssh/mykey remoteusername@123.45.56.78~
 
 **** Remove passphrase for private key id_rsa
 #+BEGIN_EXAMPLE
@@ -18043,7 +18051,7 @@ Refer to aws:ssh
 
 *** Restart SSH
 General :: ~service ssh restart~
-Ubuntu :: ~sudo restart ssh~ or ~sudo systemctl restart ssh~
+Ubuntu :: ~sudo systemctl reload sshd~ (16.04) or ~sudo systemctl restart sshd~ (16.04) or ~sudo restart ssh~ (14.04)
 
 *** Backup sshd_config file
 #+BEGIN_EXAMPLE
@@ -18053,6 +18061,7 @@ sudo chmod a-w /etc/ssh/sshd_config.factory-defaults
 
 *** Disallow SSH as root user, SSH Daemon Config
 <<<linux:ssh:disallow_root>>>
+Login as root then
 ~nano /etc/ssh/sshd_config~
 Change ~PermitRootLogin yes~ to no
 Restart SSH
@@ -18061,8 +18070,15 @@ Before logout, open another terminal to see if it works.
 Default SSH port is 22
 
 *** Disable Password Authentication
+Force to use public key only instead of plain password only
 ~nano /etc/ssh/sshd_config~
 Replace ~#PasswordAuthentication yes~ with ~PasswordAuthentication no~
+These are supposed to be default. If not, change to as below
+#+BEGIN_EXAMPLE
+PubkeyAuthentication yes
+ChallengeResponseAuthentication no
+#+END_EXAMPLE
+
 Restart SSH
 
 ** fail2ban
@@ -18871,14 +18887,27 @@ netstat -an | find "8080"
 <<<linux:firewall>>> <<<linux:ufw>>>
 
 Should be installed by default. ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
-~sudo ufw status verbose~
+~sudo ufw status verbose~ to check if status is active.
 ~sudo ufw disable~ and ~sudo ufw enable~ to restart firewall
 Or just reload ~sudo ufw reload~
 ~sudo ufw reset~
 
-Review setting ~sudo vi /etc/default/ufw~
+ufw comes with some profiles each of them is a setting for a service/app. Get all profiles ~sudo ufw app list~
+#+BEGIN_EXAMPLE
+Available applications:
+  Nginx Full
+  Nginx HTTP
+  Nginx HTTPS
+  OpenSSH
+#+END_EXAMPLE
+
+Refer to nginx:ufw for further info. 
 
 Default setting is no restriction on outgoing connection, deny all incoming connection
+
+Allow OpenSSH app/profile first ~sudo ufw allow OpenSSH~ then ~sudo ufw enable~ enable ufw
+
+Review setting ~sudo vi /etc/default/ufw~
 
 Make sure ~IPV6=yes~ in setting.
 Make sure DEFAULT_FORWARD_POLICY="ACCEPT" if docker is installed
@@ -19762,6 +19791,7 @@ Remove it and downgrade back to previous version before using PPA
 linux:user :: Add a normal user, add the user to sudo group
 linux:ssh :: Add ssh public key to the new user's .ssh folder
 linux:ssh:disallow_root :: Disallow SSH in as root
+linux:sudo:nopassword :: require no password for non-root users with sudo privilige/group
 linux:firewall :: configure firewall, open ports
 linux:timezone :: setup timezone and sync time
 
@@ -22720,6 +22750,9 @@ Connect using Putty!
 Specify the username for login: Putty > Connection > Data > Auto-login username
 
 * Apache
+** Basics
+Run this to get Apache version, root and config file ~httpd -V~
+
 ** Production Setup
 <<<apache:production>>>
 
@@ -22829,7 +22862,7 @@ sudo apt-get update
 sudo apt-get install nginx
 #+END_EXAMPLE
 
-*** Config Firewall
+*** Config Firewall <<<nginx:ufw>>>
 This is optional if firewall ~ufw~ doesn't exist.
 
 Nginx registers itself as a service with firewall ~ufw~
@@ -22848,7 +22881,7 @@ Nginx Full: This profile opens both port 80 (normal, unencrypted web traffic) an
 Nginx HTTP: This profile opens only port 80 (normal, unencrypted web traffic)
 Nginx HTTPS: This profile opens only port 443 (TLS/SSL encrypted traffic)
 
-Eanble Nginx HTTP
+Enable Nginx HTTP
 #+BEGIN_EXAMPLE
 sudo ufw allow 'Nginx HTTP'
 sudo ufw status
