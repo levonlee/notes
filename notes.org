@@ -22796,6 +22796,11 @@ Specify the username for login: Putty > Connection > Data > Auto-login username
 ** Basics
 Run this to get Apache version, root and config file ~httpd -V~
 
+** Ubuntu install
+apt-get update; apt-get install apache2
+
+service apache2 restart
+
 ** Production Setup
 <<<apache:production>>>
 
@@ -24615,8 +24620,8 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 
 ** MySQL
 *** Version, Settings
-In console
-=SHOW VARIABLES LIKE "%version%";=
+~service mysql status~
+In console :: =SHOW VARIABLES LIKE "%version%";=
 
 To check if it's MariaDB, just =SELECT VERSION();=
 
@@ -24651,6 +24656,60 @@ That's actually what Wordpress does: resize the indexed columns for some tables 
 Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as Wordpress.
 
 Referred by d7:mysql:charset
+
+*** Install
+#+BEGIN_EXAMPLE
+# Ubuntu
+apt-get update; apt-get install mysql-server
+service mysql start
+
+# Debian
+yum install php-mysql
+service httpd restart
+service mysqld start
+
+# both
+mysql_secure_installation
+#+END_EXAMPLE
+
+**** MySQL does not start after installation, Ubuntu
+~No directory, logging in with HOME=/~ and ~service mysql status~ shows it is inactive.
+This is new.. Change the owner:group for relevant folders
+#+BEGIN_EXAMPLE
+chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
+#+END_EXAMPLE
+
+**** Reset root password, Ubuntu
+ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
+
+#+BEGIN_EXAMPLE
+# stop
+sudo /etc/init.d/mysql stop
+# skip permission check
+sudo /usr/sbin/mysqld --skip-grant-tables --skip-networking &
+# start mysql client without a password
+mysql -u root
+FLUSH PRIVILEGES;
+# Update root password
+SET PASSWORD FOR root@'localhost' = PASSWORD('password');
+# If you have a mysql root account that can connect from everywhere, you should also do:
+UPDATE mysql.user SET Password=PASSWORD('password') WHERE User='root';
+# Alternate
+USE mysql
+UPDATE user SET Password = PASSWORD()
+WHERE Host = 'localhost' And User='root';
+# Alternate for root can access from everywhere
+USE mysql
+UPDATE user SET Password = PASSWORD('password');
+WHERE Host = '%' AND User = 'root';
+
+FLUSH PRIVILEGES;
+exit
+service mysql restart
+# or
+sudo /etc/init.d/mysql stop
+sudo /etc/init.d/mysql start
+#+END_EXAMPLE
 
 *** Data Types
 **** <<<MySQL Integer>>>
@@ -25141,6 +25200,14 @@ VALUES
 *** Dump
 #+BEGIN_EXAMPLE
 mysqldump -u user -p database_name > database_name_backup.sql
+# Use config file to avoid typing password
+mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.sql
+#+END_EXAMPLE
+
+.mydb.cnf
+#+BEGIN_EXAMPLE
+[mysqldump]
+password='enclosedwithdoublequotes'
 #+END_EXAMPLE
 
 ** MSSQL
