@@ -10690,6 +10690,336 @@ print theme(
 Litmus :: covers the most email clients and used by MailChimp and Campaign Monitor. Plus plan has Live Edit and Live Preivew
 Email on Acid :: Basic plan covers unlimited tests. Fewer Android devices are supported compared with Litmus.
 
+*** MJML
+#+BEGIN_EXAMPLE
+npm install mjml
+
+./node_modules/.bin/mjml -V
+
+# To avoid typing ./node_modules/bin/
+export PATH="$PATH:./node_modules/.bin"
+
+# mjml version (e.g. 3.3.5)
+mjml -V
+
+# one time output html
+mjml input.mjml
+
+# one time output to a specific file
+mjml input.mjml -o my-email.html
+
+# watch a file
+mjml -w input.mjml
+#+END_EXAMPLE
+
+Install Litmus Chrome Extension and follow the instructions to tweak the extension setting. Login to Litmus.com and open a local .html file.
+
+Install Atom packages to edit .mjml in Atom: linter-mjml and mjml-preview
+
+Tags or mj-elements styling
+- a limited set of attributes can be used
+- For now, must repeat for each tag the style you want to apply on it.
+- Another way is to create custom component, sub-classing a standard one and have your styles defined by default.
+
+[[https://mjml.io/try-it-live/templates/basic][Sample 1]]
+
+**** <<<mjml:tag:mjml>>>
+Contains mjml:tag:mj-head and mjml:tag:mj-body
+
+***** <<<mjml:tag:mj-head>>>
+Contains styles and meta elements. To insert custom head elements, registerMJHeadElement(<string> name, <funciton> handler) api from mjml-core
+
+****** <<<mjml:tag:mj-preview>>>
+no other attributes
+#+BEGIN_EXAMPLE
+<mj-head>
+    <mj-preview>Hello MJML</mj-preview>
+</mj-head>
+#+END_EXAMPLE
+
+****** <<<mjml:tag:mj-attributes>>>
+mj-all sets default attributes for every component inside your MJML document
+Order: inline attributes > classes > default mj-attributes > defaultMJMLDefinition
+
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-text padding="0" />
+      <mj-class name="blue" color="blue" />
+      <mj-class name="big" font-size="20px" />
+      <mj-all font-family="Arial" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body>
+    <mj-container>
+      <mj-section>
+        <mj-column>
+          <mj-text mj-class="blue big">
+            Hello World!
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-container>
+  </mj-body>
+</mjml>
+#+END_EXAMPLE
+
+****** <<<mjml:tag:mj-style>>>
+mj-style to apply styles to generated or native HTML elements
+inline="inline" to set class in native HTML elememts
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+    <mj-style>
+      @media all and (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
+    </mj-style>
+    <mj-style inline="inline">
+      .link-nostyle { color: inherit; text-decoration: none }
+    </mj-style>
+  </mj-head>
+  <mj-body>
+    <mj-container>
+      <mj-section>
+        <mj-column>
+
+          <mj-image width="100" src="/assets/img/logo-small.png"></mj-image>
+
+          <mj-divider border-color="#F45E43"></mj-divider>
+
+          <mj-text font-size="20px" color="#F45e46" font-family="helvetica">
+            Hello <a href="https://mjml.io" class="link-nostyle">World</a>
+          </mj-text>
+
+        </mj-column>
+      </mj-section>
+    </mj-container>
+  </mj-body>
+</mjml>
+#+END_EXAMPLE
+
+****** <<<mjml:tag:mj-font>>>
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+    <mj-font name="Raleway" href="https://fonts.googleapis.com/css?family=Raleway" />
+  </mj-head>
+  <mj-body>
+    <mj-container>
+      <mj-section>
+        <mj-column>
+          <mj-text font-family="Raleway, Arial">
+            Hello World!
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-container>
+  </mj-body>
+</mjml>
+#+END_EXAMPLE
+
+****** <<<mjml:tag:mj-title>>>
+#+BEGIN_EXAMPLE
+<mj-head>
+  <mj-title>Hello MJML</mj-title>
+</mj-head>
+#+END_EXAMPLE
+
+***** <<<mjml:tag:mj-body>>>, <<<mjml:tag:mj-container>>>
+To insert custom elements either registerMJElement(<MJMLElement> class) api from mjml-core or via .mjmlconfig file.
+Non-known element from mjml-core are ignored.
+It should have only one root element which usually is mjml-container, which contains the entire content of your document.
+
+mj-container was mj-body in version 1.x
+- width :: unit px, default 600px
+- background-color
+- css-class :: rendered HTML is class="xx"
+
+Inside container, you can have include, section and/or wrapper
+
+****** <<<mjml:tag:mj-include>>>
+Inside mjml > mj-body > mj-container
+<mj-include path="./header" /> <!-- or 'header.mjml' -->
+
+****** <<<mjml:tag:mj-section>>>
+It should contain mj-column. Up to 4 columns.
+Section has up to 600px width.
+
+https://mjml.io/documentation/#mjml-section
+
+Structure the columns in the order you want them to stack on mobile, then use direction attribute to change the order on desktop.
+
+- direction :: ltr or rtl, default ltr
+
+****** <<<mjml:tag:mj-wrapper>>>
+Wrap multiple sections. Perfect place to set borders
+
+https://mjml.io/documentation/#mjml-wrapper
+
+******* <<<mjml:tag:mj-column>>>
+Any mj-element included in a column will have a width equals to 100% of this column's width. e.g. mj-text
+
+Inside a column, any standard element, or the ones you've defined and registered can be included.
+
+But don't include another column or section.
+
+******** Auto sizing
+2 columns, each column 50%, 3 columns each is 33%, etc.
+
+******** Manual sizing
+#+BEGIN_EXAMPLE
+<mj-column width="300px">
+ <!-- First column content -->
+</mj-column>
+<mj-column> 
+ <!-- Second column content -->
+</mj-column>
+#+END_EXAMPLE
+
+Once one column's width is set, you have to set manually each column size.
+
+Always keep in mind that the maximum space to end up with a responsive layout is 600px.
+
+**** mj-elements inside mj-column
+***** <<<mjml:tag:mj-text>>>
+It can contain any HTML tag with any attributes.
+
+#+BEGIN_EXAMPLE
+<mj-section background-color="#f0f0f0">
+  <mj-column>
+    <mj-text font-style="italic" font-size="20" color="#626262">
+       My Company
+    </mj-text>
+    <mj-text>
+      <h1>
+        Hey Title!
+      </h1>
+    </mj-text>
+ </mj-column>
+</mj-section>
+#+END_EXAMPLE
+
+***** Image header with text and button
+
+#+BEGIN_EXAMPLE
+<mj-section background-url="http://1.bp.blogspot.com/-TPrfhxbYpDY/Uh3Refzk02I/AAAAAAAALw8/5sUJ0UUGYuw/s1600/New+York+in+The+1960's+-+70's+(2).jpg" background-size="cover" background-repeat="no-repeat">
+  <!-- -In order to have the background rendered full-width in the column, 
+  set the column width to 600px-->
+  <mj-column width="600">
+
+    <mj-text align="center" color="#fff" font-size="40" font-family="Helvetica Neue">Slogan here</mj-text>
+
+    <mj-button background-color="#F63A4D" href="#">
+      Promotion
+    </mj-button>
+
+  </mj-column>
+
+</mj-section>
+#+END_EXAMPLE
+
+***** mj-image, Basic 2 columns with image on left and text on right
+mj-image
+- width :: px, default 100% (100% of the column width)
+
+#+BEGIN_EXAMPLE
+<mj-section background-color="white">
+
+  <!-- Left image -->
+  <!-- column is 50% of total width,  mj-image is vertically and horizontally centered and image width is always 200 -->
+  <mj-column>
+    <mj-image width="200" src="http://via.placeholder.com/300x400/?text=300x400" />
+  </mj-column>
+
+  <!-- right paragraph -->
+  <mj-column>
+    <mj-text font-style="italic" font-size="20" font-family="Helvetica Neue" color="#626262">
+      Find amazing places
+    </mj-text>
+
+    <mj-text color="#525252">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin rutrum enim eget magna efficitur, eu semper augue semper. Aliquam erat volutpat. Cras id dui lectus. Vestibulum sed finibus lectus.</mj-text>
+
+  </mj-column>
+</mj-section>
+#+END_EXAMPLE
+
+***** mj-social
+#+BEGIN_EXAMPLE
+<mj-section background-color="#e7e7e7">
+  <mj-column>
+      <mj-social display="facebook" />
+  </mj-column>
+</mj-section>
+#+END_EXAMPLE
+
+***** mj-divider
+Try to add horizontal border with some spacing using mj-divider
+#+BEGIN_EXAMPLE
+<mj-section padding-bottom="0" background-color="white">
+  <mj-column width="100%">
+    <mj-image src="https://avatars0.githubusercontent.com/u/16115896?v=3&s=200" width="50px" />
+    <mj-divider horizontal-spacing="0" vertical-spacing="0" padding-top="20" padding-bottom="0" padding-left="0" padding-right="0" border-width="1px" border-color="#f8f8f8" />
+  </mj-column>
+</mj-section>
+#+END_EXAMPLE
+
+***** mj-spacer
+blank space
+#+BEGIN_EXAMPLE
+<mj-section>
+  <mj-column>
+    <mj-text>A first line of text</mj-text>
+    <mj-spacer height="50px" />
+    <mj-text>A second line of text</mj-text>
+  </mj-column>
+</mj-section>
+#+END_EXAMPLE
+
+***** mj-table
+It only accepts plain html
+#+BEGIN_EXAMPLE
+<mj-column>
+  <mj-table>
+    <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
+      <th style="padding: 0 15px 0 0;">Year</th>
+      <th style="padding: 0 15px;">Language</th>
+      <th style="padding: 0 0 0 15px;">Inspired from</th>
+    </tr>
+    <tr>
+      <td style="padding: 0 15px 0 0;">1995</td>
+      <td style="padding: 0 15px;">PHP</td>
+      <td style="padding: 0 0 0 15px;">C, Shell Unix</td>
+    </tr>
+    <tr>
+      <td style="padding: 0 15px 0 0;">1995</td>
+      <td style="padding: 0 15px;">JavaScript</td>
+      <td style="padding: 0 0 0 15px;">Scheme, Self</td>
+    </tr>
+  </mj-table>
+</mj-column>
+#+END_EXAMPLE
+
+***** mj-raw
+Not to be rendered by MJML engine
+
+***** mj-hero
+Display a section with a background image and some content inside (mj-text, mj-button, mj-image …) wrapped in mj-hero-content component
+
+***** mj-invoice
+***** mj-location
+***** mj-navbar
+***** mj-carousel
+***** mj-accordion
+**** mj-group to group columns
+Prevent columns from stacking on mobile.
+
+Columns inside a grop must have a width in percentage or auto sizing, but not in pixel
+
+Section can have both column and group.
+
+iOS 9 :: always remove space between columns inside a mj-group
+
 ** Icons, Address Bar color
 *** Icons
 General Icon in scale of 48px
