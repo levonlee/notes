@@ -20814,6 +20814,9 @@ Add-Content $PROFILE "`nImport-Module posh-docker"
 cat $PROFILE
 #+END_EXAMPLE
 
+** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
+Parent: scratch (perfect for building base images such as debian and busybox
+
 ** image:debian:stretch - Debian 9 <<<image:debian:stretch>>>
 ** image:buildpack-deps:jessie-scm
 Parent: buildpack-deps:jessie-curl
@@ -20821,6 +20824,48 @@ Available: git, curl, wget, openssh-client
 
 ** image:buildpack-deps:stretch-curl
 Parent: image:debian:stretch
+
+** image:php:5.6.31-apache-jessie
+Short name: php:5.6.31-apache
+Parent: debian:jessie
+[[https://github.com/docker-library/php/blob/0bb4068bd639ba98631bc2999e0d20cae583ec00/5.6/jessie/apache/Dockerfile][Dockerfile]]
+
+PHP_INI_DIR :: /usr/local/etc/php (/conf.d)
+APACHE_CONFDIR :: /etc/apache2
+APACHE_ENVVAR ::  /etc/apache2/envvars
+
+If you want to get some from PHP's source, you can extract, use and delete it.
+#+BEGIN_EXAMPLE
+FROM php:7.0-apache
+RUN docker-php-source extract \
+    # do important things \
+    && docker-php-source delete
+#+END_EXAMPLE
+
+Install PHP Core Extensions
+#+BEGIN_EXAMPLE
+FROM php:7.0-fpm
+RUN apt-get update && apt-get install -y \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libmcrypt-dev \
+        libpng-dev \
+    && docker-php-ext-install -j$(nproc) iconv mcrypt \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd
+#+END_EXAMPLE
+
+Install PECL Extensions
+#+BEGIN_EXAMPLE
+FROM php:7.1-fpm
+RUN pecl install redis-3.1.0 \
+    && pecl install xdebug-2.5.0 \
+    && docker-php-ext-enable redis xdebug
+FROM php:5.6-fpm
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+    && pecl install memcached-2.2.0 \
+    && docker-php-ext-enable memcached
+#+END_EXAMPLE
 
 ** image:lucee
 <<<docker:image:lucee>>>
