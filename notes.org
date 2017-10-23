@@ -19331,7 +19331,7 @@ Internal network Class A :: 10.0.0.0 - 10.255.255.254 (10.0.0.0/8, total hosts: 
 Internal network Class B :: 172.16.0.1 - 172.16.255.254 (127.16.0.0/16, total hosts: 65,534)
 Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total hosts: 254)
 
-*** Port
+*** Port <<<network:port>>>
 If a port is in use =telnet localhost 9000=, if it's connected, it's in use.
 List all ports in use: =netstat -lp= or =netstat -nlp= to list in numeric form.
 Search a port =netstat -nlp | grep 8000=
@@ -19360,6 +19360,11 @@ In Windows, to see if a port is being used in a local computer
 #+BEGIN_EXAMPLE
 netstat -an | find "8080"
 #+END_EXAMPLE
+
+Use open ports that are in the range of 1024-49151.
+0-1023 are well known ports
+1024-65535 are registered ports
+49152-65535 are dynamic ports and should not be prescribed to a protocol (e.g. random)
 
 *** Wireless network adapters =iwconfig=
 
@@ -20104,6 +20109,14 @@ apt-get install w3m
 # S-Q to quit
 #+END_EXAMPLE
 
+*** set, <<bash:set>>>
+#+BEGIN_EXAMPLE
+set -ex; command1; command2; ...
+#+END_EXAMPLE
+
+-x :: enable a mode of the shell where all executed commands are printed to the terminal.
+-e :: under common situation, exit when there's an error
+
 ** Cheat
 #+BEGIN_EXAMPLE
 sudo apt-get update && sudo apt-get upgrade
@@ -20629,6 +20642,8 @@ RUN apt-get update && apt-get install -y apt-utils
 #+END_EXAMPLE
 
 ** Docker Compose
+
+
 =docker-compose --version=
 =docker-compose up -d=
 =docker-compose up -d --force-recreate= Force restart or recreate containers
@@ -20639,6 +20654,24 @@ RUN apt-get update && apt-get install -y apt-utils
 =docker-compose build= build new image if there's any build directive
 =docker-compose up -d= doesn't build image, it will use existing image
 =docker-compose up -d --build= build new image and run
+
+*** Ubuntu 16.04 Installation
+[[https://github.com/docker/compose/releases][Grab latest docker-compose version]] say it's 1.16.1
+
+#+BEGIN_EXAMPLE
+sudo curl -o /usr/local/bin/docker-compose -L "https://github.com/docker/compose/releases/download/1.16.1/docker-compose-$(uname -s)-$(uname -m)"
+# add execute permission
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose -v
+# Test
+nano docker-compose.yml
+my-test:
+  image: hello-world
+# run
+docker-compose up
+docker rm <container-id>
+docker rmi hello-world
+#+END_EXAMPLE
 
 *** YML
 It has to be this name ~docker-compose.yml~ and don't include this file in sub directories.
