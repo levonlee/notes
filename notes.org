@@ -20867,6 +20867,37 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
     && docker-php-ext-enable memcached
 #+END_EXAMPLE
 
+Install other extensions
+#+BEGIN_EXAMPLE
+FROM php:5.6-apache
+RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \
+    && mkdir -p xcache \
+    && tar -xf xcache.tar.gz -C xcache --strip-components=1 \
+    && rm xcache.tar.gz \
+    && ( \
+        cd xcache \
+        && phpize \
+        && ./configure --enable-xcache \
+        && make -j$(nproc) \
+        && make install \
+    ) \
+    && rm -r xcache \
+    && docker-php-ext-enable xcache
+#+END_EXAMPLE
+
+The docker-php-ext-* scripts can accept an arbitrary path, but it must be absolute (to disambiguate from built-in extension names), so the above example could also be written as the following:
+
+#+BEGIN_EXAMPLE
+FROM php:5.6-apache
+RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \
+    && mkdir -p /tmp/xcache \
+    && tar -xf xcache.tar.gz -C /tmp/xcache --strip-components=1 \
+    && rm xcache.tar.gz \
+    && docker-php-ext-configure /tmp/xcache --enable-xcache \
+    && docker-php-ext-install /tmp/xcache \
+    && rm -r /tmp/xcache
+#+END_EXAMPLE
+
 ** image:lucee
 <<<docker:image:lucee>>>
 Image name: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
