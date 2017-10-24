@@ -10708,6 +10708,21 @@ print theme(
 Litmus :: covers the most email clients and used by MailChimp and Campaign Monitor. Plus plan has Live Edit and Live Preivew
 Email on Acid :: Basic plan covers unlimited tests. Fewer Android devices are supported compared with Litmus.
 
+*** CSS and HTML Support across Devices
+https://www.campaignmonitor.com/css/
+https://templates.mailchimp.com/resources/email-client-css-support/
+
+Gmail app is the only one doesn't support <style>
+
+Gmail browser doesn't support <style> in <body> but supports <style> in <head>
+
+<link> within <head> or <body> :: not support, browsers Outlook.com, Yahoo!, Gmail, AOL
+
+@media :: not supported in
+- Desktop :: Outlook 2007-16, Windows 10 Mail
+- Mobile :: Gmail Android app IMAP, Gmail mobile wemail but supports in Gmail Android app, Gmail iOS app
+- Webmail :: AOL Mail, Outlook.com
+
 *** MJML
 #+BEGIN_EXAMPLE
 npm install mjml
@@ -20712,12 +20727,19 @@ docker volume rm $(docker volume ls -qf dangling=true)
 #+END_EXAMPLE
 
 ** Dockerfile
-*** CMD
+*** CMD, RUN, ENTRYPOINT
 There can only be one ~CMD~ in a Dockerfile or a chain of Dockerfiles included as in parent images.
 If there're multiple, only the last one will run.
 ~CMD~ is to provide defaults for a container that is already created from an image and running.
 ~RUN~ runs a command and commits the result to an image at build time.
 ~CMD~ doesn't execute anything at build time and it's not committed to the image.
+~ENTRYPOINT~ Docker's default entrypoint is ~/bin/sh -c~. Actually every ~RUN <your command>~ is ~/bin/sh -c <your command>~
+Docker allows you to specify a different entrypoint for ~docker run~ e.g. ~docker run -it ubuntu <your command>~ is to run ~/bin/sh -c <your command>~ <your command> could be ~bash~
+~CMD~ is just to provide paremeters to ENTRYPOINT when ~docker run~ is run. e.g. Ubuntu ~CMD ["bash"]~ then you can run ~docker run -it ubuntu~ to run ~/bin/sh -c bash~ directly
+
+Example :: without ENTRYPOINT, this needs to run ~docker run redisimg redis -H something -u toto get key~
+With ENTRYPOINT, ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~, only this needs to run
+~docker run redisimg get key~
 
 There're 3 forms of ~CMD~
 #+BEGIN_EXAMPLE
@@ -20987,6 +21009,11 @@ Parent: debian:jessie
 PHP_INI_DIR :: /usr/local/etc/php (/conf.d)
 APACHE_CONFDIR :: /etc/apache2
 APACHE_ENVVAR ::  /etc/apache2/envvars
+APACHE_RUN_USER :: www-data
+APACHE_DOCUMENT_ROOT, WORKDIR :: /var/www/html
+EXPOSE 80
+CMD ["apache2-foreground"]
+/usr/local/bin/apache2-foreground
 
 If you want to get some from PHP's source, you can extract, use and delete it.
 #+BEGIN_EXAMPLE
@@ -29223,6 +29250,10 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
 * TODO Book: Design Patterns: Elements of Reusable Object-Oriented Software (Addison-Wesley)
 * TODO Book: Code Complete (2nd Edition, Microsoft Press)
+* TODO Let's Encrypt
+* TODO custom-elements-everywhere.com, williams sonoma
+* TODO gridbyexample.com
+
 * DONE Chase Payment
 * DONE Lynda [[https://www.behance.net/][Behance.net]]
 * DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
