@@ -18344,6 +18344,57 @@ Changes on Views and Filters will affect future data only.
 Under Views, there're a lot of reports. Apply Segments to reports to filter out data 
 without destroying Views data.
 
+*** Bounce
+A bounce is counted when there's only one pageview in one user session
+
+*** Add Google Search Console to a property
+There will be a new section in the report called Search Console
+Need to go back to Search Console to see keywords report
+GA shows keyword only for non-google-logged-in users that use google to search
+
+*** Campaigns and Goals track across user session
+*** Channel is the traffic source :: organic search, direct, referral, social, etc.
+*** Behavior is content :: Speed, Search, Events
+*** Conversions :: Goals, Ecommerce, Multi-Channel Funnels, Attribution
+*** Goal vs Event
+http://www.metricmogul.co.uk/5-simple-differences-between-goals-and-events-in-google-analytics-and-when-to-use-them/
+
+- A goal provides additional data such as conversion rate
+- A goal will only record once per session. Newsletter sign up twice with 2 emails, only one conversion is recorded.
+- An event can be anything. A goal has to be a destination, duration, pages per session or based on an event.
+- A goal can be based on an event. 
+- Goal flow report.
+
+Events are good for
+- Downloaded file (shows which pages have the pdf file link)
+- Link (outbound)
+
+*** Filter applied on View
+You should always have a View without Filters to capture all data.
+
+A Filter is to filter out the types of traffic you don't want and save the data to your View.
+- Filter might take 24 hours to activate
+- Filter will limit the stats data from the moment it is fully activated
+
+In order to show only traffic that are on a set of pages, you can:
+- Figure out a Regex statement and use it as the filter that is inside the View > Default Segment.
+  ○ You can't save this filter. You have to do it manually every time you want the report
+  ○ You can see the filtered results right away and you can see previous stats
+- Use javascript to submit Custom Variable on those pages and set to Page-level. 
+  ○ Create a new View with Admin > Property > View > Filter 
+  ○ You have to wait 24 hours to let the stats to be recorded from then
+  ○ You can't see the previous stats
+
+You can refer to this for constructing your ga:regex in Admin > Property > View > Filter or the normal filter.
+
+*** Segment
+A Segment is to filter out the ~user sessions~ that you don't want without destroying your View data.
+
+Say you have 2 segments: All Users and New Users. Metrics inside each type of report will be divided into 2 so that you can compare.
+
+Say you want to use Segment to only include user sessions that have been to a url.
+Go to the newly created Segment, you will still see those user sessions have been to other pages.
+
 *** Tracking Code
 The most recent version is analytics.js
 [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
@@ -18527,6 +18578,48 @@ You cannot use View Filter to filter out referral domain...
 
 You can also create a segment without affecting the data. 
 Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
+
+** Google Search Console
+Position is the average of the topmost position.
+A keyword with position 1 and only 1 impression means there's a user search that keyword and it happens the url appears at position 1.
+Different users have different search results.
+
+** ObservePoint
+Site audit :: check js errors, GA tagging, etc.
+
+** Moz.com
+** Remove URL from Google Index
+This is to permanently remove a url from Google Search
+- Make the URL return 404 or 410 status
+- Don't block access to that URL using robots.txt
+- Return meta tag ~<meta name="robots" content="noindex, nofollow">~
+- Return `X-Robots-Tag` HTTP header
+#+BEGIN_EXAMPLE
+<Files ~ "\.pdf$">
+  Header set X-Robots-Tag "noindex, nofollow"
+</Files>
+
+$apacheURL = (strlen($_SERVER['REQUEST_URI'])) ?
+  substr($_SERVER['REQUEST_URI'],1) : $_SERVER['REQUEST_URI'];
+$noIndexNoFollow = array(
+  "~^subscriber-services/trucking-renewal(.*)~i",
+  "~^lookup-subscription(.*)~i",
+  "~^users/(.*)~i",
+  "~^user/(.*)~i",
+);
+
+if (!empty($apacheURL)) {
+  foreach ($noIndexNoFollow as $key => $value) {
+    $matches = array();
+    if (preg_match($value, $apacheURL, $matches)) {
+      header("X-Robots-Tag: noindex, nofollow", true);
+    }
+  }
+}
+#+END_EXAMPLE
+
+Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL 
+To check if the URL is removed: Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed.
 
 * Linux
 ** Explain Shell
@@ -28782,6 +28875,9 @@ invalid-input-secret :: The secret parameter is invalid or malformed.
 missing-input-response :: The response parameter is missing.
 invalid-input-response :: The response parameter is invalid or malformed.
 bad-request :: The request is invalid or malformed.
+
+*** Google Search - Advanced
+https://bynd.com/news-ideas/google-advanced-search-comprehensive-list-google-search-operators/
 
 ** Translation
 <<<tool:Poedit>>>
