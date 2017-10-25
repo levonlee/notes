@@ -2023,13 +2023,19 @@ url('taxonomy/term/1');
 To embed a url directly to HTML href, you should check_url($url)
 To embed a url directly as a URL parameter, echo 'http://abc.com/?t='.urlencode($url);
 
-*** Current External URL
+*** Current External URL, <<<d7:url>>> <<<d7:current_path>>>
 #+BEGIN_EXAMPLE
 url(current_path(), array('absolute' => TRUE));
 
 # With query parameters
 url(current_path(), array('absolute' => TRUE, 'query' => drupal_get_query_parameters()));
 #+END_EXAMPLE
+
+current_path still works when 404. Don't var_dump or print current_path() directly as it might have XSS
+
+url
+- absolute :: append http
+- base_url :: override the default $base_url with a custom base url, e.g. http://abc.com without trailing stash 
 
 *** Module Path, Theme Path
 global $base_url;
@@ -2041,6 +2047,13 @@ Both have no trailing slash
 *** global $base_url
 No trailing slash
 http://abc.com
+
+*** XSS
+Tests
+#+BEGIN_EXAMPLE
+http://a.ca/abc-xyz--><form><button formaction='/esi.attack.sim'><!--
+http://a.ca/abc-xyz--><script src='a' onerror=alert(document.domain)>
+#+END_EXAMPLE
 
 ** Translate
 *** t()
@@ -2409,6 +2422,112 @@ function theme_lili_flair( $variables ) {
 echo theme('lili_flair',array('text'=>'hi'));
 
 // In xxx.tpl.php use $text directly
+#+END_EXAMPLE
+
+*** Sub theme
+https://www.drupal.org/docs/7/theming/creating-a-sub-theme
+
+The name of your sub-theme must start with an alphabetic character and can only contain lowercase letters, numbers and underscores. 
+
+Folder my_subtheme
+name = My Subtheme
+
+parent theme's .info file
+base theme = theme_name
+
+The sub-theme inherits most properties of the base theme. The important exceptions are 
+- regions
+- core version
+- color info
+- features
+- parent theme's logo (logo.png/logo.jpg)
+- parent theme's favicon.ico
+- theme-settings.php
+
+You probably want to copy the regions section of your base theme's info file, along with its core version declaration.
+
+If your base theme supports the color module and you'd like your sub-theme to support it, you probably also want to copy the color folder from your base theme and add the line from your base theme's info file to your sub-themes info file that looks like:
+#+BEGIN_EXAMPLE
+stylesheets[all][] = css/colors.css
+#+END_EXAMPLE
+
+and then copy the colors.css from base theme to the css folder of the sub-theme.
+
+Style sheets and JavaScripts are inherited. If you want to override, create relevant files and add these to .info
+#+BEGIN_EXAMPLE
+stylesheets[all][] = style.css
+scripts[] = script.js
+features[] = logo
+#+END_EXAMPLE
+
+Template.php funciton inheritance
+- Anything defined in the parent theme's template.php file will be inherited. This includes theme function overrides, preprocess functions and anything else in that file. Each sub-theme should also have its own template.php file, where you can add additional functions or override functions from the parent theme.
+- theme functions, e.g. theme('[hook]', $var,...), When a sub-theme overrides a theme function, no other version of that is called.
+- preprocess functions, e.g. [theme]_preprocess_page is called before page.tpl.php is rendered. 
+  - Unlike theme functions, preprocess functions are not overriden in a sub-theme.
+  - Instead, the parent theme preprocess function will be called first, and the sub-theme preprocess function will be called next
+  - There is no way to prevent all functions in the parent theme from being inherited. The only way to remove a parent themes' preprocess function is through hook_theme_registry_alter().
+
+Page, node, block and other template (.tpl.php) file inheritance
+e.g. node--blog.tpl.php building on an inherited node.tpl.php
+A single hyphen is still used to separate words. The double hyphen always indicates a more targeted override of what comes before the "--".
+e.g. node--long-content-type-name.tpl.php
+
+Add a template file with the same name in sub-theme folder to have it override the template from the parent theme.
+
+Screen shots inheritance
+
+#+BEGIN_EXAMPLE
+name = Jean
+description = A subtheme of Bartik, which is a flexible, recolorable theme with many regions.
+core = 7.x
+base theme = bartik
+
+stylesheets[all][] = css/jean.css
+stylesheets[all][] = css/colors.css
+
+regions[header] = Header
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom
+regions[highlighted] = Highlighted
+
+regions[featured] = Featured
+regions[content] = Content
+regions[sidebar_first] = Sidebar first
+regions[sidebar_second] = Sidebar second
+
+regions[triptych_first] = Triptych first
+regions[triptych_middle] = Triptych middle
+regions[triptych_last] = Triptych last
+
+regions[footer_firstcolumn] = Footer first column
+regions[footer_secondcolumn] = Footer second column
+regions[footer_thirdcolumn] = Footer third column
+regions[footer_fourthcolumn] = Footer fourth column
+regions[footer] = Footer
+
+settings[shortcut_module_link] = 0
+#+END_EXAMPLE
+
+Create the folder: /sites/all/themes/jean
+Create the file /sites/all/themes/jean/jean.info
+Create a blank file named: /sites/all/themes/jean/css/jean.css
+Copy from bartik or create your own: /sites/all/themes/jean/logo.png
+In order to get the color module to work with your subtheme, you will need to do the following:
+- Copy the file /themes/bartik/css/colors.css to /sites/all/themes/jean/css/colors.css
+- Copy the folder and its contents /themes/bartik/color/ to /sites/all/themes/jean/color/
+- Go to the Administration > Appearance page to enable your new subtheme called Jean. Now you can add CSS to your jean.css file, and it will apply to your new subtheme.
+
+*** 404 page
+page--404.tpl.php could be in theme folder or theme's templates folder
+#+BEGIN_EXAMPLE
+function jean_preprocess_page(&$vars) {
+  $header = drupal_get_http_header('status');
+  if ($header == '404 Not Found') {
+    $vars['theme_hook_suggestions'][] = 'page__404';
+  }
+}
 #+END_EXAMPLE
 
 *** Contributed themes
