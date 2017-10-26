@@ -18395,9 +18395,9 @@ Say you have 2 segments: All Users and New Users. Metrics inside each type of re
 Say you want to use Segment to only include user sessions that have been to a url.
 Go to the newly created Segment, you will still see those user sessions have been to other pages.
 
-*** Tracking Code
-The most recent version is analytics.js
-[[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
+*** Tracking Code :: gtag.js, analytics.js
+The most recent version is gtag.js. [[https://developers.google.com/analytics/devguides/collection/gtagjs/][Documentation]]. [[https://developers.google.com/analytics/devguides/collection/gtagjs/migration][Migrate from analytics.js to gtag.js]].
+The most recent version is analytics.js. [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
 
 *** Regular Expressions <<<ga:regex>>>
 https://support.google.com/analytics/answer/1034324?hl=en
@@ -18490,7 +18490,18 @@ ga('send', 'pageview', '/ga_goal/goal1/step2/goal1_variant1.html');
 Reporting > Behavior > Events
 Category > Action > Label > Value
 
-Syntax: ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);
+Syntax: 
+gtag('event', eventName, eventParameters);
+ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);
+
+eventName :: string is eventAction
+
+#+BEGIN_EXAMPLE
+gtag('event', 'play', {
+  'event_category': 'Videos',
+  'event_label': 'Fall Campaign'
+});
+#+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
 <script>
@@ -19370,14 +19381,16 @@ Review the results and remove dry run `-n` before running again.
 
 -a: -rlptgoD
 -p: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
--g: To set the group of the destination file to be the same as the source file.
--o: To set the owner of the destination file to be the same as the source file.
+-g: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
+-o: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
 -D: is equivalent to ~--devices --specials~
 
 --devices: To transfer character and block device files to the remote system to recreate these devices.
 --specials: To transfer special files such as named sockets and fifos.
 
 --stats: show file-transfer stats: number of files, number of files transferred, Total file size in bytes, Total transferred file size
+
+--chown :: refer to -og, change owner:group on dest
 
 --exclude 'public_html/database.txt': exclude a file
 
@@ -19461,6 +19474,19 @@ cstpoguax are attributes.
 - u: reserved for future use
 - a: ACL information changed
 - x: Extended attribute information changed.
+
+**** Examples
+#+BEGIN_EXAMPLE
+# Dry, recursive, symlink, verbose, compress
+# show progress and make it possible to re-rsync if connection is lost
+# show changes in detail for each transferred file
+# update time on destination
+# don't transfer file if dest has mod time newer
+# update owner and group on dest to be the same as source
+# change owner:group on dest
+
+rsync -rlvzPituogn --chown=www-data:www-data wp-content/ remote:path/to/wp-content
+#+END_EXAMPLE
 
 ** head, tail
 <<<linux:tail>>>
@@ -21220,6 +21246,7 @@ Available: git, curl, wget, openssh-client
 Parent: image:debian:stretch
 
 ** image:php:5.6.31-apache-jessie
+<<<image:php:apache>>>
 Short name: php:5.6.31-apache
 Parent: debian:jessie
 [[https://github.com/docker-library/php/blob/0bb4068bd639ba98631bc2999e0d20cae583ec00/5.6/jessie/apache/Dockerfile][Dockerfile]]
@@ -23723,6 +23750,8 @@ Run this to get Apache version, root and config file ~httpd -V~
 apt-get update; apt-get install apache2
 
 service apache2 restart
+
+Refer to image:php:apache to get configs
 
 ** Production Setup
 <<<apache:production>>>
