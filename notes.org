@@ -11,6 +11,64 @@
 Get php configuration files location ~php --ini~
 Get a php config variable ~grep memory_limit /etc/php.ini~
 
+Apache php.ini :: /etc/php/7.0/apache2/php.ini (better to create .php page with ~<?php phpinfo(); ?>~ to see the config)
+Extra ini files are loaded in /etc/php/7.0/apache2/conf.d. e.g.
+#+BEGIN_EXAMPLE
+20-curl.ini -> /etc/php/7.0/mods-available/curl.ini
+#+END_EXAMPLE
+
+Changing php.ini requires restarting apache
+
+Configuration setting can be set in places depending on which mode it is
+
+PHP_INI_USER	Entry can be set in user scripts (like with ini_set()) or in the Windows registry. Since PHP 5.3, entry can be set in .user.ini
+PHP_INI_PERDIR	Entry can be set in php.ini, .htaccess, httpd.conf or .user.ini (since PHP 5.3)
+PHP_INI_SYSTEM	Entry can be set in php.ini or httpd.conf
+PHP_INI_ALL	Entry can be set anywhere
+
+*** <<<php:ini:mail>>>
+http://php.net/manual/en/mail.configuration.php
+
+#+BEGIN_EXAMPLE
+[mail function]
+; For Win32 only.
+; http://php.net/smtp
+SMTP = localhost
+; http://php.net/smtp-port
+smtp_port = 25
+
+; For Win32 only.
+; http://php.net/sendmail-from
+;sendmail_from = me@example.com
+
+; For Unix only.  You may supply arguments as well (default: "sendmail -t -i").
+; http://php.net/sendmail-path
+;sendmail_path =
+
+; Force the addition of the specified parameters to be passed as extra parameters
+; to the sendmail binary. These parameters will always replace the value of
+; the 5th parameter to mail().
+;mail.force_extra_parameters =
+
+; Add X-PHP-Originating-Script: that will include uid of the script followed by the filename
+mail.add_x_header = On
+
+; The path to a log file that will log all mail() calls. Log entries include
+; the full path of the script, line number, To address and headers.
+;mail.log =
+; e.g. change to 
+; mail.log = /var/log/phpmaillog
+
+; Log mail to syslog (Event Log on Windows).
+;mail.log = syslog
+#+END_EXAMPLE
+
+Enable mail.log, make sure /var/log/phpmaillog has www-data:www-data as the apache
+
+You may need to change the sendmail_path to a php wrapper instead of just adding mail.log location
+http://www.matteomattei.com/how-to-log-email-sent-from-php-through-mail-function/
+https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-detect-form-spam
+
 ** Locale
 In Linux, you can run =locale -a= to get a list of codes
 Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a backup.
@@ -19924,6 +19982,52 @@ Includes scp
 apt-get update && apt-get -y install openssh-client
 #+END_EXAMPLE
 
+**** sendmail <<<linux:sendmail>>>
+
+#+BEGIN_EXAMPLE
+apt-get install sendmail
+# get the hostname of the machine/container
+hostname
+# say hostname is abc123
+cat /etc/hosts
+# You should see something like this
+127.0.0.1 localhost
+# add this line to the end
+127.0.0.1 localhost localhost.localdomain abc123
+# Run the sendmail config, answer Y to everything, sendmail will be restarted after
+sudo sendmailconfig
+# restart apache
+service apache2 restart
+
+# you may need to run sendmailconfig again to do the config
+# check other configs
+cat /etc/mail/sendmail.conf
+cat /etc/cron.d/sendmail
+cat /etc/mail/sendmail.mc
+
+# in case you want to restart sendmail
+service sendmail restart
+
+# run this to see which emails are sent/stuck in queue
+sendmail -bq
+#+END_EXAMPLE
+
+You should setup logging in app level, such as php:ini:mail
+
+Executable is /usr/sbin/sendmail
+
+**** ssmtp <<<linux:ssmtp>>>
+ssmtp is a simple alternative to linux:sendmail and it doesn't depend on it.
+- sendmail can receive emails
+- sendmail has mail queues
+- ssmtp is good for only one user to send emails
+
+**** postfix <<<linux:postfix>>>
+It's more sophisticated than sendmail.
+https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04
+https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-16-04
+apt-get install postfix will remove sendmail automatically
+
 ** Input and Output
 *** File Descriptors
 File descriptors. First 3 are reserved.
@@ -20644,6 +20748,7 @@ Makefile.live :: make -f Makefile.live your-recipe
 - Exit :: Ctrl + x
 - Display line number and cursor position: C-c
 - Uncut or paste text C-u
+- Search :: C-w or F6
 
 - Select and copy, paste
  - ~Alt + Shift + A~ or ~C-6~ to set mark, move cursor to selct
@@ -23807,6 +23912,8 @@ The path doesn't matter
 ** Wordpress Redirect
 Redirect /dealdays to /DealDays
 #+BEGIN_EXAMPLE
+# custom RewriteRule goes before the wordpress block
+
 # BEGIN WordPress
 <IfModule mod_rewrite.c>
 RewriteEngine On
@@ -23818,6 +23925,9 @@ RewriteRule . /index.php [L]
 </IfModule>
 
 # END WordPress
+
+# default wordpress htaccess block is to redirect to index.php if it's not a file and not a directory
+# Rules below the block has to be either a file or an existing directory
 
 RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
 # If redirect to another url, use
