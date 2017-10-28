@@ -4780,7 +4780,64 @@ define( 'WP_SITEURL', '/enterprise' );
 define('DB_NAME', 'abc_enterprise');
 #+END_EXAMPLE
 
+/var/www/html/enterprise/.htaccess
+#+BEGIN_EXAMPLE
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /enterprise/
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /enterprise/index.php [L]
+</IfModule>
+
+# END WordPress
+#+END_EXAMPLE
+
 Then go to wp-admin and save the permalink
+
+abc.com/enterprise/abc has $_SERVER['REQUEST_URI'] appear as ~/abc~ on /var/www/html/enterprise/index.php
+
+- Redirect abc.com/xyz to abc.com/enterprise/ijk use /var/www/html/.htaccess
+#+BEGIN_EXAMPLE
+RedirectMatch 302 ^/psup/?$ /enterprise/ijk/
+#+END_EXAMPLE
+
+- Rewrite abc.com/ijk to abc.com/enterprise/real-page so that URL remains abc.com/ijk in address bar
+use /var/www/html/.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^ijk/?(.*)$ /enterprise/ijk [L]
+</IfModule>
+#+END_EXAMPLE
+
+Then in /var/www/html/enterprise/wp-content/themes/your-theme/functions.php
+
+NOTE: $_SERVER['REQUEST_URI'] is /ijk in ./enterprise/index.php
+#+BEGIN_EXAMPLE
+function cs_rewrite_request($query){
+
+  $request_uri = urldecode($_SERVER['REQUEST_URI']);
+  //var_dump($request_uri);
+  /* for pages */
+  if( 0 === strpos($request_uri, '/ijk') ){
+    $query['pagename'] = urlencode('real-page');
+    unset($query['name']);
+  }
+
+  return $query;
+}
+add_filter( 'request', 'cs_rewrite_request', 9999, 1 );
+#+END_EXAMPLE
+
+If you want abc.com/enterprise/real-page to redirect to abc.com/ijk which shows the real-page
+/var/www/html/.htaccess
+#+BEGIN_EXAMPLE
+RedirectMatch 302 ^/enterprise/real-page/?$ /ijk/
+#+END_EXAMPLE
 
 Fix image urls
 #+BEGIN_EXAMPLE
@@ -4820,6 +4877,107 @@ Change WP_HOME and WP_SITEURL
 $_SERVER['REQUEST_URI'] = str_replace("/wp-admin/", "/enterprise/wp-admin/",  $_SERVER['REQUEST_URI']);
 define( 'WP_SITEURL', '/enterprise' );
 define( 'WP_HOME', '/enterprise' );
+#+END_EXAMPLE
+
+** PHP redirect
+<<<wp:php:redirect>>>
+https://rudrastyh.com/wordpress/change-specific-urls.html
+Use functions.php to achieve
+
+Redirect, same can be achieved using .htaccess
+#+BEGIN_EXAMPLE
+function rudr_url_redirects() {
+	/* in this array: old URLs=>new URLs  */
+	$redirect_rules = array(
+		array('old'=>'/category/uncategorized/','new'=>'/category/Uncategorized/'), // category
+		array('old'=>'/contacts/','new'=>'/Contacts/'), // page
+		array('old'=>'/hello-world/','new'=>'/hello-planet/'), // post
+		array('old'=>'/tag/wordpress/','new'=>'/tag/WordPress/') // post tag
+	);
+	foreach( $redirect_rules as $rule ) :
+		// if URL of request matches with the one from the array, then redirect
+		if( urldecode($_SERVER['REQUEST_URI']) == $rule['old'] ) :
+			wp_redirect( site_url( $rule['new'] ), 301 );
+			exit();
+		endif;
+	endforeach;
+}
+ 
+add_action('template_redirect', 'rudr_url_redirects');
+#+END_EXAMPLE
+
+Change request based on the $_SERVER['REQUEST_URI']
+#+BEGIN_EXAMPLE
+function rudr_rewrite_request($query){
+ 
+	$request_uri = urldecode($_SERVER['REQUEST_URI']);
+ 
+	/* for categories */
+	if( $request_uri == '/category/Uncategorized/' )
+		$query['category_name'] = 'uncategorized';
+ 
+	/* for pages */
+	if( $request_uri == '/Contacts/' ){
+		$query['pagename'] = urlencode('contacts');
+		unset($query['name']);
+	}
+ 
+	/* for posts */
+	if( $request_uri == '/hello-planet/' )
+		$query['name'] = 'hello-world';
+ 
+	/* for tags */
+	if( $request_uri == '/tag/WordPress/' )
+		$query['tag'] = 'wordpress';
+ 
+	return $query;
+}
+ 
+add_filter( 'request', 'rudr_rewrite_request', 9999, 1 );
+#+END_EXAMPLE
+
+Change permalink
+For posts and pages
+#+BEGIN_EXAMPLE
+function rudr_post_permalink( $url, $post ){
+	if( !is_object( $post ) )
+		$post = get_post( $post_id );
+ 
+	$replace = $post->post_name;
+ 
+	/* We should use a post ID to make a replacement. It is required if you use urf-8 characters in your URLs */
+ 
+	if( $post->ID == 1 ) 
+		$replace = 'hello-planet';
+	if( $post->ID == 12 ) 
+		$replace = 'Contacts';
+ 
+	$url = str_replace($post->post_name, $replace, $url );
+	return $url;
+}
+ 
+add_filter( 'post_link', 'rudr_post_permalink', 'edit_files', 2 );
+add_filter( 'page_link', 'rudr_post_permalink', 'edit_files', 2 );
+add_filter( 'post_type_link', 'rudr_post_permalink', 'edit_files', 2 );
+#+END_EXAMPLE
+
+For categories and tags
+#+BEGIN_EXAMPLE
+function rudr_term_permalink( $url, $term, $taxonomy ){
+	$replace = $term->slug;
+ 
+	/* by ID as well */
+	if( $term->term_id == 5 ) 
+		$replace = 'Uncategorized';
+	if( $term->term_id == 55 ) 
+		$replace = 'WordPress';
+ 
+	$url = str_replace($term->slug, $replace, $url );
+ 
+	return $url;
+}
+ 
+add_filter( 'term_link', 'rudr_term_permalink', 10, 3 );
 #+END_EXAMPLE
 
 ** CLI
@@ -7495,6 +7653,17 @@ Graceful Method :: start from desktop layout, remove content to smaller screen s
 
 *** Viewport sizes of device
 http://viewportsizes.com/
+
+#+BEGIN_EXAMPLE
+/* iPhone 5, 6, 6+ */
+@media only screen and (max-width:420px){}
+
+/* iPhone 5, 6 */
+@media only screen and (max-width:375px){}
+
+/* iPhone 5 */
+@media only screen and (max-width:320px){}
+#+END_EXAMPLE
 
 ** @keyframes
 
@@ -20892,7 +21061,9 @@ MX records
 If URL record is not available, use CNAME and [[http://redirect.center/][redirect.center]] and redirect.name
 Instructions: https://milanaryal.com/domain-redirecting-and-url-forwarding-with-a-simple-dns-record/
 
-redirect.center is especially good for redirect abc.com to google.com/path if the domain host doesn't support Domain Forwarding with path
+redirect.center is especially good for redirect subdomain www.abc.com to google.com/path if the domain host doesn't support Domain Forwarding with path.
+
+To redirect naked domain, use Forward Domain.
 
 #+BEGIN_EXAMPLE
 # redirect google.example.com to google.com
@@ -20909,6 +21080,8 @@ www.oldwebsite.com  IN  CNAME  www.newwebsite.com.opts-uri.redirect.center
 # opts-slash
 # jobs.my-domain.com to http://www.my-domain.com/jobs
 # jobs IN CNAME to www.my-domain.com.opts-slash.jobs.redirect.center
+# multiple path components, jobs.my-domain.com to www.my-domain.com/jobs/xyz
+# jobs IN CNAME to www.my-domain.com.opts-slash.jobs.opts-slash.xyz.redirect.center
 
 # Use redirect.name instead of readirect.center
 # redirect google.example.com to google.com
@@ -20923,6 +21096,27 @@ _redirect.google.example.com  IN  TXT    Redirects from /* to https://www.google
 # Redirects from [path] to [target], where path is a path to match on the hostname
 # Redirects permanently to [target], where permanently redirects with a 301 status code (defaults to 302 otherwise)
 #+END_EXAMPLE
+
+** Domain Forwarding
+Naked domain forwarding
+Forward abc.com to http://google.com
+abc.com/xyz will become google.com/xyz in the address bar
+
+Forward abc.com to http://google.com/xyz
+Some domain host and registration service might support that.
+abc.com/ijk will become google.com/xyz/ijk in the address bar
+
+Subdomain forwarding can be done as well.
+
+** Addon domain
+It's an addtional domain that the system stores as a subdomain
+abc.com is registered in GoDaddy. Change nameservers to another domain host say ns.googlehosting.com ns2.googlehosting.com
+Then in googlehosting, set it up as an addon domain :: abc.com > subdomain abc.xyz.com, then specify the document root
+
+abc.com will appear as parked on abc.xyz.com on the googlehosting
+
+** Park domain
+To park a domain means to make the domain as idle. Nameservers will be set to Default for example in GoDaddy.
 
 * Docker
 ** Version, Info, Installation
@@ -23927,7 +24121,7 @@ Specify the username for login: Putty > Connection > Data > Auto-login username
 
 * Apache
 ** Basics
-Run this to get Apache version, root and config file ~httpd -V~
+Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ in Ubuntu
 
 ** Ubuntu install
 apt-get update; apt-get install apache2
@@ -23935,6 +24129,8 @@ apt-get update; apt-get install apache2
 service apache2 restart
 
 Refer to image:php:apache to get configs
+
+Show all loaded modules :: ~apache2ctl -M~
 
 ** Production Setup
 <<<apache:production>>>
@@ -23988,9 +24184,29 @@ The path doesn't matter
 #+END_EXAMPLE
 
 ** Wordpress Redirect
+RewriteRule with redirect flag [R] is to redirect URL. Without it, RedirectRule maintains the URL on LHS in the address bar.
+Redirect and RedirectMatch is to redirect
+Redirect means the URL in the address bar will change
+
+RewriteRule without proxy flag [P] is to maintain the URL on LHS in RewriteRule and served to $_SERVER['REQUEST_URI']
+RewriteRule with [P] is to change the URL to the one on RHS in RewriteRule and pass it to the proxy
+[P] requires mod_proxy enabled
+
+The only way to modify $_SERVER['REQUEST_URI'] is to do a redirect or with the [P] flag.
+
+RewriteRule is relative to the directory that the current .htaccess is in for both RHS and LHS.
+RewriteBase only affects the dest of RewriteRule (RHS) only if dest is a relative path
+
 Redirect /dealdays to /DealDays
 #+BEGIN_EXAMPLE
 # custom RewriteRule goes before the wordpress block
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
+  RewriteRule ^abc/?(.*)$ /subdir/abc.php [L]
+</IfModule>
+# custom RewriteRule end
 
 # BEGIN WordPress
 <IfModule mod_rewrite.c>
@@ -24042,6 +24258,11 @@ RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
 ** Rewrite flags
 L|last :: stop processing other rules
 NC|nocase
+P|proxy :: handle request by mod_proxy
+
+QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
+e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
+/pages/123?one=two will be mapped to /page.php?page=123&one=two
 
 * Nginx
 ** Install on Ubuntu 16.04
