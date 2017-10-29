@@ -6451,7 +6451,7 @@ Empty all cron rows in wp-options table `UPDATE wp_options SET option_value='' W
 
 https://wordpress.org/support/topic/high-server-load-and-dsq_sync_forum-problem?replies=6
 
-** WP_Error
+** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
 Function may return WP_Error object. Catch error
 #+BEGIN_EXAMPLE
@@ -6459,6 +6459,11 @@ $post = wp_insert_post([]);
 if ( is_wp_error($post) ) {
  echo $post->get_error_message();
 }
+#+END_EXAMPLE
+
+In wp-config.php
+#+BEGIN_EXAMPLE
+define( 'WP_DEBUG', true );
 #+END_EXAMPLE
 
 ** Installation Language
@@ -21711,6 +21716,50 @@ RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.
     && rm -r /tmp/xcache
 #+END_EXAMPLE
 
+copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or copy php-prod.ini to /usr/local/etc/php/conf.d/
+
+*** Sample
+#+BEGIN_EXAMPLE
+FROM php:5.6.31-apache-jessie
+
+# apt-utils has to be installed to avoid throwing errors during installation on Debian
+RUN set -ex; \
+    \
+    apt-get update && apt-get install -y \
+            apt-utils \
+            nano \
+            libfreetype6-dev \
+            libmcrypt-dev \
+            libjpeg62-turbo-dev \
+            libpng-dev \
+    && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    \
+    docker-php-ext-install -j$(nproc) iconv mcrypt && \
+    docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
+    docker-php-ext-install -j$(nproc) gd mysqli mysql pdo pdo_mysql pcntl zip opcache
+
+COPY config/php-prod.ini /usr/local/etc/php/conf.d/
+
+RUN { \
+                echo 'opcache.memory_consumption=128'; \
+                echo 'opcache.interned_strings_buffer=8'; \
+                echo 'opcache.max_accelerated_files=4000'; \
+                echo 'opcache.revalidate_freq=2'; \
+                echo 'opcache.fast_shutdown=1'; \
+                echo 'opcache.enable_cli=1'; \
+        } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+# enable apache modules
+RUN a2enmod rewrite expires
+
+VOLUME /var/www/html
+
+# TODO chown -R www-data:www-data /var/www/html
+
+CMD ["apache2-foreground"]
+#+END_EXAMPLE
+
 ** image:mysql:5.7.9
 <<<image:mysql>>>
 Parent :: image:debian:jessie
@@ -21731,6 +21780,12 @@ docker run --name my-mysql-container \
   --character-set-server=utf8mb4 \
   --collation-server=utf8mb4_unicode_ci
   --innodb-buffer-pool-size=50M
+#+END_EXAMPLE
+
+In docker-compose.yml
+#+BEGIN_EXAMPLE
+command:
+  mysqld --innodb-buffer-pool-size=50M
 #+END_EXAMPLE
 
 *** Environment vars
