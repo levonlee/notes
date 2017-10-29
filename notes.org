@@ -19188,6 +19188,16 @@ ChallengeResponseAuthentication no
 
 Restart SSH
 
+*** Random password
+
+#+BEGIN_EXAMPLE
+# base64 will likely to have = at the end, remove that to have length 16
+openssl rand -base64 17
+
+# hex has only number and lowercased letters
+openssl rand -hex 16
+#+END_EXAMPLE
+
 ** fail2ban
 <<<linux:fail2ban>>>
 Ban access to services (e.g. SSH) for max tries and ban time based on service's log.
@@ -21699,6 +21709,111 @@ RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.
     && docker-php-ext-configure /tmp/xcache --enable-xcache \
     && docker-php-ext-install /tmp/xcache \
     && rm -r /tmp/xcache
+#+END_EXAMPLE
+
+** image:mysql:5.7.9
+<<<image:mysql>>>
+Parent :: image:debian:jessie
+user:group :: mysql:mysql
+Executable :: mysqld
+
+*** Load configs
+Startup config :: /etc/mysql/my.cnf and any .cnf files under /etc/mysql/conf.d 
+Mount host directory to /etc/mysql/conf.d in container using ~-v~ in docker run
+
+Instead of loading custom conf.d directory, tags (--tag-name) can be used adjust the configs
+
+For container that couldn't have more than 128M memory, use innodb-buffer-pool-size to scale it down.
+#+BEGIN_EXAMPLE
+docker run --name my-mysql-container \
+  -e MYSQL_ROOT_PASSWORD=my-secret-pw \
+  -d mysql:5.7.9 \
+  --character-set-server=utf8mb4 \
+  --collation-server=utf8mb4_unicode_ci
+  --innodb-buffer-pool-size=50M
+#+END_EXAMPLE
+
+*** Environment vars
+-e :: set environment vars. None of these will have effect if the container is started with a data dir that already contains a db.
+
+MYSQL_ROOT_PASSWORD :: required
+MYSQL_DATABASE :: opt. a db to be created on image startup
+MYSQL_USER, MYSQL_PASSWORD :: opt. create a user for MYSQL_DATABASE.
+
+These vars can be loaded through a file
+#+BEGIN_EXAMPLE
+-e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root
+#+END_EXAMPLE
+
+*** Import .sql on image startup
+Poibt a directory that has a .sh, .sql, and .sql.gz to a dir in container
+
+#+BEGIN_EXAMPLE
+-v /host/path/to/db-dir:/docker-entrypoint-initdb.d
+#+END_EXAMPLE
+
+Importing needs a lot of memory. If host doesn't have 128M memory, try to import it locally and then rsync the persist data folder to host and chown -R 999:docker /path/to/persistdir accordingly on host.
+
+*** Access, view logs, db dump
+#+BEGIN_EXAMPLE
+docker exec -it my-mysql-container bash
+docker logs my-mysql-container
+docker exec some-mysql sh -c \
+  'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
+#+END_EXAMPLE
+
+*** Persist data
+A place to persist db data on host :: /my/own/datadir
+
+#+BEGIN_EXAMPLE
+-v /my/own/datadir:/var/lib/mysql
+#+END_EXAMPLE
+
+For dev where db data can be imported and disposed when needed, use volume (e.g. dbdata)
+#+BEGIN_EXAMPLE
+version: '2'
+
+volumes:
+  dbdata:
+
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.18.0.0/16
+        gateway: 172.18.0.1
+
+services:
+  db:
+    image: mysql:5.7.9
+    container_name: db
+    volumes:
+      - "dbdata:/var/lib/mysql"
+      - "/my/own/datadir:/docker-entrypoint-initdb.d"
+    networks:
+      app_net:
+        ipv4_address: 172.18.0.2
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: d7
+      MYSQL_DATABASE: d7
+      MYSQL_USER: d7
+      MYSQL_PASSWORD: d7
+#+END_EXAMPLE
+
+*** Example
+
+#+BEGIN_EXAMPLE
+docker run -it --name my-db-container \
+  -v dbdata:/var/lib/mysql \
+  -v /path/to/db-dir:/docker-entrypoint-initdb.d \
+  -e MYSQL_ROOT_PASSWORD=d7 \ 
+  -e MYSQL_DATABASE=d7 \ 
+  -e MYSQL_USER=d7 \ 
+  -e MYSQL_PASSWORD=d7 \
+  -d mysql:5.7.9
 #+END_EXAMPLE
 
 ** image:lucee
@@ -25986,25 +26101,29 @@ In console :: =SHOW VARIABLES LIKE "%version%";=
 
 To check if it's MariaDB, just =SELECT VERSION();=
 
-# Default charset is utf8, collation is utf8_general_ci
-# which is 3 bytes. utf8mb4 is 4 bytes
-# MySQL server default charset and collation
+**** charset, collation
 <<<mysql:charset>>> <<<mysql:collation>>>
+Default charset is utf8, collation is utf8_general_ci
+which is 3 bytes. utf8mb4 is 4 bytes
+MySQL server default charset and collation
+
 SELECT @@character_set_database, @@collation_database;
 ALTER DATABASE db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
-# In order to enable utf8mb4, you need to change my.cnf setting and restart MySQL
-# mysqld (client) is used on Pantheon instead of libmysqlclient
-# The following settings becomes available on mysqld (MySQL) server version > 5.5.14 and default since 5.7.7
-# As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26 
+In order to enable utf8mb4, you need to change my.cnf setting and restart MySQL
+mysqld (client) is used on Pantheon instead of libmysqlclient
+The following settings becomes available on mysqld (MySQL) server version > 5.5.14 and default since 5.7.7
+As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26 
+#+BEGIN_EXAMPLE
 [mysqld]
 innodb_large_prefix=true
 innodb_file_format=barracuda
 innodb_file_per_table=true
+#+END_EXAMPLE
 
-# mysqld (client) > 5.0.9, libmysqlclient > v. 5.5.3, has to support utf8mb4 charset
+mysqld (client) > 5.0.9, libmysqlclient > v. 5.5.3, has to support utf8mb4 charset
 
 The major problem here is that for an indexed string column (primary key column) MySQL has 767 bytes limit.
 In utf8, it's 767/3=255 characters varchar(255). In utf8mb4, it's 767/4=191 characters varchar(191).
@@ -26017,6 +26136,11 @@ That's actually what Wordpress does: resize the indexed columns for some tables 
 Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as Wordpress.
 
 Referred by d7:mysql:charset
+
+**** Memory, InnoDB Buffer
+name, default
+innodb-buffer-pool-size, innodb-buffer-pool-chunk-size :: 128M
+max-allowed-packet :: 4M, total BLOB data size for a single row
 
 *** Install
 #+BEGIN_EXAMPLE
