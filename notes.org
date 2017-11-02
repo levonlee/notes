@@ -5040,6 +5040,32 @@ define( 'WP_SITEURL', '/enterprise' );
 define( 'WP_HOME', '/enterprise' );
 #+END_EXAMPLE
 
+** Email
+Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
+This way you don't need to have sendmail installed on Linux
+
+[[https://codex.wordpress.org/Plugin_API/Action_Reference/phpmailer_init][Doc]]
+
+#+BEGIN_EXAMPLE
+// configure phpmailer
+add_action( 'phpmailer_init', 'mail_relay' );
+function mail_relay( $phpmailer ) {
+    $phpmailer->isSMTP();
+    $phpmailer->Host = 'smtp.gmail.com';
+    $phpmailer->SMTPAutoTLS = true;
+    $phpmailer->SMTPAuth = true; 
+    $phpmailer->Port = 465;
+    $phpmailer->Username = '<admin email>';
+    $phpmailer->Password = '<app password>';
+
+    // Additional settings
+    $phpmailer->SMTPSecure = "ssl"; 
+    $phpmailer->From = "<admin email>";
+    $phpmailer->FromName = "<your name>";
+}
+// configure phpmailer.
+#+END_EXAMPLE
+
 ** PHP redirect
 <<<wp:php:redirect>>>
 https://rudrastyh.com/wordpress/change-specific-urls.html
@@ -5654,6 +5680,12 @@ $_post = get_post();
 if (!empty($_post) && $_post->post_name == 'your-slug') {
   // do something
 }
+#+END_EXAMPLE
+
+Site url
+#+BEGIN_EXAMPLE
+// http://google.com without trailing slash
+get_site_url();
 #+END_EXAMPLE
 
 ** WP Custom Fields
@@ -20435,6 +20467,8 @@ cat /etc/mail/sendmail.mc
 
 # in case you want to restart sendmail
 service sendmail restart
+# or
+/etc/init.d/sendmail restart
 
 # run this to see which emails are sent/stuck in queue
 sendmail -bq
@@ -21937,6 +21971,8 @@ CMD ["apache2-foreground"]
 Parent :: image:debian:jessie
 user:group :: mysql:mysql
 Executable :: mysqld
+
+EXPOSE 3306
 
 *** Load configs
 Startup config :: /etc/mysql/my.cnf and any .cnf files under /etc/mysql/conf.d 
@@ -28668,6 +28704,21 @@ Search for Go, install plugin and restart phpStorm
 Setup SDK, which is c:\go
 
 *** Makefile support plugin
+*** Docker support
+In Docker for Windows > Settings > General
+Choose Expose daemon on tcp://localhost:2375 without TLS
+
+In phpStorm, Settings > Build, Execution, Deployment > Docker, create Docker with a + button.
+
+Default should work, so just OK
+
+API URL: tcp://localhost:2375
+Certificates folder: blank
+Docker Compose executable: docker-compose
+VirtualBox shared folders: VM Path - /c/Users, Local path - C:\Users
+ 
+You should see Docker under the bottom bar, select and connect to it. Now you should see the running containers and available images.
+
 ** Emacs
 *** Install & Configuration
 Download for Windows https://ftp.gnu.org/pub/gnu/emacs/windows/
