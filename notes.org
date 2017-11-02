@@ -131,6 +131,66 @@ session.cookie_lifetime = 2000000
 ;mail.force_extra_parameters =
 #+END_EXAMPLE
 
+** $_SERVER
+<<<php:$_SERVER>>>
+[[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
+
+GATEWAY_INTERFACE
+SERVER_ADDR
+SERVER_SOFTWARE
+DOCUMENT_ROOT
+SERVER_ADMIN
+SERVER_SIGNATURE
+
+*** Partyly safe
+HTTPS
+
+HTTP_HOST :: see below
+
+REQUEST_TIME
+
+REMOTE_ADDR
+REMOTE_HOST :: 
+  - relies on reverse DNS lookups and may hence be spoofed by DNS attacks against server (at that time you have bigger problems anyway)
+  - Its value may be a proxy, which is a simple reality of the TCP/IP protocol and nothing you can do.
+REMOTE_PORT
+
+SERVER_PROTOCOL
+SERVER_NAME :: see below
+SERVER_PORT
+
+SCRIPT_FILENAME
+
+
+REMOTE_* :: values are guaranteed to be the valid address of the client as verified by a TCP/IP handshake. Because it's the address the response will be sent to
+
+*** HTTP_HOST and SERVER_NAME
+curl -H "Host: notyourdomain.com" http://yoursite.com/
+By default, HTTP_HOST or SERVER_NAME is notyourdomain.com
+Attackers might trigger a lot of requests and cause your website that is cached by a proxy (Varnish, Cloudflare) to have wrong cache that has content which points to the attacker's domain. Cache poisoning.
+
+Solution
+Never display $_SERVER['HTTP_HOST'] or $_SERVER['SERVER_NAME']
+
+#+BEGIN_EXAMPLE
+$config['site_url'] = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
+$config['cp_url']   = 'http://' . $_SERVER['HTTP_HOST'] . '/system/index.php';
+
+$domain = 'example.com';
+$config['site_url'] = 'http://' . $domain . '/index.php';
+$config['cp_url']   = 'http://' . $domain . '/system/index.php';
+
+$domains = array('domain.com', 'dev.domain.com', 'staging.domain.com', 'localhost');
+if (in_array($_SERVER['HTTP_HOST'], $domains))
+{
+    $domain = $_SERVER['HTTP_HOST'];
+}
+else 
+{
+    $domain = 'localhost';
+}
+#+END_EXAMPLE
+
 ** Module, Extension
 *** bz2
 *** bcmath
@@ -19888,6 +19948,17 @@ cstpoguax are attributes.
 # change owner:group on dest
 
 rsync -rlvzPituogn --chown=www-data:www-data wp-content/ remote:path/to/wp-content
+#+END_EXAMPLE
+
+Transfer everything from remote to local
+- verbose
+- show overall stats
+- show individual file log
+- show progress and re-sync possible
+- compress
+
+#+BEGIN_EXAMPLE
+rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/uploads
 #+END_EXAMPLE
 
 ** head, tail
