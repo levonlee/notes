@@ -5042,7 +5042,7 @@ define( 'WP_HOME', '/enterprise' );
 
 ** Email
 Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
-This way you don't need to have sendmail installed on Linux
+This way you don't need to have linux:sendmail installed on Linux
 
 [[https://codex.wordpress.org/Plugin_API/Action_Reference/phpmailer_init][Doc]]
 
@@ -5064,6 +5064,85 @@ function mail_relay( $phpmailer ) {
     $phpmailer->FromName = "<your name>";
 }
 // configure phpmailer.
+#+END_EXAMPLE
+
+Without bootstrap wp, assuming test.php file is at root
+#+BEGIN_EXAMPLE
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+echo 'hello';
+
+// PHPMailer Gmail Example
+// https://github.com/PHPMailer/PHPMailer/blob/master/examples/gmail.phps
+
+$recipient_email = 'a@b.com';
+$recipient_name = 'First Last';
+$sender_name = 'Sender Name';
+$subject = 'Testing';
+$html = ('
+    <html>
+    <head>
+      <title>This is a test</title>
+    </head>
+    <body>
+      <h1>Testing headline</h1> 
+      <p>Testing body content</p>
+    </body>
+    </html>
+  ');
+$text = 'pure text testing';
+
+// php's native mail
+// mail($recipient_email, $subject, $text);
+
+require("wp-includes/class-phpmailer.php");
+$mail = new PHPMailer();
+
+$mail->isSMTP(); // Set mailer to use SMTP
+//Enable SMTP debugging
+// 0 = off (for production use)
+// 1 = client messages
+// 2 = client and server messages
+$mail->SMTPDebug = 2;
+
+$mail->Host = 'smtp.gmail.com';
+// use
+// $mail->Host = gethostbyname('smtp.gmail.com');
+// if your network does not support SMTP over IPv6
+
+$mail->SMTPAuth = true; // set to false if Username, Password, SMTPSecure are empty
+$mail->Username = 'username@gmail.com';
+$mail->Password = 'password';
+$mail->SMTPSecure = 'tls'; // Enable TLS encryption, `ssl` also accepted
+
+$mail->Port = 587; // 587 for tls
+
+$mail->CharSet = 'UTF-8';
+
+$mail->SetFrom('donotreply@b.com', $sender_name);
+
+$mail->AddAddress($recipient_email, $recipient_name);
+
+$mail->Subject = $subject;
+
+//$mail->addReplyTo('replyto@example.com', 'First Last');
+
+//Replace the plain text body with one created manually
+// $mail->AltBody = 'This is a plain-text message body';
+
+//Attach an image file
+//$mail->addAttachment('images/phpmailer_mini.png');
+
+$mail->MsgHTML($html);
+
+if (!$mail->Send()) {
+  echo "Mailer Error: " . $mail->ErrorInfo;
+}
+else {
+  echo "successful!";
+}
 #+END_EXAMPLE
 
 ** PHP redirect
@@ -29744,6 +29823,17 @@ The button might be too large for width < 320px
 
 *** Google Search - Advanced
 https://bynd.com/news-ideas/google-advanced-search-comprehensive-list-google-search-operators/
+
+*** Gmail
+Use Gmail SMTP to send emails
+
+Turn off 2-Step-Verification or use the [[https://support.google.com/accounts/answer/185833?hl%3Den][App Password]]. 
+
+If you can't setup App Password, it's because 2-Step-Verification is not turned on.
+
+In that case, [[https://support.google.com/accounts/answer/6010255?hl%3Den][Let less secure apps use your account]].
+
+Which is here: https://myaccount.google.com/lesssecureapps
 
 ** Translation
 <<<tool:Poedit>>>
