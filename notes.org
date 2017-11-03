@@ -5324,7 +5324,12 @@ wp plugin uninstall Plugin_name
 *** Theme
 wp theme status
 
+** Conditional Tags
+<<<wp:conditional tags>>>
+[[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
+
 ** Template Tags
+<<<wp:template tags>>>
 wp-includes/xxx-template.php
 *** post-thumbnail <<<wp:t:thumbnail>>>
 get_post_thumbnail_id($post = null);
@@ -5360,6 +5365,14 @@ retrieves info about the current site
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
+*** wp_editor
+<<<wp:f:wp_editor>>>
+Render an editor for field in a page in the typical fashion used in Posts and Pages.
+[[https://codex.wordpress.org/Function_Reference/wp_editor][Doc]]
+
+May be used in wp:action:edit_page_form wp:action:edit_form_advanced
+Use wp:f:update_post_meta in wp:action:save_post for storing the new field
+
 *** Translate
 Use tool:Poedit
 
@@ -5509,69 +5522,6 @@ add_management_page(
  'menu_slug', // string
  'callbackFunct', // string or array($this, 'options_page')
 );
-
-*** register_post_type
-wp:action:init
-wp:action:pre_get_posts
-wp:plugin:acf
-
-register_post_type( $post_type, $args );
-https://codex.wordpress.org/Function_Reference/register_post_type
-
-- $post_type :: string. < 20 characters. All lowercase and no space
-- $args :: array of arguments
-
-#+BEGIN_EXAMPLE
-add_action('init', 'lili_custom_post_type');
-function lili_custom_post_type() {
-  $labels = [
-    // array, wp:register_post_type:labels
-  ];
-
-  $args = [
-    'label' => 'Plural Name', // string
-    'labels' => $labels,
-    'description' => '', // string, optional
-    'public' => false,
-    /* Default. bool.
-     *       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
-     * true:               false,               true,              true, true
-     * false:               true,              false,             false, false
-     */
-    'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
-    'publicly_queryable' => true, // optional. take 'public' value.
-    /* ?post_type={post_type_key},
-     * ?{post_type_key}={single_post_slug},
-     * ?{post_type_query_var}={single_post_slug}
-     */
-    'show_ui' => true, // optional. bool. default take 'public' value.
-    'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
-    'show_in_menu' => true, // optional, bool or string. default inherits show_ui
-    // false :: do not display in admin menu
-    // true :: display as a top level menu
-    // 'some string' :: display as a submenu of a menu 'some string'
-    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
-    'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
-	  //  Don't have to add 'custom-fields' in order to use wp:plugin:acf
-
-  ];
-
-  register_post_type('movies', $args);
-
-}
-
-add_action( 'pre_get_posts', 'lili_pre_get_posts' );
-// Should not call this in template because in template the $query is already run
-function lili_pre_get_posts( $query ) {
-  if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
-    $query->set( 'post_type', array( 'post', 'movies' ) );
-  }
-  // this function should return nothing.
-}
-#+END_EXAMPLE
-
-**** labels
-<<<wp:register_post_type:labels>>>
 
 *** add_post_type_support
 <<<wp:f:add_post_type_support>>>
@@ -5738,6 +5688,156 @@ If you just want to define pass PHP variables and don't want to create empty js 
 wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 #+END_EXAMPLE
 
+*** register_post_type
+<<<wp:f:register_post_type>>>
+wp:action:init wp:action:pre_get_posts wp:plugin:acf
+
+register_post_type( $post_type, $args );
+https://codex.wordpress.org/Function_Reference/register_post_type
+
+- $post_type :: string. < 20 characters. All lowercase and no space
+- $args :: array of arguments
+
+#+BEGIN_EXAMPLE
+add_action('init', 'lili_custom_post_type');
+function lili_custom_post_type() {
+  $labels = [
+    // array, wp:register_post_type:labels
+  ];
+
+  $args = [
+    'label' => 'Plural Name', // string
+    'labels' => $labels,
+    'description' => '', // string, optional
+    'public' => false,
+    /* Default. bool.
+     *       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
+     * true:               false,               true,              true, true
+     * false:               true,              false,             false, false
+     */
+    'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+    'publicly_queryable' => true, // optional. take 'public' value.
+    /* ?post_type={post_type_key},
+     * ?{post_type_key}={single_post_slug},
+     * ?{post_type_query_var}={single_post_slug}
+     */
+    'show_ui' => true, // optional. bool. default take 'public' value.
+    'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
+    'show_in_menu' => true, // optional, bool or string. default inherits show_ui
+    // false :: do not display in admin menu
+    // true :: display as a top level menu
+    // 'some string' :: display as a submenu of a menu 'some string'
+    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
+    'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
+	  //  Don't have to add 'custom-fields' in order to use wp:plugin:acf
+
+  ];
+
+  register_post_type('movies', $args);
+
+}
+
+add_action( 'pre_get_posts', 'lili_pre_get_posts' );
+// Should not call this in template because in template the $query is already run
+function lili_pre_get_posts( $query ) {
+  if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
+    $query->set( 'post_type', array( 'post', 'movies' ) );
+  }
+  // this function should return nothing.
+}
+#+END_EXAMPLE
+
+**** labels
+<<<wp:register_post_type:labels>>>
+
+*** register_nav_menus
+<<<wp:f:register_nav_menus>>> used in wp:action:init
+[[https://codex.wordpress.org/Function_Reference/register_nav_menus][Register custom nav menus]]
+#+BEGIN_EXAMPLE
+function register_my_menus() {
+  register_nav_menus(
+    array(
+      'main-menu' => __('Main Menu'),
+      'about-menu' => __('About Menu'),
+      'services-menu' => __('Services Menu')
+    )
+  );
+}
+#+END_EXAMPLE
+
+*** wpautop
+<<<wp:f:wpautop>>> used in wp:filter:the_content wp:filter:the_excerpt
+Change double line-breaks in text into <p>...</p>
+
+*** shortcode_unautop
+<<<wp:f:shortcode_unautop>>> used in wp:filter:the_content
+Ensure shortcodes are not wrapped in <p>...</p>
+
+*** wp_reset_postdata
+<<<wp:f:wp_reset_postdata>>>
+After ~global $post~ is modified by wp:query:secondary, reset it to the original that was set by wp:query:main
+
+#+BEGIN_EXAMPLE
+<?php
+// example args
+$args = array( 'posts_per_page' => 3 );
+
+// the query
+$the_query = new WP_Query( $args );
+?>
+
+<?php if ( $the_query->have_posts() ) : ?>
+
+	<!-- start of the loop -->
+	<?php while ( $the_query->have_posts() ) : $the_query->the_post(); ?>
+		<?php the_title(); ?>
+		<?php the_excerpt(); ?>
+	<?php endwhile; ?><!-- end of the loop -->
+
+	<!-- put pagination functions here -->
+	<?php wp_reset_postdata(); ?>
+
+<?php else:  ?>
+
+<p><?php _e( 'Sorry, no posts matched your criteria.' ); ?></p>
+
+<?php endif; ?>
+#+END_EXAMPLE
+
+*** wp_reset_query
+<<<wp:f:wp_reset_query>>>
+Restore the $wp_query and global post data to the original main query.
+Should be called after query_posts().
+
+Avoid to use it. To alter main query parameters before it's made, use wp:filter:pre_get_posts
+
+#+BEGIN_EXAMPLE
+<?php
+
+$args = array ( 'post_parent' => 5 );
+query_posts( $args );
+
+if ( have_posts() ):
+    while ( have_posts() ) :
+        the_post();
+
+        // Do stuff with the post content.
+        the_title();
+        the_permalink(); // Etc.
+
+    endwhile;
+else:
+    // Insert any content or load a template for no posts found.
+endif;
+
+wp_reset_query();
+
+?>
+#+END_EXAMPLE
+
+*** update_post_meta
+<<<wp:f:update_post_meta>>>
+
 ** Current URL, and slug
 Current URL on your website
 <<<php:parse_url>>>
@@ -5790,7 +5890,25 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
 
-** Wordpress The Loop <<<wp:The_Loop>>>
+** WP_Query The Loop <<<wp:The_Loop>>>
+<<<wp:query:main>>>
+
+The main query/loop is based on the URL request and is processed before templates are loaded
+Only the wp:conditional tags use the main query/loop
+
+<<<wp:query:secondary>>>
+
+The secondary query/loop is ~new WP_Query~ in theme template or plugin files. It's also caled The Loop.
+wp:template tags use the secondary query/loop.
+
+By default, The Loop uses the main query's current post to set global $post.
+
+~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence global $post is modified. 
+
+When these functions are used, you need to run wp:f:wp_reset_postdata to reset global $post to the original.
+
+Notice :: ~new WP_Query()~ doesn't change wp:query:main
+
 *** Syntax
 
 #+BEGIN_EXAMPLE
@@ -6197,13 +6315,60 @@ HTML;
 add_filter('template_include', 'pubx_cuw_template_include',99);
 #+END_EXAMPLE
 
+*** flush_rewrite_rules_hard
+<<<wp:filter:flush_rewrite_rules_hard>>>
+Stop wp to modify .htaccess inside the Wordpress block
+#+BEGIN_EXAMPLE
+add_filter( 'flush_rewrite_rules_hard', '__return_false' );
+
+// __return_false is a wp function
+
+// remove the filter 
+remove_filter( 'flush_rewrite_rules_hard', 'filter_flush_rewrite_rules_hard', 10, 1 ); 
+#+END_EXAMPLE
+
+*** tiny_mce_before_init
+<<<wp:filter:tiny_mce_before_init>>>
+[[https://codex.wordpress.org/Plugin_API/Filter_Reference/tiny_mce_before_init][Change TinyMCE settings]]
+#+BEGIN_EXAMPLE
+add_filter( 'tiny_mce_before_init', 'myformatTinyMCE' );
+function myformatTinyMCE( $in ) {
+  $in['wordpress_adv_hidden'] = FALSE;
+  return $in;
+}
+#+END_EXAMPLE
+
+*** the_content
+<<<wp:filter:the_content>>>
+Change the content of the post after retrieved from db and before it's printed to the screen.
+[[https://codex.wordpress.org/Plugin_API/Filter_Reference/the_content][Doc]]
+#+BEGIN_EXAMPLE
+add_filter( 'the_content', 'wpautop');
+add_filter( 'the_content', 'shortcode_unautop'  );
+#+END_EXAMPLE
+
+*** upload_mimes
+<<<wp:filter:upload_mimes>>>
+Add mime type so that wp can handle its content-type header to browser for upload and sending.
+#+BEGIN_EXAMPLE
+function cc_mime_types($mimes) {
+  $mimes['svg'] = 'image/svg+xml';
+  return $mimes;
+}
+add_filter('upload_mimes', 'cc_mime_types');
+#+END_EXAMPLE
+
+*** widget_text
+<<<wp:filter:widget_text>>>
+wp:f:add_shortcode
+
 ** add_action, do_action, do_action_ref_array
 *** Basic
 Event based
 add_action( string $tag,
-string $function_name,
-int $priority = 10,
-int $accepted_args = 1 // number of args the function accepts
+  string $function_name,
+  int $priority = 10,
+  int $accepted_args = 1 // number of args the function accepts
 )
 
 add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
@@ -6244,6 +6409,8 @@ Fires after Wordpress has finished loading but before any headers are sent.
 User is already authenticated.
 Useful for intercepting $_GET or $_POST
 
+wp:f:register_nav_menus
+
 *** after_setup_theme
 <<<wp:action:after_setup_theme>>>
 Called each page load after the theme is initialized. 
@@ -6266,6 +6433,23 @@ function lili_pre_get_posts( $query ) {
 *** admin_menu
 <<<wp:action:admin_menu>>>
 
+*** admin_head
+<<<wp:action:admin_head>>>
+
+#+BEGIN_EXAMPLE
+function my_custom_admin_head() {
+  echo '<style>[for="wp_welcome_panel-hide"] {display: none !important;}</style>';
+}
+add_action( 'admin_head', 'my_custom_admin_head' );
+
+// Add inline JS in the admin head with the <script> tag
+
+function my_custom_admin_head() {
+  echo '<script type=""text/javascript">console.log('admin script')</script>';
+}
+add_action( 'admin_head', 'my_custom_admin_head' );
+#+END_EXAMPLE
+
 *** add_meta_boxes, add_meta_boxes_{post_type}
 lili_add_meta_boxes($post_type, $post) takes 2 arguments, no return. 
 lili_add_meta_boxes_{post_type}($post) takes 1 argument, no return.
@@ -6279,10 +6463,46 @@ The callback most likely outputs a label, form field and some description.
 
 You can either completely change the callback or use wp:filter:gettext to change the translation
 
-** add_shortcode
+*** edit_page_form
+<<<wp:action:edit_page_form>>>
+Fires after 'normal' context meta boxes have been output for the 'page' post type.
+Control admin Edit Page form.
+
+wp:f:wp_editor
 
 #+BEGIN_EXAMPLE
+function volunteer_hours_editor() {
+  $content = get_post_meta(get_the_ID(), 'volunteer-hours', true);
+  $settings = array('textarea_name' => 'volunteer-hours');
+  //wpautop($content);
+  wp_editor( $content, 'volunteer-hours', $settings);
+}
+#+END_EXAMPLE
+
+*** edit_form_advanced
+<<<wp:action:edit_form_advanced>>>
+Same as wp:action:edit_page_form but for all post types other than 'page'
+
+*** save_post
+<<<wp:action:save_post>>>
+Called when a post or page is created or updated, which could be from an import, post/page edit form, xmlrpc, or post by email. The data for the post is stored in $_POST, $_GET or the global $post_data, depending on how the post was edited. For example, quick edits use $_POST.
+
+wp:f:update_post_meta
+
+#+BEGIN_EXAMPLE
+add_action( 'save_post', 'save_post', 10, 2 );
+function save_post( $post_id, $post ) {
+  if ( !current_user_can( 'edit_post', $post_id ) )
+    return $post_id;
+    update_post_meta( $post_id, 'volunteer-hours', stripslashes( wpautop($_POST['volunteer-hours']) ) );
+}
+#+END_EXAMPLE
+
+** add_shortcode
+<<<wp:f:add_shortcode>>>
+#+BEGIN_EXAMPLE
 // [bartag foo="foo-value"]
+
 // Use underscore instead of hyphen e.g. bar_tag
 function bartag_func( $atts, $content, $tag ) {
   $a = shortcode_atts( array(
@@ -6309,6 +6529,7 @@ add_shortcode( 'bartag', 'bartag_func' );
 
 // In order to run shortcode in Widgets, add this
 add_filter('widget_text','do_shortcode');
+// wp:filter:widget_text
 #+END_EXAMPLE
 
 ** Options, Settings
@@ -6452,6 +6673,14 @@ add_action( 'wp_ajax_nopriv_my_action', 'my_action'); // non-logged in users
 #+END_EXAMPLE
 
 ** Wordpress Theme
+*** functions.php
+<<<wp:theme:functions>>>
+#+BEGIN_EXAMPLE
+add_theme_support( 'post-thumbnails' );
+
+// wp:action:init
+#+END_EXAMPLE
+
 *** Template Files
 [[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
 single.php
@@ -6483,7 +6712,6 @@ Make a copy of page.php to start
 #+END_EXAMPLE
 
 *** Widgets
-
 **** Create sidebar
 #+BEGIN_EXAMPLE
 function lili_widgets_init() {
@@ -6736,6 +6964,12 @@ if ( is_wp_error($post) ) {
 In wp-config.php
 #+BEGIN_EXAMPLE
 define( 'WP_DEBUG', true );
+#+END_EXAMPLE
+
+Or anywhere
+#+BEGIN_EXAMPLE
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 #+END_EXAMPLE
 
 ** Installation Language
@@ -24589,6 +24823,65 @@ Refer to image:php:apache to get configs
 
 Show all loaded modules :: ~apache2ctl -M~
 
+Show parsed vhost settings and run settings :: ~apache2ctl -S~
+#+BEGIN_EXAMPLE
+VirtualHost configuration:
+*:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
+ServerRoot: "/etc/apache2"
+Main DocumentRoot: "/var/www/html"
+Main ErrorLog: "/var/log/apache2/error.log"
+Mutex default: dir="/var/lock/apache2" mechanism=fcntl
+Mutex mpm-accept: using_defaults
+Mutex watchdog-callback: using_defaults
+Mutex rewrite-map: using_defaults
+PidFile: "/var/run/apache2/apache2.pid"
+Define: DUMP_VHOSTS
+Define: DUMP_RUN_CFG
+User: name="www-data" id=33
+Group: name="www-data" id=33
+#+END_EXAMPLE
+
+Sites :: /etc/apache2/sites-enabled/
+Sample
+#+BEGIN_EXAMPLE
+<VirtualHost *:80>
+        # The ServerName directive sets the request scheme, hostname and port that
+        # the server uses to identify itself. This is used when creating
+        # redirection URLs. In the context of virtual hosts, the ServerName
+        # specifies what hostname must appear in the request's Host: header to
+        # match this virtual host. For the default virtual host (this file) this
+        # value is not decisive as it is used as a last resort host regardless.
+        # However, you must set it for any further virtual host explicitly.
+        #ServerName www.example.com
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html/public
+
+<Directory /var/www/html/public>
+                Options Indexes FollowSymLinks MultiViews
+                AllowOverride All
+                Order allow,deny
+                allow from all
+</Directory>
+
+        # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+        # error, crit, alert, emerg.
+        # It is also possible to configure the loglevel for particular
+        # modules, e.g.
+        #LogLevel info ssl:warn
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+        # For most configuration files from conf-available/, which are
+        # enabled or disabled at a global level, it is possible to
+        # include a line for only one particular virtual host. For example the
+        # following line enables the CGI configuration for this host only
+        # after it has been globally disabled with "a2disconf".
+        #Include conf-available/serve-cgi-bin.conf
+</VirtualHost>
+#+END_EXAMPLE
+
 ** Production Setup
 <<<apache:production>>>
 
@@ -26030,7 +26323,11 @@ AAAA @ value_from_pantheon
 CNAME www live-example.pantheonsite.io (Pantheon live URL)
 
 ** Global CDN
-Fastly's edge cloud platform. 36 global points of presence (POPs). Cache entire pages at the edge not just static assets.
+Fastly's edge cloud platform. 36 global points of presence (PoPs). Cache entire pages at the edge not just static assets.
+
+Each PoP is an edge server which is proxy cache.
+
+Cache key is the entire URL plus query string.
 
 ** HTTPS
 *** Redirect to HTTPS
