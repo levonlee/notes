@@ -20551,6 +20551,10 @@ host google.com
 dig google.com
 #+END_EXAMPLE
 
+dig can only follow through DNS management. If there's redirect done in Apache, Nginx or other codes, it won't follow through them.
+
+Use linux:curl to track further.
+
 dig finds A record
 #+BEGIN_EXAMPLE
 dig google.com
@@ -21100,7 +21104,7 @@ this_var3=${3:-"_"}
 #+END_EXAMPLE
 
 ** curl wget
-*** curl
+*** curl <<<linux:curl>>>
 **** Basic
 #+BEGIN_EXAMPLE
 dlDir=/home/lili/download/
@@ -21625,9 +21629,11 @@ A records :: redirect hostname.domainname.com to an IP address. For the barebone
 
 AAAA records :: same as A records but they are IPv6. Nowadays, both AAAA and A are needed
 
+ANAME :: It's like CNAME. Name (from source domain) could be @. The value has to be another (target) apex domain. DNS resolves the target fully qualified domain name (FQDN) to an IP or multiple and also synthesize A records of the domain that points to the IP(s) of the FQDN. Since the target FQDN's IP is returned on the first lookup, it's faster than ALIAS record.
+
 CNAME records :: point another subdomain (hostname) to an A record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in CNAME on the left hand side.
 
-ALIAS records :: same as CNAME but it can coexist with other records on that name.
+ALIAS records :: same as CNAME but it can coexist with other records on that name. It resolves the target domain to one or more A records. ALIAS's name can be (from source domain) anything, the value can be (target) any other external domain.
 
 URL records :: redirect the name to the target name using HTTP 301 status code.
 
@@ -21642,7 +21648,9 @@ The general rule is:
 - use an ALIAS record if you are trying to alias the root domain (apex zone) or if you need other records for the same name
 - use the URL record if you want the name to redirect (change address) instead of resolving to a destination.
 
-MX records
+On bare/apex domain, usually A, ALIAS or ANAME record can be used. Only DNS Made Easy supports ANAME and DNSimple and others support ALIAS. ANAME and ALIAS are not industry standards.
+
+** MX records
 - HOSTNAME :: e.g. use @ for barebone
 - Mail Providers Mail Server (or Value) :: always end with "." e.g. alt4.aspmx.l.google.com.
 - Priority :: the smaller the more important
@@ -26104,7 +26112,7 @@ curl -u ownername:password https://api.github.com/repos/:owner/:reponame | grep 
 #+END_EXAMPLE
 
 ** Github Pages
-You can add /docs folder to your repository and enable GitHub Pages in the repository setting
+You can add /docs folder to your repository on master and enable GitHub Pages in the repository setting
 Or you can create an orphan branch called gh-pages
 
 If you don't have branch gh-pages or /docs in master branch, just click on Launch automatic page generator and it will
