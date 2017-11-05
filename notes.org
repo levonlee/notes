@@ -19765,6 +19765,74 @@ openssl rand -base64 17
 openssl rand -hex 16
 #+END_EXAMPLE
 
+*** SSH tunneling
+Port forwarding is also called tunneling.
+
+Say your IMAP port 143 to gmail is blocked by Wi-fi firewall. 
+
+Default ssh port is 22. Default https port is 443.
+
+For Github and BitBucket, you can directly change to use port 443 without doing anything.
+
+If you have control of the target server's ssh server, simply just add port 443 to /etc/ssh/sshd_config and use -p 443 locally.
+
+#+BEGIN_EXAMPLE
+Host github.com
+  Hostname ssh.github.com
+  Port 443
+
+Host bitbucket.org
+  Hostname altssh.bitbucket.org
+  Port 443
+#+END_EXAMPLE
+
+**** Port Forwarding via a single intermediate host
+In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, ~sudo systemctl reload sshd~, ~sudo ufw allow 443/tcp~
+
+Check if it connects from local ~ssh -p 443 my.server.com~
+
+Then open, listen and forward port 10143 to destination imap.google.com at port 143 using intermediate host at 443
+#+BEGIN_EXAMPLE
+ssh -L localhost:10143:mail.google.com:143 -p 443 user@my.server.com
+#+END_EXAMPLE
+
+Refer to network:port on port range you should use
+
+Change email client setting to use localhost at port 10143
+
+Multiple redirections can be set up in the same tunnel
+#+BEGIN_EXAMPLE
+# add -f to go into background and -N to not launch a shell
+ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+ssh -p 10022 target_server_user@localhost
+scp -P 10022 localhost:/target/server/path/ /local/path/
+rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
+#+END_EXAMPLE
+
+**** SOCKS server
+Run a SOCKS server on a given port, and set applications to use SOCKS, either natively or forcibly.
+When the app uses SOCKS, all its network connections are routed through the SOCKS server which forwards it to all your server on internet.
+
+Open port 443 on my.server.com like the above solution.
+
+Install tsocks on localhost ~sudo apt-get install tsocks~ and configure tsocks, /etc/tsocks.conf, near the end, change it to
+#+BEGIN_EXAMPLE
+server -127.0.0.1 port = 1080
+#+END_EXAMPLE
+
+Bind traffic to local port 1080 to the jump host. Run locally
+ssh -D 1080 -p 443 user@my.server.com
+
+Run applications using tsocks. Run locally:
+tsocks skype tsocks kopete tsocks kmail tsocks ftp someserver.com tsocks ssh user@target.server.com
+
+Notes
+- FTP has to be in passive mode
+- Some applications might not support tsocks
+
 ** fail2ban
 <<<linux:fail2ban>>>
 Ban access to services (e.g. SSH) for max tries and ban time based on service's log.
