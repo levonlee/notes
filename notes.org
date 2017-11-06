@@ -19824,10 +19824,10 @@ server -127.0.0.1 port = 1080
 #+END_EXAMPLE
 
 Bind traffic to local port 1080 to the jump host. Run locally
-ssh -D 1080 -p 443 user@my.server.com
+~ssh -D 1080 -p 443 user@my.server.com~
 
 Run applications using tsocks. Run locally:
-tsocks skype tsocks kopete tsocks kmail tsocks ftp someserver.com tsocks ssh user@target.server.com
+~tsocks skype tsocks kopete tsocks kmail tsocks ftp someserver.com tsocks ssh user@target.server.com~
 
 Notes
 - FTP has to be in passive mode
@@ -20930,6 +20930,105 @@ It's more sophisticated than sendmail.
 https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04
 https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-16-04
 apt-get install postfix will remove sendmail automatically
+
+*** Ubuntu troubleshooting
+**** Unmet dependencies
+Run these
+#+BEGIN_EXAMPLE
+sudo apt-get clean
+sudo apt-get update
+sudo apt-get -f install
+# check if it returns error that about disk full error
+# fix disk full error first
+# install the package again
+sudo apt-get install make
+#+END_EXAMPLE
+
+If it still doesn't work or it has error, run these
+#+BEGIN_EXAMPLE
+sudo dpkg --configure -a
+sudo apt-get -f install
+#+END_EXAMPLE
+
+If the output is below, it means it failed.
+#+BEGIN_EXAMPLE
+0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.
+#+END_EXAMPLE
+
+Next solution is to run
+#+BEGIN_EXAMPLE
+sudo apt-get -u dist-upgrade
+#+END_EXAMPLE
+
+If it shows any held packages, it is best to eliminate them. Packages are held because of dependency conflicts that apt cannot resolve. Try this command to find and repair the conflicts:
+#+BEGIN_EXAMPLE
+sudo apt-get -o Debug::pkgProblemResolver=yes dist-upgrade
+#+END_EXAMPLE
+
+If it cannot fix the conflicts, it will exit with:
+0 upgraded, 0 newly installed, 0 to remove and 6 not upgraded.
+
+Delete the held packages one by one, running dist-upgrade each time, until there are no more held packages. Then reinstall any needed packages. Be sure to use the --dry-run option, so that you are fully informed of consequences:
+#+BEGIN_EXAMPLE
+sudo apt-get remove --dry-run package-name
+#+END_EXAMPLE
+
+Since removing the package you are trying to install may not be ideal, you might also try finding a repository that has the packages you need to satisfy the dependencies.
+
+Finally, if all else fails, you can attempt to satisfy the dependencies yourself, either by finding and installing the necessary packages, or by installing them from source and then creating “deb” packages for them.
+
+https://askubuntu.com/questions/140246/how-do-i-resolve-unmet-dependencies-after-adding-a-ppa
+
+**** /boot directory is full
+If it's full 100% ~df -h~, all apt commands will not run.
+
+Run this to get installed kernels except the currently running one.
+#+BEGIN_EXAMPLE
+sudo dpkg --list 'linux-image*'|awk '{ if ($1=="ii") print $2}'|grep -v `uname -r`
+#+END_EXAMPLE
+
+Also keep track of the 2 newest versions. ~uname -r~ to check the current kernel version. e.g.
+#+BEGIN_EXAMPLE
+linux-image-4.4.0-31-generic
+linux-image-4.4.0-36-generic
+linux-image-4.4.0-38-generic
+linux-image-4.4.0-42-generic
+linux-image-4.4.0-45-generic
+linux-image-4.4.0-47-generic
+linux-image-4.4.0-51-generic
+linux-image-4.4.0-53-generic
+linux-image-extra-4.4.0-31-generic
+linux-image-extra-4.4.0-36-generic
+linux-image-extra-4.4.0-38-generic
+linux-image-extra-4.4.0-42-generic
+linux-image-extra-4.4.0-45-generic
+linux-image-extra-4.4.0-47-generic
+linux-image-extra-4.4.0-51-generic
+linux-image-extra-4.4.0-53-generic
+#+END_EXAMPLE
+
+Current kernel version is 4.4.0-34-generic
+
+Remove other kernels except the current one and the 2 newest ones.
+
+#+BEGIN_EXAMPLE
+# before delete, check which will be deleted first
+ll /boot/*-4.4.0-{31,36,38,42,45,47}-*
+sudo rm -rf /boot/*-4.4.0-{31,36,38,42,45,47}-*
+#+END_EXAMPLE
+
+~df -h~ will show the space is reduced. Fix apt-get
+#+BEGIN_EXAMPLE
+sudo apt-get -f install
+#+END_EXAMPLE
+
+If you run into an error that includes a line like "Internal Error: Could not find image (/boot/vmlinuz-3.2.0-56-generic)", then run the command ~sudo apt-get purge linux-image-3.2.0-56-generic~ (with your appropriate version).
+
+Now apt-get should work. Finally, ~sudo apt-get autoremove~ to clear out the old kernel image packages that have been orphaned by the manual boot clean.
+
+Run ~sudo apt-get update~ and maybe ~sudo apt-get upgrade~ after.
+
+https://askubuntu.com/a/430944/481813
 
 ** Input and Output
 *** File Descriptors
@@ -27486,6 +27585,11 @@ mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.
 #+BEGIN_EXAMPLE
 [mysqldump]
 password='enclosedwithdoublequotes'
+#+END_EXAMPLE
+
+MySQL is inside a container some-mysql and dump it on host
+#+BEGIN_EXAMPLE
+docker exec some-mysql sh -c 'exec mysqldump --all-databases -uroot -p"your-passowrd"' > /some/path/on/your/host/all-databases.sql
 #+END_EXAMPLE
 
 ** MSSQL
