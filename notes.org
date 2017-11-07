@@ -148,6 +148,7 @@ HTTPS
 HTTP_HOST :: see below
 
 REQUEST_TIME
+REQUEST_URI
 
 REMOTE_ADDR
 REMOTE_HOST :: 
@@ -20734,6 +20735,51 @@ Use open ports that are in the range of 1024-49151.
 49152-65535 are dynamic ports and should not be prescribed to a protocol (e.g. random)
 
 *** Wireless network adapters =iwconfig=
+
+*** Test email address if valid without sending
+#+BEGIN_EXAMPLE
+nslookup -q=mx gmail.com
+#+END_EXAMPLE
+
+You will see this:
+#+BEGIN_EXAMPLE
+Server:         192.168.1.200
+Address:        192.168.1.200#53
+
+Non-authoritative answer:
+gmail.com       mail exchanger = 10 alt1.gmail-smtp-in.l.google.com.
+gmail.com       mail exchanger = 20 alt2.gmail-smtp-in.l.google.com.
+gmail.com       mail exchanger = 5 gmail-smtp-in.l.google.com.
+gmail.com       mail exchanger = 30 alt3.gmail-smtp-in.l.google.com.
+gmail.com       mail exchanger = 40 alt4.gmail-smtp-in.l.google.com.
+
+Authoritative answers can be found from:
+alt1.gmail-smtp-in.l.google.com internet address = 173.194.205.26
+alt1.gmail-smtp-in.l.google.com has AAAA address 2607:f8b0:400d:c02::1a
+alt2.gmail-smtp-in.l.google.com internet address = 74.125.141.26
+alt2.gmail-smtp-in.l.google.com has AAAA address 2607:f8b0:400c:c06::1a
+gmail-smtp-in.l.google.com      internet address = 108.177.112.26
+gmail-smtp-in.l.google.com      has AAAA address 2607:f8b0:4001:c12::1b
+alt3.gmail-smtp-in.l.google.com internet address = 64.233.190.26
+alt3.gmail-smtp-in.l.google.com has AAAA address 2800:3f0:4003:c01::1b
+alt4.gmail-smtp-in.l.google.com internet address = 209.85.203.26
+alt4.gmail-smtp-in.l.google.com has AAAA address 2a00:1450:400b:c03::1a
+#+END_EXAMPLE
+
+Choose any one or the root one to telnet
+#+BEGIN_EXAMPLE
+telnet gmail-smtp-in.l.google.com 25
+# if it's connected, it will say 220
+# Then you first have to say HELO hi-whatever
+HELO hi
+# setup a From email, with <> brackets
+mail from: <youremail@gmail.com>
+# then specify the target email which you want to test
+rcpt to: <test@gmail.com>
+# If the target email is good, it will say 250 OK
+# 550 and its message may say Recipient address rejected: User unknown in virtual alias table
+quit
+#+END_EXAMPLE
 
 ** Firewall 
 <<<linux:firewall>>> <<<linux:ufw>>>
