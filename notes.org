@@ -19269,6 +19269,9 @@ platformBrowserDynamic().bootstrapModule(AppModule)
 #+END_EXAMPLE
 
 ** Data and methods
+<<<vue:data>>>
+
+Root-level reactive properties need to be defined when the instance was first created.
 #+BEGIN_EXAMPLE
 var data = {a:1}
 var vm = new Vue({
@@ -19301,6 +19304,68 @@ vm.$watch('a', function (newValue, oldValue) {
 })
 #+END_EXAMPLE
 
+Mutation methods :: when these methods are called, the views will be updated.
+push, pop, shift, unshift, splice, sort, reverse
+
+e.g. my_vue_app.items.push({ message: 'Baz'});
+
+Non-mutating methods always return a new array.
+
+e.g. filter, concat
+#+BEGIN_EXAMPLE
+example1.items = example1.items.filter(function (item) {
+  return item.message.match(/Foo/)
+})
+#+END_EXAMPLE
+
+Don't use vm.items[indexOfItem] = newValue, instead use:
+#+BEGIN_EXAMPLE
+// Vue.set
+Vue.set(example1.items, indexOfItem, newValue)
+
+// Or
+
+// Array.prototype.splice
+example1.items.splice(indexOfItem, 1, newValue)
+#+END_EXAMPLE
+
+Don't use vm.items.length = newLenth, instead use:
+#+BEGIN_EXAMPLE
+example1.items.splice(newLength)
+#+END_EXAMPLE
+
+Add reactive properties to an object at root-level
+#+BEGIN_EXAMPLE
+var vm = new Vue({
+  data: {
+    userProfile: {
+      name: 'Anika'
+    }
+  }
+})
+
+Vue.set(vm.userProfile, 'age', 27);
+
+// or this.$set(this.userProfile, 'age', 27)
+// or vm.$set
+#+END_EXAMPLE
+
+Using Object.assign() or _.extend()
+
+#+BEGIN_EXAMPLE
+/* Don't do it directly
+Object.assign(this.userProfile, {
+  age: 27,
+  favoriteColor: 'Vue Green'
+})
+*/
+
+this.userProfile = Object.assign({}, this.userProfile, {
+  age: 27,
+  favoriteColor: 'Vue Green'
+})
+#+END_EXAMPLE
+
 ** Instance Lifecycle Hooks
 Data observation > compile templates > mount instance to DOM > Update DOM when data changes
 
@@ -19329,6 +19394,7 @@ new Vue({
 *** beforeDestroy, destroyed
 
 ** Component
+*** Basics
 #+BEGIN_EXAMPLE
 <div id="app-7">
   <ol>
@@ -19363,6 +19429,7 @@ var app7 = new Vue({
   }
 })
 #+END_EXAMPLE
+
 
 
 ** Template Syntax
@@ -19504,6 +19571,7 @@ You don't need to do this but since 2.3.0+
 This will only render the last value in the array which the browser supports.
 
 *** Modifiers :: v-on:submit.prevent
+Refer to vue:event:modifiers
 #+BEGIN_EXAMPLE
 <form v-on:submit.prevent="onSubmit"> ... </form>
 #+END_EXAMPLE
@@ -19577,6 +19645,511 @@ v-show always render.
 Use v-show if it needs to be toggled very often.
 
 *** List, v-for
+**** Basics
+v-for has full access to parent scope properties
+
+#+BEGIN_EXAMPLE
+// array
+<ul id="example-1">
+  <li v-for="item in items">
+    {{ item.message }}
+  </li>
+</ul>
+var example1 = new Vue({
+  el: '#example-1',
+  data: {
+    items: [
+      { message: 'Foo' },
+      { message: 'Bar' }
+    ]
+  }
+})
+
+<ul id="example-2">
+  <li v-for="(item, index) in items">
+    {{ parentMessage }} - {{ index }} - {{ item.message }}
+  </li>
+</ul>
+
+var example2 = new Vue({
+  el: '#example-2',
+  data: {
+    parentMessage: 'Parent',
+    items: [
+      { message: 'Foo' },
+      { message: 'Bar' }
+    ]
+  }
+})
+
+<div v-for="item of items"></div>
+
+// object
+<ul id="v-for-object" class="demo">
+  <li v-for="value in object">
+    {{ value }}
+  </li>
+</ul>
+
+new Vue({
+  el: '#v-for-object',
+  data: {
+    object: {
+      firstName: 'John',
+      lastName: 'Doe',
+      age: 30
+    }
+  }
+})
+
+<div v-for="(value, key) in object">
+  {{ key }}: {{ value }}
+</div>
+
+<div v-for="(value, key, index) in object">
+  {{ index }}. {{ key }}: {{ value }}
+</div>
+#+END_EXAMPLE
+
+The default mode is only suitable when your list render output does not reply on child component state or temporary DOM state (e.g. form input values)
+
+Provide a unqiue key attribute for each item.
+#+BEGIN_EXAMPLE
+<div v-for="item in items" :key="item.id">
+  <!-- content -->
+</div>
+#+END_EXAMPLE
+
+Refer to vue:data for mutation and non-mutating methods
+
+**** Filtered/Sorted
+#+BEGIN_EXAMPLE
+<li v-for="n in evenNumbers">{{ n }}</li>
+
+data: {
+  numbers: [ 1, 2, 3, 4, 5 ]
+},
+computed: {
+  evenNumbers: function () {
+    return this.numbers.filter(function (number) {
+      return number % 2 === 0
+    })
+  }
+}
+#+END_EXAMPLE
+
+In case when computed properties are not feasible e.g. inside nested v-for loops
+#+BEGIN_EXAMPLE
+<li v-for="n in even(numbers)">{{ n }}</li>
+data: {
+  numbers: [ 1, 2, 3, 4, 5 ]
+},
+methods: {
+  even: function (numbers) {
+    return numbers.filter(function (number) {
+      return number % 2 === 0
+    })
+  }
+}
+#+END_EXAMPLE
+
+**** range
+#+BEGIN_EXAMPLE
+<div>
+  <span v-for="n in 10">{{ n }} </span>
+</div>
+#+END_EXAMPLE
+
+**** v-for on <template>
+#+BEGIN_EXAMPLE
+<ul>
+  <template v-for="item in items">
+    <li>{{ item.msg }}</li>
+    <li class="divider"></li>
+  </template>
+</ul>
+#+END_EXAMPLE
+
+**** v-for with v-if
+#+BEGIN_EXAMPLE
+<li v-for="todo in todos" v-if="!todo.isComplete">
+  {{ todo }}
+</li>
+
+// don't execute v-for at all
+<ul v-if="todos.length">
+  <li v-for="todo in todos">
+    {{ todo }}
+  </li>
+</ul>
+<p v-else>No todos left!</p>
+#+END_EXAMPLE
+
+**** v-for with a component
+#+BEGIN_EXAMPLE
+<my-component v-for="item in items" :key="item.id"></my-component>
+
+// pass data to component
+<my-component
+  v-for="(item, index) in items"
+  v-bind:item="item"
+  v-bind:index="index"
+  v-bind:key="item.id"
+></my-component>
+#+END_EXAMPLE
+
+**** Example
+
+Because it has to be at least one <li> in <ul> to be valid. ~is="todo-item"~ is needed.
+#+BEGIN_EXAMPLE
+<div id="todo-list-example">
+  <input
+    v-model="newTodoText"
+    v-on:keyup.enter="addNewTodo"
+    placeholder="Add a todo"
+  >
+  <ul>
+    <li
+      is="todo-item"
+      v-for="(todo, index) in todos"
+      v-bind:key="todo.id"
+      v-bind:title="todo.title"
+      v-on:remove="todos.splice(index, 1)"
+    ></li>
+  </ul>
+</div>
+
+Vue.component('todo-item', {
+  template: '\
+    <li>\
+      {{ title }}\
+      <button v-on:click="$emit(\'remove\')">X</button>\
+    </li>\
+  ',
+  props: ['title']
+})
+new Vue({
+  el: '#todo-list-example',
+  data: {
+    newTodoText: '',
+    todos: [
+      {
+        id: 1,
+        title: 'Do the dishes',
+      },
+      {
+        id: 2,
+        title: 'Take out the trash',
+      },
+      {
+        id: 3,
+        title: 'Mow the lawn'
+      }
+    ],
+    nextTodoId: 4
+  },
+  methods: {
+    addNewTodo: function () {
+      this.todos.push({
+        id: this.nextTodoId++,
+        title: this.newTodoText
+      })
+      this.newTodoText = ''
+    }
+  }
+})
+#+END_EXAMPLE
+
+*** Event, v-on
+**** Basics
+#+BEGIN_EXAMPLE
+<div id="example-1">
+  <button v-on:click="counter += 1">Add 1</button>
+  <p>The button above has been clicked {{ counter }} times.</p>
+</div>
+var example1 = new Vue({
+  el: '#example-1',
+  data: {
+    counter: 0
+  }
+})
+#+END_EXAMPLE
+
+**** Method calling
+#+BEGIN_EXAMPLE
+<div id="example-2">
+  <!-- `greet` is the name of a method defined below -->
+  <button v-on:click="greet">Greet</button>
+</div>
+var example2 = new Vue({
+  el: '#example-2',
+  data: {
+    name: 'Vue.js'
+  },
+  // define methods under the `methods` object
+  methods: {
+    greet: function (event) {
+      // `this` inside methods points to the Vue instance
+      alert('Hello ' + this.name + '!')
+      // `event` is the native DOM event
+      if (event) {
+        alert(event.target.tagName)
+      }
+    }
+  }
+})
+// you can invoke methods in JavaScript too
+example2.greet() // => 'Hello Vue.js!'
+#+END_EXAMPLE
+
+**** Inline with $event
+#+BEGIN_EXAMPLE
+<div id="example-3">
+  <button v-on:click="say('hi')">Say hi</button>
+  <button v-on:click="say('what')">Say what</button>
+</div>
+new Vue({
+  el: '#example-3',
+  methods: {
+    say: function (message) {
+      alert(message)
+    }
+  }
+})
+
+<button v-on:click="warn('Form cannot be submitted yet.', $event)">
+  Submit
+</button>
+methods: {
+  warn: function (message, event) {
+    // now we have access to the native event
+    if (event) event.preventDefault()
+    alert(message)
+  }
+}
+#+END_EXAMPLE
+
+**** Event Modifiers
+<<<vue:event:modifiers>>>
+
+.stop, .prevent, .capture, .self, .once
+
+#+BEGIN_EXAMPLE
+<!-- the click event's propagation will be stopped -->
+<a v-on:click.stop="doThis"></a>
+
+<!-- the submit event will no longer reload the page -->
+<form v-on:submit.prevent="onSubmit"></form>
+
+<!-- modifiers can be chained :: chain stop and prevent. -->
+<a v-on:click.stop.prevent="doThat"></a>
+
+<!-- chain order matters. @click.prevent.self will prevent all clicks while @click.self.prevent will only prevent clicks on the element itself -->
+
+<!-- just the modifier -->
+<form v-on:submit.prevent></form>
+
+<!-- use capture mode when adding the event listener -->
+<!-- i.e. an event targeting an inner element is handled here before being handled by that element -->
+<div v-on:click.capture="doThis">...</div>
+
+<!-- only trigger handler if event.target is the element itself -->
+<!-- i.e. not from a child element -->
+<div v-on:click.self="doThat">...</div>
+
+<!-- the click event will be triggered at most once. 2.1.4+ -->
+<a v-on:click.once="doThis"></a>
+#+END_EXAMPLE
+
+**** Event Key Modifiers
+<<<vue:event:key modifiers>>>
+
+#+BEGIN_EXAMPLE
+<!-- only call vm.submit() when the keyCode is 13 -->
+<input v-on:keyup.13="submit">
+
+<!-- also works for shorthand -->
+<input @keyup.enter="submit">
+#+END_EXAMPLE
+
+Full list :: .enter, .tab, .delete (both Delete and Backspace), .esc, .space, .up, .down, .left, .right
+
+Define custom key modifier aliase
+#+BEGIN_EXAMPLE
+// enable v-on:keyup.f1
+Vue.config.keyCodes.f1 = 112
+#+END_EXAMPLE
+
+Directly use any valid key names provided by [[https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values][KeyboardEvent.key]] as modifiers by converting them to kebab-case.
+e.g. the handler will only be called if $event.key === 'PageDown'.
+#+BEGIN_EXAMPLE
+<input @keyup.page-down="onPageDown">
+#+END_EXAMPLE
+
+.ctrl, .alt, .shift, .meta (windows key or Mac's command key)
+#+BEGIN_EXAMPLE
+<!-- Alt + C -->
+<input @keyup.alt.67="clear">
+
+<!-- Ctrl + Click -->
+<div @click.ctrl="doSomething">Do something</div>
+#+END_EXAMPLE
+
+.exact
+#+BEGIN_EXAMPLE
+<!-- this will fire even if Alt or Shift is also pressed -->
+<button @click.ctrl="onClick">A</button>
+
+<!-- this will only fire when only Ctrl is pressed -->
+<button @click.ctrl.exact="onCtrlClick">A</button>
+#+END_EXAMPLE
+
+.left, .right, .middle
+
+*** Form input, v-model
+v-model will ignore the initial value, checked or selected.
+
+**** textarea
+#+BEGIN_EXAMPLE
+<span>Multiline message is:</span>
+<p style="white-space: pre-line;">{{ message }}</p>  <br>
+<textarea v-model="message" placeholder="add multiple lines"></textarea>
+#+END_EXAMPLE
+
+**** checkbox
+#+BEGIN_EXAMPLE
+<input type="checkbox" id="checkbox" v-model="checked">
+<label for="checkbox">{{ checked }}</label>
+
+<!-- `toggle` is either true or false -->
+<input type="checkbox" v-model="toggle">
+
+// multiple checkboxes
+
+<div id='example-3'>
+  <input type="checkbox" id="jack" value="Jack" v-model="checkedNames">
+  <label for="jack">Jack</label>
+  <input type="checkbox" id="john" value="John" v-model="checkedNames">
+  <label for="john">John</label>
+  <input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+  <label for="mike">Mike</label>
+  <br>
+  <span>Checked names: {{ checkedNames }}</span>
+</div>
+
+new Vue({
+  el: '#example-3',
+  data: {
+    checkedNames: []
+  }
+})
+
+
+#+END_EXAMPLE
+
+**** radio
+#+BEGIN_EXAMPLE
+<input type="radio" id="one" value="One" v-model="picked">
+<label for="one">One</label>
+<br>
+<input type="radio" id="two" value="Two" v-model="picked">
+<label for="two">Two</label>
+<br>
+<span>Picked: {{ picked }}</span>
+
+<!-- `picked` is a string "a" when checked -->
+<input type="radio" v-model="picked" value="a">
+#+END_EXAMPLE
+
+**** select
+#+BEGIN_EXAMPLE
+<select v-model="selected">
+  <option disabled value="">Please select one</option>
+  <option>A</option>
+  <option>B</option>
+  <option>C</option>
+</select>
+<span>Selected: {{ selected }}</span>
+
+new Vue({
+  el: '...',
+  data: {
+    selected: ''
+  }
+})
+
+<!-- `selected` is a string "abc" when selected -->
+<select v-model="selected">
+  <option value="abc">ABC</option>
+</select>
+
+// select multiple
+<select v-model="selected" multiple>
+  <option>A</option>
+  <option>B</option>
+  <option>C</option>
+</select>
+<br>
+<span>Selected: {{ selected }}</span>
+
+// select v-for
+<select v-model="selected">
+  <option v-for="option in options" v-bind:value="option.value">
+    {{ option.text }}
+  </option>
+</select>
+<span>Selected: {{ selected }}</span>
+
+new Vue({
+  el: '...',
+  data: {
+    selected: 'A',
+    options: [
+      { text: 'One', value: 'A' },
+      { text: 'Two', value: 'B' },
+      { text: 'Three', value: 'C' }
+    ]
+  }
+})
+#+END_EXAMPLE
+
+
+**** Use v-bind with v-model to prepopulate
+#+BEGIN_EXAMPLE
+<input
+  type="checkbox"
+  v-model="toggle"
+  v-bind:true-value="a"
+  v-bind:false-value="b"
+>
+
+// when checked:
+vm.toggle === vm.a
+// when unchecked:
+vm.toggle === vm.b
+
+<input type="radio" v-model="pick" v-bind:value="a">
+// when checked:
+vm.pick === vm.a
+
+<select v-model="selected">
+  <!-- inline object literal -->
+  <option v-bind:value="{ number: 123 }">123</option>
+</select>
+#+END_EXAMPLE
+
+**** v-model modifiers
+#+BEGIN_EXAMPLE
+.lazy
+<!-- synced after "change" instead of "input" -->
+<input v-model.lazy="msg" >
+
+.number :: typecast as a number
+<input v-model.number="age" type="number">
+
+.trim
+<input v-model.trim="msg">
+#+END_EXAMPLE
 
 ** Computed Property, Watchers
 *** Computed property
