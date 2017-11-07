@@ -19448,6 +19448,22 @@ new Vue({
 })
 #+END_EXAMPLE
 
+Component should be used in a way that has 3 parts 
+- props :: pass from parent to component
+- events :: set parent based on events triggered from component
+- slots :: customize, from parent, the look of the component
+#+BEGIN_EXAMPLE
+<my-component
+  :foo="baz"
+  :bar="qux"
+  @event-a="doThis"
+  @event-b="doThat"
+>
+  <img slot="icon" src="...">
+  <p slot="main-text">Hello!</p>
+</my-component>
+#+END_EXAMPLE
+
 *** DOM Template Parsing Caveats
 Becuase <ul>, <ol>, <table> and <select> need to have certain elements appearing inside them and some elements such as <option> can only appear inside certain other elements, it will lead to parsing issues if you do this
 #+BEGIN_EXAMPLE
@@ -19639,7 +19655,7 @@ Vue.component('child', {
 <child my-message="hello!"></child>
 #+END_EXAMPLE
 
-*** Excetp class and style :: parent attributes overwrite child component
+*** Except class and style :: parent attributes overwrite child component
 Child component bs-date-input has this template
 <input type="date" class="form-control">
 
@@ -19655,7 +19671,196 @@ But the child component is called from parent with the type attribute as well.
 The final result is type="large" because the value provided to the component will replace the value set by the component.
 
 Except class and style attributes.
- 
+
+*** Slots
+Parent content will be discarded unless the child component template contains at least one <slot> outlet.
+
+**** Basics
+my-component template:
+#+BEGIN_EXAMPLE
+<div>
+  <h2>I'm the child title</h2>
+  <slot>
+    This will only be displayed if there is no content
+    to be distributed.
+  </slot>
+</div>
+#+END_EXAMPLE
+
+the parent
+#+BEGIN_EXAMPLE
+<div>
+  <h1>I'm the parent title</h1>
+  <my-component>
+    <p>This is some original content</p>
+    <p>This is some more original content</p>
+  </my-component>
+</div>
+#+END_EXAMPLE
+
+Result
+#+BEGIN_EXAMPLE
+<div>
+  <h1>I'm the parent title</h1>
+  <div>
+    <h2>I'm the child title</h2>
+    <p>This is some original content</p>
+    <p>This is some more original content</p>
+  </div>
+</div>
+#+END_EXAMPLE
+
+**** Multiple slots
+app-layout component with template
+#+BEGIN_EXAMPLE
+<div class="container">
+  <header>
+    <slot name="header"></slot>
+  </header>
+  <main>
+    <slot></slot>
+  </main>
+  <footer>
+    <slot name="footer"></slot>
+  </footer>
+</div>
+#+END_EXAMPLE
+
+Parent
+#+BEGIN_EXAMPLE
+<app-layout>
+  <h1 slot="header">Here might be a page title</h1>
+  <p>A paragraph for the main content.</p>
+  <p>And another one.</p>
+  <p slot="footer">Here's some contact info</p>
+</app-layout>
+#+END_EXAMPLE
+
+Result
+#+BEGIN_EXAMPLE
+<div class="container">
+  <header>
+    <h1>Here might be a page title</h1>
+  </header>
+  <main>
+    <p>A paragraph for the main content.</p>
+    <p>And another one.</p>
+  </main>
+  <footer>
+    <p>Here's some contact info</p>
+  </footer>
+</div>
+#+END_EXAMPLE
+
+**** Scoped slot
+From parent, create a temporary variable with an alias name which holds the props object passed from the child (props.text defined in child)
+
+This provides a way for parent to customize the look of a component.
+
+child component
+#+BEGIN_EXAMPLE
+<div class="child">
+  <slot text="hello from child"></slot>
+</div>
+#+END_EXAMPLE
+
+Parent
+#+BEGIN_EXAMPLE
+<div class="parent">
+  <child>
+    <template slot-scope="props">
+      <span>hello from parent</span>
+      <span>{{ props.text }}</span>
+    </template>
+  </child>
+</div>
+#+END_EXAMPLE
+
+Result
+#+BEGIN_EXAMPLE
+<div class="parent">
+  <div class="child">
+    <span>hello from parent</span>
+    <span>hello from child</span>
+  </div>
+</div>
+#+END_EXAMPLE
+
+In 2.5.0+, slot-scope is no longer limited to <template> and can be used on any element or component.
+
+Number of slots in parent do not need to match number of slots in component.
+
+Parent :: customize the look for each list item
+#+BEGIN_EXAMPLE
+<my-awesome-list :items="items">
+  <!-- scoped slot can be named too -->
+  <li
+    slot="item"
+    slot-scope="props"
+    class="my-fancy-item">
+    {{ props.text }}
+  </li>
+</my-awesome-list>
+#+END_EXAMPLE
+
+my-awesome-list component template
+#+BEGIN_EXAMPLE
+<ul>
+  <slot name="item"
+    v-for="item in items"
+    :text="item.text">
+    <!-- fallback content here -->
+  </slot>
+</ul>
+#+END_EXAMPLE
+
+**** Destructuring for slot-scope
+#+BEGIN_EXAMPLE
+<child>
+  <span slot-scope="{ text }">{{ text }}</span>
+</child>
+#+END_EXAMPLE
+
+*** Dynamic component, v-bind:is, <component>, keep-alive
+#+BEGIN_EXAMPLE
+var vm = new Vue({
+  el: '#example',
+  data: {
+    currentView: 'home'
+  },
+  components: {
+    home: { /* ... */ },
+    posts: { /* ... */ },
+    archive: { /* ... */ }
+  }
+})
+
+<component v-bind:is="currentView">
+  <!-- component changes when vm.currentView changes! -->
+</component>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<keep-alive>
+  <component :is="currentView">
+    <!-- inactive components will be cached! -->
+  </component>
+</keep-alive>
+#+END_EXAMPLE
+
+*** Get Child Component One Time
+$refs are only populated after the component has been rendered and it is not reactive.
+#+BEGIN_EXAMPLE
+<div id="parent">
+  <user-profile ref="profile"></user-profile>
+</div>
+
+var parent = new Vue({ el: '#parent' })
+// access child component instance
+var child = parent.$refs.profile
+#+END_EXAMPLE
+
+*** 
 ** Template Syntax
 *** String template vs DOM template
 String template <<<vue:string template>>>
@@ -20776,7 +20981,7 @@ var watchExampleVM = new Vue({
 </script>
 #+END_EXAMPLE
 
-*** State Management
+** State Management
 <<<vue:state management>>>
 
 * SEO
