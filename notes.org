@@ -19304,6 +19304,8 @@ vm.$watch('a', function (newValue, oldValue) {
 })
 #+END_EXAMPLE
 
+*** Mutation
+<<<vue:data:mutation>>>
 Mutation methods :: when these methods are called, the views will be updated.
 push, pop, shift, unshift, splice, sort, reverse
 
@@ -19395,6 +19397,7 @@ new Vue({
 
 ** Component
 *** Basics
+component name should be all lowercase and must contain a hyphen
 #+BEGIN_EXAMPLE
 <div id="app-7">
   <ol>
@@ -19430,9 +19433,251 @@ var app7 = new Vue({
 })
 #+END_EXAMPLE
 
+Vue.component registers a component globally. Make a component available only in the scope of another instance/component by registering it with the components instance option:
+
+#+BEGIN_EXAMPLE
+var Child = {
+  template: '<div>A custom component!</div>'
+}
+new Vue({
+  // ...
+  components: {
+    // <my-component> will only be available in parent's template
+    'my-component': Child
+  }
+})
+#+END_EXAMPLE
+
+*** DOM Template Parsing Caveats
+Becuase <ul>, <ol>, <table> and <select> need to have certain elements appearing inside them and some elements such as <option> can only appear inside certain other elements, it will lead to parsing issues if you do this
+#+BEGIN_EXAMPLE
+<table>
+  <my-row>...</my-row>
+</table>
+#+END_EXAMPLE
+
+So better to do this
+#+BEGIN_EXAMPLE
+<table>
+  <tr is="my-row"></tr>
+</table>
+#+END_EXAMPLE
+
+camelCase vs. kebab-case
 
 
+These limitations do not apply if you are using string templates from one of the following sources:
+- <script type='text/x-template'>
+- JavaScript inline template strings
+- .vue components
+
+So, prefer using string templates whenever possible.
+
+*** Option data has to be a function
+data is the initialization part that defines extra local data properties that are only available in the component.
+
+3 simple-counter's have their own initializing part and scopes.
+#+BEGIN_EXAMPLE
+<div id="example-2">
+  <simple-counter></simple-counter>
+  <simple-counter></simple-counter>
+  <simple-counter></simple-counter>
+</div>
+
+Vue.component('simple-counter', {
+  template: '<button v-on:click="counter += 1">{{ counter }}</button>',
+  data: function () {
+    return {
+      counter: 0
+    }
+  }
+})
+new Vue({
+  el: '#example-2'
+})
+#+END_EXAMPLE
+
+*** Props down
+Pass down prop from parent to child using child component's prop option.
+
+When the parent property updates, it will flow down to the child but not the other way around.
+
+#+BEGIN_EXAMPLE
+Vue.component('child', {
+  // declare the props
+  props: ['message'],
+  // like data, the prop can be used inside templates and
+  // is also made available in the vm as this.message
+  template: '<span>{{ message }}</span>'
+})
+
+// parent page
+<child message="hello!"></child>
+
+// dynamic binding a parent variable
+<div>
+  <input v-model="parentMsg">
+  <br>
+  <child v-bind:my-message="parentMsg"></child>
+</div>
+
+// pass all properties of the parent as props to the child
+todo: {
+  text: 'Learn Vue',
+  isComplete: false
+}
+
+<todo-item v-bind="todo"></todo-item>
+
+<todo-item
+  v-bind:text="todo.text"
+  v-bind:is-complete="todo.isComplete"
+></todo-item>
+#+END_EXAMPLE
+
+Literal vs Dynamic
+#+BEGIN_EXAMPLE
+<!-- this passes down a plain string "1" -->
+<comp some-prop="1"></comp>
+
+<!-- this passes down an actual number -->
+<comp v-bind:some-prop="1"></comp>
+#+END_EXAMPLE
+
+**** Don't mutate a prop of child component
+You shouldn't mutate a prop insde a child component. Refer to vue:data:mutation
+
+Because objects and arrays in JavaScript are passed by reference. So mutating the object or array inside the child will affect parent state.
+
+Instead you should do the following:
+- Define a local data prop that uses the prop's initial value as its initial value
+#+BEGIN_EXAMPLE
+props: ['initialCounter'],
+data: function () {
+  return { counter: this.initialCounter }
+}
+#+END_EXAMPLE
+
+- Define a computed prop that is computed from the prop's value
+#+BEGIN_EXAMPLE
+props: ['size'],
+computed: {
+  normalizedSize: function () {
+    return this.size.trim().toLowerCase()
+  }
+}
+#+END_EXAMPLE
+
+**** prop validation
+When prop validation fails, Vue will produce a console warning (if using the development build). Note that props are validated before a component instance is created, so within default or validator functions, instance properties such as from data, computed, or methods will not be available.
+
+#+BEGIN_EXAMPLE
+Vue.component('example', {
+  props: {
+    // basic type check (`null` means accept any type)
+    propA: Number,
+
+    // multiple possible types
+    propB: [String, Number],
+
+    // a required string
+    propC: {
+      type: String,
+      required: true
+    },
+
+    // a number with default value
+    propD: {
+      type: Number,
+      default: 100
+    },
+
+    // object/array defaults should be returned from a
+    // factory function
+    propE: {
+      type: Object,
+      default: function () {
+        return { message: 'hello' }
+      }
+    },
+
+    // custom validator function
+    propF: {
+      validator: function (value) {
+        return value > 10
+      }
+    }
+  }
+})
+#+END_EXAMPLE
+
+***** type
+type can be one of the following instructors
+String
+Number
+Boolean
+Function
+Object
+Array
+Symbol
+
+In addition, type can also be a custom constructor function and the assertion will be made with an instanceof check.
+
+*** Events Up
+vue:event:component
+
+*** DOM template
+In non-string templates, camelCased prop names need to use their kebab-case equivalents
+Refer to see what vue:string template is.
+#+BEGIN_EXAMPLE
+Vue.component('child', {
+  // camelCase in JavaScript
+  props: ['myMessage'],
+  template: '<span>{{ myMessage }}</span>'
+})
+<!-- kebab-case in HTML -->
+<child my-message="hello!"></child>
+#+END_EXAMPLE
+
+*** Excetp class and style :: parent attributes overwrite child component
+Child component bs-date-input has this template
+<input type="date" class="form-control">
+
+But the child component is called from parent with the type attribute as well.
+#+BEGIN_EXAMPLE
+<bs-date-input
+  data-3d-date-picker="true"
+  class="date-picker-theme-dark"
+  type="large"
+></bs-date-input>
+#+END_EXAMPLE
+
+The final result is type="large" because the value provided to the component will replace the value set by the component.
+
+Except class and style attributes.
+ 
 ** Template Syntax
+*** String template vs DOM template
+String template <<<vue:string template>>>
+#+BEGIN_EXAMPLE
+Vue.component('my-component', {
+  template: '<p>This is a String template, it iss passed as a string to the component.</p>'
+})
+#+END_EXAMPLE
+
+DOM template
+#+BEGIN_EXAMPLE
+<body>
+  <div id="app"> <!-- your App is runnning in this div --->
+    <my-component></my-component>
+  </div>
+
+  <template id="template-for-my-component">
+    {{ message }}
+  </template>
+</body>
+#+END_EXAMPLE
+
 *** v-once on text
 one-time interpolations
 #+BEGIN_EXAMPLE
@@ -20006,6 +20251,219 @@ e.g. the handler will only be called if $event.key === 'PageDown'.
 
 .left, .right, .middle
 
+**** Event from child component. .sync
+<<<vue:event:component>>>
+
+#+BEGIN_EXAMPLE
+<div id="counter-event-example">
+  <p>{{ total }}</p>
+  <button-counter v-on:increment="incrementTotal"></button-counter>
+  <button-counter v-on:increment="incrementTotal"></button-counter>
+</div>
+
+Vue.component('button-counter', {
+  template: '<button v-on:click="incrementCounter">{{ counter }}</button>',
+  data: function () {
+    return {
+      counter: 0
+    }
+  },
+  methods: {
+    incrementCounter: function () {
+      this.counter += 1
+      this.$emit('increment')
+    }
+  },
+})
+new Vue({
+  el: '#counter-event-example',
+  data: {
+    total: 0
+  },
+  methods: {
+    incrementTotal: function () {
+      this.total += 1
+    }
+  }
+})
+#+END_EXAMPLE
+
+vm.$on can only listen events on teh current vm. But in order to listen from child components, you will need v-on in parent template
+#+BEGIN_EXAMPLE
+vm.$on('test', function (msg) {
+  console.log(msg)
+})
+vm.$emit('test', 'hi')
+// => "hi"
+#+END_EXAMPLE
+
+In parent, when adding a native even (e.g. click) on a component, @click.native="parentMethod" is required.
+
+.sync
+By default one-way data flow from parent to child. There's time when modifying parent prop is desired. But try to avoid this.
+#+BEGIN_EXAMPLE
+<comp :foo.sync="bar"></comp>
+
+// got expanded to
+
+<comp :foo="bar" @update:foo="val => bar = val"></comp>
+
+// For the child component to update foo‘s value, it needs to explicitly emit an event instead of mutating the prop:
+
+this.$emit('update:foo', newValue)
+#+END_EXAMPLE
+
+**** Event in Form, v-model
+<<<vue:event:v-model>>>
+
+#+BEGIN_EXAMPLE
+<input v-model="something">
+// is equivalent of
+<input
+  v-bind:value="something"
+  v-on:input="something = $event.target.value">
+
+// For a component
+<custom-input
+  :value="something"
+  @input="value => { something = value }">
+</custom-input>
+#+END_EXAMPLE
+
+Custom form input
+The key point is the component has to have props: ['value'] and emit an input event with the new value
+
+***** text
+#+BEGIN_EXAMPLE
+<script src="https://cdn.rawgit.com/chrisvfritz/5f0a639590d6e648933416f90ba7ae4e/raw/974aa47f8f9c5361c5233bd56be37db8ed765a09/currency-validator.js"></script>
+<div id="app">
+  <currency-input 
+    label="Price" 
+    v-model="price"
+  ></currency-input>
+  <currency-input 
+    label="Shipping" 
+    v-model="shipping"
+  ></currency-input>
+  <currency-input 
+    label="Handling" 
+    v-model="handling"
+  ></currency-input>
+  <currency-input 
+    label="Discount" 
+    v-model="discount"
+  ></currency-input>
+  
+  <p>Total: ${{ total }}</p>
+</div>
+
+Vue.component('currency-input', {
+  template: '\
+    <div>\
+      <label v-if="label">{{ label }}</label>\
+      $\
+      <input\
+        ref="input"\
+        v-bind:value="value"\
+        v-on:input="updateValue($event.target.value)"\
+        v-on:focus="selectAll"\
+        v-on:blur="formatValue"\
+      >\
+    </div>\
+  ',
+  props: {
+    value: {
+      type: Number,
+      default: 0
+    },
+    label: {
+      type: String,
+      default: ''
+    }
+  },
+  mounted: function () {
+    this.formatValue()
+  },
+  methods: {
+    updateValue: function (value) {
+      var result = currencyValidator.parse(value, this.value)
+      if (result.warning) {
+        this.$refs.input.value = result.value
+      }
+      this.$emit('input', result.value)
+    },
+    formatValue: function () {
+      this.$refs.input.value = currencyValidator.format(this.value)
+    },
+    selectAll: function (event) {
+      // Workaround for Safari bug
+      // http://stackoverflow.com/questions/1269722/selecting-text-on-focus-using-jquery-not-working-in-safari-and-chrome
+      setTimeout(function () {
+      	event.target.select()
+      }, 0)
+    }
+  }
+})
+
+new Vue({
+  el: '#app',
+  data: {
+    price: 0,
+    shipping: 0,
+    handling: 0,
+    discount: 0
+  },
+  computed: {
+    total: function () {
+      return ((
+        this.price * 100 + 
+        this.shipping * 100 + 
+        this.handling * 100 - 
+        this.discount * 100
+      ) / 100).toFixed(2)
+    }
+  }
+})
+#+END_EXAMPLE
+
+***** checkbox
+By default, v-model on a component uses value as the prop and input as the event, but some input types such as checkboxes and radio buttons may want to use the value prop for a different purpose. Using the model option can avoid the conflict in such cases
+#+BEGIN_EXAMPLE
+Vue.component('my-checkbox', {
+  model: {
+    prop: 'checked',
+    event: 'change'
+  },
+  props: {
+    checked: Boolean,
+    // this allows using the `value` prop for a different purpose
+    value: String
+  },
+  // ...
+})
+
+<my-checkbox v-model="foo" value="some value"></my-checkbox>
+
+// is equivalent to
+<my-checkbox
+  :checked="foo"
+  @change="val => { foo = val }"
+  value="some value">
+</my-checkbox>
+#+END_EXAMPLE
+
+**** Use Event to transfer data between components that are not parent-child
+#+BEGIN_EXAMPLE
+var bus = new Vue()
+bus.$emit('id-selected', 1)
+// in component B's created hook
+bus.$on('id-selected', function (id) {
+  // ...
+})
+#+END_EXAMPLE
+
+If it's more complex, refer to vue:state management
+
 *** Form input, v-model
 v-model will ignore the initial value, checked or selected.
 
@@ -20113,7 +20571,6 @@ new Vue({
 })
 #+END_EXAMPLE
 
-
 **** Use v-bind with v-model to prepopulate
 #+BEGIN_EXAMPLE
 <input
@@ -20150,6 +20607,9 @@ vm.pick === vm.a
 .trim
 <input v-model.trim="msg">
 #+END_EXAMPLE
+
+**** Event in v-model
+vue:event:v-model
 
 ** Computed Property, Watchers
 *** Computed property
@@ -20315,6 +20775,9 @@ var watchExampleVM = new Vue({
 })
 </script>
 #+END_EXAMPLE
+
+*** State Management
+<<<vue:state management>>>
 
 * SEO
 ** Google Analytics
