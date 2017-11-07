@@ -19216,6 +19216,533 @@ platformBrowserDynamic().bootstrapModule(AppModule)
 
 **** Directive selectors (lower camel case)
 
+* Vue.js
+** Basics
+#+BEGIN_EXAMPLE
+<script src="https://unpkg.com/vue"></script>
+
+<div id="app">
+  <!-- bind attribute to a var -->
+  <span v-bind:title="msg2">
+    {{ message }}
+  </span>
+  <div>
+    <span v-if="seen">Now you see me</span>
+  </div>
+  <div>
+    <ol>
+      <li v-for="todo in todos">
+        {{ todo.text }}
+      </li>
+    </ol>
+  </div>
+
+  <button v-on:click="reverseMessage">Reverse Message</button>
+
+  <!-- 2 way binding -->
+  <div>
+    <input v-model="message">
+  </div>
+</div>
+
+<script>
+  var my_vue_app = new Vue({
+    el: '#app',
+    data: {
+      message: 'Hello Vue.js!',
+      msg2: 'span title',
+      seen: true,
+      // my_vue_app.todos.push({ text: 'New item' })
+      todos: [
+        { text: 'Learn JavaScript' },
+        { text: 'Learn Vue' },
+        { text: 'Build something awesome' }
+      ]
+    },
+    methods: {
+      reverseMessage: function () {
+        this.message = this.message.split('').reverse().join('')
+      }
+    }
+  })
+</script>
+#+END_EXAMPLE
+
+** Data and methods
+#+BEGIN_EXAMPLE
+var data = {a:1}
+var vm = new Vue({
+  data: data
+});
+
+vm.a === data.a // true, they refer to the same object
+vm.a = 2 // then data.a is 2, too
+data.a = 3 // and vice-versa vm.a === 3
+
+vm.b = 'hi' // the properties in data are active only when the instance was first created.
+// a new property is defined after initialization, so it won't trigger view update.
+// Define all variables with default values you need in initialization.
+#+END_EXAMPLE
+
+Special instance properties and methods :: vm.$data, vm.$el, vm.$watch
+
+Don't use arrow function
+#+BEGIN_EXAMPLE
+var data = { a: 1 }
+var vm = new Vue({
+  el: '#example',
+  data: data
+})
+vm.$data === data // => true
+vm.$el === document.getElementById('example') // => true
+// $watch is an instance method
+vm.$watch('a', function (newValue, oldValue) {
+  // This callback will be called when `vm.a` changes
+})
+#+END_EXAMPLE
+
+** Instance Lifecycle Hooks
+Data observation > compile templates > mount instance to DOM > Update DOM when data changes
+
+Don't use arrow function in those hooks e.g. ~created: () => console.log(this.a)~
+
+[[https://vuejs.org/v2/guide/instance.html#Lifecycle-Diagram][Full lifecycle diagram and hooks]]
+
+*** beforeCreate, created
+run code after an instance is created
+
+#+BEGIN_EXAMPLE
+new Vue({
+  data: {
+    a: 1
+  },
+  created: function () {
+    // `this` points to the vm instance
+    console.log('a is: ' + this.a)
+  }
+})
+// => "a is: 1"
+#+END_EXAMPLE
+
+*** vm.$mount(el), beforeMount, mounted
+*** beforeUpdate, updated
+*** beforeDestroy, destroyed
+
+** Component
+#+BEGIN_EXAMPLE
+<div id="app-7">
+  <ol>
+    <!--
+      Now we provide each todo-item with the todo object
+      it's representing, so that its content can be dynamic.
+      We also need to provide each component with a "key",
+      which will be explained later.
+    -->
+    <todo-item
+      v-for="item in groceryList"
+      v-bind:todo="item"
+      v-bind:key="item.id">
+    </todo-item>
+  </ol>
+</div>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+Vue.component('todo-item', {
+  props: ['todo'],
+  template: '<li>{{ todo.text }}</li>'
+})
+var app7 = new Vue({
+  el: '#app-7',
+  data: {
+    groceryList: [
+      { id: 0, text: 'Vegetables' },
+      { id: 1, text: 'Cheese' },
+      { id: 2, text: 'Whatever else humans are supposed to eat' }
+    ]
+  }
+})
+#+END_EXAMPLE
+
+
+** Template Syntax
+*** v-once on text
+one-time interpolations
+#+BEGIN_EXAMPLE
+<span v-once>This will never change: {{ msg }}</span>
+#+END_EXAMPLE
+
+*** v-html
+<div v-html="rawHtml"></div>
+Can't be used for components. Watch out for XSS
+
+*** v-bind:attributeName
+<button v-bind:disabled="isButtonDisabled">Button</button>
+<button :disabled="isButtonDisabled">Button</button>
+
+*** Expression
+One single expression and it has a whitelist. Don't access user defined globals in template expressions.
+
+#+BEGIN_EXAMPLE
+{{ number + 1 }}
+{{ ok ? 'YES' : 'NO' }}
+{{ message.split('').reverse().join('') }}
+<div v-bind:id="'list-' + id"></div>
+#+END_EXAMPLE
+
+*** Arguments :: v-bind:href, v-bind:class, v-on:click
+**** v-bind:href, v-on:click
+#+BEGIN_EXAMPLE
+<a v-bind:href="url"> ... </a>
+// bind element's href attribute to the value of the expression url
+<a v-on:click="doSomething"> ... </a>
+// shorthand
+<a @click="doSomething">...</a>
+#+END_EXAMPLE
+
+**** v-bind:class
+
+#+BEGIN_EXAMPLE
+<div class="static"
+     v-bind:class="{ active: isActive, 'text-danger': hasError }">
+</div>
+// <div class="static active"></div>
+data: {
+  isActive: true,
+  hasError: false
+}
+#+END_EXAMPLE
+
+Or 
+
+#+BEGIN_EXAMPLE
+<div v-bind:class="classObject"></div>
+
+data: {
+  classObject: {
+    active: true,
+    'text-danger': false
+  }
+}
+
+// or even
+data: {
+  isActive: true,
+  error: null
+},
+computed: {
+  classObject: function () {
+    return {
+      active: this.isActive && !this.error,
+      'text-danger': this.error && this.error.type === 'fatal'
+    }
+  }
+}
+#+END_EXAMPLE
+
+Array
+#+BEGIN_EXAMPLE
+<div v-bind:class="[activeClass, errorClass]"></div>
+data: {
+  activeClass: 'active',
+  errorClass: 'text-danger'
+}
+
+<div v-bind:class="[isActive ? activeClass : '', errorClass]"></div>
+<div v-bind:class="[{ active: isActive }, errorClass]"></div>
+#+END_EXAMPLE
+
+When you use the class attribute on a custom component, those classes will be added to the component’s root element. Existing classes on this element will not be overwritten.
+
+#+BEGIN_EXAMPLE
+Vue.component('my-component', {
+  template: '<p class="foo bar">Hi</p>'
+})
+
+<my-component class="baz boo"></my-component>
+
+// the rendered HTML will be:
+// <p class="foo bar baz boo">Hi</p>
+// the same is also true for class bindings
+
+<my-component v-bind:class="{ active: isActive }"></my-component>
+
+// <p class="foo bar active">Hi</p>
+#+END_EXAMPLE
+
+**** v-bind:style
+CSS vendor-prefixes are auto detected and added when v-bind:style is used
+Use either camelCase or kebab-case for CSS property name
+#+BEGIN_EXAMPLE
+<div v-bind:style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
+// kebob case
+// <div v-bind:style="{ color: activeColor, 'font-size': fontSize + 'px' }"></div>
+
+data: {
+  activeColor: 'red',
+  fontSize: 30
+}
+
+<div v-bind:style="styleObject"></div>
+data: {
+  styleObject: {
+    color: 'red',
+    fontSize: '13px'
+  }
+}
+#+END_EXAMPLE
+
+Array
+#+BEGIN_EXAMPLE
+<div v-bind:style="[baseStyles, overridingStyles]"></div>
+#+END_EXAMPLE
+
+You don't need to do this but since 2.3.0+
+#+BEGIN_EXAMPLE
+<div v-bind:style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }"></div>
+#+END_EXAMPLE
+This will only render the last value in the array which the browser supports.
+
+*** Modifiers :: v-on:submit.prevent
+#+BEGIN_EXAMPLE
+<form v-on:submit.prevent="onSubmit"> ... </form>
+#+END_EXAMPLE
+
+*** v-if, key attribute, v-show
+When used together with v-if, v-for has a higher priority than v-if.
+
+#+BEGIN_EXAMPLE
+<h1 v-if="ok">Yes</h1>
+<h1 v-else>No</h1>
+#+END_EXAMPLE
+
+Group with v-if on <template>. template element will not be included
+#+BEGIN_EXAMPLE
+<template v-if="ok">
+  <h1>Title</h1>
+  <p>Paragraph 1</p>
+  <p>Paragraph 2</p>
+</template>
+#+END_EXAMPLE
+
+v-else must immediately follow a v-if or v-else-if element.
+#+BEGIN_EXAMPLE
+<div v-if="Math.random() > 0.5">
+  Now you see me
+</div>
+<div v-else>
+  Now you don't
+</div>
+#+END_EXAMPLE
+
+v-else-if since 2.1.0+
+#+BEGIN_EXAMPLE
+<div v-if="type === 'A'">
+  A
+</div>
+<div v-else-if="type === 'B'">
+  B
+</div>
+<div v-else-if="type === 'C'">
+  C
+</div>
+<div v-else>
+  Not A/B/C
+</div>
+#+END_EXAMPLE
+
+key attribute marks an element unique which means elements shouldn't be reused unless it has the same key
+#+BEGIN_EXAMPLE
+<template v-if="loginType === 'username'">
+  <label>Username</label>
+  <input placeholder="Enter your username" key="username-input">
+</template>
+<template v-else>
+  <label>Email</label>
+  <input placeholder="Enter your email address" key="email-input">
+</template>
+#+END_EXAMPLE
+
+v-show toggles the element’s display CSS property based on the truthy-ness of the expression value.
+
+v-show doesn’t support the <template> element, nor does it work with v-else.
+
+v-if vs v-show
+It's expensive to toggle v-if, so use it when the condition is unlikely to change over time.
+
+v-if is lazy means if it's false on initial render, it will not do anything, the conditional block won't be rendered until the condition becomes true for the first time.
+
+v-show always render.
+
+Use v-show if it needs to be toggled very often.
+
+*** List, v-for
+
+** Computed Property, Watchers
+*** Computed property
+#+BEGIN_EXAMPLE
+<div id="example">
+  <p>Original message: "{{ message }}"</p>
+  <p>Computed reversed message: "{{ reversedMessage }}"</p>
+  <!-- same as 
+  <p>Reversed message: "{{ reverseMessage()  }}"</p>
+  -->
+</div>
+
+var vm = new Vue({
+  el: '#example',
+  data: {
+    message: 'Hello'
+  },
+  computed: {
+    // a computed getter
+    reversedMessage: function () {
+      // `this` points to the vm instance
+      return this.message.split('').reverse().join('')
+    }
+  }
+  /* same as method
+  methods: {
+    reverseMessage: function () {
+      return this.message.split('').reverse().join('')
+    }
+  }
+  */
+})
+#+END_EXAMPLE
+
+The computed property is cached until vm.$data.message is not changed. While method will run every time the view updates (re-render).
+
+Hence, never define computed property without vm.$data e.g.
+#+BEGIN_EXAMPLE
+computed: {
+  now: function () {
+    return Date.now()
+  }
+}
+#+END_EXAMPLE
+
+vm.watch is to watch a property vm.data.propA change.
+
+Try to avoid using watch too much, use computed property instead
+
+Instead of
+#+BEGIN_EXAMPLE
+var vm = new Vue({
+  el: '#demo',
+  data: {
+    firstName: 'Foo',
+    lastName: 'Bar',
+    fullName: 'Foo Bar'
+  },
+  watch: {
+    firstName: function (newval, oldval) {
+      this.fullName = newval + ' ' + this.lastName
+    },
+    lastName: function (newval, oldval) {
+      this.fullName = this.firstName + ' ' + newval
+    }
+  }
+})
+#+END_EXAMPLE
+
+Use
+#+BEGIN_EXAMPLE
+var vm = new Vue({
+  el: '#demo',
+  data: {
+    firstName: 'Foo',
+    lastName: 'Bar'
+  },
+  computed: {
+    fullName: function () {
+      return this.firstName + ' ' + this.lastName
+    }
+  }
+})
+#+END_EXAMPLE
+
+Computed setter
+#+BEGIN_EXAMPLE
+computed: {
+  fullName: {
+    // getter
+    get: function () {
+      return this.firstName + ' ' + this.lastName
+    },
+    // setter
+    set: function (newValue) {
+      var names = newValue.split(' ')
+      this.firstName = names[0]
+      this.lastName = names[names.length - 1]
+    }
+  }
+}
+#+END_EXAMPLE
+
+*** Watchers
+#+BEGIN_EXAMPLE
+<div id="watch-example">
+  <p>
+    Ask a yes/no question:
+    <input v-model="question">
+  </p>
+  <p>{{ answer }}</p>
+</div>
+
+<!-- Since there is already a rich ecosystem of ajax libraries    -->
+<!-- and collections of general-purpose utility methods, Vue core -->
+<!-- is able to remain small by not reinventing them. This also   -->
+<!-- gives you the freedom to use what you're familiar with. -->
+<script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+<script>
+var watchExampleVM = new Vue({
+  el: '#watch-example',
+  data: {
+    question: '',
+    answer: 'I cannot give you an answer until you ask a question!'
+  },
+  watch: {
+    // whenever question changes, this function will run
+    question: function (newQuestion) {
+      this.answer = 'Waiting for you to stop typing...'
+      this.getAnswer()
+    }
+  },
+  methods: {
+    // _.debounce is a function provided by lodash to limit how
+    // often a particularly expensive operation can be run.
+    // In this case, we want to limit how often we access
+    // yesno.wtf/api, waiting until the user has completely
+    // finished typing before making the ajax request. To learn
+    // more about the _.debounce function (and its cousin
+    // _.throttle), visit: https://lodash.com/docs#debounce
+    getAnswer: _.debounce(
+      function () {
+        if (this.question.indexOf('?') === -1) {
+          this.answer = 'Questions usually contain a question mark. ;-)'
+          return
+        }
+        this.answer = 'Thinking...'
+        var vm = this
+        axios.get('https://yesno.wtf/api')
+          .then(function (response) {
+            vm.answer = _.capitalize(response.data.answer)
+          })
+          .catch(function (error) {
+            vm.answer = 'Error! Could not reach the API. ' + error
+          })
+      },
+      // This is the number of milliseconds we wait for the
+      // user to stop typing.
+      500
+    )
+  }
+})
+</script>
+#+END_EXAMPLE
+
 * SEO
 ** Google Analytics
 Under Admin, you can build Views. Views can have Filters. Views collect data.
