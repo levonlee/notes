@@ -19397,7 +19397,17 @@ new Vue({
 
 ** Component
 *** Basics
-component name should be all lowercase and must contain a hyphen
+component name better to have all lowercase and must contain a hyphen.
+
+Although these can be used in string templates
+#+BEGIN_EXAMPLE
+components: {
+  'kebab-cased-component': { /* ... */ },
+  camelCasedComponent: { /* ... */ },
+  PascalCasedComponent: { /* ... */ }
+}
+#+END_EXAMPLE
+
 #+BEGIN_EXAMPLE
 <div id="app-7">
   <ol>
@@ -19860,7 +19870,139 @@ var parent = new Vue({ el: '#parent' })
 var child = parent.$refs.profile
 #+END_EXAMPLE
 
-*** 
+*** Async Components
+Define component as a factory function that asynchronously resolves the component definition.
+The factory function will only be triggered when the component actually needs to be rendered and will cache the result for future re-renders.
+
+Usually, component is defined using a name and an object of props.
+
+A factory function can be used:
+#+BEGIN_EXAMPLE
+Vue.component('async-example', function (resolve, reject) {
+  setTimeout(function () {
+    // Pass the component definition to the resolve callback
+    resolve({
+      template: '<div>I am async!</div>'
+    })
+  }, 1000)
+})
+#+END_EXAMPLE
+
+Webpack example
+#+BEGIN_EXAMPLE
+Vue.component('async-webpack-example', function (resolve) {
+  // This special require syntax will instruct Webpack to
+  // automatically split your built code into bundles which
+  // are loaded over Ajax requests.
+  require(['./my-async-component'], resolve)
+})
+#+END_EXAMPLE
+
+**** Component factory function can return a Promise 
+(with Webpack)
+#+BEGIN_EXAMPLE
+Vue.component(
+  'async-webpack-example',
+  // The `import` function returns a `Promise`.
+  () => import('./my-async-component')
+)
+
+new Vue({
+  // ...
+  components: {
+    'my-component': () => import('./my-async-component')
+  }
+})
+#+END_EXAMPLE
+
+**** Component factory function can also return an object
+#+BEGIN_EXAMPLE
+const AsyncComp = () => ({
+  // The component to load. Should be a Promise
+  component: import('./MyComp.vue'),
+  // A component to use while the async component is loading
+  loading: LoadingComp,
+  // A component to use if the load fails
+  error: ErrorComp,
+  // Delay before showing the loading component. Default: 200ms.
+  delay: 200,
+  // The error component will be displayed if a timeout is
+  // provided and exceeded. Default: Infinity.
+  timeout: 3000
+})
+#+END_EXAMPLE
+Refer to vue:router
+
+*** Recursive and Circular Reference
+A component can recursively invoke itself in its own template
+
+When a component is registered globally using Vue.component, the global ID is auto set as the component's name option
+#+BEGIN_EXAMPLE
+Vue.component('unique-name-of-my-component', {
+  // ...
+})
+
+name: 'unique-name-of-my-component'
+#+END_EXAMPLE
+
+**** Recursive
+#+BEGIN_EXAMPLE
+name: 'stack-overflow',
+template: '<div><stack-overflow></stack-overflow></div>
+#+END_EXAMPLE
+
+**** Circular reference
+tree-folder component
+#+BEGIN_EXAMPLE
+<p>
+  <span>{{ folder.name }}</span>
+  <tree-folder-contents :children="folder.children"/>
+</p>
+#+END_EXAMPLE
+
+tree-folder-contents component
+#+BEGIN_EXAMPLE
+<ul>
+  <li v-for="child in children">
+    <tree-folder v-if="child.children" :folder="child"/>
+    <span v-else>{{ child.name }}</span>
+  </li>
+</ul>
+#+END_EXAMPLE
+
+tree-folder needs tree-folder-contents and tree-folder-contents needs tree-folder.
+
+It's ok if no module system is used to import components (Webpack or Browserify).
+
+You should do this
+#+BEGIN_EXAMPLE
+beforeCreate: function () {
+  this.$options.components.TreeFolderContents = require('./tree-folder-contents.vue')
+}
+#+END_EXAMPLE
+
+*** inline-template
+It makes the inner content as the component's template. Don't use it.
+#+BEGIN_EXAMPLE
+<my-component inline-template>
+  <div>
+    <p>These are compiled as the component's own template.</p>
+    <p>Not parent's transclusion content.</p>
+  </div>
+</my-component>
+#+END_EXAMPLE
+
+*** X-Templates
+Don't use.
+#+BEGIN_EXAMPLE
+<script type="text/x-template" id="hello-world-template">
+  <p>Hello hello hello</p>
+</script>
+Vue.component('hello-world', {
+  template: '#hello-world-template'
+})
+#+END_EXAMPLE
+
 ** Template Syntax
 *** String template vs DOM template
 String template <<<vue:string template>>>
@@ -19883,10 +20025,19 @@ DOM template
 </body>
 #+END_EXAMPLE
 
-*** v-once on text
-one-time interpolations
+*** v-once on text or element
+one-time interpolations and remain cached
 #+BEGIN_EXAMPLE
 <span v-once>This will never change: {{ msg }}</span>
+
+Vue.component('terms-of-service', {
+  template: '\
+    <div v-once>\
+      <h1>Terms of Service</h1>\
+      ... a lot of static content ...\
+    </div>\
+  '
+})
 #+END_EXAMPLE
 
 *** v-html
@@ -20979,6 +21130,571 @@ var watchExampleVM = new Vue({
   }
 })
 </script>
+#+END_EXAMPLE
+
+** Transition & Animation
+*** <transition> wrapper component
+Wrap v-if, v-show, dynamic components and component root nodes
+
+**** CSS Transition
+#+BEGIN_EXAMPLE
+<div id="demo">
+  <button v-on:click="show = !show">
+    Toggle
+  </button>
+  <transition name="fade">
+    <p v-if="show">hello</p>
+  </transition>
+</div>
+new Vue({
+  el: '#demo',
+  data: {
+    show: true
+  }
+})
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0
+}
+
+// more examples using pure css
+/* Enter and leave animations can use different */
+/* durations and timing functions.              */
+.slide-fade-enter-active {
+  transition: all .3s ease;
+}
+.slide-fade-leave-active {
+  transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter, .slide-fade-leave-to
+/* .slide-fade-leave-active below version 2.1.8 */ {
+  transform: translateX(10px);
+  opacity: 0;
+}
+#+END_EXAMPLE
+
+Classes
+*-enter :: before element inserted > one frame after element is inserted
+*-enter-active :: before element is inserted > removed when transition/animation finishes. Use it to define during, delay and easing curve for the entering transition.
+*-enter-to : one frame after element is inserted > transition/animation finishes.
+*-leave :: leave transition is triggered > after one frame
+*-leave-active :: leave transition is triggered > transition/animation finishes. Use it to define duration, delay and easing curve for the leaving transition.
+*-leave-to :: one frame after a leave transition is triggered > transition/animation finishes.
+
+*-enter is enter start, *-enter-to is enter end
+*-leave is leave start, *-leave-to is leave end
+
+v- prefix is used when <transition> has no name
+ 
+**** CSS Animations
+#+BEGIN_EXAMPLE
+<div id="example-2">
+  <button @click="show = !show">Toggle show</button>
+  <transition name="bounce">
+    <p v-if="show">Look at me!</p>
+  </transition>
+</div>
+
+new Vue({
+  el: '#example-2',
+  data: {
+    show: true
+  }
+})
+
+.bounce-enter-active {
+  animation: bounce-in .5s;
+}
+.bounce-leave-active {
+  animation: bounce-in .5s reverse;
+}
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+#+END_EXAMPLE
+
+**** Custom Transition Class
+Override the default class names such as Animate.css
+#+BEGIN_EXAMPLE
+<link href="https://cdn.jsdelivr.net/npm/animate.css@3.5.1" rel="stylesheet" type="text/css">
+<div id="example-3">
+  <button @click="show = !show">
+    Toggle render
+  </button>
+  <transition
+    name="custom-classes-transition"
+    enter-active-class="animated tada"
+    leave-active-class="animated bounceOutRight"
+  >
+    <p v-if="show">hello</p>
+  </transition>
+</div>
+#+END_EXAMPLE
+
+**** prop
+#+BEGIN_EXAMPLE
+<transition :duration="1000">...</transition>
+<transition :duration="{ enter: 500, leave: 800 }">...</transition>
+#+END_EXAMPLE
+
+**** event hooks
+When using JavaScript-only transitions, the done callbacks are required for the enter and leave hooks.
+
+***** events
+#+BEGIN_EXAMPLE
+<transition
+  v-on:before-enter="beforeEnter"
+  v-on:enter="enter"
+  v-on:after-enter="afterEnter"
+  v-on:enter-cancelled="enterCancelled"
+  v-on:before-leave="beforeLeave"
+  v-on:leave="leave"
+  v-on:after-leave="afterLeave"
+  v-on:leave-cancelled="leaveCancelled"
+>
+  <!-- ... -->
+</transition>
+#+END_EXAMPLE
+
+***** methods
+#+BEGIN_EXAMPLE
+// ...
+methods: {
+  // --------
+  // ENTERING
+  // --------
+  beforeEnter: function (el) {
+    // ...
+  },
+  // the done callback is optional when
+  // used in combination with CSS
+  enter: function (el, done) {
+    // ...
+    done()
+  },
+  afterEnter: function (el) {
+    // ...
+  },
+  enterCancelled: function (el) {
+    // ...
+  },
+  // --------
+  // LEAVING
+  // --------
+  beforeLeave: function (el) {
+    // ...
+  },
+  // the done callback is optional when
+  // used in combination with CSS
+  leave: function (el, done) {
+    // ...
+    done()
+  },
+  afterLeave: function (el) {
+    // ...
+  },
+  // leaveCancelled only available with v-show
+  leaveCancelled: function (el) {
+    // ...
+  }
+}
+#+END_EXAMPLE
+
+When javascript-only transistions, better to add v-bind:css="false"
+
+***** Example using Velocity.js
+#+BEGIN_EXAMPLE
+<!--
+Velocity works very much like jQuery.animate and is
+a great option for JavaScript animations
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.3/velocity.min.js"></script>
+<div id="example-4">
+  <button @click="show = !show">
+    Toggle
+  </button>
+  <transition
+    v-on:before-enter="beforeEnter"
+    v-on:enter="enter"
+    v-on:leave="leave"
+    v-bind:css="false"
+  >
+    <p v-if="show">
+      Demo
+    </p>
+  </transition>
+</div>
+
+new Vue({
+  el: '#example-4',
+  data: {
+    show: false
+  },
+  methods: {
+    beforeEnter: function (el) {
+      el.style.opacity = 0
+    },
+    enter: function (el, done) {
+      Velocity(el, { opacity: 1, fontSize: '1.4em' }, { duration: 300 })
+      Velocity(el, { fontSize: '1em' }, { complete: done })
+    },
+    leave: function (el, done) {
+      Velocity(el, { translateX: '15px', rotateZ: '50deg' }, { duration: 600 })
+      Velocity(el, { rotateZ: '100deg' }, { loop: 2 })
+      Velocity(el, {
+        rotateZ: '45deg',
+        translateY: '30px',
+        translateX: '30px',
+        opacity: 0
+      }, { complete: done })
+    }
+  }
+})
+#+END_EXAMPLE
+
+**** Transition on Initial Render
+Use appear attribute
+#+BEGIN_EXAMPLE
+// default only uses enter and leave
+<transition appear>
+  <!-- ... -->
+</transition>
+
+// specify more or custom CSS classes
+<transition
+  appear
+  appear-class="custom-appear-class"
+  appear-to-class="custom-appear-to-class" (2.1.8+)
+  appear-active-class="custom-appear-active-class"
+>
+  <!-- ... -->
+</transition>
+
+// and custom javascript hooks
+<transition
+  appear
+  v-on:before-appear="customBeforeAppearHook"
+  v-on:appear="customAppearHook"
+  v-on:after-appear="customAfterAppearHook"
+  v-on:appear-cancelled="customAppearCancelledHook"
+>
+  <!-- ... -->
+</transition>
+#+END_EXAMPLE
+
+**** Transition between elements
+#+BEGIN_EXAMPLE
+<transition>
+  <button v-if="docState === 'saved'" key="saved">
+    Edit
+  </button>
+  <button v-if="docState === 'edited'" key="edited">
+    Save
+  </button>
+  <button v-if="docState === 'editing'" key="editing">
+    Cancel
+  </button>
+</transition>
+
+// It's equivalent to
+<transition>
+  <button v-bind:key="docState">
+    {{ buttonMessage }}
+  </button>
+</transition>
+
+// ...
+computed: {
+  buttonMessage: function () {
+    switch (this.docState) {
+      case 'saved': return 'Edit'
+      case 'edited': return 'Save'
+      case 'editing': return 'Cancel'
+    }
+  }
+}
+#+END_EXAMPLE
+
+**** Transition modes
+Default behavior is entering and leaving happens simultaneously.
+#+BEGIN_EXAMPLE
+<transition name="fade" mode="out-in">
+  <!-- ... the buttons ... -->
+</transition>
+#+END_EXAMPLE
+
+in-out :: new element transitions in first then when complete, the current element transitions out.
+out-in :: current element transitions out first then when complete, the new element transitions in.
+
+**** Transition between dynamic components
+key attribute is not required
+#+BEGIN_EXAMPLE
+<transition name="component-fade" mode="out-in">
+  <component v-bind:is="view"></component>
+</transition>
+
+new Vue({
+  el: '#transition-components-demo',
+  data: {
+    view: 'v-a'
+  },
+  components: {
+    'v-a': {
+      template: '<div>Component A</div>'
+    },
+    'v-b': {
+      template: '<div>Component B</div>'
+    }
+  }
+})
+#+END_EXAMPLE
+
+*** List transition <transition-group>
+Default is to turn the <transition-group> to <span>, change it to p in tag attribute. 
+key attribute is required.
+
+**** Animate entering and leaving
+#+BEGIN_EXAMPLE
+<div id="list-demo">
+  <button v-on:click="add">Add</button>
+  <button v-on:click="remove">Remove</button>
+  <transition-group name="list" tag="p">
+    <span v-for="item in items" v-bind:key="item" class="list-item">
+      {{ item }}
+    </span>
+  </transition-group>
+</div>
+
+new Vue({
+  el: '#list-demo',
+  data: {
+    items: [1,2,3,4,5,6,7,8,9],
+    nextNum: 10
+  },
+  methods: {
+    randomIndex: function () {
+      return Math.floor(Math.random() * this.items.length)
+    },
+    add: function () {
+      this.items.splice(this.randomIndex(), 0, this.nextNum++)
+    },
+    remove: function () {
+      this.items.splice(this.randomIndex(), 1)
+    },
+  }
+})
+
+.list-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+.list-enter-active, .list-leave-active {
+  transition: all 1s;
+}
+.list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateY(30px);
+}
+#+END_EXAMPLE
+
+**** Animate when order is changed, v-move, *-move class
+Vue uses FLIP and FLIP doesn't work with elements set to display:inline. Set it to display: inline-block or place elements in a flex context.
+
+#+BEGIN_EXAMPLE
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.14.1/lodash.min.js"></script>
+<div id="flip-list-demo" class="demo">
+  <button v-on:click="shuffle">Shuffle</button>
+  <transition-group name="flip-list" tag="ul">
+    <li v-for="item in items" v-bind:key="item">
+      {{ item }}
+    </li>
+  </transition-group>
+</div>
+
+new Vue({
+  el: '#flip-list-demo',
+  data: {
+    items: [1,2,3,4,5,6,7,8,9]
+  },
+  methods: {
+    shuffle: function () {
+      this.items = _.shuffle(this.items)
+    }
+  }
+})
+
+.flip-list-move {
+  transition: transform 1s;
+}
+#+END_EXAMPLE
+
+
+**** javascript hooks
+By assigning different delay, list items can be transitioned in/out in the same order as they first appeared.
+
+#+BEGIN_EXAMPLE
+<script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.3/velocity.min.js"></script>
+<div id="staggered-list-demo">
+  <input v-model="query">
+  <transition-group
+    name="staggered-fade"
+    tag="ul"
+    v-bind:css="false"
+    v-on:before-enter="beforeEnter"
+    v-on:enter="enter"
+    v-on:leave="leave"
+  >
+    <li
+      v-for="(item, index) in computedList"
+      v-bind:key="item.msg"
+      v-bind:data-index="index"
+    >{{ item.msg }}</li>
+  </transition-group>
+</div>
+
+new Vue({
+  el: '#staggered-list-demo',
+  data: {
+    query: '',
+    list: [
+      { msg: 'Bruce Lee' },
+      { msg: 'Jackie Chan' },
+      { msg: 'Chuck Norris' },
+      { msg: 'Jet Li' },
+      { msg: 'Kung Fury' }
+    ]
+  },
+  computed: {
+    computedList: function () {
+      var vm = this
+      return this.list.filter(function (item) {
+        return item.msg.toLowerCase().indexOf(vm.query.toLowerCase()) !== -1
+      })
+    }
+  },
+  methods: {
+    beforeEnter: function (el) {
+      el.style.opacity = 0
+      el.style.height = 0
+    },
+    enter: function (el, done) {
+      var delay = el.dataset.index * 150
+      setTimeout(function () {
+        Velocity(
+          el,
+          { opacity: 1, height: '1.6em' },
+          { complete: done }
+        )
+      }, delay)
+    },
+    leave: function (el, done) {
+      var delay = el.dataset.index * 150
+      setTimeout(function () {
+        Velocity(
+          el,
+          { opacity: 0, height: 0 },
+          { complete: done }
+        )
+      }, delay)
+    }
+  }
+})
+#+END_EXAMPLE
+
+*** Make transition reusable
+#+BEGIN_EXAMPLE
+Vue.component('my-special-transition', {
+  template: '\
+    <transition\
+      name="very-special-transition"\
+      mode="out-in"\
+      v-on:before-enter="beforeEnter"\
+      v-on:after-enter="afterEnter"\
+    >\
+      <slot></slot>\
+    </transition>\
+  ',
+  methods: {
+    beforeEnter: function (el) {
+      // ...
+    },
+    afterEnter: function (el) {
+      // ...
+    }
+  }
+})
+#+END_EXAMPLE
+
+Functional component
+#+BEGIN_EXAMPLE
+Vue.component('my-special-transition', {
+  functional: true,
+  render: function (createElement, context) {
+    var data = {
+      props: {
+        name: 'very-special-transition',
+        mode: 'out-in'
+      },
+      on: {
+        beforeEnter: function (el) {
+          // ...
+        },
+        afterEnter: function (el) {
+          // ...
+        }
+      }
+    }
+    return createElement('transition', data, context.children)
+  }
+})
+#+END_EXAMPLE
+
+*** State Transition
+Achieve transition by changing state (e.g. prop) of data.
+
+**** Watchers, Tween.js, Color.js
+#+BEGIN_EXAMPLE
+<script src="https://cdn.jsdelivr.net/npm/tween.js@16.3.4"></script>
+<div id="animated-number-demo">
+  <input v-model.number="number" type="number" step="20">
+  <p>{{ animatedNumber }}</p>
+</div>
+
+new Vue({
+  el: '#animated-number-demo',
+  data: {
+    number: 0,
+    animatedNumber: 0
+  },
+  watch: {
+    number: function(newValue, oldValue) {
+      var vm = this
+      function animate () {
+        if (TWEEN.update()) {
+          requestAnimationFrame(animate)
+        }
+      }
+      new TWEEN.Tween({ tweeningNumber: oldValue })
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .to({ tweeningNumber: newValue }, 500)
+        .onUpdate(function () {
+          vm.animatedNumber = this.tweeningNumber.toFixed(0)
+        })
+        .start()
+      animate()
+    }
+  }
+})
 #+END_EXAMPLE
 
 ** State Management
