@@ -22210,8 +22210,215 @@ Without build tools, directly inject javascript
 Prod :: https://cdn.jsdelivr.net/npm/vue
 Dev :: https://unpkg.com/vue
 
-** State Management
+** State Management, Vuex
 <<<vue:state management>>>
+
+** Dev - Webpack
+*** Basics
+Install node module vue-cli
+#+BEGIN_EXAMPLE
+npm install -g vue-cli
+vue init webpack my-project
+cd my-project
+npm install
+npm run dev
+#+END_EXAMPLE
+
+[[https://vuejs-templates.github.io/webpack/structure.html][Doc]]
+
+*** npm
+Default port is 8080 and it can be auto adjusted.
+It loads the [[https://github.com/vuejs-templates/webpack][vuejs-templates/webpack]]
+npm run dev includes
+- webpack + vue-loader for single file Vue components
+- state preserving hot-reload
+- state preserving compilation error overlay
+- Lint-on-save with ESLint
+- Source maps
+
+npm run build :: build for production
+- UglifyJS
+- html-minifier https://github.com/kangax/html-minifier
+- CSS across all components extracted into a single file and minified with [[https://github.com/ben-eb/cssnano][cssnano]]
+- Static assets compiled with versio hashes for efficient long-term caching and an auto-generated production index.html with proper URLs to these generated assets
+- Use ~npm run build --report~ to build with bundle size analytics
+
+npm run unit :: unit tests run in PhantomJS with Karma + Mocha + karma-webpack
+- support ES2015+ in test files
+- support all webpack loaders
+- easy mock injection
+
+num run e2e :: end-to-end tests with Nightwatch
+- run tests in multiple browsers in parallel
+- works with one command out of the box
+  - Selenium and chromedrive dependencies automatically handled
+  - automatically spawns the Selenium Server
+
+*** Structure
+#+BEGIN_EXAMPLE
+.
+├── build/                      # webpack config files for dev and prod. Don't touch unless to customize Webpack loaders
+│   └── ...                     # e.g. webpack.base.conf.js
+├── config/
+│   ├── index.js                # main project config. vue:webpack:integrate backend
+│   └── ...
+├── src/                        # app files
+│   ├── main.js                 # app entry file
+│   ├── App.vue                 # main app component
+│   ├── components/             # ui components
+│   │   └── ...
+│   └── assets/                 # module assets (processed by webpack)
+│       └── ...
+├── static/                     # pure static assets (directly copied and not processed by Webpack)
+├── test/
+│   └── unit/                   # unit tests
+│   │   ├── specs/              # test spec files
+│   │   ├── index.js            # test build entry file
+│   │   └── karma.conf.js       # test runner config file
+│   └── e2e/                    # e2e tests
+│   │   ├── specs/              # test spec files
+│   │   ├── custom-assertions/  # custom assertions for e2e tests
+│   │   ├── runner.js           # test runner script
+│   │   └── nightwatch.conf.js  # test runner config file
+├── .babelrc                    # babel config
+├── .postcssrc.js               # postcss config
+├── .eslintrc.js                # eslint config
+├── .editorconfig               # editor config
+├── index.html                  # index.html template. Webpack will generate assets and auto inject into it during dev and builds.
+└── package.json                # build scripts and dependencies
+#+END_EXAMPLE
+
+*** Linter configuration
+Modify ./.eslintrc.js
+Add under rule
+#+BEGIN_EXAMPLE
+"semi": [2, "always"]
+#+END_EXAMPLE
+
+Preset standard is set. [[https://github.com/standard/standard/blob/master/docs/RULES-en.md][Checkout all the rules]].
+
+*** CSS Pre-processor
+This boilerplate has pre-configured LESS, SASS, Stylus adn PostCSS.
+Just install the appropriate webpack loader.
+
+#+BEGIN_EXAMPLE
+npm install sass-loader node-sass --save-dev
+#+END_EXAMPLE
+
+After, in *.vue components
+#+BEGIN_EXAMPLE
+<style lang="scss">
+/* write SASS! */
+</style>
+#+END_EXAMPLE
+
+lang="scss" corresponds to the CSS-superset syntax (with curly braces and semicolons).
+lang="sass" corresponds to the indentation-based syntax.
+
+Standalone CSS Files
+Import global and custom style files from your root App.vue component
+#+BEGIN_EXAMPLE
+<!-- App.vue -->
+<style src="./styles/global.less" lang="less"></style>
+#+END_EXAMPLE
+
+For other 3rd party, e.g. Bootstrap, place them inside /static and reference them directly in index.html.
+
+*** Processed Static Assets => /src/assets
+In *.vue components, all templates and CSS are parsed by vue-html-loader and css-loader to look for asset URLs.
+
+~<img src="./logo.png">~ and ~background: url(./logo.png)~, is a relative asset path and will be resolved by Webpack as a module dependency.
+
+These assets may be inlined/copied/renamed during build.
+
+Recommended :: put each component in its own directory with its static assets right next to it and continue to use relative path.
+
+- Relative URLs :: e.g. ./assets/logo.png will be interpreted as a module dependency. They will be replaced with an auto-generated URL based on your Webpack output configuration.
+
+- Non-prefixed URLs :: e.g. assets/logo.png will be treated the same as the relative URLs and translated into ./assets/logo.png.
+
+- URLs prefixed with ~ :: are treated as a module request, similar to require('some-module/image.png'). You need to use this prefix if you want to leverage Webpack's module resolving configurations. For example if you have a resolve alias for assets, you need to use <img src="~assets/logo.png"> to ensure that alias is respected.
+
+- Root-relative URLs :: e.g. /assets/logo.png are not processed at all.
+
+Files in ./src/assets/ or any webpack processed assets may be copied to $(build.assetsRoot)$(build.assetsSubDirectory)
+
+If assets are inserted via JavaScript like computed property, you need to do it in this way
+#+BEGIN_EXAMPLE
+computed: {
+  background () {
+    return require('./bgs/' + this.id + '.jpg')
+  }
+}
+#+END_EXAMPLE
+
+Limitation :: all images under ./bgs/ will be included in the final build.
+
+Files in ./static/ will be directly copied to $(build.assetsPublicPath)$(build.assetsSubDirectory). Refer to vue:webpack:config:index.js
+
+Files in ./static/ should be referenced as absolute path like /static/[filename]. If $(build.assetsSubDirectory) is changed, you need to change in the reference as well.
+
+*** Integrate with Backend
+<<<vue:webpack:integrate backend>>>
+**** Proxy requests to a backend
+In ~config/index.js~, edit dev.proxyTable option
+Proxy the request /api/posts/1 to http://jsonplaceholder.typicode.com/posts/1.
+#+BEGIN_EXAMPLE
+module.exports = {
+  // ...
+  dev: {
+    proxyTable: {
+      // proxy all requests starting with /api to jsonplaceholder
+      '/api': {
+        target: 'http://jsonplaceholder.typicode.com',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      }
+    }
+  }
+}
+#+END_EXAMPLE
+
+It uses [[https://github.com/chimurai/http-proxy-middleware][http-proxy-middleware]]
+
+#+BEGIN_EXAMPLE
+proxyTable: {
+  '**': {
+    target: 'http://jsonplaceholder.typicode.com',
+    filter: function (pathname, req) {
+      return pathname.match('^/api') && req.method === 'GET'
+    }
+  }
+}
+#+END_EXAMPLE
+
+**** Backend path
+Default ./config/index.js
+<<<vue:webpack:config:index.js>>>
+#+BEGIN_EXAMPLE
+var path = require('path')
+
+module.exports = {
+  build: {
+    index: path.resolve(__dirname, 'dist/index.html'),
+    // has to be absolute
+    // e.g. path.resolve(__dirname, 'resources/views/index.blade.php'),
+
+    assetsRoot: path.resolve(__dirname, 'dist'), // final after build is /dist/static
+    // path.resolve(__dirname, 'public/');
+
+    assetsSubDirectory: 'static', // changing this also means absolute paths for real static assets need to be changed 
+    assetsPublicPath: '/',
+    productionSourceMap: true
+  },
+  dev: {
+    port: 8080,
+    proxyTable: {}
+  }
+}
+#+END_EXAMPLE
 
 * SEO
 ** Google Analytics
