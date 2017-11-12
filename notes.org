@@ -22321,7 +22321,7 @@ Dev :: https://unpkg.com/vue
 ** State Management, Vuex
 <<<vue:state management>>>
 
-** Dev - Webpack
+** Dev - Webpack Template
 *** Basics
 Install node module vue-cli
 #+BEGIN_EXAMPLE
@@ -22332,7 +22332,22 @@ npm install
 npm run dev
 #+END_EXAMPLE
 
-[[https://vuejs-templates.github.io/webpack/structure.html][Doc]]
+Other template can be used
+
+#+BEGIN_EXAMPLE
+# vue init <template-name> <project-name>
+vue init webpack-simple my-project
+# Template on github
+vue init username/repo my-project
+# Template on Bitbucket
+vue init bitbucket:username/repo my-project
+# for a tag or branch
+vue init bitbucket:username/repo#branch my-project
+# local template
+vue init ~/fs/path/to-custom-template my-project
+#+END_EXAMPLE
+
+[[https://vuejs-templates.github.io/webpack/structure.html][Webpack Template Doc]]
 
 *** npm
 Default port is 8080 and it can be auto adjusted.
@@ -22527,6 +22542,104 @@ module.exports = {
   }
 }
 #+END_EXAMPLE
+
+*** .vue file vue-loader
+Add attribute ~lang~ to chnage language :: <style lang="sass">
+
+<template> :: default html, 0 or 1 template block.
+<script> :: default js (ES2015 if babel-loader or buble-loader exists). - or 1 script block. require() can be used. With ES2015, import and export can also be used. The result is to export a Vue.js component option object. An extended constructor created by Vue.extend() can also be exported.
+
+<style> :: default css. 
+- Multiple blocks. 
+- Can have scoped or mobile attributes.
+- vue:loader:scoped css, vue:loader:css modules
+- can have mixed encapsulation modes
+
+**** scoped css
+<<<vue:loader:scoped css>>>
+
+Scoped to current component.
+
+#+BEGIN_EXAMPLE
+<style scoped>
+.example {
+  color: red;
+}
+</style>
+
+<template>
+  <div class="example">hi</div>
+</template>
+#+END_EXAMPLE
+
+Parent component's styles will not leak into child components.
+However, a child component's root node will be affected by both the parent's scoped CSS and the child's scoped CSS.
+So that the parent can style the child root element for layout purpose.
+
+Deep selector
+#+BEGIN_EXAMPLE
+<style scoped>
+.a >>> .b { /* ... */ }
+</style>
+
+// will be compiled into
+.a[data-v-f3f3eg9] .b { /* ... */ }
+
+// may use /deep/ combinator instead for >>> in other pre-processors, like SASS
+#+END_EXAMPLE
+
+**** CSS Modules
+<<<vue:loader:css modules>>>
+https://vue-loader.vuejs.org/en/features/css-modules.html
+
+* Prerender.io
+https://github.com/prerender/prerender
+
+Install middleware on .htaccess to rewrite search engine traffic to prerender server
+
+example.com is your site and its .htaccess is
+#+BEGIN_EXAMPLE
+# Change YOUR_TOKEN to your prerender token and uncomment that line if you want to cache urls and view crawl stats
+# Change http://example.com (at the end of the last RewriteRule) to your website url
+
+<IfModule mod_headers.c>
+    #RequestHeader set X-Prerender-Token "YOUR_TOKEN"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    <IfModule mod_proxy_http.c>
+        RewriteCond %{HTTP_USER_AGENT} baiduspider|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora\ link\ preview|showyoubot|outbrain|pinterest|slackbot|vkShare|W3C_Validator [NC,OR]
+        RewriteCond %{QUERY_STRING} _escaped_fragment_
+        
+        # Only proxy the request to Prerender if it's a request for HTML
+        RewriteRule ^(?!.*?(\.js|\.css|\.xml|\.less|\.png|\.jpg|\.jpeg|\.gif|\.pdf|\.doc|\.txt|\.ico|\.rss|\.zip|\.mp3|\.rar|\.exe|\.wmv|\.doc|\.avi|\.ppt|\.mpg|\.mpeg|\.tif|\.wav|\.mov|\.psd|\.ai|\.xls|\.mp4|\.m4a|\.swf|\.dat|\.dmg|\.iso|\.flv|\.m4v|\.torrent|\.ttf|\.woff))(.*) http://service.prerender.io/http://example.com/$2 [P,L]
+    </IfModule>
+</IfModule>
+#+END_EXAMPLE
+
+Install prerender on prerender server
+#+BEGIN_EXAMPLE
+$ git clone https://github.com/prerender/prerender.git
+$ cd prerender
+$ npm install
+$ node server.js
+#+END_EXAMPLE
+
+Prerender will now be running on http://localhost:3000. If you wanted to start a web app that ran on say, http://localhost:8000, you can now visit the URL http://localhost:3000/http://localhost:8000 to see how your app would render in Prerender.
+
+:3000/http://:8000 may return something that is 504. Don't worry it will work after Rewrite.
+
+Change options in ./server.js
+
+For better result, add this to every page and search engine will add ~?_escaped_fragment_=~ to the URL
+#+BEGIN_EXAMPLE
+<meta name="fragment" content="!">
+#+END_EXAMPLE
+
+html5 push state :: URL ~http://example.com/user/1~ becomes ~http://example.com/user/1?_escaped_fragment_=~
+hashbang :: ~http://example.com/#!/user/1~ becomes ~http://example.com/?_escaped_fragment_=/user/1~
 
 * SEO
 ** Google Analytics
@@ -32773,6 +32886,9 @@ Docker Compose executable: docker-compose
 VirtualBox shared folders: VM Path - /c/Users, Local path - C:\Users
  
 You should see Docker under the bottom bar, select and connect to it. Now you should see the running containers and available images.
+
+*** Vue.js
+JetBrains plugin repository
 
 ** Emacs
 *** Install & Configuration
