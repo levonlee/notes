@@ -22495,6 +22495,9 @@ var VueRouter = require('vue-router')
 Vue.use(VueRouter)
 #+END_EXAMPLE
 
+*** vuex Namespace in Plugin
+vue:plugin:vuex:namespace in plugin
+
 ** Production Development
 Without build tools, directly inject javascript
 Prod :: https://cdn.jsdelivr.net/npm/vue
@@ -22946,6 +22949,404 @@ actions: {
     commit('gotOtherData', await getOtherData())
   }
 }
+#+END_EXAMPLE
+
+*** store:option:modules
+#+BEGIN_EXAMPLE
+const moduleA = {
+  state: { ... },
+  mutations: { ... },
+  actions: { ... },
+  getters: { ... }
+}
+
+const moduleB = {
+  state: { ... },
+  mutations: { ... },
+  actions: { ... }
+}
+
+const store = new Vuex.Store({
+  modules: {
+    a: moduleA,
+    b: moduleB
+  }
+})
+
+store.state.a // -> `moduleA`'s state
+store.state.b // -> `moduleB`'s state
+#+END_EXAMPLE
+
+Register a module after the store has been created
+#+BEGIN_EXAMPLE
+// register a module `myModule`
+store.registerModule('myModule', {
+  // ...
+})
+
+// register a nested module `nested/myModule`
+store.registerModule(['nested', 'myModule'], {
+  // ...
+})
+
+store.unregisterModule(moduleName)
+#+END_EXAMPLE
+
+**** Module local state and rootState
+#+BEGIN_EXAMPLE
+const moduleA = {
+  state: { count: 0 },
+  mutations: {
+    increment (state) {
+      // `state` is the local module state
+      state.count++
+    }
+  },
+
+  getters: {
+    doubleCount (state, rootState) {
+      // rootState is root state
+      return state.count * 2 + rootState.count
+    }
+  }
+
+  actions: {
+    incrementIfOddOnRootSum ({ state, commit, rootState }) {
+      // local state
+      if ((state.count + rootState.count) % 2 === 1) {
+        commit('increment')
+      }
+    }
+  }
+}
+#+END_EXAMPLE
+
+**** Namespace
+Namespaced getters and actions will receive localized getters, dispatch and commit. In other words, you can use the module assets without writing prefix in the same module.
+#+BEGIN_EXAMPLE
+const store = new Vuex.Store({
+  modules: {
+    account: {
+      namespaced: true,
+
+      // module assets
+      state: { ... }, // module state is already nested and not affected by namespace option
+      getters: {
+        isAdmin () { ... } // -> getters['account/isAdmin']
+      },
+      actions: {
+        login () { ... } // -> dispatch('account/login')
+      },
+      mutations: {
+        login () { ... } // -> commit('account/login')
+      },
+
+      // nested modules
+      modules: {
+        // inherits the namespace from parent module
+        myPage: {
+          state: { ... },
+          getters: {
+            profile () { ... } // -> getters['account/profile']
+          }
+        },
+
+        // further nest the namespace
+        posts: {
+          namespaced: true,
+
+          state: { ... },
+          getters: {
+            popular () { ... } // -> getters['account/posts/popular']
+          }
+        }
+      }
+    }
+  }
+})
+#+END_EXAMPLE
+
+In component
+#+BEGIN_EXAMPLE
+computed: {
+  ...mapState({
+    a: state => state.some.nested.module.a,
+    b: state => state.some.nested.module.b
+  })
+},
+methods: {
+  ...mapActions([
+    'some/nested/module/foo',
+    'some/nested/module/bar'
+  ])
+}
+#+END_EXAMPLE
+
+Or this
+#+BEGIN_EXAMPLE
+computed: {
+  ...mapState('some/nested/module', {
+    a: state => state.a,
+    b: state => state.b
+  })
+},
+methods: {
+  ...mapActions('some/nested/module', [
+    'foo',
+    'bar'
+  ])
+}
+#+END_EXAMPLE
+
+Or
+#+BEGIN_EXAMPLE
+import { createNamespacedHelpers } from 'vuex'
+
+const { mapState, mapActions } = createNamespacedHelpers('some/nested/module')
+
+export default {
+  computed: {
+    // look up in `some/nested/module`
+    ...mapState({
+      a: state => state.a,
+      b: state => state.b
+    })
+  },
+  methods: {
+    // look up in `some/nested/module`
+    ...mapActions([
+      'foo',
+      'bar'
+    ])
+  }
+}
+#+END_EXAMPLE
+
+**** rootGetters
+#+BEGIN_EXAMPLE
+modules: {
+  foo: {
+    namespaced: true,
+
+    getters: {
+      // `getters` is localized to this module's getters
+      // you can use rootGetters via 4th argument of getters
+      someGetter (state, getters, rootState, rootGetters) {
+        getters.someOtherGetter // -> 'foo/someOtherGetter'
+        rootGetters.someOtherGetter // -> 'someOtherGetter'
+      },
+      someOtherGetter: state => { ... }
+    },
+
+    actions: {
+      // dispatch and commit are also localized for this module
+      // they will accept `root` option for the root dispatch/commit
+      someAction ({ dispatch, commit, getters, rootGetters }) {
+        getters.someGetter // -> 'foo/someGetter'
+        rootGetters.someGetter // -> 'someGetter'
+
+        dispatch('someOtherAction') // -> 'foo/someOtherAction'
+        dispatch('someOtherAction', null, { root: true }) // -> 'someOtherAction'
+
+        commit('someMutation') // -> 'foo/someMutation'
+        commit('someMutation', null, { root: true }) // -> 'someMutation'
+      },
+      someOtherAction (ctx, payload) { ... }
+    }
+  }
+}
+#+END_EXAMPLE
+
+**** Namespace in Plugin Development
+<<<vue:plugin:vuex:namespace in plugin>>>
+#+BEGIN_EXAMPLE
+// get namespace value via plugin option
+// and returns Vuex plugin function
+export function createPlugin (options = {}) {
+  return function (store) {
+    // add namespace to plugin module's types
+    const namespace = options.namespace || ''
+    store.dispatch(namespace + 'pluginAction')
+  }
+}
+#+END_EXAMPLE
+
+*** store:option:strict, strict mode
+In strict mode, whenever Vuex state is mutated outside of mutation handlers, an error will be thrown. This ensures that all state mutations can be explicitly tracked by debugging tools.
+#+BEGIN_EXAMPLE
+const store = new Vuex.Store({
+  // ...
+  strict: process.env.NODE_ENV !== 'production'
+})
+#+END_EXAMPLE
+
+*** App Structure, Example
+[[https://github.com/vuejs/vuex/tree/dev/examples/shopping-cart][Shopping Cart Example]]
+#+BEGIN_EXAMPLE
+├── index.html
+├── main.js
+├── api
+│   └── ... # abstractions for making API requests
+├── components
+│   ├── App.vue
+│   └── ...
+└── store
+    ├── index.js          # where we assemble modules and export the store
+    ├── actions.js        # root actions
+    ├── mutations.js      # root mutations
+    └── modules
+        ├── cart.js       # cart module
+        └── products.js   # products module
+#+END_EXAMPLE
+
+./api/shop.js
+#+BEGIN_EXAMPLE
+/**
+ * Mocking client-server processing
+ */
+const _products = [
+  {"id": 1, "title": "iPad 4 Mini", "price": 500.01, "inventory": 2},
+  {"id": 2, "title": "H&M T-Shirt White", "price": 10.99, "inventory": 10},
+  {"id": 3, "title": "Charli XCX - Sucker CD", "price": 19.99, "inventory": 5}
+]
+
+export default {
+  getProducts (cb) {
+    setTimeout(() => cb(_products), 100)
+  },
+
+  buyProducts (products, cb, errorCb) {
+    setTimeout(() => {
+      // simulate random checkout failure.
+      (Math.random() > 0.5 || navigator.userAgent.indexOf('PhantomJS') > -1)
+        ? cb()
+        : errorCb()
+    }, 100)
+  }
+}
+#+END_EXAMPLE
+
+./store/index.js
+#+BEGIN_EXAMPLE
+import Vue from 'vue'
+import Vuex from 'vuex'
+import * as actions from './actions'
+import * as getters from './getters'
+import cart from './modules/cart'
+import products from './modules/products'
+import createLogger from '../../../src/plugins/logger'
+
+Vue.use(Vuex)
+
+const debug = process.env.NODE_ENV !== 'production'
+
+export default new Vuex.Store({
+  actions,
+  getters,
+  modules: {
+    cart,
+    products
+  },
+  strict: debug,
+  plugins: debug ? [createLogger()] : []
+})
+#+END_EXAMPLE
+
+./store/modules/products.js
+#+BEGIN_EXAMPLE
+import shop from '../../api/shop'
+import * as types from '../mutation-types'
+
+// initial state
+const state = {
+  all: []
+}
+
+// getters
+const getters = {
+  allProducts: state => state.all
+}
+
+// actions
+const actions = {
+  getAllProducts ({ commit }) {
+    shop.getProducts(products => {
+      commit(types.RECEIVE_PRODUCTS, { products })
+    })
+  }
+}
+
+// mutations
+const mutations = {
+  [types.RECEIVE_PRODUCTS] (state, { products }) {
+    state.all = products
+  },
+
+  [types.ADD_TO_CART] (state, { id }) {
+    state.all.find(p => p.id === id).inventory--
+  }
+}
+
+export default {
+  state,
+  getters,
+  actions,
+  mutations
+}
+#+END_EXAMPLE
+
+./components/App.vue
+#+BEGIN_EXAMPLE
+<template>
+  <div id="app">
+    <h1>Shopping Cart Example</h1>
+    <hr>
+    <h2>Products</h2>
+    <product-list></product-list>
+    <hr>
+    <cart></cart>
+  </div>
+</template>
+
+<script>
+import ProductList from './ProductList.vue'
+import Cart from './Cart.vue'
+export default {
+  components: { ProductList, Cart }
+}
+</script>
+#+END_EXAMPLE
+
+./component/ProductList.vue
+#+BEGIN_EXAMPLE
+<template>
+  <ul>
+    <li v-for="p in products">
+      {{ p.title }} - {{ p.price | currency }}
+      <br>
+      <button
+        :disabled="!p.inventory"
+        @click="addToCart(p)">
+        Add to cart
+      </button>
+    </li>
+  </ul>
+</template>
+
+<script>
+import { mapGetters, mapActions } from 'vuex'
+export default {
+  computed: mapGetters({
+    products: 'allProducts'
+  }),
+  methods: mapActions([
+    'addToCart'
+  ]),
+  created () {
+    this.$store.dispatch('getAllProducts')
+  }
+}
+</script>
 #+END_EXAMPLE
 
 ** Dev - Webpack Template
