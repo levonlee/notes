@@ -14778,7 +14778,11 @@ jQuery(function(){
 });
 #+END_EXAMPLE
 
-* ES6
+* ES6-ES2015
+<<<js:es6>>>
+6 stands for 6th edition. 2015 is the year.
+ES7-2016, ES8-2017
+
 ** Generator Function
 You can treat each yield is a stop, and later code could be started when gen.next() is called.
 You can assign variable = yield (async requests) and program like they are normal sync. Refer to last example
@@ -14886,6 +14890,50 @@ run(function* () {
   }catch(e){
     console.error(e.message);
   }
+});
+#+END_EXAMPLE
+
+** async/await
+<<<js:async/await>>>
+
+async function returns AsyncFunction object which is Promise.resolve. 
+
+await one and only one Promise.
+
+To wait for all promises to finish, use Promise.all
+
+#+BEGIN_EXAMPLE
+function resolveAfter2Seconds(x) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(x);
+    }, 2000);
+  });
+}
+
+
+async function add1(x) {
+  // start and await Promise in order
+  const a = await resolveAfter2Seconds(20);
+  const b = await resolveAfter2Seconds(30);
+  return x + a + b;
+}
+
+add1(10).then(v => {
+  console.log(v);  // prints 60 after 4 seconds.
+});
+
+
+async function add2(x) {
+  // start Promise all together
+  const p_a = resolveAfter2Seconds(20);
+  const p_b = resolveAfter2Seconds(30);
+  // await each Promise
+  return x + await p_a + await p_b;
+}
+
+add2(10).then(v => {
+  console.log(v);  // prints 60 after 2 seconds.
 });
 #+END_EXAMPLE
 
@@ -19538,9 +19586,10 @@ vm.$watch('a', function (newValue, oldValue) {
 })
 #+END_EXAMPLE
 
-All root-level properties are available in components and can be referred to as this.$propname e.g. this.$store
+Some plugins allow components to access/change specific root-level properties e.g. this.$store vue:plugin:vuex
+This is specifically enabled in the plugin.
 
-*** Mutation
+*** Mutation, Vue.set
 <<<vue:data:mutation>>>
 Mutation methods :: when these methods are called, the views will be updated.
 push, pop, shift, unshift, splice, sort, reverse
@@ -19556,7 +19605,7 @@ example1.items = example1.items.filter(function (item) {
 })
 #+END_EXAMPLE
 
-Don't use vm.items[indexOfItem] = newValue, instead use:
+Add new prop reactivitely :: Don't use vm.items[indexOfItem] = newValue, instead use:
 #+BEGIN_EXAMPLE
 // Vue.set
 Vue.set(example1.items, indexOfItem, newValue)
@@ -19588,7 +19637,7 @@ Vue.set(vm.userProfile, 'age', 27);
 // or vm.$set
 #+END_EXAMPLE
 
-Using Object.assign() or _.extend()
+The other way to add a new prop is to rebuild the object using Object.assign() or _.extend()
 
 #+BEGIN_EXAMPLE
 /* Don't do it directly
@@ -19603,6 +19652,8 @@ this.userProfile = Object.assign({}, this.userProfile, {
   favoriteColor: 'Vue Green'
 })
 #+END_EXAMPLE
+
+vue:plugin:vuex:mutations
 
 ** Instance Lifecycle Hooks
 Data observation > compile templates > mount instance to DOM > Update DOM when data changes
@@ -20310,7 +20361,7 @@ Vue.component('terms-of-service', {
 <div v-html="rawHtml"></div>
 Can't be used for components. Watch out for XSS
 
-*** v-bind:attributeName
+*** v-bind:attributeName, :attributeName
 <button v-bind:disabled="isButtonDisabled">Button</button>
 <button :disabled="isButtonDisabled">Button</button>
 
@@ -20727,7 +20778,7 @@ new Vue({
 })
 #+END_EXAMPLE
 
-*** Event, v-on
+*** Event, v-on, @attributeName
 **** Basics
 #+BEGIN_EXAMPLE
 <div id="example-1">
@@ -22451,13 +22502,15 @@ Dev :: https://unpkg.com/vue
 
 ** State Management, Vuex
 <<<vue:state management>>> <<<vue:plugin:vuex>>>
+
+*** Basics, option:state
 vuex is a vue:plugin
 
 [[https://vuex.vuejs.org/en/][Vuex Doc]]
 
 npm install vuex --save
 
-./src/store/store.js or index.js
+./src/store/store.js (or index.js)
 #+BEGIN_EXAMPLE
 import Vue from 'vue'
 import Vuex from 'vuex'
@@ -22465,8 +22518,14 @@ import Vuex from 'vuex'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
-  state: {},
-  mutations: {},
+  state: {
+    count: 0
+  },
+  mutations: {
+    increment: state => state.count++, // shorthand for
+    // increment (state) { state.count++ } 
+    decrement: state => state.count--
+  },
   actions: {
     // actions can be defined directly here to so that
     // they can interact with other actions/modules
@@ -22479,7 +22538,7 @@ export default new Vuex.Store({
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import store from './store/store'
+import store from './store/store' // new
 
 Vue.config.productionTip = false
 
@@ -22487,12 +22546,11 @@ Vue.config.productionTip = false
 new Vue({
   el: '#app',
   router,
-  store,
+  store, // new
   template: '<App/>',
   components: { App }
 
 })
-
 #+END_EXAMPLE
 
 App.vue
@@ -22528,6 +22586,366 @@ export default {
   }
 }
 </script>
+#+END_EXAMPLE
+
+*** mapState in component computed props
+mapState is to get state as it is without calculation or maybe has to do calculations with local state.
+It can save some keystrokes:
+Before App.vue
+#+BEGIN_EXAMPLE
+<script>
+export default {
+  name: 'app',
+  computed: {
+    count () {
+      return this.$store.state.count
+    }
+  },
+  // some methods: {}
+}
+</script>
+#+END_EXAMPLE
+
+Use mapState
+#+BEGIN_EXAMPLE
+// in full builds helpers are exposed as Vuex.mapState
+import { mapState } from 'vuex'
+
+export default {
+  // ...
+  computed: mapState({
+    // arrow functions can make the code very succinct!
+    count: state => state.count,
+
+    // passing the string value 'count' is same as `state => state.count`
+    countAlias: 'count',
+
+    // to access local state with `this`, a normal function must be used
+    countPlusLocalState (state) {
+      return state.count + this.localCount
+    }
+  })
+}
+#+END_EXAMPLE
+
+Use array in mapState to map this.count to store.state.count
+#+BEGIN_EXAMPLE
+computed: mapState([
+  // map this.count to store.state.count
+  'count'
+])
+#+END_EXAMPLE
+
+mapState returns an object inside the component's computed. How to combine with other computed properties?
+#+BEGIN_EXAMPLE
+computed: {
+  localComputed () { /* ... */ },
+  // mix this into the outer object with the object spread operator
+  ...mapState({
+    // ...
+  })
+}
+#+END_EXAMPLE
+
+*** store:option:getters, mapGetters in component computed props
+getters or mapGetters are to get state and compute on it.
+
+./src/store/store.js
+#+BEGIN_EXAMPLE
+const store = new Vuex.Store({
+  state: {
+    todos: [
+      { id: 1, text: '...', done: true },
+      { id: 2, text: '...', done: false }
+    ]
+  },
+  getters: {
+    doneTodos: state => {
+      return state.todos.filter(todo => todo.done)
+    },
+    doneTodosCount: (state, getters) => {
+      return getters.doneTodos.length
+    },
+    // pass parameter
+    getTodoById: (state, getters) => (id) => {
+      return state.todos.find(todo => todo.id === id)
+    }
+  }
+})
+
+store.getters.doneTodos // -> [{ id: 1, text: '...', done: true }]
+store.getters.doneTodosCount // -> 1
+store.getters.getTodoById(2) // -> { id: 2, text: '...', done: false }
+#+END_EXAMPLE
+
+In component
+#+BEGIN_EXAMPLE
+computed: {
+  doneTodosCount () {
+    return this.$store.getters.doneTodosCount
+  }
+}
+#+END_EXAMPLE
+
+mapGetters in component computed props
+#+BEGIN_EXAMPLE
+import { mapGetters } from 'vuex'
+
+export default {
+  // ...
+  computed: {
+    // mix the getters into computed with object spread operator
+    ...mapGetters([
+      'doneTodosCount',
+      'anotherGetter',
+      // ...
+    ])
+  }
+}
+#+END_EXAMPLE
+
+Change name
+#+BEGIN_EXAMPLE
+...mapGetters({
+  // map `this.doneCount` to `store.getters.doneTodosCount`
+  doneCount: 'doneTodosCount'
+})
+#+END_EXAMPLE
+
+*** store:option:mutations, commit/mapMutations in component, Synchronous
+<<<vue:plugin:vuex:mutations>>>
+Mutation is the only way to actually change state
+
+Mutation is defined in Vuex and it has to be synchronous!
+
+Add new prop to state
+#+BEGIN_EXAMPLE
+Vue.set(obj, 'newProp', 123)
+
+// or rebuild the whole state
+state.obj = { ...state.obj, newProp: 123 }
+#+END_EXAMPLE
+
+**** Mutation in store, commit in component
+#+BEGIN_EXAMPLE
+export default new Vuex.Store({
+  state: {
+    count: 1
+  },
+  mutations: {
+    increment: state => state.count++, // shorthand for
+    // increment (state) { state.count++ } 
+  }
+})
+#+END_EXAMPLE
+
+commit in component
+#+BEGIN_EXAMPLE
+methods: {
+  increment () {
+    this.$store.commit('increment')
+  },
+  decrement () {
+    this.$store.commit('decrement')
+  }
+}
+#+END_EXAMPLE
+
+Mutation-Commit with payload
+#+BEGIN_EXAMPLE
+mutations: {
+  increment (state, payload) {
+    state.count += payload.amount
+  }
+}
+
+// in component
+methods: {
+  increment: () {
+    this.$store.commit('increment', {
+      amount: 10
+    })
+    // object commit form
+    /*
+    this.$store.commit({
+      type: 'increment',
+      amound: 10
+    })
+    */
+  }
+}
+#+END_EXAMPLE
+
+**** mapMutations in component
+save typing in component without typing commit
+#+BEGIN_EXAMPLE
+import { mapMutations } from 'vuex'
+
+export default {
+  // ...
+  methods: {
+    ...mapMutations([
+      'increment', // map `this.increment()` to `this.$store.commit('increment')`
+
+      // `mapMutations` also supports payloads:
+      'incrementBy' // map `this.incrementBy(amount)` to `this.$store.commit('incrementBy', amount)`
+    ]),
+    ...mapMutations({
+      add: 'increment' // map `this.add()` to `this.$store.commit('increment')`
+    })
+  }
+}
+#+END_EXAMPLE
+
+**** Constant for Mutation
+#+BEGIN_EXAMPLE
+// mutation-types.js
+export const SOME_MUTATION = 'SOME_MUTATION'
+
+// store.js
+import Vuex from 'vuex'
+import { SOME_MUTATION } from './mutation-types'
+
+const store = new Vuex.Store({
+  state: { ... },
+  mutations: {
+    // we can use the ES2015 computed property name feature
+    // to use a constant as the function name
+    [SOME_MUTATION] (state) {
+      // mutate state
+    }
+  }
+})
+#+END_EXAMPLE
+
+*** store:option:actions with context, dispatch/mapActions in component, Asynchronous
+Actions commit mutations
+
+**** Basics
+#+BEGIN_EXAMPLE
+const store = new Vuex.Store({
+  state: {
+    count: 0
+  },
+  mutations: {
+    increment (state) {
+      state.count++
+    }
+  },
+  actions: {
+    increment (context) {
+      // context exposes the same set of methods/props on the store instance
+      // e.g. context.state, context.getters
+      // but context is not the store instance
+      context.commit('increment')
+    }
+    
+    /* the above can be shortened to
+
+    increment ({ commit }) {
+      commit('increment')
+    }
+    */
+
+  }
+})
+#+END_EXAMPLE
+
+In component
+#+BEGIN_EXAMPLE
+this.$store.dispatch('increment')
+#+END_EXAMPLE
+
+**** mapActions and Asynchronous
+store.js
+#+BEGIN_EXAMPLE
+actions: {
+  // checkout only needs commit and state from context
+  // products is a payload
+  checkout ({ commit, state }, products) {
+
+    // save the items currently in the cart
+    const savedCartItems = [...state.cart.added]
+
+    // send out checkout request, and optimistically
+    // clear the cart
+    commit(types.CHECKOUT_REQUEST)
+
+    // the shop API accepts a success callback and a failure callback
+    shop.buyProducts(
+
+      products,
+
+      // handle success
+      () => commit(types.CHECKOUT_SUCCESS),
+
+      // handle failure
+      () => commit(types.CHECKOUT_FAILURE, savedCartItems)
+
+    )
+  }
+}
+#+END_EXAMPLE
+
+In component
+#+BEGIN_EXAMPLE
+import { mapActions } from 'vuex'
+
+export default {
+  // ...
+  methods: {
+    ...mapActions([
+      'increment', // map `this.increment()` to `this.$store.dispatch('increment')`
+
+      // `mapActions` also supports payloads:
+      'incrementBy' // map `this.incrementBy(amount)` to `this.$store.dispatch('incrementBy', amount)`
+    ]),
+    ...mapActions({
+      add: 'increment' // map `this.add()` to `this.$store.dispatch('increment')`
+    })
+  }
+}
+#+END_EXAMPLE
+
+**** Series of actions, return Promise
+#+BEGIN_EXAMPLE
+actions: {
+  actionA ({ commit }) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        commit('someMutation')
+        resolve()
+      }, 1000)
+    })
+  },
+  actionB ({ dispatch, commit }) {
+    return dispatch('actionA').then(() => {
+      commit('someOtherMutation')
+    })
+  }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+store.dispatch('actionA').then(() => {
+  // ...
+})
+#+END_EXAMPLE
+
+**** Series of actions, async/await
+js:async/await
+#+BEGIN_EXAMPLE
+// assuming `getData()` and `getOtherData()` return Promises
+
+actions: {
+  async actionA ({ commit }) {
+    commit('gotData', await getData())
+  },
+  async actionB ({ dispatch, commit }) {
+    await dispatch('actionA') // wait for `actionA` to finish
+    commit('gotOtherData', await getOtherData())
+  }
+}
 #+END_EXAMPLE
 
 ** Dev - Webpack Template
