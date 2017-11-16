@@ -19586,7 +19586,7 @@ vm.$watch('a', function (newValue, oldValue) {
 })
 #+END_EXAMPLE
 
-Some plugins allow components to access/change specific root-level properties e.g. this.$store vue:plugin:vuex
+Some plugins allow components to access/change specific root-level properties e.g. this.$store vue:plugin:vuex, this.$router vue:router
 This is specifically enabled in the plugin.
 
 *** Mutation, Vue.set
@@ -22502,6 +22502,473 @@ vue:plugin:vuex:namespace in plugin
 Without build tools, directly inject javascript
 Prod :: https://cdn.jsdelivr.net/npm/vue
 Dev :: https://unpkg.com/vue
+
+** vue-router
+<<<vue:plugin:router>>> <<<vue:router>>>
+VueRouter:option:x => option:x
+*** <router-view>, <router-link>, option:routes, this.$router, this.$route
+#+BEGIN_EXAMPLE
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<div id="app">
+  <h1>Hello App!</h1>
+  <p>
+    <!-- use router-link component for navigation. -->
+    <!-- specify the link by passing the `to` prop. -->
+    <!-- `<router-link>` will be rendered as an `<a>` tag by default -->
+    <!-- it gets .router-link-active class when the route is matched -->
+    <router-link to="/foo">Go to Foo</router-link>
+    <router-link to="/bar">Go to Bar</router-link>
+  </p>
+  <!-- route outlet -->
+  <!-- component matched by the route will render here -->
+  <router-view></router-view>
+</div>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+// 0. If using a module system (e.g. via vue-cli), import Vue and VueRouter
+// and then call `Vue.use(VueRouter)`.
+
+// 1. Define route components.
+// These can be imported from other files
+const Foo = { template: '<div>foo</div>' }
+const Bar = { template: '<div>bar</div>' }
+
+// 2. Define some routes
+// Each route should map to a component. The "component" can
+// either be an actual component constructor created via
+// `Vue.extend()`, or just a component options object.
+// We'll talk about nested routes later.
+const routes = [
+  { path: '/foo', component: Foo },
+  { path: '/bar', component: Bar }
+]
+
+// 3. Create the router instance and pass the `routes` option
+// You can pass in additional options here, but let's
+// keep it simple for now.
+const router = new VueRouter({
+  routes // short for `routes: routes`
+})
+
+// 4. Create and mount the root instance.
+// Make sure to inject the router with the router option to make the
+// whole app router-aware.
+const app = new Vue({
+  router
+}).$mount('#app')
+
+// Now the app has started!
+#+END_EXAMPLE
+
+In any component, this.$router vue:router:router and this.$route vue:router:route are available
+#+BEGIN_EXAMPLE
+// Home.vue
+export default {
+  computed: {
+    username () {
+      // We will see what `params` is shortly
+      return this.$route.params.username
+    }
+  },
+  methods: {
+    goBack () {
+      window.history.length > 1
+        ? this.$router.go(-1)
+        : this.$router.push('/')
+    }
+  }
+}
+#+END_EXAMPLE
+
+*** option:routes, $route.params, regex, option:routes[]:name, option:routes[]:component
+#+BEGIN_EXAMPLE
+const User = {
+  template: '<div>User {{ $route.params.id }}</div>'
+}
+
+const router = new VueRouter({
+  routes: [
+    // dynamic segments start with a colon
+    { path: '/user/:id', component: User }
+  ]
+})
+#+END_EXAMPLE
+
+**** regex pattern in option:routes
+vue-router uses [[https://github.com/pillarjs/path-to-regexp][path-to-regexp]] whihc is used by Express as well.
+The earlier a route is defined, the higher priority it gets.
+
+#+BEGIN_EXAMPLE
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+
+Vue.use(VueRouter)
+
+// The matching uses path-to-regexp, which is the matching engine used
+// by express as well, so the same matching rules apply.
+// For detailed rules, see https://github.com/pillarjs/path-to-regexp
+const router = new VueRouter({
+  mode: 'history',
+  base: __dirname,
+  routes: [
+    { path: '/' },
+    // params are denoted with a colon ":"
+    { path: '/params/:foo/:bar' },
+    // a param can be made optional by adding "?"
+    { path: '/optional-params/:foo?' },
+    // a param can be followed by a regex pattern in parens
+    // this route will only be matched if :id is all numbers
+    { path: '/params-with-regex/:id(\\d+)' },
+    // asterisk can match anything
+    { path: '/asterisk/*' },
+    // make part of the path optional by wrapping with parens and add "?"
+    { path: '/optional-group/(foo/)?bar' }
+  ]
+})
+
+new Vue({
+  router,
+  template: `
+    <div id="app">
+      <h1>Route Matching</h1>
+      <ul>
+        <li><router-link to="/">/</router-link></li>
+        <li><router-link to="/params/foo/bar">/params/foo/bar</router-link></li>
+        <li><router-link to="/optional-params">/optional-params</router-link></li>
+        <li><router-link to="/optional-params/foo">/optional-params/foo</router-link></li>
+        <li><router-link to="/params-with-regex/123">/params-with-regex/123</router-link></li>
+        <li><router-link to="/params-with-regex/abc">/params-with-regex/abc</router-link></li>
+        <li><router-link to="/asterisk/foo">/asterisk/foo</router-link></li>
+        <li><router-link to="/asterisk/foo/bar">/asterisk/foo/bar</router-link></li>
+        <li><router-link to="/optional-group/bar">/optional-group/bar</router-link></li>
+        <li><router-link to="/optional-group/foo/bar">/optional-group/foo/bar</router-link></li>
+      </ul>
+      <p>Route context</p>
+      <pre>{{ JSON.stringify($route, null, 2) }}</pre>
+    </div>
+  `
+}).$mount('#app')
+#+END_EXAMPLE
+
+**** Named routes, option:routes[]:name
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [
+    {
+      path: '/user/:userId',
+      name: 'user',
+      component: User
+    }
+  ]
+})
+
+<router-link :to="{ name: 'user', params: { userId: 123 }}">User</router-link>
+router.push({ name: 'user', params: { userId: 123 }})
+#+END_EXAMPLE
+
+*** option:routes[]:components, multiple <router-view>'s
+#+BEGIN_EXAMPLE
+<router-view class="view one"></router-view>
+<router-view class="view two" name="a"></router-view>
+<router-view class="view three" name="b"></router-view>
+
+const router = new VueRouter({
+  routes: [
+    {
+      path: '/',
+      components: {
+        default: Foo,
+        a: Bar,
+        b: Baz
+      }
+    }
+  ]
+})
+#+END_EXAMPLE
+
+*** option:routes[]:redirect, option:routes[]:alias
+A redirect means when the user visits /a, and URL will be replaced by /b, and then matched as /b. 
+
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [
+    { path: '/a', redirect: '/b' }
+  ]
+})
+
+const router = new VueRouter({
+  routes: [
+    { path: '/a', redirect: { name: 'foo' }}
+  ]
+})
+
+const router = new VueRouter({
+  routes: [
+    { path: '/a', redirect: to => {
+      // the function receives the target route as the argument
+      // return redirect path/location here.
+    }}
+  ]
+})
+#+END_EXAMPLE
+
+An alias of /a as /b means when the user visits /b, the URL remains /b, but it will be matched as if the user is visiting /a.
+
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [
+    { path: '/a', component: A, alias: '/b' }
+  ]
+})
+#+END_EXAMPLE
+
+*** Route object, $route, this.$route, router.match(location), option:scrollBehavior
+<<<vue:router:route>>>
+https://router.vuejs.org/en/api/route-object.html
+$route => this.$route, router.match(location)
+#+BEGIN_EXAMPLE
+router.beforeEach((to, from, next) => {
+  // `to` and `from` are both route objects
+})
+
+const router = new VueRouter({
+  scrollBehavior (to, from, savedPosition) {
+    // `to` and `from` are both route objects
+  }
+})
+#+END_EXAMPLE
+
+$route.path :: absolute path e.g. /foo/bar
+$route.params :: {} or key/value pairs of dynamic segments and star segments
+$route.query :: {} or key/vale pairs of the query string /foo?user=1 $route.query.user == 1
+$route.hash :: empty string or anything with #.
+$route.fullPath :: string query and hash
+$route.matched :: 
+
+*** option:routes[]:props, component:props
+Decouple $route in component. Before
+#+BEGIN_EXAMPLE
+const User = {
+  template: '<div>User {{ $route.params.id }}</div>'
+}
+const router = new VueRouter({
+  routes: [
+    { path: '/user/:id', component: User }
+  ]
+})
+#+END_EXAMPLE
+
+Now
+#+BEGIN_EXAMPLE
+const User = {
+  props: ['id'],
+  template: '<div>User {{ id }}</div>'
+}
+const router = new VueRouter({
+  routes: [
+    { path: '/user/:id', component: User, props: true }
+
+    // for routes with named views, you have to define the `props` option for each named view:
+    {
+      path: '/user/:id',
+      components: { default: User, sidebar: Sidebar },
+      props: { default: true, sidebar: false }
+    }
+  ]
+})
+#+END_EXAMPLE
+
+option:routes[]:props is set to true, the route.params will be set as the component props.
+
+props is an object
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [
+    { path: '/hello/:name', component: Hello, props: true }, // Pass route.params to props
+    { path: '/promotion/from-newsletter', component: Promotion, props: { newsletterPopup: false } },
+    { path: '/static', component: Hello, props: { name: 'world' }}, // static values
+  ]
+})
+#+END_EXAMPLE
+
+props is a function
+The URL /search?q=vue would pass {query: 'vue'} as props to the SearchUser component.
+#+BEGIN_EXAMPLE
+function dynamicPropsFn (route) {
+  const now = new Date()
+  return {
+    name: (now.getFullYear() + parseInt(route.params.years)) + '!'
+  }
+}
+
+const router = new VueRouter({
+  routes: [
+    { path: '/search', component: SearchUser, props: (route) => ({ query: route.query.q }) }
+    { path: '/dynamic/:years', component: Hello, props: dynamicPropsFn }, // custom logic for mapping between route and props
+  ]
+})
+#+END_EXAMPLE
+
+*** React to params changes, component:watch, component:beforeRouteUpdate
+<<<vue:router:react>>>
+<<<vue:router:component:beforeRouteUpdate>>> <<<vue:router:component:watch>>>
+params or query chnages won't trigger enter/leave navigation guards and hence this is needed to react to changes.
+#+BEGIN_EXAMPLE
+const User = {
+  template: '...',
+  watch: {
+    '$route' (to, from) {
+      // react to route changes...
+    }
+  }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+const User = {
+  template: '...',
+  beforeRouteUpdate (to, from, next) {
+    // react to route changes...
+    // don't forget to call next()
+  }
+}
+#+END_EXAMPLE
+
+*** Nested routes, <router-view>, option:routes:children
+/user/foo/profile (component:user and component:profile) and /user/foo/posts (component:user and component:posts)
+
+#+BEGIN_EXAMPLE
+<div id="app">
+  <router-view></router-view>
+</div>
+
+const User = {
+  template: `
+    <div>User {{ $route.params.id }}</div>
+    <router-view></router-view>
+  `
+}
+
+const router = new VueRouter({
+  routes: [
+    { path: '/user/:id', component: User,
+      children: [
+        // UserHome will be rendered inside User's <router-view>
+        // when /user/:id is matched
+        { path: '', component: UserHome },
+
+        {
+          // UserProfile will be rendered inside User's <router-view>
+          // when /user/:id/profile is matched
+          path: 'profile',
+          component: UserProfile
+        },
+
+        {
+          // UserPosts will be rendered inside User's <router-view>
+          // when /user/:id/posts is matched
+          path: 'posts',
+          component: UserPosts
+        }
+      ]
+    }
+  ]
+})
+#+END_EXAMPLE
+
+*** Programmatic Navigation, this.$router, router.*
+<<<vue:router:router>>>
+Both router and this.$router can be used in component. this.$router means vue-router is imported in every component.
+~<router-link :to="...">~ is equivalent to ~router.push(...)~
+
+params are ignored if a path is provided.
+
+#+BEGIN_EXAMPLE
+// literal string path
+router.push('home')
+
+// object
+router.push({ path: 'home' })
+
+// named route
+router.push({ name: 'user', params: { userId: 123 }})
+
+// with query, resulting in /register?plan=private
+router.push({ path: 'register', query: { plan: 'private' }})
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+const userId = 123
+router.push({ name: 'user', params: { userId }}) // -> /user/123
+router.push({ path: `/user/${userId}` }) // -> /user/123
+// This will NOT work
+router.push({ path: '/user', params: { userId }}) // -> /user
+#+END_EXAMPLE
+
+**** router.push, router.replace, router.push.onComplete, router.push.onAbort
+Callbacks as the 2nd and 3rd arguments.
+onComplete :: after all async hooks are resolved
+onAbort :: navigated to the same route, or to a different route before current navigation has finished.
+
+If destination is the same as the current route and only params are changing (/users/1 -> /users/2), use beforeRouteUpdate to react.
+vue:router:react
+
+router.push(location, onComplete?, onAbort?)
+router.replace(location, onComplete?, onAbort?) :: without pushing a new history entry
+
+**** router.go(n)
+Similar to window.history.go(n)
+
+#+BEGIN_EXAMPLE
+// go forward by one record, the same as history.forward()
+router.go(1)
+
+// go back by one record, the same as history.back()
+router.go(-1)
+
+// go forward by 3 records
+router.go(3)
+
+// fails silently if there aren't that many records.
+router.go(-100)
+router.go(100)
+#+END_EXAMPLE
+
+*** option:mode
+Default is hash mode, change to history mode to change URL without a page reload.
+
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  mode: 'history',
+  routes: [
+    // some path
+    // catch 404
+    { path: '*', component: NotFoundComponent }
+  ]
+})
+#+END_EXAMPLE
+
+Apache
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+#+END_EXAMPLE
+
+nginx
+#+BEGIN_EXAMPLE
+location / {
+  try_files $uri $uri/ /index.html;
+}
+#+END_EXAMPLE
 
 ** State Management, Vuex
 <<<vue:state management>>> <<<vue:plugin:vuex>>>
