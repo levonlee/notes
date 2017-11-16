@@ -22747,7 +22747,7 @@ const router = new VueRouter({
 })
 #+END_EXAMPLE
 
-*** Route object, $route, this.$route, router.match(location), option:scrollBehavior
+*** Route object, $route, this.$route, option:scrollBehavior
 <<<vue:router:route>>>
 https://router.vuejs.org/en/api/route-object.html
 $route => this.$route, router.match(location)
@@ -22768,7 +22768,50 @@ $route.params :: {} or key/value pairs of dynamic segments and star segments
 $route.query :: {} or key/vale pairs of the query string /foo?user=1 $route.query.user == 1
 $route.hash :: empty string or anything with #.
 $route.fullPath :: string query and hash
-$route.matched :: 
+$route.matched :: e.g. /foo/bar, then .matched is an array of objects in parent to child order.
+
+*** option:scrollBehavior
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [...],
+  scrollBehavior (to, from, savedPosition) {
+    // return desired position
+  }
+})
+#+END_EXAMPLE
+
+savedPosition, is only available if this is a popstate navigation (triggered by the browser's back/forward buttons).
+
+Should return either one of these
+- { x: number, y: number }
+- { selector: string, offset? : { x: number, y: number }}
+
+Scroll to top for all route navigations
+#+BEGIN_EXAMPLE
+scrollBehavior (to, from, savedPosition) {
+  return { x: 0, y: 0 }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+scrollBehavior (to, from, savedPosition) {
+  if (savedPosition) {
+    return savedPosition
+  } else {
+    return { x: 0, y: 0 }
+  }
+}
+
+// scroll to anchor
+scrollBehavior (to, from, savedPosition) {
+  if (to.hash) {
+    return {
+      selector: to.hash
+      // , offset: { x: 0, y: 10 }
+    }
+  }
+}
+#+END_EXAMPLE
 
 *** option:routes[]:props, component:props
 Decouple $route in component. Before
@@ -22901,8 +22944,47 @@ const router = new VueRouter({
 })
 #+END_EXAMPLE
 
+**** option:routes:children[]:meta
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [
+    {
+      path: '/foo',
+      component: Foo,
+      children: [
+        {
+          path: 'bar',
+          component: Bar,
+          // a meta field
+          meta: { requiresAuth: true }
+        }
+      ]
+    }
+  ]
+})
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // this route requires auth, check if logged in
+    // if not, redirect to login page.
+    if (!auth.loggedIn()) {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    } else {
+      next()
+    }
+  } else {
+    next() // make sure to always call next()!
+  }
+})
+#+END_EXAMPLE
+
 *** Programmatic Navigation, this.$router, router.*
-<<<vue:router:router>>>
+<<<vue:router:router>>> <<<vue:router:router.push>>>
 Both router and this.$router can be used in component. this.$router means vue-router is imported in every component.
 ~<router-link :to="...">~ is equivalent to ~router.push(...)~
 
@@ -22990,6 +23072,220 @@ nginx
 location / {
   try_files $uri $uri/ /index.html;
 }
+#+END_EXAMPLE
+
+*** Guards
+- Navigation triggered.
+- Call leave guards in deactivated components.
+- Call global beforeEach guards.
+- Call beforeRouteUpdate guards in reused components (2.2+).
+- Call beforeEnter in route configs.
+- Resolve async route components.
+- Call beforeRouteEnter in activated components.
+- Call global beforeResolve guards (2.5+).
+- Navigation confirmed.
+- Call global afterEach hooks.
+- DOM updates triggered.
+- Call callbacks passed to next in beforeRouteEnter guards with instantiated instances.
+
+**** global, router.beforeEach, router.beforeResolve, router.afterEach
+Guards/hooks may be resolved asynchronously, the navigation is considered pending before all hooks have been resolved (confirmed).
+<<<vue:router:router.beforeEach>>>
+
+#+BEGIN_EXAMPLE
+const router = new VueRouter({ ... })
+
+router.beforeEach((to, from, next) => {
+  // ...
+})
+#+END_EXAMPLE
+
+Always call next function to resolve.
+
+next() :: move on to the next hook in the pipeline.
+next(false) :: abort the current navigation. If the URL was changed (either manually by the user or via back button), it will be reset to that of the from route.
+next('/') or next({ path: '/' }) :: redirect to a different location. The current navigation will be aborted and a new one will be started. A location object can be passed. Refer to vue:router:router.push
+next(error) :: navigation will be aborted and the error will be passed to callbacks registered via router.onError().
+
+router.beforeResolve is similar to router.beforeEach with the difference that resolve guards will be called right before the navigation is confirmed, after all in-component guards and async route components are resolved.
+
+router.afterEach do not get a next function and cannot affect the navigation
+
+#+BEGIN_EXAMPLE
+router.afterEach((to, from) => {
+  // ...
+})
+#+END_EXAMPLE
+
+**** per-route, option:routes[]:beforeEnter
+Same as vue:router:router.beforeEach
+#+BEGIN_EXAMPLE
+const router = new VueRouter({
+  routes: [
+    {
+      path: '/foo',
+      component: Foo,
+      beforeEnter: (to, from, next) => {
+        // ...
+      }
+    }
+  ]
+})
+#+END_EXAMPLE
+
+**** in-component, component:beforeRouteEnter, component:beforeRouteUpdate, component:beforeRouteLeave
+#+BEGIN_EXAMPLE
+const Foo = {
+  template: `...`,
+  beforeRouteEnter (to, from, next) {
+    // called before the route that renders this component is confirmed.
+    // does NOT have access to `this` component instance,
+    // because it has not been created yet when this guard is called!
+   
+    // you can access to component instance via `vm`
+
+    next(vm => {
+      // it will be called when the navigation is confirmed
+      // access to component instance via `vm`
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    // called when the route that renders this component has changed,
+    // but this component is reused in the new route.
+    // For example, for a route with dynamic params `/foo/:id`, when we
+    // navigate between `/foo/1` and `/foo/2`, the same `Foo` component instance
+    // will be reused, and this hook will be called when that happens.
+    // has access to `this` component instance.
+  },
+  beforeRouteLeave (to, from, next) {
+    // called when the route that renders this component is about to
+    // be navigated away from.
+    // has access to `this` component instance.
+
+    const answer = window.confirm('Do you really want to leave? you have unsaved changes!')
+    if (answer) {
+      next()
+    } else {
+      next(false)
+    }    
+  }
+}
+#+END_EXAMPLE
+
+*** Fetch data
+Fetch after navigation
+#+BEGIN_EXAMPLE
+<template>
+  <div class="post">
+    <div class="loading" v-if="loading">
+      Loading...
+    </div>
+
+    <div v-if="error" class="error">
+      {{ error }}
+    </div>
+
+    <div v-if="post" class="content">
+      <h2>{{ post.title }}</h2>
+      <p>{{ post.body }}</p>
+    </div>
+  </div>
+</template>
+export default {
+  data () {
+    return {
+      loading: false,
+      post: null,
+      error: null
+    }
+  },
+  created () {
+    // fetch the data when the view is created and the data is
+    // already being observed
+    this.fetchData()
+  },
+  watch: {
+    // call again the method if the route changes
+    '$route': 'fetchData'
+  },
+  methods: {
+    fetchData () {
+      this.error = this.post = null
+      this.loading = true
+      // replace `getPost` with your data fetching util / API wrapper
+      getPost(this.$route.params.id, (err, post) => {
+        this.loading = false
+        if (err) {
+          this.error = err.toString()
+        } else {
+          this.post = post
+        }
+      })
+    }
+  }
+}
+#+END_EXAMPLE
+
+Fetch before navigation
+#+BEGIN_EXAMPLE
+export default {
+  data () {
+    return {
+      post: null,
+      error: null
+    }
+  },
+  beforeRouteEnter (to, from, next) {
+    getPost(to.params.id, (err, post) => {
+      next(vm => vm.setData(err, post))
+    })
+  },
+  // when route changes and this component is already rendered,
+  // the logic will be slightly different.
+  beforeRouteUpdate (to, from, next) {
+    this.post = null
+    getPost(to.params.id, (err, post) => {
+      this.setData(err, post)
+      next()
+    })
+  },
+  methods: {
+    setData (err, post) {
+      if (err) {
+        this.error = err.toString()
+      } else {
+        this.post = post
+      }
+    }
+  }
+}
+#+END_EXAMPLE
+
+*** Lazy loading
+Only load components when they are triggered by navigation
+#+BEGIN_EXAMPLE
+const Foo = () => Promise.resolve({ /* component definition */ })
+import('./Foo.vue') // returns a Promise
+#+END_EXAMPLE
+
+Webpack
+#+BEGIN_EXAMPLE
+const Foo = () => import('./Foo.vue')
+
+// everything is the same in router config
+const router = new VueRouter({
+  routes: [
+    { path: '/foo', component: Foo }
+  ]
+})
+#+END_EXAMPLE
+
+Group multiple components and lazy load them
+
+#+BEGIN_EXAMPLE
+const Foo = () => import(/* webpackChunkName: "group-foo" */ './Foo.vue')
+const Bar = () => import(/* webpackChunkName: "group-foo" */ './Bar.vue')
+const Baz = () => import(/* webpackChunkName: "group-foo" */ './Baz.vue')
 #+END_EXAMPLE
 
 ** State Management, Vuex
