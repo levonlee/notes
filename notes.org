@@ -446,6 +446,14 @@ function str_lreplace($search, $replace, $subject)
 }
 #+END_EXAMPLE
 
+*** Start with
+#+BEGIN_EXAMPLE
+$target_prefix = '/inventory/';
+if( strcasecmp(substr($request_uri, 0, strlen($target_prefix)), $target_prefix) === 0 ){
+  $q['pagename'] = urlencode('inventory');
+  unset($q['name']);
+}
+#+END_EXAMPLE
 ** URL
 #+BEGIN_EXAMPLE
 $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
@@ -5236,17 +5244,17 @@ function rudr_rewrite_request($query){
 	$request_uri = urldecode($_SERVER['REQUEST_URI']);
  
 	/* for categories */
-	if( $request_uri == '/category/Uncategorized/' )
+	if ( $request_uri == '/category/Uncategorized/' )
 		$query['category_name'] = 'uncategorized';
  
 	/* for pages */
-	if( $request_uri == '/Contacts/' ){
+	if ( $request_uri == '/Contacts/' ){
 		$query['pagename'] = urlencode('contacts');
 		unset($query['name']);
 	}
  
 	/* for posts */
-	if( $request_uri == '/hello-planet/' )
+	if ( $request_uri == '/hello-planet/' )
 		$query['name'] = 'hello-world';
  
 	/* for tags */
@@ -20170,7 +20178,7 @@ my-awesome-list component template
 </child>
 #+END_EXAMPLE
 
-*** Dynamic component, v-bind:is, <component>, keep-alive
+*** Dynamic component, v-bind:is, <component>, <keep-alive>
 #+BEGIN_EXAMPLE
 var vm = new Vue({
   el: '#example',
@@ -20189,6 +20197,7 @@ var vm = new Vue({
 </component>
 #+END_EXAMPLE
 
+If <transition> is used, wrap <keep-alive> inside <transition>
 #+BEGIN_EXAMPLE
 <keep-alive>
   <component :is="currentView">
@@ -23290,7 +23299,6 @@ const Baz = () => import(/* webpackChunkName: "group-foo" */ './Baz.vue')
 
 ** State Management, Vuex
 <<<vue:state management>>> <<<vue:plugin:vuex>>>
-
 *** Basics, option:state
 vuex is a vue:plugin
 
@@ -23435,7 +23443,7 @@ computed: {
 }
 #+END_EXAMPLE
 
-*** store:option:getters, mapGetters in component computed props
+*** option:getters, mapGetters in component computed props
 getters or mapGetters are to get state and compute on it.
 
 ./src/store/store.js
@@ -23500,7 +23508,7 @@ Change name
 })
 #+END_EXAMPLE
 
-*** store:option:mutations, commit/mapMutations in component, Synchronous
+*** option:mutations, commit/mapMutations in component, Synchronous
 <<<vue:plugin:vuex:mutations>>>
 Mutation is the only way to actually change state
 
@@ -23606,7 +23614,7 @@ const store = new Vuex.Store({
 })
 #+END_EXAMPLE
 
-*** store:option:actions with context, dispatch/mapActions in component, Asynchronous
+*** option:actions with context, dispatch/mapActions in component, Asynchronous
 Actions commit mutations
 
 **** Basics
@@ -23736,7 +23744,7 @@ actions: {
 }
 #+END_EXAMPLE
 
-*** store:option:modules
+*** option:modules
 #+BEGIN_EXAMPLE
 const moduleA = {
   state: { ... },
@@ -23956,7 +23964,7 @@ export function createPlugin (options = {}) {
 }
 #+END_EXAMPLE
 
-*** store:option:strict, strict mode
+*** option:strict, strict mode
 In strict mode, whenever Vuex state is mutated outside of mutation handlers, an error will be thrown. This ensures that all state mutations can be explicitly tracked by debugging tools.
 #+BEGIN_EXAMPLE
 const store = new Vuex.Store({
@@ -23964,6 +23972,13 @@ const store = new Vuex.Store({
   strict: process.env.NODE_ENV !== 'production'
 })
 #+END_EXAMPLE
+
+*** option:watch
+watch(getter: Function, cb: Function, options?: Object)
+
+Reactively watch a getter function's return value, and call the callback when the value changes. The getter receives the store's state as the only argument. Accepts an optional options object that takes the same options as Vue's vm.$watch method.
+
+To stop watching, call the returned handle function.
 
 *** App Structure, Example
 [[https://github.com/vuejs/vuex/tree/dev/examples/shopping-cart][Shopping Cart Example]]
@@ -30308,13 +30323,25 @@ https://github.com/leighmcculloch/vagrant-docker-compose
 Install vagrant-vbguest which automatically installs VirtualBox Guest Additions (VBGA) on Vagrant VM.
 ~vagrant plugin install vagrant-vbguest~
 
-To prevent updating VBGA when ~vagrant up~, add ~config.vbguest.auto_update = false~ in Vagrantfile
+To prevent updating VBGA when ~vagrant up~, add ~config.vbguest.auto_update = false~ in Vagrantfile. This happens when .box file has older version of vbguest while Vagrant on host has a newer version.
 
 Update all installed plugins ~vagrant plugin update~
 
 List all installed plugins ~vagrant plugin list~
 
 Uninstall a plugin ~vagrant plugin uninstall vagrant-docker-compose~
+
+After Vagrant core is upgraded, you might need to auto upgrade existing plugins ~vagrant plugin expunge --reinstall~
+
+vagrant plugin install vagrant-docker-compose
+#+BEGIN_EXAMPLE
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/trusty64"
+
+  config.vm.provision :docker
+  config.vm.provision :docker_compose
+end
+#+END_EXAMPLE
 
 ** Box
 A VirtualBox, ~.box~ file, is a compressed box on top of which a VM can run.
@@ -30352,8 +30379,14 @@ vagrant box outdated
 
 # if it's not outdated and before destroy current Vagrant machine, update the box
 vagrant box update
+vagrant box update --box boxname
 # Destroy the current Vagrant machine and up again.
 #+END_EXAMPLE
+
+Vagrant .box should have vagrant as a user and should be able to install as the Vagrant provision plugin instructs. The ubuntu/xenial64 has a lot of trouble with that and hence it's not a good Vagrant box to start with.
+
+*** bento/ubuntu-16.04
+vagrant box add bento/ubuntu-16.04
 
 ** Custom Box
 https://github.com/levonlee/vagrant/tree/master/wordpress
@@ -30369,6 +30402,9 @@ Putty > Connection > SSH > Auth, browse and select that ppk file.
 Connect using Putty!
 
 Specify the username for login: Putty > Connection > Data > Auto-login username
+
+~/.vagrant.d/ is the global. Different box has ./.vagrant/ folder. Run ~vagrant ssh-config~ to identify the $HOSTNAME $PORT $LOGINNAME
+Convert the Identityfile to .ppk with SSH-2-RSA with 2048 bits and save it to the same folder.
 
 * Apache
 ** Basics
@@ -36348,7 +36384,38 @@ For web, always include WOFF (Web Open Font Format), then TTF then OTF. WOFF is 
 As you can see OTF is newer and based on TTF but it's much smaller.
 
 TTF rendered in different devices has non-equal pixels.
- 
+
+*** Google Font (GF)
+Can be downloaded and installed on Desktop as .ttf and for website .woff or .woff2
+
+#+BEGIN_EXAMPLE
+# subset / scripts, Latin subset is always included if available and need not be specified.
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Roboto+Mono&subset=greek">
+
+# Multiple fonts
+https://fonts.googleapis.com/css?family=Tangerine|Inconsolata|Droid+Sans
+
+# Multiple styles/wegihts (,)
+https://fonts.googleapis.com/css?family=Tangerine:bold,bolditalic|Inconsolata:italic|Droid+Sans
+
+http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic
+#+END_EXAMPLE
+
+text with url encoded value
+#+BEGIN_EXAMPLE
+https://fonts.googleapis.com/css?family=Inconsolata&text=Hello%20World
+#+END_EXAMPLE
+
+[[https://developers.google.com/fonts/docs/getting_started#enabling_font_effects_beta][effect]]
+#+BEGIN_EXAMPLE
+https://fonts.googleapis.com/css?family=Rancho&effect=shadow-multiple
+
+// font-effect- class prefix
+<div class="font-effect-shadow-multiple">This is a font effect!<div>
+#+END_EXAMPLE
+
+
 *** Open source alternative, identify font
 http://alternatype.net/
 
@@ -36360,6 +36427,7 @@ https://github.com/JB-Dmitry/monoid
 *** Hasklig
 https://github.com/i-tu/Hasklig Extend Source Code Pro
 
+*** Poppin, GF
 * TODO Inspectlet.com
 * TODO QUnit
 * TODO Lynda Bootstrap Layout Responsive Single-Page Design
