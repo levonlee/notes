@@ -5237,7 +5237,7 @@ function rudr_url_redirects() {
 add_action('template_redirect', 'rudr_url_redirects');
 #+END_EXAMPLE
 
-Change request based on the $_SERVER['REQUEST_URI']
+Redirect by changing request based on the $_SERVER['REQUEST_URI']
 #+BEGIN_EXAMPLE
 function rudr_rewrite_request($query){
  
@@ -5645,6 +5645,15 @@ function lili_custom_post_type() {
 }
 
 Use wp:action:pre_get_posts to enable query for this new post type
+
+*** add_rewrite_rule
+
+#+BEGIN_EXAMPLE
+function custom_rewrite_basic() {
+  add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
+}
+add_action('init', 'custom_rewrite_basic');
+#+END_EXAMPLE
 
 *** remove_meta_box
 <<<wp:f:remove_meta_box>>>
@@ -6211,7 +6220,7 @@ add_filter(
   2, // int. Accepted args, default is 1! Be careful
 )
 
-apply_filters('tagname', $result, $var1);
+apply_filters( 'tagname', $result, $var1);
 
 // callback should take 2 variables
 function lili_funct($result, $var1) {
@@ -6298,6 +6307,23 @@ SQL;
 
   return $clauses;
 }
+#+END_EXAMPLE
+
+*** page_link
+<<<wp:filter:page_link>>> => get_permalink
+
+#+BEGIN_EXAMPLE
+// When set to true, a structural link will be returned, rather than the actual URI. Example: http://www.example.com/%postname% 
+// instead of http://www.example.com/my-post
+
+function append_query_string( $url, $post, $leavename=false ) {
+
+  if ( $post->post_type == 'post' ) {
+    $url = add_query_arg( 'foo', 'bar', $url );
+  }
+  return $url;
+}
+add_filter( 'post_link', 'append_query_string', 10, 3 );
 #+END_EXAMPLE
 
 *** pre_option_(option_name)
