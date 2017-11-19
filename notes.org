@@ -23397,7 +23397,7 @@ export default new Vuex.Store({
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import store from './store/store' // new
+import store from './store/store' // new, if store/index.js is used, use ./store
 
 Vue.config.productionTip = false
 
@@ -24043,6 +24043,23 @@ Reactively watch a getter function's return value, and call the callback when th
 
 To stop watching, call the returned handle function.
 
+*** option:plugin
+plugins option that exposes hooks for each mutation. A Vuex plugin is simply a function that receives the store as the only argument
+#+BEGIN_EXAMPLE
+const myPlugin = store => {
+  // called when the store is initialized
+  store.subscribe((mutation, state) => {
+    // called after every mutation.
+    // The mutation comes in the format of `{ type, payload }`.
+  })
+}
+
+const store = new Vuex.Store({
+  // ...
+  plugins: [myPlugin]
+})
+#+END_EXAMPLE
+
 *** App Structure, Example
 [[https://github.com/vuejs/vuex/tree/dev/examples/shopping-cart][Shopping Cart Example]]
 #+BEGIN_EXAMPLE
@@ -24435,6 +24452,7 @@ module.exports = {
 #+END_EXAMPLE
 
 *** .vue file vue-loader
+.vue file name
 Add attribute ~lang~ to chnage language :: <style lang="sass">
 
 <template> :: default html, 0 or 1 template block.
@@ -31610,6 +31628,19 @@ git pull --no-rebase --squash -Xtheirs origin master
 # git://github.com/pantheon-systems/drops-7.git
 # the remote that's pulled from usually has the same codebase as your current local repo
 #+END_EXAMPLE
+
+** Clone a subdirectory
+Just clone examples/shopping-cart directory from branch dev
+#+BEGIN_EXAMPLE
+git init <repo>
+cd <repo>
+git remote add origin https://github.com/vuejs/vuex.git
+git config core.sparsecheckout true
+echo "examples/shopping-cart/*" >> .git/info/sparse-checkout
+git pull --depth=1 origin master
+#+END_EXAMPLE
+
+Result is ./<repo>/examples/shopping-cart
 
 ** Track local branch with a remote branch <<<git:upstream>>>
 #+BEGIN_EXAMPLE
