@@ -5646,13 +5646,49 @@ function lili_custom_post_type() {
 
 Use wp:action:pre_get_posts to enable query for this new post type
 
-*** add_rewrite_rule
+*** add_rewrite_rule, add_rewrite_tag
+<<<wp:f:add_rewrite_rule>>> <<<wp:f:add_rewrite_tag>>>
+wp:action:init
 
+Need to flush Settings -> Permalinks and just click Save Changes without any changes to add into db:wp_options:rewrite_rules
 #+BEGIN_EXAMPLE
+// add_rewrite_rule($regex, $redirect, $after = 'bottom');
 function custom_rewrite_basic() {
   add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
 }
 add_action('init', 'custom_rewrite_basic');
+#+END_EXAMPLE
+
+$after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first.
+
+$matches[] to retrieve the values of a matched URL, capture group data starts at 1, not 0.
+
+#+BEGIN_EXAMPLE
+function custom_rewrite_tag() {
+  add_rewrite_tag('%food%', '([^&]+)');
+  add_rewrite_tag('%variety%', '([^&]+)');
+}
+add_action('init', 'custom_rewrite_tag', 10, 0);
+
+function custom_rewrite_rule() {
+  add_rewrite_rule('^nutrition/([^/]*)/([^/]*)/?','index.php?page_id=12&food=$matches[1]&variety=$matches[2]','top');
+}
+add_action('init', 'custom_rewrite_rule', 10, 0);
+#+END_EXAMPLE
+
+Create a page called Nutrition with page id 12 and use a custom template my-custom-template.php:
+#+BEGIN_EXAMPLE
+/**
+ * Template Name: Nutritional Information
+ */
+get_header(); 
+
+global $wp_query;
+echo 'Food : ' . $wp_query->query_vars['food'];
+echo '<br />';
+echo 'Variety : ' . $wp_query->query_vars['variety'];
+// ... more ...
+get_footer();
 #+END_EXAMPLE
 
 *** remove_meta_box
@@ -6501,6 +6537,7 @@ User is already authenticated.
 Useful for intercepting $_GET or $_POST
 
 wp:f:register_nav_menus
+wp:f:add_rewrite_rule
 
 *** after_setup_theme
 <<<wp:action:after_setup_theme>>>
