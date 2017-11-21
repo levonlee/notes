@@ -693,7 +693,7 @@ Order of sections
 - @throws
 - @ingroup
 - @deprecated
-- @see
+- @see :: PHPDoc:@see
 - @todo
 - @Plugin
 
@@ -752,6 +752,13 @@ class FooBar {
   public $dbh;
 
 }
+#+END_EXAMPLE
+
+*** @see <<<PHPDoc:@see>>>
+#+BEGIN_EXAMPLE
+@see AnotherClassName::Methodname() or AnotherClassName::$varname
+@see elementname() => to search a function or method
+@see $elementname => to search var in the current class
 #+END_EXAMPLE
 
 ** OOP
@@ -8931,8 +8938,38 @@ img {
 #+END_EXAMPLE
 
 ** SVG
-*** Make SVG, Optimize SVG
+*** Make SVG, Optimize SVG, IE 11
 Exported from AI and [[http://petercollingridge.appspot.com/svg-optimiser][optimize it]]
+
+Or use nodejs:svgo
+
+IE 11 doesn't support url('a.svg') in background CSS. Use nodejs:svgo to convert to URL encoded.
+#+BEGIN_EXAMPLE
+div.svgbg {
+  background-image:url('url-encoded-svg');
+}
+#+END_EXAMPLE
+
+*** SVG as background image IE 11 <<<svg:ie11>>>
+AI export .svg by default is responsive and no width and height attributes are in <svg>
+You may add width and height to <svg> based on viewBox
+#+BEGIN_EXAMPLE
+// before
+<svg viewBox="0 0 22.77 28.96">
+
+// after
+<svg viewBox="0 0 22.77 28.96" width="22.77" height="28.96">
+#+END_EXAMPLE
+
+If it still doesn't work, move <styles> to attributes
+
+You need to export .svg in Adobe Illustrator using one of these mode for the Styling
+- Presentation Attributes
+- Inline Style
+
+But not Internal Style.
+
+If AI already exports the .svg, use nodejs:svgo:move styles
 
 *** SVG as background image dynamic size
 You can only control size in this method
@@ -17241,6 +17278,32 @@ istanbul cover _mocha
 
 # ./coverage/lconv-report/index.html
 #+END_EXAMPLE
+
+*** svgo <<<nodejs:svgo>>>
+https://github.com/svg/svgo
+#+BEGIN_EXAMPLE
+# i found windows has permission issue if it's installed globally
+npm install svgo
+# optimize the svg
+./node_modules/svgo abc.svg
+# output the svg to data uri URL encoded
+# enc, unenc, base64
+svgo abc.svg --datauri enc
+
+# output result STDOUT. if not, the file will be overwritten
+
+svgo abc.svg --datauri enc -o -
+#+END_EXAMPLE
+
+<<<nodejs:svgo:move styles>>>
+
+Usually it's good in IE11 but if it still doesn't work, refer to svg:ie11
+
+AI already makes .svg and you want to move styles to inline
+svgo abc.svg --enable inlineStyles
+
+# Move style attribute from each node to attributes
+svgo abc.svg --enable convertStyleToAttrs
 
 ** Custom Module
 #+BEGIN_EXAMPLE
