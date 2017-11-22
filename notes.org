@@ -462,7 +462,10 @@ echo '<a href="mycgi?' . htmlentities($query_string) . '">';
 
 ** Include file
 #+BEGIN_EXAMPLE
-<?php include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; ?>
+include __DIR__ . "/../abc.";
+
+# PHP version < 5
+include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; 
 #+END_EXAMPLE
 
 ** Random Integer Number
@@ -30911,6 +30914,35 @@ Redirect www.abc.com to abc.com
 #+BEGIN_EXAMPLE
 RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
 RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
+#+END_EXAMPLE
+
+** ReWrite a path to sub directory with .htaccess
+URL /inventory/* rewrite to /my-app/public/*
+
+./my-app/public/index.php is where the app starts
+./my-app/app/*.* are the app codes
+./my-app/public/theme/*.* and ./my-app/public/uploads/*.* have the assets
+
+./.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^inventory/?$ /my-app/public/index.php [L]
+RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
+</IfModule>
+#+END_EXAMPLE
+
+./my-app/public/.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /my-app/public/
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /my-app/public/index.php [L]
+</IfModule>
 #+END_EXAMPLE
 
 ** RewriteCond
