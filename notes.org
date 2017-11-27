@@ -460,9 +460,35 @@ $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
 echo '<a href="mycgi?' . htmlentities($query_string) . '">';
 #+END_EXAMPLE
 
+To encode path
+#+BEGIN_EXAMPLE
+echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
+     '@ftp.example.com/x.txt">';
+echo '<a href="http://example.com/department_list_script/',
+    rawurlencode('sales and marketing/Miami'), '">';
+#+END_EXAMPLE
+
+Parse current URL
+#+BEGIN_EXAMPLE
+$url = $_SERVER['REQUEST_URI'];
+$parts = parse_url($url);
+parse_str($parts['query'], $query);
+echo $query['email'];
+
+$str = "first=value&arr[]=foo+bar&arr[]=baz";
+
+parse_str($str, $output);
+echo $output['first'];  // value
+echo $output['arr'][0]; // foo bar
+echo $output['arr'][1]; // baz
+#+END_EXAMPLE
+
 ** Include file
 #+BEGIN_EXAMPLE
-<?php include dirname(__FILE__)."../../../../../wp-content/themes/a-theme/includes/thank-you.php"; ?>
+include __DIR__ . "/../abc.";
+
+# PHP version < 5
+include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; 
 #+END_EXAMPLE
 
 ** Random Integer Number
@@ -544,7 +570,9 @@ EOT;
 #+END_EXAMPLE
 
 ** Buffer
+<<<php:buffer>>>
 http://php.net/manual/en/book.outcontrol.php
+https://phpfashion.com/everything-about-output-buffering-in-php
 Send headers to browser after php has begun outputting data.
 
 #+BEGIN_EXAMPLE
@@ -560,17 +588,33 @@ ob_end_flush();
 
 ob_start() can be stacked
 
-Flush means send
+Flush means send to output
 
 ob_end_flush :: send and turn off output buffering
 ob_get_flush :: send, return and turn off
 ob_flush :: send
 ob_clean :: erase the output buffer
 ob_end_clean :: erase and turn off
-ob_get_clean :: return and erase
+ob_get_clean :: return and erase = ob_get_contents + ob_end_clean
 ob_get_contents :: return
 
 ob_get_length
+
+#+BEGIN_EXAMPLE
+ob_start();
+?>
+    <div id="site_header">
+        <div id="site_header_inner">
+            <div id="site_header_logo"><?php echo $PhpVar; ?></div>
+            <div id="site_header_countdown">BARE XX DAGER IGJEN</div>
+        </div>
+    </div>
+<?php
+$output = ob_get_clean();
+//ob_flush();
+
+return $output;
+#+END_EXAMPLE
 
 ** Image
 *** Create image in memory and output
@@ -693,7 +737,7 @@ Order of sections
 - @throws
 - @ingroup
 - @deprecated
-- @see
+- @see :: PHPDoc:@see
 - @todo
 - @Plugin
 
@@ -752,6 +796,46 @@ class FooBar {
   public $dbh;
 
 }
+#+END_EXAMPLE
+
+*** @see <<<PHPDoc:@see>>>
+#+BEGIN_EXAMPLE
+@see AnotherClassName::Methodname() or AnotherClassName::$varname
+@see elementname() => to search a function or method
+@see $elementname => to search var in the current class
+#+END_EXAMPLE
+
+*** @example
+It can be used to demo by presenting the contents of files that use them.
+
+#+BEGIN_EXAMPLE
+@example [location] [<start-line> [<number-of-lines>] ] [<description>]
+@example example1.php Some Description
+#+END_EXAMPLE
+
+** mysqli
+#+BEGIN_EXAMPLE
+$mysqli = new mysqli("localhost", "my_user", "my_password", "world");
+
+/* check connection */
+if (mysqli_connect_errno()) {
+    printf("Connect failed: %s\n", mysqli_connect_error());
+    exit();
+}
+
+$mysqli->query("CREATE TEMPORARY TABLE myCity LIKE City");
+
+$city = "'s Hertogenbosch";
+
+$city = $mysqli->real_escape_string($city);
+
+if ($mysqli->query("INSERT into myCity (Name) VALUES ('$city')")) {
+    printf("%d Row inserted.\n", $mysqli->affected_rows);
+}
+
+
+// You don't have to close it
+// $mysqli->close();
 #+END_EXAMPLE
 
 ** OOP
@@ -1358,6 +1442,33 @@ class BookTitleStarDecorator extends BookTitleDecorator {
 }
 #+END_EXAMPLE
 
+*** Namespace
+./index.php
+#+BEGIN_EXAMPLE
+include_once __DIR__."/../app/config.php";
+include_once __DIR__."/../app/controllers/sys-curl.php"
+#+END_EXAMPLE
+
+./../app/config.php
+#+BEGIN_EXAMPLE
+namespace MyApp\Abc;
+class CONFIG {
+  static public function config() {
+    return 'abc';
+  }
+}
+#+END_EXAMPLE
+
+./../app/controllers/sys-curl.php
+#+BEGIN_EXAMPLE
+namespace MyApp\Abc;
+class SYS_CURL {
+  public function PULL() {
+    $config = CONFIG::config();
+  }
+}
+#+END_EXAMPLE
+
 ** Http Request
 cURL-less method for PHP5 but requires file_get_contents. Some host might disable file_get_contents. Use cURL method
 #+BEGIN_EXAMPLE
@@ -1408,6 +1519,19 @@ Or ~Parse error: syntax error, unexpected 'endwhile' (t_endwhile)~
 
 Check if php ~short_open_tag~ is enabled. Default is not enabled. 
 Then search ~<? ~ with a space and replace them with ~<?php~
+
+** Naming Convention
+ClassNamesLike
+methodName
+propertyName
+function_name (global function)
+FunctionNamesLike (local function) 
+$variable_name
+$localVariableName
+
+CONSTANTS_LIKE_THIS
+
+Global names must be prefixed or use namespace.
 
 * phpMyAdmin
 Just put sql-admin to any Wordpress website root directory and run http://yourwebsiteip:port/sql-admin
@@ -7900,7 +8024,7 @@ a:hover
 a:link
 a:visited
 
-p::after
+p::after :: <img> can't have pseudo element
 p::before
 p::first-letter
 p::first-line
@@ -8482,6 +8606,13 @@ Good for vertical and horizontal center a child element inside a container (pare
  
  /* flex-basis: auto | <length>; */
  /* auto is default. if it's 0, extra space will not be factored in. Always use auto */
+
+ /* don't set width in flex item */
+ flex: 0 0 100px; /* instead of width:100px */
+ flex: 0 0 50%; /* width: 50% */
+ /* However, flex-basis is not guaranteed and it's based on max-width and min-width */
+
+ flex: 1 0 auto; /* grow to the rest of the width, no srhink, auto */
  
  /* Override align-items in container */
  /* align-self: auto | flex-start | flex-end | center | baseline | stretch; */
@@ -8565,7 +8696,6 @@ You don't have to get height of any other rows.
 
 ** Grid
 https://css-tricks.com/snippets/css/complete-guide-grid/
-
 
 *** container: display, grid-template-columns, grid-template-rows
 <<<css:grid-template-columns>>> <<<css:grid-template-rows>>>
@@ -8926,8 +9056,38 @@ img {
 #+END_EXAMPLE
 
 ** SVG
-*** Make SVG, Optimize SVG
+*** Make SVG, Optimize SVG, IE 11
 Exported from AI and [[http://petercollingridge.appspot.com/svg-optimiser][optimize it]]
+
+Or use nodejs:svgo
+
+IE 11 doesn't support url('a.svg') in background CSS. Use nodejs:svgo to convert to URL encoded.
+#+BEGIN_EXAMPLE
+div.svgbg {
+  background-image:url('url-encoded-svg');
+}
+#+END_EXAMPLE
+
+*** SVG as background image IE 11 <<<svg:ie11>>>
+AI export .svg by default is responsive and no width and height attributes are in <svg>
+You may add width and height to <svg> based on viewBox
+#+BEGIN_EXAMPLE
+// before
+<svg viewBox="0 0 22.77 28.96">
+
+// after
+<svg viewBox="0 0 22.77 28.96" width="22.77" height="28.96">
+#+END_EXAMPLE
+
+If it still doesn't work, move <styles> to attributes
+
+You need to export .svg in Adobe Illustrator using one of these mode for the Styling
+- Presentation Attributes
+- Inline Style
+
+But not Internal Style.
+
+If AI already exports the .svg, use nodejs:svgo:move styles
 
 *** SVG as background image dynamic size
 You can only control size in this method
@@ -9034,7 +9194,7 @@ You need to move down and right 50px
 </div>
 
 /* Solution 1 */
-.clearfix:after {
+.clearfix::after {
  content: " ";
  display:block;
  clear:both;
@@ -9247,6 +9407,145 @@ Use flex
 }
 #+END_EXAMPLE
 
+*** Circle Number List
+#+BEGIN_EXAMPLE
+.numberCircle {
+    border-radius: 50%;
+    behavior: url(PIE.htc); /* remove if you don't care about IE8 */
+
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    
+    background: #fff;
+    border: 2px solid #666;
+    color: #666;
+    text-align: center;
+    
+    font: 32px Arial, sans-serif; /* 32 + padding/2 = width = height */
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<span style="font-size: 450%; color: #FF5722;">&#9312;</span>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<span class="step">1</span>
+
+span.step {
+  background: #cccccc;
+  border-radius: 0.8em;
+  -moz-border-radius: 0.8em;
+  -webkit-border-radius: 0.8em;
+  color: #ffffff;
+  display: inline-block;
+  font-weight: bold;
+  line-height: 1.6em;
+  margin-right: 5px;
+  text-align: center;
+  width: 1.6em; 
+}
+#+END_EXAMPLE
+
+Just change the font size to enlarge/shrink the button. Or width, line-height and the border-radius to only affect the circle (border-radius = half of the width and line-height values)
+
+*** superscript, subscript uneven line height
+#+BEGIN_EXAMPLE
+<p>Some Text <sup>OM</sup>Office Mark
+
+p {
+  line-height:1.5em; /* if line-height:0 doesn't work, try increase p line-height or lower sup font-size*/
+}
+sup {
+  /* font-size:0.5em; */
+  line-height:0;
+}
+#+END_EXAMPLE
+
+*** Swap image in @media
+css
+#+BEGIN_EXAMPLE
+.flex-r-w-fs-center-mq-r-w-sa-center {
+  display:flex;
+  flex-flow:row wrap;
+  justify-content:flex-start;
+  align-items:center;
+}
+
+.footer-logos > div {
+  margin:15px 10px;
+  background-color:red;
+}
+.footer-logos > div > div > img{
+  display:block;
+  margin:0 auto;
+}
+
+@media only screen and (max-width: 697px) {
+  .footer-logos.flex-r-w-fs-center-mq-r-w-sa-center {
+    justify-content:space-around;
+  }
+}
+
+@media only screen and (max-width: 320px) {
+  .footer-logos > div {
+    width:100%;
+    margin-top:2em;
+  }
+
+  .footer-logos .cs-i-1 {
+    background:transparent url('http://placehold.it/137x42/?text=137x42') center center no-repeat;
+    height:42px;
+  }
+  .footer-logos .cs-i-2 {
+    background:transparent url('http://placehold.it/137x49/?text=137x49') center center no-repeat;
+    height:49px;
+  }
+  .footer-logos .cs-i-3 {
+    background:transparent url('http://placehold.it/137x64/?text=137x64') center center no-repeat;
+    height:64px;
+  }
+  .footer-logos .cs-i-4 {
+    background:transparent url('http://placehold.it/137x37/?text=137x37') center center no-repeat;
+    height:37px;
+  }
+  .footer-logos .cs-items {
+    margin:0.5em auto;
+    width:137px;
+  }
+  .footer-logos .cs-items img {
+    visibility:hidden;
+  }
+
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<div class="footer-logos flex-r-w-fs-center-mq-r-w-sa-center">
+  <div>
+    <div class="cs-items cs-i-1">
+      <img src="http://placehold.it/81x25/?text=81x25" alt="#1 Logo"/>
+    </div>
+  </div>
+  <div>
+    <div class="cs-items cs-i-2">
+      <img src="http://placehold.it/92x25/?text=92x25" alt="#2 Logo"/>
+    </div>
+  </div>
+  <div>
+    <div class="cs-items cs-i-3">
+      <img src="http://placehold.it/54x25/?text=86x25" alt="#3 Hydro"/>
+    </div>
+  </div>
+  <div>
+    <div class="cs-items cs-i-4">
+      <img src="http://placehold.it/70x25/?text=70x25" alt="#4 Logo"/>
+    </div>
+  </div>
+</div>
+#+END_EXAMPLE
+
 * Bootstrap
 ** Mobile Meta Setup
 <!DOCTYPE html>
@@ -9415,7 +9714,7 @@ Not to be used in .navbar. Use .navbar-left or .navbar-right instead.
 
 For all sizes, 15px on each side of a column
 .container has a fixed max-width based on different viewports.
-.container-fluid takes 100% of the viewport width
+.container-fluid takes 100% of the viewport width and the same as .container
 .row is a horizontal group of columns. Only columns can be immediate children of rows.
 
 15px on each side of a column
@@ -12555,6 +12854,12 @@ mj-section, mj-column don't have left and right padding by default.
 
 mj-image has padding:10px 25px by default
 
+*** Non breaking
+#+BEGIN_EXAMPLE
+&nbsp; ::
+&#x2011; :: hyphen
+#+END_EXAMPLE
+
 ** Icons, Address Bar color
 *** Icons
 General Icon in scale of 48px
@@ -14588,6 +14893,26 @@ document.body.clientWidth is width excluding scrollbars
 =var w = Math.max(window.innerWidth || 0, document.body.clientWidth)=
 =var h = Math.max(window.innerHeight || 0, document.body.clientHeight)=
 
+** Use Cases
+*** Click to anchor
+#+BEGIN_EXAMPLE
+<div onclick="goToAnchor('gotoanchor-section-name')">
+  something here
+</div>
+
+<div class="spacer" id="gotoanchor-section-name"></div>
+
+<div> Content I want to go to </div>
+
+<script>
+  function goToAnchor(anchor) {
+    var loc = document.location.toString().split('#')[0];
+    document.location = loc + '#' + anchor;
+    return false;
+  }
+</script>
+#+END_EXAMPLE
+
 * jQuery
 ** Closure and document ready
 
@@ -15379,7 +15704,108 @@ else {
   // merge multiple objects from left to right for enumerable string keyed properties
   res.json(updatedUser);
 }
+#+END_EXAMPLE
 
+**** _.identity(value)
+returns the first argument it receives
+
+var object = { 'a': 1 };
+console.log(_.identity(object) === object); // => true
+
+**** _.matches(source)
+creates a function that performs a partical deep comparison between a given object and source, return true if the given object has equivalent prop values, else false.
+Partial comparisons will match empty array and empty object source values against any array or object value, respectively.
+
+#+BEGIN_EXAMPLE
+var objects = [
+  { 'a': 1, 'b': 2, 'c': 3 },
+  { 'a': 4, 'b': 5, 'c': 6 }
+];
+ 
+_.filter(objects, _.matches({ 'a': 4, 'c': 6 }));
+// => [{ 'a': 4, 'b': 5, 'c': 6 }]
+#+END_EXAMPLE
+
+**** _.find, _.findLast
+Return the first element that the predicate function returns true.
+#+BEGIN_EXAMPLE
+_.find(collection, [predicate=_.identity], [fromIndex=0])
+_.findLast(collection, [predicate=_.identity], [fromIndex=collection.length-1])
+
+// Predicate function is passed with (value, index|key, collection)
+
+var users = [
+  { 'user': 'barney',  'age': 36, 'active': true },
+  { 'user': 'fred',    'age': 40, 'active': false },
+  { 'user': 'pebbles', 'age': 1,  'active': true }
+];
+ 
+_.find(users, function(o) { return o.age < 40; });
+// => object for 'barney'
+ 
+// The `_.matches` iteratee shorthand.
+_.find(users, { 'age': 1, 'active': true });
+// => object for 'pebbles'
+ 
+// The `_.matchesProperty` iteratee shorthand.
+_.find(users, ['active', false]);
+// => object for 'fred'
+ 
+// The `_.property` iteratee shorthand.
+_.find(users, 'active');
+// => object for 'barney'
+#+END_EXAMPLE
+
+**** _.iteratee
+Creates a function that invokes func with the arguments of the created function.
+func is
+- a property name :: the created function returns the prop value for a given element.
+
+#+BEGIN_EXAMPLE
+_.iteratee([func=_.identity])
+
+var users = [
+  { 'user': 'barney', 'age': 36, 'active': true },
+  { 'user': 'fred',   'age': 40, 'active': false }
+];
+ 
+// The `_.matches` iteratee shorthand.
+_.filter(users, _.iteratee({ 'user': 'barney', 'active': true }));
+// => [{ 'user': 'barney', 'age': 36, 'active': true }]
+ 
+// The `_.matchesProperty` iteratee shorthand.
+_.filter(users, _.iteratee(['user', 'fred']));
+// => [{ 'user': 'fred', 'age': 40 }]
+ 
+// The `_.property` iteratee shorthand.
+_.map(users, _.iteratee('user'));
+// => ['barney', 'fred']
+ 
+// Create custom iteratee shorthands.
+_.iteratee = _.wrap(_.iteratee, function(iteratee, func) {
+  return !_.isRegExp(func) ? iteratee(func) : function(string) {
+    return func.test(string);
+  };
+});
+ 
+_.filter(['abc', 'def'], /ef/);
+// => ['def']
+#+END_EXAMPLE
+
+**** _.property(path)
+Creates a function that returns the value at path of a given object
+
+#+BEGIN_EXAMPLE
+var objects = [
+  { 'a': { 'b': 2 } },
+  { 'a': { 'b': 1 } }
+];
+ 
+_.map(objects, _.property('a.b'));
+// => [2, 1]
+ 
+_.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
+// => [1, 2]
 #+END_EXAMPLE
 
 *** child_process
@@ -17180,6 +17606,32 @@ istanbul cover _mocha
 
 # ./coverage/lconv-report/index.html
 #+END_EXAMPLE
+
+*** svgo <<<nodejs:svgo>>>
+https://github.com/svg/svgo
+#+BEGIN_EXAMPLE
+# i found windows has permission issue if it's installed globally
+npm install svgo
+# optimize the svg
+./node_modules/svgo abc.svg
+# output the svg to data uri URL encoded
+# enc, unenc, base64
+svgo abc.svg --datauri enc
+
+# output result STDOUT. if not, the file will be overwritten
+
+svgo abc.svg --datauri enc -o -
+#+END_EXAMPLE
+
+<<<nodejs:svgo:move styles>>>
+
+Usually it's good in IE11 but if it still doesn't work, refer to svg:ie11
+
+AI already makes .svg and you want to move styles to inline
+svgo abc.svg --enable inlineStyles
+
+# Move style attribute from each node to attributes
+svgo abc.svg --enable convertStyleToAttrs
 
 ** Custom Module
 #+BEGIN_EXAMPLE
@@ -30719,6 +31171,35 @@ RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
 RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
 #+END_EXAMPLE
 
+** ReWrite a path to sub directory with .htaccess
+URL /inventory/* rewrite to /my-app/public/*
+
+./my-app/public/index.php is where the app starts
+./my-app/app/*.* are the app codes
+./my-app/public/theme/*.* and ./my-app/public/uploads/*.* have the assets
+
+./.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^inventory/?$ /my-app/public/index.php [L]
+RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
+</IfModule>
+#+END_EXAMPLE
+
+./my-app/public/.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /my-app/public/
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /my-app/public/index.php [L]
+</IfModule>
+#+END_EXAMPLE
+
 ** RewriteCond
 Rewrite based on time
 #+BEGIN_EXAMPLE
@@ -33098,6 +33579,10 @@ VALUES
 *** Dump, Restore
 #+BEGIN_EXAMPLE
 mysqldump -u user -p database_name > database_name_backup.sql
+
+# dump specific tables
+mysqldump -u user -p database_name t1 t2 t3 > a.sql
+
 # Use config file to avoid typing password
 mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.sql
 #+END_EXAMPLE
@@ -36089,6 +36574,15 @@ $_POST['x_MD5_Hash'] == md5($response_key. $_POST['x_login'] . $_POST['x_trans_i
 - Proposed Recommendation (PR)
 - Recommendation (REC)
 
+** Adobe Creative Cloud
+If you have error 146 and an app update failed, you might need to reinstall Creative Cloud Desktop App and then update individual app.
+
+** Adobe Photoshop
+*** Image Resize
+- Preserve Details (enlargement)
+- Bicubic Smoother (enlargement)
+- Bicubic Sharper (reduction)
+
 ** Adobe Illustrator
 *** Setting
 Preferences > General > enable Scale Strokes & Effects
@@ -36412,6 +36906,17 @@ Select the image, ~Window > Image Trace~
 Convert Image Tracing to Paths
 Select the Image Tracing object and ~Object > Expand~ or ~Expand~ in the top Image Tracing control panel
 Once expanded, image cannot be traced again.
+
+*** Crop image
+You CAN crop raster images in Illustrator.
+
+Draw a rectangle above the raster image.
+Select both the rectangle and the image
+choose Object > Clipping Mask > Make.
+change blending mode to "darken" from transparency tab
+choose Object > Flatten Transparency..> OK
+Choose Object > Expand...
+Now you have trimmed raster object.
 
 *** Export Assets
 Window > Asset Export.
