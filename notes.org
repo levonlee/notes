@@ -15212,6 +15212,241 @@ jQuery(function(){
 });
 #+END_EXAMPLE
 
+* TweenLite, TweenMax, Greensock
+TweenMax has other common plugins included e.g. CSSPlugin where you can ease CSS property changes.
+TweenLite has to manually include these plugins.
+
+#+BEGIN_EXAMPLE
+TweenLite.to( [target object], [duration in seconds], [destination values] );
+
+TweenLite.to(active_slide,0.5,{marginLeft:'-50%',ease:Power3.easeOut});
+#+END_EXAMPLE
+
+** dest:css, relative value
+It's important that you remove all dashes (-) from the css property names and use camelCase.
+#+BEGIN_EXAMPLE
+TweenLite.to(logo, 2, {left:"542px",
+                       backgroundColor:"black",
+                       borderBottomColor:"#90e500",
+                       color:"white"});
+#+END_EXAMPLE
+
+Adding a += or -= prefix tells GSAP to treat a value as relative to whatever it is when the tween renders the first time. For example, if "left" is currently 50px and you tween to "+=100px", it will end up at 150px. Don't forget to put quotes around the value.
+
+#+BEGIN_EXAMPLE
+TweenLite.to(logo, 0.5, {left:"+=100px"});
+#+END_EXAMPLE
+
+** dest:ease, easeIn (begin), easeOut (the end), easeInOut (both)
+https://greensock.com/docs/Easing
+
+Power0 is linear
+
+#+BEGIN_EXAMPLE
+TweenLite.to(logo, 3, {left:"440px", ease:Bounce.easeOut});
+#+END_EXAMPLE
+
+** dest:delay in seconds
+
+** Use Case
+*** Slideshow
+#+BEGIN_EXAMPLE
+<section id="slider-wrap" class="home-slide inner">
+
+  <div id="slides-frame">
+
+    <div id="active-slide" class="slide-img"
+         style="background:transparent url('1.jpg') no-repeat center 15%;background-size:cover;-webkit-transform: translateZ(0);">
+      <div class="background-screen">
+        <div class="page-wrap">
+          <div class="slide-headline">
+            <h2>Slide #1 Title</h2>
+            <p class="quote">Slide #1 Paragraph</p>
+            <p class="quote-name">Slide #1 Paragraph</p>
+            <a href="#">Slide #1 Button</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="next-slide" class="slide-img"
+         style="background:transparent url('2.jpg') no-repeat center 25%;background-size:cover;-webkit-transform: translateZ(0);">
+      <div class="background-screen">
+        <div class="page-wrap">
+          <div class="slide-headline">
+            <h2>Slide #2 Title</h2>
+            <p class="quote">Slide #2 Paragraph</p>
+            <p class="quote-name">Slide #2 Paragraph</p>
+            <a href="#">Slide #2 Button</a>
+          </div>
+        </div>
+      </div>
+    </div> <!-- #next-slide -->
+
+  </div> <!-- #slides-frame -->
+</section>
+
+<!-- @@ Slideshow Data: -->
+<div id="slideshow-data" style="display:none!important;">
+  <div class="slideshow-data-item"
+       style="background:transparent url('1.jpg') no-repeat center 15%;background-size:cover;-webkit-transform: translateZ(0);">
+    <div class="background-screen">
+      <div class="page-wrap">
+        <div class="slide-headline">
+          <h2>Slide #1 Title</h2>
+          <p class="quote">Slide #1 Paragraph</p>
+          <p class="quote-name">Slide #1 Paragraph</p>
+          <a href="#">Slide #1 Button</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slideshow-data-item"
+       style="background:transparent url('2.jpg') no-repeat center 25%;background-size:cover;-webkit-transform: translateZ(0);">
+    <div class="background-screen">
+      <div class="page-wrap">
+        <div class="slide-headline">
+          <h2>Slide #2 Title</h2>
+          <p class="quote">Slide #2 Paragraph</p>
+          <p class="quote-name">Slide #2 Paragraph</p>
+          <a href="#">Slide #2 Button</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slideshow-data-item"
+       style="background:transparent url('3.jpg') no-repeat center left;background-size:cover;-webkit-transform: translateZ(0);">
+    <div class="background-screen">
+      <div class="page-wrap">
+        <div class="slide-headline">
+          <h2>Slide #3 Title</h2>
+          <p class="quote">Slide #3 Paragraph</p>
+          <p class="quote-name">Slide #3 Paragraph</p>
+          <a href="#">Slide #3 Button</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- #slideshow-data -->
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+.slide-headline {
+  position:absolute;
+  left:0;
+  bottom:0;
+  margin-bottom:155px; /* media query change margin-bottom */
+}
+.slide-wrap {
+  width:1200px; /* media query change width */
+  height:100%;
+  overflow:visible;
+  margin:0 auto;
+}
+#slides-frame .background-screen {
+  position:relative;
+  height:100%;
+  width:100%
+  overflow-y:hidden;
+  background:rgba(0,0,0,0.35); /* darken bg image */
+}
+#active-slide, #next-slide {
+  position:relative;
+  display:inline-block;
+  width:50%;
+  height:100%;
+  vertical-align:top;
+}
+#slides-frame {
+  width:200%!important;
+  position:relative;
+  min-height:55px;
+  height:550px;
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+window.onload = init();
+function init() {
+  slideshow_checker();
+}
+function slideshow_checker() {
+  var slideshow_data = document.getElementById('slider-wrap');
+  if (slideshow_data != null) {
+    slideshow(0, 'time', 7000);
+  }
+}
+
+var timer;
+function slideshow(id, type, time_length) {
+
+  var active_slide = document.getElementById('active-slide'),
+    active_slide_style = active_slide.getAttribute('style');
+  var next_slide = document.getElementById('next-slide');
+
+
+  /* -- COUNT SLIDE NUM -- */
+  var slideshow_data = document.getElementById('slideshow-data');
+  var slides = slideshow_data.getElementsByClassName('slideshow-data-item');
+  var slide_count = slides.length;
+
+  var nxt_id, nxt_nxt_id, prev_id;
+  nxt_id = (id + 1);
+  prev_id = (id - 1);
+
+  if (nxt_id == slide_count) {
+    nxt_id = 0;
+  }
+  if ((id == 0)) {
+    prev_id = (slide_count - 1);
+  }
+
+  //  arr_left.setAttribute('onclick','javascript:get_slide('+prev_id+')');
+  //    arr_right.setAttribute('onclick','javascript:get_slide('+nxt_id+')');
+
+  if (type == 'click') {
+    var next_slide_data = slides[id].getAttribute('style');
+    var next_slide_html = slides[id].innerHTML;
+    next_slide.innerHTML = next_slide_html;
+    next_slide.setAttribute('style', next_slide_data);
+
+  }
+  else {
+    var next_slide_data = slides[nxt_id].getAttribute('style');
+    var next_slide_html = slides[nxt_id].innerHTML;
+    next_slide.innerHTML = next_slide_html;
+    next_slide.setAttribute('style', next_slide_data);
+  }
+
+  timer = setTimeout(function () {
+    TweenLite.to(active_slide, 0.5, {marginLeft: '-50%', ease: Power3.easeOut});
+    setTimeout(function () {
+
+      active_slide.setAttribute('style', next_slide.getAttribute('style'));
+
+      TweenLite.to(active_slide, 0, {marginLeft: '0%'});
+
+      active_slide.innerHTML = next_slide_html;
+
+      /* -- RUN LOOP() --- */
+      setTimeout(function () {
+        if (type == 'time') {
+          slideshow(nxt_id, 'time', 7000);
+        }
+        else {
+          slideshow(nxt_id, 'time', time_length);
+        }
+      }, 0);
+
+    }, 1000);
+  }, time_length);
+
+}
+#+END_EXAMPLE
+
 * ES6-ES2015
 <<<js:es6>>>
 6 stands for 6th edition. 2015 is the year.
