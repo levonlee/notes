@@ -1555,6 +1555,17 @@ CONSTANTS_LIKE_THIS
 
 Global names must be prefixed or use namespace.
 
+** Session
+PHP relies on client cookie PHPSESSID to identify session.
+
+Javascript XMLHttpRequest made on the same domain always transfer all cookies.
+
+#+BEGIN_EXAMPLE
+// need to start session. check if session is already started.
+if (session_id() == "")
+  session_start();
+#+END_EXAMPLE
+
 ** RESTful
 GET /tickets - Retrieves a list of tickets
 GET /tickets/12 - Retrieves a specific ticket
@@ -1562,6 +1573,15 @@ POST /tickets - Creates a new ticket
 PUT /tickets/12 - Updates ticket #12
 PATCH /tickets/12 - Partially updates ticket #12
 DELETE /tickets/12 - Deletes ticket #12
+
+Read Put request
+#+BEGIN_EXAMPLE
+$method = $_SERVER['REQUEST_METHOD'];
+if ('PUT' === $method) {
+    parse_str(file_get_contents('php://input'), $_PUT);
+    var_dump($_PUT); //$_PUT contains put fields 
+}
+#+END_EXAMPLE
 
 * phpMyAdmin
 Just put sql-admin to any Wordpress website root directory and run http://yourwebsiteip:port/sql-admin
@@ -14642,6 +14662,7 @@ function loadDoc() {
  , "psw" // optional
  );
 
+ /* After open() */
  xhttp.setRequestHeader(); // set request header. Especially if 'POST' form fields
  /* For POST
   * xhttp.setRequestHeader("Content-type",'application/x-www-form-urlencoded');
@@ -14649,6 +14670,9 @@ function loadDoc() {
 
  // For receiving a binary string
  // xhttp.overrideMimeType("text/plain; charset=x-user-defined");
+
+
+ /* before send(); */
 
  xhttp.send(); // Nothing when 'GET'
  /* For POST
@@ -14665,6 +14689,71 @@ function loadDoc() {
   * }
   * xhttp.send(myArray);
   */ 
+}
+#+END_EXAMPLE
+
+*** application/x-www-form-urlencoded vs multipart/form-data
+urlencoded has to transfer extra data if large amount of binary data is sent.
+
+multipart/form-data
+- Request header
+  - Content-Type: multipart/form-data; boundary=--user-agent-sets-this-boundary
+- Request Payload
+#+BEGIN_EXAMPLE
+--user-agent-sets-this-boundary
+Content-Disposition: form-data; name="gv-inv_image"; filename="alectra-APP-dynamic-card.jpg"
+Content-Type: image/jpeg
+
+
+
+--user-agent-sets-this-boundary--
+#+END_EXAMPLE
+
+*** FormData to send file
+Supports all browsers except IE 9 and below.
+
+#+BEGIN_EXAMPLE
+<input type="file" id="gv-inv_image">
+
+var fileInputElement = document.getElementById('gv-inv_image');
+
+var formData = new FormData();
+
+formData.append("username", "Groucho");
+formData.append("accountnum", 123456); // number 123456 is immediately converted to a string "123456"
+
+// if value is not string or Blob or file, it will be converted to string
+
+// HTML file input, chosen by user
+formData.append("userfile", fileInputElement.files[0]);
+
+// you can check the file before it gets uploaded
+
+// JavaScript file-like object
+var content = '<a id="a"><b id="b">hey!</b></a>'; // the body of the new file...
+var blob = new Blob([content], { type: "text/xml"});
+
+formData.append("webmasterfile", blob);
+
+var request = new XMLHttpRequest();
+request.open("POST", "http://foo.com/submitform.php");
+request.send(formData);
+// request content type is multipart/form-data
+#+END_EXAMPLE
+
+php
+#+BEGIN_EXAMPLE
+if (isset($_FILES['gv-inv_image'])) {
+  $file         = $_FILES['gv-inv_image']['name'];
+  $ext          = pathinfo($file, PATHINFO_EXTENSION);
+  $filename = sha1(rand(25, 1920) . rand(72, 2560)) . '-' . time();
+  $filename = strtoupper($filename) . '.' . $ext;
+  if (move_uploaded_file($_FILES['gv-inv_image']['tmp_name'], '../uploads/' . $filename)) {
+      $result = ['status' => 'OK', 'filename' => $filename];
+  }
+  else {
+      $result = ['status' => 'ERR', 'message' => 'File Move Error.'];
+  }
 }
 #+END_EXAMPLE
 
@@ -14705,6 +14794,9 @@ oReq.onload = function(e) {
 
 oReq.send();
 #+END_EXAMPLE
+
+** File handling
+https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
 
 ** Apply XSLT on XML
 #+BEGIN_EXAMPLE
