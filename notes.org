@@ -192,6 +192,48 @@ else
 }
 #+END_EXAMPLE
 
+** $_FILES POST method uploads
+http://www.php.net/manual/en/features.file-upload.post-method.php
+
+enctype="multipart/form-data"
+
+$_FILES['userfile']['name']
+The original name of the file on the client machine.
+
+$_FILES['userfile']['type']
+The mime type of the file, if the browser provided this information. An example would be "image/gif". This mime type is however not checked on the PHP side and therefore don't take its value for granted.
+
+$_FILES['userfile']['size']
+The size, in bytes, of the uploaded file.
+
+$_FILES['userfile']['tmp_name']
+The temporary filename of the file in which the uploaded file was stored on the server.
+
+$_FILES['userfile']['error']
+The error code associated with this file upload.
+
+POST as array
+#+BEGIN_EXAMPLE
+<form action="" method="post" enctype="multipart/form-data">
+<p>Pictures:
+<input type="file" name="pictures[]" />
+<input type="file" name="pictures[]" />
+<input type="file" name="pictures[]" />
+<input type="submit" value="Send" />
+</p>
+</form>
+
+foreach ($_FILES["pictures"]["error"] as $key => $error) {
+    if ($error == UPLOAD_ERR_OK) {
+        $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
+        // basename() may prevent filesystem traversal attacks;
+        // further validation/sanitation of the filename may be appropriate
+        $name = basename($_FILES["pictures"]["name"][$key]);
+        move_uploaded_file($tmp_name, "data/$name");
+    }
+}
+#+END_EXAMPLE
+
 ** Module, Extension
 *** bz2
 *** bcmath
@@ -16356,6 +16398,136 @@ No dependency
 
 ** Dropzone
 https://github.com/enyo/dropzone/
+
+No dependency
+
+Download the dist folder
+#+BEGIN_EXAMPLE
+<script src="/dist/dropzone.js"></script>
+<link rel="stylesheet" href="/dist/dropzone.css">
+<!-- /dist/min/* for production -->
+#+END_EXAMPLE
+
+Dropzone will be available as window.Dropzone and jQuery.fn.Dropzone (if jQuery is loaded)
+
+Create Dropzone without javascript (auto discover), Dropzone.options
+#+BEGIN_EXAMPLE
+<form action="/file-upload" class="dropzone" id="my-awesome-dropzone">
+  <div class="fallback">
+    <input name="file" type="file" multiple />
+  </div>
+</form>
+
+<!-- because it's auto discovered, you may need to setup the config -->
+// "myAwesomeDropzone" is the camelized version of the HTML element's ID
+Dropzone.options.myAwesomeDropzone = {
+  paramName: "file", // The name that will be used to transfer the file
+  maxFilesize: 2, // MB
+  accept: function(file, done) {
+    if (file.name == "justinbieber.jpg") {
+      done("Naha, you don't.");
+    }
+    else { done(); }
+  }
+};
+
+// Prevent Dropzone from auto discovering this element:
+Dropzone.options.myAwesomeDropzone = false;
+// This is useful when you want to create the
+// Dropzone programmatically later
+
+// Disable auto discover for all elements:
+Dropzone.autoDiscover = false;
+#+END_EXAMPLE
+
+Create with javascript
+#+BEGIN_EXAMPLE
+// Dropzone class:
+var myDropzone = new Dropzone("div#myId", { url: "/file/post"});
+
+// jQuery
+$("div#myId").dropzone({ url: "/file/post" });
+#+END_EXAMPLE
+
+The file will be posted in backend as
+#+BEGIN_EXAMPLE
+<input type="file" name="file" />
+#+END_EXAMPLE
+
+attributes ~data-dz-*~ for marking the template HTML elements which DZ will update.
+
+*** option:function:accept
+Invoke done without arguments to accept and process the file.
+Invoke done with an error message to reject the file and show the message.
+It won't be invoked if the file is too big or mime type doesn't match.
+#+BEGIN_EXAMPLE
+accept: function(file, done) {
+  if (file.name == "justinbieber.jpg") {
+    done("Naha, you don't.");
+  }
+  else { done(); }
+}
+#+END_EXAMPLE
+
+*** option:autoProcessQueue
+False :: files will be added to the queue but the queue will not be processed automatically.
+Call myDropzone.processQueue() to process the queue.
+
+*** option:previewTemplate String
+Default template <<<dropzone:default template>>>
+#+BEGIN_EXAMPLE
+<div class="dz-preview dz-file-preview">
+  <div class="dz-details">
+    <div class="dz-filename"><span data-dz-name></span></div>
+    <div class="dz-size" data-dz-size></div>
+    <!-- img's alt and src will change -->
+    <img data-dz-thumbnail />
+  </div>
+  <div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress><!-- style.width from 0% to 100% --></span></div>
+  <div class="dz-success-mark"><span>✔</span></div>
+  <div class="dz-error-mark"><span>✘</span></div>
+  <div class="dz-error-message"><span data-dz-errormessage></span></div>
+  <!-- <a class="dz-remove" href="javascript:undefined" data-dz-remove>Remove file</a> -->
+</div>
+#+END_EXAMPLE
+
+.dz-preview gets .dz-processing when the file gets processed, .dz-success when it got uploaded and .dz-error
+
+Make sure custom template has these attributes
+- data-dz-name
+- data-dz-size
+- data-dz-thumbnail
+- data-dz-uploadprogress
+- data-dz-errormessage
+
+Add a remove button (data-dz-remove)
+#+BEGIN_EXAMPLE
+<img src="removebutton.png" alt="Click me to remove the file." data-dz-remove />
+#+END_EXAMPLE
+
+*** option:addRemoveLInks null:true
+Wording: dictCancelUpload, dictCancelUploadConfirmation and dictRemoveFile
+dropzone:default template
+
+*** option:translation
+**** option:dictCancelUpload, dictCancelUploadConfirmation, dictRemoveFile
+
+*** event:addedfile
+#+BEGIN_EXAMPLE
+// Disabling autoDiscover, otherwise Dropzone will try to attach twice.
+Dropzone.autoDiscover = false;
+// or disable for specific dropzone:
+// Dropzone.options.myDropzone = false;
+
+$(function() {
+  // Now that the DOM is fully loaded, create the dropzone, and setup the
+  // event listeners
+  var myDropzone = new Dropzone("#my-dropzone");
+  myDropzone.on("addedfile", function(file) {
+    /* Maybe display some more file information on your page */
+  });
+})
+#+END_EXAMPLE
 
 * ES6-ES2015
 <<<js:es6>>>
