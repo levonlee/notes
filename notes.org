@@ -33151,7 +33151,12 @@ git push anotherremote shrinksize:master
 =git log -3= Last 3 commits
 =git log --grep=<pattern>= Search commit message
 
-** Local Ignore, Global Ignore
+** Local Ignore, Global Ignore, git status -u
+Show untracked files
+#+BEGIN_EXAMPLE
+git status -u
+#+END_EXAMPLE
+
 Add file or directory paths to
 - .git/info/exclude/ (will not be committed)
 - .gitignore file (will be commited)
@@ -33177,6 +33182,31 @@ Use ~**/wp-content/uploads/~ to ignore any folder that has path ~wp-content/uplo
 
 #+BEGIN_EXAMPLE
 /main/**/bin/
+#+END_EXAMPLE
+
+Negate
+An optional prefix ! which negates the pattern; any matching file excluded by a previous pattern will become included again. If a negated pattern matches, this will override lower precedence patterns sources.
+#+BEGIN_EXAMPLE
+# Ignore everything
+*
+
+# But don't ignore these files...
+!.gitignore
+!script.pl
+!template.latex
+# etc...
+
+# ...even if they are in subdirectories. (don't ignore first level subdirectories)
+# without this line, script.pl will only be included in the root directory
+!*/
+#+END_EXAMPLE
+
+If you want to ignore a folder but don't ignore a file, create .gitignore in that folder
+#+BEGIN_EXAMPLE
+*
+!.gitignore
+!*.sql
+!*/
 #+END_EXAMPLE
 
 https://www.atlassian.com/git/tutorials/gitignore
@@ -37563,6 +37593,38 @@ invalid-input-secret :: The secret parameter is invalid or malformed.
 missing-input-response :: The response parameter is missing.
 invalid-input-response :: The response parameter is invalid or malformed.
 bad-request :: The request is invalid or malformed.
+
+PHP
+#+BEGIN_EXAMPLE
+  private function validateReCaptcha() {
+    if (!isset($_POST['g-recaptcha-response']))
+      return FALSE;
+    $C_CAPTCHA                = $_POST['g-recaptcha-response'];
+    $C_CAPTCHA_google_request = [
+      'url'     => 'https://www.google.com/recaptcha/api/siteverify',
+      'options' => [
+        'secret'   => 'your-key',
+        'response' => $C_CAPTCHA,
+      ],
+    ];
+
+    $ch      = curl_init();
+    $options = [
+      CURLOPT_URL            => $C_CAPTCHA_google_request['url'],
+      CURLOPT_POSTFIELDS     => http_build_query($C_CAPTCHA_google_request['options']),
+      CURLOPT_FOLLOWLOCATION => 1,
+      CURLOPT_HEADER         => 0,
+      CURLOPT_RETURNTRANSFER => 1,
+    ];
+    curl_setopt_array($ch, $options);
+    $C_CAPTCHA_google_result = json_decode(curl_exec($ch), TRUE);
+    curl_close($ch);
+
+    if (is_array($C_CAPTCHA_google_result) && $C_CAPTCHA_google_result['success'] === TRUE) {
+      return TRUE;
+    }
+  }
+#+END_EXAMPLE
 
 **** CSS
 The button might be too large for width < 320px
