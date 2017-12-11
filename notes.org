@@ -197,6 +197,8 @@ http://www.php.net/manual/en/features.file-upload.post-method.php
 
 enctype="multipart/form-data"
 
+'userfile' is the <input> name attribute. If no name, then it's 'file' > $_FILES['file']
+
 $_FILES['userfile']['name']
 The original name of the file on the client machine.
 
@@ -681,6 +683,29 @@ header.php
 #+END_EXAMPLE
 
 ** Image
+*** GD vs Imagick
+GD is the oldest. Imagick might not exist in some hosting.
+
+#+BEGIN_EXAMPLE
+if(extension_loaded('gd')) {
+    print_r(gd_info());
+}
+else {
+    echo 'GD is not available.';
+}
+
+if(extension_loaded('imagick')) {
+    $imagick = new Imagick();
+    print_r($imagick->queryFormats());
+}
+else {
+    echo 'ImageMagick is not available.';
+}
+#+END_EXAMPLE
+
+GD only supports JPG, PNG, GIF, WBMP, WebP, XBM and XPM.
+If TIFF needs to be supported, use Imagick.
+
 *** Create image in memory and output
 #+BEGIN_EXAMPLE
 $data = 'iVBORw0KGgoAAAANSUhEUgAAABwAAAASCAMAAAB/2U7WAAAABl'
@@ -713,6 +738,31 @@ header("Content-length: " . ob_get_length());
 imagedestroy($im);
 // send it
 ob_flush();
+#+END_EXAMPLE
+
+*** Resize image
+[[https://github.com/claviska/SimpleImage][SimpleImage - GD library]]
+
+#+BEGIN_EXAMPLE
+require 'SimpleImage.php';
+try {
+  // Create a new SimpleImage object
+  $image = new \claviska\SimpleImage();
+  //$new_file = __DIR__ . '/'.$file_path.$file_no_ext.'_200x200f.'.$ext;
+  $new_file = $file_path.$file_no_ext.'_200x200f.'.$ext;
+
+  $image
+    ->fromFile($file_orig_full)              // load parrot.jpg
+    //->autoOrient()                        // adjust orientation based on exif data
+    ->bestFit(200, 200)
+    ->toFile($new_file);                         // output to the screen
+  $localW = $image->getWidth();
+  $localH = $image->getHeight();
+  var_dump($localW, $localH);
+} catch(Exception $err) {
+  // Handle errors
+  echo $err->getMessage();
+}
 #+END_EXAMPLE
 
 ** Apply XSLT on XML
@@ -15618,6 +15668,20 @@ jQuery(function(){
 });
 #+END_EXAMPLE
 
+** jQuery UI: Sortable
+#+BEGIN_EXAMPLE
+$(function() {
+    $("#slideshow-pictures").sortable({
+      items:'.dz-preview',
+      cursor: 'move',
+      opacity: 0.5,
+      containment: '#slideshow-pictures',
+      distance: 20,
+      tolerance: 'pointer'
+    });
+  });
+#+END_EXAMPLE
+
 * javascript Plugins
 ** TweenLite, TweenMax, Greensock
 TweenMax has other common plugins included e.g. CSSPlugin where you can ease CSS property changes.
@@ -16619,8 +16683,11 @@ when a file gets processed
 progress :: int from 0 to 100
 
 *** event:error(file)
-*** event:success(file)
-Display something after a file is uploaded
+*** event:success(file, responseText)
+Display something after a file is uploaded.
+
+myDropzone.files has been appended.
+
 #+BEGIN_EXAMPLE
 Dropzone.options.myDropzone = {
   init: function() {
@@ -16663,6 +16730,9 @@ Just return HTTP status code in the range of 400-500.
 If response Content-Type is text/plain, the text will be returned as error message.
 If it's application/json, dropzone uses the error property {"error": "File could not be saved."}
 
+*** Show server response
+See event:success(file, responseText)
+
 *** Show files already stored on server
 #+BEGIN_EXAMPLE
 // Create the mock file:
@@ -16687,6 +16757,37 @@ myDropzone.files.push(mockFile);
 // correct amount:
 var existingFileCount = 1; // The number of files already uploaded
 myDropzone.options.maxFiles = myDropzone.options.maxFiles - existingFileCount;
+#+END_EXAMPLE
+
+*** Sortable
+#+BEGIN_EXAMPLE
+  $(function() {
+    $("#slideshow-pictures").sortable({
+      items:'.dz-preview',
+      cursor: 'move',
+      opacity: 0.5,
+      containment: '#slideshow-pictures',
+      //distance: 20,
+      tolerance: 'pointer',
+      update: function (event, ui) {
+        var queue = myDropzone.files;
+        var newQueue = [];
+        $('#slideshow-pictures .dz-preview .dz-filename [data-dz-name]').each(function (count, el) {
+          var name = el.innerHTML;
+          queue.forEach(function(file) {
+            if (file.name === name) {
+              newQueue.push(file);
+            }
+          });
+        });
+        myDropzone.files = newQueue;
+      }
+    });
+  });
+
+Dropzone.options.slideshowPictures = false;
+Dropzone.autoDiscover = false;
+var myDropzone = new Dropzone("#slideshow-pictures", {...});
 #+END_EXAMPLE
 
 * ES6-ES2015
