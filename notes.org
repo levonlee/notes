@@ -16401,6 +16401,7 @@ https://github.com/enyo/dropzone/
 
 No dependency
 
+*** Basics
 Download the dist folder
 #+BEGIN_EXAMPLE
 <script src="/dist/dropzone.js"></script>
@@ -16413,6 +16414,8 @@ Dropzone will be available as window.Dropzone and jQuery.fn.Dropzone (if jQuery 
 Create Dropzone without javascript (auto discover), Dropzone.options
 #+BEGIN_EXAMPLE
 <form action="/file-upload" class="dropzone" id="my-awesome-dropzone">
+  <!-- hidden input will be submitted -->
+  <!-- <input type="hidden" name="addtionaldata" value="1" /> -->
   <div class="fallback">
     <input name="file" type="file" multiple />
   </div>
@@ -16430,7 +16433,10 @@ Dropzone.options.myAwesomeDropzone = {
     else { done(); }
   }
 };
+#+END_EXAMPLE
 
+Create with javascript, must have url option.
+#+BEGIN_EXAMPLE
 // Prevent Dropzone from auto discovering this element:
 Dropzone.options.myAwesomeDropzone = false;
 // This is useful when you want to create the
@@ -16438,10 +16444,7 @@ Dropzone.options.myAwesomeDropzone = false;
 
 // Disable auto discover for all elements:
 Dropzone.autoDiscover = false;
-#+END_EXAMPLE
 
-Create with javascript
-#+BEGIN_EXAMPLE
 // Dropzone class:
 var myDropzone = new Dropzone("div#myId", { url: "/file/post"});
 
@@ -16454,11 +16457,36 @@ The file will be posted in backend as
 <input type="file" name="file" />
 #+END_EXAMPLE
 
-attributes ~data-dz-*~ for marking the template HTML elements which DZ will update.
+To make the whole page droppable
+#+BEGIN_EXAMPLE
+<!--
+Don't forget to give this container the dropzone-previews class 
+so the previews are formatted correctly.
+ -->
+<div id="previews" class="dropzone-previews"></div>
 
-*** option:function:accept
-Invoke done without arguments to accept and process the file.
-Invoke done with an error message to reject the file and show the message.
+<button id="clickable">Click me to select files</button>
+
+var myDropzone  = new Dropzone(document.body, {
+  previewsContainer: ".dropzone-previews", // the element must have
+  // You probably don't want the whole body
+  // to be clickable to select files
+  clickable: false
+});
+
+// or
+<script>
+  new Dropzone(document.body, { // Make the whole body a dropzone
+    url: "/upload/url", // Set the url
+    previewsContainer: "#previews", // Define the container to display the previews
+    clickable: "#clickable" // Define the element that should be used as click trigger to select files.
+  });
+</script>
+#+END_EXAMPLE
+
+*** option:function:accept(file, done)
+Invoke done() without arguments to accept and process the file.
+Invoke done() with an error message to reject the file and show the message.
 It won't be invoked if the file is too big or mime type doesn't match.
 #+BEGIN_EXAMPLE
 accept: function(file, done) {
@@ -16469,11 +16497,14 @@ accept: function(file, done) {
 }
 #+END_EXAMPLE
 
+*** option:previewsContainer null|string
+HTMLElement or a CSS selector. The element should have the .dropzone-previews or dropzone class.
+
 *** option:autoProcessQueue
 False :: files will be added to the queue but the queue will not be processed automatically.
 Call myDropzone.processQueue() to process the queue.
 
-*** option:previewTemplate String
+*** option:previewTemplate String, option:dict*
 Default template <<<dropzone:default template>>>
 #+BEGIN_EXAMPLE
 <div class="dz-preview dz-file-preview">
@@ -16489,7 +16520,10 @@ Default template <<<dropzone:default template>>>
   <div class="dz-error-message"><span data-dz-errormessage></span></div>
   <!-- <a class="dz-remove" href="javascript:undefined" data-dz-remove>Remove file</a> -->
 </div>
+<!-- Another preview -->
 #+END_EXAMPLE
+
+The default template might change from version to version. But console.log(file.previewElement) in any event will output.
 
 .dz-preview gets .dz-processing when the file gets processed, .dz-success when it got uploaded and .dz-error
 
@@ -16512,6 +16546,53 @@ dropzone:default template
 *** option:translation
 **** option:dictCancelUpload, dictCancelUploadConfirmation, dictRemoveFile
 
+*** option:maxFiles int
+*** option:maxFilesize int (MB)
+event:maxfilesexceeded is called and the whole dropzone element gets the class .dz-max-files-reached
+
+*** option:event:init, add events
+It's the best place to add custom events if options are used to setup the dropzone
+#+BEGIN_EXAMPLE
+// The recommended way from within the init configuration:
+Dropzone.options.myAwesomeDropzone = {
+  init: function() {
+    this.on("addedfile", function(file) { alert("Added file."); });
+  }
+};
+#+END_EXAMPLE
+
+Use this to attach events if dropzone is defined programmatically
+#+BEGIN_EXAMPLE
+// This example uses jQuery so it creates the Dropzone, only when the DOM has
+// loaded.
+
+// Disabling autoDiscover, otherwise Dropzone will try to attach twice.
+Dropzone.autoDiscover = false;
+// or disable for specific dropzone:
+// Dropzone.options.myDropzone = false;
+
+$(function() {
+  // Now that the DOM is fully loaded, create the dropzone, and setup the
+  // event listeners
+  var myDropzone = new Dropzone("#my-dropzone");
+  myDropzone.on("addedfile", function(file) {
+    /* Maybe display some more file information on your page */
+  });
+})
+#+END_EXAMPLE
+
+*** option:clickable null|true|false|an html element|a CSS selector|array of html
+All of those elements will trigger an upload when clicked
+
+*** option:acceptedFiles
+comma separated list of mime types of file extensions
+#+BEGIN_EXAMPLE
+image/*,applicaton/pdf,.psd
+#+END_EXAMPLE
+
+*** option:maxThumbnailFilesize (MB), thumbnailWidth, thumbnailHeight, thumbnailMethod
+thumbnailMethod :: 'contain' or 'crop' when thumbnailWidth and thumbnailHeight are both defined!
+
 *** event:addedfile
 #+BEGIN_EXAMPLE
 // Disabling autoDiscover, otherwise Dropzone will try to attach twice.
@@ -16527,6 +16608,85 @@ $(function() {
     /* Maybe display some more file information on your page */
   });
 })
+#+END_EXAMPLE
+
+*** event:removedfile(file)
+*** event:thumbnail(file, dataUrl)
+*** event:processing(file)
+when a file gets processed
+
+*** event:uploadprogress(file, progress, bytesSent)
+progress :: int from 0 to 100
+
+*** event:error(file)
+*** event:success(file)
+Display something after a file is uploaded
+#+BEGIN_EXAMPLE
+Dropzone.options.myDropzone = {
+  init: function() {
+    this.on("success", function(file, responseText) {
+      // Handle the responseText here. For example, add the text to the preview element:
+      file.previewTemplate.appendChild(document.createTextNode(responseText));
+    });
+  }
+};
+#+END_EXAMPLE
+
+Display thumbnail that is created on server after server processes the uploaded image
+{ "imageUrl": "http://my.image/file.jpg" }
+#+BEGIN_EXAMPLE
+Dropzone.options.myDropzone = {
+  init: function() {
+    this.on("success", function(file, serverResponse) {
+      // Called after the file successfully uploaded.
+
+      // If the image is already a thumbnail:
+      this.emit('thumbnail', file, serverResponse.imageUrl);
+
+      // If it needs resizing:
+      this.createThumbnailFromUrl(file, serverResponse.imageUrl);
+    });
+  }
+};
+#+END_EXAMPLE
+
+*** event:complete(file)
+*** event:canceled(file)
+*** event:maxfilesexceeded(file)
+*** event:maxfilesreached(file)
+the number of files accepted reaches the maxFiles limit
+*** FAQ
+https://github.com/enyo/dropzone/wiki/FAQ#how-to-show-files-already-stored-on-server
+
+*** Show error returned by server
+Just return HTTP status code in the range of 400-500.
+If response Content-Type is text/plain, the text will be returned as error message.
+If it's application/json, dropzone uses the error property {"error": "File could not be saved."}
+
+*** Show files already stored on server
+#+BEGIN_EXAMPLE
+// Create the mock file:
+var mockFile = { name: "Filename", size: 12345 };
+
+// Call the default addedfile event handler
+myDropzone.emit("addedfile", mockFile);
+
+// And optionally show the thumbnail of the file:
+myDropzone.emit("thumbnail", mockFile, "/image/url");
+// Or if the file on your server is not yet in the right
+// size, you can let Dropzone download and resize it
+// callback and crossOrigin are optional.
+myDropzone.createThumbnailFromUrl(file, imageUrl, callback, crossOrigin);
+
+// Make sure that there is no progress bar, etc...
+myDropzone.emit("complete", mockFile);
+
+myDropzone.files.push(mockFile);
+
+// If you use the maxFiles option, make sure you adjust it to the
+// correct amount:
+var existingFileCount = 1; // The number of files already uploaded
+myDropzone.options.maxFiles = myDropzone.options.maxFiles - existingFileCount;
 #+END_EXAMPLE
 
 * ES6-ES2015
