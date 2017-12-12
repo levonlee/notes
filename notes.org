@@ -7421,6 +7421,48 @@ add_filter( 'allow_dev_auto_core_updates', '__return_true' );           // Enabl
 add_filter( 'allow_minor_auto_core_updates', '__return_true' );         // Enable minor updates
 add_filter( 'allow_major_auto_core_updates', '__return_true' );         // Enable major updates
 
+** SSL
+#+BEGIN_EXAMPLE
+// Force HTTPS logins and administration
+define('FORCE_SSL_ADMIN', true);
+
+// The above also means this below
+//define('FORCE_SSL_LOGIN', true);
+
+define('WP_HOME','https://'.$_SERVER[HTTP_HOST]);
+define('WP_SITEURL','https://'.$_SERVER[HTTP_HOST]);
+#+END_EXAMPLE
+
+You can now try to go to wp-admin
+If W3 Total Cache is installed, Performance > Page Cache > enable Cache SSL (https) requests
+
+Use ssl:test tools to identify problematic links
+Fix legacy content in DB
+https://css-tricks.com/moving-to-https-on-wordpress/
+#+BEGIN_EXAMPLE
+// double quotes
+UPDATE wp_posts 
+SET    post_content = ( Replace (post_content, 'src="http://', 'src="//') )
+WHERE  Instr(post_content, 'jpeg') > 0 
+        OR Instr(post_content, 'jpg') > 0 
+        OR Instr(post_content, 'gif') > 0 
+        OR Instr(post_content, 'png') > 0;
+
+// single quote
+UPDATE wp_posts 
+SET   post_content = ( Replace (post_content, "src='http://", "src='//") )
+WHERE  Instr(post_content, 'jpeg') > 0 
+        OR Instr(post_content, 'jpg') > 0 
+        OR Instr(post_content, 'gif') > 0 
+        OR Instr(post_content, 'png') > 0;
+
+// Custom Fields
+UPDATE wp_postmeta 
+SET meta_value=(REPLACE (meta_value, 'iframe src="http://','iframe src="//'));
+#+END_EXAMPLE
+
+Force redirect to https on Apache for all pages :: apache:https
+
 ** UC: Simple HTML page with form submit
 Create a url path /abc which points to index.html (can't have php files)
 *** /abc/index.html
@@ -16611,6 +16653,22 @@ dropzone:default template
 **** option:dictCancelUpload, dictCancelUploadConfirmation, dictRemoveFile
 
 *** option:maxFiles int
+#+BEGIN_EXAMPLE
+Dropzone.options.myAwesomeDropzone = {
+  maxFiles: 1,
+  accept: function(file, done) {
+    console.log("uploaded");
+    done();
+  },
+  init: function() {
+    this.on("maxfilesexceeded", function(file){
+        alert("No more files please!");
+      this.removeFile(file);
+    });
+  }
+};
+#+END_EXAMPLE
+
 *** option:maxFilesize int (MB)
 event:maxfilesexceeded is called and the whole dropzone element gets the class .dz-max-files-reached
 
@@ -26888,6 +26946,10 @@ Position is the average of the topmost position.
 A keyword with position 1 and only 1 impression means there's a user search that keyword and it happens the url appears at position 1.
 Different users have different search results.
 
+Add a new property for https if the website is upgraded from http. Stats are separated.
+
+Google recommends creating 2 properties per root domain per schema (http/https). domainroot.com and www.domainroot.com
+
 ** ObservePoint
 Site audit :: check js errors, GA tagging, etc.
 
@@ -29292,7 +29354,7 @@ linux:sudo:nopassword :: require no password for non-root users with sudo privil
 linux:firewall :: configure firewall, open ports
 linux:timezone :: setup timezone and sync time
 
-* Domain Server, DNS Server
+* Domain Server, DNS Server, SSL/https
 Refer to linux:dns
 A hostname :: a sub domain. e.g. www
 
@@ -29386,6 +29448,36 @@ abc.com will appear as parked on abc.xyz.com on the googlehosting
 
 ** Park domain
 To park a domain means to make the domain as idle. Nameservers will be set to Default for example in GoDaddy.
+
+** AutoSSL in WHM/cPanel
+WHM and cPanel provides free SSL certificates for VPS and Dedicated server users.
+http://www.inmotionhosting.com/support/edu/whm/creating-and-managing-accounts/using-auto-ssl
+
+It uses SHA256 TLS v1 and expires every 90 days. TLS v1 must be disabled for eCommerce site by June 30, 2018. For non-eCommerce site, it's ok.
+
+First is to enable AutoSSL for WHM users. AutoSSL will check all root domains under the user account.
+
+AutoSSL will include certificates for www. domains. e.g. www.yourrootdomain.com, www.yoursub.yourrootdomain.com 
+yoursub.yourrootdomain.com is set up by you and you didn't setup www.yoursub.yourrootdomain.com
+
+Use hosting nameservers in domain registrar. Log in WHM as root. Go to Manage AutoSSL.
+Providers :: cPanel (powered by Comodo)
+Options :: check all options especially "Allow AutoSSL to replace invalid or expiring non-AutoSSL certificates"
+Manage Users :: Enable AutoSSL for relevant users
+Click on Run AutoSSL for All Users
+Check Logs
+
+SSL certificates should be now installed.
+
+Check each domain SSL certificate using cPanel. SSL/TLS > Certificates (CRT)
+http://www.inmotionhosting.com/support/website/cpanel/add-delete-autossl-cpanel
+
+** SSL Testing Tools
+<<<ssl:test>>>
+https://www.whynopadlock.com/
+https://www.ssllabs.com/ssltest/index.html
+
+Resubmit Google Webmaster
 
 * Docker
 ** Version, Info, Installation
@@ -32817,6 +32909,38 @@ P|proxy :: handle request by mod_proxy
 QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
 e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
 /pages/123?one=two will be mapped to /page.php?page=123&one=two
+
+** Redirect to HTTPS
+<<<apache:https>>>
+#+BEGIN_EXAMPLE
+RewriteEngine On 
+RewriteCond %{SERVER_PORT} 80 
+# or
+# RewriteCond %{HTTPS} off
+
+# test one page
+# RewriteCond %{REQUEST_URI} ^/page-path-name/$
+
+RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+# or
+# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+#+END_EXAMPLE
+
+A specific domain
+#+BEGIN_EXAMPLE
+RewriteEngine On 
+RewriteCond %{HTTP_HOST} ^example\.com [NC]
+RewriteCond %{SERVER_PORT} 80 
+RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+#+END_EXAMPLE
+
+Force SSL on a specific folder. Place this .htaccess in that folder
+#+BEGIN_EXAMPLE
+RewriteEngine On 
+RewriteCond %{SERVER_PORT} 80 
+RewriteCond %{REQUEST_URI} folder 
+RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
+#+END_EXAMPLE
 
 * Nginx
 ** Install on Ubuntu 16.04
