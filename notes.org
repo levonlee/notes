@@ -6289,11 +6289,12 @@ get_site_url();
 *** Get Custom Fields
 Normal
 #+BEGIN_EXAMPLE
-<?php 
 print_r(get_post_custom_keys()); // Get all keys as an array
 print_r(get_post_custom()); // Get keys and values as an array
 print_r(get_post_custom_values('fieldkey')); // Get values as an array
-?>
+
+// get all meta
+$meta = get_post_meta(get_the_ID());
 #+END_EXAMPLE
 
 Plugin is different :: wp:plugin:types
@@ -6968,6 +6969,24 @@ add_filter('widget_text','do_shortcode');
 // wp:filter:widget_text
 #+END_EXAMPLE
 
+Pass array to shortcode attribute
+#+BEGIN_EXAMPLE
+$data = [
+ [],[],[]
+];
+
+var_dump(serialize($data));
+
+// use single quotes
+[your-shortcode data='serialized-string']
+
+function your_shortcode_cb() {
+  ...
+  $data = unserialize($a['data']);
+}
+
+#+END_EXAMPLE
+
 ** Options, Settings
 <<<WP All Options>>>
 /wp-admin/options.php
@@ -7124,6 +7143,10 @@ add_theme_support( 'post-thumbnails' );
 [[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
 single.php
 single-{post-type}.php
+archive.php
+archive-{post-type}.php
+
+if single.php and archive.php don't exist, wp looks for index.php
 
 *** Page template
 Hierarchy
@@ -7149,6 +7172,11 @@ Make a copy of page.php to start
  * @since Twenty Fourteen 1.0
  */
 #+END_EXAMPLE
+
+*** Header template
+header-{name}.php
+
+<?php get_header( $name ); ?>
 
 *** Widgets
 **** Create sidebar
@@ -7401,6 +7429,10 @@ receive messages from customers to your email addresses. Download, activate and 
 
 *** custom-search-plugin
 Custom Search plugin adds custom post types and taxonomies to WordPress website search results. A quick and easy way to search everything within custom post types and taxonomies.
+
+*** custom-permalinks
+Change URL to any structure for individual post, page, tag or category.
+Need to resave Permalinks setting
 
 *** hc-custom-wp-admin-url
 
@@ -35073,6 +35105,23 @@ Referred by d7:mysql:charset
 name, default
 innodb-buffer-pool-size, innodb-buffer-pool-chunk-size :: 128M
 max-allowed-packet :: 4M, total BLOB data size for a single row
+
+**** Last Update time for a table in a database
+#+BEGIN_EXAMPLE
+SELECT UPDATE_TIME, TABLE_SCHEMA, TABLE_NAME
+FROM   INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA NOT LIKE '%information_schema%'
+AND TABLE_SCHEMA LIKE '%your_db_name%'
+AND TABLE_NAME LIKE '%your_db_table_name%'
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+SELECT MAX(UPDATE_TIME), TABLE_SCHEMA
+FROM   INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA NOT LIKE '%information_schema%'
+GROUP BY TABLE_SCHEMA
+ORDER BY MAX(UPDATE_TIME)
+#+END_EXAMPLE
 
 *** Install
 #+BEGIN_EXAMPLE
