@@ -6767,7 +6767,7 @@ remove_filter( 'flush_rewrite_rules_hard', 'filter_flush_rewrite_rules_hard', 10
 *** tiny_mce_before_init
 <<<wp:filter:tiny_mce_before_init>>>
 [[https://codex.wordpress.org/Plugin_API/Filter_Reference/tiny_mce_before_init][Change TinyMCE settings]]
-https://codex.wordpress.org/TinyMCE
+https://codex.wordpress.org/TinyMCE Default setting
 https://www.tinymce.com/docs/configure/
 
 #+BEGIN_EXAMPLE
@@ -6786,7 +6786,27 @@ function myformatTinyMCE( $in ) {
   $in['indent'] = true;
   //endregion
 
+  //region p tag will not be added for any new line.
+  // To create a paragraph in Visual mode, Shift+Enter. Otherwise, enter will simply create a <br>
+  // This helps TinyMCE wraps shortcode on any line with p tag.
+  $in['force_p_newlines'] = false;
+  $in['forced_root_block'] = '';
+  //endregion
+
   return $in;
+}
+#+END_EXAMPLE
+
+To be safe, add this for Wordpress to remove p tag wrapped around shortcode
+#+BEGIN_EXAMPLE
+add_filter( 'the_content', 'tgm_io_shortcode_empty_paragraph_fix' );
+function tgm_io_shortcode_empty_paragraph_fix( $content ) {
+  $array = array(
+    '<p>['    => '[',
+    ']</p>'   => ']',
+    ']<br />' => ']'
+  );
+  return strtr( $content, $array );
 }
 #+END_EXAMPLE
 
@@ -36046,13 +36066,30 @@ SELECT
     DB_NAME(dbid) as DBName, 
     COUNT(dbid) as NumberOfConnections,
     loginame as LoginName
-FROM
-    sys.sysprocesses
-WHERE 
-    dbid > 0
-GROUP BY 
-    dbid, loginame
-;
+FROM sys.sysprocesses
+WHERE dbid > 0
+GROUP BY dbid, loginame
+
+-- 2017 new query
+
+SELECT @@ServerName AS server
+ ,NAME AS dbname
+ ,COUNT(STATUS) AS number_of_connections
+FROM sys.databases sd
+LEFT JOIN sys.sysprocesses sp ON sd.database_id = sp.dbid
+GROUP BY NAME
+#+END_EXAMPLE
+
+*** Last access
+#+BEGIN_EXAMPLE
+SELECT d.name,
+last_user_seek = MAX(last_user_seek),
+last_user_scan = MAX(last_user_scan),
+last_user_lookup = MAX(last_user_lookup),
+last_user_update = MAX(last_user_update)
+FROM sys.dm_db_index_usage_stats AS i
+JOIN sys.databases AS d ON i.database_id=d.database_id
+GROUP BY d.name
 #+END_EXAMPLE
 
 *** Backup
