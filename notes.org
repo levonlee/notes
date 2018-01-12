@@ -6672,6 +6672,34 @@ function append_query_string( $url, $post, $leavename=false ) {
 add_filter( 'post_link', 'append_query_string', 10, 3 );
 #+END_EXAMPLE
 
+*** url_to_postid
+url_to_postid can take full url. But it may not work for custom post type even though get_permalink and rewrite works.
+
+When URL has url paremeter p or other special parameters, it will directly return the post id.
+
+#+BEGIN_EXAMPLE
+echo url_to_postid(get_permalink()); // the current post id.
+
+function lili_get_post_id($custom_permalink) {
+  global $wpdb;
+  $post_id = $wpdb->get_col($wpdb->prepare("SELECT post_id FROM $wpdb->postmeta WHERE meta_key= 'custom_permalink' AND meta_value = '%s';", $custom_permalink ));
+  return $post_id[0];
+}
+
+function lili_url_to_postid($url) {
+  $url_parse = wp_parse_url($url);
+  if ($url_parse !== false && !empty($url_parse['path'])) {
+    $post_id = lili_get_post_id(ltrim(strtolower($url_parse['path']), '/'));
+    if ($post_id) {
+      $post_id = (int) $post_id;
+      return '?p='.$post_id;
+    }
+  }
+  return $url;
+}
+add_filter( 'url_to_postid', 'lili_url_to_postid', 10, 1);
+#+END_EXAMPLE
+
 *** pre_option_(option_name)
 <<<wp:filter:pre_option>>>
 Temporarily alter an option without changing in database.
@@ -30313,6 +30341,9 @@ COPY $REQUIREMENTS $APP_ROOT/
 #+END_EXAMPLE
 
 ** Docker for Windows
+Settings > General > Expose daemon on tcp://localhost:2375 without TLS.
+This is to allow legacy clients/applications such as phpStorm to connect to the daemon.
+
 *** PowerShell Auto Complete
 Win + x > PowerShell (Admin)
 Run these
@@ -38355,6 +38386,9 @@ HTML link to another domain with target="_blank", better add this so that window
 
 ** WCAG, AODA, Web Content Accessibility Guidelines
 SortSite by powermapper
+aodaonline.com First 50 pages is free
+
+https://www.w3.org/WAI/WCAG20/quickref/
 
 Keyboard accessbile for non link elements and non form elements
 #+BEGIN_EXAMPLE
