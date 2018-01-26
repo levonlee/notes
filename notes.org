@@ -439,6 +439,8 @@ function sanitize($s) {
 }
 $a = array('harmless', '<bad>', '>>click here!<<');
 $a = array_map('sanitize', $a);
+// trim each element
+$a = array_map('trim', $a);
 echo implode(' ', $a);
 #+END_EXAMPLE
 
@@ -638,6 +640,13 @@ Heredoc result is a double-quoted string
 $html = <<<HTML
 <span>{$obj->name[1]}</span>
 HTML;
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+$string = <<< heredoc
+plain text and now a function: %s
+heredoc;
+$string = sprintf($string, testfunction());
 #+END_EXAMPLE
 
 Nowdoc can't expand variables and the result is single quoted string
@@ -1038,6 +1047,8 @@ class RestJson {
     // Can't modify instance value $this->aPropertyName
     // Can't call instance method $this->aMethod();
   }
+
+  // Private and protected properties/methods prefixed with a single underscore
 }
 
 // Class::method()
@@ -14361,16 +14372,7 @@ function add() {
 }
 add(2,3,4,5);
 
-function add() {
-  var sum = 0;
-  for (var i = 0, j = arguments.length; i < j; i++) {
-    sum += arguments[i];
-  }
-  return sum;
-}
-
 // Use Spread Syntax js:spread
-
 function add(firstValue, ...args) {
   var sum = 0;
   for (let value of args) {
@@ -14379,8 +14381,13 @@ function add(firstValue, ...args) {
   sum += firstValue;
   return sum;
 }
-
 add(2,3,4,5);
+
+Optional argument
+function verify(w) {
+  w = (typeof w === 'undefined') ? 'default' : w;
+}
+
 **** .apply(), .call()
 <<<js:Function.apply>>> <<<js:Function.call>>>
 .apply() :: Pass arguments as an array to a function which accepts multiple arguments
@@ -26970,7 +26977,7 @@ without destroying Views data.
 A bounce is counted when there's only one pageview in one user session
 
 *** Add Google Search Console to a property
-There will be a new section in the report called Search Console
+There will be a new section in the report called Acquisition > Search Console
 Need to go back to Search Console to see keywords report
 GA shows keyword only for non-google-logged-in users that use google to search
 
@@ -27029,6 +27036,8 @@ Use ~\~ to escape. Need to escape ~.~
 http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
 
 Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI
+
+http://www.analyticsmarket.com/freetools/regex-tester
 
 *** ga Object Methods
 
@@ -27216,15 +27225,18 @@ You can also create a segment without affecting the data.
 Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
 
 ** Google Search Console
-Position is the average of the topmost position.
-A keyword with position 1 and only 1 impression means there's a user search that keyword and it happens the url appears at position 1.
-Different users have different search results.
-
 Add a new property for https if the website is upgraded from http. Stats are separated.
 
 Google recommends creating 2 properties per root domain per schema (http/https). domainroot.com and www.domainroot.com
 
 https://support.google.com/webmasters/
+
+Search Traffic > Search Analytics :: which search query end up to your site
+ - impressions :: how many times your site appears on search result page
+ - click :: how many times people click on your website on search result page
+ - position :: avg of the topmost position.
+
+Only 3 months of search traffic stats are available
 
 ** Google Trends
 A B
