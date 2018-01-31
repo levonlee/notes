@@ -1663,7 +1663,8 @@ $options = array(
  CURLOPT_POSTFIELDS => $myvars,
  CURLOPT_FOLLOWLOCATION =>  1,
  CURLOPT_HEADER => 0,
- CURLOPT_RETURNTRANSFER => 1
+ CURLOPT_RETURNTRANSFER => 1,
+ // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity
 );
 
 curl_setopt_array($ch, $options);
@@ -28161,11 +28162,19 @@ tar -cvzpf ../backup.tar.gz .
 Options
 - -z :: use gzip method
 - -c :: create a new archive
+- C :: current directory
 - -v :: verbose
 - -p :: preserve permissions (default for superuser)
 - -f :: use archive file as result or input. It follows the output/input filename
 - --exclude :: wrap in '' if it contains spaces
 - --exclude='*/*/*' :: ignore 3 levels deep
+
+Say you want compress the html folder at /var/www/html/, do this
+#+BEGIN_EXAMPLE
+tar -cvzpf mybk.tar.gz -C /var/www/html .
+// instead of
+tar -cvzpf mybk.tar.gz /var/www/html
+#+END_EXAMPLE
 
 **** Uncompress
 #+BEGIN_EXAMPLE
@@ -29862,10 +29871,12 @@ It's an addtional domain that the system stores as a subdomain
 abc.com is registered in GoDaddy. Change nameservers to another domain host say ns.googlehosting.com ns2.googlehosting.com
 Then in googlehosting, set it up as an addon domain :: abc.com > subdomain abc.xyz.com, then specify the document root
 
-abc.com will appear as parked on abc.xyz.com on the googlehosting
+abc.com will appear as parked on subdomain abc.xyz.com on the googlehosting
 
 ** Park domain
 To park a domain means to make the domain as idle. Nameservers will be set to Default for example in GoDaddy.
+
+Another instance is when you park multiple domains abc.net, abc.info to the main domain abc.com
 
 ** AutoSSL in WHM/cPanel
 WHM and cPanel provides free SSL certificates for VPS and Dedicated server users.
@@ -29875,8 +29886,10 @@ It uses SHA256 TLS v1 and expires every 90 days. TLS v1 must be disabled for eCo
 
 First is to enable AutoSSL for WHM users. AutoSSL will check all root domains under the user account.
 
+If you enable a user and the user has 1 root domain and several addon domains and subdomains, all of those will have SSL.
+
 AutoSSL will include certificates for www. domains. e.g. www.yourrootdomain.com, www.yoursub.yourrootdomain.com 
-yoursub.yourrootdomain.com is set up by you and you didn't setup www.yoursub.yourrootdomain.com
+yoursub.yourrootdomain.com was set up by you and you didn't setup www.yoursub.yourrootdomain.com
 
 Use hosting nameservers in domain registrar. Log in WHM as root. Go to Manage AutoSSL.
 Providers :: cPanel (powered by Comodo)
@@ -33196,172 +33209,6 @@ AllowOverride All
 
 Restart Apache ~service httpd restart~
 
-** Force to download a PDF file
-The path doesn't matter
-#+BEGIN_EXAMPLE
-<FilesMatch "aPDFfile.pdf">
-  ForceType application/octet-stream
-  Header add Content-Disposition "attachment"
-</filesMatch>
-#+END_EXAMPLE
-
-** Wordpress Redirect
-RewriteRule with redirect flag [R] is to redirect URL. Without it, RedirectRule maintains the URL on LHS in the address bar.
-Redirect and RedirectMatch is to redirect
-Redirect means the URL in the address bar will change
-
-RewriteRule without proxy flag [P] is to maintain the URL on LHS in RewriteRule and served to $_SERVER['REQUEST_URI']
-RewriteRule with [P] is to change the URL to the one on RHS in RewriteRule and pass it to the proxy
-[P] requires mod_proxy enabled
-
-The only way to modify $_SERVER['REQUEST_URI'] is to do a redirect or with the [P] flag.
-
-RewriteRule is relative to the directory that the current .htaccess is in for both RHS and LHS.
-RewriteBase only affects the dest of RewriteRule (RHS) only if dest is a relative path
-
-Redirect /dealdays to /DealDays
-#+BEGIN_EXAMPLE
-# custom RewriteRule goes before the wordpress block
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
-  RewriteRule ^abc/?(.*)$ /subdir/abc.php [L]
-</IfModule>
-# custom RewriteRule end
-
-# BEGIN WordPress
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /
-RewriteRule ^index\.php$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.php [L]
-</IfModule>
-
-# END WordPress
-
-# default wordpress htaccess block is to redirect to index.php if it's not a file and not a directory
-# Rules below the block has to be either a file or an existing directory
-
-RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
-# If redirect to another url, use
-# Redirect is prefix match and append additional path info beyond the matched URL-path to the new/target URL.
-# a.com/dealdays2 to b.com/dealdays2, a.com/dealdays2/foo.txt to b.com/dealdays2/foo.txt, a.com/dealdays2/xyz to b.com/dealdays2/xyz
-# Redirect syntax :: Redirect [status] [URL-path] URL
-# [URL-path] is case-sensitive beginning with slash. relative path is not allowed
-# URL may be either an absolute URL beginning with scheme and hostname or a URL-path beginning with a slash
-Redirect 301 /dealdays2 http://b.com/dealdays2
-
-# Redirect without appending additional path info
-# RedirectMatch is like Redirect but regex
-# syntax :: RedirectMatch [status] regex URL
-RedirectMatch 302 ^/dealdays2/?$ http://b.com/dealdays2
-
-# case insensitive just add (?i) in front of the pattern
-RedirectMatch 302 (?i)^dealdays2/?$  /dealdays/
-#+END_EXAMPLE
-
-Redirect root domain only but not other URI. e.g. mysite.com or www.mysite.com redirect to abc.com but not mysite.com/xyz to abc.com/xyz
-#+BEGIN_EXAMPLE
-RewriteEngine on
-RewriteCond %{HTTP_HOST} ^(www\.)?mysite\.com [NC]
-# no www :: RewriteCond %{HTTP_HOST} ^mysite\.com [NC]
-
-RewriteCond %{REQUEST_URI} ^/$
-# Rewriterule ^(.*)$ http://abc.com/ [L,R=301]
-Rewriterule ^$ http://abc.com/ [L,R=301]
-#+END_EXAMPLE
-
-Redirect www.abc.com to abc.com
-#+BEGIN_EXAMPLE
-RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
-RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
-#+END_EXAMPLE
-
-** ReWrite a path to sub directory with .htaccess
-URL /inventory/* rewrite to /my-app/public/*
-
-./my-app/public/index.php is where the app starts
-./my-app/app/*.* are the app codes
-./my-app/public/theme/*.* and ./my-app/public/uploads/*.* have the assets
-
-./.htaccess
-#+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /
-RewriteRule ^inventory/?$ /my-app/public/index.php [L]
-RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
-</IfModule>
-#+END_EXAMPLE
-
-./my-app/public/.htaccess
-#+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /my-app/public/
-RewriteRule ^index\.php$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /my-app/public/index.php [L]
-</IfModule>
-#+END_EXAMPLE
-
-** RewriteCond
-Rewrite based on time
-#+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /
-RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
-RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR} >2017110521
-RewriteRule ^DealDays/?(.*)$ / [R=302,L]
-</IfModule>
-#+END_EXAMPLE
-
-** Rewrite flags
-L|last :: stop processing other rules
-NC|nocase
-P|proxy :: handle request by mod_proxy
-
-QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
-e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
-/pages/123?one=two will be mapped to /page.php?page=123&one=two
-
-** Redirect to HTTPS
-<<<apache:https>>>
-#+BEGIN_EXAMPLE
-RewriteEngine On 
-RewriteCond %{SERVER_PORT} 80 
-# or
-# RewriteCond %{HTTPS} off
-
-# test one page
-# RewriteCond %{REQUEST_URI} ^/page-path-name/$
-
-RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
-# or
-# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
-#+END_EXAMPLE
-
-A specific domain
-#+BEGIN_EXAMPLE
-RewriteEngine On 
-RewriteCond %{HTTP_HOST} ^example\.com [NC]
-RewriteCond %{SERVER_PORT} 80 
-RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
-#+END_EXAMPLE
-
-Force SSL on a specific folder. Place this .htaccess in that folder
-#+BEGIN_EXAMPLE
-RewriteEngine On 
-RewriteCond %{SERVER_PORT} 80 
-RewriteCond %{REQUEST_URI} folder 
-RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
-#+END_EXAMPLE
-
 * Nginx
 ** Install on Ubuntu 16.04
 #+BEGIN_EXAMPLE
@@ -33788,6 +33635,187 @@ rewrite (?i)^/cms/(.*)$ /CMS/$1 last;
 
 Flag ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
 
+* ModSecurity - Web Application Firewall (WAF)
+<<<waf:modsecurity>>>
+Mod security is a free Web Application Firewall (WAF) that works with Apache, Nginx and IIS. It supports a flexible rule engine to perform simple and complex operations and comes with a Core Rule Set (CRS) which has rules for SQL injection, cross site scripting, Trojans, bad user agents, session hijacking and a lot of other exploits. For Apache, it is an additional module which makes it easy to install and configure.
+
+https://www.digitalocean.com/community/tutorials/how-to-set-up-mod_security-with-apache-on-debian-ubuntu
+
+You can disable ModSecurity on WHM but not recommended.
+In InMotion, when curl website url that is hosted on the same server, you will get
+Error 406 - Not Acceptable. Generally a 406 error is caused because a request has been blocked by Mod Security.
+
+Add user agent
+#+BEGIN_EXAMPLE
+curl --user-agent cPanel-Cron http://example.com/cron.php
+#+END_EXAMPLE
+
+** Force to download a PDF file
+The path doesn't matter
+#+BEGIN_EXAMPLE
+<FilesMatch "aPDFfile.pdf">
+  ForceType application/octet-stream
+  Header add Content-Disposition "attachment"
+</filesMatch>
+#+END_EXAMPLE
+
+** Wordpress Redirect
+RewriteRule with redirect flag [R] is to redirect URL. Without it, RedirectRule maintains the URL on LHS in the address bar.
+Redirect and RedirectMatch is to redirect
+Redirect means the URL in the address bar will change
+
+RewriteRule without proxy flag [P] is to maintain the URL on LHS in RewriteRule and served to $_SERVER['REQUEST_URI']
+RewriteRule with [P] is to change the URL to the one on RHS in RewriteRule and pass it to the proxy
+[P] requires mod_proxy enabled
+
+The only way to modify $_SERVER['REQUEST_URI'] is to do a redirect or with the [P] flag.
+
+RewriteRule is relative to the directory that the current .htaccess is in for both RHS and LHS.
+RewriteBase only affects the dest of RewriteRule (RHS) only if dest is a relative path
+
+Redirect /dealdays to /DealDays
+#+BEGIN_EXAMPLE
+# custom RewriteRule goes before the wordpress block
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
+  RewriteRule ^abc/?(.*)$ /subdir/abc.php [L]
+</IfModule>
+# custom RewriteRule end
+
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress
+
+# default wordpress htaccess block is to redirect to index.php if it's not a file and not a directory
+# Rules below the block has to be either a file or an existing directory
+
+RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
+# If redirect to another url, use
+# Redirect is prefix match and append additional path info beyond the matched URL-path to the new/target URL.
+# a.com/dealdays2 to b.com/dealdays2, a.com/dealdays2/foo.txt to b.com/dealdays2/foo.txt, a.com/dealdays2/xyz to b.com/dealdays2/xyz
+# Redirect syntax :: Redirect [status] [URL-path] URL
+# [URL-path] is case-sensitive beginning with slash. relative path is not allowed
+# URL may be either an absolute URL beginning with scheme and hostname or a URL-path beginning with a slash
+Redirect 301 /dealdays2 http://b.com/dealdays2
+
+# Redirect without appending additional path info
+# RedirectMatch is like Redirect but regex
+# syntax :: RedirectMatch [status] regex URL
+RedirectMatch 302 ^/dealdays2/?$ http://b.com/dealdays2
+
+# case insensitive just add (?i) in front of the pattern
+RedirectMatch 302 (?i)^dealdays2/?$  /dealdays/
+#+END_EXAMPLE
+
+Redirect root domain only but not other URI. e.g. mysite.com or www.mysite.com redirect to abc.com but not mysite.com/xyz to abc.com/xyz
+#+BEGIN_EXAMPLE
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^(www\.)?mysite\.com [NC]
+# no www :: RewriteCond %{HTTP_HOST} ^mysite\.com [NC]
+
+RewriteCond %{REQUEST_URI} ^/$
+# Rewriterule ^(.*)$ http://abc.com/ [L,R=301]
+Rewriterule ^$ http://abc.com/ [L,R=301]
+#+END_EXAMPLE
+
+Redirect www.abc.com to abc.com
+#+BEGIN_EXAMPLE
+RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
+RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
+#+END_EXAMPLE
+
+** ReWrite a path to sub directory with .htaccess
+URL /inventory/* rewrite to /my-app/public/*
+
+./my-app/public/index.php is where the app starts
+./my-app/app/*.* are the app codes
+./my-app/public/theme/*.* and ./my-app/public/uploads/*.* have the assets
+
+./.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^inventory/?$ /my-app/public/index.php [L]
+RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
+</IfModule>
+#+END_EXAMPLE
+
+./my-app/public/.htaccess
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /my-app/public/
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /my-app/public/index.php [L]
+</IfModule>
+#+END_EXAMPLE
+
+** RewriteCond
+Rewrite based on time
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
+RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR} >2017110521
+RewriteRule ^DealDays/?(.*)$ / [R=302,L]
+</IfModule>
+#+END_EXAMPLE
+
+** Rewrite flags
+L|last :: stop processing other rules
+NC|nocase
+P|proxy :: handle request by mod_proxy
+
+QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
+e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
+/pages/123?one=two will be mapped to /page.php?page=123&one=two
+
+** Redirect to HTTPS
+<<<apache:https>>>
+#+BEGIN_EXAMPLE
+RewriteEngine On 
+RewriteCond %{SERVER_PORT} 80 
+# or
+# RewriteCond %{HTTPS} off
+
+# test one page
+# RewriteCond %{REQUEST_URI} ^/page-path-name/$
+
+RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+# or
+# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+#+END_EXAMPLE
+
+A specific domain
+#+BEGIN_EXAMPLE
+RewriteEngine On 
+RewriteCond %{HTTP_HOST} ^example\.com [NC]
+RewriteCond %{SERVER_PORT} 80 
+RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+#+END_EXAMPLE
+
+Force SSL on a specific folder. Place this .htaccess in that folder
+#+BEGIN_EXAMPLE
+RewriteEngine On 
+RewriteCond %{SERVER_PORT} 80 
+RewriteCond %{REQUEST_URI} folder 
+RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
+#+END_EXAMPLE
+
 * Git
 ** Show config
 #+BEGIN_EXAMPLE
@@ -34129,6 +34157,17 @@ git push anotherremote shrinksize:master
 =git log --graph=
 =git log -3= Last 3 commits
 =git log --grep=<pattern>= Search commit message
+
+** Head Detached Mode, checkout previous commit
+At the current branch master, find hash of the old commit that you want to revert back to and checkout
+#+BEGIN_EXAMPLE
+git checkout a1b2c3
+#+END_EXAMPLE
+
+when you are done, set the HEAD back to the front
+#+BEGIN_EXAMPLE
+git checkout master
+#+END_EXAMPLE
 
 ** Local Ignore, Global Ignore, git status -u
 Show untracked files
