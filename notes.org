@@ -1628,7 +1628,7 @@ class SYS_CURL {
 }
 #+END_EXAMPLE
 
-** Http Request
+** Http Request, cURL, file_get_contents
 cURL-less method for PHP5 but requires file_get_contents. Some host might disable file_get_contents. Use cURL method
 #+BEGIN_EXAMPLE
 $url = 'http://server.com/path';
@@ -1650,7 +1650,9 @@ var_dump($result);
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-$url = 'http://www.someurl.com';
+$url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
+// usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
+
 $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
 
 $ch = curl_init();
@@ -1658,18 +1660,32 @@ $ch = curl_init();
 // curl_setopt( $ch, CURLOPT_POST, 1);
 
 // use curl_setopt_array to set multiple
+
+// $verbose = fopen('php://temp', 'w+'); // enable debug
+
 $options = array(
  CURLOPT_URL => $url,
  CURLOPT_POSTFIELDS => $myvars,
  CURLOPT_FOLLOWLOCATION =>  1,
  CURLOPT_HEADER => 0,
  CURLOPT_RETURNTRANSFER => 1,
- // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity
+ // CURLOPT_VERBOSE => true, // enable debug
+ // CURLOPT_STDERR => $verbose, // enable debug
+ // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
 );
 
 curl_setopt_array($ch, $options);
 
 $response = curl_exec( $ch );
+
+// catch debug
+/*
+if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
+rewind($verbose);
+$verboseLog = stream_get_contents($verbose);
+echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+*/
+
 curl_close($ch);
 #+END_EXAMPLE
 
@@ -28356,7 +28372,7 @@ rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/up
 #+END_EXAMPLE
 
 ** head, tail
-<<<linux:tail>>>
+   <<<linux:tail>>>
 
 Last 5 lines
 #+BEGIN_EXAMPLE
@@ -29261,7 +29277,7 @@ this_var3=${3:-"_"}
  fi
 #+END_EXAMPLE
 
-** curl wget
+** curl, wget
 *** curl <<<linux:curl>>>
 **** Basic
 #+BEGIN_EXAMPLE
@@ -33645,9 +33661,17 @@ You can disable ModSecurity on WHM but not recommended.
 In InMotion, when curl website url that is hosted on the same server, you will get
 Error 406 - Not Acceptable. Generally a 406 error is caused because a request has been blocked by Mod Security.
 
-Add user agent
+Add user agent. This only works for cURL GET request.
 #+BEGIN_EXAMPLE
 curl --user-agent cPanel-Cron http://example.com/cron.php
+#+END_EXAMPLE
+
+To see any requests that violate which rules in which .conf file, tail the apache log
+#+BEGIN_EXAMPLE
+tail -f /usr/local/apache/logs/error_log | grep ModSecurity | grep my-host-url.com
+
+// to see which .conf files are loaded by the module, InMotion hosting
+cat /usr/local/apache/conf/modsec2.user.conf
 #+END_EXAMPLE
 
 ** Force to download a PDF file
