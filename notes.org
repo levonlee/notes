@@ -7520,10 +7520,32 @@ https://wordpress.org/support/topic/high-server-load-and-dsq_sync_forum-problem?
 *** captcha
 *** all-in-one-event-calendar
 *** contact-form-7
-*** contact-form-plugin
-receive messages from customers to your email addresses. Download, activate and paste [bestwebsoft_contact_form] shortcode on any page, post or widget to display the form. Customize the form styles and contents easily with the pre-build options.
+**** DOM Events
+https://contactform7.com/dom-events/
 
-**** shortcode
+wpcf7invalid — Fires when an Ajax form submission has completed successfully, but mail hasn’t been sent because there are fields with invalid input.
+wpcf7spam — Fires when an Ajax form submission has completed successfully, but mail hasn’t been sent because a possible spam activity has been detected.
+wpcf7mailsent — Fires when an Ajax form submission has completed successfully, and mail has been sent.
+wpcf7mailfailed — Fires when an Ajax form submission has completed successfully, but it has failed in sending mail.
+wpcf7submit — Fires when an Ajax form submission has completed successfully, regardless of other incidents.
+
+event.detail
+detail.inputs
+detail.contactFormId	The ID of the contact form.
+detail.pluginVersion	The version of Contact Form 7 plugin.
+detail.contactFormLocale	The locale code of the contact form.
+detail.unitTag	The unit-tag of the contact form.
+detail.containerPostId	The ID of the post that the contact form is placed in.
+
+Example redirect to a page
+#+BEGIN_EXAMPLE
+document.addEventListener( 'wpcf7mailsent', function( event ) {
+  var inputs = event.detail.inputs;
+  location = 'http://example.com/';
+}, false );
+#+END_EXAMPLE
+
+**** Form tags, akismet
 #+BEGIN_EXAMPLE
 Select Country (required)
 [checkbox* your-country use_label_element "China" "India" "San Marino"]
@@ -7543,6 +7565,31 @@ Select Ghkdsjdf
 [submit "Send"]
 #+END_EXAMPLE
 
+akismet:author
+Add this option to the field that accepts the name of the sender.
+Example: [text* your-name akismet:author]
+akismet:author_email
+Add this option to the field that accepts the email address of the sender.
+Example: [email* your-email akismet:author_email]
+akismet:author_url
+Add this option to the field that accepts the URL of the sender.
+Example: [text your-url akismet:author_url]
+
+***** File upload
+https://contactform7.com/file-uploading-and-attachment/
+#+BEGIN_EXAMPLE
+[file your-file filetypes:pdf|txt limit:2mb]
+//id:foo
+//limit:1048576
+//limit:1024kb
+//limit:1mb
+
+// multiple classes
+// class:y2008 class:m01 class:d01
+#+END_EXAMPLE
+
+Default file upload location is wp-content/uploads/wpcf7_uploads
+
 ***** select with pipes
 #+BEGIN_EXAMPLE
 [select your-recipient "CEO|ceo@example.com"
@@ -7551,6 +7598,18 @@ Select Ghkdsjdf
 #+END_EXAMPLE
 Only the part before pipes are revealed on the front end to prevent spam.
 Use [your-recipient] in the Mail template. To get value before pipe, [_raw_{field name}] e.g. [_raw_your-recipient]
+**** multifile-upload-field-for-contact-form-7
+Form tag [multifile your-photos] to upload multiple files as one zip file
+**** contact-form-7-confirm-email-feild
+Confirm email field 
+
+#+BEGIN_EXAMPLE
+[email* your-email akismet:author_email]
+<label> <p>Confirm Email:</p> [confirm_email* confirm-email]</label>
+#+END_EXAMPLE
+
+**** contact-form-plugin
+receive messages from customers to your email addresses. Download, activate and paste [bestwebsoft_contact_form] shortcode on any page, post or widget to display the form. Customize the form styles and contents easily with the pre-build options.
 
 *** custom-search-plugin
 Custom Search plugin adds custom post types and taxonomies to WordPress website search results. A quick and easy way to search everything within custom post types and taxonomies.
@@ -7561,7 +7620,7 @@ Need to resave Permalinks setting
 
 *** hc-custom-wp-admin-url
 
-*** tinymce-advanced, 
+*** tinymce-advanced
 Add, remove and arrange buttons shown on the Visual Editor toolbar.
 Enable or disable 15 plugins for TinyMCE.
 Modify options such as keeping the paragrah tags in the Text editor and importing CSS classes from the theme's editor-style.css
@@ -33962,6 +34021,13 @@ c4 contains all the necessary changes for going back to c1.
 Reset rewrites history. Only use it for local changes that are never pushed to remote.
 
 ~git revert c1 --no-edit~ undoes commit 1 and creates a commit. --no-edit means to skip the commit message.
+
+** Checkout a folder from another branch to current branch
+current branch is master and get folder target-folder/ from feature branch
+#+BEGIN_EXAMPLE
+git checkout master
+git checkout feature target-folder/
+#+END_EXAMPLE
 
 ** Branch
 *** Duplicate current branch and switch to it 
