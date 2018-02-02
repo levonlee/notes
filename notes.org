@@ -5446,6 +5446,24 @@ define( 'WP_SITEURL', '/enterprise' );
 define( 'WP_HOME', '/enterprise' );
 #+END_EXAMPLE
 
+** Load WP Core in sub directory under same domain
+sub directory has a customized PHP application and it needs to use WP Core to determine if a user is logged in
+
+https://www.webhostinghero.com/wordpress-authentication-integration-with-php/
+http://dovy.io/wordpress/authenticating-outside-of-wordpress-on-diff-domain/
+
+subfolder/index.php
+#+BEGIN_EXAMPLE
+define( 'WP_USE_THEMES', false ); // NOT load the theme at all or any of that content.
+define( 'COOKIE_DOMAIN', false ); // NOT verify the cookie domain. We just want to take the cookie as it is.
+define( 'DISABLE_WP_CRON', true );
+
+require_once(__DIR__ . "/../wp-load.php");
+// You will find some errors, fix errors in your custom themes and plugins
+// clear cache and try again
+
+#+END_EXAMPLE
+
 ** Email
 Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
 This way you don't need to have linux:sendmail installed on Linux
@@ -8160,6 +8178,19 @@ class FORM_CLEAN{
 
   }
   
+}
+#+END_EXAMPLE
+
+** TS: wp_deregister_script was called incorrectly
+Scripts and styles should not be registered or enqueued until the wp_enqueue_scripts, admin_enqueue_scripts, or login_enqueue_scripts hooks.
+Use something like this
+#+BEGIN_EXAMPLE
+if ( ! is_admin() ) {
+    add_action( 'wp_enqueue_scripts', function(){
+        wp_deregister_script( 'jquery' );
+        wp_register_script( 'jquery', 'http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js', array(), null, false );
+        wp_enqueue_script( 'jquery');
+    });
 }
 #+END_EXAMPLE
 
