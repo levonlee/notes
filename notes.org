@@ -2546,6 +2546,14 @@ $conf['s3fs_region'] = 'YOUR REGION'';
 Go to =admin/config/media/file-system= and set the Default download method to Amazon Simple Storage Service
 Refer to aws:s3 about how to setup user with correct permission policy
 
+*** Security Kit - seckit
+https://www.drupal.org/project/seckit
+Content Security Policy implementation via HTTP response header Content-Security-Policy
+
+Control over Internet Explorer / Apple Safari / Google Chrome internal XSS filter via X-XSS-Protection HTTP response header
+
+Prevent content upsniffing and serving files with incorrect MIME-type via X-Content-Type-Options: nosniff HTTP response header
+
 ** Debug
 watchdog('LOG_TYPE','message');
 watchdog('LOG_TYPE', $message, array(), WATCHDOG_ERROR);
@@ -12241,6 +12249,11 @@ Required properties for every page
 ** HTTP Header
 All headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
 
+HTTP response header can be defined in html markup
+#+BEGIN_EXAMPLE
+<meta http-equiv="Content-Security-Policy" content="default-src https://cdn.example.net; child-src 'none'; object-src 'none'">
+#+END_EXAMPLE
+
 *** Age
 A non-negative integer of seconds that the object (response) has been in a proxy cache (CDN, Varnish)
 
@@ -12267,6 +12280,109 @@ post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask 
 When the response is considered stale.
 Set to 0 means the response is expired.
 If Cache-Control has max-age or s-max-age, Expires is ignored.
+
+*** Content-Security-Policy (CSP) :: response
+<<<Content-Security-Policy>>> is official name
+- X-Content-Security-Policy (Firefox and IE) 
+- X-WebKit-CSP (Chrome and Safari)
+
+https://developers.google.com/web/fundamentals/security/csp/
+
+Use Content-Security-Policy-Report-Only instead of Content-Security-Policy to test first!
+
+Specify whitelist
+#+BEGIN_EXAMPLE
+Content-Security-Policy: script-src 'self' https://apis.google.com https://host1.com https://host2.com
+#+END_EXAMPLE
+
+default-src is any other non-defined directives' default
+
+Define multiple directives, 'none' means whitelist nothing (block anything)
+#+BEGIN_EXAMPLE
+Content-Security-Policy: default-src https://cdn.example.net; child-src 'none'; object-src 'none'
+#+END_EXAMPLE
+
+Wildcards can be used for scheme, port, or in the leftmost position of the hostname.
+#+BEGIN_EXAMPLE
+*://*.example.com:*
+#+END_EXAMPLE
+
+~data:~ ~http:~ :: scheme
+#+BEGIN_EXAMPLE
+script-src * data: https://ssl.gstatic.com 'unsafe-inline' 'unsafe-eval';
+#+END_EXAMPLE
+
+example.com :: any scheme and any port
+
+'self' :: matches the current origin, but not its subdomains
+'unsafe-inline' :: allow inline JavaScript and CSS.
+'unsafe-eval' :: allo text-to-JavaScript mechanisms like eval.
+
+By default, CSP bans inline script entirely if 'unsafe-inline', 'nonce-*' nor 'sha256-' is not used
+- scripts inside <script> tags
+- inline event handlers and ~javascript:~ URLs.
+
+You will need to move content of script tags into an external file.
+#+BEGIN_EXAMPLE
+//  change this
+<script>
+  function doAmazingThings() {
+    alert('YOU AM AMAZING!');
+  }
+</script>
+<button onclick='doAmazingThings();'>Am I amazing?</button>
+
+// To this
+<!-- amazing.html -->
+<script src='amazing.js'></script>
+<button id='amazing'>Am I amazing?</button>
+// amazing.js
+function doAmazingThings() {
+  alert('YOU AM AMAZING!');
+}
+document.addEventListener('DOMContentReady', function () {
+  document.getElementById('amazing')
+    .addEventListener('click', doAmazingThings);
+});
+#+END_EXAMPLE 
+
+report-uri directive tells the browser to POST JSON-formatted violation reports
+#+BEGIN_EXAMPLE
+Content-Security-Policy: default-src 'self'; ...; report-uri /my_amazing_csp_report_parser;
+// example
+{
+  "csp-report": {
+    "document-uri": "http://example.org/page.html",
+    "referrer": "http://evil.example.com/",
+    "blocked-uri": "http://evil.example.com/evil.js",
+    "violated-directive": "script-src 'self' https://apis.google.com",
+    "original-policy": "script-src 'self' https://apis.google.com; report-uri http://example.org/my_amazing_csp_report_parser"
+  }
+}
+#+END_EXAMPLE
+
+Generate ononce value differently each time and insert it into any inline script
+#+BEGIN_EXAMPLE
+<script nonce=EDNnf03nceIOfn39fn3e9h3sdfa>
+  //Some inline code I cant remove yet, but need to asap.
+</script>
+
+Content-Security-Policy: script-src 'nonce-EDNnf03nceIOfn39fn3e9h3sdfa'
+#+END_EXAMPLE
+
+Or use sha
+#+BEGIN_EXAMPLE
+<script>alert('Hello, world.');</script>
+Content-Security-Policy: script-src 'sha256-qznLcsROx4GACP2dm0UCKCzCG-HiZ1guq6ZZDob_Tng='
+// calculate sha hash for each inline script
+#+END_EXAMPLE
+
+To enable Google Analytics without 'unsafe-inline', move GA code in a js file and
+#+BEGIN_EXAMPLE
+Content-Security-Policy: script-src www.google-analytics.com; img-src www.google-analytics.com
+#+END_EXAMPLE
+
+I've heard there's way other than 'unsafe-inline' for Google Tag Manager
 
 ** Email
 *** View email source on Outlook
