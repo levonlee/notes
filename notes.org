@@ -5456,12 +5456,15 @@ subfolder/index.php
 #+BEGIN_EXAMPLE
 define( 'WP_USE_THEMES', false ); // NOT load the theme at all or any of that content.
 define( 'COOKIE_DOMAIN', false ); // NOT verify the cookie domain. We just want to take the cookie as it is.
-define( 'DISABLE_WP_CRON', true );
+define( 'DISABLE_WP_CRON', true ); // Optional
+
+// if(!session_id()) session_start(); // I find this not necessary
 
 require_once(__DIR__ . "/../wp-load.php");
 // You will find some errors, fix errors in your custom themes and plugins
 // clear cache and try again
 
+// see wp:user
 #+END_EXAMPLE
 
 ** Email
@@ -6336,6 +6339,32 @@ Site url
 #+BEGIN_EXAMPLE
 // http://google.com without trailing slash
 get_site_url();
+#+END_EXAMPLE
+
+** WP_User, user object
+<<<wp:user>>> https://codex.wordpress.org/Class_Reference/WP_User
+
+Public properties
+ID (int) - the user's ID.
+caps (array) - the individual capabilities the user has been given.
+cap_key (string) -
+roles (array) - the roles the user is part of.
+allcaps (array) - all capabilities the user has, including individual and role based.
+first_name (string) - first name of the user.
+last_name (string) - last name of the user.
+
+Public Methods
+has_cap :: has role name or capability
+
+#+BEGIN_EXAMPLE
+if ( is_user_logged_in() ) {
+  $user = wp_get_current_user();
+  // $user->ID public properties
+  
+  if ($user->has_cap('administrator')) {
+    // user is admin
+  }
+} 
 #+END_EXAMPLE
 
 ** WP Custom Fields
@@ -7662,6 +7691,8 @@ Add, remove and arrange buttons shown on the Visual Editor toolbar.
 Enable or disable 15 plugins for TinyMCE.
 Modify options such as keeping the paragrah tags in the Text editor and importing CSS classes from the theme's editor-style.css
 
+*** menu-image
+*** revslider (not in WP directory)
 *** sendgrid-email-delivery-simplified
 ** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
@@ -16077,10 +16108,17 @@ var iframeId = $("#div-iframe").find('iframe').get(0).id;
 var parentVideoDiv = parent.jQuery('#videoplayer').parent('.the-content');
 #+END_EXAMPLE
 
-** Get parent element, sibling
+** Get parent element, sibling, closet
 #+BEGIN_EXAMPLE
 var parentDiv = jQuery('#videoplayer').parent('.content');
 var siblingDiv = parentDiv.prev(); // preceding sibling
+#+END_EXAMPLE
+
+.closet starts from the current element, travels up the DOM tree until it finds a match for the supplied selector, returns zero or one element.
+#+BEGIN_EXAMPLE
+$( "li.item-a" )
+  .closest( "ul" )
+  .css( "background-color", "red" );
 #+END_EXAMPLE
 
 ** Pass $(this) to javascript function
@@ -16092,6 +16130,15 @@ function doFunc(obj) {
 $('li').each(function() {
   doFunc(this);
 });
+
+// or
+function handler(event) {
+  var target = $(event.target);
+  if (target.is("li")) {
+    target.children().toggle();
+  }
+}
+$("ul").click(handler).find("ul").hide();
 #+END_EXAMPLE
 
 ** Replace class
@@ -16106,9 +16153,13 @@ Or remove a class if it exists or add a class if it doesn't
 $('#id').toggleClass('col-md-9 col-md-12');
 #+END_EXAMPLE
 
-** Find inside an element
+** Find inside an element, .find, .first, .last
 #+BEGIN_EXAMPLE
 siblingDiv.find(".panel.panel-default");
+
+// by data attribute
+var $all = $('#id').find('[data-name="' + js_var + '"]');
+$first = $all.first(); 
 #+END_EXAMPLE
 
 ** Move element
@@ -34577,6 +34628,7 @@ wp-content/upgrade/
 wp-content/backup-db/
 wp-content/advanced-cache.php
 wp-content/wp-cache-config.php
+wp-content/w3tc-config/*
 wp-content/cache/*
 wp-content/cache/supercache/*
 *.log
