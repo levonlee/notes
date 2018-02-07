@@ -479,6 +479,51 @@ $_first_img = $imgs->item(0);
 echo $_first_img->getAttribute('src');
 #+END_EXAMPLE
 
+Strip one specific HTML tag
+#+BEGIN_EXAMPLE
+$dom = new DOMDocument;
+$dom->loadHTML($htmlString);
+$xPath = new DOMXPath($dom);
+$nodes = $xPath->query('//*[@id="anotherDiv"]');
+if($nodes->item(0)) {
+    $nodes->item(0)->parentNode->removeChild($nodes->item(0));
+}
+
+$list = $doc->getElementsByTagName("p");
+while ($list->length > 0) {
+    $p = $list->item(0);
+    $p->parentNode->removeChild($p);
+}
+
+echo $dom->saveHTML();
+#+END_EXAMPLE
+
+The above will add <!doctype><html><body> tags, use this to do fragment
+#+BEGIN_EXAMPLE
+$dom = new DOMDocument;
+$fragment = $dom->createDocumentFragment();
+$fragment->appendXML($form);
+$dom->appendChild($fragment);
+$noscripts = $dom->getElementsByTagName('noscript');
+while ($noscripts->length > 0) {
+  $i = $noscripts->item(0);
+  $i->parentNode->removeChild($i);
+}
+return $dom->saveHTML();
+#+END_EXAMPLE
+
+*** Remove HTML tag, regex
+#+BEGIN_EXAMPLE
+$tags = ['noscript', 'p'];
+return preg_replace('@<('. implode('|', $tags) .')[^>]*?>.*?</\\1>@si', '',$html);
+#+END_EXAMPLE
+
+*** Remove an attribute from string, regex
+remove attribute style
+#+BEGIN_EXAMPLE
+$output = preg_replace('/(<[^>]+) style=".*?"/si', '$1', $input);
+#+END_EXAMPLE
+
 *** String Ellipsis, Trim
 wp:ellipsis d7:ellipsis
 
@@ -6653,7 +6698,8 @@ apply_filters( 'tagname', $result, $var1);
 
 // callback should take 2 variables
 function lili_funct($result, $var1) {
- return $result;
+ $new = $result . 'abc';
+ return $new;
 }
 
 remove_filter(
@@ -7575,6 +7621,55 @@ https://wordpress.org/support/topic/high-server-load-and-dsq_sync_forum-problem?
 *** captcha
 *** all-in-one-event-calendar
 *** contact-form-7
+**** autop <<<wp:p:contact-form-7:autop>>>
+wp-config.php
+#+BEGIN_EXAMPLE
+define( 'WPCF7_AUTOP', false );
+#+END_EXAMPLE
+
+**** WCAG, hooks
+Default template
+#+BEGIN_EXAMPLE
+[response]
+
+<p><label for="your-name">Your Name (required)</label><br>
+[text* your-name id:your-name]</p>
+
+<p><label for="your-email">Your Email (required)</label><br>
+[email* your-email id:your-email]</p>
+
+<p><label for="your-message">Your Message</label><br>
+[textarea* your-message id:your-message]</p>
+
+<p>[submit "Send"]</p>
+#+END_EXAMPLE
+
+Turn off wp:p:contact-form-7:autop
+
+***** filter:wpcf7_form_elements
+Remove <noscript> for reCaptcha which has an iframe that is not WCAG ready
+#+BEGIN_EXAMPLE
+function csWpcf7FormElements($form) {
+  try {
+    $dom = new DOMDocument;
+    $dom->loadHTML($form);
+    $noscripts = $dom->getElementsByTagName('noscript');
+    while ($noscripts->length > 0) {
+      $i = $noscripts->item(0);
+      $i->parentNode->removeChild($i);
+    }
+    return $dom->saveHTML();
+  }
+  catch (Exception $err) {
+    return $form;
+  }
+
+  return $form;
+
+}
+add_filter( 'wpcf7_form_elements', 'csWpcf7FormElements');
+#+END_EXAMPLE
+
 **** DOM Events
 https://contactform7.com/dom-events/
 
@@ -7692,6 +7787,27 @@ Enable or disable 15 plugins for TinyMCE.
 Modify options such as keeping the paragrah tags in the Text editor and importing CSS classes from the theme's editor-style.css
 
 *** menu-image
+*** responsive-lightbox
+https://dfactory.eu/docs/responsive-lightbox/manual-usage/
+By default, RL applies effects to all published images, videos and galleries.
+
+Settings > Responsive Lightbox > General settings
+- set Selector and enable lightbox for WordPress image links. This is the manual way.
+- (default) Enable lightbox for WordPress image links will apply to all published images
+
+- set Display single post images as a gallery. This is the manual way to create gallery
+- (default) Add lightbox to WordPress image galleries by default.
+
+- (default) Add lightbox to YouTube and Vimeo video links by default.
+
+#+BEGIN_EXAMPLE
+// Manual on single image
+<a href="image-link" data-rel="lightbox"><img class ="some-text-here" src="image-link" /></a>
+
+// Manual on single gallery
+<a href="image-link" data-rel="lightbox-gallery-182"><img class ="some-text-here" src="image-link" /></a>
+#+END_EXAMPLE
+
 *** revslider (not in WP directory)
 *** sendgrid-email-delivery-simplified
 ** Debug, WP_Error
@@ -38861,12 +38977,26 @@ Keyboard accessbile for non link elements and non form elements
 <div onclick="doSumat();" onkeypress="doSumat();" tabindex="">
 #+END_EXAMPLE
 
+*** <a>
+Multiple read more on a page
+#+BEGIN_EXAMPLE
+<a href="babymayor.html" aria-label="Read more about Seminole's new baby mayor">[Read more...]</a>
+#+END_EXAMPLE
+
+*** iframe
 <iframe title="" style="border:0px;">
 
 frameborder="0" is obsolete.
 
+*** input, label
 if <input> has no <label>, then add title attribute
 
+Remove size attribute for input type file, confirm_email
+#+BEGIN_EXAMPLE
+$html = preg_replace('/(<input type="file" [^>]+) size=".*?"/si', '$1', $html);
+#+END_EXAMPLE
+
+*** pdf
 PDF and Office documents need to set Title, Advanced > Language in Document Properties
 
 PDF and Office document image has to have title attribute.
@@ -38882,6 +39012,8 @@ Accessbility > Reading Order > Show Order Panel. Right click on the figure and T
 Add Adobe Reader download link
 http://www.adobe.com/ca/legal/permissions/icons-web-logos.html#adobereader
 
+Get Adobe Reader
+
 #+BEGIN_EXAMPLE
 <a href="http://www.adobe.com/go/getreader" target="_blank"><img src="get-reader-158x39.png" alt="Get Adobe Reader DC"></a>
 #+END_EXAMPLE
@@ -38889,9 +39021,9 @@ http://www.adobe.com/ca/legal/permissions/icons-web-logos.html#adobereader
 PDF/UA-1 compliance. PDF needs to have this XMP metadata to mark it as PDF/UA-1 compliant.
 Tools > Print Production > Preflight, choose PDF Standards or Acrobat Pro DC 2015 Profiles as profile, choose the wrench tool icon (Select single fixups), expand to Document info and Metadata and choose Set PDF/UA-1 entry and then Fix.
 
-meta viewport
-
-Skip to content link, right below <body>
+*** meta viewport
+*** Skip to content link
+Right below <body>
 #+BEGIN_EXAMPLE
 <a id="skip-nav" href="#main-content">Skip to content</a>
 <div id="main-content"></div>
@@ -38914,7 +39046,7 @@ Skip to content link, right below <body>
 }
 #+END_EXAMPLE
 
-Color Contrast Ratio
+*** Color Contrast Ratio
 WCAG 2.0 level AA requires a contrast ratio of 4.5:1 for normal text and 3:1 for large text. Level AAA requires a contrast ratio of 7:1 for normal text and 4.5:1 for large text.
 https://webaim.org/resources/contrastchecker/
 http://leaverou.github.io/contrast-ratio/
@@ -39381,6 +39513,13 @@ If you have error 146 and an app update failed, you might need to reinstall Crea
 - Preserve Details (enlargement)
 - Bicubic Smoother (enlargement)
 - Bicubic Sharper (reduction)
+
+Resize an animated gif
+Window > Workspace > Motion
+
+Crop if you like. 
+
+File > Export > Save for Web (Legacy) > Resize it there
 
 ** Adobe Illustrator
 *** Setting
