@@ -7338,7 +7338,55 @@ add_action( 'wp_ajax_nopriv_my_action', 'my_action'); // non-logged in users
 // same my_action
 #+END_EXAMPLE
 
-** Wordpress Theme
+** Theme
+*** child theme
+https://codex.wordpress.org/Child_Themes
+wp-content/themes/parent-theme-name-child
+wp-content/themes/parent-theme-name-child/style.css
+#+BEGIN_EXAMPLE
+/*
+ Theme Name:   Twenty Fifteen Child
+ Theme URI:    http://example.com/twenty-fifteen-child/
+ Description:  Twenty Fifteen Child Theme
+ Author:       John Doe
+ Author URI:   http://example.com
+ Template:     twentyfifteen
+ Version:      1.0.0
+ License:      GNU General Public License v2 or later
+ License URI:  http://www.gnu.org/licenses/gpl-2.0.html
+ Tags:         light, dark, two-columns, right-sidebar, responsive-layout, accessibility-ready
+ Text Domain:  twenty-fifteen-child
+*/
+#+END_EXAMPLE
+
+Only Theme Name and Template (the name of the parent theme directory) are required
+
+functions.php in child loads first then the parent's
+#+BEGIN_EXAMPLE
+add_action( 'wp_enqueue_scripts', 'my_theme_enqueue_styles' );
+function my_theme_enqueue_styles() {
+  $parent_style = 'parent-style'; // This is 'twentyfifteen-style' for the Twenty Fifteen theme.
+
+  wp_enqueue_style( $parent_style, get_template_directory_uri() . '/style.css' );
+
+  // child theme style.css is loaded after parent's style.css
+  wp_enqueue_style( 'child-style',
+        get_stylesheet_directory_uri() . '/style.css',
+        array( $parent_style ),
+        wp_get_theme()->get('Version')
+  );
+}
+#+END_EXAMPLE
+
+That requires parent functions.php to have
+#+BEGIN_EXAMPLE
+if ( ! function_exists( 'theme_special_nav' ) ) {
+    function theme_special_nav() {
+        //  Do something.
+    }
+}
+#+END_EXAMPLE
+
 *** functions.php
 <<<wp:theme:functions>>>
 #+BEGIN_EXAMPLE
@@ -7519,6 +7567,78 @@ https://github.com/DevinVinson/WordPress-Plugin-Boilerplate
 https://github.com/levonlee/gridli-vue
 
 Use hyphen for plugin name and folder `wp_content/plugins/li-custom/li-custom.php`
+
+*** polylang
+https://polylang.wordpress.com/documentation/
+Add languages including English (the first language)
+Click on a post/page, click on + for another language and then create the translation page.
+You can select another existing page and add that page to the current page's translation.
+Posts in different languages will be created with different URLs. Go to edit one post and you can go to different translated pages.
+
+URLs
+#+BEGIN_EXAMPLE
+/sample-page
+/zh/chinese-sample-page
+#+END_EXAMPLE
+
+String translation is possible
+pll_register_string($name, $string, $group, $multiline);
+$name => (required) name provided for sorting convenience (ex: ‘myplugin’)
+$string => (required) the string to translate
+$group => (optional) the group in which the string is registered, defaults to ‘polylang’
+$multiline => (optional) if set to true, the translation text field will be multiline, defaults to false
+
+#+BEGIN_EXAMPLE
+
+function register_strings() {
+  pll_register_string('mytheme', 'some_string');
+}
+add_action('init','register_strings');
+
+// in template to echo
+pll_e('some_string');
+
+// to return
+pll__('some_string');
+#+END_EXAMPLE
+
+Determine the locale of current page
+#+BEGIN_EXAMPLE
+//get_locale() :: 'en_US'
+//get_bloginfo('language') :: 'en-US'
+
+// in template
+<div class="nav-previous alignleft">
+<?php
+$currentlang = get_bloginfo('language');
+if($currentlang=="en-US"):?>
+This is English
+<?php else: ?>
+This is Spanish
+<?php endif; ?>
+</div>
+#+END_EXAMPLE
+
+Display links to posts translations within the loop
+#+BEGIN_EXAMPLE
+<?php while ( have_posts() ) : the_post(); ?>
+<ul class='translations'><?php pll_the_languages( array( 'post_id' => $post->ID ) ); ?></ul>
+<?php the_content(); ?>
+<?php endwhile; ?>
+#+END_EXAMPLE
+
+Other functions
+https://polylang.wordpress.com/documentation/documentation-for-developers/functions-reference/
+#+BEGIN_EXAMPLE
+<?php // outputs a list of languages names ?>
+<ul><?php pll_the_languages(); ?></ul>
+ 
+<?php // outputs a flags list (without languages names) ?>
+<ul><?php pll_the_languages(array('show_flags'=>1,'show_names'=>0)); ?></ul>
+ 
+<?php // outputs a dropdown list of languages names ?>
+<?php pll_the_languages(array('dropdown'=>1));  ?>
+#+END_EXAMPLE
 
 *** Resize image on the fly
 <<<fly-dynamic-image-resizer>>>
@@ -29078,7 +29198,7 @@ curl http://icanhazip.com
 #+END_EXAMPLE
 
 *** CIDR Netmask (Network Mask)
-CIDR netmask
+<<<CIDR netmask>>>
 - 10.0.75.5/32 = 10.0.75.5 AND 255.255.255.255 = 10.0.75.5 (a single host)
 - 10.0.75.5/24 = 10.0.75.5 AND 255.255.255.0 = 10.0.75.0 
 	(10.0.75.5 is in the 10.0.75.0 subnet)
@@ -29087,11 +29207,11 @@ CIDR netmask
 
 Private IPv4 address spaces
 - 10.0.0.0 - 10.255.255.254 = 10.0.0.0/8 (16 million number of addresses)
-- 172.16.0.0 - 172.31.255.255 = 172.16.0.0/12 (255.240.0.0) (1 million number of addresses)
+- 172.16.0.0 - 172.31.255.255 = 172.16.0.0/12 (255.240.0.0) (1 million number of addresses, 172.16.x.x - 172.31.x.x)
 - 192.168.0.0 - 192.168.255.255 = 192.168.0.0/16 (65,536 number of addresses)
 
 Internal network Class A :: 10.0.0.0 - 10.255.255.254 (10.0.0.0/8, total hosts: 16 million)
-Internal network Class B :: 172.16.0.1 - 172.16.255.254 (127.16.0.0/16, total hosts: 65,534)
+Internal network Class B :: 172.16.0.1 - 172.16.255.254 (172.16.0.0/16, total hosts: 65,534)
 Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total hosts: 254)
 
 *** Port <<<network:port>>>
@@ -30621,6 +30741,35 @@ docker network inspect the_network_id
 docker network rm $(docker network ls | grep "bridge" | awk '/ / { print $1 }')
 #+END_EXAMPLE
 
+*** My Network
+Refer to CIDR Netmask network:port
+Personal dev projects use 172.20.x.0/24
+Work dev projects use 172.19.x.0/24
+
+Personal dev project port range up to 49151
+- mysql :: 31000 to 31999
+- php   :: 32000 to 32999
+
+Personal dev project
+- 172.20.0.0/24 :: wordpress image, port mysql:31000 php:32000
+- 172.20.1.0/24
+
+#+BEGIN_EXAMPLE
+networks:
+  app_netsandbox:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.20.0.0/24
+        gateway: 172.20.0.1
+services:
+  dbtest:
+    networks:
+      app_netsandbox:
+        ipv4_address: 172.20.0.2
+#+END_EXAMPLE
+
 ** Volume
 #+BEGIN_EXAMPLE
 # List all volumes
@@ -31145,6 +31294,69 @@ docker run -it --name my-db-container \
   -e MYSQL_USER=d7 \ 
   -e MYSQL_PASSWORD=d7 \
   -d mysql:5.7.9
+#+END_EXAMPLE
+
+** image:wordpress
+<<<image:wordpress:apache>>>
+wordpress:4.9.3-php7.1-apache
+Parent :: php:7.1-apache image:php:apache 
+
+docker-compose.yml
+#+BEGIN_EXAMPLE
+version: '2'
+volumes:
+  dbsandboxwp:
+networks:
+  app_netsandboxwp:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.20.0.0/24
+        gateway: 172.20.0.1
+services:
+  dbsandboxwp:
+    image: mysql:5.7.9
+    container_name: dbsandboxwp
+    networks:
+      app_netsandboxwp:
+        ipv4_address: 172.20.0.2
+    ports:
+      - "31000:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: wp
+      MYSQL_DATABASE: wp
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp
+
+  phpsandboxwp:
+    image: wordpress:4.9.3-php7.1-apache
+    container_name: phpsandboxwp
+    volumes:
+      - "./:/var/www/html"
+    restart: always
+    networks:
+      app_netsandboxwp:
+        ipv4_address: 172.20.0.3
+    environment:
+      WORDPRESS_DB_HOST: dbsandboxwp
+      WORDPRESS_DB_PASSWORD: wp
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_NAME: wp
+      WORDPRESS_TABLE_PREFIX: wp_
+    # environment variables honor mysql
+    # WORDPRESS_DB_HOST WORDPRESS_DB_PASSWORD
+    # environment variables default
+    # WORDPRESS_DB_USER root
+    # WORDPRESS_DB_NAME wordpress
+    # WORDPRESS_TABLE_PREFIX ""
+    ports:
+      - "32000:80"
+    depends_on:
+      - dbsandboxwp
+    links:
+      - dbsandboxwp
 #+END_EXAMPLE
 
 ** image:lucee
