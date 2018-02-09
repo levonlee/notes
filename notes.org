@@ -1770,6 +1770,26 @@ if (session_id() == "")
   session_start();
 #+END_EXAMPLE
 
+** Development mode determined by url parameter
+#+BEGIN_EXAMPLE
+if (is_dev('demo-aap')) {
+  // add class prefix
+  // *-demo-aap
+  // add class to id
+  // *-demo-aap
+}
+
+function is_dev($app) {
+  return (isset($_GET['edemo']) && $_GET['edemo'] == $app) ? true : false;
+  // for production always return true;
+}
+
+.orig-class {...}
+.orig-class-demo-aap {...}
+#element-id {...}
+#element-id.element-id-demo-aap {...}
+#+END_EXAMPLE
+
 ** RESTful
 GET /tickets - Retrieves a list of tickets
 GET /tickets/12 - Retrieves a specific ticket
@@ -1786,13 +1806,6 @@ if ('PUT' === $method) {
     var_dump($_PUT); //$_PUT contains put fields 
 }
 #+END_EXAMPLE
-
-* phpMyAdmin
-Just put sql-admin to any Wordpress website root directory and run http://yourwebsiteip:port/sql-admin
-You don't need to do anything else.
-
-It first loads sql-admin\libraries\config.default.php and then load sql-admin\config.inc.php
-To create a config.inc.php, just duplicate sql-admin/config.sample.inc.php
 
 * Drupal
 ** Install Drupal on Windows
@@ -2147,6 +2160,9 @@ requires imce and wysiwyg
 requires nothing
 7.x-1.10 to 7.x-1.11
 IMCE is an image/file uploader and browser that supports personal directories and quota.
+
+*** nodeblock
+create a block for a node 
 
 *** Block Group
 [[https://www.drupal.org/project/blockgroup][blockgroup]] :: requires core Block <<<d7:blockgroup>>>
@@ -2809,6 +2825,12 @@ $_path = current_path();
 if (drupal_valid_path($_path)) {
   // Current user has access to this path/page
 }
+
+*** drupal_clean_css_identifier
+Convert string to CSS ready element name, class and ID in selectors.
+#+BEGIN_EXAMPLE
+echo drupal_clean_css_identifier(drupal_strtolower($class));
+#+END_EXAMPLE
 
 ** Theme
 *** System Theme
@@ -8892,6 +8914,8 @@ a::after {
 
 *** calc()
 No parenthesis is allowed inside calc()
+Only attr() and calc() are allowed inside calc()
+
 #+BEGIN_EXAMPLE
 <div>Some Text...</div>
 
@@ -9380,6 +9404,9 @@ Container could be display:flex or display:inline-flex
 Flexbox is good for aligning child elements with irregular or unknown or inconsistent width and height
 And the number of child elements are unknown
 Good for vertical and horizontal center a child element inside a container (parent)
+Good for these scenarios https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Typical_Use_Cases_of_Flexbox
+
+Can't set equal width for child items when the number of child items is unknown
 
 #+BEGIN_EXAMPLE
 .container {
@@ -9518,6 +9545,45 @@ You don't have to get height of any other rows.
     flex-flow: row wrap;
   }
 }
+#+END_EXAMPLE
+
+** Equal width for unknown number of child elements
+#+BEGIN_EXAMPLE
+<div>
+   <span>tab1</span>
+   <span>tab2</span>
+   <span>tabx</span>
+</div>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+div{
+  margin:0;
+  padding:0;
+  width:100%;
+  max-width:100%;
+  display:table; /* trick */
+  table-layout: fixed; /* trick */
+}
+span{
+  border:1px solid grey;
+  padding 0 20;
+  margin:0;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display:table-cell; /* trick */
+}
+
+/* Set back
+div {
+  display:block;
+  table-layout:auto;
+}
+span {
+  display:inline;
+}
+*/
 #+END_EXAMPLE
 
 ** Grid
@@ -36649,6 +36715,13 @@ Restore
 cat backup.sql | docker exec -i CONTAINER /usr/bin/mysql -u root --password=root DATABASE
 #+END_EXAMPLE
 
+*** phpMyAdmin
+Just put sql-admin to any Wordpress website root directory and run http://yourwebsiteip:port/sql-admin
+You don't need to do anything else.
+
+It first loads sql-admin\libraries\config.default.php and then load sql-admin\config.inc.php
+To create a config.inc.php, just duplicate sql-admin/config.sample.inc.php
+
 ** MSSQL
 *** Modify column values if exist (CASE WHEN)
 #+BEGIN_EXAMPLE
@@ -38694,7 +38767,11 @@ chrome.exe --allow-file-access-from-files
 #+END_EXAMPLE
 
 *** Allow CORS locally
+<<<chrome:cors>>>
 May need to close all Chrome instances. Mine opens the Chromium version not the regular Chrome.
+Errors such as
+- Access to Font at 'yourwebsite.com' from origin 'e.g. localhost' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. Origin 'e.g. localhost' is therefore not allowed access.
+
 #+BEGIN_EXAMPLE
 chrome.exe --disable-web-security --user-data-dir
 #+END_EXAMPLE
@@ -38751,6 +38828,14 @@ and
 *** Extension - [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
 Fire GET and POST requests.
 For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
+
+*** Extension - [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
+Chrome's default save page as HTML has some limitations such as not all images are downloaded.
+This saves all content in one HTML file.
+
+Font file is not converted but you can fix the url() manually.
+
+Turn off chrome:cors
 
 *** Flush DNS Caches in Chrome
 Even ipconfig /flushdns is run, Chrome still caches the DNS
