@@ -373,7 +373,9 @@ $a= array(
 );
 
 print_r( preg_grep( "/ONe$/i" , $a ) );
-// Array ( [k1] => one )
+// return all matches
+// Array ( [k1] => one, ... )
+// empty array if no match
 #+END_EXAMPLE
 
 Use ~in_array('string', $a)~ for case sensitive search
@@ -442,6 +444,15 @@ $a = array_map('sanitize', $a);
 // trim each element
 $a = array_map('trim', $a);
 echo implode(' ', $a);
+#+END_EXAMPLE
+
+*** Insert to any position of an array
+#+BEGIN_EXAMPLE
+$original = array( 'a', 'b', 'c', 'd', 'e' );
+$inserted = array( 'x' ); // Not necessarily an array
+
+array_splice( $original, 3, 0, $inserted ); // splice in at position 3
+// $original is now a b c x d e
 #+END_EXAMPLE
 
 *** array_filter
@@ -579,6 +590,11 @@ if( strcasecmp(substr($request_uri, 0, strlen($target_prefix)), $target_prefix) 
   unset($q['name']);
 }
 #+END_EXAMPLE
+*** Random bash64 string
+#+BEGIN_EXAMPLE
+$str = substr(base64_encode(sha1(mt_rand())), 0, 16);
+#+END_EXAMPLE
+
 ** URL
 #+BEGIN_EXAMPLE
 $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
@@ -2161,6 +2177,9 @@ requires nothing
 7.x-1.10 to 7.x-1.11
 IMCE is an image/file uploader and browser that supports personal directories and quota.
 
+*** ckeditor
+requires nothing
+
 *** nodeblock
 create a block for a node 
 
@@ -2285,6 +2304,12 @@ In D8 core
 Add a entity reference field which you can use an entity reference view as a list of values to select from as values in that field.
 Refer to d7:entity reference view
 
+*** File Entity
+[[https://www.drupal.org/project/file_entity][file_entity]] <<<d7:file entity>>>
+Requires: d7:ctools, core: Field, Field SQL storage, File
+
+From 7.x-2.0-beta2 to 7.x-2.3
+
 *** Webform
 <<<d7:webform>>> [[https://www.drupal.org/project/webform][webform]] :: 7.x-3.x requires nothing. 7.x-4.x requries d7:ctools d7:views 3
 
@@ -2299,12 +2324,6 @@ Modify in $form['submitted']
 Requires: d7:ctools
 Has a lot of security updates
 From 7.x-3.6 to 7.x-3.9
-
-*** File Entity
-[[https://www.drupal.org/project/file_entity][file_entity]] <<<d7:file entity>>>
-Requires: d7:ctools, core: Field, Field SQL storage, File
-
-From 7.x-2.0-beta2 to 7.x-2.3
 
 *** Facet API
 <<<d7:facetapi>>> facetapi :: requires d7:ctools
@@ -2872,6 +2891,21 @@ hook_preprocess_page(&$variables) {
   }
 }
 
+[[https://api.drupal.org/api/drupal/modules%2521system%2521page.tpl.php/7.x][Available variables in page.tpl.php]]
+
+**** node.tpl.php
+<<<d7:template:node>>>
+[[https://api.drupal.org/api/drupal/modules%2521node%2521node.tpl.php/7.x][Available variables]]
+
+$title :: sanitized title of the node
+$content['field_example']
+
+$node
+$type :: node type
+
+Node status variables
+$view_mode :: 'full'
+
 *** Form Theme
 $form['#theme'][] = 'lili_form';
 If no custom theme function, d7:hook_theme d7:theme_*, is defined, then the default template file is
@@ -3228,6 +3262,88 @@ https://www.drupal.org/project/omega
 
 **** Corolla
 https://www.drupal.org/project/corolla
+
+*** Render a node
+**** field_get_items, field_view_value
+#+BEGIN_EXAMPLE
+$delta = 0; // first value
+$field = field_get_items('node', $node, 'field_youtube_link');
+// 
+$output = field_view_value('node', $node, 'field_youtube_link', $field[$delta]);
+// $output is an array
+print render($output);
+
+// it seams field_view_value can't render node title
+#+END_EXAMPLE
+
+$output
+#+BEGIN_EXAMPLE
+[ 
+  "#markup" => "...",
+  "#access" => true
+]
+#+END_EXAMPLE
+
+Taxonomy term field
+#+BEGIN_EXAMPLE
+$eventField = field_get_items('node', $node, 'field_event_category');
+$eventTerm = field_view_value('node', $node, 'field_event_category', $eventField[0]);
+$titleImLookingFor = $eventTerm['#title'];
+#+END_EXAMPLE
+
+Change value before rendering
+#+BEGIN_EXAMPLE
+$image = field_get_items('node', $node, 'field_image');
+$output = field_view_value('node', $node, 'field_image', $image[0], array(
+  'type' => 'image',
+  'settings' => array(
+    'image_style' => 'thumbnail',
+    'image_link' => 'content',
+  ),
+));
+#+END_EXAMPLE
+
+**** Using node template
+node--[node-type-machine-name].tpl.php
+
+Refer to d7:template:node
+
+In page.tpl.php
+#+BEGIN_EXAMPLE
+$node_view = node_view($node);
+// different view mode, default is 'full'
+// node_view($node, 'custom-view-mode');
+// different language, default is the global content language of the current request
+// node_view($node, 'full', 'fr');
+print drupal_render($test);
+#+END_EXAMPLE
+
+Add a view mode
+#+BEGIN_EXAMPLE
+/**
+ * Implements hook_entity_info_alter().
+ */
+function MODULE_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['block_feature'] = array(
+    'label' => t('Block feature'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function MODULE_preprocess_node(&$variables) {
+  if($variables['view_mode'] == 'block_feature') {
+    $variables['theme_hook_suggestions'][] = 'node__' . $variables['type'] . '__block_feature';
+  }
+}
+#+END_EXAMPLE
+
+Get raw value
+#+BEGIN_EXAMPLE
+$content['field_youtube_link']['#items']['0']['value']
+#+END_EXAMPLE
 
 ** Drush
 *** version =drush version=
@@ -12736,7 +12852,7 @@ Content-Security-Policy: default-src 'self'; ...; report-uri /my_amazing_csp_rep
 }
 #+END_EXAMPLE
 
-Generate ononce value differently each time and insert it into any inline script
+Generate nonce value differently each time and insert it into any inline script, bash64
 #+BEGIN_EXAMPLE
 <script nonce=EDNnf03nceIOfn39fn3e9h3sdfa>
   //Some inline code I cant remove yet, but need to asap.
@@ -27921,10 +28037,17 @@ Default broad match :: ~hiking tour northern california~
   - match with queries with any order and any additional words
   - match with synonyms
   - partial match is allowed "best hiking" query matches ~hiking tour northern california~
+
+Modified broad match :: 
+- ~+gel batteries~ must include gel or its synonym, batteries may not present.
+- ~gel +batteries~ must include batteries or its different forms, gen may not present.
+
 Phrase match with double quotes :: any queries match ~"hiking tour northern california"~ in any order with additional words
 Exact match and only these words :: ~[hiking tours northern california]~
 
 ~-dog~, ~-wallpaper~, ~-screensavers~, ~-pictures~ to ignore queries that have this negative word
+
+https://support.google.com/adwords/answer/2472708?hl=en
 
 ** Link building, Search Visibility
 Website A has 10 links to your site and website B has 5 links to your site.
