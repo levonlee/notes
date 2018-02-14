@@ -2892,6 +2892,7 @@ hook_preprocess_page(&$variables) {
 }
 
 [[https://api.drupal.org/api/drupal/modules%2521system%2521page.tpl.php/7.x][Available variables in page.tpl.php]]
+$node
 
 **** node.tpl.php
 <<<d7:template:node>>>
@@ -2905,6 +2906,31 @@ $type :: node type
 
 Node status variables
 $view_mode :: 'full'
+
+***** Check if a field is empty
+#+BEGIN_EXAMPLE
+$info = field_info_field($field_name);
+$function = $info['module'] . '_field_is_empty';
+
+if (function_exists($function)) {
+  $value = field_get_items('node', $node, $field_name);
+  $is_empty = $function($value, $info);
+}
+#+END_EXAMPLE
+
+***** $content['field_name']
+#+BEGIN_EXAMPLE
+render($content['field_name']);
+
+//Raw value
+$delta = 0; // first value. Even for text field
+$item = $content['field_name']['#items'][$delta]
+$item['target-id'] // for entity reference field
+$item['entity']->title // entity title
+$aField = $item['entity']->field_entity_field_name // array
+$aField['und'][0]['value'] // raw value of a field of that entity
+$aField['und'][0]['safe_value']
+#+END_EXAMPLE
 
 *** Form Theme
 $form['#theme'][] = 'lili_form';
@@ -3263,8 +3289,11 @@ https://www.drupal.org/project/omega
 **** Corolla
 https://www.drupal.org/project/corolla
 
-*** Render a node
-**** field_get_items, field_view_value
+*** Render a field of a node, a term
+**** field_get_items, field_view_value, field_view_field
+field_view_field returns a renderable array that has everything: lable and value.
+field_view_value returns a renderable array that only has the formatted value. Such as text field simply returns text
+
 #+BEGIN_EXAMPLE
 $delta = 0; // first value
 $field = field_get_items('node', $node, 'field_youtube_link');
@@ -3457,6 +3486,9 @@ https://api.drupal.org/api/drupal/modules%21node%21node.api.php/7.x
 https://api.drupal.org/api/drupal/modules%21node%21node.api.php/group/node_api_hooks/7.x
 
 [[https://www.drupal.org/node/49768][Node object]]
+
+$node->nid :: node id
+$node->type
 
 *** Update a node
 #+BEGIN_EXAMPLE
@@ -4585,7 +4617,7 @@ $_r = $_q
 ->entityCondition('bundle', 'newsletter') // node type or content type
 ->fieldCondition('field_active','value',1,'=') // boolean field, only 1 or 0
 ->fieldCondition('field_news_publishdate', 'value', $year . '%', 'like') // Text LIKE
-->fieldOrderBy('field_ns_newsletter_unique_id', 'value', 'DESC') // Sort
+->fieldOrderBy('field_ns_newsletter_unique_id', 'value', 'DESC') // Sort. refer to propertyOrderBy for created date
 ->fieldCondition('field_a_term_reference_field', 'tid', 123) // field Term Reference
 ->fieldCondition('field_a_term_reference_field', 'tid', $tids) // field Term Reference multiple has at least one value in array $tids
 ->fieldCondition('field_dealer', 'target_id', 12345, '=') // field Entity Reference, single value
@@ -4608,6 +4640,8 @@ $_r = array_diff_key($_r_all, $_r_in_12345);
 // STARTS_WITH, CONTAINS
 // IN, NOT IN (does not work)
 // BETWEEN :: propertyCondtion('created', array($start, $end), 'BETWEEN')
+
+->propertyOrderBy('created', 'DESC') // sort by created date
 
 ->range(0,10)
 // Random order. hook_query_TAG_alter
@@ -15368,7 +15402,7 @@ if (e.dataset.hasOwnProperty('primary')) {
 }
 #+END_EXAMPLE
 
-** URI and URI Component Encode, Current URL
+** URI and URI Component Encode, Current URL, open, email link
 #+BEGIN_EXAMPLE
 var url1 = "http://abc.com";
 var url2 = "http://xyz.com/test.php?url=" + encodeURIComponent(url1);
@@ -15396,6 +15430,20 @@ console.log(window.location.href);
 // + window.location.pathname (/xyz/ijk.php, if homepage, '/')
 // + window.location.search (?m=123)
 // +  window.location.hash; (#def)
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+// click to email
+function sendMail() {
+ var link = "mailto:me@example.com"
+          + "?cc=myCCaddress@example.com"
+          + "&subject=" + encodeURIComponent("This is my subject")
+          + "&body=" + encodeURIComponent(document.getElementById('myText').value);
+ window.location.href = link;
+}
+
+// open a new tab
+window.open('/your-url', '_blank');
 #+END_EXAMPLE
 
 ** Cookie
