@@ -2853,17 +2853,12 @@ echo drupal_clean_css_identifier(drupal_strtolower($class));
 
 ** Theme
 *** System Theme
-Default theme file is located at 
-=sites/all/modules/mod_path/modname/templates/theme-name.tpl.php=
+Default theme files (*.tpl.php) are located at 
+=/modules/mod_name/mod-name-component-name.tpl.php=
 
-- template.php
-- html.tpl.php
-- page.tpl.php
-- region.tpl.php
-- block.tpl.php
-- node.tpl.php
-- comment-wrapper.tpl.php
-- comment.tpl.php
+e.g. /modules/node/node.tpl.php
+
+For custom theme, better to put *.tpl.php files under ~/sites/all/themes/theme_name/templates/~
 
 d7:View_Theming
 
@@ -2878,6 +2873,7 @@ include(drupal_get_path('theme', 'theme_name').'/example-file-template.tpl.php')
 If the file is in the same folder
 <?php include 'abc.php'; ?>
 
+**** .info (required)
 **** html.tpl.php
 Get node if it's a node page
 $node = menu_get_object();
@@ -2894,6 +2890,8 @@ hook_preprocess_page(&$variables) {
 [[https://api.drupal.org/api/drupal/modules%2521system%2521page.tpl.php/7.x][Available variables in page.tpl.php]]
 $node
 
+**** region.tpl.php
+**** block.tpl.php
 **** node.tpl.php
 <<<d7:template:node>>>
 [[https://api.drupal.org/api/drupal/modules%2521node%2521node.tpl.php/7.x][Available variables]]
@@ -2932,6 +2930,12 @@ $aField['und'][0]['value'] // raw value of a field of that entity
 $aField['und'][0]['safe_value']
 #+END_EXAMPLE
 
+**** field.tpl.php
+**** comment-wrapper.tpl.php
+**** comment.tpl.php
+**** template.php
+**** logo.png
+**** screenshot.png
 *** Form Theme
 $form['#theme'][] = 'lili_form';
 If no custom theme function, d7:hook_theme d7:theme_*, is defined, then the default template file is
@@ -4593,7 +4597,7 @@ function mymod_query_node_is_not_tagged_alter(QueryAlterableInterface $query) {
 ** Entity
 Node, user, taxonomy are all entities.
 
-*** EntityFieldQuery
+*** EntityFieldQuery <<<d7:efq>>>
 Use this to get entities of one type that have certain:
 - entity properties (propertyCondition: status, changed, etc)
 - field values (fieldCondition)
@@ -5029,6 +5033,8 @@ function _lili_archive_by_newsletter_json($pub_id,$newsletter_name, $page = 1, $
 #+END_EXAMPLE
 
 ** Taxonomy
+A node or an entity has a taxonomy term means the node has a category. Categories may have hierarchy.
+
 *** Get taxonomy terms of a node, ready for display with language
 #+BEGIN_EXAMPLE
 $categories = field_get_items('node', $node, 'field_category');
@@ -5041,7 +5047,7 @@ array(
 )
 #+END_EXAMPLE
 
-*** Get multiple terms
+*** Get multiple terms by id, taxonomy_term_load_multiple
 #+BEGIN_EXAMPLE
 $tids = array(1,2,3); // Default:array()
 $conditions = array(); // Default
@@ -5055,13 +5061,13 @@ array(
 )
 #+END_EXAMPLE
 
-*** Get term by name
+*** Get term by name, taxonomy_get_term_by_name
 #+BEGIN_EXAMPLE
 $_limit_to_vocab = 'vocab_name'; // Default NULL.
 $term_is_parent = taxonomy_get_term_by_name('video', $_limit_to_vocab);
 #+END_EXAMPLE
 
-*** Get all children of a term
+*** Get all children of a term, taxonomy_get_children
 Get a term that is parent
 #+BEGIN_EXAMPLE
 $_limit_to_vocab = 'vocab_name'; // Default NULL.
@@ -5073,7 +5079,7 @@ $term_is_parent = reset($term_is_parent);
 echo $term_is_parent->tid; // parent term id
 
 // Get all children of a term
-$children = taxonomy_get_children($term-tid);
+$children = taxonomy_get_children($term->tid);
 $children_tids = array_keys($children);
 #+END_EXAMPLE
 
@@ -27779,6 +27785,9 @@ Query Parameters
 - url :: ~https%3A%2F%2Fexample.com%2F~
 - hashtags :: ~nature,sunset~
 
+*** View a topic
+https://twitter.com/hashtag/hastagname?src=hash
+
 * SEO
 ** Google Analytics
 Under Admin, you can build Views. Views can have Filters. Views collect data.
@@ -39021,6 +39030,12 @@ This saves all content in one HTML file.
 Font file is not converted but you can fix the url() manually.
 
 Turn off chrome:cors
+
+*** Extension - [[https://chrome.google.com/webstore/detail/ignore-x-frame-headers/gleekbfjekiniecknbkamfmkohkpodhe][Ignore X-Frame headers]]
+Ignore headers X-Frame-x e.g. X-Frame-Options
+
+*** Extension - [[https://chrome.google.com/webstore/detail/requestly-redirect-url-mo/mdnleldcmiljblolnjhpnblkcekpdkpa][Requestly]]
+Modify http request and response headers
 
 *** Flush DNS Caches in Chrome
 Even ipconfig /flushdns is run, Chrome still caches the DNS
