@@ -1068,6 +1068,7 @@ OOP Features
 - Polymorphism (interface :: interact with classes without knowing what class it is) 
 
 *** Sample
+RestJson.php
 #+BEGIN_EXAMPLE
 $rest = new RestJson('12345', 'trucks', 'new');
 // Class name should use UpperCamel, can have underscores and numbers
@@ -2851,7 +2852,39 @@ Convert string to CSS ready element name, class and ID in selectors.
 echo drupal_clean_css_identifier(drupal_strtolower($class));
 #+END_EXAMPLE
 
-** Theme
+** Theme API
+*** render() vs drupal_render()
+render(&$element)
+render is a wrapper for durpal_render which
+- makes sure the element passed in is set to be shown show()
+- only renders array. If what's passed in is not an array, it will return as it is.
+
+show() :: $element['#printed'] = FALSE;
+
+drupal_render(&$elements)
+- if #access == false, return ''
+- if #printed = true, return ''
+- if #cached is set, load and return cache drupal_render_cache_get($elements)
+- #markup is set but not #type, #type is set to markup
+- 
+- #pre_render :: array of pre_render function names to modify 
+- pre_render functions might set #printed to some value to indicate not to print, if so return ''
+- get children $children and initialize #children
+- if #theme is set, theme all children and save to #children
+- if #children is still empty, concatenate drupal_render for each child
+- if #theme_wrappers is defined, run each theme_wrapper function for #children
+- if #post_render is defined, run each function for #children
+- if #states is defined, attach JavaScript state drupal_process_states
+- if #attached is defined, drupal_process_attached
+- #prefix . #children . #suffix
+- drupal_render_cache_set
+- #printed set to true
+
+*** theme()
+https://api.drupal.org/api/drupal/includes%21theme.inc/function/theme/7.x
+theme($hook, $variables = array())
+Use $variables to merge with defaults from the theme registry
+
 *** System Theme
 Default theme files (*.tpl.php) are located at 
 =/modules/mod_name/mod-name-component-name.tpl.php=
@@ -2906,17 +2939,15 @@ Node status variables
 $view_mode :: 'full'
 
 ***** Check if a field is empty
-#+BEGIN_EXAMPLE
-$info = field_info_field($field_name);
-$function = $info['module'] . '_field_is_empty';
-
-if (function_exists($function)) {
-  $value = field_get_items('node', $node, $field_name);
-  $is_empty = $function($value, $info);
-}
-#+END_EXAMPLE
+d7:api:field:hook_field_is_empty
 
 ***** $content['field_name']
+print render($content['field_name']) is based on the view mode that the entity is currently used to display and then the field formatter.
+
+If field_name is not a field of the $node, then $content['field_name] is not set.
+If field_name is defined but it has no value, then $content['field_name'] is not set.
+So you can't directly render($content['field_name']) because the field_name might not be defined or has value.
+
 #+BEGIN_EXAMPLE
 render($content['field_name']);
 
@@ -4143,7 +4174,35 @@ $an_action :: array
 [[https://www.drupal.org/node/2052067#permissions][VBO Permissions]]
 
 ** Field API <<<d7:api:field>>>
-*** Field Formatter
+When a field associates with an entity, a widget can be specified
+A field with an entity can have one formatter for each view mode.
+
+*** hook_field_is_empty <<<d7:api:field:hook_field_is_empty>>>
+/modules/field/field.api.php hook_field_is_empty($item, $field)
+/modules/field/modules/[fieldtype]/[fieldtype].module
+Or any modules that implements hook_field_is_empty
+
+Core fieldtype:
+- field_sql_storage
+- list
+- number
+- options
+- text
+- taxonomy
+- image
+- file
+
+#+BEGIN_EXAMPLE
+$info = field_info_field($field_name);
+$function = $info['module'] . '_field_is_empty';
+
+if (function_exists($function)) {
+  $value = field_get_items('node', $node, $field_name);
+  $is_empty = $function($value, $info);
+}
+#+END_EXAMPLE
+
+*** Field Formatter <<<d7:api:field:formatter>>>
 Content Type > Manage Display > Format for a field
 hook_field_formatter_info tells Drupal a new field formatter that will apply to what field types.
 If a formatter has a setting, a summary and a form needs to be defined in order to show a gear icon next to summary in Manage Display
@@ -4178,7 +4237,6 @@ function text_field_formatter_info() {
 #+END_EXAMPLE
 
 hook_field_formatter_settings_summary
-
 #+BEGIN_EXAMPLE
 function text_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
@@ -4195,7 +4253,6 @@ function text_field_formatter_settings_summary($field, $instance, $view_mode) {
 #+END_EXAMPLE
 
 hook_field_formatter_settings_form
-
 #+BEGIN_EXAMPLE
 function text_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
   $display = $instance['display'][$view_mode];
@@ -4221,7 +4278,6 @@ function text_field_formatter_settings_form($field, $instance, $view_mode, $form
 #+END_EXAMPLE
 
 hook_field_formatter_view :: use settings to return result (HTML). Use hook_field_formatter_prepare_view to add info for field values being displayed.
-
 #+BEGIN_EXAMPLE
 function text_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
@@ -4274,6 +4330,47 @@ $settings = array(
 $node_summary = field_view_field('node', $node, 'body', $settings);
 print render($node_summary);
 #+END_EXAMPLE
+
+*** field_get_items <<<d7:field_get_items>>>
+Return the field items in the language they currently would be displayed.
+$items = field_get_items($entity_type, $entity, $field_name, $langcode = NULL)
+
+If there is no field associated with $entity or the field is not a field belongs to $entity, it will return false.
+
+#+BEGIN_EXAMPLE
+function hasValues($field_name,$entity, $entity_type='node', $langcode = NULL) {
+    $r     = [
+      'has'   => FALSE,
+      'count' => 0
+    ];
+    $value = field_get_items($entity_type, $entity, $field_name, $langcode);
+    if (is_array($value)) {
+      $r = [
+        'has' => true,
+        'count' => count($value)
+      ];
+    }
+    return $r;
+}
+#+END_EXAMPLE
+
+To check if a field value is empty d7:api:field:hook_field_is_empty
+
+After checking it has values, then you can render($content['field_name']) in node.tpl.php
+
+**** Image field
+fid => "768"
+uid => "1"
+filename => "splash-photo.jpg"
+uri => "public://splash-photo.jpg"
+filemime => "image/jpeg"
+filesize => "129265"
+status => "1"
+timestamp => "1518792000"
+alt => ""
+title=> ""
+width => "727"
+height => "426"
 
 ** Database
 *** Close Comment for Existing Nodes
