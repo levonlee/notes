@@ -29158,11 +29158,17 @@ tar -tf backup.tar.gz
 # targetFolder/subfolder.html ...
 # And put targetFolder so that /anotherfolder/targetFolder
 # Copy .tar.gz to /anotherfolder
-cd /another
+cd /anotherfolder
 tar -xvzf backup.tar.gz
 
 # If you don't want to copy .tar.gz to /anotherfolder, 
-tar -xvzf /any/path/to/backup.tar.gz -C /anotherfolder
+tar -xvzf /any/path/to/backup.tar.gz -C /path/to/anotherfolder/
+
+# if you want to untar targetFolder only in the tar file
+tar -xvzf /any/path/to/backup.tar.gz targetFolder
+
+# if you want to untar targetFolder only and save the uncompressed as /anotherfolder/* not /anotherfolder/targetFolder
+tar -xvzf /any/path/to/backup.tar.gz --strip-components=1
 
 # If file structure is
 # ./index.html
@@ -29180,6 +29186,7 @@ gzip -d file.gz
 
 Options
 - -x :: extract
+- -C :: change the folder that the tar file will be uncompressed to. Without it, it will be the current folder
 
 *** rsync
 Dry run first: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
@@ -30840,10 +30847,12 @@ Subdomain forwarding can be done as well.
 
 ** Addon domain
 It's an addtional domain that the system stores as a subdomain
-abc.com is registered in GoDaddy. Change nameservers to another domain host say ns.googlehosting.com ns2.googlehosting.com
+abc.com is registered in GoDaddy and will be added as an addon domain on abc.xyz.com. Change nameservers to the domain xyz.com host say ns.googlehosting.com ns2.googlehosting.com
 Then in googlehosting, set it up as an addon domain :: abc.com > subdomain abc.xyz.com, then specify the document root
 
 abc.com will appear as parked on subdomain abc.xyz.com on the googlehosting
+
+An addon domain has to be mapped to a main domain's subdomain. In this case, the subdomain is abc.xyz.com
 
 ** Park domain
 To park a domain means to make the domain as idle. Nameservers will be set to Default for example in GoDaddy.
@@ -30874,6 +30883,8 @@ SSL certificates should be now installed.
 
 Check each domain SSL certificate using cPanel. SSL/TLS > Certificates (CRT)
 http://www.inmotionhosting.com/support/website/cpanel/add-delete-autossl-cpanel
+
+A directory .well-known will be created in sub website directory if the parent website directory has AutoSSL
 
 ** SSL Testing Tools
 <<<ssl:test>>>
@@ -35382,6 +35393,8 @@ https://www.atlassian.com/git/tutorials/gitignore
 *** Wordpress .gitignore
 #+BEGIN_EXAMPLE
 *~
+cgi-bin/
+.well-known/
 .DS_Store
 .svn
 .cvs
@@ -35590,11 +35603,14 @@ Instead of the original
 https://github.com/[GITHUB_USERNAME]/[REPO_NAME].git
 #+END_EXAMPLE
 
-** Add a remote, remove a remote and its branches
+** Add a remote, remove a remote and its branches, change upstream
 #+BEGIN_EXAMPLE
 git remote add origin https://...
 git remote -v
 git remote rm origin
+// rename a remtoe
+git remote rename origin li
+git branch master --set-upstream-to origin/master
 #+END_EXAMPLE
 
 ** Push to 2 remotes
@@ -35655,6 +35671,15 @@ git push origin --tags
 git describe --long --match 'live*'
 # live-10-g7digits
 # HEAD is now 10 commits ahead of tag live
+#+END_EXAMPLE
+
+** Submodule
+#+BEGIN_EXAMPLE
+// create a folder DbConnector in parent project directory root folder
+cd /parent
+git submodule add https://github.com/chaconinc/DbConnector
+// change the subfolder name from DbConnector to dbconnector
+// git submodule add https://github.com/chaconinc/DbConnector dbconnector
 #+END_EXAMPLE
 
 ** Github API
