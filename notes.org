@@ -6544,9 +6544,14 @@ function lili_pre_get_posts( $query ) {
 **** labels
 <<<wp:register_post_type:labels>>>
 
-*** register_nav_menus
+*** register_nav_menus, register_nav_menu, wp_nav_menu
 <<<wp:f:register_nav_menus>>> used in wp:action:init
 [[https://codex.wordpress.org/Function_Reference/register_nav_menus][Register custom nav menus]]
+This is to create a theme location. Each theme location can have one menu created from wp-admin.
+Menu created from wp-admin can associate with multiple theme locations.
+The following registers 3 theme locations.
+Other translation plugins like Polylang can create theme locations for each extra language based on the already defined theme locations.
+
 #+BEGIN_EXAMPLE
 function register_my_menus() {
   register_nav_menus(
@@ -6557,6 +6562,13 @@ function register_my_menus() {
     )
   );
 }
+#+END_EXAMPLE
+
+Display in template
+https://developer.wordpress.org/reference/functions/wp_nav_menu/
+#+BEGIN_EXAMPLE
+// already echo
+wp_nav_menu( array( 'theme_location' => 'header-menu' ) );
 #+END_EXAMPLE
 
 *** wpautop
@@ -7278,6 +7290,18 @@ add_filter('upload_mimes', 'cc_mime_types');
 <<<wp:filter:widget_text>>>
 wp:f:add_shortcode
 
+*** sidebars_widgets
+<<<wp:filter:sidebars_widgets>>>
+Filters the list of sidebars and their widgets.
+#+BEGIN_EXAMPLE
+// disable all widget areas
+function disable_all_widgets($sidebars_widgets) {
+  $sidebars_widgets = array(false);
+  return $sidebars_widgets;
+}
+add_filter('sidebars_widgets', 'disable_all_widgets');
+#+END_EXAMPLE
+
 ** add_action, do_action, do_action_ref_array
 *** Basic
 Event based
@@ -7327,6 +7351,50 @@ Useful for intercepting $_GET or $_POST
 
 wp:f:register_nav_menus
 wp:f:add_rewrite_rule
+
+*** widgets_init
+<<<wp:action:widgets_init>>>
+Refer to wp:filter:sidebars_widgets to modify registered sidebars and their widgets.
+#+BEGIN_EXAMPLE
+function lili_widgets_init() {
+  $args = array(
+	'name'          => __( 'Sidebar name', 'theme_text_domain' ),
+	'id'            => 'unique-sidebar-id', // %1$s
+	'description'   => '',
+        'class'         => '', // %2$s, will have ~sidebar-~ prepended
+	'before_widget' => '<li id="%1$s" class="widget %2$s">',
+	'after_widget'  => '</li>',
+	'before_title'  => '<h2 class="widgettitle">',
+	'after_title'   => '</h2>' );
+  register_sidebar( $args );
+
+  // register_sidebar( $args2 );
+  
+  // Create multiple sidebars with the same config
+  $args = array(
+	'name'          => __('Sidebar %d'),
+        'id'            => 'sidebar',          
+	'description'   => '',
+	'class'         => '',
+	'before_widget' => '<li id="%1$s" class="widget %2$s">',
+	'after_widget'  => '</li>',
+	'before_title'  => '<h2 class="widgettitle">',
+	'after_title'   => '</h2>' );
+
+  // register_sidebars( 2, $args );
+
+}
+add_action('widgets_init', 'lili_widgets_init');
+#+END_EXAMPLE
+
+Display
+#+BEGIN_EXAMPLE
+<?php if ( is_active_sidebar( 'home_right_1' ) ) : ?>
+  <div id="primary-sidebar" class="primary-sidebar widget-area" role="complementary">
+    <?php dynamic_sidebar( 'home_right_1' ); ?>
+  </div><!-- #primary-sidebar -->
+<?php endif; ?>
+#+END_EXAMPLE
 
 *** after_setup_theme
 <<<wp:action:after_setup_theme>>>
@@ -7711,37 +7779,7 @@ header-{name}.php
 
 *** Widgets
 **** Create sidebar
-#+BEGIN_EXAMPLE
-function lili_widgets_init() {
-  $args = array(
-	'name'          => __( 'Sidebar name', 'theme_text_domain' ),
-	'id'            => 'unique-sidebar-id', // %1$s
-	'description'   => '',
-        'class'         => '', // %2$s, will have ~sidebar-~ prepended
-	'before_widget' => '<li id="%1$s" class="widget %2$s">',
-	'after_widget'  => '</li>',
-	'before_title'  => '<h2 class="widgettitle">',
-	'after_title'   => '</h2>' );
-  register_sidebar( $args );
-
-  // register_sidebar( $args2 );
-  
-  // Create multiple sidebars with the same config
-  $args = array(
-	'name'          => __('Sidebar %d'),
-        'id'            => 'sidebar',          
-	'description'   => '',
-	'class'         => '',
-	'before_widget' => '<li id="%1$s" class="widget %2$s">',
-	'after_widget'  => '</li>',
-	'before_title'  => '<h2 class="widgettitle">',
-	'after_title'   => '</h2>' );
-
-  // register_sidebars( 2, $args );
-
-}
-add_action('widgets_init', 'lili_widgets_init');
-#+END_EXAMPLE
+wp:action:widgets_init
 
 *** Functions used in template
 #+BEGIN_EXAMPLE
@@ -7845,6 +7883,14 @@ Use hyphen for plugin name and folder `wp_content/plugins/li-custom/li-custom.ph
 
 *** polylang
 https://polylang.wordpress.com/documentation/
+
+Manage multilingual posts in one post per language (e.g. WPML - paid, xili-language, Polylang, Bogo or Sublanguage). Translations are then linked together, indicating that one page is the translation of another.
+
+There are other types of multilingual plugins:
+- Store all languages alternatives for each post in the same post (e.g. qTranslate-X, WPGlobus).
+- Manage translations on the generated page instead of using a post context (e.g. Transposh and Global Translator).
+- Plugins like Multisite Language Switcher, Multilingual Press, and Zanto, link together separate WordPress network (multisite) installations for each language by pinging back and forth.
+
 Add languages including English (the first language)
 Click on a post/page, click on + for another language and then create the translation page.
 You can select another existing page and add that page to the current page's translation.
@@ -7856,26 +7902,7 @@ URLs
 /zh/chinese-sample-page
 #+END_EXAMPLE
 
-String translation is possible
-pll_register_string($name, $string, $group, $multiline);
-$name => (required) name provided for sorting convenience (ex: ‘myplugin’)
-$string => (required) the string to translate
-$group => (optional) the group in which the string is registered, defaults to ‘polylang’
-$multiline => (optional) if set to true, the translation text field will be multiline, defaults to false
-
-#+BEGIN_EXAMPLE
-
-function register_strings() {
-  pll_register_string('mytheme', 'some_string');
-}
-add_action('init','register_strings');
-
-// in template to echo
-pll_e('some_string');
-
-// to return
-pll__('some_string');
-#+END_EXAMPLE
+You can create a different menu for each language
 
 Determine the locale of current page
 #+BEGIN_EXAMPLE
@@ -7914,6 +7941,76 @@ https://polylang.wordpress.com/documentation/documentation-for-developers/functi
 <?php // outputs a dropdown list of languages names ?>
 <?php pll_the_languages(array('dropdown'=>1));  ?>
 #+END_EXAMPLE
+
+**** String translation is possible
+
+There're 3 ways to register a string to translate
+***** pll_register_string($name, $string, $group, $multiline);
+- $name => (required) name provided for sorting convenience (ex: ‘myplugin’)
+- $string => (required) the string to translate
+- $group => (optional) the group in which the string is registered, default is ‘polylang’
+- $multiline => (optional) if set to true, the translation text field will be multiline, default is false
+
+#+BEGIN_EXAMPLE
+function register_strings() {
+  pll_register_string('mytheme', 'some_string');
+}
+add_action('init','register_strings');
+
+// in template to echo
+pll_e('some_string');
+
+// to return
+pll__('some_string');
+
+// return in another language that might not be the current language
+pll_translate_string($string, $lang);
+#+END_EXAMPLE
+
+***** WPML API
+for example icl_register_string($context, $name, $string);
+
+***** wpml-config.xml
+Some plugin or theme might include this WPML plugin xml in its root directory.
+https://polylang.pro/doc/the-wpml-config-xml-file/
+#+BEGIN_EXAMPLE
+<wpml-config>
+    <custom-fields>
+        <custom-field action="copy">quantity</custom-field>
+        <custom-field action="translate">custom-title</custom-field>
+    </custom-fields>
+    <custom-types>
+        <custom-type translate="1">book</custom-type>
+        <custom-type translate="1">DVD</custom-type>
+    </custom-types>
+    <taxonomies>
+        <taxonomy translate="1">genre</taxonomy>
+    </taxonomies>
+    <admin-texts>
+        <key name="my_plugins_options">
+            <key name="option_name_1" />
+            <key name="option_name_2" />
+            <key name="options_group_1">
+                <key name="sub_option_name_11" />
+                <key name="sub_option_name_12" />
+            </key>
+        </key>
+        <key name="simple_string_option" />
+    </admin-texts>
+</wpml-config>
+#+END_EXAMPLE
+
+custom-fields: the custom field name needs to be provided and also the action
+- ignore :: no action
+- translate :: value is copied from the source but may be modified
+- copy :: value is copied from the source and synchronized across translations
+
+custom-types: the custom post types that Polylang should manage. Once translate attribute is set, it cannot be changed in Polylang settings. 1 is to manage, 0 is not to manage.
+
+taxonomies: the custom tax that Polylang should manage.
+
+admin-texts: when get_option is called in themes or plugins, Polylang can filter these calls and provide translation to the values of these options.
+- Add a key name. A key can have children for serialization.
 
 *** Resize image on the fly
 <<<fly-dynamic-image-resizer>>>
