@@ -5794,6 +5794,17 @@ require_once(__DIR__ . "/../wp-load.php");
 // see wp:user
 #+END_EXAMPLE
 
+** Global Variables
+https://codex.wordpress.org/Global_Variables
+
+#+BEGIN_EXAMPLE
+global $wp_version;
+if ( version_compare( $GLOBALS['wp_version'], '4.7-alpha', '<' ) ) {
+	require get_template_directory() . '/inc/back-compat.php';
+	return;
+}
+#+END_EXAMPLE
+
 ** Email
 Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
 This way you don't need to have linux:sendmail installed on Linux
@@ -6255,6 +6266,61 @@ msgstr ""
 Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
 Settings > General > Site Lanuage to match fr_CA
 
+*** add_theme_support <<<wp:f:add_theme_support>>>
+<<<wp:f:add_theme_support:post-thumbnails>>>
+Features are usually added in wp:action:after_setup_theme
+#+BEGIN_EXAMPLE
+add_theme_support( 'post-thumbnails' );
+
+// refer to wp:f:add_image_size
+
+add_theme_support( 'automatic-feed-links' );
+// adds
+//<link rel="alternate" type="application/rss+xml" title="Website Name Feed" href="http://myweb.io/feed/" />
+//<link rel="alternate" type="application/rss+xml" title="Website Name Comments Feed" href="http://myweb.io/comments/feed/" />
+// If it's a page, add one more
+// <link rel="alternate" type="application/rss+xml" title="Website Name Page Name Comments Feed" href="http://myweb.io/2016/07/20/page-name/feed/" />
+
+add_theme_support( 'title-tag' ); // wp will provide <title> not hard coded in template file using wp_title()
+
+add_theme_support( 'html5', array(
+  'search-form',
+  'comment-form',
+  'comment-list',
+  'gallery',
+  'caption',
+) );
+// use the default html5 markup instead of the default html4 file
+
+add_theme_support( 'post-formats', array(
+  'aside',
+  'image',
+  'video',
+  'quote',
+  'link',
+  'gallery',
+  'audio',
+) );
+// wp provides a list of formats for admin users to choose to display a post
+// refer to wp:f:has_post_format
+
+add_theme_support( 'custom-logo', array(
+		'width'       => 250,
+		'height'      => 250,
+		'flex-width'  => true,
+) );
+// provide a place to upload theme logo in wp-admin
+// https://developer.wordpress.org/themes/functionality/custom-logo/
+// refer to wp:custom logo:display
+
+add_theme_support( 'customize-selective-refresh-widgets' );
+// https://make.wordpress.org/core/2016/03/22/implementing-selective-refresh-support-for-widgets/
+
+add_theme_support( 'starter-content', $starter_content );
+// https://make.wordpress.org/core/2016/11/30/starter-content-for-themes-in-4-7/
+
+#+END_EXAMPLE
+
 *** add_image_size
 <<<wp:f:add_image_size>>>
 Use wp:action:after_setup_theme
@@ -6382,6 +6448,50 @@ echo 'Variety : ' . $wp_query->query_vars['variety'];
 get_footer();
 #+END_EXAMPLE
 
+*** add_editor_style
+Used in wp:action:admin_init wp:action:after_setup_theme
+
+Add stylesheets for TinyMCE
+add_editor_style( array|string $stylesheet = 'editor-style.css' )
+Stylesheet name or array thereof, relative to theme root
+This function automatically adds another stylesheet with -rtl prefix, e.g. editor-style-rtl.css. If that file doesn’t exist, it is removed before adding the stylesheet(s) to TinyMCE. If an array of stylesheets is passed to add_editor_style(), RTL is only added for the first stylesheet.
+
+Since version 3.4 the TinyMCE body has .rtl CSS class. It is a better option to use that class and add any RTL styles to the main stylesheet.
+
+#+BEGIN_EXAMPLE
+add_editor_style( array( 'assets/css/editor-style.css', twentyseventeen_fonts_url() ) );
+#+END_EXAMPLE
+
+*** has_post_format
+<<<wp:f:has_post_format>>>
+In template
+#+BEGIN_EXAMPLE
+if ( has_post_format( 'aside' )) {
+  // code to display the aside format post here
+} else if (has_post_format('gallery')) {
+   // stuff to display the gallery format post here
+} else if (has_post_format('link')) {
+   // stuff to display the link format post here
+}else {
+   // code to display the normal format post here
+}
+#+END_EXAMPLE
+
+*** has_custom_logo, get_custom_logo, the_custom_logo
+<<<wp:custom logo:display>>>
+get_custom_logo returns markup
+the_custom_logo displays markup
+
+#+BEGIN_EXAMPLE
+$custom_logo_id = get_theme_mod( 'custom_logo' );
+$logo = wp_get_attachment_image_src( $custom_logo_id , 'full' );
+if ( has_custom_logo() ) {
+        echo '<img src="'. esc_url( $logo[0] ) .'">';
+} else {
+        echo '<h1>'. get_bloginfo( 'name' ) .'</h1>';
+}
+#+END_EXAMPLE
+
 *** remove_meta_box
 <<<wp:f:remove_meta_box>>>
 
@@ -6418,8 +6528,38 @@ remove_meta_box( $id, $page, $context);
   - Menu meta boxes :: side
 - Return nothing
 
+*** get_header, get_footer, get_sidebar, get_search_form, comments_template
+<<<wp:f:get_header>>> <<<wp:f:get_footer>>> <<<wp:f:get_sidebar>>> <<<wp:f:get_search_form>>> <<<wp:f:comments_template>>>
+
+System default load paths:
+wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
+
+#+BEGIN_EXAMPLE
+header-{name}.php
+footer-{name}.php
+sidebar-{name}.php
+{slug}-{name}.php
+searchform.php
+comment.php
+
+// 404.php sample
+
+<?php get_header( $name ); 
+//get_template_part( $slug, $name );
+get_template_part( 'nav' );
+?>
+<h2>Error - 404 - Not Found</h2>
+<?php
+get_sidebar();
+get_footer( $name );
+?>
+#+END_EXAMPLE
+
 *** get_template_part
-wp:f:get_template_part
+<<<wp:f:get_template_part>>>
+
+get_template_part( string $slug, string $name = null )
+It includes file {slug.php} or {slug}-{name}.php
 
 *** get_the_excerpt, the_excerpt
 the_excerpt() echoes current post and it calls get_the_excerpt($post=null)
@@ -6462,31 +6602,6 @@ $args = array(
     'stream'      => false,
     'filename'    => null
 ); 
-#+END_EXAMPLE
-
-*** wp_localize_script
-This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
-#+BEGIN_EXAMPLE
-wp_register_script('unique_handle', 'path/to/myscript.js' );
-
-$translation_array = array(
-  'some_string' => 'hello';
-  'a_value' => '10'
-);
-
-// Pass vars in $translation_array to file path/to/myscript.js
-wp_localize_script( 'unique_handle', 'object_name', $translation_array );
-
-wp_enqueue_script( 'unique_handle' );
-
-<script>
-  console.log( object_name.some_string);
-</script>
-#+END_EXAMPLE
-
-If you just want to define pass PHP variables and don't want to create empty js files
-#+BEGIN_EXAMPLE
-wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 #+END_EXAMPLE
 
 *** register_post_type
@@ -6552,7 +6667,7 @@ function lili_pre_get_posts( $query ) {
 <<<wp:register_post_type:labels>>>
 
 *** register_nav_menus, register_nav_menu, wp_nav_menu
-<<<wp:f:register_nav_menus>>> used in wp:action:init
+<<<wp:f:register_nav_menus>>> used in wp:action:init or wp:action:after_setup_theme
 [[https://codex.wordpress.org/Function_Reference/register_nav_menus][Register custom nav menus]]
 This is to create a theme location. Each theme location can have one menu created from wp-admin.
 Menu created from wp-admin can associate with multiple theme locations.
@@ -6661,6 +6776,86 @@ wp_reset_query();
 
 *** update_post_meta
 <<<wp:f:update_post_meta>>>
+
+*** wp_enqueue_style, wp_style_add_data
+<<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
+
+wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )
+#+BEGIN_EXAMPLE
+// Load the main stylesheet
+	wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
+
+/**
+ * Load our IE-only stylesheet for all versions of IE:
+ * <!--[if IE]> ... <![endif]-->
+ */
+wp_enqueue_style( 'my-theme-ie', get_stylesheet_directory_uri() . "/css/ie.css", array( 'my-theme' ) );
+wp_style_add_data( 'my-theme-ie', 'conditional', 'IE' );
+
+/**
+ * Load our IE version-specific stylesheet:
+ * <!--[if IE 7]> ... <![endif]-->
+ */
+wp_enqueue_style( 'my-theme-ie7', get_stylesheet_directory_uri() . "/css/ie7.css", array( 'my-theme' ) );
+wp_style_add_data( 'my-theme-ie7', 'conditional', 'IE 7' );
+
+/**
+ * Load our IE specific stylesheet for a range of older versions:
+ * <!--[if lt IE 9]> ... <![endif]-->
+ * <!--[if lte IE 8]> ... <![endif]-->
+ * NOTE: You can use the 'less than' or the 'less than or equal to' syntax here interchangeably.
+ */
+wp_enqueue_style( 'my-theme-old-ie', get_stylesheet_directory_uri() . "/css/old-ie.css", array( 'my-theme' ) );
+wp_style_add_data( 'my-theme-old-ie', 'conditional', 'lt IE 9' );
+
+/**
+ * Load our IE specific stylesheet for a range of newer versions:
+ * <!--[if gt IE 8]> ... <![endif]-->
+ * <!--[if gte IE 9]> ... <![endif]-->
+ * NOTE: You can use the 'greater than' or the 'greater than or equal to' syntax here interchangeably.
+ */
+wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-ie.css", array( 'my-theme' ) );
+wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
+#+END_EXAMPLE
+
+*** wp_enqueue_script, wp_script_add_data
+<<<wp:f:wp_enqueue_script>>>
+wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
+
+#+BEGIN_EXAMPLE
+wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
+wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
+#+END_EXAMPLE
+
+*** wp_localize_script
+This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
+#+BEGIN_EXAMPLE
+wp_register_script('unique_handle', 'path/to/myscript.js' );
+
+$translation_array = array(
+  'some_string' => 'hello';
+  'a_value' => '10'
+);
+
+// Pass vars in $translation_array to file path/to/myscript.js
+wp_localize_script( 'unique_handle', 'object_name', $translation_array );
+
+//wp_enqueue_script( 'unique_handle' );
+
+<script>
+  console.log( object_name.some_string);
+</script>
+#+END_EXAMPLE
+
+If you just want to define pass PHP variables and don't want to create empty js files
+#+BEGIN_EXAMPLE
+wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+wp_enqueue_script( 'twentyseventeen-skip-link-focus-fix', get_theme_file_uri( '/assets/js/skip-link-focus-fix.js' ), array(), '1.0', true );
+wp_localize_script( 'twentyseventeen-skip-link-focus-fix', 'twentyseventeenScreenReaderText', $twentyseventeen_l10n );
+#+END_EXAMPLE
 
 ** Current URL, and slug
 Current URL on your website
@@ -6925,7 +7120,7 @@ List goes on...
 
 ** RSS
 
-<<<wp:f:get_template_part>>> includes any template in child theme
+wp:f:get_template_part includes any template in child theme
 
 #+BEGIN_EXAMPLE
 function lili_RSS() {
@@ -7309,6 +7504,122 @@ function disable_all_widgets($sidebars_widgets) {
 add_filter('sidebars_widgets', 'disable_all_widgets');
 #+END_EXAMPLE
 
+*** excerpt_more
+Default is  echo '[…]'
+
+#+BEGIN_EXAMPLE
+function twentyseventeen_excerpt_more( $link ) {
+	if ( is_admin() ) {
+		return $link;
+	}
+
+	$link = sprintf( '<p class="link-more"><a href="%1$s" class="more-link">%2$s</a></p>',
+		esc_url( get_permalink( get_the_ID() ) ),
+		/* translators: %s: Name of current post */
+		sprintf( __( 'Continue reading<span class="screen-reader-text"> "%s"</span>', 'twentyseventeen' ), get_the_title( get_the_ID() ) )
+	);
+	return ' &hellip; ' . $link;
+}
+add_filter( 'excerpt_more', 'twentyseventeen_excerpt_more' );
+#+END_EXAMPLE
+
+*** wp_calculate_image_sizes
+wp_calculate_image_sizes( array|string $size, string $image_src = null, array $image_meta = null, int $attachment_id )
+
+Creates a ‘sizes’ attribute value for an image. html:img:srcset html:img:sizes
+
+#+BEGIN_EXAMPLE
+function twentyseventeen_content_image_sizes_attr( $sizes, $size ) {
+	$width = $size[0];
+
+	if ( 740 <= $width ) {
+		$sizes = '(max-width: 706px) 89vw, (max-width: 767px) 82vw, 740px';
+	}
+
+	if ( is_active_sidebar( 'sidebar-1' ) || is_archive() || is_search() || is_home() || is_page() ) {
+		if ( ! ( is_page() && 'one-column' === get_theme_mod( 'page_options' ) ) && 767 <= $width ) {
+			 $sizes = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
+		}
+	}
+
+	return $sizes;
+}
+add_filter( 'wp_calculate_image_sizes', 'twentyseventeen_content_image_sizes_attr', 10, 2 );
+#+END_EXAMPLE
+
+*** wp_resource_hints
+apply_filters( 'wp_resource_hints', array $urls, string $relation_type )
+
+relation_type :: dns-prefetch, preconnect, prefetch, and prerender
+
+https://make.wordpress.org/core/2016/07/06/resource-hints-in-4-6/
+
+#+BEGIN_EXAMPLE
+function twentyseventeen_resource_hints( $urls, $relation_type ) {
+	if ( wp_style_is( 'twentyseventeen-fonts', 'queue' ) && 'preconnect' === $relation_type ) {
+		$urls[] = array(
+			'href' => 'https://fonts.gstatic.com',
+			'crossorigin',
+		);
+	}
+
+	return $urls;
+}
+add_filter( 'wp_resource_hints', 'twentyseventeen_resource_hints', 10, 2 );
+#+END_EXAMPLE
+
+*** get_header_image_tag
+apply_filters( 'get_header_image_tag', string $html, object $header, array $attr )
+#+BEGIN_EXAMPLE
+function twentyseventeen_header_image_tag( $html, $header, $attr ) {
+	if ( isset( $attr['sizes'] ) ) {
+		$html = str_replace( $attr['sizes'], '100vw', $html );
+	}
+	return $html;
+}
+add_filter( 'get_header_image_tag', 'twentyseventeen_header_image_tag', 10, 3 );
+#+END_EXAMPLE
+
+In template
+#+BEGIN_EXAMPLE
+<img src="<?php header_image(); ?>" height="<?php echo get_custom_header()->height; ?>" width="<?php echo get_custom_header()->width; ?>" alt="" />
+#+END_EXAMPLE
+
+*** wp_get_attachment_image_attributes
+apply_filters( 'wp_get_attachment_image_attributes', array $attr, WP_Post $attachment, string|array $size )
+
+$attr :: (array) Attributes for the image markup.
+
+$attachment :: (WP_Post) Image attachment post.
+
+$size :: (string|array) Requested size. Image size or array of width and height values (in that order). Default 'thumbnail'.
+
+#+BEGIN_EXAMPLE
+function twentyseventeen_post_thumbnail_sizes_attr( $attr, $attachment, $size ) {
+	if ( is_archive() || is_search() || is_home() ) {
+		$attr['sizes'] = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
+	} else {
+		$attr['sizes'] = '100vw';
+	}
+
+	return $attr;
+}
+add_filter( 'wp_get_attachment_image_attributes', 'twentyseventeen_post_thumbnail_sizes_attr', 10, 3 );
+#+END_EXAMPLE
+
+*** widget_tag_cloud_args
+#+BEGIN_EXAMPLE
+function twentyseventeen_widget_tag_cloud_args( $args ) {
+	$args['largest']  = 1;
+	$args['smallest'] = 1;
+	$args['unit']     = 'em';
+	$args['format']   = 'list';
+
+	return $args;
+}
+add_filter( 'widget_tag_cloud_args', 'twentyseventeen_widget_tag_cloud_args' );
+#+END_EXAMPLE
+
 ** add_action, do_action, do_action_ref_array
 *** Basic
 Event based
@@ -7320,35 +7631,18 @@ add_action( string $tag,
 
 add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
 
-*** wp_head, wp_footer, get_footer
-Refer to wp:default filters
-wp_head(); and wp_footer(); are usually called in header/footer.php
-get_footer action is called at the beginning of the get_footer(); function, which will include footer.php file later.
+Sequence
+https://codex.wordpress.org/Plugin_API/Action_Reference
 
-If a parameter is passed, footer-[$name].php is also included and you can play around $name in the get_footer hook like this
-#+BEGIN_EXAMPLE
-function themeslug_footer_hook( $name ) {
-	if ( 'new' == $name ) { ?>
-		<script>
-			(function($) {
-				//put all your jQuery goodness in here.
-			})(jQuery);
-		</script>
-	<?php
-	}
-}
-add_action( 'get_footer', 'themeslug_footer_hook' );
-#+END_EXAMPLE
+*** after_setup_theme
+<<<wp:action:after_setup_theme>>>
+Called each page load after the theme is initialized. 
+Do basic setup, registration and init actions for a theme
 
-*** wp_enqueue_scripts
-Can use wp_enqueue_style and wp_enqueue_script. Priority might be needed to change to greater 10
-to load after default theme/style.css
-#+BEGIN_EXAMPLE
-function lili_scripts() {
- wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
-}
-add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
-#+END_EXAMPLE
+These may be used
+wp:f:add_theme_support
+wp:f:add_image_size
+wp:f:register_nav_menus
 
 *** init
 <<<wp:action:init>>>
@@ -7403,10 +7697,8 @@ Display
 <?php endif; ?>
 #+END_EXAMPLE
 
-*** after_setup_theme
-<<<wp:action:after_setup_theme>>>
-Called each page load after the theme is initialized. 
-Do basic setup, registration and init actions for a theme
+*** admin_menu
+<<<wp:action:admin_menu>>>
 
 *** pre_get_posts
 <<<wp:action:pre_get_posts>>>
@@ -7422,8 +7714,15 @@ function lili_pre_get_posts( $query ) {
   // this function should return nothing.
 }
 
-*** admin_menu
-<<<wp:action:admin_menu>>>
+*** wp_enqueue_scripts
+Can use wp_enqueue_style and wp_enqueue_script. Priority might be needed to change to greater 10
+to load after default theme/style.css
+#+BEGIN_EXAMPLE
+function lili_scripts() {
+ wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
+}
+add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
+#+END_EXAMPLE
 
 *** admin_head
 <<<wp:action:admin_head>>>
@@ -7440,6 +7739,35 @@ function my_custom_admin_head() {
   echo '<script type=""text/javascript">console.log('admin script')</script>';
 }
 add_action( 'admin_head', 'my_custom_admin_head' );
+#+END_EXAMPLE
+
+*** template_redirect
+<<<wp:action:template_redirect>>>
+Refer to wp:php:redirect
+
+*** wp_head, wp_footer, get_footer
+Refer to wp:default filters
+wp_head(); and wp_footer(); are usually called in header/footer.php
+get_footer action is called at the beginning of the get_footer(); function, which will include footer.php file later.
+
+If a parameter is passed, footer-[$name].php is also included and you can play around $name in the get_footer hook like this
+#+BEGIN_EXAMPLE
+function themeslug_footer_hook( $name ) {
+	if ( 'new' == $name ) { ?>
+		<script>
+			(function($) {
+				//put all your jQuery goodness in here.
+			})(jQuery);
+		</script>
+	<?php
+	}
+  // you can also print
+  if ( is_singular() && pings_open() ) {
+    printf( '<link rel="pingback" href="%s">' . "\n", get_bloginfo( 'pingback_url' ) );
+  }
+
+}
+add_action( 'get_footer', 'themeslug_footer_hook' );
 #+END_EXAMPLE
 
 *** add_meta_boxes, add_meta_boxes_{post_type}
@@ -7693,6 +8021,9 @@ add_action( 'wp_ajax_nopriv_my_action', 'my_action'); // non-logged in users
 https://codex.wordpress.org/Child_Themes
 wp-content/themes/parent-theme-name-child
 wp-content/themes/parent-theme-name-child/style.css
+
+For new theme, index.php is required
+
 #+BEGIN_EXAMPLE
 /*
  Theme Name:   Twenty Fifteen Child
@@ -7739,11 +8070,6 @@ if ( ! function_exists( 'theme_special_nav' ) ) {
 
 *** functions.php
 <<<wp:theme:functions>>>
-#+BEGIN_EXAMPLE
-add_theme_support( 'post-thumbnails' );
-
-// wp:action:init
-#+END_EXAMPLE
 
 *** Template Files
 [[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
@@ -7779,10 +8105,11 @@ Make a copy of page.php to start
  */
 #+END_EXAMPLE
 
-*** Header template
-header-{name}.php
+*** Setup
+wp:f:add_theme_support
 
-<?php get_header( $name ); ?>
+*** Include header, footer, sidebar and other, search form
+wp:f:get_header
 
 *** Widgets
 **** Create sidebar
@@ -13033,6 +13360,7 @@ transitionend
 |          |                                   |                                                           |
 
 *** Picture tag, <img srcset>
+<<<html:img:srcset>>> <<<html:img:sizes>>>
 The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only.
 <img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">
 
