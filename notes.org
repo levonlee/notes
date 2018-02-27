@@ -6125,8 +6125,11 @@ wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false 
 ** Functions
 *** get_bloginfo, Site tagline, Sitetitle
 retrieves info about the current site
-
 https://developer.wordpress.org/reference/functions/get_bloginfo/
+
+#+BEGIN_EXAMPLE
+<img src="<?php bloginfo('template_url'); ?>/assets/images/phantomscreens.jpg" alt="" />
+#+END_EXAMPLE
 
 *** get_the_ID() - ID of current item or false
 *** wp_get_post_terms($post_id, $tax, $args)
@@ -6555,11 +6558,43 @@ get_footer( $name );
 ?>
 #+END_EXAMPLE
 
-*** get_template_part
+*** get_template_part, get_theme_file_uri, get_theme_file_path
 <<<wp:f:get_template_part>>>
 
 get_template_part( string $slug, string $name = null )
 It includes file {slug.php} or {slug}-{name}.php
+
+#+BEGIN_EXAMPLE
+<?php get_template_part( 'template-parts/header/header', 'image' ); ?>
+// echo path-to-theme/template-parts/header/header-image.php
+#+END_EXAMPLE
+
+<<<wp:f:get_theme_file_uri>>>
+get_theme_file_uri checks for file existance and returns URL.
+#+BEGIN_EXAMPLE
+wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
+#+END_EXAMPLE
+Get from child theme first js/my-scripts.js. Fall back to parent theme.
+
+wp:f:get_theme_file_path returns the path in filesystem so that you can use filemtime
+#+BEGIN_EXAMPLE
+wp_enqueue_script(
+    'my-script',
+    get_theme_file_uri( 'js/my-script.js' ),
+    array(),
+    filemtime( get_theme_file_path( 'js/my-script.js' ) )
+);
+#+END_EXAMPLE
+
+*** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
+Return the filesystem path or URI of the current parent theme
+Use get_stylesheet_directory_uri instead to grab child and then parent theme.
+get_stylesheet_uri returns URI of style.css
+
+#+BEGIN_EXAMPLE
+include( get_template_directory() . '/includes/myfile.php');
+wp_enqueue_script( 'twentyfifteen-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20141010', true );
+#+END_EXAMPLE
 
 *** get_the_excerpt, the_excerpt
 the_excerpt() echoes current post and it calls get_the_excerpt($post=null)
@@ -6703,6 +6738,7 @@ function remove_p_on_pages() {
     if ( is_page() ) {
         remove_filter( 'the_content', 'wpautop' );
         remove_filter( 'the_excerpt', 'wpautop' );
+        
     }
 }
 add_action( 'wp_head', 'remove_p_on_pages' );
@@ -6711,6 +6747,12 @@ add_action( 'wp_head', 'remove_p_on_pages' );
 *** shortcode_unautop
 <<<wp:f:shortcode_unautop>>> used in wp:filter:the_content
 Ensure shortcodes are not wrapped in <p>...</p>
+
+Refer to wp:filter:the_content wp:filter:tiny_mce_before_init
+
+#+BEGIN_EXAMPLE
+add_filter( 'the_content', 'shortcode_unautop'  );
+#+END_EXAMPLE
 
 *** wp_reset_postdata
 <<<wp:f:wp_reset_postdata>>>
@@ -6781,6 +6823,16 @@ wp_reset_query();
 <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
 
 wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )
+
+$deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on.
+         Default value: array()
+
+$ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added.
+        Default value: false
+
+$media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'.
+          Default value: 'all'
+
 #+BEGIN_EXAMPLE
 // Load the main stylesheet
 	wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
@@ -6827,8 +6879,17 @@ wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array()
 wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
 #+END_EXAMPLE
 
+When a script is added with dependency on jQuery, jQuery is auto loaded by wp. Change jQuery
+#+BEGIN_EXAMPLE
+wp_deregister_script('jquery');
+wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js', array(), null, true);
+wp_enqueue_script('my-custom-script', get_template_directory_uri() .'/js/my-custom-script.js', array('jquery'), null, true);
+#+END_EXAMPLE
+
 *** wp_localize_script
 This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
+It is used to define variables as an object.
+
 #+BEGIN_EXAMPLE
 wp_register_script('unique_handle', 'path/to/myscript.js' );
 
@@ -6839,9 +6900,9 @@ $translation_array = array(
 
 // Pass vars in $translation_array to file path/to/myscript.js
 wp_localize_script( 'unique_handle', 'object_name', $translation_array );
+wp_enqueue_script( 'unique_handle' );
 
-//wp_enqueue_script( 'unique_handle' );
-
+// Then you can use it in all enqueued javascript files
 <script>
   console.log( object_name.some_string);
 </script>
@@ -7469,6 +7530,7 @@ function tgm_io_shortcode_empty_paragraph_fix( $content ) {
 
 *** the_content
 <<<wp:filter:the_content>>>
+Refer to wp:f:shortcode_unautop wp:f:wpautop wp:filter:tiny_mce_before_init
 Change the content of the post after retrieved from db and before it's printed to the screen.
 [[https://codex.wordpress.org/Plugin_API/Filter_Reference/the_content][Doc]]
 #+BEGIN_EXAMPLE
@@ -8073,6 +8135,7 @@ if ( ! function_exists( 'theme_special_nav' ) ) {
 
 *** Template Files
 [[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
+https://developer.wordpress.org/themes/basics/template-hierarchy/
 single.php
 single-{post-type}.php
 archive.php
