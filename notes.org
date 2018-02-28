@@ -5805,7 +5805,7 @@ if ( version_compare( $GLOBALS['wp_version'], '4.7-alpha', '<' ) ) {
 }
 #+END_EXAMPLE
 
-** Email
+** Email PHPMailer
 Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
 This way you don't need to have linux:sendmail installed on Linux
 
@@ -35046,6 +35046,31 @@ AllowOverride All
 #+END_EXAMPLE
 
 Restart Apache ~service httpd restart~
+
+** Force redirect to https .htaccess
+Diffrent hositng companies have different rule
+
+In general
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+#+END_EXAMPLE
+
+InMotion https://www.inmotionhosting.com/support/website/ssl/how-to-force-https-using-the-htaccess-file
+
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteCond %{REQUEST_URI} !^/[0-9]+\..+\.cpaneldcv$
+RewriteCond %{REQUEST_URI} !^/\.well-known/pki-validation/[A-F0-9]{32}\.txt(?:\ Comodo\ DCV)?$
+RewriteEngine On 
+RewriteCond %{SERVER_PORT} 80 
+RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
+</IfModule>
+#+END_EXAMPLE
 
 * Nginx
 ** Install on Ubuntu 16.04
