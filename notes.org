@@ -8516,9 +8516,52 @@ If all else fails and your site is broken
 <<<wp:plugin:wordpress-seo>>>
 How to SEO? https://yoast.com/wordpress-seo/
 
+API and fitlers https://yoast.com/wordpress/plugins/seo/api/
+
 **** Open Graph
 Use at least 200x200 pixels image for `og:image`
 You need to resave the post/article on WP first (to prevent WP Super Cache as FB crawler gets to the page differently) and then run Facebook Open Graph Object Debugger
+
+**** Turn off json-ld
+<<<wp:plugin:wordpress-seo:json-ld>>>
+
+Plugin inserts Oranization and Website by default
+#+BEGIN_EXAMPLE
+{
+  "@context": "http:\/\/schema.org",
+  "@type": "WebSite",
+  "@id": "#website",
+  "url": "https:\/\/mywebsite.com\/",
+  "name": "My Website Name",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https:\/\/mywebsite.com\/?s={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+{
+  "@context": "http:\/\/schema.org",
+  "@type": "Organization",
+  "url": "https:\/\/mywebsite.com\/",
+  "sameAs": [],
+  "@id": "#organization",
+  "name": "My Organization Name",
+  "logo": "http:\/\/mywebsite.com\/wp-content\/uploads\/2018\/02\/logo.jpg"
+}
+#+END_EXAMPLE
+
+Use filter to turn it off and customize it
+https://www.bybe.net/yoast-seo-guide-disable-schema-json-ld-wordpress/
+#+BEGIN_EXAMPLE
+function bybe_remove_yoast_json($data){
+  $data = array();
+  return $data;
+}
+add_filter('wpseo_json_ld_output', 'bybe_remove_yoast_json', 10, 1);
+#+END_EXAMPLE
 
 *** all-in-one-seo-pack <<<wp:plugin:all-in-one-seo-pack>>>
 *** Disqus
@@ -8871,6 +8914,30 @@ SET meta_value=(REPLACE (meta_value, 'iframe src="http://','iframe src="//'));
 #+END_EXAMPLE
 
 Force redirect to https on Apache for all pages :: apache:https
+
+** SEO: hreflang
+Google Search Console looks for hreflang to determine language
+
+For more than one language, use multilingual plugins like wp:plugin:polylang to insert hreflang
+
+3 ways to implement
+- Inside ~<head>~
+- HTTP response header
+To indicate a different language version of a URL (e.g. PDF)
+#+BEGIN_EXAMPLE
+Link: <http://es.example.com/document.pdf>; rel="alternate"; hreflang="es", <http://en.example.com/document.pdf>; rel="alternate"; hreflang="en", <http://de.example.com/document.pdf>; rel="alternate"; hreflang="de"
+#+END_EXAMPLE
+- Sitemap
+
+*** Inside ~<head>~
+#+BEGIN_EXAMPLE
+<?php
+global $wp;
+$current_url = home_url(add_query_arg(array(), $wp->request)); 
+// echo esc_url($current_url);
+?>
+<link rel="alternate" hreflang="<?php echo get_bloginfo('language'); ?>" href="http://es.example.com/" />
+#+END_EXAMPLE
 
 ** UC: Simple HTML page with form submit
 Create a url path /abc which points to index.html (can't have php files)
@@ -9644,7 +9711,12 @@ letter-spacing, padding using em is relative to the current element's font size
 <<<CSS Selectors>>>
 
 div > p :: select p elements where the direct parent is div
-div + p :: select p elements that are placed immediately after div (div's children)
+div + p :: select p elements that are placed immediately after div
+#+BEGIN_EXAMPLE
+<div></div>
+<p></p>
+#+END_EXAMPLE
+
 p ~ ul :: select ul elements that are preceded by a p element
 #+BEGIN_EXAMPLE
 <p></p>
@@ -10940,6 +11012,26 @@ You need to move down and right 50px
 <min-x> = -(target move right amount )/(svg height)*(h*(shrink factor))
 
 ** Use Cases
+*** iOS Hover
+Other than <a> tag, :hover doesn't work on iOS. Try one of these workaround
+#+BEGIN_EXAMPLE
+// add onclick
+<div onClick="return true" class="tast test">
+    Test
+</div>
+
+// or add cursor:pointer
+.test {
+  background-color:blue;
+}
+div.test {
+  cursor:pointer;
+}
+div.test:hover {
+  background-color:red;
+}
+#+END_EXAMPLE
+
 *** Fix parent height less than total children height
 #+BEGIN_EXAMPLE
 <div class="clearfix">
@@ -11308,6 +11400,16 @@ css
 @keyframes contenthighlight {
   0% { border-left-color: red; }
   100% { border-left-color: white; }
+}
+#+END_EXAMPLE
+
+*** Go to anchor element with position:fixed header
+#+BEGIN_EXAMPLE
+:target:before {
+content:"";
+display:block;
+height:90px; /* fixed header height*/
+margin:-90px 0 0; /* negative fixed header height */
 }
 #+END_EXAMPLE
 
@@ -28956,6 +29058,7 @@ https://moz.com/blog/mega-serp-a-visual-guide-to-google
 https://moz.com/learn/seo/serp-features
 
 ** Rich snippet, JSON-LD
+<<<google:json-ld>>>
 LD stands for linked data.
 Google Search Console > Structured Data Markup Helper
 
@@ -28970,7 +29073,11 @@ https://developers.google.com/search/docs/data-types/product
 
 Full Vocabulary Schema.org https://schema.org/docs/full.html
 
-Embed JSON-LD in HTML
+Reminder json shouldn't have double quotes or / backslashes. Any Unicode character should be fine.
+
+Multiple ~<script type="application/ld+json">~ are ok.
+
+*** Product
 #+BEGIN_EXAMPLE
 <script type="application/ld+json">
 {
@@ -28999,7 +29106,135 @@ Multiple products
 </script>
 #+END_EXAMPLE
 
-Reminder json shouldn't have double quotes or / backslashes. Any Unicode character should be fine.
+*** [[https://schema.org/Organization][Organization]], [[http://schema.org/WebSite][Website]]
+<<<google:json-ld:organization>>>
+Refer to wp:plugin:wordpress-seo:json-ld
+
+#+BEGIN_EXAMPLE
+{
+  "@context": "http:\/\/schema.org",
+  "@type": "Organization",
+  "url": "https:\/\/mywebsite.com\/",
+  "sameAs": [],
+  "@id": "#organization",
+  "name": "My Organization Name",
+  "logo": "http:\/\/mywebsite.com\/wp-content\/uploads\/2018\/02\/logo.jpg",
+  "contactPoint": [
+    { "@type": "ContactPoint",
+      "telephone": "+1-401-555-1212",
+      "contactType": "customer service"
+    }
+  ]
+}
+#+END_EXAMPLE
+
+*** [[https://schema.org/ContactPoint][ContactPoint]]
+https://developers.google.com/search/docs/data-types/corporate-contact
+
+*** [[http://schema.org/LocalBusiness][LocalBusiness]]
+https://developers.google.com/search/docs/data-types/local-business
+https://www.chrisains.com/seo/local-business-schema-mark-via-json-ld/
+
+Single address
+#+BEGIN_EXAMPLE
+<script type="application/ld+json">
+{
+    "@context" : "http://schema.org",
+    "@type" : "LocalBusiness",
+    "name" : "Your Business Name",
+    "url" : "http://www.your-domain.co.uk",
+    "logo": "http://www.your-domain.co.uk/images/your-logo.png",
+    "image": "http://www.your-domain.co.uk/images/your-image.png",
+    "address": {
+        "@type" : "PostalAddress",
+        "streetAddress": "1 The High Street",
+        "addressLocality": "Colchester",
+        "addressRegion": "Essex",
+        "addressCountry": "US",
+        "postalCode": "CO1 1AB",
+        "telephone" : "01234 567 891"
+    },
+    "openingHours": [ "Mo-Fr 09:00-18:00", "Sa 10:00-16:00" ],
+    "priceRange": "$$$",
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "40.75",
+      "longitude": "73.98"
+    },
+    "hasmap" : "https://www.google.co.uk/maps/place/Buckingham+Palace/@51.501364,-0.1440787,17z/data=!3m1!4b1!4m5!3m4!1s0x48760520cd5b5eb5:0xa26abf514d902a7!8m2!3d51.501364!4d-0.14189",
+    "sameAs" : [ "https://www.facebook.com/chrisains",
+        "https://twitter.com/chrisains",
+        "https://plus.google.com/+ChrisAinsworth",
+        "https://www.youtube.com/user/chrisains1982" ] 
+}
+</script>
+#+END_EXAMPLE
+
+*** OpeningHoursSpecification
+#+BEGIN_EXAMPLE
+"openingHoursSpecification": [
+  {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
+    "opens": "09:00",
+    "closes": "21:00"
+  },
+  {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": [
+      "Saturday",
+      "Sunday"
+    ],
+    "opens": "10:00",
+    "closes": "23:00"
+  }
+]
+#+END_EXAMPLE
+
+Open 6pm on Saturday and close on 3am on Sunday
+#+BEGIN_EXAMPLE
+"openingHoursSpecification": {
+  "@type": "OpeningHoursSpecification",
+  "dayOfWeek": "Saturday",
+  "opens": "18:00",
+  "closes": "03:00"
+}
+#+END_EXAMPLE
+
+Open all day on Saturday and close all day on Sunday
+#+BEGIN_EXAMPLE
+"openingHoursSpecification": [
+  {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": "Saturday",
+    "opens": "00:00",
+    "closes": "23:59"
+  },
+  {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": "Sunday",
+    "opens": "00:00",
+    "closes": "00:00"
+  }
+]
+#+END_EXAMPLE
+
+Close for Winter
+#+BEGIN_EXAMPLE
+"openingHoursSpecification": {
+  "@type": "OpeningHoursSpecification",
+  "opens": "00:00",
+  "closes": "00:00",
+  "validFrom": "2015-12-23",
+  "validThrough": "2016-01-05"
+}
+#+END_EXAMPLE
 
 ** Remove URL from Google Index
 This is to permanently remove a url from Google Search
