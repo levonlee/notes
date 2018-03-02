@@ -41129,18 +41129,66 @@ Usually, you need to create one subdomain per main domain. e.g. delivery.yourdom
 
 With Automated Security checked, SendGrid will show you to create 3 CNAME records for your DNS registrar.
 
-Some DNS registrar might not support _ in subdomains. In this case, don't check Automated Security.
+Some DNS registrar might not support _ in subdomains in CNAME host. In this case, don't check Automated Security.
 
 Without Automated Security checked, 1 MX and 2 TXT records are provided from SendGrid.
 
-- Email link whitelabel 
+- Email link whitelabel
 adds a CNAME record for a a subdomain that you choose, which masks click and open-tracking links to your domain 
 rather than a SendGrid domain. e.g. In email body there's a link yourdomain.com. Before email link whitelabel is setup,
-the sent out email with this link changed to SendGrid domain. After whitelabel is setup, this link is changed to yourchoice.yourdomain.com
+the sent out email with this link changed to SendGrid domain. After whitelabel is setup, this link is changed to e.g. click.yourdomain.com
 
 This subdomain has to be different from the Domain whitelable subdomain.
 
 SendGrid will show you 2 CNAMES per subdomain setup.
+
+**** PHPMailer
+#+BEGIN_EXAMPLE
+date_default_timezone_set('America/Toronto');
+require_once(__DIR__.'/../../../wp-includes/class-phpmailer.php');
+
+$receipients = array('a@b.com');
+$subject = '';
+$body = '';
+$html = <<<HTML
+    <html>
+    <head>
+      <title>{$subject}</title>
+    </head>
+    <body>
+      {$body}
+    </body>
+    </html>
+HTML;
+
+$mail = new \PHPMailer();
+$mail->isSMTP();
+//$mail->SMTPDebug = 2; // 0 for off in production
+$mail->SMTPDebug = 0;
+$mail->Host = 'smtp.sendgrid.net';
+$mail->SMTPAuth=true;
+$mail->Username= 'apikey';
+$mail->Password= 'secret key';
+$mail->Port = 587;
+$mail->CharSet= 'UTF-8';
+$mail->SetFrom('donotreply@myweb.com', 'My Website');
+
+$mail->addCustomHeader('X-SMTPAPI', '{"category": ["fromwebsiteA"]}');
+
+foreach ($reciepients as $v) {
+  $mail->AddAddress($v);
+}
+
+$mail->Subject = $subject;
+$mail->MsgHTML($html);
+
+if (!$mail->Send()) {
+  return 'error: '.$mail->ErrorInfo;
+}
+else {
+  return 'success';
+}
+#+END_EXAMPLE
 
 *** Send test HTML email for free
 https://htmlmail.pro/ use your Gmail to send HTML emails.
