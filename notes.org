@@ -18858,6 +18858,121 @@ Dropzone.autoDiscover = false;
 var myDropzone = new Dropzone("#slideshow-pictures", {...});
 #+END_EXAMPLE
 
+** modernizr
+It usually adds a class in <html> when a certain feature is supported
+#+BEGIN_EXAMPLE
+// <html class="no-cssgradients">
+// <html class="cssgradients">
+
+.no-cssgradients .header {
+  background: url("images/glossybutton.png");
+}
+.cssgradients .header {
+  background-image: linear-gradient(cornflowerblue, rebeccapurple);
+}
+#+END_EXAMPLE
+
+Config
+#+BEGIN_EXAMPLE
+{
+  "classPrefix": "foo-",
+  "feature-detects": ["dom/hidden"]
+}
+#+END_EXAMPLE
+
+*** Feature
+Modernizr.feature-name is true or false, true add .classPrefix-feature-name, false add .classPrefix-no-feature-name
+
+#+BEGIN_EXAMPLE
+if (Modernizr.mediaqueries) {
+  // supported
+} else {
+  // not-supported
+}
+#+END_EXAMPLE
+
+*** Option
+
+*** API
+**** Modernizr.on(feature, cb)
+#+BEGIN_EXAMPLE
+Modernizr.on('flash', function( result ) {
+  if (result) {
+   // the browser has flash
+  } else {
+    // the browser does not have flash
+  }
+});
+#+END_EXAMPLE
+
+**** .addTest('customFeatureName', cb)
+#+BEGIN_EXAMPLE
+Modernizr.addTest('itsTuesday', function() {
+ var d = new Date();
+ return d.getDay() === 2;
+});
+
+Modernizr.addTest('hasJquery', 'jQuery' in window);
+
+// combine
+var detects = {
+ 'hasjquery': 'jQuery' in window,
+ 'itstuesday': function() {
+   var d = new Date();
+   return d.getDay() === 2;
+ }
+}
+Modernizr.addTest(detects);
+#+END_EXAMPLE
+
+**** .atRule(prop)
+#+BEGIN_EXAMPLE
+var keyframes = Modernizr.atRule('@keyframes');
+if (keyframes) {
+   // keyframes are supported
+   // could be `@-webkit-keyframes` or `@keyframes`
+} else {
+  // keyframes === `false`
+}
+#+END_EXAMPLE
+
+**** ._domPrefixes, ._prefixes
+._prefixes return kebab-case properties
+#+BEGIN_EXAMPLE
+var rule = Modernizr._prefixes.join('transform: rotate(20deg); ');
+rule === 'transform: rotate(20deg); webkit-transform: rotate(20deg); moz-transform: rotate(20deg); o-transform: rotate(20deg); ms-transform: rotate(20deg);'
+#+END_EXAMPLE
+
+Modernizr._domPrefixes === [ "Moz", "O", "ms", "Webkit" ];
+
+**** .hasEvent(eventName, [element])
+**** .mq(mq)
+#+BEGIN_EXAMPLE
+var query = Modernizr.mq('(min-width: 900px)');
+if (query) {
+  // the browser window is larger than 900px
+}
+
+Modernizr.mq('only all'); // true if MQ are supported, false if not
+#+END_EXAMPLE
+
+**** .prefixedCSS(prop), .prefixed(prop, [obj], [elem])
+#+BEGIN_EXAMPLE
+Modernizr.prefixedCSS('transition') // '-moz-transition' in old Firefox
+#+END_EXAMPLE
+
+**** .prefixedCSSValue(prop,value)
+
+**** .testAllProps(prop,[value], [skipValueTest]), .testProp(prop,[value], [useValue])
+Whether a given CSS property, in some prefixed form, is supported by the browser.
+#+BEGIN_EXAMPLE
+testAllProps('boxSizing')  // true
+testAllProps('display', 'block') // true
+testAllProps('display', 'penguin') // false
+#+END_EXAMPLE
+
+.testProp only tests against non-prefix version.
+
 * ES6-ES2015
 <<<js:es6>>>
 6 stands for 6th edition. 2015 is the year.
@@ -40197,10 +40312,46 @@ Navigate to ~chrome://net-internals/#dns~ and press "Clear host cache" button
 - Search for =browser.privatebrowsing.autostart=
 - Change value to True
 
+** BrowserStack
+2018/03 Devices chosen for screenshots
+
+iOS 
+v8.3 iPad Mini 2, iPhone 6, iPhone 6 Plus
+v7 iPhone 5S, iPad Mini
+v6 iPad 3
+
+Android
+Samsung S5, S4
+Google Nexus 9, 7
+
+Win 10
+Edge 15, IE 11, Chrome 50
+
+Win 8.1
+IE 11
+
+Win 8
+IE 10
+
+Win 7
+IE 11, 10
+
+Win XP
+IE 7
+
+Mac OS X 10.11 El Capitan
+Safari 9.1
+Chrome 50
+
+Mac OS X 10.10 Yosemite
+Safari 8
+Chrome 50
+
+Mac OS X 10.9 Mavericks
+Safari 7.1
+
 ** Browser market share
 https://data.apteligent.com/ios/
-https://data.apteligent.com/android/
-
 iOS Overview 2018/03
 <=6 .06%   (.06%)
 <=7 .30%   (.23%)
@@ -40208,9 +40359,45 @@ iOS Overview 2018/03
 <=9  6.5%  (5.57%)
 <=10 20.5% (13.94%)
 
+https://data.apteligent.com/android/
 Android overview 2018/03
 <=4 .41%
 4.4 12%
+
+https://netmarketshare.com
+Browser Market Share across all devices 2018/03
+Chrome 58.57%
+Safari 17.15%
+Firefox 6.61%
+Internet Explorer 6.52%
+Edge 2.11%
+
+Internet Explorer Browser Market Share across all devices 2018/03
+IE 11 71.76%
+IE 10 5.5%
+IE 9 6.81%
+IE 8 12.19%
+IE 7 1.56%
+
+http://gs.statcounter.com/os-version-market-share/windows/desktop/worldwide
+Windows Desktop 2018/03
+Win 10 38.29%
+Win 7 44.58%
+Win 8.1 9.21%
+Win 8 2.5%
+Win XP 4.47%
+Win Vista .86%
+
+http://gs.statcounter.com/macos-version-market-share/desktop/worldwide
+macOS Desktop overview 2018/03
+High Sierra 10.13 14.75%
+Sierra 10.12 39.27%
+El Capitan 10.11 21.22%
+Yosemite 10.10 14.12%
+Mavericks 10.9 4.95%
+Mountain Lion 10.8 < 2.13%
+Lion 10.7 <2.13%
+Snow Leopard 10.6 2.13%
 
 Resolution Distribution
 http://gs.statcounter.com/
