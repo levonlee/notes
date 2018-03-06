@@ -29695,6 +29695,10 @@ cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
 Create ssh host alias and the private key to use in =~/.ssh/config= file
 cd ~/.ssh && nano config, ~chmod 600 ~/.ssh/config~
 #+BEGIN_EXAMPLE
+Host *
+  ServerAliveInterval 240
+  ServerAliveCountMax 2
+
 Host scotch
     HostName scotch.io
     User nick
@@ -29961,7 +29965,7 @@ owner-group-public
 700 :: full for owner
 *755 :: rwxr-xr-x (e.g. wordpress directory) Default directory permission and default executable file permission <<<chmod:755>>>
 *777 :: -rwxrwxrwx Directory's full permission
-600 :: owner can read and write file
+600 :: -rw------ only owner can read and write file
 *644 :: -rw-r--r-- (e.g. wordpress .php files) <<<chmod:644>>>
 *660 :: rw-rw---- (e.g. wp-config.php) <<<chmod:660>>>
 666 :: anyone can read and write. File full permission. <<<chmod:666>>>
@@ -31870,6 +31874,8 @@ Makefile :: make your-recipe
 Makefile.test :: make -f Makefile.test your-recipe
 Makefile.live :: make -f Makefile.live your-recipe
 
+Be careful to close single quotes in @echo
+
 ** Nano
 - Save :: Ctrl + O 
 - Exit :: Ctrl + x
@@ -32577,6 +32583,70 @@ Add-Content $PROFILE "`nImport-Module posh-docker"
 
 # check
 cat $PROFILE
+#+END_EXAMPLE
+
+** Common DevOps
+*** Files are in container
+docker container name dcontainer :: ecwww_prod
+container path to code and files dcontainerpath :: /var/www/html
+store code and files to this folder :: html
+
+**** Makefile at remote host /root/Makefile
+#+BEGIN_EXAMPLE
+.PHONY: info rmbkfolder bkfolder tarall tarcode taruploads taruploadsexclude
+
+filename := $(shell date +%F)
+dcontainer = ecwww_prod
+dcontainerpath = /var/www/html
+bkpath = html
+tarexclude = --exclude='wp-content/uploads' --exclude='sql-admin'
+taruploadsexclude = --exclude='backupbuddy_backups'
+
+info:
+	@echo first run bkfolder
+	@echo then run make tarcode and make taruploads
+	@echo run make tarall
+	@echo run make taruploadsexclude if some directories need to be excluded
+	@echo Finally, run rmbkfolder to release space
+
+bkfolder: rmbkfolder
+	@echo should use docker cp -a if it is supported
+	docker cp -L $(dcontainer):$(dcontainerpath) $(bkpath)
+
+rmbkfolder:
+	rm -rf $(bkpath)
+
+tarall:
+	tar -cvzpf all-$(filename).tar.gz -C $(bkpath) .
+
+tarcode:
+	tar -cvzpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
+
+taruploads:
+	tar -cvzpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
+
+taruploadsexclude:
+	tar -cvzpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
+#+END_EXAMPLE
+
+For database, enter into the container and run
+#+BEGIN_EXAMPLE
+mysqldump -u dbusername -p databasename > /root/myproject.sql
+
+// exit to host and copy the .sql
+docker cp dcontainername:/root/myproject.sql .
+#+END_EXAMPLE
+
+**** run at local dev
+#+BEGIN_EXAMPLE
+// copy code.tar.gz to /myproject/code.tar.gz
+cd /myproject
+tar -xvzf code.tar.gz
+
+// make wp-content/uploads directory
+mkdir wp-content/uploads
+
+tar -xvzf uploads.tar.gz -C wp-content/uploads
 #+END_EXAMPLE
 
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
@@ -36570,7 +36640,7 @@ If you want to ignore a folder but don't ignore a file, create .gitignore in tha
 
 https://www.atlassian.com/git/tutorials/gitignore
 
-*** Wordpress .gitignore
+*** WordPress .gitignore
 #+BEGIN_EXAMPLE
 *~
 cgi-bin/
@@ -36599,6 +36669,7 @@ wp-content/backups/
 sitemap.xml
 sitemap.xml.gz
 sql-admin/
+cs-devops/
 #+END_EXAMPLE
 
 *** NodeJS, NPM .gitignore
