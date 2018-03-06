@@ -29967,6 +29967,28 @@ du options
 -c, --total :: have a grand total line at the bottom
 -a, --all :: write counts for all files, not just directories
 
+**** Large file deleted but still no space
+Delete file reserved by process
+#+BEGIN_EXAMPLE
+sudo lsof / | grep deleted
+#+END_EXAMPLE
+
+Either restart the service that is using the file or kill the process
+
+check inodes usage. Delete old files to release inodes
+#+BEGIN_EXAMPLE
+sudo df -i /
+#+END_EXAMPLE
+
+**** /tmp is mounted as overflow (often sized at 1MB).
+It's likely due to /tmp was not specified as its own partition and the root filesystem filled up and "/tmp" was remounted as a fallback.
+After space has been cleared, just unmount the fallback and it should remount at tis original point.
+#+BEGIN_EXAMPLE
+sudo umount overflow
+// or 
+sudo umount /tmp
+#+END_EXAMPLE
+
 *** File permission
 **** Change permission - chmod
 Octal mode. [[https://chmod-calculator.com/][Convert to Octal Mode]] [[http://permissions-calculator.org/decode/][Convert to Permissions Bit]]
@@ -30493,7 +30515,7 @@ rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/up
 #+END_EXAMPLE
 
 ** head, tail
-   <<<linux:tail>>>
+<<<bash:head>>> <<<linux:tail>>>
 
 Last 5 lines
 #+BEGIN_EXAMPLE
@@ -30617,8 +30639,12 @@ To see memory usage for each process, use linux:top or =htop=
 
 ~systemctl~ :: List running services only with more detail
 
-~service~ operates on the files in ~/etc/init.d~ which is an old init system.
+~service~ operates on the daemon files in ~/etc/init.d~ which is an old init system.
+
 ~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old init.
+
+Some daemon files can do restart and it might be the preferred way to interact with service. e.g.
+~sudo /etc/init.d/jenkins restart~
 
 ** Network
 All active NIC and IP addresses: =ifconfig=
@@ -33722,6 +33748,45 @@ To download the compiled hello command to host directory /tmp/bin:
 ~docker run --rm -v /tmp/bin:/go/bin golang:1.8 go get github.com/golang/example/hello/...~
 Then run ~/tmp/bin/hello~ where hello is the parent directory name
 (For private repo, add ~-it~ for inputing username and password)
+
+* Jenkins
+** Install
+Ubuntu or Debian-based
+#+BEGIN_EXAMPLE
+wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt-get update
+sudo apt-get install jenkins
+#+END_EXAMPLE
+
+It will:
+- Setup Jenkins as a daemon launched on start. See /etc/init.d/jenkins for more details.
+- Create a jenkins user to run this service.
+- Direct console log output to the file ~/var/log/jenkins/jenkins.log~. Check this file if you are troubleshooting Jenkins.
+- Populate ~/etc/default/jenkins~ with configuration parameters for the launch, e.g JENKINS_HOME
+- Set Jenkins to listen on port 8080. Access this port with your browser to start configuration.
+- If your /etc/init.d/jenkins file fails to start Jenkins, edit the /etc/default/jenkins to replace the line ----HTTP_PORT=8080---- with ----HTTP_PORT=8081---- Here, "8081" was chosen but you can put another port available.
+
+To restart jenkins :: ~sudo /etc/init.d/jenkins restart~
+Usage: /etc/init.d/jenkins {start|stop|status|restart|force-reload}`
+
+** config
+nano /etc/default/jenkins
+Disable DNS Multicast feature which will blow up jenkins log
+#+BEGIN_EXAMPLE
+Change this: JAVA_ARGS="-Djava.awt.headless=true"
+To this: JAVA_ARGS="-Djava.awt.headless=true -Dhudson.DNSMultiCast.disabled=true"
+Restart
+service jenkins restart
+#+END_EXAMPLE
+
+Or you can keep that feature on but just don't log
+
+Manage Jenkins -> System Log -> Log Levels (on the left)
+Add the following entry:
+
+Name: javax.jmdns
+Level: off
 
 * Go
 ** Basics, Command
