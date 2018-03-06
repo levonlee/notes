@@ -35566,7 +35566,7 @@ Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ 
 ** Ubuntu install
 apt-get update; apt-get install apache2
 
-service apache2 restart
+~service apache2 restart~
 
 Refer to image:php:apache to get configs
 
@@ -35629,6 +35629,91 @@ Sample
         # after it has been globally disabled with "a2disconf".
         #Include conf-available/serve-cgi-bin.conf
 </VirtualHost>
+#+END_EXAMPLE
+
+Main config file :: /etc/apache2/apache2.conf
+You can see the *.conf files loading sequence
+#+BEGIN_EXAMPLE
+# include module config
+mods-enabled/*.load
+mods-enabled/*.conf
+
+# include list of ports to listen on
+ports.conf
+
+# main config file config
+
+# generic
+conf-enabled/*.conf
+# virutal host config
+sites-enabled/*.conf
+#+END_EXAMPLE
+
+** Basic authentication
+htpasswd creates auth file and it needs this package. htpasswd doesn't need to be installed on server.
+#+BEGIN_EXAMPLE
+apt-get install apache2-utils
+
+# use -c to create and sammy is the username, supply password later
+sudo htpasswd -c /mywebsite/.htpasswd-dev sammy
+
+# later add more user without -c
+sudo htpasswd -c /mywebsite/.htpasswd-dev another_user
+#+END_EXAMPLE
+
+.htpasswd file content
+#+BEGIN_EXAMPLE
+Output
+sammy:$apr1$.0CAabqX$rb8lueIORA/p8UzGPYtGs/
+another_user:$apr1$fqH7UG8a$SrUxurp/Atfq6j7GL/VEC1
+#+END_EXAMPLE
+
+MD5           $apr1$.0CAabqX$rb8lueIORA/p8UzGPYtGs/
+32bit salt is       .0CAabqX
+MD5 result is                rb8lueIORA/p8UzGPYtGs/
+
+*** Option 1: control access within Virutal Host Definition
+/etc/apache2/sites-enabled/000-default.conf
+
+#+BEGIN_EXAMPLE
+<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/html
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+  
+# add this
+  <Directory "/var/www/html">
+    AuthType Basic
+    AuthName "Restricted Content"
+    AuthUserFile /etc/apache2/.htpasswd
+    Require valid-user
+  </Directory>
+# add this.
+
+</VirtualHost>
+#+END_EXAMPLE
+
+*** Option 2: control access with .htaccess
+Main config file :: /etc/apache2/apache2.conf
+Allow .htaccess to override config
+For /var/www/, change ~AllowOverride None~ to ~All~
+#+BEGIN_EXAMPLE
+. . .
+<Directory /var/www/>
+  Options Indexes FollowSymLinks
+  AllowOverride All
+  Require all granted
+</Directory>
+. . .
+#+END_EXAMPLE
+
+/var/www/mywebsite/.htaccess, restart apache
+#+BEGIN_EXAMPLE
+AuthType Basic
+AuthName "restricted area"
+AuthUserFile /var/www/__secure/.htpasswd-dev
+require valid-user
 #+END_EXAMPLE
 
 ** Production Setup
