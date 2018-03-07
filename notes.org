@@ -32387,6 +32387,8 @@ Container log :: ~docker logs -f containerName~ -f to follow log output
 Container network IP and settings :: ~NetworkSetting > IPAddress~
 Volume :: ~Config > Volumes~ and ~Mounts~
 
+docker inspect -f {{.State.Running}} $CONTAINER_ID
+
 - docker cp
 Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
@@ -32762,26 +32764,39 @@ cat $PROFILE
 
 ** Common DevOps
 *** Files are in container
-docker container name dcontainer :: ecwww_prod
 container path to code and files dcontainerpath :: /var/www/html
 store code and files to this folder :: html
 
-**** Makefile at remote host /root/Makefile
+**** Makefile at remote Prod/Live host /root/Makefile
+Prepare in container a script to dump db :: /root/dump.sh
 #+BEGIN_EXAMPLE
-.PHONY: info rmbkfolder bkfolder bkdb tarall tarcode taruploads taruploadsexclude
+#!/bin/bash
+mysqldump -u root --password='$mypass$' livedbname > /root/myproject.sql
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+.PHONY: info rmbkfolder bkfolder bkdb bkdbsamename tarall tarallexcludesamename tarcode taruploads taruploadsexclude
 
 filename := $(shell date +%F)
+# WordPress runs in container
 dcontainer = mycontainername
+# website root folder
 dcontainerpath = /var/www/html
-dconainterdbdump = /var/transfer/bash/dbdump.sh
-dcontainerdbdumppath = /var/transfer/sql-dump/dev-to-prod
 
+# container db dump script
+dconainterdbdump = /root/dump.sh
+
+# db dump location in container
+dcontainerdbdumppath = /root
+
+# host backup folder /root/html
 bkpath = html
 
 tarexclude = --exclude='wp-content/uploads' --exclude='sql-admin'
-tarallexclude = --exclude='wp-content/uploads/backupbuddy_bakcups' --exclude='sql-admin'
 taruploadsexclude = --exclude='backupbuddy_backups'
+tarallexclude = --exclude='wp-content/uploads/backupbuddy_bakcups' --exclude='sql-admin'
 
+# myproject.sql
 projectname = myproject
 
 # prepare files to push to Live environment
@@ -32802,11 +32817,12 @@ rmbkfolder:
 	rm -rf $(bkpath)
 
 bkdb:
-	docker cp $(dcontainer):/root/$(projectname).sql db-$(projectname)-$(filename).sql
-
-bkdbv2:
 	docker exec $(dcontainer) $dcontainerdbdump
-	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(dcontainer).sql db-$(projectname)-$(filename).sql
+	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname)-$(filename).sql
+
+bkdbsamename:
+	docker exec $(dcontainer) $dcontainerdbdump
+	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname).sql
 
 tarall:
 	tar -czpf all-$(filename).tar.gz -C $(bkpath) .
@@ -32823,6 +32839,11 @@ taruploads:
 taruploadsexclude:
 	tar -czpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
 
+# copy code.tar.gz to /myproject/code.tar.gz
+# cd /myproject && tar -xvzf code.tar.gz
+# make wp-content/uploads directory
+# mkdir wp-content/uploads && tar -xvzf uploads.tar.gz -C wp-content/uploads
+
 cleantars:
 	rm -rf all.tar.gz
 
@@ -32834,12 +32855,16 @@ pushcodetolive:
 	rm $(transferpath).htaccess
 #+END_EXAMPLE
 
-For database, enter into the container and run
+Also prepare on Live host /root/devops-db.sh
 #+BEGIN_EXAMPLE
-mysqldump -u dbusername -p databasename > /root/myproject.sql
+#!/bin/bash
+cd /root && make bkdbsamename
+#+END_EXAMPLE
 
-// exit to host and copy the .sql
-docker cp dcontainername:/root/myproject.sql .
+And /root/devops-files.sh
+#+BEGIN_EXAMPLE
+#!/bin/bash
+cd /root && make bkfolder && make tarallexcludesamename
 #+END_EXAMPLE
 
 **** Sql dump inside container
@@ -32865,43 +32890,66 @@ mysqldump -u root --password='dbpassword' dbname > containername.sql
 sed 's|http://www\.dev.mywebsite.com\.com|http://www\.mywebsite\.com|g' containername.sql
 #+END_EXAMPLE
 
-**** run at local dev
+**** local dev /root/Makefile
+Create /root/myfile to store ssh plain password
 #+BEGIN_EXAMPLE
-// copy code.tar.gz to /myproject/code.tar.gz
-cd /myproject
-tar -xvzf code.tar.gz
-
-// make wp-content/uploads directory
-mkdir wp-content/uploads
-
-tar -xvzf uploads.tar.gz -C wp-content/uploads
+echo '$mysshpass$' > myfile
 #+END_EXAMPLE
 
-from live to local dev
+Live environment has IP 1.2.3.4
+Dev uses container devcontainer and database name is devdb
+Dev container map files to dev host at /myproject/html
+
+make importlivedb
+
+/root/Makefile
 #+BEGIN_EXAMPLE
-# generate sql dump on Live environment
-sshpass -f myfile ssh -o StrictHostKeyChecking=no root@1.2.3.4 '/root/devops-db.sh'
-# download to local dev
-sshpass -f myfile scp -o StrictHostKeyChecking=no root@1.2.3.4:/root/myproject.sql .
+.PHONY: importlivedb importlivefiles
 
-# change url in db before import
-sed -n 's|http://www\.myweb\.com|http://dev\.myweb\.com|g' myproject.sql
-sed -n 's|http://myweb\.com|http://dev\.myweb\.com|g' myproject.sql
-cat myproject.sql | docker exec -i containername /usr/bin/mysql -u root --password='$(password)' dbname
+liveip=1.2.3.4
+liveuser=root
+livescriptdb=/root/devops-db.sh
+livescriptfiles=/root/devops-files.sh
+livedbfile=/root/myproject.sql
+livedbfilename=myproject.sql
 
-# devops-files.sh has make commands
-sshpass -f myfile ssh -o StrictHostKeyChecking=no root@1.2.3.4 'cd /root && ./devops-files.sh'
-sshpass -f myfile scp -o StrictHostKeyChecking=no root@1.2.3.4:/root/all.tar.gz .
-rm -rf html
-mkdir html
-tar -xzf all.tar.gz -C ./html
-cp -a /myproject/html/wp-config.php .
-cp -a /myproject/html/.htaccess .
-rm -rf /myproject/html
-cp -a html /myproject/
-cp -a wp-config.php /myproject/html/
-cp -a .htaccess /myproject/html/
-chown -R localdevuser /myproject/html
+livetarfile=/root/all.tar.gz
+
+containername=devcontainer
+
+password=$$mydevdbpassEscapeDollarSigns$$
+dbname=devdb
+htmlpath=/myproject/html
+htmlparent=/myproject
+
+apacheuserandgroup=www-data:www-data
+
+importlivedb:
+	@echo generate sql dump on Live
+	sshpass -f myfile ssh -o StrictHostKeyChecking=no $(liveuser)@$(liveip) '$(livescriptdb)'
+	@echo download dump to here
+	sshpass -f myfile scp -o StrictHostKeyChecking=no $(liveuser)@$(liveip):$(livedbfile) .
+	@echo change url in db file before import
+	sed -i 's|http://www\.myweb\.com|http://dev\.myweb\.com|g' $(livedbfilename)
+	sed -i 's|http://myweb\.com|http://dev\.myweb\.com|g' $(livedbfilename)
+	cat $(livedbfilename) | docker exec -i $(containername) /usr/bin/mysql -u root --password='$(password)' $(dbname)
+
+importlivefiles:
+	sshpass -f myfile ssh -o StrictHostKeyChecking=no $(liveuser)@$(liveip) '$(livescriptfiles)'
+	sshpass -f myfile scp -o StrictHostKeyChecking=no $(liveuser)@$(liveip):$(livetarfile) ./all.tar.gz
+	rm -rf html
+	mkdir html
+	tar -xzf all.tar.gz -C ./html
+	cp -a $(htmlpath)/wp-config.php .
+	cp -a $(htmlpath)/.htaccess .
+	rm -rf $(htmlpath)
+	cp -a html $(htmlparent)/
+	cp -a wp-config.php $(htmlpath)/
+	cp -a .htaccess $(htmlpath)/
+	chown -R $(apacheuserandgroup) $(htmlpath)
+
+cleanupimport:
+	rm -rf all.tar.gz html $(livedbfilename)  
 #+END_EXAMPLE
 
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
@@ -33984,6 +34032,9 @@ Add the following entry:
 
 Name: javax.jmdns
 Level: off
+
+** Builds
+Always use sudo to run commands
 
 * Go
 ** Basics, Command
