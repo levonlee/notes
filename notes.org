@@ -29688,8 +29688,9 @@ abc ALL = (root) NOPASSWD: /path/to/script.sh
 # ~/etc/sudoers.d/mybypass file should have permission 0440 and owner:group is root:root
 #+END_EXAMPLE
 
-** SSH
-<<<linux:ssh>>>
+** SSH, scp, sshpass
+<<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>>
+Refer to linux:package:openssh-client
 
 *** Transfer Client Key to Host
 Generate a private key on your local machine ~ssh-keygen -t rsa~
@@ -29808,8 +29809,41 @@ ChallengeResponseAuthentication no
 
 Restart SSH
 
-*** Random password
+*** Login without setting public keys <<<bash:sshpass>>>
+https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 
+#+BEGIN_EXAMPLE
+apt-get install sshpass
+
+sshpass -p 't@uyM59bQ' ssh -o StrictHostKeyChecking=no username@server.example.com
+
+# StrictHostKeyChecking is for shell script to ignore prompt
+
+# Use a file for password, this is the most reliable way when it has special characters for rsync
+echo 'myPassword' > myfile
+chmod 0400 myfile
+sshpass -f myfile ssh vivek@server42.cyberciti.biz
+
+# scp
+sudo sshpass -p 'abc' scp -o StrictHostKeyChecking=no -r /local/path/archive/ user@1.2.3.4:/remote/path/dtp-tmp/
+
+# use with rsync
+rsync --rsh="sshpass -p myPassword ssh -l username" server.example.com:/var/www/html/ /backup/
+
+# ssh -l means to specify a username to login
+
+# use environment variable SSHPASS to store password and it has to SSHPASS
+SSHPASS='yourPasswordHere'
+rsync --rsh="sshpass -e ssh -l username" server.example.com:/var/www/html/ /backup/
+
+# gpg encrypted file
+echo 'mySshPasswordHere' > .sshpassword
+gpg -c .sshpassword
+rm .sshpassword
+gpg -d -q .sshpassword.gpg > fifo; sshpass -f fifo ssh vivek@server1.cyberciti.biz
+#+END_EXAMPLE
+
+*** Random password
 #+BEGIN_EXAMPLE
 # base64 will likely to have = at the end, remove that to have length 16
 openssl rand -base64 17
@@ -30398,6 +30432,7 @@ Options
 - -C :: change the folder that the tar file will be uncompressed to. Without it, it will be the current folder
 
 *** rsync
+**** Basic
 Dry run first: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
 
 By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated.
@@ -30449,9 +30484,19 @@ downloads/test/*
 
 --ignore-existing :: skip updating files that already exist on the destination
 
+Refer to bash:sshpass for --rsh
+
 **** Change summary, compare 2 directories
-rsync -rlvzPitn --size-only wp-content/themes/my-theme/ sshconfighostname:/var/www/mylivesite/wp-content/themes/my-theme/
-// for current folder, use ./
+For comparing, you don't need -a specifically -pgoD so that left -rlt
+You need -vzPin
+Probably include -t and --size-only
+
+rsync -rltvzPin wp-content/themes/my-theme/ sshconfighostname:/var/www/mylivesite/wp-content/themes/my-theme/
+
+For current folder, use ./
+
+Refer to bash:sshpass
+
 #+BEGIN_EXAMPLE
 .d..t...... ./
 <f.st...... footer.php
@@ -30496,8 +30541,8 @@ cd+++++++++ lb/api-localbusiness/
 YXcstpoguax
 
 Y is update type
-- < means a file is being transferred to the remote
-- > means a file is being transferred to the local
+- < means a file is being transferred to the remote (sent)
+- > means a file is being transferred to the local (received)
 - c means a local change/creation is occuring for the item (on the receiving side)
 - h means the item is a hard link to another item
 - . means the item is not being updated (though it might have attributes that are modified)
@@ -31075,8 +31120,8 @@ See if a package is installed :: ~aptitude search package_name~
 - There might be a second character which indicates the action to be performed on the package.
 
 *** Ubuntu Packages
-**** openssh-client
-Includes scp
+**** openssh-client <<<linux:package:openssh-client>>>
+Includes ssh, scp
 #+BEGIN_EXAMPLE
 apt-get update && apt-get -y install openssh-client
 #+END_EXAMPLE
@@ -31913,6 +31958,12 @@ VERSION=0.1.0
 REPO=mydockerreponame
 # define some variables
 
+# escape $ in string variable with $$, say password is $abc$ 
+password=$$abc$$
+
+# trylogin:
+#     sshpass -p '$(password)' ssh -o StrictHostKeyChecking=no root@123.123.123.123
+
 # Define dynamic variable
 filename := file_$(shell date +%FT%T%Z).log
 
@@ -32714,9 +32765,15 @@ dconainterdbdump = /var/transfer/bash/dbdump.sh
 dcontainerdbdumppath = /var/transfer/sql-dump/dev-to-prod
 
 bkpath = html
+
 tarexclude = --exclude='wp-content/uploads' --exclude='sql-admin'
+tarallexclude = --exclude='wp-content/uploads/backupbuddy_bakcups' --exclude='sql-admin'
 taruploadsexclude = --exclude='backupbuddy_backups'
+
 projectname = myproject
+
+# prepare files to push to Live environment
+transferpath = /web-root/transfer-files/dev-to-prod/source/
 
 info:
 	@echo first run bkfolder
@@ -32740,16 +32797,29 @@ bkdbv2:
 	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(dcontainer).sql db-$(projectname)-$(filename).sql
 
 tarall:
-	tar -cvzpf all-$(filename).tar.gz -C $(bkpath) .
+	tar -czpf all-$(filename).tar.gz -C $(bkpath) .
+
+tarallexcludesamename:
+	tar -czpf all.tar.gz -C $(bkpath) . $(tarallexclude))
 
 tarcode:
-	tar -cvzpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
+	tar -czpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
 
 taruploads:
-	tar -cvzpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
+	tar -czpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
 
 taruploadsexclude:
-	tar -cvzpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
+	tar -czpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
+
+cleantars:
+	rm -rf all.tar.gz
+
+# copy dev code to a transfer folder, remove wp-config.php and .htaccess
+
+pushcodetolive:
+	rsync -av ./$(bkpath)/ $(transferpath)
+	rm $(transferpath)wp-config.php
+	rm $(transferpath).htaccess
 #+END_EXAMPLE
 
 For database, enter into the container and run
@@ -32777,7 +32847,7 @@ mkdir dev-to-prod
 cd dev-to-prod
 
 # MySQL Dump A Copy of the Database to the server :
-mysqldump -u root --password='dbpassword' containername > containername.sql
+mysqldump -u root --password='dbpassword' dbname > containername.sql
 
 # Find && Replace Dev URL with Prod URL :
 sed 's|http://www\.dev.mywebsite.com\.com|http://www\.mywebsite\.com|g' containername.sql
@@ -32793,6 +32863,33 @@ tar -xvzf code.tar.gz
 mkdir wp-content/uploads
 
 tar -xvzf uploads.tar.gz -C wp-content/uploads
+#+END_EXAMPLE
+
+from live to local dev
+#+BEGIN_EXAMPLE
+# generate sql dump on Live environment
+sshpass -f myfile ssh -o StrictHostKeyChecking=no root@1.2.3.4 '/root/devops-db.sh'
+# download to local dev
+sshpass -f myfile scp -o StrictHostKeyChecking=no root@1.2.3.4:/root/myproject.sql .
+
+# change url in db before import
+sed -n 's|http://www\.myweb\.com|http://dev\.myweb\.com|g' myproject.sql
+sed -n 's|http://myweb\.com|http://dev\.myweb\.com|g' myproject.sql
+cat myproject.sql | docker exec -i containername /usr/bin/mysql -u root --password='$(password)' dbname
+
+# devops-files.sh has make commands
+sshpass -f myfile ssh -o StrictHostKeyChecking=no root@1.2.3.4 'cd /root && ./devops-files.sh'
+sshpass -f myfile scp -o StrictHostKeyChecking=no root@1.2.3.4:/root/all.tar.gz .
+rm -rf html
+mkdir html
+tar -xzf all.tar.gz -C ./html
+cp -a /myproject/html/wp-config.php .
+cp -a /myproject/html/.htaccess .
+rm -rf /myproject/html
+cp -a html /myproject/
+cp -a wp-config.php /myproject/html/
+cp -a .htaccess /myproject/html/
+chown -R localdevuser /myproject/html
 #+END_EXAMPLE
 
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
