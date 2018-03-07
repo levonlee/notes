@@ -8532,6 +8532,8 @@ If all else fails and your site is broken
 How to SEO? https://yoast.com/wordpress-seo/
 
 API and fitlers https://yoast.com/wordpress/plugins/seo/api/
+**** Version
+7 - UI
 
 **** Open Graph
 Use at least 200x200 pixels image for `og:image`
@@ -31705,8 +31707,7 @@ If the first command not successful, 2nd command will not run: =lspci && lspci=
 | =-m= | Character Count |                      |
 |      |                 |                      |
 
-*** Replace String  =sed= 
-<<<bash:sed>>>
+*** Replace String  =sed= <<<bash:sed>>>
 Replace all (g) Nick with John case-insensitive
 cat report.txt | sed 's/Nick/John/gi' > report_new.txt
 
@@ -31716,9 +31717,9 @@ sed OPTIONS... [SCRIPT] [INPUTFILE...]
 
 SCRIPT
 - s command :: 's/{regexp}/{replacement}/{flags}'
-  - {regexp} :: For literal string, wrap each letter in [ and ] and for ^ do [\^]
+  - {regexp} :: To literally match string, wrap each letter in [ and ] and for ^ do [\^]
     - e.g. literal string '&#x1f;' =sed 's/[&][#][x][1][f][;]//gi' -i c.xml=
-    - literal string '&#^x1f;' =sed 's/[&][#][\v][x][1][f][;]//gi' -i c.xml=
+    - literal string '&#^x1f;' =sed 's/[&][#][\^][x][1][f][;]//gi' -i c.xml=
   - {replacement} :: You can use & to subsitute the whole matched portion of the pattern.
 
 Refer to [[https://stackoverflow.com/questions/29613304/is-it-possible-to-escape-regex-metacharacters-reliably-with-sed][regexp and replacement escape]]
@@ -31739,6 +31740,33 @@ sed 's/Nick/John/gi' *.txt
 No backup
 sed 's/Nick/John/gi' -i.backup *.txt
 create backup files
+
+Instead of / as delimiter, use | for handling string with / such as ~http://~
+
+Always use \ to escape no matter what delimiter is
+
+Special characters to escape for {regexp}
+Single quote :: \'
+$ :: \$
+. :: \.
+~* :: \*~
+[ :: \[
+\ :: \\
+] :: \]
+^ :: \^
+
+For inside bracket expression (list of characters), to literally include:
+^ :: put it not at the beginning [ab^c]. If it's the only one, use [\^]
+- :: put it either at the start or end [-abc] or [abc-] not [a-bc]. If it's the only one, use [\-]
+] :: put it at the start []abc] or [^]abc] but not [abc]] nor [abc\]]. If it's the only one, [^]]
+
+Special characters to escape for {replacement}
+Single quote :: \'
+& and \ need to be escaped, as do the delimiter (usually /) and newlines \n
+
+Notice :: escape \ is crucial because \number e.g. \1 is subsitution, \letter e.g. \n also has special meaning
+
+Notice :: use double quotes for interpolation sed -e "s/$BRE/$REPL/"
 
 [[https://www.gnu.org/software/sed/manual/sed.txt][man sed]]
 
@@ -32680,12 +32708,15 @@ store code and files to this folder :: html
 .PHONY: info rmbkfolder bkfolder bkdb tarall tarcode taruploads taruploadsexclude
 
 filename := $(shell date +%F)
-dcontainer = ecwww_prod
+dcontainer = mycontainername
 dcontainerpath = /var/www/html
+dconainterdbdump = /var/transfer/bash/dbdump.sh
+dcontainerdbdumppath = /var/transfer/sql-dump/dev-to-prod
+
 bkpath = html
 tarexclude = --exclude='wp-content/uploads' --exclude='sql-admin'
 taruploadsexclude = --exclude='backupbuddy_backups'
-projectname = enersource
+projectname = myproject
 
 info:
 	@echo first run bkfolder
@@ -32703,6 +32734,10 @@ rmbkfolder:
 
 bkdb:
 	docker cp $(dcontainer):/root/$(projectname).sql db-$(projectname)-$(filename).sql
+
+bkdbv2:
+	docker exec $(dcontainer) $dcontainerdbdump
+	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(dcontainer).sql db-$(projectname)-$(filename).sql
 
 tarall:
 	tar -cvzpf all-$(filename).tar.gz -C $(bkpath) .
@@ -32723,6 +32758,29 @@ mysqldump -u dbusername -p databasename > /root/myproject.sql
 
 // exit to host and copy the .sql
 docker cp dcontainername:/root/myproject.sql .
+#+END_EXAMPLE
+
+**** Sql dump inside container
+Inside container /var/transfer/bash/dbdump.sh
+
+#+BEGIN_EXAMPLE
+#!/bin/bash
+
+# Move to MySQL Dump Folder :
+cd /var/transfer/sql-dump/
+
+# Remove dump folder (if Exists):
+rm -rf dev-to-prod
+
+# Create and Enter Dump Folder :
+mkdir dev-to-prod
+cd dev-to-prod
+
+# MySQL Dump A Copy of the Database to the server :
+mysqldump -u root --password='dbpassword' containername > containername.sql
+
+# Find && Replace Dev URL with Prod URL :
+sed 's|http://www\.dev.mywebsite.com\.com|http://www\.mywebsite\.com|g' containername.sql
 #+END_EXAMPLE
 
 **** run at local dev
