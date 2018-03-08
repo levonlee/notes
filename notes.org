@@ -32952,6 +32952,55 @@ cleanupimport:
 	rm -rf all.tar.gz html $(livedbfilename)  
 #+END_EXAMPLE
 
+*** Check container status and restart services
+#+BEGIN_EXAMPLE
+#!/bin/bash
+container=mycontainer
+containerstatus=$(docker inspect -f {{.State.Running}} $container)
+
+if [ "$containerstatus" != "true" ]; then
+  echo "$container container is not started. Restarting.."
+  docker restart $container
+fi
+
+containerstatus=$(docker inspect -f {{.State.Running}} $container)
+
+if [ "$containerstatus" != "true" ]; then
+  echo "By now container should be started but it is not.. Abort restarting mysql and apache in container"
+else
+  echo "Check mysql status in container"
+  docker exec $container service mysql status
+  if [ $? = "0" ]; then
+    echo "mysql is running"
+  else
+    echo "Restarting mysql in container.."
+    docker exec $container service mysql restart
+    docker exec $container service mysql status
+    if [ $? = "0" ]; then
+      echo "mysql is restarted"
+    else
+      echo "mysql could not be restarted."
+    fi
+  fi
+
+  echo "Check apache in container"
+  docker exec $container service apache2 status
+  if [ $? = "0" ]; then
+     echo "apache is running"
+  else
+   echo "Restarting apache in container.."
+   docker exec $container service apache2 restart
+   docker exec $container service apache2 status
+   if [ $? = "0" ]; then
+     echo "apache is restarted"
+   else
+     echo "apache could not be restarted."
+   fi
+  fi
+
+fi
+#+END_EXAMPLE
+
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
 Parent: scratch (perfect for building base images such as debian and busybox
 
