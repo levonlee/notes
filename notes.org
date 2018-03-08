@@ -19236,7 +19236,7 @@ apt-get update
 apt-get install build-essential libssl-dev
 #+END_EXAMPLE
 
-Get [[https://github.com/creationix/nvm/releases][nvm version number]] 0.33.1,
+Get [[https://github.com/creationix/nvm/releases][nvm version number]] 0.33.1, Node Version Manager
 #+BEGIN_EXAMPLE
 cd ~
 curl -sL https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh -o install_nvm.sh
@@ -19254,30 +19254,18 @@ List Node.js available versions ~nvm ls-remote~
 #+BEGIN_EXAMPLE
 nvm install 7.1.0
 nvm use 7.1.0
+
 # What versions are installed
 nvm ls
+
 # Current in-use node version
 node -v
+
 # Make one version as default for new sessions
 nvm alias default 6.10.2
+
 # Use the default version
 nvm use default
-# Install npm package to ./node_modules
-npm install express
-# Install package globally (available to other projects using the same Node.js version)
-# ~/.nvm/node_version/lib/node_modules/package_name
-npm install -g gulp
-# Link global package into local sphere
-npm link express
-
-# Remove a package globally, just remove -g for locally
-npm remove async -g
-
-# What packages/modules are installed globally, just remove -g for locally
-npm ls -g
-
-# modules installed globally usually have an executable command for direct use
-# if it's installed locally, usually run ./node_modules/module_name/bin/exec_cmd
 #+END_EXAMPLE
 
 https://github.com/nodejs/LTS
@@ -19288,14 +19276,49 @@ Download the latest .msi to upgrade. And upgrade any existing global packages.
 
 Refer to phpstorm:nodejs
 
+** Basic
+Modules installed globally usually have an executable command for direct use. If installed locally, usually run ./node_modules/module_name/bin/exec_cmd
+
 #+BEGIN_EXAMPLE
+node -v
+npm -v
+
 npm cache clean
+
+# Install npm package to ./node_modules
+npm install express
+
+# Install package globally (available to other projects using the same Node.js version)
+# ~/.nvm/node_version/lib/node_modules/package_name
+npm install -g gulp
+
+# What packages/modules are installed globally, just remove -g for locally
+npm ls -g
+
 # Check which global packages are outdated
 npm outdated -g
+
 # Update all global packages
+# some global package update requires removing first
 npm update -g
+
 # Update one global package
 npm install -g <packagename>
+
+# Remove a package globally, just remove -g for locally
+npm remove async -g
+#+END_EXAMPLE
+
+Link
+#+BEGIN_EXAMPLE
+# run npm link alone in local repo is to create a symlink in global folder that links to the package where the command was executed
+cd ~/projects/node-redis # Note local package name is not node-redis but redis as in ~/projects/node-redis/package.json
+npm link # create symlink in global folder so that redis can be globally referrenced/linked.
+
+cd ~/projects/node-bloggy # go to another project
+npm link redis # install redis package in ~/projects/node-bloggy/node_modules/node-redis, file changes in ~/projects/node-redis/ will be reflected.
+
+npm link express # a global package can be linked inside any local repo
 #+END_EXAMPLE
 
 ** Global Object
@@ -19404,11 +19427,8 @@ writePercent(percentWaited);
 *** Get version
 ~npm list~ for locally installed packages
 ~npm list -g~ for globally installed packages
-
 ~npm list -g --depth=0~ global installed packages at first level
-
 ~npm list express~
-
 ~npm view PKG_NAME version~ The latest available version of a package
 view aliaes: info, show, v
 
@@ -19713,12 +19733,22 @@ setTimeout(function() {
 #+END_EXAMPLE
 
 *** gulp
+https://github.com/gulpjs/gulp/blob/master/docs/README.md
+
+If gulp was previously globally installed, remove it before installing gulp-cli
+#+BEGIN_EXAMPLE
+npm rm --global gulp
+npm install --global gulp-cli
+gulp -v
+# 2.0.1
+#+END_EXAMPLE
+
+Then install gulp locally
+#+BEGIN_EXAMPLE
+npm install --save-dev gulp@next
+#+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-# Install gulp globally and locally.
-
-npm install -g gulp
-npm install --save-dev gulp
 npm install gulp-util --save-dev
 npm install gulp-coffee --save-dev
 npm install gulp-concat --save-dev
@@ -19735,12 +19765,12 @@ var gulp=require('gulp'),
     compase = require('gulp-compass'),
     concat = require('gulp-concat');
 
-# run gulp will run this task
+// run ~gulp~ will run this task
 gulp.task('default', function() {
   console.log('hello from gulp');
 });
 
-// gulp-util, run `gulp log`
+// gulp-util, run ~gulp log~
 gulp.task('log', function() {
   gutil.log('Workflow starts');
 });
@@ -19780,8 +19810,12 @@ gulp.task('compass', function() {
 gulp.task('watch', function() {
   gulp.watch(coffeeSources, ['coffee']);
 });
-
 #+END_EXAMPLE
+
+**** gulp-postcss
+[[https://github.com/postcss/gulp-postcss][Doc]]
+npm install --save-dev autoprefixer
+npm install --save-dev gulp-postcss
 
 *** grunt
 Install grunt globally and locally
@@ -40752,11 +40786,10 @@ M-g M-p :: Previous match
 *** Link <<<emacs:link>>>
 [[http://orgmode.org/manual/Link-format.html#Link-format][Here's description of the link]]
 
-| C-c C-l | add or modify link                             |
-|         | Or cusor to the right of end and hit BACKSPACE |
-|---------+------------------------------------------------|
-| C-c &   | Go back to previous position                   |
-| C-c C-c | Update radio targets                           |
+| C-c C-l | add or modify link           |
+|---------+------------------------------|
+| C-c &   | Go back to previous position |
+| C-c C-c | Update radio targets         |
 
 #+BEGIN_EXAMPLE
 =[[My Target]]= 
@@ -42644,6 +42677,7 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Front End Design
 ** https://codekitapp.com/
 ** https://webpack.js.org/
+** http://postcss.org/
 * TODO [[https://wpengine.com/partners/agencies/][Web agencies backed by WP Engine]] 
 * DONE Chase Payment
 * DONE Lynda [[https://www.behance.net/][Behance.net]]
