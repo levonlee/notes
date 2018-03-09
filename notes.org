@@ -19437,6 +19437,11 @@ view aliaes: info, show, v
 
 Update npm ~sudo npm install -g npm~
 
+npm i -D :: npm install --save-dev
+
+Npm website for a package gulp-sourcemaps
+https://www.npmjs.com/package/gulp-sourcemaps
+
 *** Global package and Scoped package
 npm install -g @angular/cli
 @ indicates angular/cli is a scoped package. 
@@ -19474,6 +19479,24 @@ You will make sure to list any angular's peerDependencies into your app's devDep
 #+BEGIN_EXAMPLE
 var v8 = require('v8');
 console.log('v8.getHeapStatistics()');
+#+END_EXAMPLE
+
+*** npx <<<npm:npx>>>
+Run <command> either from a local ./node_modules/.bin, or from a central cache, installing any packages needed in order for <command> to run.
+
+By default, npx will check whether <command> exists in $PATH, or in the local project binaries, and execute that. If <command> is not found, it will be installed prior to execution.
+
+#+BEGIN_EXAMPLE
+npm i -g npx
+
+# usage
+npx [options] <command>[@version] [command-arg]...
+
+npx [options] [-p|--package <pkg>]... <command> [command-arg]...
+
+npx [options] -c '<command-string>'
+
+npx --shell-auto-fallback [shell]
 #+END_EXAMPLE
 
 *** readline
@@ -19748,6 +19771,10 @@ Then install gulp locally
 npm install --save-dev gulp@next
 #+END_EXAMPLE
 
+**** Example
+~gulp~ runs the default task.
+gulp <task> <othertask>
+
 #+BEGIN_EXAMPLE
 npm install gulp-util --save-dev
 npm install gulp-coffee --save-dev
@@ -19812,10 +19839,162 @@ gulp.task('watch', function() {
 });
 #+END_EXAMPLE
 
+**** gulp.src
+#+BEGIN_EXAMPLE
+some/path/example/app/js/app.js
+some/path/example/vendor/js/vendor.js
+some/path/example/vendor/lib/js/lib.js
+
+gulp.src('some/path/**/js/*.js')
+  .pipe(gulp.dest('output'));
+
+// base is anything before the first ** which is some/path
+// result
+
+output/example/app/js/app.js
+output/example/vendor/js/vendor.js
+output/example/vendor/lib/js/lib.js
+
+// hard set base
+gulp.src('some/path/**/js/*.js', {base:'.'})
+  .pipe(gulp.dest('output'));
+
+// result
+output/some/path/example/app/js/app.js
+output/some/path/example/vendor/js/vendor.js
+output/some/path/example/vendor/lib/js/lib.js
+#+END_EXAMPLE
+
+Only one base is possible for an array of files
+#+BEGIN_EXAMPLE
+gulp.src(
+  ['source1/examples/**/*.html',
+   'source2/examples/**/*.html'],
+  { base: ['source1/', 'source2/']}   // Doesn't work. Needs to be a string.
+).pipe(gulp.dest('dist'));
+#+END_EXAMPLE
+
+Instead, do this
+#+BEGIN_EXAMPLE
+var merge = require('merge-stream');
+
+gulp.task('default', function() {
+  merge(gulp.src('source1/examples/**/*.html', {base: 'source1/'}),
+        gulp.src('source2/examples/**/*.html', {base: 'source2/'}))
+   .pipe(gulp.dest('dist'));
+});
+#+END_EXAMPLE
+
+**** gulp-rename
+#+BEGIN_EXAMPLE
+var rename = require("gulp-rename");
+
+// rename via string
+gulp.src("./src/main/text/hello.txt")
+  .pipe(rename("main/text/ciao/goodbye.md"))
+  .pipe(gulp.dest("./dist")); // ./dist/main/text/ciao/goodbye.md
+
+// rename via function
+gulp.src("./src/**/hello.txt")
+  .pipe(rename(function (path) {
+    path.dirname += "/ciao";
+    path.basename += "-goodbye";
+    path.extname = ".md";
+  }))
+  .pipe(gulp.dest("./dist")); // ./dist/main/text/ciao/hello-goodbye.md
+
+// rename via hash
+gulp.src("./src/main/text/hello.txt", { base: process.cwd() })
+  .pipe(rename({
+    dirname: "main/text/ciao",
+    basename: "aloha",
+    prefix: "bonjour-",
+    suffix: "-hola",
+    extname: ".md"
+  }))
+  .pipe(gulp.dest("./dist")); // ./dist/main/text/ciao/bonjour-aloha-hola.md
+#+END_EXAMPLE
+
+Rename dest file name
+Any source *-gulp.css will have dest file *-gulp-build.css
+#+BEGIN_EXAMPLE
+var gulp = require('gulp');
+
+gulp.task('autoprefixer', function () {
+  var postcss = require('gulp-postcss');
+  var sourcemaps = require('gulp-sourcemaps');
+  var rename = require('gulp-rename');
+  var autoprefixer = require('autoprefixer');
+
+  return gulp.src('**/*-gulp.css', {base: '.'})
+    .pipe(sourcemaps.init())
+    .pipe(postcss([autoprefixer()]))
+    .pipe(sourcemaps.write('.'))
+    .pipe(rename(function (path) {
+      path.basename += '-build';
+    }))
+    .pipe(gulp.dest('.'));
+});
+#+END_EXAMPLE
+
+**** gulp-sourcemaps
+https://www.npmjs.com/package/gulp-sourcemaps
+
+#+BEGIN_EXAMPLE
+var gulp = require('gulp');
+var plugin1 = require('gulp-plugin1');
+var plugin2 = require('gulp-plugin2');
+var sourcemaps = require('gulp-sourcemaps');
+ 
+gulp.task('javascript', function() {
+  gulp.src('src/**/*.js')
+    .pipe(sourcemaps.init())
+      .pipe(plugin1())
+      .pipe(plugin2())
+    .pipe(sourcemaps.write())
+    .pipe(gulp.dest('dist'));
+});
+#+END_EXAMPLE
+
 **** gulp-postcss
-[[https://github.com/postcss/gulp-postcss][Doc]]
+<<<npm:gulp-postcss>>> [[https://github.com/postcss/gulp-postcss][Doc]]
 npm install --save-dev autoprefixer
 npm install --save-dev gulp-postcss
+
+#+BEGIN_EXAMPLE
+gulp.task('autoprefixer', function () {
+  var postcss      = require('gulp-postcss');
+  var sourcemaps   = require('gulp-sourcemaps');
+  var autoprefixer = require('autoprefixer');
+
+  return gulp.src('./src/*.css')
+    .pipe(sourcemaps.init())
+    .pipe(postcss([ autoprefixer() ]))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('./dest'));
+});
+#+END_EXAMPLE
+
+Load multiple PostCSS plugins, refer to npm:autoprefixer for options
+#+BEGIN_EXAMPLE
+var postcss = require('gulp-postcss');
+var gulp = require('gulp');
+var autoprefixer = require('autoprefixer');
+var cssnano = require('cssnano');
+
+gulp.task('css', function () {
+    var plugins = [
+        autoprefixer({browsers: ['last 1 version']}),
+        cssnano()
+    ];
+    return gulp.src('./src/*.css')
+        .pipe(postcss(plugins))
+        .pipe(gulp.dest('./dest'));
+});
+#+END_EXAMPLE
+
+***** npm:postcss:options
+
 
 *** grunt
 Install grunt globally and locally
@@ -20196,6 +20375,121 @@ Highlights
 - The AppComponent itself has its own html template and css file. WebPack loads them with calls to require(). Webpack stashes those component-scoped files in the app.js bundle too. You don't see those calls in the source code; they're added behind the scenes by the angular2-template-loader plug-in.
 
 - The vendor.ts consists of vendor dependency import statements that drive the vendor.js bundle. The application imports these modules too; they'd be duplicated in the app.js bundle if the CommonsChunkPlugin hadn't detected the overlap and removed them from app.js.
+
+*** PostCSS, postcss-cli cssnano autoprefixer
+[[https://github.com/postcss/postcss/blob/master/docs/plugins.md][All PostCSS plugins]], [[https://www.postcss.parts/][online catalog]]
+
+Install npm package for a specific build tool e.g. npm:gulp-postcss
+And install individual PostCSS plugin which is separate npm package
+
+<<<npm:postcss:options>>>
+Most PostCSS runners accept two parameters:
+- An array of plugins.
+- An object of options.
+
+Common options:
+- syntax: an object providing a syntax parser and a stringifier.
+- parser: a special syntax parser (for example, SCSS).
+- stringifier: a special syntax output generator (for example, Midas).
+- map: source map options.
+- from: the input file name (most runners set it automatically).
+- to: the output file name (most runners set it automatically).
+
+#+BEGIN_EXAMPLE
+var gulp = require('gulp');
+var postcss = require('gulp-postcss');
+var nested = require('postcss-nested');
+var sugarss = require('sugarss');
+
+gulp.task('default', function () {
+    var plugins = [nested];
+    return gulp.src('in.sss')
+        .pipe(postcss(plugins, { parser: sugarss }))
+        .pipe(gulp.dest('out'));
+});
+#+END_EXAMPLE
+
+**** postcss-cli <<<npm:postcss-cli>>>
+npm i -g|-D postcss-cli
+
+#+BEGIN_EXAMPLE
+npm i postcss-cli autoprefixer
+npx postcss *.css --use autoprefixer -d build/
+#+END_EXAMPLE
+
+**** cssnano <<<npm:cssnano>>>
+Build on top of PostCSS, minify css
+
+**** autoprefixer <<<npm:autoprefixer>>>
+Required by npm:gulp-postcss
+
+***** browserslist
+package.json
+
+https://github.com/ai/browserslist#queries
+Default
+#+BEGIN_EXAMPLE
+{
+...,
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "Firefox ESR",
+    "not dead"
+  ],
+...
+}
+#+END_EXAMPLE
+
+***** Comment to turn off prefixing
+Autoprefixer is disabled for a specific rule ~b~
+#+BEGIN_EXAMPLE
+a {
+    transition: 1s; /* it will be prefixed */
+}
+
+b {
+    /* autoprefixer: off */
+    transition: 1s; /* it will not be prefixed */
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+/* autoprefixer: off */
+@supports (transition: all) {
+    /* autoprefixer: on */
+    a {
+        /* autoprefixer: off */
+    }
+}
+#+END_EXAMPLE
+
+For Sass, add ! so that ~/*! autoprefixer: off */~
+
+***** Options
+autoprefixer({ cascade: false })
+
+- browsers (array) :: list of browsers query (like last 2 versions), which are supported in your project. We recommend to use browserslist config or browserslist key in package.json, rather than this option to share browsers with other tools. See Browserslist docs for available queries and default value.
+- env (string) :: environment for Browserslist.
+- cascade (boolean) :: should Autoprefixer use Visual Cascade, if CSS is uncompressed. Default: true
+- add (boolean) :: should Autoprefixer add prefixes. Default is true.
+- remove (boolean) :: should Autoprefixer [remove outdated] prefixes. Default is true.
+- supports (boolean) :: should Autoprefixer add prefixes for @supports parameters. Default is true.
+- flexbox (boolean|string) :: should Autoprefixer add prefixes for flexbox properties. With "no-2009" value Autoprefixer will add prefixes only for final and IE versions of specification. Default is true.
+- grid (boolean) :: should Autoprefixer add IE prefixes for Grid Layout properties. Default is false.
+- stats (object) :: custom usage statistics for > 10% in my stats browsers query.
+
+Plugin object has info() method for debugging purpose.
+
+You can use PostCSS processor to process several CSS files to increase performance.
+
+***** Debug
+Show selected browsers and css properties will be prefixed
+npx autoprefixer --info
+
+**** precss <<<npm:precss>>>
+Use Sass-like markup and staged CSS features in .css file.
+npm install precss --save-dev
 
 *** path <<<nodejs:path>>>
 #+BEGIN_EXAMPLE
