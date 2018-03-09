@@ -14877,6 +14877,7 @@ It can contain any HTML tag with any attributes.
 - padding :: default 10px 25px
 - line-height :: default 22px
 - color :: default #000000
+- container-background-color :: n/a
 - font-family :: default Ubuntu, Helvetica, Arial, sans-serif
 - font-size :: 13px
 - align :: left
@@ -15152,6 +15153,8 @@ Columns inside a group must have a width in percentage or auto sizing, but not i
 Section can have both column and group.
 
 iOS 9 :: always remove space between columns inside a mj-group
+
+background-color :: default n/a
 
 **** Caveats
 mj-image inside mj-colum will always have a maximum fixed width.
@@ -29960,7 +29963,7 @@ useradd --user-group --create-home --shell /bin/false newusername
 
 =-o -u 1000= :: change UID to 1000, -o is to allow duplicate UID
 
-*** User Group
+*** Group sudo
 Run ~visudo~ to see permissions given to each group
 And check sudo environment variable setting
 
@@ -29996,7 +29999,7 @@ Login (need to type password) ~/bin/su - username~
 Run as a user (need to type password) ~/bin/su - username -c 'whoami'~
 
 As root user, run as another user without typing password ~sudo -H -u username bash -c 'whoami'~
-Where -H is to use the target user's home directory
+-H :: to use the target user's home directory
 
 *** Sudo run multiple commands
 ~sudo bash -c 'apt-get update;apt-get install'~
@@ -30732,6 +30735,11 @@ tar -cvzpf mybk.tar.gz -C /var/www/html .
 tar -cvzpf mybk.tar.gz /var/www/html
 #+END_EXAMPLE
 
+Dry run :: use - for tar file name and pipe with wc
+#+BEGIN_EXAMPLE
+tar -cvzpf - /var/www/html | wc -c
+#+END_EXAMPLE
+
 **** Uncompress
 #+BEGIN_EXAMPLE
 # Read the tar file first
@@ -30814,7 +30822,11 @@ Review the results and remove dry run `-n` before running again.
 
 --exclude 'public_html/database.txt': exclude a file or directory, use multiple --exclude
 
---exclude-from '/home/backup/exclude.txt': exclude multiple files and folders
+--exclude-from '/home/backup/exclude.txt': exclude multiple files and folders, use relative path without leading ./
+e.g.
+#+BEGIN_EXAMPLE
+afolder/*
+#+END_EXAMPLE
 
 exclude.txt
 #+BEGIN_EXAMPLE
@@ -33104,7 +33116,7 @@ mysqldump -u root --password='$mypass$' livedbname > /root/myproject.sql
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-.PHONY: info rmbkfolder bkfolder bkdb bkdbsamename tarall tarallexcludesamename tarcode taruploads taruploadsexclude
+.PHONY: info rmbkfolder bkfolder bkdb bkdbsamename tarall tarallexcludesamename drytarallexcludesamename tarcode taruploads taruploadsexclude
 
 filename := $(shell date +%F)
 # WordPress runs in container
@@ -33158,6 +33170,9 @@ tarall:
 
 tarallexcludesamename:
 	tar -czpf all.tar.gz -C $(bkpath) . $(tarallexclude))
+
+drytarallexcludesamename:
+	tar -cvzpf - -C $(bkpath) . $(tarallexclude)
 
 tarcode:
 	tar -czpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
@@ -33565,16 +33580,33 @@ services:
 #+END_EXAMPLE
 
 *** Example
-
+To initialize a db, use docker run with data persist
 #+BEGIN_EXAMPLE
 docker run -it --name my-db-container \
-  -v dbdata:/var/lib/mysql \
-  -v /path/to/db-dir:/docker-entrypoint-initdb.d \
+  -v /host/path/to/dbdata:/var/lib/mysql \
+  -v /host/path/to/db-dir:/docker-entrypoint-initdb.d \
   -e MYSQL_ROOT_PASSWORD=d7 \ 
   -e MYSQL_DATABASE=d7 \ 
   -e MYSQL_USER=d7 \ 
   -e MYSQL_PASSWORD=d7 \
-  -d mysql:5.7.9
+  -d mysql:5.7.9 \
+--innodb-buffer-pool-size=50M \
+--innodb-buffer-pool-chunk-size=50M \
+--max-allowed-packet=50M
+#+END_EXAMPLE
+
+Check db status, then you docker-compose restart the container without specifying import directive in docker-compose.yml
+#+BEGIN_EXAMPLE
+mydbcontainer:
+  image: mysql:5.7.9
+  container_name: mydbcontainer
+  volumes:
+    - "/host/path/to/dbdata:/var/lib/mysql"
+  command:
+    mysqld --innodb-buffer-pool-size=50M --innodb-buffer-pool-chunk=50M --max-allowed-packet=50M
+  restart: always
+  networks:
+    ...
 #+END_EXAMPLE
 
 ** image:wordpress
@@ -36800,6 +36832,19 @@ location / {
   proxy_send_timeout 600;
   proxy_read_timeout 600;
   send_timeout 600;
+}
+#+END_EXAMPLE
+
+Common docker container
+#+BEGIN_EXAMPLE
+server {
+  listen 80;
+  server_name dev.myweb.com;
+  location / {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Host $http_host;
+    proxy_pass http://127.0.0.1:9977;
+  }
 }
 #+END_EXAMPLE
 
