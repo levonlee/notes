@@ -30399,6 +30399,71 @@ sudo umount overflow
 sudo umount /tmp
 #+END_EXAMPLE
 
+**** Swap
+
+#+BEGIN_EXAMPLE
+free
+# if swap is not enabled, it shows
+Swap: 0 0 0
+
+# or another to see if swap is on, is to list
+sudo swapon --show
+#+END_EXAMPLE
+
+***** Swap partition is recommended
+***** Swap file
+https://www.digitalocean.com/community/tutorials/how-to-configure-virtual-memory-swap-file-on-a-vps
+
+<<<linux:dd>>>
+Swap file on Linux is a disk image e.g. /var/swap.img. Size is better 1 or 2x available system Ram. Run as root
+#+BEGIN_EXAMPLE
+cd /var
+touch swap.img
+chmod 600 swap.img
+
+# fill the file with zeroes for 1gb or 1024mb
+dd if=/dev/zero of=/var/swap.img bs=1024k count=1000
+
+# or use this line to change file size
+sudo fallocate -l 1G /var/swap.img
+
+# initialize the swap filesystem
+mkswap /var/swap.img
+
+# enable swap file for the current boot
+swapon /var/swap.img
+
+# swapoff /var/swap.img
+
+# Make it ready at boot, add a line to /etc/fstab, be careful!! Don't overwrite, just add a new line
+echo "/var/swap.img none swap sw 0 0" >> /etc/fstab
+
+# in case you run sudo
+# echo "/var/swap.img none swap sw 0 0" | sudo tee -a /etc/fstab > /dev/null
+
+# set how likely Linux virtual memory manager to use swap. 100 means it uses swap as much as possible and leave memory free.
+# list all options
+sysctl -a
+
+# just VM options
+sysctl -a | grep vm.
+
+# or this way to see swappiness value
+cat /proc/sys/vm/swappiness
+
+# default seems to be 60 (you can also modify /etc/sysctl.conf file)
+sysctl -w vm.swappiness=30
+#+END_EXAMPLE
+
+/etc/fstab format
+
+/var/swap.img :: File system specifier :: For disk-based file systems, either a device file name (/dev/sda1), a file system label specification (LABEL=/), or a devlabel-managed symbolic link (/dev/homedisk)
+none :: Mount point :: Except for swap partitions, this field specifies the mount point to be used when the file system is mounted (/boot)
+swap :: File system type :: The type of file system present on the specified device (note that auto may be specified to select automatic detection of the file system to be mounted, which is handy for removable media units such as diskette drives)
+sw :: Mount options :: A comma-separated list of options that can be used to control mount's behavior (noauto,owner,kudzu)
+0 :: Dump frequency :: If the dump backup utility is used, the number in this field controls dump's handling of the specified file system
+0 :: File system check order :: Controls the order in which the file system checker fsck checks the integrity of the file systems
+
 *** File permission
 **** Change permission - chmod
 Octal mode. [[https://chmod-calculator.com/][Convert to Octal Mode]] [[http://permissions-calculator.org/decode/][Convert to Permissions Bit]]
@@ -32043,6 +32108,70 @@ wget -cr -l inf -N -nH --cut-dirs=3 -P test/ ftp://server/path/to/test/1
 
 [[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
 
+** Cron
+*** Cron table (crontab)
+Each user can have his own cron table. Use ~crontab~ to manage a user's cron jobs
+
+List current user's cron table (called crontab) ~crontab -l~
+List a user's cron table :: ~crontab -u username -l~
+User crontabs are in /var/spool/cron/*
+
+List system-wide crontab. You shouldn't need to modify it. ~cat /etc/crontab~
+
+Packages usually saved under /etc/cron.d/* use the same syntax as /etc/crontab/
+
+Backup your crontab before edit ~crontab -l > ~/cron.back~
+To add entries to cron table ~crontab -e~
+	
+~PATH~ may have to be copied to either the script file or crontab because ~env~ in cron is different from ~env~ the shell that you run the script in.
+
+#+BEGIN_EXAMPLE
+# Setup a Linux cron to run a Drupal Cron URL every 5 minutes
+*/5 * * * * /path/to/rundrupalcron.sh
+#+END_EXAMPLE
+	
+There're 4 cron directories. Copy script files to one of them and run as root:
+/etc/cron.daily
+/etc/cron.hourly
+/etc/cron.montly
+/etc/cron.weekly
+
+Packages put crontab file to folder /etc/cron.d/*
+
+*** User crontab syntax and system-wide syntax
+User Crontab Syntax ~min hour dayofmonth month dayofweek command~
+- /var/spool/cron/*
+
+System Crontab Syntax ~min hour dayofmonth month dayofweek user command~
+- /etc/crontab
+
+range :: 1-5
+wildcard :: *
+	
+~dayofweek~ :: can be (mon, tue, wed, thu, fri, sat, sun) or (1, 2, 3, 4, 5, 6, 0)
+
+#+BEGIN_EXAMPLE
+# Last day of month 
+00 12 * * * if [ `date +%d -d tomorrow` = 01 ] ; then ; command
+
+# Every 15 minutes every Wednesday
+*/15 * * * 3 echo "do something
+	
+# Every hour except 6am 
+00 0-5,7-23 * * * echo "hi"
+#+END_EXAMPLE
+
+Special strings to replace with all 5 time-and-date fields
+| @reboot   | Run once, at startup.          |
+| @yearly   | Run once a year, "0 0 1 1 *".  |
+| @annually | (same as @yearly)              |
+| @monthly  | Run once a month, "0 0 1 * *". |
+| @weekly   | Run once a week, "0 0 * * 0".  |
+| @daily    | Run once a day, "0 0 * * *".   |
+| @midnight | (same as @daily)               |
+| @hourly   | Run once an hour, "0 * * * *". |
+|           |                                |
+
 ** upx <<<linux:upx>>>
 Executable file packer (compresser)
 
@@ -32712,7 +32841,7 @@ Inside the container, the container is called --hostname=value
 ~docker run --hostname=value~ OR ~docker run -h value~
 Combine --name and --hostname as much as you can
 
-** Containers
+** Containers cp logs stats start stop restart rm inspect
 List containers :: ~docker ps -a~
 Stop and Start :: ~docker stop containerName~ ~docker start containerName~
 Restart :: ~docker restart containerName~
@@ -32728,9 +32857,13 @@ Container log :: ~docker logs -f containerName~ -f to follow log output
 Container network IP and settings :: ~NetworkSetting > IPAddress~
 Volume :: ~Config > Volumes~ and ~Mounts~
 
+Return true or false for container running state
 docker inspect -f {{.State.Running}} $CONTAINER_ID
 
-- docker cp
+Show docker system log
+docker events
+
+*** docker cp
 Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
 Copy a folder, result /var/www/transfer/web :: ~docker cp web/. ghost:/var/www/transfer/web~
@@ -32759,7 +32892,14 @@ SRC_PATH specifies a directory
  - SRC_PATH does end with /. (that is: slash followed by dot)
    the content of the source directory is copied into this directory
 
-Memory usage for all containers ~docker stats -a~
+*** docker stats
+Memory usage for all containers ~docker stats -a~ default just shows running containers
+Show container names
+#+BEGIN_EXAMPLE
+docker stats --format "table {{.Name}}\t{{.Container}}\t{{.CPUPerc}}\t{{.MemPerc}}\t{{.MemUsage}}\t{{.PIDs}}"
+# other column values
+\t{{.NetIO}}\t{{.BlockIO}}
+#+END_EXAMPLE
 
 *** Save a running container to an image
 First exit the container first
@@ -32897,16 +33037,34 @@ RUN apt-get update && apt-get install -y apt-utils
 #+END_EXAMPLE
 
 ** Docker Compose
-=docker-compose --version=
-=docker-compose up -d=
-=docker-compose up -d --force-recreate= Force restart or recreate containers
-=docker-compose down -v= remove containers and volumes
-=docker-compose down ---rmi local= remove only images that don't have a custom tag set by the `image` field
-=docker-compose down --rmi all= remove all images used by any service
+#+BEGIN_EXAMPLE
+docker-compose --version
+docker-compose up -d
 
-=docker-compose build= build new image if there's any build directive
-=docker-compose up -d= doesn't build image, it will use existing image
-=docker-compose up -d --build= build new image and run
+docker-compose up -d --force-recreate
+# Force restart or recreate containers
+
+docker-compose down -v
+# remove containers and volumes
+
+docker-compose down ---rmi local
+# remove only images that don't have a custom tag set by the `image` field
+
+docker-compose down --rmi all
+# remove all images used by any service
+
+docker-compose build
+# build new image if there's any build directive
+
+docker-compose up -d
+# doesn't build image, it will use existing image
+
+docker-compose up -d --build
+# build new image and run
+
+docker-compose ps
+# shows containers info started by docker compose in current folder
+#+END_EXAMPLE
 
 *** Ubuntu 16.04 Installation
 [[https://github.com/docker/compose/releases][Grab latest docker-compose version]] say it's 1.16.1
@@ -33050,6 +33208,54 @@ services:
  - The service in the container is accessible from anywhere, even outside Docker
 - Specify -p but not EXPOSE
  - It's like only specify EXPOSE
+
+**** Resources
+[[https://docs.docker.com/compose/compose-file/compose-file-v2/#cpu-and-other-resources][compose file v2]]
+#+BEGIN_EXAMPLE
+cpu_count: 2
+cpu_percent: 50
+cpus: 0.5
+cpu_shares: 73
+cpu_quota: 50000
+cpuset: 0,1
+
+user: postgresql
+working_dir: /code
+
+domainname: foo.com
+hostname: foo
+ipc: host
+mac_address: 02:42:ac:11:65:43
+
+mem_limit: 536870912 #512 MB 512*1024*1024, 128MB 134217728
+memswap_limit: 2000000000
+mem_reservation: 512m
+privileged: true
+
+oom_score_adj: 500
+oom_kill_disable: true
+
+read_only: true
+shm_size: 64M
+stdin_open: true
+tty: true
+#+END_EXAMPLE
+
+compose file v3
+#+BEGIN_EXAMPLE
+version: '3'
+services:
+  redis:
+    image: redis:alpine
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+#+END_EXAMPLE
 
 **** Pass arguments from Compose to Dockerfile
 docker-compose.yml
@@ -33487,6 +33693,10 @@ Executable :: mysqld
 
 EXPOSE 3306
 
+mysql-data:/var/lib/mysql
+mysql-log:/var/log/mysql
+mysql-conf:/etc/mysql/conf.d
+
 *** Load configs
 Startup config :: /etc/mysql/my.cnf and any .cnf files under /etc/mysql/conf.d 
 Mount host directory to /etc/mysql/conf.d in container using ~-v~ in docker run
@@ -33508,6 +33718,8 @@ In docker-compose.yml
 command:
   mysqld --innodb-buffer-pool-size=50M
 #+END_EXAMPLE
+
+More mysql:config
 
 *** Environment vars
 -e :: set environment vars. None of these will have effect if the container is started with a data dir that already contains a db.
@@ -33603,7 +33815,7 @@ mydbcontainer:
   volumes:
     - "/host/path/to/dbdata:/var/lib/mysql"
   command:
-    mysqld --innodb-buffer-pool-size=50M --innodb-buffer-pool-chunk=50M --max-allowed-packet=50M
+    mysqld --innodb-buffer-pool-size=50M --innodb-buffer-pool-chunk=50M --max-allowed-packet=16M
   restart: always
   networks:
     ...
@@ -36900,8 +37112,6 @@ Allow HTTPS in firewalld nginx:ufw
 Obtain an SSL certificate using --nginx plugin for those -d server names
 #+BEGIN_EXAMPLE
 sudo certbot --nginx -d example.com -d www.example.com
-
-
 #+END_EXAMPLE
 
 The first time running certbot, prompt to enter an email address and agree to the terms of service. After doing so, certbot will communicate with the Let's Encrypt server, then run a challenge to verify that you control the domain you're requesting a certificate for.
@@ -38577,10 +38787,53 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 
 ** MySQL
 *** Version, Settings
+<<<mysql:config>>>
 ~service mysql status~
-In console :: =SHOW VARIABLES LIKE "%version%";=
 
-To check if it's MariaDB, just =SELECT VERSION();=
+In console
+#+BEGIN_EXAMPLE
+# all settings
+SHOW VARIABLES;
+
+# one setting
+SHOW VARIABLES LIKE "%version%";
+
+# check if it's MariaDB
+SELECT VERSION();
+#+END_EXAMPLE
+
+**** Minimum
+http://www.tocker.ca/2014/03/10/configuring-mysql-to-use-minimal-memory.html
+https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
+
+#+BEGIN_EXAMPLE
+[mysqld]
+innodb_buffer_pool_size=5M
+innodb_log_buffer_size=256K
+query_cache_size=0
+max_connections=10
+key_buffer_size=8
+thread_cache_size=0
+host_cache_size=0
+innodb_ft_cache_size=1600000
+innodb_ft_total_cache_size=32000000
+
+# per thread or per operation settings
+thread_stack=131072
+sort_buffer_size=32K
+read_buffer_size=8200
+read_rnd_buffer_size=8200
+max_heap_table_size=16K
+tmp_table_size=1K
+bulk_insert_buffer_size=0
+join_buffer_size=128
+net_buffer_length=1K
+innodb_sort_buffer_size=64K
+
+#settings that relate to the binary log (if enabled)
+binlog_cache_size=4K
+binlog_stmt_cache_size=4K
+#+END_EXAMPLE
 
 **** charset, collation
 <<<mysql:charset>>> <<<mysql:collation>>>
@@ -38618,10 +38871,10 @@ Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you
 
 Referred by d7:mysql:charset
 
-**** Memory, InnoDB Buffer
+**** Memory, InnoDB Buffer, packet
 name, default
-innodb-buffer-pool-size, innodb-buffer-pool-chunk-size :: 128M
-max-allowed-packet :: 4M, total BLOB data size for a single row
+innodb-buffer-pool-size = innodb-buffer-pool-chunk-size * innodb-buffer-pool-instaces
+max-allowed-packet :: 16M # total BLOB data size for a single row
 
 **** Last Update time for a table in a database
 #+BEGIN_EXAMPLE
