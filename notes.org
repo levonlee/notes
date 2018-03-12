@@ -20843,7 +20843,7 @@ SSL certificate changes from SHA1 to SHA256 which is SHA2 algorithm.
 One ASCII character is 8 bits.
 One UTF-8 character is between 8 bits to 32 bits.
 
-One character is 2 hex characters (UTF-8, etc.)
+One ASCII character can be represented as 2 hex characters (UTF-8, etc.)
 
 Output size of SHA256 is 256 bits, which is 256/8*2 = 64 hex characters
 Output size of SHA1 is 160, which is 40 hex characters
@@ -32437,6 +32437,8 @@ linux:timezone :: setup timezone and sync time
 
 * Domain Server, DNS Server, SSL/https
 Refer to linux:dns
+
+** DNS records: A AAAA ANAME CNAME TXT ALIAS URL
 A hostname :: a sub domain. e.g. www
 
 A records :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
@@ -32563,11 +32565,9 @@ http://www.inmotionhosting.com/support/website/cpanel/add-delete-autossl-cpanel
 
 A directory .well-known will be created in sub website directory if the parent website directory has AutoSSL
 
-** SSL Testing Tools
-<<<ssl:test>>>
+** SSL Testing Tools <<<ssl:test>>>
 https://www.whynopadlock.com/
-https://www.ssllabs.com/ssltest/index.html
-Qualys https://www.ssllabs.com/ssltest/index.html
+Qualys https://www.ssllabs.com/ssltest/
 
 * Docker
 ** Version, Info, Installation
@@ -36452,11 +36452,10 @@ sudo apt-get install nginx
 This is optional if firewall ~ufw~ doesn't exist.
 
 Nginx registers itself as a service with firewall ~ufw~
-~sudo ufw app list~
-
-Output
 #+BEGIN_EXAMPLE
-Available applications:
+sudo ufw app list
+
+# Available applications:
   Nginx Full
   Nginx HTTP
   Nginx HTTPS
@@ -36471,10 +36470,8 @@ Enable Nginx HTTP
 #+BEGIN_EXAMPLE
 sudo ufw allow 'Nginx HTTP'
 sudo ufw status
-#+END_EXAMPLE
 
-Output
-#+BEGIN_EXAMPLE
+# output
 Status: active
 
 To                         Action      From
@@ -36485,10 +36482,16 @@ OpenSSH (v6)               ALLOW       Anywhere (v6)
 Nginx HTTP (v6)            ALLOW       Anywhere (v6)
 #+END_EXAMPLE
 
-*** Service Check
+Enable HTTPS, allow Full and delete HTTP
+#+BEGIN_EXAMPLE
+sudo ufw allow 'Nginx Full'
+sudo ufw delete allow 'Nginx HTTP'
+#+END_EXAMPLE
+
+*** Service Check, reload, restart
 Use service if systemctl doesn't exist.
 
-systemctl status nginx
+~systemctl status nginx~
 
 Output
 #+BEGIN_EXAMPLE
@@ -36503,7 +36506,7 @@ Output
 
 systemctl stop/start/restart/reload/disable/enable nginx
 
-restart drops connection, use reload to not drop connection
+~restart~ drops connection, use ~reload~ to not drop connection
 disable nginx service, default the nginx service is to start automatically
 
 ** /etc/nginx /var/log
@@ -36879,6 +36882,75 @@ rewrite (?i)^/cms/(.*)$ /CMS/$1 last;
 #+END_EXAMPLE
 
 Flag ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
+
+** Let's Encrypt SSL <<<nginx:ssl>>>
+On Ubuntu, install Let's Encrypt SSL client ~cerbot~ package to renew certificate.
+
+#+BEGIN_EXAMPLE
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt-get update
+sudo apt-get install python-cerbot-nginx
+# sudo apt-get install python-certbot-apache
+#+END_EXAMPLE
+
+~certbot~ looks for server block files with server_name
+
+Allow HTTPS in firewalld nginx:ufw
+
+Obtain an SSL certificate using --nginx plugin for those -d server names
+#+BEGIN_EXAMPLE
+sudo certbot --nginx -d example.com -d www.example.com
+
+
+#+END_EXAMPLE
+
+The first time running certbot, prompt to enter an email address and agree to the terms of service. After doing so, certbot will communicate with the Let's Encrypt server, then run a challenge to verify that you control the domain you're requesting a certificate for.
+
+After everything, certificate is downloaded, Nginx config is updated and reloaded.
+
+Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
+Certbot config and account credential :: /etc/letsencrypt
+
+ssl:test
+
+Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~cerbot~ package to renew certificate. ~cerbot renew~ is run twice a day on systemd timer. For non-systemd, /etc/cron.d also runs twice a day.
+
+Dry run ~sudo cerbot renew --dry-run~, expect no error.
+
+** Alternative clients
+https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
+
+- [[https://github.com/xenolf/lego][lego]] :: Written in Go, lego is a one-file binary install, and supports many DNS providers when using the DNS challenge
+- [[https://github.com/Neilpang/acme.sh][acme.sh]] :: acme.sh is a simple shell script that can run in unprivileged mode, and also interact with 30+ DNS providers
+- [[https://caddyserver.com/][Caddy]] :: Caddy is a full web server written in Go with built-in support for Let's Encrypt.
+
+** User certbot for other webserver
+https://www.digitalocean.com/community/tutorials/how-to-use-certbot-standalone-mode-to-retrieve-let-s-encrypt-ssl-certificates
+
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt-get update
+sudo apt-get install certbot
+
+Certbot may run as a standalone webserver, allow either 80 or 443
+sudo ufw allow 80
+
+generete certificate only
+sudo certbot certonly --standalone --preferred-challenges http -d example.com
+
+The certbot package we installed takes care of this for us by adding a renew script to /etc/cron.d
+
+/etc/letsencrypt/renewal/example.com.conf
+renew_hook = systemctl reload rabbitmq
+
+sudo certbot renew --dry-run
+
+** Limitation
+There are 5 levels of validation
+Domain Validation (DV), Organization Validation (OV), Extended Validation, Wildcard Certificate
+
+Certificate Authority (CA) provides the above validation and Commercial Certificate Authorities are the only one provide EV and Wildcard.
+
+Let's Encrypt provides DV only and planning to support Wildcard in near future. A certificate with up to 100 hostnames.
 
 * ModSecurity - Web Application Firewall (WAF)
 <<<waf:modsecurity>>>
