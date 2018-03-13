@@ -31028,17 +31028,27 @@ ls -t | tail -n3
 #+END_EXAMPLE
 
 ** Processes
-| =ps -ef=                   | List of running processes      |
-| =sudo ls -l /proc/PID/exe= | file path for command, sub PID |
-| =ps -f -p 123=             | List file of a running process |
+| =ps -ef=                   | List of running processes                            |
+| =sudo ls -l /proc/PID/exe= | file path for command, sub PID                       |
+| =ps -f -p 123=             | List file of a running process                       |
+| =ps axu=                   | List all processes for all users and                 |
+|                            | not started by a terminal (e.g. started by a daemon) |
+|                            | and show user columns                                |
+|                            |                                                      |
 
 ps options
 - f or F :: full format. F for Ubuntu
 - e :: all processes. same as -A
 - p :: PID. same as p and --pid
+- o :: specify format e.g. -o pid,ppid,pgid,sid
+
+- ax :: list all processes from all users that are not started by a terminal (e.g. started by a daemon)
+
+- u :: Displays user-oriented output. This includes the USER, PID, %CPU, %MEM, SZ, RSS, TTY, STAT, STIME, TIME, and COMMAND fields.
+- l :: Displays a long listing having the F, S, UID, PID, PPID, C, PRI, NI, ADDR, SZ, PSS, WCHAN, TTY, TIME, and CMD fields.
+  Note ::  -l doesn't include fields from -u
 
 *** pgrep, pkill
-
 #+BEGIN_EXAMPLE
 # Search a process by file name, return PID
 pgrep newcomgo
@@ -31046,6 +31056,28 @@ pgrep newcomgo
 # Kill a process by file name
 pkill newcomgo
 #+END_EXAMPLE
+
+*** Parent process
+<<<linux:process:parent>>>
+Parent process id is PPID. PPID is 1 means parent is not found.
+Child process PID is 1234
+
+#+BEGIN_EXAMPLE
+# search in all processes
+ps -f 1234
+
+# just return ppid
+ps -o ppid= 1234
+
+# return with custom format
+ps -eo pid,ppid,comm | grep 1234
+
+# search in all processes that may start by daemon
+ps -axl | grep 1234
+#+END_EXAMPLE
+
+A package ~pstree~ can be installed and used
+~pstree -s -p 2072~ outputs ~init(1)───pulseaudio(2061)───gconf-helper(2072)~
 
 *** Run executable in background for all sessions
 This should be enough. If not, use bash:screen
@@ -31120,11 +31152,12 @@ false || echo 'yes'
 ** Memory
 Total memory: =grep MemTotal /proc/meminfo=
 More info: =cat /proc/meminfo=
-Memory usage: =free -ltm -c 2 -s 2= or just =free -m=
+Memory usage: =free -ltm -c 2 -s 2= or just =free -mh=
 Delay 2 seconds and repeat 2 times: =-c 2 -s 2=
-=-m=: in megabyte. e.g. -g
-=-t=: show Total
-=-l=: show Low and High
+- m :: in megabyte. e.g. -g
+- t :: show Total
+- l :: show Low and High
+- h
 Another way: =vmstat -s=
 To see memory usage for each process, use linux:top or =htop=
 
@@ -31266,6 +31299,8 @@ netstat options
 - l :: show only listening sockets
 - p :: show PID and name of the program to which each socket belongs.
 - n :: show numerical addresses instead of symbolic host, port or user names
+- t :: tcp
+- u :: udp
 
 List all command files (open files) that are using an Internet address (-i)
 ~-P~ is to print port number
@@ -31281,6 +31316,16 @@ Full format
 
 It's better to use telnet IP_address port_number in an external computer to connect to a port to check
 if it's in use.
+
+#+BEGIN_EXAMPLE
+# this can also list PID's that use the port
+fuser 443/tcp -v
+
+# and kill
+fuser -k 443/tcp
+#+END_EXAMPLE
+
+If process keeps coming back, consider find the parent process and kill it.
 
 In Windows, to see if a port is being used in a local computer
 #+BEGIN_EXAMPLE
@@ -36721,7 +36766,7 @@ systemctl stop/start/restart/reload/disable/enable nginx
 ~restart~ drops connection, use ~reload~ to not drop connection
 disable nginx service, default the nginx service is to start automatically
 
-** /etc/nginx /var/log
+** /etc/nginx /var/log/nginx
 Config directory.
 
 *** /etc/nginx/sites-available/
@@ -36875,6 +36920,8 @@ server {
 # If no port is set in ip:port, then 80 is used
 # If no listen is set, then 0.0.0.0:80 is used
 # If only ip is specified (no port), it has a higher specificity than only port is specified.
+# 0.0.0.0 means all ipv4 addresses
+# listen [::]:80 ipv6only=on; # means to listen all ipv6 address :::80
 
   server_name example.org www.example.org;
   
@@ -37056,12 +37103,21 @@ server {
   listen 80;
   server_name dev.myweb.com;
   location / {
+    proxy_pass http://127.0.0.1:9977;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header Host $http_host;
-    proxy_pass http://127.0.0.1:9977;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  #  proxy_set_header X-Forwarded-SSL on; # for ssl
+  # proxy_redirect default; # default is to redirect location into proxy_pass
+  # proxy_redirect changes the response header ~Location~ from the proxied server
   }
 }
 #+END_EXAMPLE
+
+$http_host equals always the HTTP_HOST request header.
+$host equals $http_host, lowercase and without the port number (if present), except when HTTP_HOST is absent or is an empty value. 
+- In that case, $host equals the value of the server_name directive of the server which processed the request.
 
 *** Sample: Redirect a path to a different proxy
 <<<nginx:redirect path to proxy>>>
@@ -37071,7 +37127,7 @@ server {
   listen 80;
   server_name abc.com www.abc.com;
 
-# this doens't work in wordpress! location ^~ /subpath
+# this doens't work in wordpress! => location ^~ /subpath
   location ^~ /subpath/ {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header Host $http_host;
@@ -37096,18 +37152,50 @@ rewrite (?i)^/cms/(.*)$ /CMS/$1 last;
 Flag ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
 
 ** Let's Encrypt SSL <<<nginx:ssl>>>
-On Ubuntu, install Let's Encrypt SSL client ~cerbot~ package to renew certificate.
+On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to renew certificate.
+
+~certbot~ is ~letsencrypt~ in older version or ~certbot-auto~ in an alternate installation method.
+
+Authenticator plugins use ~certonly~ command to obtain a certificate to ~/etc/letsencrypt~ directory
+e.g. Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
+
+Install plugins use ~install~ command to install a certificate :: modify webserver config
+
+Authenticator (-a) and installer (-i) plugins can be combined
+#+BEGIN_EXAMPLE
+certbot run -a webroot -i apache -w /var/www/html -d example.com
+#+END_EXAMPLE
+
+renewal config files for each domain /etc/letsencrypt/renewal/mydomain.com.conf
+
+Global config /etc/letsencrypt/cli.ini (usually empty)
+
+Log /var/log/letsencrypt
+
+/etc/cron.d/certbot is just running ~certbot -q renew~ so renewal config file is very important for each domain
+
+*** Challenges
+http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
+
+dns (port 53 open on DNS server) :: requires to place a TXT DNS record with specific contents
+  e.g. _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
+
+tls-sni (port 443) :: prepares a self-signed SSL certificate with the challenge validation encoded into a subjectAlternatNames entry. Config your SSL server to present this challenge SSL certificate to the ACME server using SNI.
+  - nginx and apache plugins use this type
+
+*** certbot nginx apache plugins
+They are authenticator and install plugins. tls-sni-01 challenge
 
 #+BEGIN_EXAMPLE
 sudo add-apt-repository ppa:certbot/certbot
 sudo apt-get update
-sudo apt-get install python-cerbot-nginx
+sudo apt-get install python-certbot-nginx
 # sudo apt-get install python-certbot-apache
 #+END_EXAMPLE
 
 ~certbot~ looks for server block files with server_name
 
-Allow HTTPS in firewalld nginx:ufw
+Allow HTTPS in firewall nginx:ufw
 
 Obtain an SSL certificate using --nginx plugin for those -d server names
 #+BEGIN_EXAMPLE
@@ -37118,23 +37206,169 @@ The first time running certbot, prompt to enter an email address and agree to th
 
 After everything, certificate is downloaded, Nginx config is updated and reloaded.
 
+Modified :: /etc/nginx/sites-enabled/yoursite.com
+#+BEGIN_EXAMPLE
+server {
+    listen 80;
+    listen [::]:80;
+    server_name example.com www.example.com; 
+    return 301 https://example.com$request_uri;
+  # force redirect to https
+}
+
+server {
+  # your original setting
+  # listen 80; # if you want to serve http as well in the same block
+  # ssl on; # is not needed when ssl is in listen directive
+  listen 443 ssl; # managed by Certbot
+  ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+  ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+# certbot will insert this block, but it's better to use the one atop.
+server {
+  if ($host = yoursite.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+  listen 80;
+  server_name yoursite.com;
+    return 404; # managed by Certbot
+}
+#+END_EXAMPLE
+
 Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
 Certbot config and account credential :: /etc/letsencrypt
 
 ssl:test
 
-Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~cerbot~ package to renew certificate. ~cerbot renew~ is run twice a day on systemd timer. For non-systemd, /etc/cron.d also runs twice a day.
+Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbot~ package to renew certificate. ~certbot renew~ is run twice a day on systemd timer. For non-systemd, /etc/cron.d also runs twice a day.
 
-Dry run ~sudo cerbot renew --dry-run~, expect no error.
+/etc/cron.d/certbot
+#+BEGIN_EXAMPLE
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-** Alternative clients
-https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
+0 */12 * * * root test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(3600))' && certbot -q renew
+#+END_EXAMPLE
 
-- [[https://github.com/xenolf/lego][lego]] :: Written in Go, lego is a one-file binary install, and supports many DNS providers when using the DNS challenge
-- [[https://github.com/Neilpang/acme.sh][acme.sh]] :: acme.sh is a simple shell script that can run in unprivileged mode, and also interact with 30+ DNS providers
-- [[https://caddyserver.com/][Caddy]] :: Caddy is a full web server written in Go with built-in support for Let's Encrypt.
+Dry run ~sudo certbot renew --dry-run~, expect no error.
 
-** User certbot for other webserver
+*** certbot manual plugin
+An authenticator plugin that obtains a certificate by giving you instructions to perform domain validation yourself. Additionally allows you to specify scripts to automate the validation task in a customized way. hooks can be specified
+
+http-01, dns-01 or tls-sni-01 challenge
+
+Example usage for HTTP-01:
+#+BEGIN_EXAMPLE
+certbot certonly --manual --preferred-challenges=http --manual-auth-hook /path/to/http/authenticator.sh --manual-cleanup-hook /path/to/http/cleanup.sh -d secure.example.com
+#+END_EXAMPLE
+
+authenticator.sh
+#+BEGIN_EXAMPLE
+#!/bin/bash
+dir=/path/to/web-root/.well-known/acme-challenge
+mkdir -p $dir
+filename=$dir/$CERTBOT_TOKEN
+test -f $filename || touch $filename
+echo $CERTBOT_VALIDATION > $filename
+chown -R www-data:www-data $filename
+#+END_EXAMPLE
+
+cleanup.sh
+#+BEGIN_EXAMPLE
+rm -f /var/www/htdocs/.well-known/acme-challenge/$CERTBOT_TOKEN
+#+END_EXAMPLE
+
+Environment vars available to hooks
+- CERTBOT_DOMAIN :: The domain being authenticated
+- CERTBOT_VALIDATION :: The validation string (HTTP-01 and DNS-01 only)
+- CERTBOT_TOKEN :: Resource name part of the HTTP-01 challenge (HTTP-01 only)
+- CERTBOT_CERT_PATH :: The challenge SSL certificate (TLS-SNI-01 only)
+- CERTBOT_KEY_PATH :: The private key associated with the aforementioned SSL certificate (TLS-SNI-01 only)
+- CERTBOT_SNI_DOMAIN :: The SNI name for which the ACME server expects to be presented the self-signed certificate located at $CERTBOT_CERT_PATH (TLS-SNI-01 only)
+- CERTBOT_AUTH_OUTPUT :: (cleanup hook only) Whatever the auth script wrote to stdout
+
+**** Example usage for DNS-01
+(Cloudflare API v4) (for example purposes only, do not use as-is)
+
+#+BEGIN_EXAMPLE
+certbot certonly --manual --preferred-challenges=dns --manual-auth-hook /path/to/dns/authenticator.sh --manual-cleanup-hook /path/to/dns/cleanup.sh -d secure.example.com
+#+END_EXAMPLE
+
+authenticator.sh
+#+BEGIN_EXAMPLE
+#!/bin/bash
+
+# Get your API key from https://www.cloudflare.com/a/account/my-account
+API_KEY="your-api-key"
+EMAIL="your.email@example.com"
+
+# Strip only the top domain to get the zone id
+DOMAIN=$(expr match "$CERTBOT_DOMAIN" '.*\.\(.*\..*\)')
+
+# Get the Cloudflare zone id
+ZONE_EXTRA_PARAMS="status=active&page=1&per_page=20&order=status&direction=desc&match=all"
+ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&$ZONE_EXTRA_PARAMS" \
+     -H     "X-Auth-Email: $EMAIL" \
+     -H     "X-Auth-Key: $API_KEY" \
+     -H     "Content-Type: application/json" | python -c "import sys,json;print(json.load(sys.stdin)['result'][0]['id'])")
+
+# Create TXT record
+CREATE_DOMAIN="_acme-challenge.$CERTBOT_DOMAIN"
+RECORD_ID=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+     -H     "X-Auth-Email: $EMAIL" \
+     -H     "X-Auth-Key: $API_KEY" \
+     -H     "Content-Type: application/json" \
+     --data '{"type":"TXT","name":"'"$CREATE_DOMAIN"'","content":"'"$CERTBOT_VALIDATION"'","ttl":120}' \
+             | python -c "import sys,json;print(json.load(sys.stdin)['result']['id'])")
+# Save info for cleanup
+if [ ! -d /tmp/CERTBOT_$CERTBOT_DOMAIN ];then
+        mkdir -m 0700 /tmp/CERTBOT_$CERTBOT_DOMAIN
+fi
+echo $ZONE_ID > /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID
+echo $RECORD_ID > /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID
+
+# Sleep to make sure the change has time to propagate over to DNS
+sleep 25
+#+END_EXAMPLE
+
+cleanup.sh
+#+BEGIN_EXAMPLE
+#!/bin/bash
+
+# Get your API key from https://www.cloudflare.com/a/account/my-account
+API_KEY="your-api-key"
+EMAIL="your.email@example.com"
+
+if [ -f /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID ]; then
+        ZONE_ID=$(cat /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID)
+        rm -f /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID
+fi
+
+if [ -f /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID ]; then
+        RECORD_ID=$(cat /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID)
+        rm -f /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID
+fi
+
+# Remove the challenge TXT record from the zone
+if [ -n "${ZONE_ID}" ]; then
+    if [ -n "${RECORD_ID}" ]; then
+        curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
+                -H "X-Auth-Email: $EMAIL" \
+                -H "X-Auth-Key: $API_KEY" \
+                -H "Content-Type: application/json"
+    fi
+fi
+#+END_EXAMPLE
+
+*** certbot standalone plugin
+An authenticator plugin uses a standalone webserver to obtain a certificate. It's useful when there's no webserver. Need to open port 80 or 443
+http-01 or tls-sni-01 challenge.
+
 https://www.digitalocean.com/community/tutorials/how-to-use-certbot-standalone-mode-to-retrieve-let-s-encrypt-ssl-certificates
 
 sudo add-apt-repository ppa:certbot/certbot
@@ -37154,7 +37388,133 @@ renew_hook = systemctl reload rabbitmq
 
 sudo certbot renew --dry-run
 
-** Limitation
+*** certbot webroot plugin
+An authenticator plugin that obtains certificate and write to an existing webroot without webserver config mod. http-01 challenge.
+
+#+BEGIN_EXAMPLE
+certbot certonly --webroot -w /var/www/example/ -d www.example.com -d example.com -w /var/www/other -d other.example.net -d another.other.example.net
+#+END_EXAMPLE
+
+*** certbot manage and renew certificates
+certbot [SUBCOMMAND] [options] [-d DOMAIN] [-d DOMAIN] ...
+
+Subcommand:
+- (default) run ::   Obtain & install a certificate in your current webserver
+- certonly      ::   Obtain or renew a certificate, but do not install it
+
+/etc/letsencrypt/archive and /etc/letsencrypt/keys contain all previous keys and certificates, while /etc/letsencrypt/live symlinks to the latest versions.
+
+#+BEGIN_EXAMPLE
+certbot certificates
+certbot certonly --cert-name example.com
+
+# Update an existing certificate with a new one that contains all old domains and new domains
+# Use -d to specify all existing and new domains.
+certbot --expand -d existing.com,example.com,newdomain.com
+
+# remove some domains from an exisiting certificate. before it contains example.com and www.example.com
+certbot certonly --cert-name example.com -d example.com
+
+# overwrites all domains for an existing certificate
+certbot certonly --cert-name example.com -d example.org,www.example.org
+
+# revoke
+certbot revoke --cert-path /etc/letsencrypt/live/CERTNAME/cert.pem
+
+# renew any existing certificates that expire in less than 30 days.
+# --pre-hook and --post-hook hooks run before and after every renewal attempt.
+certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+
+# If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
+certbot renew --deploy-hook /path/to/deploy-hook-script
+#+END_EXAMPLE
+
+**** Hooks 
+#+BEGIN_EXAMPLE
+certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+
+# If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
+certbot renew --deploy-hook /path/to/deploy-hook-script
+#+END_EXAMPLE
+
+deploy-hook-script
+#+BEGIN_EXAMPLE
+#!/bin/sh
+
+set -e
+
+for domain in $RENEWED_DOMAINS; do
+        case $domain in
+        example.com)
+                daemon_cert_root=/etc/some-daemon/certs
+
+                # Make sure the certificate and private key files are
+                # never world readable, even just for an instant while
+                # we're copying them into daemon_cert_root.
+                umask 077
+
+                cp "$RENEWED_LINEAGE/fullchain.pem" "$daemon_cert_root/$domain.cert"
+                cp "$RENEWED_LINEAGE/privkey.pem" "$daemon_cert_root/$domain.key"
+
+                # Apply the proper file ownership and permissions for
+                # the daemon to read its certificate and key.
+                chown some-daemon "$daemon_cert_root/$domain.cert" \
+                        "$daemon_cert_root/$domain.key"
+                chmod 400 "$daemon_cert_root/$domain.cert" \
+                        "$daemon_cert_root/$domain.key"
+
+                service some-daemon restart >/dev/null
+                ;;
+        esac
+done
+#+END_EXAMPLE
+
+Script files can be placed at /etc/letsencrypt/renewal-hooks/pre, /etc/letsencrypt/renewal-hooks/deploy, and /etc/letsencrypt/renewal-hooks/post
+Script files are run in alpha order.
+
+**** Renewal conf
+Sample /etc/letsencrypt/renewal/mydomain.com.conf
+#+BEGIN_EXAMPLE
+# renew_before_expiry = 30 days
+version = 0.21.1
+archive_dir = /etc/letsencrypt/archive/mydomain.com
+cert = /etc/letsencrypt/live/mydomain.com/cert.pem
+privkey = /etc/letsencrypt/live/mydomain.com/privkey.pem
+chain = /etc/letsencrypt/live/mydomain.com/chain.pem
+fullchain = /etc/letsencrypt/live/mydomain.com/fullchain.pem
+
+# Options used in the renewal process
+[renewalparams]
+account = abcfdfsda
+installer = nginx
+authenticator = nginx
+#+END_EXAMPLE
+
+*** A certificate
+#+BEGIN_EXAMPLE
+server {
+  # your original setting
+
+  listen 443 ssl; # managed by Certbot
+  ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+  ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+#+END_EXAMPLE
+
+certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
+global config /etc/letsencrypt/cli.ini
+
+*** Alternative clients
+https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
+
+- [[https://github.com/xenolf/lego][lego]] :: Written in Go, lego is a one-file binary install, and supports many DNS providers when using the DNS challenge
+- [[https://github.com/Neilpang/acme.sh][acme.sh]] :: acme.sh is a simple shell script that can run in unprivileged mode, and also interact with 30+ DNS providers
+- [[https://caddyserver.com/][Caddy]] :: Caddy is a full web server written in Go with built-in support for Let's Encrypt.
+
+*** Limitation
 There are 5 levels of validation
 Domain Validation (DV), Organization Validation (OV), Extended Validation, Wildcard Certificate
 
@@ -43331,7 +43691,6 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
 * TODO Book: Design Patterns: Elements of Reusable Object-Oriented Software (Addison-Wesley)
 * TODO Book: Code Complete (2nd Edition, Microsoft Press)
-* TODO Let's Encrypt
 * TODO custom-elements-everywhere.com, williams sonoma
 * TODO gridbyexample.com
 
