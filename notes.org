@@ -8943,6 +8943,15 @@ SET meta_value=(REPLACE (meta_value, 'iframe src="http://','iframe src="//'));
 #+END_EXAMPLE
 
 Force redirect to https on Apache for all pages :: apache:https
+To setup nginx as host and apache as proxy nginx:proxy:docker
+
+If WordPress is behind Nginx proxy server or load balancer, the above is not enough because is_ssl function will not work
+Inspired by plugin [[https://wordpress.org/plugins/ssl-insecure-content-fixer/][ssl-insecure-content-fixer]] wp-config.php
+#+BEGIN_EXAMPLE
+if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+  $_SERVER['HTTPS'] = 'on';
+}
+#+END_EXAMPLE
 
 ** SEO: hreflang
 Google Search Console looks for hreflang to determine language
@@ -31048,6 +31057,8 @@ ps options
 - l :: Displays a long listing having the F, S, UID, PID, PPID, C, PRI, NI, ADDR, SZ, PSS, WCHAN, TTY, TIME, and CMD fields.
   Note ::  -l doesn't include fields from -u
 
+- w :: use with -f to show in unlimited width so that PPID and others are shown
+
 *** pgrep, pkill
 #+BEGIN_EXAMPLE
 # Search a process by file name, return PID
@@ -31064,7 +31075,7 @@ Child process PID is 1234
 
 #+BEGIN_EXAMPLE
 # search in all processes
-ps -f 1234
+ps -feww 1234
 
 # just return ppid
 ps -o ppid= 1234
@@ -32153,7 +32164,7 @@ wget -cr -l inf -N -nH --cut-dirs=3 -P test/ ftp://server/path/to/test/1
 
 [[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
 
-** Cron
+** Cron <<<linux:cron>>>
 *** Cron table (crontab)
 Each user can have his own cron table. Use ~crontab~ to manage a user's cron jobs
 
@@ -33643,7 +33654,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) gd
 #+END_EXAMPLE
 
-Install PECL Extensions
+Install PECL Extensions use docker-php-ext-enable
 #+BEGIN_EXAMPLE
 FROM php:7.1-fpm
 RUN pecl install redis-3.1.0 \
@@ -37097,18 +37108,21 @@ location / {
 }
 #+END_EXAMPLE
 
-Common docker container
+Common docker container <<<nginx:proxy:docker>>>
 #+BEGIN_EXAMPLE
 server {
   listen 80;
   server_name dev.myweb.com;
+
+# refer to SSL config for nginx:ssl:server block for Let's Encrypt
+
   location / {
     proxy_pass http://127.0.0.1:9977;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-  #  proxy_set_header X-Forwarded-SSL on; # for ssl
+  # proxy_set_header X-Forwarded-SSL on; # for ssl
   # proxy_redirect default; # default is to redirect location into proxy_pass
   # proxy_redirect changes the response header ~Location~ from the proxied server
   }
@@ -37118,6 +37132,8 @@ server {
 $http_host equals always the HTTP_HOST request header.
 $host equals $http_host, lowercase and without the port number (if present), except when HTTP_HOST is absent or is an empty value. 
 - In that case, $host equals the value of the server_name directive of the server which processed the request.
+
+Refer to wordpress:ssl:behind proxy
 
 *** Sample: Redirect a path to a different proxy
 <<<nginx:redirect path to proxy>>>
@@ -37207,6 +37223,7 @@ The first time running certbot, prompt to enter an email address and agree to th
 After everything, certificate is downloaded, Nginx config is updated and reloaded.
 
 Modified :: /etc/nginx/sites-enabled/yoursite.com
+<<<nginx:ssl:server block>>>
 #+BEGIN_EXAMPLE
 server {
     listen 80;
@@ -37225,6 +37242,8 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
   include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+  # follow by these proxy rules nginx:proxy:docker
 
 }
 
