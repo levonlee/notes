@@ -6836,6 +6836,8 @@ $ver :: (string|bool|null) (Optional) String specifying stylesheet version numbe
 $media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'.
           Default value: 'all'
 
+Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
+
 #+BEGIN_EXAMPLE
 // Load the main stylesheet
 	wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
@@ -10118,9 +10120,9 @@ img {
 
 Edge and IE only works for <img> element
 
-** @font-face
+** @font-face <<<css:font-face>>>
 Most widely accepted font format is WOFF then TTF and OTF.
-Only IE supports EOT
+IE 11 and less only supports EOT. Edge supports WOFF.
 
 #+BEGIN_EXAMPLE
 @font-face {
@@ -10140,6 +10142,19 @@ Only IE supports EOT
 }
 #+END_EXAMPLE
 
+Bootstrap 3
+#+BEGIN_EXAMPLE
+@font-face {
+  font-family: 'Glyphicons Halflings';
+  src: url('../fonts/glyphicons-halflings-regular.eot');
+  src: url('../fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), 
+       url('../fonts/glyphicons-halflings-regular.woff2') format('woff2'), 
+       url('../fonts/glyphicons-halflings-regular.woff') format('woff'), 
+       url('../fonts/glyphicons-halflings-regular.ttf') format('truetype'),
+       url('../fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+#+END_EXAMPLE
+
 Web Safe Fonts
 - Arial, Arial Black
 - Comic Sans MS
@@ -10153,6 +10168,19 @@ Web Safe Fonts
 - Verdana
 
 [[http://www.cssfontstack.com/][Web Safe Fonts in PC and Mac]]
+
+Target IE 11 only
+#+BEGIN_EXAMPLE
+_:-ms-fullscreen, :root .msie11 { color: blue; }
+#+END_EXAMPLE
+
+Target IE 10 and IE 11
+#+BEGIN_EXAMPLE
+@media all and (-ms-high-contrast:none) {
+  .foo { color: green } /* IE10 */
+  *::-ms-backdrop, .foo { color: red } /* IE11 */
+}
+#+END_EXAMPLE
 
 ** @media
 @media not|only /mediatype/ and (/media feature/) {}
@@ -11182,6 +11210,24 @@ Div's height is greater than img. add display:block in <img>
 #+BEGIN_EXAMPLE
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
  width="100" height="100">
+#+END_EXAMPLE
+
+*** Image scaling
+IE 10+ and Edge removes any -ms-* CSS filters, so this does not work any more
+#+BEGIN_EXAMPLE
+img { -ms-interpolation-mode: bicubic; }
+#+END_EXAMPLE
+
+Use this plugin https://github.com/sukhoi1/ie-bicubic-img-interpolation-plugin
+#+BEGIN_EXAMPLE
+$( document ).ready(function() {
+  if (navigator.appName == 'Microsoft Internet Explorer' ||  !!(navigator.userAgent.match(/Trident/) || navigator.userAgent.match(/rv:11/)) || (typeof $.browser !== "undefined" && $.browser.msie == 1))
+  {
+    $('img.render').bicubicImgInterpolation({
+     		crossOrigin: 'anonymous' //for demo purpose
+    });
+  }
+});
 #+END_EXAMPLE
 
 *** Button Hover Double Quotes
@@ -42294,6 +42340,9 @@ SET HOMESHARE=\\localhost\C$\Users\%USERNAME%
 Set the registry key ~HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit~ to 'C:\Windows\System32\userinit.cmd,'
 Userinit default value is 'C:\Windows\system32\userinit.exe,'
 
+**** Move a window
+Shift + right click on a tab in Task Bar and you should see Move.
+
 *** Win Server 2003
 **** System Information
 run ~winmsd.exe~ and look for processor to find out the bit count
@@ -43797,6 +43846,8 @@ TeamViewer.exe、TeamViewer_Service.exe、TeamViewer_Desktop.exe
 http://www.zdfans.com/6351.html
 
 ** Font
+WOFF is supported in Edge and modern browsers. IE 11 and less only supports EOT.
+
 Install OTF (OpenType Font) over TTF (TrueType Font).
 
 For web, always include WOFF (Web Open Font Format), then TTF then OTF. WOFF is good for SEO
@@ -43804,6 +43855,8 @@ For web, always include WOFF (Web Open Font Format), then TTF then OTF. WOFF is 
 As you can see OTF is newer and based on TTF but it's much smaller.
 
 TTF rendered in different devices has non-equal pixels.
+
+Refer to css:font-face
 
 *** Abbreviations
 https://www.extensis.com/blog/fonts/abbreviations-font-names/
@@ -43816,6 +43869,65 @@ Font size as intended in print: (Text, Display, Poster/Caption, Small Text, Regu
 
 *** Not a valid font file Windows
 Turn off firewall or try font converter to convert the font and then install
+
+*** Line height
+Fonts rendered different line height across browsers is because Line Height Adjustment option is not in the font.
+
+Line Height Adjustments
+
+- Best (Use the best method to normalize the line height for this font)
+- 120% (Redefine the line height as 120% of the point size)
+- Automatic (Distributes OS/2.Typo values across ascender, descender and line gap)
+- *Bounding Box (Match the bounding box of the glyphs, line gap will always be 0)
+- Native (Use the line height as defined in the font, results may differ between browsers)
+
+Use Bounding Box.
+
+https://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align
+
+p {
+    /* font metrics */
+    --font: Catamaran;
+    --fm-capitalHeight: 0.68;
+    --fm-descender: 0.54;
+    --fm-ascender: 1.1;
+    --fm-linegap: 0;
+
+    /* desired font-size for capital height */
+    --capital-height: 100;
+
+    /* apply font-family */
+    font-family: var(--font);
+
+    /* compute font-size to get capital height equal desired font-size */
+    --computedFontSize: (var(--capital-height) / var(--fm-capitalHeight));
+    font-size: calc(var(--computedFontSize) * 1px);
+
+  /* compute line-height:normal and content-area's height */
+  --lineheightNormal: (var(--fm-ascender) + var(--fm-descender) + var(--fm-linegap));
+  --contentArea: (var(--lineheightNormal) * var(--computedFontSize));
+
+  --distanceBottom: (var(--fm-descender));
+  --distanceTop: (var(--fm-ascender) - var(--fm-capitalHeight));
+
+  --valign: ((var(--distanceBottom) - var(--distanceTop)) * var(--computedFontSize));
+
+  --line-height: 3;
+    line-height: calc(((var(--line-height) * var(--capital-height)) - var(--valign)) * 1px);
+}
+
+*** FontForge
+http://fontforge.github.io/en-US/
+
+Element > Font Info > General to get Em Size
+
+Element > Font Info > OS/2 to get 
+
+- Win Ascent, Win Descent for Windows
+- H Head Ascent, H Head Descent for Mac OS
+- Capital Height
+- X Height
+- Typo Line Gap and H Head Line Gap
 
 *** Google Font (GF)
 Can be downloaded and installed on Desktop as .ttf and for website .woff or .woff2
