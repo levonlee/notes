@@ -10322,44 +10322,45 @@ Graceful Method :: start from desktop layout, remove content to smaller screen s
 http://viewportsizes.com/
 
 #+BEGIN_EXAMPLE
+// @media only screen and (max-width:1920) {}
 
-@media only screen and (max-width:1920px){}
+@media (max-width:1920px){}
 
 /* iPadPro@H1366 */
-@media only screen and (max-width:1400px){}
+@media (max-width:1400px){}
 
 /* iPad@H1024 */
-@media only screen and (max-width:1267px){}
+@media (max-width:1267px){}
 
 /* iPadPro@1024 */
-@media only screen and (max-width:1201px){}
+@media (max-width:1201px){}
 
-@media only screen and (max-width:1023px){}
+@media (max-width:1023px){}
 
-@media only screen and (max-width:967px){}
+@media (max-width:967px){}
 
 /* iPad@768, iPhone6+@H736, Nexus 6P/5X@H732 */
-@media only screen and (max-width:867px){}
+@media (max-width:867px){}
 
 /* iPhone6@H667 */
-@media only screen and (max-width:697px){}
+@media (max-width:697px){}
 
 /* GalaxyS5@H640 */
-@media only screen and (max-width:645px){}
+@media (max-width:645px){}
 
 /* iPhone5@H568 */
-@media only screen and (max-width:597px){}
+@media (max-width:597px){}
 
-@media only screen and (max-width:467px){}
+@media (max-width:467px){}
 
 /* iPhone6+@414, Nexus 6P/5X@412 */
-@media only screen and (max-width:420px){}
+@media (max-width:420px){}
 
 /* iPhone6@375, GalaxyS5@360 */
-@media only screen and (max-width:375px){}
+@media (max-width:375px){}
 
 /* iPhone5@320 */
-@media only screen and (max-width:320px){}
+@media (max-width:320px){}
 #+END_EXAMPLE
 
 ** @keyframes
@@ -13760,6 +13761,7 @@ transitionend
 
 *** Picture tag, <img srcset>
 <<<html:img:srcset>>> <<<html:img:sizes>>>
+IE 11 doesn't support srcset and sizes
 The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only.
 <img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">
 
@@ -13826,6 +13828,46 @@ img {
   <source media="(min-width: 800px)" srcset="elva-800w.jpg">
   <img src="elva-800w.jpg" alt="Chris standing up holding his daughter Elva">
 </picture>
+#+END_EXAMPLE
+
+CSS fallback
+#+BEGIN_EXAMPLE
+<img srcset="
+  examples/images/image-384.jpg 1x, 
+  examples/images/image-768.jpg 2x
+" alt="…">
+
+.img {
+  background-image: url(examples/images/image-384.jpg); 
+}
+@media 
+  (-webkit-min-device-pixel-ratio: 2), 
+  (min-resolution: 192dpi) { 
+  .img {
+    background-image: url(examples/images/image-768.jpg);
+  }
+}
+
+/* 1.25 dpr */
+@media 
+(-webkit-min-device-pixel-ratio: 1.25), 
+(min-resolution: 120dpi){ 
+    /* Retina-specific stuff here */
+}
+
+/* 1.3 dpr */
+@media 
+(-webkit-min-device-pixel-ratio: 1.3), 
+(min-resolution: 124.8dpi){ 
+    /* Retina-specific stuff here */
+}
+
+/* 1.5 dpr */
+@media 
+(-webkit-min-device-pixel-ratio: 1.5), 
+(min-resolution: 144dpi){ 
+    /* Retina-specific stuff here */
+}
 #+END_EXAMPLE
 
 *** Term/name in a list
@@ -19964,6 +20006,9 @@ Then install gulp locally
 npm install --save-dev gulp@next
 #+END_EXAMPLE
 
+https://gulpjs.com/plugins/
+https://github.com/alferov/awesome-gulp
+
 **** Example
 ~gulp~ runs the default task.
 gulp <task> <othertask>
@@ -20187,6 +20232,23 @@ gulp.task('css', function () {
 #+END_EXAMPLE
 
 ***** npm:postcss:options
+**** gulp-responsive
+https://github.com/mahnunchik/gulp-responsive
+
+***** Installation
+Requires node-gyp
+
+#+BEGIN_EXAMPLE
+npm install --save-dev gulp-responsive
+
+// you may need to run this if there is still error, but I didn't need it
+// npm -g install npm@latest
+// https://github.com/lovell/sharp/issues/615
+#+END_EXAMPLE
+
+**** gulp-imagemin
+https://www.npmjs.com/package/gulp-imagemin
+
 *** grunt
 Install grunt globally and locally
 #+BEGIN_EXAMPLE
@@ -22127,6 +22189,18 @@ npm run debug
 #+END_EXAMPLE
 
 ~npm install --production~ or when NODE_ENV environment variable is production, npm will not install modules listed in devDependencies
+
+** node-gyp <<<node-gyp>>>
+Some plugins need [[https://github.com/TooTallNate/node-gyp][node-gyp]] installed
+Open PowerShell with admin right
+#+BEGIN_EXAMPLE
+npm install --global --production windows-build-tools
+npm install --global node-gyp
+#+END_EXAMPLE
+
+[[https://github.com/felixrieseberg/windows-build-tools][windows-build-tools]] downloads and installs VC++ Build Tools and Python 2.7, configuring maching and npm appropriately.
+
+The install is conflict-free meaning that they do not mess with existing installations of VS, C++ Build Tools or Python.
 
 ** npm dependency ~ vs ^
 ^1.2.3 will match any 1.x.x latest release but will miss 2.0.0
