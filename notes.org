@@ -6014,7 +6014,7 @@ function rudr_term_permalink( $url, $term, $taxonomy ){
 add_filter( 'term_link', 'rudr_term_permalink', 10, 3 );
 #+END_EXAMPLE
 
-** CLI
+** WP-CLI <<<wp-cli>>>
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
 WP CLI Pantheon
 
@@ -6091,6 +6091,48 @@ wp plugin uninstall Plugin_name
 
 *** Theme
 wp theme status
+
+*** Search and replace
+<<<wp-cli:search-replace>>> Refer to image:tatemz/wp-cli
+https://developer.wordpress.org/cli/commands/search-replace/
+
+Search/replace intelligently handles PHP serialized data, and does not change primary key values.
+
+#+BEGIN_EXAMPLE
+# Search and replace but skip one column
+$ wp search-replace 'http://example.dev' 'http://example.com' --skip-columns=guid
+
+# Run search/replace operation but dont save in database
+$ wp search-replace 'foo' 'bar' wp_posts wp_postmeta wp_terms --dry-run
+
+# Run case-insensitive regex search/replace operation (slow)
+$ wp search-replace '\[foo id="([0-9]+)"' '[bar id="\1"' --regex --regex-flags='i'
+
+# Turn your production multisite database into a local dev database
+$ wp search-replace --url=example.com example.com example.dev 'wp_*options' wp_blogs
+
+# Search/replace to a SQL file without transforming the database
+# Current database is not changed. The change result is output to a file
+$ wp search-replace foo bar --export=database.sql
+
+# Bash script: Search/replace production to development url (multisite compatible)
+#!/bin/bash
+if $(wp --url=http://example.com core is-installed --network); then
+    wp search-replace --url=http://example.com 'http://example.com' 'http://example.dev' --recurse-objects --network --skip-columns=guid --skip-tables=wp_users
+else
+    wp search-replace 'http://example.com' 'http://example.dev' --recurse-objects --skip-columns=guid --skip-tables=wp_users
+fi
+#+END_EXAMPLE
+
+*** db export
+https://developer.wordpress.org/cli/commands/db/export/
+#+BEGIN_EXAMPLE
+# Export database with drop query included
+$ wp db export --add-drop-table
+Success: Exported to 'wordpress_dbase-db72bb5.sql'.
+
+wp db export --add-drop-table /var/www/html/devops/db/dump.sql
+#+END_EXAMPLE
 
 ** Conditional Tags
 <<<wp:conditional tags>>>
@@ -33425,7 +33467,7 @@ volumes:
   dbdata:
 #+END_EXAMPLE
 
-**** networks (top level)
+**** networks (top level) links (deprecated)
 Every time ~docker-compose up~ creates a single network (per app) which all services in the app are on.
 Let's say yml file is a folder called foldername
 This avoids the need to use links
@@ -33449,9 +33491,15 @@ services:
    image: mysql:5.7.9
    container_name: db
    hostname: db
+ # links is deprecated. 
+ # links:
+ #   - thisserviceorotherservicename:mysql
+ # Use networks:aliases below for thisservice
    networks:
      app_net:
        ipv4_address: 172.18.0.2
+       aliases:
+         - mysql
    restart: always
 #+END_EXAMPLE
 
@@ -33863,6 +33911,22 @@ else
 fi
 #+END_EXAMPLE
 
+*** Replace string in .sql
+https://github.com/tazotodua/useful-php-scripts/blob/master/database-modifier-when-migrating-wordpress
+https://interconnectit.com/products/search-and-replace-for-wordpress-databases/
+https://en-ca.wordpress.org/plugins/wp-migrate-db/
+https://wordpress.org/plugins/better-search-replace/
+
+UPDATE wp_options SET option_value = replace(option_value, 'http://olddomain.com', 'http://newdomain.com') WHERE option_name = 'home' OR option_name = 'siteurl';
+
+UPDATE wp_posts SET guid = replace(guid, 'http://olddomain.com','http://newdomain.com');
+
+UPDATE wp_posts SET post_content = replace(post_content, 'http://olddomain.com', 'http://newdomain.com');
+
+UPDATE wp_postmeta SET meta_value = replace(meta_value, 'http://olddomain.com', 'http://newdomain.com');
+
+image:tatemz/wp-cli
+
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
 Parent: scratch (perfect for building base images such as debian and busybox
 
@@ -33996,6 +34060,41 @@ VOLUME /var/www/html
 
 CMD ["apache2-foreground"]
 #+END_EXAMPLE
+
+** image:bylexus:apache-php53
+Ubuntu 12.04 (LTS), Apache 2.2, PHP 5.3.10
+Ubuntu Server 12.04, based on ubuntu docker image
+apache2
+php5
+php5-cli
+libapache2-mod-php5
+php5-gd
+php5-ldap
+php5-mysql
+php5-pgsql
+
+docker pull bylexus/apache-php53
+https://hub.docker.com/r/bylexus/apache-php53/
+
+docker run -d -p 8080:80 \
+    -v /home/user/webroot:/var/www \
+    -e PHP_ERROR_REPORTING='E_ALL & ~E_STRICT' \
+    bylexus/apache-php53
+-v [local path]:/var/www maps the container's webroot to a local path
+-p [local port]:80 maps a local port to the container's HTTP port 80
+-e PHP_ERROR_REPORTING=[php error_reporting settings] sets the value of error_reporting in the php.ini files.
+Access apache logs
+
+Apache Logs
+docker logs -f container-id
+
+/etc/php5/apache2/php.ini
+/etc/php5/cli/php.ini
+
+Default:
+- display_errors=ON
+- error_reporting=E_ALL & ~E_DEPRECATED & ~E_NOTICE
+  - change it via -e PHP_ERROR_REPORTING=...
 
 ** image:mysql:5.7.9
 <<<image:mysql>>>
@@ -34254,6 +34353,26 @@ services:
       - "32001:80"
     depends_on:
       - dbsandboxd7
+#+END_EXAMPLE
+
+** image:tatemz/wp-cli
+<<<image:tatemz/wp-cli>>>
+https://github.com/tatemz/docker-wpcli
+
+Refer to wp-cli:search-replace
+
+#+BEGIN_EXAMPLE
+docker-compose run --rm my-wpcli
+docker-compose run --rm my-wpcli post list
+# For some reason, the following only works when run in PowerShell
+# This will replace A with B for the current database without changing it but instead export it.
+docker-compose run --rm my-wpcli search-replace 'http://live.ca' 'http://localhost:9999' --export=/var/www/html/devops/db/export.sql
+
+# There's no way to search/replace multiple strings. Do it one by one
+docker-compose run --rm my-wpcli search-replace 'https://live.ca' 'http://localhost:9999'
+
+# at the end export it
+docker-compose run --rm my-wpcli db export --add-drop-table /var/www/html/devops/db/dump.sql
 #+END_EXAMPLE
 
 ** image:lucee
