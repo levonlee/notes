@@ -1690,6 +1690,14 @@ class SYS_CURL {
 }
 #+END_EXAMPLE
 
+*** Cannot redeclare class
+class_exists is case-insensitive match. Better to restart PHP first.
+#+BEGIN_EXAMPLE
+if (!class_exists('MyClass')) {
+  class MyClass {...}
+}
+#+END_EXAMPLE
+
 ** Http Request, cURL, file_get_contents
 cURL-less method for PHP5 but requires file_get_contents. Some host might disable file_get_contents. Use cURL method
 #+BEGIN_EXAMPLE
@@ -2672,7 +2680,7 @@ For assigning permissions to roles, e.g. enable anonymous for Devel, you have to
 
 If setting is an array, you have to override the whole array. Can't override a key value.
 
-<<<d7:mysql:charset>>>
+*** <<<d7:mysql:charset>>>
 Since Drupal 7.50, Drupal now supports 4 byte UTF-8 with MySQL.
 You will first need to run a custom drush command provided by a [[https://www.drupal.org/project/utf8mb4_convert][utf8mb4_convert module]] to convert
 all Drupal database, tables and fields to charset utf8mb4 and collation utf8mb4_general_ci
@@ -2694,6 +2702,13 @@ If MySQL server doesn't bootup with inno_large_prefix=true, all indexed columns 
 As a quick workaround, you can remove all php:4byte characters.
 
 Refer to mysql:charset for important info
+
+*** Show error
+#+BEGIN_EXAMPLE
+error_reporting(E_ALL);
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+#+END_EXAMPLE
 
 ** URL Alias
 Setup pattern for each node type
@@ -6176,7 +6191,7 @@ https://developer.wordpress.org/reference/functions/get_bloginfo/
 <img src="<?php bloginfo('template_url'); ?>/assets/images/phantomscreens.jpg" alt="" />
 #+END_EXAMPLE
 
-*** get_the_ID() - ID of current item or false
+*** get_the_ID() the_ID() - ID of current item or false
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
@@ -31815,6 +31830,15 @@ Repositories
 - Multiverse: not free pkg
 - Restricted: hardware drivers etc.
 
+Sometimes archive.ubunut.com doesn't respond.. change it to us.archive.ubuntu.com
+#+BEGIN_EXAMPLE
+sed -i 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
+
+# for EOL, change list
+sed -i 's/archive\.ubuntu\.com/old-releases\.ubuntu\.com/g' /etc/apt/sources.list
+sed -i 's/security\.ubuntu\.com/old-releases\.ubuntu\.com/g' /etc/apt/sources.list
+#+END_EXAMPLE
+
 *** Package Management
 **** Debian only =yum=
 ~yum check-update~ only checks if any updates are available for installed packages only.
@@ -31858,6 +31882,9 @@ Find which package owns a file =dpkg -S /etc/crontab=
 
 **** =apt-get= =apt-cache= Ubuntu
 Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
+
+It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network.
+Add a line ~nameserver 8.8.8.8~ to /etc/resolv.conf
 
 Install or upgrade a package :: ~apt-get install openssh-client~
 
@@ -34086,6 +34113,8 @@ php5-pgsql
 docker pull bylexus/apache-php53
 https://hub.docker.com/r/bylexus/apache-php53/
 
+document root /var/www
+
 docker run -d -p 8080:80 \
     -v /home/user/webroot:/var/www \
     -e PHP_ERROR_REPORTING='E_ALL & ~E_STRICT' \
@@ -34093,10 +34122,11 @@ docker run -d -p 8080:80 \
 -v [local path]:/var/www maps the container's webroot to a local path
 -p [local port]:80 maps a local port to the container's HTTP port 80
 -e PHP_ERROR_REPORTING=[php error_reporting settings] sets the value of error_reporting in the php.ini files.
-Access apache logs
 
 Apache Logs
 docker logs -f container-id
+- ErrorLog /dev/stdout
+- CustomLog /dev/stdout combined
 
 /etc/php5/apache2/php.ini
 /etc/php5/cli/php.ini
