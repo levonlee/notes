@@ -5,17 +5,15 @@
 #+TODO: TODO IN-PROGRESS WAITING DONE
 
 * PHP
-** Configuration
-<<<php:config>>>
-
+** Configuration <<<php:config>>>
+*** Basics
 Get php configuration files location ~php --ini~
 Get a php config variable ~grep memory_limit /etc/php.ini~
 
-Apache php.ini :: /etc/php/7.0/apache2/php.ini (better to create .php page with ~<?php phpinfo(); ?>~ to see the config)
-Extra ini files are loaded in /etc/php/7.0/apache2/conf.d. e.g.
-#+BEGIN_EXAMPLE
-20-curl.ini -> /etc/php/7.0/mods-available/curl.ini
-#+END_EXAMPLE
+Possible places
+- 7.x :: /etc/php/7.0/apache2/php.ini, /etc/php/7.0/apache2/conf.d/*.ini
+- 5.6 :: /usr/local/etc/php/php.ini, /usr/local/etc/php/conf.d/*.ini
+- 5.3 :: /etc/php5/apache/php.ini, /etc/php5/cli/php.ini
 
 Changing php.ini requires restarting apache
 
@@ -25,54 +23,6 @@ PHP_INI_USER	Entry can be set in user scripts (like with ini_set()) or in the Wi
 PHP_INI_PERDIR	Entry can be set in php.ini, .htaccess, httpd.conf or .user.ini (since PHP 5.3)
 PHP_INI_SYSTEM	Entry can be set in php.ini or httpd.conf
 PHP_INI_ALL	Entry can be set anywhere
-
-*** <<<php:ini:mail>>>
-http://php.net/manual/en/mail.configuration.php
-
-#+BEGIN_EXAMPLE
-[mail function]
-; For Win32 only.
-; http://php.net/smtp
-SMTP = localhost
-; http://php.net/smtp-port
-smtp_port = 25
-
-; For Win32 only.
-; http://php.net/sendmail-from
-;sendmail_from = me@example.com
-
-; For Unix only.  You may supply arguments as well (default: "sendmail -t -i").
-; http://php.net/sendmail-path
-;sendmail_path =
-
-; Force the addition of the specified parameters to be passed as extra parameters
-; to the sendmail binary. These parameters will always replace the value of
-; the 5th parameter to mail().
-;mail.force_extra_parameters =
-
-; Add X-PHP-Originating-Script: that will include uid of the script followed by the filename
-mail.add_x_header = On
-
-; The path to a log file that will log all mail() calls. Log entries include
-; the full path of the script, line number, To address and headers.
-;mail.log =
-; e.g. change to 
-; mail.log = /var/log/phpmaillog
-
-; Log mail to syslog (Event Log on Windows).
-;mail.log = syslog
-#+END_EXAMPLE
-
-Enable mail.log, make sure /var/log/phpmaillog has www-data:www-data as the apache
-
-You may need to change the sendmail_path to a php wrapper instead of just adding mail.log location
-http://www.matteomattei.com/how-to-log-email-sent-from-php-through-mail-function/
-https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-detect-form-spam
-
-*** php.ini
-**** Basics
-Possible places :: /usr/local/etc/php/php.ini, /usr/local/etc/php/conf.d/*.ini
-  - older version 5.3 /etc/php5/apache/php.ini, /etc/php5/cli/php.ini
 
 The value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ${foo})
 
@@ -133,17 +83,62 @@ session.cookie_lifetime = 2000000
 ;mail.force_extra_parameters =
 #+END_EXAMPLE
 
-**** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]]
-<<<php.ini:prod>>>
+php.ini can also enable module. e.g. to enable module intl
+#+BEGIN_EXAMPLE
+[intl]
+;without specifying anything
+#+END_EXAMPLE
+
+*** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]] <<<php.ini:prod>>>
 error_reporint=E_ALL & ~E_DEPRECATED (22527)
 display_errors=Off
 log_errors=On
 error_log not set go to Apache error log
 
-**** [[https://github.com/php/php-src/blob/master/php.ini-development][dev]]
-<<<php.ini:dev>>>
+*** [[https://github.com/php/php-src/blob/master/php.ini-development][dev]] <<<php.ini:dev>>>
+*** Mail <<<php:ini:mail>>>
+http://php.net/manual/en/mail.configuration.php
 
-**** Error log <<<php:show error>>>
+#+BEGIN_EXAMPLE
+[mail function]
+; For Win32 only.
+; http://php.net/smtp
+SMTP = localhost
+; http://php.net/smtp-port
+smtp_port = 25
+
+; For Win32 only.
+; http://php.net/sendmail-from
+;sendmail_from = me@example.com
+
+; For Unix only.  You may supply arguments as well (default: "sendmail -t -i").
+; http://php.net/sendmail-path
+;sendmail_path =
+
+; Force the addition of the specified parameters to be passed as extra parameters
+; to the sendmail binary. These parameters will always replace the value of
+; the 5th parameter to mail().
+;mail.force_extra_parameters =
+
+; Add X-PHP-Originating-Script: that will include uid of the script followed by the filename
+mail.add_x_header = On
+
+; The path to a log file that will log all mail() calls. Log entries include
+; the full path of the script, line number, To address and headers.
+;mail.log =
+; e.g. change to 
+; mail.log = /var/log/phpmaillog
+
+; Log mail to syslog (Event Log on Windows).
+;mail.log = syslog
+#+END_EXAMPLE
+
+Enable mail.log, make sure /var/log/phpmaillog has www-data:www-data as the apache
+
+You may need to change the sendmail_path to a php wrapper instead of just adding mail.log location
+http://www.matteomattei.com/how-to-log-email-sent-from-php-through-mail-function/
+https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-detect-form-spam
+*** Error log <<<php:show error>>>
 d7:show error wp:show error
 [[http://php.net/manual/en/errorfunc.configuration.php][Runtime configuration for error handling]]
 
@@ -33507,14 +33502,51 @@ ENV TZ=America/Toronto
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 #+END_EXAMPLE
 
-*** Debian (Jessie)
+*** ARG Debian (Jessie)
 When building an image using Debian, a lot of these:
 debconf: delaying package configuration, since apt-utils is not installed
 
+<<<Dockerfile:ARG>>>
+ARG :: defines a var that users can pass at build-time to the builder with the docker build command using the --build-arg <varname>=<value> flag.
+
+ARG acts like ENV but ENV always overrides ARG
+
+#+BEGIN_EXAMPLE
+FROM busybox
+ARG user1
+ARG buildno
+#+END_EXAMPLE
+
+ARG defined before FROM is outside of build stage so it can't be used in any other instruction. Define ARG again after FROM
+#+BEGIN_EXAMPLE
+ARG VERSION=latest
+FROM busybox:$VERSION
+ARG VERSION
+RUN echo $VERSION > image_version
+#+END_EXAMPLE
+
+In this case, a default value is defined
 #+BEGIN_EXAMPLE
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y apt-utils
 #+END_EXAMPLE
+
+**** Predefined ARG variables
+Docker has a set of predefined ARG variables without default values. Use it like without defining ARG in Dockerfile
+#+BEGIN_EXAMPLE
+docker build -t mycontainer . --build-arg <varname>=<value>
+--build-arg HTTP_PROXY=http://user:pass@proxy.lon.example.com
+#+END_EXAMPLE
+
+These predefined ARG variables are not saved in docker history so it's good to use them for passing sensitive info
+HTTP_PROXY
+http_proxy
+HTTPS_PROXY
+https_proxy
+FTP_PROXY
+ftp_proxy
+NO_PROXY
+no_proxy
 
 ** Docker Compose
 #+BEGIN_EXAMPLE
