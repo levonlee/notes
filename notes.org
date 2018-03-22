@@ -5647,6 +5647,22 @@ And include when it's needed using module_load_include('inc', 'modename', 'lib/r
 ** Core Update
 https://codex.wordpress.org/WordPress_Versions
 
+https://codex.wordpress.org/Configuring_Automatic_Background_Updates
+
+wp-config.php
+#+BEGIN_EXAMPLE
+define( 'WP_AUTO_UPDATE_CORE', true );
+#+END_EXAMPLE
+
+Value of true – Development, minor, and major updates are all enabled
+Value of false – Development, minor, and major updates are all disabled
+Value of 'minor' – Minor updates are enabled, development, and major updates are disabled
+
+Fine tune
+add_filter( 'allow_dev_auto_core_updates', '__return_true' );           // Enable development updates 
+add_filter( 'allow_minor_auto_core_updates', '__return_true' );         // Enable minor updates
+add_filter( 'allow_major_auto_core_updates', '__return_true' );         // Enable major updates
+
 ** Migrate database
 At your previous host, access phpMyAdmin.
 Load your WordPress database by clicking the database name in the left hand menu pane.
@@ -6397,6 +6413,21 @@ add_theme_support( 'customize-selective-refresh-widgets' );
 add_theme_support( 'starter-content', $starter_content );
 // https://make.wordpress.org/core/2016/11/30/starter-content-for-themes-in-4-7/
 
+//add_theme_support( 'custom-background' ); // simple enable
+$defaults = array(
+	'default-color'          => '',
+	'default-image'          => '',
+	'default-repeat'         => 'repeat',
+	'default-position-x'     => 'left',
+        'default-position-y'     => 'top',
+        'default-size'           => 'auto',
+	'default-attachment'     => 'scroll',
+	'wp-head-callback'       => '_custom_background_cb',
+	'admin-head-callback'    => '',
+	'admin-preview-callback' => ''
+);
+add_theme_support( 'custom-background', $defaults );
+// https://codex.wordpress.org/Custom_Backgrounds
 #+END_EXAMPLE
 
 *** add_image_size
@@ -6827,6 +6858,32 @@ Refer to wp:filter:the_content wp:filter:tiny_mce_before_init
 
 #+BEGIN_EXAMPLE
 add_filter( 'the_content', 'shortcode_unautop'  );
+#+END_EXAMPLE
+
+*** wp_get_image_editor
+wp_get_image_editor( string $path, array $args = array() )
+Returns WP_Error or [[https://developer.wordpress.org/reference/classes/wp_image_editor/][WP_Image_Editor]]
+#+BEGIN_EXAMPLE
+function image_resize( $file, $max_w, $max_h, $crop = false, $suffix = null, $dest_path = null, $jpeg_quality = 90 ) {
+    _deprecated_function( __FUNCTION__, '3.5.0', 'wp_get_image_editor()' );
+ 
+    $editor = wp_get_image_editor( $file );
+    if ( is_wp_error( $editor ) )
+        return $editor;
+    $editor->set_quality( $jpeg_quality );
+ 
+    $resized = $editor->resize( $max_w, $max_h, $crop );
+    if ( is_wp_error( $resized ) )
+        return $resized;
+ 
+    $dest_file = $editor->generate_filename( $suffix, $dest_path );
+    $saved = $editor->save( $dest_file );
+ 
+    if ( is_wp_error( $saved ) )
+        return $saved;
+ 
+    return $dest_file;
+}
 #+END_EXAMPLE
 
 *** wp_reset_postdata
@@ -8676,6 +8733,10 @@ add_filter('wpseo_json_ld_output', 'bybe_remove_yoast_json', 10, 1);
 #+END_EXAMPLE
 
 *** all-in-one-seo-pack <<<wp:plugin:all-in-one-seo-pack>>>
+**** Release
+2.3.11.2
+2.4.5 :: WP v4.0 to 4.4
+2.4.6.1
 *** Disqus
 If you receive a lot of errors about dsq_sync_forum in Apache logs, it is caused by Disqus tries to sync with WP comments so frequently.
 
@@ -9022,23 +9083,6 @@ find . -type d -not -perm 755 -o -type f -not -perm 644
 find . -type d -not -perm 755 -not -path "./.git/*" -o -type f -not -perm 644 -not -path "./.git/*"
 #+END_EXAMPLE
 
-** Auto update
-https://codex.wordpress.org/Configuring_Automatic_Background_Updates
-
-wp-config.php
-#+BEGIN_EXAMPLE
-define( 'WP_AUTO_UPDATE_CORE', true );
-#+END_EXAMPLE
-
-Value of true – Development, minor, and major updates are all enabled
-Value of false – Development, minor, and major updates are all disabled
-Value of 'minor' – Minor updates are enabled, development, and major updates are disabled
-
-Fine tune
-add_filter( 'allow_dev_auto_core_updates', '__return_true' );           // Enable development updates 
-add_filter( 'allow_minor_auto_core_updates', '__return_true' );         // Enable minor updates
-add_filter( 'allow_major_auto_core_updates', '__return_true' );         // Enable major updates
-
 ** SSL
 #+BEGIN_EXAMPLE
 // Force HTTPS logins and administration
@@ -9113,6 +9157,14 @@ $current_url = home_url(add_query_arg(array(), $wp->request));
 // echo esc_url($current_url);
 ?>
 <link rel="alternate" hreflang="<?php echo get_bloginfo('language'); ?>" href="http://es.example.com/" />
+#+END_EXAMPLE
+
+** PHP 7
+Notice: The called constructor method for WP_Widget is deprecated since version 4.3.0! Use __construct() instead. in /mnt/stor13-wc1-ord1/754452/www.eden-festival.com/web/content/securewp/wp-includes/functions.php on line 3457
+
+Disable Notice logging
+#+BEGIN_EXAMPLE
+add_filter('deprecated_constructor_trigger_error', '__return_false');
 #+END_EXAMPLE
 
 ** UC: Simple HTML page with form submit
