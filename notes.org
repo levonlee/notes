@@ -131,6 +131,9 @@ session.cookie_lifetime = 2000000
 ;mail.force_extra_parameters =
 #+END_EXAMPLE
 
+**** Error log <<<php:show error>>>
+d7:show error wp:show error
+
 ** $_SERVER
 <<<php:$_SERVER>>>
 [[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
@@ -1884,16 +1887,6 @@ If module name is not found in db, most likely the code incorrectly refers to a 
 
 ** Module
 *** Custom Module
-**** Show all errors
-settings.php
-#+BEGIN_EXAMPLE
-error_reporting(E_ALL);
-ini_set('display_errors', TRUE);
-ini_set('display_startup_errors', TRUE);
-$conf['error_level'] = 2;
-// UI > Administration > Configuration > Development > logging > 'All messages'
-#+END_EXAMPLE
-
 **** .info file
 [[https://www.drupal.org/node/542202#files][Instructions]]
 
@@ -2703,11 +2696,13 @@ As a quick workaround, you can remove all php:4byte characters.
 
 Refer to mysql:charset for important info
 
-*** Show error
+*** Show error <<<d7:show error>>>
 #+BEGIN_EXAMPLE
 error_reporting(E_ALL);
 ini_set('display_errors', TRUE);
 ini_set('display_startup_errors', TRUE);
+$conf['error_level'] = 2;
+// UI > Administration > Configuration > Development > logging > 'All messages'
 #+END_EXAMPLE
 
 ** URL Alias
@@ -8962,9 +8957,22 @@ if ( is_wp_error($post) ) {
 }
 #+END_EXAMPLE
 
-In wp-config.php
+<<<wp:show error>>>
+In wp-config.php insert this before /* That's all, stop editing! Happy blogging */
+https://codex.wordpress.org/Debugging_in_WordPress
 #+BEGIN_EXAMPLE
-define( 'WP_DEBUG', true );
+define( 'WP_DEBUG', false );
+//define('WP_DEBUG', true);
+if ( WP_DEBUG ) {
+  @error_reporting( E_ALL ); @ini_set( 'log_errors', true );
+  @ini_set( 'log_errors_max_len', '0' );
+  define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
+  define('WP_DEBUG_DISPLAY', true); // set to false to not display error on HTML pages
+  define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
+  // set to false that JavaScript files are loaded separately for Admin area.
+  define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
+  ini_set('display_errors', 1); // 'stderr' can be set
+}
 #+END_EXAMPLE
 
 Or anywhere
@@ -33989,6 +33997,14 @@ APACHE_DOCUMENT_ROOT, WORKDIR :: /var/www/html
 EXPOSE 80
 CMD ["apache2-foreground"]
 /usr/local/bin/apache2-foreground
+
+APACHE_LOG_DIR :: /var/log/apache2/
+
+/var/log/apache2/error.log => /dev/stderr
+/var/log/apache2/access.log => /dev/stdout
+/var/log/apache2/other_vhosts_access.log => /dev/stdout
+
+copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or copy php-prod.ini to /usr/local/etc/php/conf.d/
 
 If you want to get some from PHP's source, you can extract, use and delete it.
 #+BEGIN_EXAMPLE
