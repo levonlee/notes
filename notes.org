@@ -30311,14 +30311,67 @@ First click testing :: what is the first click if readers want specific content?
 
 ** System Version, Distro
 
-| =uanme -a=          | all info     |
-| =uname -r=          | Kernal       |
-|                     |              |
-| =cat /etc/*release= | Linux distro |
-| =cat /etc/issue=    |              |
-| =cat /proc/version= |              |
-| =lsb_release -a=    | Ubuntu only  |
-|                     |              |
+| =uanme -a=          | all info       |
+| =uname -r=          | Kernal release |
+|                     |                |
+| =cat /etc/*release= | Linux distro   |
+| =cat /etc/issue=    |                |
+| =cat /proc/version= |                |
+| =lsb_release -a=    | Ubuntu only    |
+|                     |                |
+
+- uname -a
+Linux your-server-name 4.4.0-116-generic #140-Ubuntu SMP Mon Feb 12 21:23:04 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+
+-n :: network node host name :: your-server-name
+-r :: kernal release :: 4.4.0-116-generic
+-v :: kernal version :: #140-Ubuntu SMP Mon Feb 12 21:23:04 UTC 2018
+-m :: machine hardware name :: x86_64
+-p :: processor type :: x86_64
+-i :: hardware platform :: x86_64
+-o :: operating system :: GNU/Linux
+
+- lsb_release -a
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 16.04.3 LTS
+Release:        16.04
+Codename:       xenial
+
+lsb_release can be changed by apt-get dist-upgrade. After running it, lsb_release shows 16.04.04 using kernal 4.4.0-116-generic
+
+When Ubuntu is first installed as 16.04.0, kernal generic 4.4 is installed and kernal 4.4.0-x will always be used when 16.04.0 is upgraded to 16.04.x
+
+It looks like if generic kernal version is installed at the first place, it will stay at that version until special action to replace the generic kernal.
+
+*** Upgrade
+- sudo apt-get upgrade (-s for dry run)
+Install newest versions of all packages currently installed on the system from the sources /etc/apt/sources.list
+Packages currently installed with new versions will be retrieved and upgraded. No packages are removed or added. e.g. upgrade Firefox use this.
+New versions of currently installed packages that cannot be upgraded without changing the install status of another package will be left at their current version. An update must be performed first so that apt-get knows that new versions of packages are available.
+
+- sudo apt-get -s dist-upgrade (-s for dry run)
+In addition to performing the function of upgrade, also intelligently handles changing dependencies with new versions of packages; apt-get has a "smart" conflict resolution system, and it will attempt to upgrade the most important packages at the expense of less important ones if necessary. So, dist-upgrade command may remove some packages. The /etc/apt/sources.list file contains a list of locations from which to retrieve desired package files. See also apt_preferences(5) for a mechanism for overriding the general settings for individual packages.
+
+By applying all package upgrades, the latest stable kernel will be pulled in.
+
+- sudo apt-get full-upgrade (Ubuntu 14.04+)
+full-upgrade performs the function of upgrade but may also remove installed packages if that is required in order to resolve a package conflict.
+
+CentOS :: ~sudo yum update~
+Fedora :: sudo dnf update
+
+sudo reboot
+
+*** Upgrade to a newer release
+sudo do-release-upgrade
+
+update-manager-core is needed
+sudo apt-get install update-manager-core
+
+Usually do these 2 first sudo apt-get update, upgrade and dist-grade and then do-release-upgrade
+
+https://www.digitalocean.com/community/tutorials/how-to-upgrade-to-ubuntu-16-04-lts
 
 ** Environment and Shell Variables
 Child processes inherit the environmental variables of the parent process.
@@ -31999,6 +32052,8 @@ List files owned by a package =dpkg -L cron=
 Find which package owns a file =dpkg -S /etc/crontab=
 
 **** =apt-get= =apt-cache= Ubuntu
+Since Ubuntu 16.04, apt is introduced and it's a subset of apt-get and apt-cache
+
 Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
 
 It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network.
@@ -32165,7 +32220,7 @@ Finally, if all else fails, you can attempt to satisfy the dependencies yourself
 
 https://askubuntu.com/questions/140246/how-do-i-resolve-unmet-dependencies-after-adding-a-ppa
 
-**** /boot directory is full
+**** /boot directory is full <<<linux:disk full>>>
 If it's full 100% ~df -h~, all apt commands will not run.
 
 Run this to get installed kernels except the currently running one.
