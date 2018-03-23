@@ -8,7 +8,9 @@
 ** Configuration <<<php:config>>>
 *** Basics
 Get php configuration files location ~php --ini~
-Get a php config variable ~grep memory_limit /etc/php.ini~
+~php -i~ is CLI equivalent to ~phpinfo()~
+Get loaded extensions ~php -r "print_r(get_loaded_extensions());"~
+Get a php config variable ~php -i | grep --color -n "memory_limit"~
 
 Possible places
 - 7.x :: /etc/php/7.0/apache2/php.ini, /etc/php/7.0/apache2/conf.d/*.ini
@@ -83,11 +85,21 @@ session.cookie_lifetime = 2000000
 ;mail.force_extra_parameters =
 #+END_EXAMPLE
 
+*** <<<php.ini:directives>>>
+http://php.net/manual/en/ini.list.php
+
+*** <<<php.ini:extension>>>
 php.ini can also enable module. e.g. to enable module intl
 #+BEGIN_EXAMPLE
-[intl]
-;without specifying anything
+;   extension=modulename
+; For example:
+;
+;   extension=mysqli
+;   extension=/path/to/extension/mysqli.so
 #+END_EXAMPLE
+
+http://php.net/manual/en/extensions.alphabetical.php
+https://pecl.php.net/packages.php
 
 *** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]] <<<php.ini:prod>>>
 error_reporint=E_ALL & ~E_DEPRECATED (22527)
@@ -34118,6 +34130,8 @@ APACHE_LOG_DIR :: /var/log/apache2/
 /var/log/apache2/other_vhosts_access.log => /dev/stdout
 
 copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or copy php-prod.ini to /usr/local/etc/php/conf.d/
+
+docker-php-ext-install uses docker-php-ext-enable which adds docker-php-ext-{ext-name}.ini to /usr/local/etc/php/conf.d/
 
 If you want to get some from PHP's source, you can extract, use and delete it.
 #+BEGIN_EXAMPLE
