@@ -5670,6 +5670,32 @@ add_filter( 'allow_dev_auto_core_updates', '__return_true' );           // Enabl
 add_filter( 'allow_minor_auto_core_updates', '__return_true' );         // Enable minor updates
 add_filter( 'allow_major_auto_core_updates', '__return_true' );         // Enable major updates
 
+*** Manual Update Core
+https://codex.wordpress.org/Upgrading_WordPress
+https://codex.wordpress.org/Upgrading_WordPress_Extended
+- Backup
+- Disable all plugins
+- Delete old wp-includes and wp-admin and replace with new ones
+- Go to new wp-content and copy and replace existing files and directories
+- Replace files at root directory
+- Visit /wp-admin and it will give you a link
+- http://example.com/wp-admin/upgrade.php
+- Update Permalinks and .htaccess from wp-admin UI
+- Install updated Plugins and Themes
+- Reactivate plugins
+
+*** Release
+See if wp-config.php .htaccess files are modified
+3.8.6
+4.9.4
+
+*** TS: update-core.php blank
+Add this to disable WP to check FTP
+#+BEGIN_EXAMPLE
+define('FS_METHOD', 'direct');
+#+END_EXAMPLE
+Refer to wp:ftp https://stackoverflow.com/questions/28598547/wordpress-core-update-fail-4-1-to-4-1-1
+
 ** Migrate database
 At your previous host, access phpMyAdmin.
 Load your WordPress database by clicking the database name in the left hand menu pane.
@@ -6186,6 +6212,16 @@ Success: Exported to 'wordpress_dbase-db72bb5.sql'.
 
 wp db export --add-drop-table /var/www/html/devops/db/dump.sql
 #+END_EXAMPLE
+
+*** Common Issues
+https://make.wordpress.org/cli/handbook/common-issues/#error-cant-connect-to-the-database
+
+Make sure this line is exactly like this and wp-config.php shouldn't run any WP functions but only define constants
+#+BEGIN_EXAMPLE
+require_once(ABSPATH . 'wp-settings.php');
+#+END_EXAMPLE
+
+Latest version of WordPress Docker is PHP 7 and hence has some extensions removed like mysql_connect. Make sure your PHP environment is the same for WordPress and wp-cli.
 
 ** Conditional Tags
 <<<wp:conditional tags>>>
@@ -8091,7 +8127,7 @@ function your_shortcode_cb() {
 noindex, nofollow
 Settings > Reading > toggle Search Engine Visibility - Discourage search engines from indexing this site
 
-** FTP setting
+** FTP setting <<<wp:ftp>>>
 WordPress is usually run using Apache or Nginx user which might not have permission to write files.
 docker container map /host/path/to/html:/var/www
 Setup these in wp-config.php
@@ -8104,7 +8140,7 @@ define('FTP_PASS', 'ftppassword');
 define('FTP_SSL', true);
 #+END_EXAMPLE
 
-https://codex.wordpress.org/Editing_wp-config.php#WordPress_Upgrade_Constanst
+https://codex.wordpress.org/Editing_wp-config.php#WordPress_Upgrade_Constants
 
 ** Ellipsis and trim, strip HTML and PHP tags
 <<<wp:ellipsis>>>
@@ -9620,6 +9656,7 @@ if ( ! is_admin() ) {
 - check WP Core version
 - check proprietary plugins and see which plugins are deprecated. Check PHP and WP version required by plugins.
 - check if there's custom/modified plugins
+- check errors wp:show error
 
 * ColdFusion
 ** cfsetting
