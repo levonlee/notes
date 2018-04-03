@@ -6294,13 +6294,15 @@ wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false 
 *** category <<<wp:t:category>>>
 *** general <<<wp:t:general>>>
 ** Functions
-*** get_bloginfo, Site tagline, Sitetitle
+*** get_bloginfo, bloginfo, Site tagline, Sitetitle
 retrieves info about the current site
 https://developer.wordpress.org/reference/functions/get_bloginfo/
 
 #+BEGIN_EXAMPLE
-<img src="<?php bloginfo('template_url'); ?>/assets/images/phantomscreens.jpg" alt="" />
+<img src="<?php bloginfo('template_url'); ?>/assets/images/a.jpg" alt="" />
 #+END_EXAMPLE
+
+version :: '4.9.4'
 
 *** get_the_ID() the_ID() - ID of current item or false
 *** wp_get_post_terms($post_id, $tax, $args)
@@ -6912,6 +6914,111 @@ https://developer.wordpress.org/reference/functions/wp_nav_menu/
 #+BEGIN_EXAMPLE
 // already echo
 wp_nav_menu( array( 'theme_location' => 'header-menu' ) );
+#+END_EXAMPLE
+
+*** register_widget
+<<<wp:f:register_widget>>> used in wp:action:widgets_init
+
+#+BEGIN_EXAMPLE
+<?php
+// Register and load the widget
+function wpb_load_widget() {
+  register_widget( 'wpb_widget' );
+}
+
+add_action( 'widgets_init', 'wpb_load_widget' );
+
+// Creating the widget 
+class wpb_widget extends WP_Widget {
+
+  function __construct() {
+    // PHP 5.x
+    //$this->WP_Widget( 'dokan-category-menu', 'Dokan: Product Category', $widget_ops );
+
+    parent::__construct(
+
+    // Base ID of your widget
+      'wpb_widget',
+
+      // Widget name will appear in UI
+      __( 'WPBeginner Widget', 'wpb_widget_domain' ),
+
+      // Widget description
+      [ 'description' => __( 'Sample widget based on WPBeginner Tutorial', 'wpb_widget_domain' ), ]
+    );
+  }
+
+  // Creating widget front-end
+
+  public function widget( $args, $instance ) {
+    $title = apply_filters( 'widget_title', $instance['title'] );
+
+    // before and after widget arguments are defined by themes
+    echo $args['before_widget'];
+    if ( ! empty( $title ) ) {
+      echo $args['before_title'] . $title . $args['after_title'];
+    }
+
+    // This is where you run the code and display the output
+    echo __( 'Hello, World!', 'wpb_widget_domain' );
+    echo $args['after_widget'];
+  }
+
+  // Widget Backend 
+  public function form( $instance ) {
+    if ( isset( $instance['title'] ) ) {
+      $title = $instance['title'];
+    } else {
+      $title = __( 'New title', 'wpb_widget_domain' );
+    }
+    // Widget admin form
+    ?>
+    <p>
+      <label
+        for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title:' ); ?></label>
+      <input class="widefat"
+             id="<?php echo $this->get_field_id( 'title' ); ?>"
+             name="<?php echo $this->get_field_name( 'title' ); ?>"
+             type="text" value="<?php echo esc_attr( $title ); ?>"/>
+    </p>
+    <?php
+  }
+
+  // Updating widget replacing old instances with new
+  public function update( $new_instance, $old_instance ) {
+    $instance          = [];
+    $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+
+    return $instance;
+  }
+} // Class wpb_widget ends here
+
+
+class MyNewWidget extends WP_Widget {
+
+	function __construct() {
+		// Instantiate the parent object
+
+	}
+
+	function widget( $args, $instance ) {
+		// Widget output
+	}
+
+	function update( $new_instance, $old_instance ) {
+		// Save widget options
+	}
+
+	function form( $instance ) {
+		// Output admin widget options form
+	}
+}
+
+function myplugin_register_widgets() {
+	register_widget( 'MyNewWidget' );
+}
+
+add_action( 'widgets_init', 'myplugin_register_widgets' );
 #+END_EXAMPLE
 
 *** wpautop
@@ -7932,6 +8039,7 @@ wp:f:add_rewrite_rule
 *** widgets_init
 <<<wp:action:widgets_init>>>
 Refer to wp:filter:sidebars_widgets to modify registered sidebars and their widgets.
+Refer to wp:f:register_widget to create a widget
 #+BEGIN_EXAMPLE
 function lili_widgets_init() {
   $args = array(
@@ -9316,6 +9424,8 @@ Disable Notice logging
 #+BEGIN_EXAMPLE
 add_filter('deprecated_constructor_trigger_error', '__return_false');
 #+END_EXAMPLE
+
+Or fix the code wp:f:register_widget
 
 ** UC: Simple HTML page with form submit
 Create a url path /abc which points to index.html (can't have php files)
@@ -30206,14 +30316,14 @@ Locations on the Display Network where your ad can appear. Examples include rele
 
 Ad Rank = Quality Score x Maximum bid.
 
-Cost per Click (CPC) is determined by max bid + Quality Scors + Ad Rank and compare those against your competitors
+Cost per Click (CPC) is determined by max bid + Quality Score + Ad Rank and compare those against your competitors
 
 Set Max. CPC to = your profit x commission for Google x your conversion rate
 
 $100 x 0.3 x 1% = $.30
 1% conversion rate is based on 1000 views of the page and 10 people buy
 
-Manual CPC means that the each keyword or Ad Group would have the same bid.
+Manual CPC :: each keyword or Ad Group would have the same bid.
 Automatic CPC :: there're some bid strategies under this category. Max CPC cannot be set.
 Enhanced CPC :: relies on Google’s own historical data to help you predict where and when to adjust bids in order to drive the best results.
   - For example, if a campaign’s performance looks promising it will automatically raise bids to ‘capture’ more results (for less money). Similarly, it will also drop bids if necessary to help you save on wasted ad spend if performance starts to slide.
@@ -30227,9 +30337,14 @@ CPC, CPA and CPM are 3 bidding strategies but each one can be further optimized 
 - Device :: although more traffic from mobile but conversion rate is higher on desktop
 - Dayparting
 
-**** Networks
-Search Network
-Display Network :: shows ads on other websites
+**** Networks, Campaign Types
+***** Search Network
+***** Display Network
+Shows ads on other websites
+
+- Keywords
+  - Audience
+  - Content
 
 **** ValueTrack URL parameters
 These parameters can be used in Final URL and Tracking Template. Here's an example of Tracking Template
