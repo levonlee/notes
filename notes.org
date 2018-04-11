@@ -29958,6 +29958,16 @@ Insights
 API : https://developers.google.com/my-business/
 
 ** Google Analytics
+*** document.main
+GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoys.example.com have 2 different cookies.
+
+GA for FireBase is free and limited to track mobile apps.
+GA 360 is a paid service that includes a Service Level Agreement (SLA) that supports higher hit volumes.
+
+10 million hits per month per property
+500 hits per session for legacy tracking library (ga.js)
+200,000 hits per user per day, 500 hits per session (universal analytics)
+
 *** Views, Filters, Segments
 Under Admin, you can build Views. Views can have Filters. Views collect data when they are created.
 Changes on Views and Filters will affect future data only.
@@ -29981,6 +29991,8 @@ In order to show only traffic that are on a set of pages, you can:
   ○ Create a new View with Admin > Property > View > Filter 
   ○ You have to wait 24 hours to let the stats to be recorded from then
   ○ You can't see the previous stats
+
+Filters are account-level. If filters are changed on View level, they are also changed on account-level.
 
 You can refer to this for constructing your ga:regex in Admin > Property > View > Filter or the normal filter.
 
@@ -30018,12 +30030,20 @@ Each cell shows the value in the corresponding metric column that also belong to
 
 e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country.
 
+**** Custom dimensions and metrics
+https://support.google.com/analytics/answer/2709828
+Allow you to combine Analytics data with non-Analytics data, e.g. CRM data. For example:
+
+- If you store the gender of signed-in users in a CRM system, you could combine this information with your Analytics data to see Pageviews by gender.
+- If you're a game developer, metrics like "level completions" or "high score" may be more relevant to you than pre-defined metrics like Screenviews. By tracking this data with custom metrics, you can track progress against your most important metrics in flexible and easy-to-read custom reports.
+Custom dimensions can appear as primary dimensions in Custom Reports. You can also use them as Segments and secondary dimensions in standard reports.
+
 *** Bounce
 A bounce is counted when there's only one pageview in one user session
 
 *** Audience
 **** User, New User, Sessions
-User :: The total number of users for the requested time period. Long time cookie.
+User (cid, client id) :: The total number of users for the requested time period. Long time cookie. Same browser and same device.
 
 New User :: The number of users whose session was marked as a first-time session.
 
@@ -30088,6 +30108,12 @@ Compare in
 <<<ga:channel>>>
 Channel is the traffic source :: organic search, direct, referral, social, cpc, email, display.
 
+You can change the Default Channel Grouping :: Admin > Property > View > Channel Settings > Channel Grouping > Default Channel Grouping
+Or add a custom channel grouping :: Admin > Property > View > Custom Channel Grouping
+#+BEGIN_EXAMPLE
+You want to define a channel to include traffic from a campaign containing the term January (e.g., January1, 2ndJanuary, January). Instead of specifying the rule as January (which will only return January), enter it as .*January.* 
+#+END_EXAMPLE
+
 Medium is more like channels, and source provides more specific about the medium.
 
 Source: Every referral to a web site has an origin, or source. Possible sources include: “google” (the name of a search engine), “facebook.com” (the name of a referring site), “spring_newsletter” (the name of one of your newsletters), and “direct” (users that typed your URL directly into their browser, or who had bookmarked your site).
@@ -30130,6 +30156,37 @@ For some dimension, you can filter by Device type on the top.
 How users navigate between pages
 content :: Speed, Search, Events
 
+**** Content Grouping
+Admin > Property > View > Content Grouping
+
+e.g. Webpages have
+Men
+- Shirts
+- Pants
+- Accessories
+
+Women
+- Tops
+- Slacks
+- Skirts & Dresses
+- Accessories
+
+Clothing, Men, and Women are options in the Primary Dimension > Content Grouping menu.
+When you select Clothing as the primary dimension, Men and Women are the dimension values in the first column of the report table.
+When you select Men as the primary dimension, Shirts, Pants, and Accessories are the dimension values in the first column of the table.
+For each dimension value (Content Group), you see behavioral metrics like Pageviews and Bounce Rate.
+
+#+BEGIN_EXAMPLE
+​gtag('config', 'GA_TRACKING_NUMBER', {
+  'content_group<Index Number>': '<Group Name>'
+}
+// example
+
+​gtag('config', 'GA_TRACKING_NUMBER', {
+  'content_group1': 'shoes'
+}
+#+END_EXAMPLE
+
 *** Conversions
 Goals, Ecommerce, Multi-Channel Funnels, Attribution
 
@@ -30166,12 +30223,14 @@ http://www.metricmogul.co.uk/5-simple-differences-between-goals-and-events-in-go
 
 Types of a Goal
 - Desitnation :: the only type that is possible to track funnels
-- Duration
+- Duration :: Sessions that last a specific amount of time or longer
 - Pages/Screens per session
 - Event
 - Smart Goal
 
 [[https://support.google.com/analytics/answer/1116091#matchTypes][Destination Goal match types: begin with, equal to & RegEx]]
+
+A conversion is counted once per session per goal.
 
 Events are good for
 - Downloaded file (shows which pages have the pdf file link)
@@ -30326,6 +30385,9 @@ gtag('config', 'GA_TRACKING_ID', {
   'page_path': '/ga_goal/goal1/goal1_variant1.html'
 });
 #+END_EXAMPLE
+
+
+
 
 *** Scroll (send event)
 Reporting > Behavior > Events
