@@ -29958,12 +29958,15 @@ Insights
 API : https://developers.google.com/my-business/
 
 ** Google Analytics
-*** document.main
-GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoys.example.com have 2 different cookies.
+*** Limits and Versions
+GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoys.example.com have 2 different cookies. Javascript document.domain
 
 GA for FireBase is free and limited to track mobile apps.
-GA 360 is a paid service that includes a Service Level Agreement (SLA) that supports higher hit volumes.
 
+GA 360 is a paid service that includes a Service Level Agreement (SLA) that supports higher hit volumes.
+- Roll-up reporting aggregates data from multiple Analytics properties and lets you see that data together in the same reports. e.g. website and mobile app stats
+
+**** Hit limits
 10 million hits per month per property
 500 hits per session for legacy tracking library (ga.js)
 200,000 hits per user per day, 500 hits per session (universal analytics)
@@ -29979,6 +29982,7 @@ Up to 25 views per property
 
 You should always have a View without Filters to capture all data.
 
+**** Filter
 A Filter is to filter out the types of traffic you don't want and save the data to your View.
 - Filter might take 24 hours to activate
 - Filter will limit the stats data from the moment it is fully activated
@@ -30024,11 +30028,36 @@ Setting Field 1 and 2 are required, Override Output Field
 Custom Filter
 Include, Custom Field 1, utm_source=[^&]*&utm_medium=email
 
+**** System Filters
+https://support.google.com/analytics/answer/1034380
+
+**** Include domain names (Custom Filter)
+Filter Type: Custom filter > Advanced
+Field A: Hostname Extract A: (.*)
+Field B: Request URI Extract: (.*)
+Output To: Request URI Constructor: $A1$B1
+
 *** Dimensions vs Metrics
 <<<ga:dimensions>>> <<<ga:metrics>>>
 Each cell shows the value in the corresponding metric column that also belong to the corresponding dimension row.
 
 e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country.
+
+You can see stats like which dimension value has the highest metric?
+
+Filters are applied to dimensions.
+
+Dimension can have one of these levels
+- Hit
+- Session
+- User
+- Product :: value is applied to the product for which it has been set (Enhanced Ecommerce only).
+
+Metric can only have Hit or Product level.
+
+[[https://developers.google.com/analytics/devguides/reporting/core/dimsmets][Dimensions & Metrics Explorer]] [[https://support.google.com/analytics/answer/2709828][Custom dimensions & metrics]]
+
+Metrics can be set as KPI's to indicate macro or micro conversions.
 
 **** Custom dimensions and metrics
 https://support.google.com/analytics/answer/2709828
@@ -30038,11 +30067,18 @@ Allow you to combine Analytics data with non-Analytics data, e.g. CRM data. For 
 - If you're a game developer, metrics like "level completions" or "high score" may be more relevant to you than pre-defined metrics like Screenviews. By tracking this data with custom metrics, you can track progress against your most important metrics in flexible and easy-to-read custom reports.
 Custom dimensions can appear as primary dimensions in Custom Reports. You can also use them as Segments and secondary dimensions in standard reports.
 
+Up to 20 custom dimensions and 20 custom metrics.
+
+**** Calculated Metric
+Admin > Property > View > Calculated Metrics
+
 *** Bounce
 A bounce is counted when there's only one pageview in one user session
 
 *** Audience
-**** User, New User, Sessions
+**** User, New User, Session
+Tracking id :: UA-12315-12 (tid) where account id is 12315 
+Property id :: UA-12315-12 is the same as the tracking id.
 User (cid, client id) :: The total number of users for the requested time period. Long time cookie. Same browser and same device.
 
 New User :: The number of users whose session was marked as a first-time session.
@@ -30063,6 +30099,52 @@ _ga or _gid cookie example
 #+BEGIN_EXAMPLE
 GA1.2.2033959936.1513880474
 2033959936.1513880474 is the client id
+#+END_EXAMPLE
+
+By default, gtag.js has automatic cookie domain configuration enabled. When enabled, automatic cookie domain configuration sets the _ga cookie to the highest level domain it can. For example, if your website address is blog.example.co.uk, gtag.js will set the cookie domain to example.co.uk. If gtag.js detects that you're running a server locally (e.g. localhost), it automatically sets the cookie_domain to 'none'.
+
+To turn off automatic cookie domain configuration, update the config for your property to specify a value for the cookie_domain parameter:
+#+BEGIN_EXAMPLE
+gtag('config', 'GA_TRACKING_ID', {
+  'cookie_domain': 'blog.example.co.uk'
+});
+#+END_EXAMPLE
+
+Cross-domain tracking allows you to see sessions from 2 sites as single session. Also called site linking.
+This code will append the linker parameter to any links on the page that point to the target domain 'example.com':
+#+BEGIN_EXAMPLE
+gtag('config', 'GA_TRACKING_ID', {
+  'linker': {
+    'domains': ['example.com']
+  }
+});
+#+END_EXAMPLE
+If the destination domain has been configured to automatically link domains, it will accept linker parameters by default.
+
+If the destination domain is not configured to automatically link domains, you can instruct the destination page to look for linker parameters by setting the accept_incoming property of the linker parameter to true on the destination property's config:
+#+BEGIN_EXAMPLE
+gtag('config', 'GA_TRACKING_ID', {
+  'linker': {
+    'accept_incoming': true
+  }
+});
+#+END_EXAMPLE
+
+Single snippet on all domains
+#+BEGIN_EXAMPLE
+// on example-1.com
+gtag('config', 'GA_TRACKING_ID_1', {
+  'linker': {
+    'domains': ['example-1.com', 'example-2.com']
+  }
+});
+
+// on example-2.com
+gtag('config', 'GA_TRACKING_ID_2', {
+  'linker': {
+    'domains': ['example-1.com', 'example-2.com']
+  }
+});
 #+END_EXAMPLE
 
 **** Interests
@@ -30225,7 +30307,7 @@ Types of a Goal
 - Desitnation :: the only type that is possible to track funnels
 - Duration :: Sessions that last a specific amount of time or longer
 - Pages/Screens per session
-- Event
+- Event :: multiple events in one session but event goal is counted as one
 - Smart Goal
 
 [[https://support.google.com/analytics/answer/1116091#matchTypes][Destination Goal match types: begin with, equal to & RegEx]]
@@ -30247,6 +30329,8 @@ Say you have 2 segments: All Users and New Users. Metrics inside each type of re
 
 Say you want to use Segment to only include user sessions that have been to a url.
 Go to the newly created Segment, you will still see those user sessions have been to other pages.
+
+Ideas :: https://searchenginewatch.com/sew/how-to/2268458/16-secret-google-analytics-advanced-segments-worth-their-weight-in-gold
 
 **** Converter segment
 <<<ga:segment:converter>>> refer to ga:goal
@@ -30285,8 +30369,77 @@ Previous version
 
 Have to use certain parameters for certain business type. [[https://support.google.com/adwords/answer/7305793][Here're the list of parameters]].
 
-*** Regular Expressions <<<ga:regex>>>
-https://support.google.com/analytics/answer/1034324?hl=en
+**** Send to multiple property id's
+#+BEGIN_EXAMPLE
+ga('create', 'UA-XXXXX-Y', 'auto');
+ga('create', 'UA-XXXXX-Z', 'auto', 'clientTracker');
+
+ga('send', 'pageview');
+ga('clientTracker.send', 'pageview');
+#+END_EXAMPLE
+
+gtag.js
+#+BEGIN_EXAMPLE
+gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'group1' });
+gtag('config', 'GA-TRACKING_ID-2', { 'groups': 'group1' });
+
+// Routes to 'GA-TRACKING_ID-1' and 'GA-TRACKING_ID-2'
+gtag('event', 'sign_in', { 'send_to': 'group1' });
+
+// The following two lines are equivalent:
+gtag('config', 'GA-TRACKING_ID-1');
+gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'default' });
+#+END_EXAMPLE
+
+Full example :: send to a specific property instead of groups
+#+BEGIN_EXAMPLE
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA-TRACKING_ID-1">
+</script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  // Global configs
+  gtag('config', 'GA-TRACKING_ID-1');
+  gtag('config', 'AW-CONVERSION_ID');
+  gtag('config', 'DC-FLOODLIGHT_ID');
+
+  // Track AdWords conversions
+  gtag('event', 'conversion', {
+      'send_to': 'AW-CONVERSION_ID/AbC-D_efG-h12_34-567',
+      'value': 1.0,
+      'currency': 'USD'
+  });
+
+  // Track Floodlight conversions
+  gtag('event', 'conversion', {
+    'allow_custom_scripts': true,
+    'send_to': 'DC-FLOODLIGHT_ID/actions/locat304+standard'
+  });
+
+  // route ecommerce add_to_cart event to AdWords and Analytics
+  gtag('event', 'add_to_cart', {
+    'send_to': [
+      'GA-TRACKING_ID-1',
+      'AW-CONVERSION_ID'
+    ],
+    'items': [
+      'id': 'U1234',
+      'ecomm_prodid': 'U1234',
+      'name': 'Argyle Funky Winklepickers',
+      'list': 'Search Results',
+      'category': 'Footwear',
+      'quantity': 1,
+      'ecomm_totalvalue': 123.45,
+      'price': 123.45
+    ]
+  });
+</script>
+#+END_EXAMPLE
+
+*** Regular Expressions
+<<<ga:regex>>> https://support.google.com/analytics/answer/1034324?hl=en
 
 Use ~\~ to escape. Need to escape the following metacharacters
 . ? + * | ^ $ ( ) [ ] -
@@ -30300,8 +30453,10 @@ http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
 Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI
 
 http://www.analyticsmarket.com/freetools/regex-tester
-
 http://www.lunametrics.com/regex-book/Regular-Expressions-Google-Analytics.pdf
+
+**** Include multiple words but order does not matter
+word1+word2+word3
 
 *** ga Object Methods
 
@@ -30386,9 +30541,6 @@ gtag('config', 'GA_TRACKING_ID', {
 });
 #+END_EXAMPLE
 
-
-
-
 *** Scroll (send event)
 Reporting > Behavior > Events
 Category > Action > Label > Value
@@ -30471,6 +30623,62 @@ $(window).bind('beforeunload', function() {sendGAreq();});
 </script>
 #+END_EXAMPLE
 
+*** Send dimension and metrics
+
+Configure and send custom dimensions
+#+BEGIN_EXAMPLE
+// Configures custom dimension<Index> to use the custom parameter
+// 'dimension_name' for 'GA_TRACKING_ID', where <Index> is a number
+// representing the index of the custom dimension.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'dimension<Index>': 'dimension_name'}
+});
+
+// Sends the custom dimension to Google Analytics.
+gtag('event', 'any_event_name', {'dimension_name': dimension_value});
+
+// Maps 'dimension2' to 'age'.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'dimension2': 'age'}
+});
+
+// Sends an event that passes 'age' as a parameter.
+gtag('event', 'age_dimension', {'age': 12});
+#+END_EXAMPLE
+
+Configure and send custom metrics
+#+BEGIN_EXAMPLE
+// Configures custom metric<Index> to use the custom parameter
+// 'metric_name' for GA_TRACKING_ID, where <Index> is a number
+// representing the index of the custom metric.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'metric<Index>': 'metric_name'}
+});
+
+// Sends the custom dimension to Google Analytics.
+gtag('event', 'any_event_name', {'metric_name': metric_value});
+
+// Maps 'metric5' to 'avg_page_load_time'.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'metric5': 'avg_page_load_time'}
+});
+
+// Sends an event that passes 'avg_page_load_time' as a parameter.
+gtag('event', 'load_time_metric', {'avg_page_load_time': 1});
+#+END_EXAMPLE
+
+Configure and send both custom dimensions and custom metrics
+#+BEGIN_EXAMPLE
+gtag('config', 'GA_TRACKING_ID', {
+   'custom_map': {
+     'dimension2': 'age',
+     'metric5': 'avg_page_load_time'
+   }
+});
+
+gtag('event', 'foo', {'age': 12, 'avg_page_load_time': 1});
+#+END_EXAMPLE
+
 *** Campaign URL Builder
 https://ga-dev-tools.appspot.com/campaign-url-builder/
 
@@ -30508,6 +30716,11 @@ A gallery may contain Custom Reports, Dashboard, Segments, etc.
 
 Imported gallery will show in Admin > View > Share Assets
 
+*** Email tracking, Measurement Protocol
+The Google Analytics Measurement Protocol allows developers to make HTTP requests to send raw user interaction data directly to Google Analytics servers.
+https://developers.google.com/analytics/devguides/collection/protocol/v1/email
+
+*** Google Analytis Core Reporting API
 *** Checklist
 - Audience > Audiences > enable Demographics and Interest Reports
 - Admin > Property Settings > 
