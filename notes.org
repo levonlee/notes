@@ -30059,6 +30059,8 @@ Metric can only have Hit or Product level.
 
 Metrics can be set as KPI's to indicate macro or micro conversions.
 
+Custom Dimension can be used as secondary dimension in UI but as primary in Custom Reports.
+
 **** Custom dimensions and metrics
 https://support.google.com/analytics/answer/2709828
 Allow you to combine Analytics data with non-Analytics data, e.g. CRM data. For example:
@@ -30082,8 +30084,6 @@ Property id :: UA-12315-12 is the same as the tracking id.
 User (cid, client id) :: The total number of users for the requested time period. Long time cookie. Same browser and same device.
 
 New User :: The number of users whose session was marked as a first-time session.
-
-Active user :: an user that has a session in the last n days. Also called site reach, stickiness.
 
 Sessions :: Short time cookie. Each session from a unique user will get its own incremental index starting from 1 for the first session. Subsequent sessions do not change previous session indices. For example, if a user has 4 sessions to the website, sessionCount for that user will have 4 distinct values of ‘1’ through ‘4’.
 
@@ -30147,6 +30147,24 @@ gtag('config', 'GA_TRACKING_ID_2', {
 });
 #+END_EXAMPLE
 
+**** Active user
+Users that initiate session(s) in the last n days. Also called site reach, stickiness.
+7-Day Active Users: the number of unique users who initiated sessions on your site or app from January 22 through January 28 (the last 7 days of your date range).
+
+**** Cohort Analysis
+Cohort analysis helps you understand the behavior of component groups of users apart from your user population as a whole. Examples of how you can use cohort analysis include to see how the behavior and performance of individual.
+
+e.g. Group an audience based on their acquisition date and then compare behavior metrics over a series of weeks
+
+Cohort type :: the only option now is Acquisition Date :: the first time a user is recognized as interacting with your content. When selected in the Cohort Analysis report, the cohorts are grouped based on when users started their first sessions.
+
+Say metric is Pageviews and Date Range is 7 days. Today's April 12
+For users visited the website for the first time on April 12-7 = April 5, they also visit n PageViews on Day 1 the next day April 6.
+
+Metric User Retention :: The number of users in the cohort who returned in the Nth time period (day, week, month) divided by the total number of users in the cohort.
+
+e.g. 3.02% of the users who visited the website for the first time on April 5, also visit the website on the next day, April 6 (Day 1).
+
 **** Interests
 <<<ga:audience:interests>>>
 Affinity
@@ -30167,6 +30185,16 @@ If there are more than 1000 page/screen URLs for your site/app, then Analytics d
 - Users who completed a transaction: This is already configured to include any user with more than zero transactions.
 
 A segment can be imported as an Audience
+
+AdWords Search Remarketing 
+- requires 1000+ unique users (cookies). 
+- GA's demographics dimensions cannot be used for AdWords Search Remarketing.
+
+AdWords Display Remarketing
+- requires 100+ unique users.
+
+https://support.google.com/analytics/answer/2611268
+https://support.google.com/adwords/answer/6178664
 
 **** User Explorer
 Instead of aggregating users or user sessions, this shows each user/session's
@@ -30344,7 +30372,8 @@ The most recent version is gtag.js (Global site tag). [[https://developers.googl
 Previous version
   - analytics.js. [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
 **** Custom parameters for dynamic remarketing
-<<<ga:dynamic remarketing>>> https://support.google.com/adwords/answer/3103357
+<<<ga:dynamic remarketing>>>
+https://support.google.com/adwords/answer/3103357
 
 #+BEGIN_EXAMPLE
 <!-- Global Site Tag (gtag.js) - Google AdWords: 123456789 -->
@@ -31003,7 +31032,10 @@ Downloads of your app
   - Languages
   - IP exclusions
   - Content exclusions
-  - Dynamic ads :: use Data feed to show different ads based on audience who have visited certain webpages on your website with custom parameters tagged. Refer to ga:dynamic remarketing for tagging. [[https://support.google.com/adwords/answer/6053288][Create data feed]]. [[https://support.google.com/adwords/answer/3265299][Create responsive ads]]. [[https://support.google.com/adwords/answer/6077124][Full guide on Dynamic remarketing]].
+  - Dynamic ads :: use Data feed to show different ads based on audience who have visited certain webpages on your website with custom parameters tagged. Refer to ga:dynamic remarketing for tagging.
+    - [[https://support.google.com/adwords/answer/6053288][Create data feed]].
+    - [[https://support.google.com/adwords/answer/3265299][Create responsive ads]].
+    - [[https://support.google.com/adwords/answer/6077124][Full guide on Dynamic remarketing]].
 
 **** Ad Formats in networks
 https://support.google.com/adwords/answer/1722124
@@ -31150,6 +31182,61 @@ A view-through conversion is a new type of conversion tracking within Google whi
 Check conversion tracking tag :: https://support.google.com/adwords/answer/1722021
 
 [[https://support.google.com/adwords/answer/6270625][Conversion tracking data (columns)]]
+
+***** Phone
+Call Extension or call-only ad, enable Call Reporting and you have to change "count conversions as" to a new Conversion tracking instead of the default "Calls from ads"
+
+https://support.google.com/adwords/answer/6095882
+
+Measurement > Conversions > Add new Phone calls - Calls from ads using call extensions or call-only ads
+
+After that, go back to your existing call extension or call-only ad or when you create them from now on
+Select the conversion action you just created as Count conversion as
+
+****** Calls to a phone number on your website
+https://support.google.com/adwords/answer/6095883
+Set up a conversion action as usual :: Measurement > Conversions > Add new Phone calls - Calls to a phone number on your website
+
+It prompts the phone snippet based on your option. Sample in header
+#+BEGIN_EXAMPLE
+gtag('config', 'AW-CONVERSION_ID');
+
+<script>
+  gtag('config', 'AW-CONVERSION_ID/CONVERSION_LABEL', {
+    'phone_conversion_number': '1-650-555-5555'
+  });
+</script>
+#+END_EXAMPLE
+
+If you select "Don't enter a number"
+#+BEGIN_EXAMPLE
+<script>
+  gtag('config', 'AW-CONVERSION_ID/CONVERSION_LABEL', {
+    'phone_conversion_number': '1-650-555-5555',
+    'phone_conversion_callback':function(formatted_number, mobile_number) {
+    // formatted_number: number to display, in the same format as the 
+    //     number passed to 'phone_conversion_number'. 
+    //     (in this case, '1-650-555-5555')
+    // mobile_number: number formatted for use in a clickable link
+    //      with tel:-URI (in this case, '+16505555555')
+    var e = document.getElementById("number");
+    e.innerHTML = "";
+    // e.href = "tel:" + mobile_number;
+    e.appendChild(document.createTextNode(formatted_number));
+    };,
+    'phone_conversion_options':timeout=20;cache=false'
+  });
+</script>
+#+END_EXAMPLE
+
+Adding this will get a telephone number and replace the contents of all spans of the given class
+#+BEGIN_EXAMPLE
+phone_conversion_css_class: 'number'
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<span class="number">1-800-123-4567</span>
+#+END_EXAMPLE
 
 **** Reports
 
@@ -45120,6 +45207,41 @@ if (!$mail->Send()) {
 else {
   return 'success';
 }
+#+END_EXAMPLE
+
+*** DMARC, SPF, DKIM
+Domain-based Message Authentication, Reporting, and Conformance.
+
+It serves as a method of authentication for your brand, alongside Sender Policy Framework (SPF) and DomainKeys Identified Mail (DKIM).
+
+What sets DMARC apart from the other two authentication methods is its reporting capability.
+
+DMARC is an email authentication technology that protects a domain from being used in phishing and spoofing attempts by using a signing policy to define how receiving inbox providers should handle messages that fail an authentication check. DMARC also allows for a reporting mechanism in which inbox providers can send reports on email that appears to be sent from a certain domain back to the domain owner.
+
+Inbox providers that support DMARC will attempt to validate both DKIM and SPF, and depending on the outcome of those checks, will look to the sending domain's DMARC policy on how to handle emails that fail authentication.
+
+If the inbox provider is able to successfully validate either DKIM or SPF, the email will continue on its normal path. If the message fails both DKIM and SPF authentication checks, however, the inbox provider will enforce the sender’s DMARC policy, which specifies how the email should be handled if it fails authentication and where to send any reports.
+
+DMARC has three levels of policy:
+
+None: If the policy is set to none, the receiving inbox provider monitors and reports on metrics.
+Quarantine: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder.
+Reject: If the policy is set to reject, the inbox provider will block any message that fails authentication.
+
+https://sendgrid.com/blog/dmarc-domain-based-message-authentication-reporting-conformance/
+
+*** Preview text
+Preview text is the hidden text that is the first element in the body and it should be at least 90 characters long. Img alt attribute values.
+
+#+BEGIN_EXAMPLE
+<div style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+  Insert preview text here.
+</div>
+
+<!-- Insert &zwnj;&nbsp; hack after hidden preview text. 10 characters -->
+<div style="display: none; max-height: 0px; overflow: hidden;">
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
 #+END_EXAMPLE
 
 *** Send test HTML email for free
