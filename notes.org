@@ -18053,7 +18053,7 @@ var iOS = parseFloat(
 #+END_EXAMPLE
 
 * jQuery
-** Version, Closure and document ready
+** Version, Closure, document ready
 #+BEGIN_EXAMPLE
 jQuery.fn.jquery
 #+END_EXAMPLE
@@ -18072,6 +18072,56 @@ Document ready shorthand
 $(function(){
 
 });
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<script src="other_lib.js"></script>
+<script src="jquery.js"></script>
+<script>
+$.noConflict();
+jQuery( document ).ready(function( $ ) {
+  // Code that uses jQuery's $ can follow here.
+});
+// Code that uses other library's $ can follow here.
+</script>
+
+jQuery.noConflict();
+(function( $ ) {
+  $(function() {
+    // More code using $ as alias to jQuery
+  });
+})(jQuery);
+ 
+// Other code using $ as an alias to the other library
+#+END_EXAMPLE
+
+*** jQuery.noConflict
+Return control of $ back to the other library with a call to $.noConflict(). Old references of $ are saved during jQuery initialization; noConflict() simply restores them.
+
+#+BEGIN_EXAMPLE
+var j = jQuery.noConflict(); // different alias
+ 
+// Do something with jQuery
+j( "div p" ).hide();
+ 
+// Do something with another library's $()
+$( "content" ).style.display = "none";
+#+END_EXAMPLE
+
+Completely move jQuery to a new namespace in another object.
+#+BEGIN_EXAMPLE
+var dom = {};
+dom.query = jQuery.noConflict( true );
+// If for some reason two versions of jQuery are loaded (which is not recommended), calling $.noConflict( true ) from the second version will return the globally scoped jQuery variables to those of the first version.
+
+// Do something with the new jQuery
+dom.query( "div p" ).hide();
+ 
+// Do something with another library's $()
+$( "content" ).style.display = "none";
+ 
+// Do something with another version of jQuery
+jQuery( "div > p" ).hide();
 #+END_EXAMPLE
 
 ** Ajax
@@ -30585,7 +30635,7 @@ gtag('config', 'GA_TRACKING_ID', {
 });
 #+END_EXAMPLE
 
-*** Scroll (send event)
+*** Send event - play, call, scroll
 Reporting > Behavior > Events
 Category > Action > Label > Value
 
@@ -30605,6 +30655,14 @@ gtag('event', <action>, {
 gtag('event', 'play', {
   'event_category': 'Videos',
   'event_label': 'Fall Campaign'
+});
+
+$("a[href^='tel:+18881234567']").click(function(event){
+    gtag('event', 'click', {
+      'event_category': 'phone call',
+      'event_label': '1 (888) 123-4567',
+      'value': 100
+    })
 });
 #+END_EXAMPLE
 
