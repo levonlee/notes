@@ -6200,12 +6200,27 @@ wp plugin uninstall Plugin_name
 *** Theme
 wp theme status
 
-*** Search db
+*** db search
 https://developer.wordpress.org/cli/commands/db/search/
 #+BEGIN_EXAMPLE
 wp db search 'your search string'
 # regex
 wp db search 'https?://' --regex --stats
+#+END_EXAMPLE
+
+*** db export
+https://developer.wordpress.org/cli/commands/db/export/
+#+BEGIN_EXAMPLE
+# Export database with drop query included
+$ wp db export --add-drop-table
+Success: Exported to 'wordpress_dbase-db72bb5.sql'.
+
+wp db export --add-drop-table /var/www/html/devops/db/dump.sql
+#+END_EXAMPLE
+
+*** db size
+#+BEGIN_EXAMPLE
+wp db size --tables --size_format=mb
 #+END_EXAMPLE
 
 *** Search and replace
@@ -6238,16 +6253,6 @@ if $(wp --url=http://example.com core is-installed --network); then
 else
     wp search-replace 'http://example.com' 'http://example.dev' --recurse-objects --skip-columns=guid --skip-tables=wp_users
 fi
-#+END_EXAMPLE
-
-*** db export
-https://developer.wordpress.org/cli/commands/db/export/
-#+BEGIN_EXAMPLE
-# Export database with drop query included
-$ wp db export --add-drop-table
-Success: Exported to 'wordpress_dbase-db72bb5.sql'.
-
-wp db export --add-drop-table /var/www/html/devops/db/dump.sql
 #+END_EXAMPLE
 
 *** Common Issues
@@ -34730,7 +34735,9 @@ List all images :: ~docker images~
 List all dangling images which can be removed :: ~docker images -f "dangling=true"~
 
 Remove all dangling images (-q is to return IDs only)
-~docker rmi $(docker images -f "dangling=true" -q --no-trunc)~
+#+BEGIN_EXAMPLE
+docker rmi $(docker images -f "dangling=true" -q --no-trunc)
+#+END_EXAMPLE
 
 Remove all none images
 ~docker rmi $(docker images | grep "none" | awk '/ / { print $3 }')~
@@ -34779,7 +34786,7 @@ Dockerfile and resource are in different folders
 
 Build a lot of times while testing a Dockerfile
 #+BEGIN_EXAMPLE
-docker build --force-rm=true --no-cache==true -t my-image-name .
+docker build --rm --force-rm --no-cache -t my-image-name .
 #+END_EXAMPLE
 
 ** run
