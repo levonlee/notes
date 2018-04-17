@@ -32067,7 +32067,7 @@ Host bitbucket.org
 #+END_EXAMPLE
 
 **** Port Forwarding via a single intermediate host
-In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, ~sudo systemctl reload sshd~, ~sudo ufw allow 443/tcp~
+In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, linux:ssh:restart, ~sudo ufw allow 443/tcp~
 
 Check if it connects from local ~ssh -p 443 my.server.com~
 
@@ -32091,6 +32091,20 @@ ssh -p 10022 target_server_user@localhost
 scp -P 10022 localhost:/target/server/path/ /local/path/
 rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
 #+END_EXAMPLE
+
+-L [bind_address:]port:host:hostport :: specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine. Summary :: localhost:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
+
+-R [bind_address:]port:host:hostport :: Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine. 
+Summary
+~port~ my.server.com (access from internet) > -p 443 user@my.server.com (SSH) > from remote forward to host:hostport (at local). 
+e.g. people on the internet my.server.com:9000 to access your localhost:8001
+ssh -R 9000:localhost:8001 -p 443 user@my.server.com
+In order to use -R, add this line to /etc/ssh/sshd_config then linux:ssh:restart
+#+BEGIN_EXAMPLE
+GatewayPorts yes
+#+END_EXAMPLE
+
+-g :: allows remote hosts to connect to local forwarded ports.
 
 **** SOCKS server
 Run a SOCKS server on a given port, and set applications to use SOCKS, either natively or forcibly.
@@ -32530,7 +32544,7 @@ Check file permissions wp:check file permissions
 <<<linux:grep>>>
 
 #+BEGIN_EXAMPLE
-grep --color -HRi "google.com" /root/dir
+grep --color -HRi "google\.com" /root/dir
 
 # Only file names
 grep --color -HRi "abc" /root/dir | cut -d: -f1
