@@ -8976,7 +8976,7 @@ wp-config.php
 define( 'WPCF7_AUTOP', false );
 #+END_EXAMPLE
 
-**** WCAG, hooks
+**** hooks - reCaptcha
 Default template
 #+BEGIN_EXAMPLE
 [response]
@@ -9019,6 +9019,21 @@ function csWpcf7FormElements($form) {
 add_filter( 'wpcf7_form_elements', 'csWpcf7FormElements');
 #+END_EXAMPLE
 
+***** filter:shortcode_atts_wpcf7 <<<wp:p:contact-form-7:f:shortcode_atts_wpcf7>>>
+#+BEGIN_EXAMPLE
+add_filter( 'shortcode_atts_wpcf7', 'custom_shortcode_atts_wpcf7_filter', 10, 3 );
+ 
+function custom_shortcode_atts_wpcf7_filter( $out, $pairs, $atts ) {
+    $my_attr = 'destination-email';
+ 
+    if ( isset( $atts[$my_attr] ) ) {
+        $out[$my_attr] = $atts[$my_attr];
+    }
+ 
+    return $out;
+}
+#+END_EXAMPLE
+
 **** DOM Events
 https://contactform7.com/dom-events/
 
@@ -9046,6 +9061,19 @@ document.addEventListener( 'wpcf7mailsent', function( event ) {
 }, false );
 #+END_EXAMPLE
 
+#+BEGIN_EXAMPLE
+document.addEventListener( 'wpcf7submit', function( event ) {
+    var inputs = event.detail.inputs;
+ 
+    for ( var i = 0; i < inputs.length; i++ ) {
+        if ( 'your-name' == inputs[i].name ) {
+            alert( inputs[i].value );
+            break;
+        }
+    }
+}, false );
+#+END_EXAMPLE
+
 **** Form tags, akismet
 #+BEGIN_EXAMPLE
 Select Country (required)
@@ -9066,6 +9094,7 @@ Select Ghkdsjdf
 [submit "Send"]
 #+END_EXAMPLE
 
+***** Akismet
 akismet:author
 Add this option to the field that accepts the name of the sender.
 Example: [text* your-name akismet:author]
@@ -9099,6 +9128,40 @@ Default file upload location is wp-content/uploads/wpcf7_uploads
 #+END_EXAMPLE
 Only the part before pipes are revealed on the front end to prevent spam.
 Use [your-recipient] in the Mail template. To get value before pipe, [_raw_{field name}] e.g. [_raw_your-recipient]
+
+***** Attribute - default
+#+BEGIN_EXAMPLE
+// The field will obtain its default value from the GET variable with the same name (“your-name”)
+// http://example.com/contact/?your-name=John+Smith
+// John Smith
+[text* your-name default:get]
+
+// This form-tag has two default options and a value “Your Name”. The options are evaluated from the first to the last. In this example, default:get is evaluated first. If the “your-name” GET variable has a value, it will be used for the default value. If that value is empty, default:post_meta will be evaluated next. If both of these options do not have values, “Your Name” will be used.
+[text* your-name default:get default:post_meta "Your Name"]
+#+END_EXAMPLE
+
+[[https://contactform7.com/setting-default-values-to-the-logged-in-user/][Logged-in user fields]]
+#+BEGIN_EXAMPLE
+Your Name: [text* your-name default:user_display_name]
+Your E-mail: [email* your-email default:user_email]
+#+END_EXAMPLE
+
+Get default from shortcode attributes
+#+BEGIN_EXAMPLE
+[contact-form-7 id="123" title="Contact Form" destination-email="xxxxxx@example.com"]
+
+[email* destination-email default:shortcode_attr]
+
+// Filter needs to setup to catch custom attributes. Refer to wp:p:contact-form-7:f:shortcode_atts_wpcf7
+#+END_EXAMPLE
+
+***** hidden fields
+id:foo, 
+#+BEGIN_EXAMPLE
+[hidden your-text class:y2008 class:m01 class:d01]
+[hidden your-email default:user_email "example@example.com"]
+#+END_EXAMPLE
+
 **** multifile-upload-field-for-contact-form-7
 Form tag [multifile your-photos] to upload multiple files as one zip file
 **** contact-form-7-confirm-email-feild
@@ -18492,7 +18555,9 @@ $(function() {
   });
 #+END_EXAMPLE
 
-* javascript Plugins
+* javascript Projects
+https://stats.js.org/
+
 ** TweenLite, TweenMax, Greensock
 TweenMax has other common plugins included e.g. CSSPlugin where you can ease CSS property changes.
 TweenLite has to manually include these plugins.
@@ -22682,6 +22747,9 @@ The install is conflict-free meaning that they do not mess with existing install
 ^, caret, is the default now
 
 * Angular
+** Who use Angular?
+https://www.paypal.com https://www.theguardian.com
+
 ** 1.x AngularJS
 *** Structure
 https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js
@@ -24978,6 +25046,10 @@ platformBrowserDynamic().bootstrapModule(AppModule)
 **** Directive selectors (lower camel case)
 
 * Vue.js
+** Who use Vue.js
+GitLab https://github.com/alibaba/weex
+https://github.com/vuejs/awesome-vue#appswebsites
+
 ** Builds
 https://cdn.jsdelivr.net/npm/vue is the Runtime + Compiler UMD Minimized latest build
 
@@ -40062,13 +40134,39 @@ git merge --abort
 ** Rebase
 feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
 #+BEGIN_EXAMPLE
+git checkout master
+git pull --rebase
 git checkout feature
+# make some changes and git commit
 git rebase master
+# git status to review conflicts if exist. After resolving,
+git add .
+git rebase --continue
+# now your commits in feature are applied on top of the tip 
+# you can merge commits into one commit on feature branch to further clean up your feature branch commits
 git checkout master
 git merge feature
 #+END_EXAMPLE
 
 The result is feature and master are exactly the same: C2 -> C3 -> C4
+*** Merge commits into one commit on local branch
+Branch feature has 4 commits ahead of branch master
+
+m1 > c1 > c2 > c3 > c4
+
+Combine c2, c3 and c4 to c5 and assign a different commit message
+#+BEGIN_EXAMPLE
+git rebase -i c1
+// open up VIM, keep the first line unchanged pick c2 and change pick to s or squash for all other commits
+pick c2
+s c3
+s c4
+
+// ESC and :wq to save, VIM returns that what will happen. Comment lines with # and give a new commit message without #
+changes about c5
+
+// ESC and :wq to save. Done!
+#+END_EXAMPLE
 
 ** Show merge commit
 After merge or rebase happened, a merge commit is created. 
@@ -40585,6 +40683,9 @@ curl https://api.github.com/repos/:owner/:reponame | grep size
 
 # for private repo
 curl -u ownername:password https://api.github.com/repos/:owner/:reponame | grep size
+
+// sort repos of user:alibaba by number of stars
+https://github.com/search?q=user%3Aalibaba+&s=stars&type=Repositories
 #+END_EXAMPLE
 
 ** Github Pages
@@ -46082,6 +46183,11 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO https://developers.google.com/training/
 * TODO https://grow.google/
 * TODO https://www.thinkwithgoogle.com/intl/en-ca/
+* TODO https://experiments.withgoogle.com/chrome
+* TODO https://www.sitepoint.com/nuxt-js-universal-vue-js/
+* TODO https://generalassemb.ly/ Course on Product Management
+* TODO https://www.roberthalf.com/ Job Hunt
+* TODO https://zeit.co/ instantly deploy local NodeJS and Docker to the internet
 * DONE Chase Payment
 * DONE Lynda [[https://www.behance.net/][Behance.net]]
 * DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
