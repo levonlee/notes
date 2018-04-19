@@ -14246,7 +14246,7 @@ transitionend
 | li       | value="100"                       | increment by 1                                            |
 |          |                                   |                                                           |
 
-*** Picture tag, <img srcset>
+*** <picture>, <img srcset>
 <<<html:img:srcset>>> <<<html:img:sizes>>>
 IE 11 doesn't support srcset and sizes
 The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only.
@@ -14265,14 +14265,18 @@ srcset="examples/images/medium.jpg 375w,
 alt="…">
 #+END_EXAMPLE
 
-The picture element is used when you need explicit control over which source is shown at set viewport sizes.
-
+<<<html:picture>>> is used when you need explicit control over which source is shown at set viewport sizes. Except IE 11 and below
 #+BEGIN_EXAMPLE
 <picture>
  <source srcset="a.jpg" media="(min-width: 600px)">
  <source srcset="b.jpg" media="(min-width: 500px)"> 
  <source srcset="fallback.jpg">
  <img src="fallback.jpg">
+</picture>
+
+<picture>
+  <source type="image/webp" srcset="images/butterfly.webp">
+  <img src="images/butterfly.jpg" alt="a butterfly">
 </picture>
 #+END_EXAMPLE
 
@@ -14367,10 +14371,76 @@ CSS fallback
 </dl>
 #+END_EXAMPLE
 
-** Video
+*** video <<<html:video>>>
 MP4 is the most compatible video format. Uses H.264 video codec and AAC audio codec.
 WebM is Google for HTML5. Uses VP8 video codec and Vorbis audio codec. Doesn't support in iOS, Safari nor old IE.
 FLV is Flash only. Uses H.263 video codec and MP3 audio codec.
+
+autoplay is turned off on iOS mobile < v10
+#+BEGIN_EXAMPLE
+<video autoplay muted loop id="myVideo">
+  <source src="rain.mp4" type="video/mp4">
+</video>
+#+END_EXAMPLE
+
+**** Attribute preload
+- metadata :: dimensions, track list, duration
+- auto :: load entire video. Setting to auto is not guaranteed as some browsers force it to be metadata or none.
+- none
+
+Video resource starts to be fetched after DOMContentLoaded and window.load event will be fired when the entire resource is completely fetched.
+
+https://developers.google.com/web/fundamentals/media/fast-playback-with-video-preload
+Use html:link:rel:preload
+<<<html:preload video>>>
+
+Preload full small media files < 5mb
+#+BEGIN_EXAMPLE
+<link rel="preload" as="video" href="https://cdn.com/small-file.mp4">
+
+<video id="video" controls></video>
+
+<script>
+  // Later on, after some condition has been met, set video source to the
+  // preloaded video URL.
+  video.src = 'https://cdn.com/small-file.mp4';
+  video.play().then(_ => {
+    // If preloaded video URL was already cached, playback started immediately.
+  });
+</script>
+#+END_EXAMPLE
+
+Preload the first segment use [[https://developers.google.com/web/fundamentals/media/mse/basics][Media Source Extensions JavaScript API]]
+#+BEGIN_EXAMPLE
+<link rel="preload" as="fetch" href="https://cdn.com/file_1.webm">
+
+<video id="video" controls></video>
+
+<script>
+  const mediaSource = new MediaSource();
+  video.src = URL.createObjectURL(mediaSource);
+  mediaSource.addEventListener('sourceopen', sourceOpen, { once: true });
+
+  function sourceOpen() {
+    URL.revokeObjectURL(video.src);
+    const sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp09.00.10.08"');
+
+    // If video is preloaded already, fetch will return immediately a response
+    // from the browser cache (memory cache). Otherwise, it will perform a
+    // regular network fetch.
+    fetch('https://cdn.com/file_1.webm')
+    .then(response => response.arrayBuffer())
+    .then(data => {
+      // Append the data into the new sourceBuffer.
+      sourceBuffer.appendBuffer(data);
+      // TODO: Fetch file_2.webm when user starts playing video.
+    })
+    .catch(error => {
+      // TODO: Show "Video is not available" message to user.
+    });
+  }
+</script>
+#+END_EXAMPLE
 
 ** Meta
 *** Meta Refresh (redirect)
@@ -15878,9 +15948,29 @@ mj-image has padding:10px 25px by default
 
 // javascript
 window.open('tel:+11231231234');
+** link <<<html:link>>>
+*** rel="preload"
+<<<html:link:rel:preload>>> Not supported in IE11-, Edge, Safari 11-, iOS Safari 11.2-
 
-** Icons, Address Bar color
-*** Icons
+Resources loaded via <link rel="preload"> are stored locally in the browser, and are effectively inert until they’re referenced in the DOM, JavaScript, or CSS.
+
+#+BEGIN_EXAMPLE
+<link rel="preload" href="used-later.js" as="script">
+<!-- ...other HTML... -->
+<script>
+  // Later on, after some condition has been met, we run the preloaded
+  // JavaScript by inserting a <script> tag into the DOM.
+  var usedLaterScript = document.createElement('script');
+  usedLaterScript.src = 'used-later.js';    
+  document.body.appendChild(usedLaterScript)
+</script>
+#+END_EXAMPLE
+
+as="script" refers to consumer tag <script>
+
+Refer to html:preload video
+
+*** Icons - rel="apple-touch-startup-image", apple-touch-icon
 General Icon in scale of 48px
 #+BEGIN_EXAMPLE
 <link rel="icon" sizes="192x192" href="icon.png">
@@ -15977,7 +16067,7 @@ Base Size :: 320x480. But different devices ask for different sizes. Follow this
       rel="apple-touch-startup-image">
 #+END_EXAMPLE
 
-*** Address Bar
+** Address Bar
 Hide Safari UI (URL address bar)
 #+BEGIN_EXAMPLE
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16095,9 +16185,11 @@ https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques
 - search :: <form> define purpose
 
 *** aria-* attributes
-- aria-label :: inside <button> where label text can't be displayed
-- aria-labelledby :: refer to an element's id where the element contains text for label purpose.
+- aria-label :: Label or name is used interchangably. Inside <button> where label text can't be displayed.
+- aria-labelledby :: Labelled by other element(s). Refer to other elements using their ids.
   - Can be nested 'parentID child1ID'
+  - Say parentID element contains text Men's Shirts and childID element contains text Shop Now, then the name of the element used aria-labelledby has a name "Men's Shirts Shop Now"
+  - it can even refer to itself
 
 ** Display price
 #+BEGIN_EXAMPLE
@@ -19762,6 +19854,9 @@ $(function() {
 **** touchevents
 **** videoautoplay
 This feature detection is not reliable..
+
+**** webp <<<modernizr:webp>>>
+Modernizr.webp, Modernizr.webp.lossless, Modernizr.webp.alpha and Modernizr.webp.animation
 
 *** Option
 **** .mq(mq)
@@ -44117,13 +44212,13 @@ Emacs only update radio targets when the file is first loaded. To manual update,
 ** Regex
 https://regexr.com/ https://regexr.com/
 
-** Chrome
+** [[https://developers.google.com/web/updates/][Chrome]]
 *** Command Menu (DevTools > C+S P)
 **** Coverage (Show coverage)
-*** Capture full size screenshot
+*** Capture full size screenshot - Mobile View
 F12, mobile view, click on the top right tool button of the main website window
 
-*** Block Request or Domain
+*** Block Request or Domain - Network
 Block a certain file request or any files from a domain. Network > right click on a file and Block Request
 
 *** Get all events of an element in Console
@@ -44131,25 +44226,6 @@ getEventListeners($0);
 
 *** Inject CSS file in Console
 =jQuery(document.head).append('<link rel="stylesheet" href="path_to_my_css">');=
-
-*** Flash Couldn't Load Plugin
-Properites > Security, give Full Control for Everyone in this folder
-C:\Users\you\AppData\Local\Google\Chrome\User Data\PepperFlash\some.version.number
-
-*** Allow XMLHttpRequest for local files
-#+BEGIN_EXAMPLE
-chrome.exe --allow-file-access-from-files
-#+END_EXAMPLE
-
-*** Allow CORS locally
-<<<chrome:cors>>>
-May need to close all Chrome instances. Mine opens the Chromium version not the regular Chrome.
-Errors such as
-- Access to Font at 'yourwebsite.com' from origin 'e.g. localhost' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. Origin 'e.g. localhost' is therefore not allowed access.
-
-#+BEGIN_EXAMPLE
-chrome.exe --disable-web-security --user-data-dir
-#+END_EXAMPLE
 
 *** XPath <<<XPath>>>
 In DevTools > Elements, search using Xpath, e.g. find all h4 element //h4
@@ -44199,18 +44275,44 @@ mod (division remainder) :: 5 mod 2
 or :: price=9.8 or price=9.7
 and
 
-*** Local Overrides
+*** Turn on DevTools Experiment
+chrome://flags > search a Feature, enable and relaunch
+
+Developer Tools experiments :: Experiments under DevTools > Settings
+Experimental JavaScript
+
+*** Elements
+**** Styles
+Click on color and expand Contrast Ratio produces 1 line. Choose color below the line in order to make it AA or AAA compliant.
+
+**** Accessibility
+*** Audits
+Run checks using Light House
+
+*** Sources
+**** Local Overrides
 Specify a directory where DevTools should save changes. This directory will contain all changes across different website domains.
 DevTools > Sources > Overrides
 
 Select folder > Allow > Enable Local Overrides
 
-*** Extension - Google Tag Assistant
-*** Extension - [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
+This only works to override styles that are loaded by a CSS file and you can override the CSS files.
+
+**** Event Listener Breakpoints and Blackboxing
+Mouse > click
+Say it jumps jquery.js at function abc at line 1000. Find this under Call Stack, right click and Blackbox script. jquery.js will be ignored.
+
+Right click again to stop blackboxing, To see all blackboxed scripts:
+DevTools > Settings > Blackboxing
+https://developer.chrome.com/devtools/docs/blackboxing
+
+*** Extension
+**** Google Tag Assistant
+**** [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
 Fire GET and POST requests.
 For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
 
-*** Extension - [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
+**** [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
 Chrome's default save page as HTML has some limitations such as not all images are downloaded.
 This saves all content in one HTML file.
 
@@ -44218,15 +44320,37 @@ Font file is not converted but you can fix the url() manually.
 
 Turn off chrome:cors
 
-*** Extension - [[https://chrome.google.com/webstore/detail/ignore-x-frame-headers/gleekbfjekiniecknbkamfmkohkpodhe][Ignore X-Frame headers]]
+**** [[https://chrome.google.com/webstore/detail/ignore-x-frame-headers/gleekbfjekiniecknbkamfmkohkpodhe][Ignore X-Frame headers]]
 Ignore headers X-Frame-x e.g. X-Frame-Options
 
-*** Extension - [[https://chrome.google.com/webstore/detail/requestly-redirect-url-mo/mdnleldcmiljblolnjhpnblkcekpdkpa][Requestly]]
+**** [[https://chrome.google.com/webstore/detail/requestly-redirect-url-mo/mdnleldcmiljblolnjhpnblkcekpdkpa][Requestly]]
 Modify http request and response headers
+
+**** [[https://chrome.google.com/webstore/detail/axe/lhdoppojpmngadmnindnejefpokejbdd][aXe]]
+Accessibility testing. Node.js https://www.axe-core.org/
 
 *** Flush DNS Caches in Chrome
 Even ipconfig /flushdns is run, Chrome still caches the DNS
 Navigate to ~chrome://net-internals/#dns~ and press "Clear host cache" button
+
+*** Flash Couldn't Load Plugin
+Properites > Security, give Full Control for Everyone in this folder
+C:\Users\you\AppData\Local\Google\Chrome\User Data\PepperFlash\some.version.number
+
+*** Allow XMLHttpRequest for local files
+#+BEGIN_EXAMPLE
+chrome.exe --allow-file-access-from-files
+#+END_EXAMPLE
+
+*** Allow CORS locally
+<<<chrome:cors>>>
+May need to close all Chrome instances. Mine opens the Chromium version not the regular Chrome.
+Errors such as
+- Access to Font at 'yourwebsite.com' from origin 'e.g. localhost' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. Origin 'e.g. localhost' is therefore not allowed access.
+
+#+BEGIN_EXAMPLE
+chrome.exe --disable-web-security --user-data-dir
+#+END_EXAMPLE
 
 ** Firefox
 *** Make all new windows open in Private Mode
@@ -44809,6 +44933,40 @@ https://picsum.photos/200/300/?random
 
 *** Convert image to favicon (.ico)
 https://converticon.com/
+
+*** WebP
+Supported by Chrome desktop and android and Opera.
+
+https://developers.google.com/speed/webp/faq#how_can_i_detect_browser_support_for_webp
+Detect if request header ~accept~ literally contains image/webp. Browsers have these accept headers
+#+BEGIN_EXAMPLE
+*/*
+image/*
+#+END_EXAMPLE
+
+Some CDN support content negotiation in action means if the accept doesn't have image/webp then deliver .png or .jpg. How to deliver different cache based on the same URL? Nginx example
+#+BEGIN_EXAMPLE
+server {
+   listen 80;
+   server_name ei8gd7lwnymbl2d.cdnconnect.netdna-cdn.com jdorfman.cdnconnect.com;
+   set $webp "";
+   if ($http_accept ~* image/webp) {
+           set $webp "webp";
+   }
+   location ~ /purge(/.*) {
+           allow 192.168.0.1/24;
+           deny all;
+           proxy_cache_purge my_diskcached ei8gd7lwnymbl2d.cdnconnect10$myae$webp$1$is_args$args;
+   }
+   location / {
+     [clipped]
+	   proxy_cache_key ei8gd7lwnymbl2d.cdnconnect10$myae$webp$uri$is_args$args;
+   }
+}
+#+END_EXAMPLE
+Notice how the “$webp” variable gives us different cache keys for the various versions.
+
+Use html:picture modernizr:webp
 
 *** Image Stock
 https://www.freeimages.com/
@@ -46171,7 +46329,6 @@ https://github.com/i-tu/Hasklig Extend Source Code Pro
 * TODO Learn SPF and whitelabel
 * TODO Learn tool Zeplin
 * TODO Blowfish hashing algorithm using random salt which is stored in db
-* TODO Learn ARIA html:ARIA
 * TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
 * TODO Lynda Agile Project Management
 * TODO Lynda Javascript: Enhancing the DOM
