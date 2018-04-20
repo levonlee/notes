@@ -10709,7 +10709,7 @@ function handlerOrientationChange(mql) {
 }
 #+END_EXAMPLE
 
-*** Media Types
+*** Media Types <<<css:@media:type>>>
 all, print, screen, speech
 
 #+BEGIN_EXAMPLE
@@ -10718,9 +10718,9 @@ all, print, screen, speech
 @media screen and (max-width: 699px) and (min-width: 520px), (min-width: 1151px) {}
 #+END_EXAMPLE
 
-<<<meta viewport>>>
+*** <<<meta viewport>>>
 #+BEGIN_EXAMPLE
-<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 // Set the width of the page to follow the screen-width of the device
 // Initial zoom level 1.0
 
@@ -10728,22 +10728,26 @@ all, print, screen, speech
 // the above won't be WCAG compliant
 #+END_EXAMPLE
 
-*** Features
-| Key           | Min/Max? | value                                                       |
-| orientation   | no       | landscape, portrait. Not reliable when soft keyboard opens  |
-| color         | yes      | int, number of colors. (color) for color device             |
-| aspect-ratio  | yes      | int1/int2                                                   |
-| grid          | no       | 0, 1 or (grid). The last suggests it's a device with 1 font |
-| width, height | yes      | viewport                                                    |
-| monochrome    | yes      | 0 (not mono) or int                                         |
-| resolution    | yes      | 300dpi or 2dppx                                             |
-|               |          |                                                             |
+*** Features <<<css:@media:features>>>
+min-width, max-width and:
+| Key           | Min/Max? | value                                                                        |
+| orientation   | no       | landscape, portrait. Not reliable when soft keyboard opens                   |
+| color         | yes      | int, number of colors. (color) for color device                              |
+| aspect-ratio  | yes      | int1/int2                                                                    |
+| grid          | no       | 0, 1 or (grid). The last suggests it's a device with 1 font                  |
+| width, height | yes      | viewport                                                                     |
+| monochrome    | yes      | 0 (not mono) or int                                                          |
+| resolution    | yes      | 300dpi or 2dppx                                                              |
+| pointer       | no       | fine (mouse, drawying stylus), coarse (finger), none (not a pointing device) |
+| hover         | no       | none (finger), hover (can have hover state)                                  |
+
+pointer and hover always refer to the primary device while any-pointer and any-hover refers to any if exists.
+any-hover has on-demand which means mobile services can emulate hovering when the user performs a long tap.
+
+Don't use min/max-device-width as it refers to the screen size not the viewport size
 
 *** Responsive Design
-
 Progressive Method :: start from mobile layout, add content to bigger screen size
-Graceful Method :: start from desktop layout, remove content to smaller screen size
-
 #+BEGIN_EXAMPLE
 /* {
  box-sizing: border-box;
@@ -10803,6 +10807,259 @@ Graceful Method :: start from desktop layout, remove content to smaller screen s
   right sidebar...
  </div>
 </div>
+#+END_EXAMPLE
+
+Graceful Method :: start from desktop layout, remove content to smaller screen size
+
+**** Mostly Fluid
+https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/mostly-fluid.html
+#+BEGIN_EXAMPLE
+    <div class="container" role="main">
+      <div class="c1">
+      </div>
+      <div class="c2">
+      </div>
+      <div class="c3">
+      </div>
+      <div class="c4">
+      </div>
+      <div class="c5">
+      </div>
+    </div>
+
+.container {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row wrap;
+  flex-flow: row wrap;
+}
+
+.c1, .c2, .c3, .c4, .c5 {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .c2, .c3, .c4, .c5 {
+    width: 50%;
+  }
+}
+
+@media (min-width: 800px) {
+  .c1 {
+    width: 60%;
+  }
+  .c2 {
+    width: 40%;
+  }
+  .c3, .c4, .c5 {
+    width: 33.33%;
+  }
+}
+
+@media (min-width: 800px) {
+  .container {
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+#+END_EXAMPLE
+
+**** Column Drop
+https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/column-drop.html
+#+BEGIN_EXAMPLE
+    <div class="container" role="main">
+      <div class="c1"></div>
+      <div class="c2"></div>
+      <div class="c3"></div>
+    </div>
+
+.container {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row wrap;
+  flex-flow: row wrap;
+}
+
+.c1, .c2, .c3 {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .c1 {
+    width: 60%;
+    -webkit-order: 2;
+    order: 2;
+  }
+
+  .c2 {
+    width: 40%;
+    -webkit-order: 1;
+    order: 1;
+  }
+
+  .c3 {
+    width: 100%;
+    -webkit-order: 3;
+    order: 3;
+  }
+}
+
+
+@media (min-width: 800px) {
+  .c2 {
+    width: 20%;
+  }
+
+  .c3 {
+    width: 20%;
+  }
+}
+#+END_EXAMPLE
+
+**** Layout shifter
+https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/layout-shifter.html
+#+BEGIN_EXAMPLE
+<div class="container" role="main">
+  <div class="c1"></div>
+  <div class="c4">
+    <div class="c2"></div>
+    <div class="c3"></div>
+  </div>
+</div>
+
+.container {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row wrap;
+  flex-flow: row wrap;
+}
+
+.c1, .c2, .c3, .c4 {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .c1 {
+    width: 25%;
+  }
+
+  .c4 {
+    width: 75%;
+  }
+
+}
+
+@media (min-width: 800px) {
+  .container {
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+#+END_EXAMPLE
+
+**** Off canvas
+https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/off-canvas.html
+#+BEGIN_EXAMPLE
+    <div class="container" role="main">
+      <div class="c1" id="leftDrawer">
+      </div>
+      <div class="c2" id="mainPanel">
+        Click the <code>div</code>'s to change views
+      </div>
+      <div class="c3" id="rightDrawer">
+      </div>
+    </div>
+
+body {
+  overflow-x: hidden;
+}
+
+.container {
+  display: block;
+}
+
+.c1, .c3 {
+  position: absolute;
+  width: 250px;
+  height: 100%;
+
+  /*
+    This is a trick to improve performance on newer versions of Chrome
+    #perfmatters
+  */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden; 
+
+  -webkit-transition: -webkit-transform 0.4s ease-out;
+  transition: transform 0.4s ease-out;
+
+  z-index: 1;
+}
+
+.c1 {
+  /*
+  Using translate3d as a trick to improve performance on older versions of Chrome
+  See: http://aerotwist.com/blog/on-translate3d-and-layer-creation-hacks/
+  #perfmatters
+  */
+  -webkit-transform: translate(-250px,0);
+  transform: translate(-250px,0);
+}
+
+.c2 {
+  width: 100%;
+  position: absolute;
+}
+
+.c3 {
+  left: 100%;
+}
+
+.c1.open {
+  -webkit-transform: translate(0,0);
+  transform: translate(0,0);
+}
+
+.c3.open {
+  -webkit-transform: translate(-250px,0);
+  transform: translate(-250px,0);
+}
+
+@media (min-width: 500px) {
+  /* If the screen is wider then 500px, use Flexbox */
+  .container {
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-flow: row nowrap;
+    flex-flow: row nowrap;
+  }
+  .c1 {
+    position: relative;
+    -webkit-transition: none 0s ease-out;
+    transition: none 0s ease-out;
+    -webkit-transform: translate(0,0);
+    transform: translate(0,0);
+  }
+  .c2 {
+    position: static;
+  }
+}
+
+@media (min-width: 800px) {
+  body {
+    overflow-x: auto;
+  }
+  .c3 {
+    position: relative;
+    left: auto;
+    -webkit-transition: none 0s ease-out;
+    transition: none 0s ease-out;
+    -webkit-transform: translate(0,0);
+    transform: translate(0,0);
+  }
+}
 #+END_EXAMPLE
 
 *** Viewport sizes of device
@@ -10901,9 +11158,8 @@ x.addEventListner("animationend", func3);
 #+END_EXAMPLE
 
 ** @import
-
 #+BEGIN_EXAMPLE
-/* @import should appear before any css styles defined in a css file */
+/* @import usage should be avoided and should appear before any css styles defined in a css file */
 @import "mystyle.css";
 @import url("mystyle.css");
 @import "mystyle.css" print;
@@ -14246,32 +14502,41 @@ transitionend
 | li       | value="100"                       | increment by 1                                            |
 |          |                                   |                                                           |
 
-*** <picture>, <img srcset>
-<<<html:img:srcset>>> <<<html:img:sizes>>>
+*** <picture>, <img srcset sizes>
+**** <<<html:img:srcset>>> <<<html:img:sizes>>>
 IE 11 doesn't support srcset and sizes
-The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only.
+The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only. When x is used, ~sizes~ cannot be set.
 <img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">
 
-The srcset and sizes syntaxes are used to provide the browser with a list of image sources that are identical apart from their size (same aspect ratio, same focal point) and how they’ll be displayed, then allow the browser to choose the source best for the user’s current viewport size, display density, and the size of that image in the page layout.
+~w~ in ~srcset~ is the actual image's width.
+~sizes~ attribute is the final rendered width of our image. If the image takes a third of the viewport, then sizes="33.3vw"
 
 In order to test img with srcset and sizes, you need to open InCognito and resize the window size not choosing a simulated device.
 
 #+BEGIN_EXAMPLE
 <img
+src="examples/images/fallback.jpg"
 sizes="(min-width: 40em) 80vw, 100vw"
 srcset="examples/images/medium.jpg 375w,
         examples/images/large.jpg 480w,
         examples/images/extralarge.jpg 768w"
 alt="…">
+
+// make sure img tag is responsive
+img {
+  max-width:100%;
+  height:auto;
+}
 #+END_EXAMPLE
 
-<<<html:picture>>> is used when you need explicit control over which source is shown at set viewport sizes. Except IE 11 and below
+**** <<<html:picture>>>
+Used when you need explicit control over which source is shown at set viewport sizes. Except IE 11 and below
 #+BEGIN_EXAMPLE
 <picture>
  <source srcset="a.jpg" media="(min-width: 600px)">
  <source srcset="b.jpg" media="(min-width: 500px)"> 
  <source srcset="fallback.jpg">
- <img src="fallback.jpg">
+ <img src="fallback.jpg" alt="one alt">
 </picture>
 
 <picture>
@@ -14280,7 +14545,7 @@ alt="…">
 </picture>
 #+END_EXAMPLE
 
-img tag with srcset
+**** srcset and sizes calculation
 small is 500x100, medium is 1000x200, and large is 2000x400
 Device with screen width of 320px and 1x display (non-retina)
 Then chooses the one that is closest to 1
@@ -15969,6 +16234,12 @@ Resources loaded via <link rel="preload"> are stored locally in the browser, and
 as="script" refers to consumer tag <script>
 
 Refer to html:preload video
+
+*** Stylesheet for a media
+#+BEGIN_EXAMPLE
+<link rel="stylesheet" href="print.css" media="print">
+#+END_EXAMPLE
+Or use css:@media:type
 
 *** Icons - rel="apple-touch-startup-image", apple-touch-icon
 General Icon in scale of 48px
