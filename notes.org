@@ -150,6 +150,7 @@ Enable mail.log, make sure /var/log/phpmaillog has www-data:www-data as the apac
 You may need to change the sendmail_path to a php wrapper instead of just adding mail.log location
 http://www.matteomattei.com/how-to-log-email-sent-from-php-through-mail-function/
 https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-detect-form-spam
+
 *** Error log <<<php:show error>>>
 d7:show error wp:show error
 [[http://php.net/manual/en/errorfunc.configuration.php][Runtime configuration for error handling]]
@@ -6244,6 +6245,13 @@ wp db export --add-drop-table /var/www/html/devops/db/dump.sql
 *** db size
 #+BEGIN_EXAMPLE
 wp db size --tables --size_format=mb
+#+END_EXAMPLE
+
+*** db query
+#+BEGIN_EXAMPLE
+wp db query 'SELECT id FROM wp_posts WHERE post_content LIKE "%trans.gif%" AND post_type NOT IN ('revision')'
+// In PowerShell, you need to escape "
+// wp db query 'SELECT id FROM wp_posts WHERE post_content LIKE \"%trans.gif%\" AND post_type NOT IN ('revision')'
 #+END_EXAMPLE
 
 *** Search and replace
@@ -34077,7 +34085,6 @@ apt-get update && apt-get -y install openssh-client
 #+END_EXAMPLE
 
 **** sendmail <<<linux:sendmail>>>
-
 #+BEGIN_EXAMPLE
 apt-get install sendmail
 # get the hostname of the machine/container
@@ -34120,9 +34127,60 @@ ssmtp is a simple alternative to linux:sendmail and it doesn't depend on it.
 
 **** postfix <<<linux:postfix>>>
 It's more sophisticated than sendmail.
+~apt-get install postfix~ will remove sendmail automatically
+
 https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04
 https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-16-04
-apt-get install postfix will remove sendmail automatically
+#+BEGIN_EXAMPLE
+apt-get update && apt install mailutils
+// Default is Internet site. Use TAB and ENTER
+// System mail name: example.com // Use FQDN (bare domain)
+sudo nano /etc/postfix/main.cf
+#+END_EXAMPLE
+
+Setup to send only
+
+Change to loopback interface, the virtual network interface that the server uses to communicate internally.
+#+BEGIN_EXAMPLE
+// inet_interfaces = all
+inet_interfaces = loopback-only
+#+END_EXAMPLE
+
+Similar to sendmail /etc/hosts setting
+#+BEGIN_EXAMPLE
+// mydestination = $myhostname, example.com, localhost.com, , localhost
+mydestination = $myhostname, localhost.$mydomain, $mydomain
+#+END_EXAMPLE
+
+Restart postfix
+#+BEGIN_EXAMPLE
+/etc/init.d/postfix status
+postfix status
+postfix start
+sudo systemctl restart postfix
+
+// Test
+echo "This is the body of the email" | mail -s "This is the subject line" myemail@a.com
+
+// From: sammy@example.com where sammy is Linux username and example.com is the server's hostname
+#+END_EXAMPLE
+
+Forward emails sent to root
+#+BEGIN_EXAMPLE
+sudo nano /etc/aliases
+
+// With the following, system generated emails are sent to the root user.
+postmaster: root
+
+// Add
+root: myemail@a.com
+
+// restart
+sudo newaliases
+
+// Test
+echo "This is the body of the email" | mail -s "This is the subject line" root
+#+END_EXAMPLE
 
 **** rtorrent
 #+BEGIN_EXAMPLE
