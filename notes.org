@@ -12,21 +12,40 @@ Get php configuration files location ~php --ini~
 Get loaded extensions ~php -r "print_r(get_loaded_extensions());"~
 Get a php config variable ~php -i | grep --color -n "memory_limit"~
 
-Possible places
+Changing php.ini requires restarting apache
+
+**** Possible places for php.ini
 - 7.x :: /etc/php/7.0/apache2/php.ini, /etc/php/7.0/apache2/conf.d/*.ini
 - 5.6 :: /usr/local/etc/php/php.ini, /usr/local/etc/php/conf.d/*.ini
 - 5.3 :: /etc/php5/apache/php.ini, /etc/php5/cli/php.ini
 
-Changing php.ini requires restarting apache
+**** Apache
+Set PHP via Apache directives e.g. httpd.conf .htaccess
+Require ~AllowOverride Options~ or ~AllowOverride All~
 
-Configuration setting can be set in places depending on which mode it is
+And then
+#+BEGIN_EXAMPLE
+// for value. Can be used only with PHP_INI_ALL and PHP_INI_PERDIR type directives
+php_value name value
 
+// for boolean. Can be used only with PHP_INI_ALL and PHP_INI_PERDIR type directives
+php_flag name on|off
+
+// This cannot be set in .htaccess file and cannot be overriden by .htaccess or ini_set()
+php_admin_value name value
+
+// This cannot be set in .htaccess file and cannot be overriden by .htaccess or ini_set()
+php_admin_flag name on|off
+#+END_EXAMPLE
+
+**** Configuration Mode
 PHP_INI_USER	Entry can be set in user scripts (like with ini_set()) or in the Windows registry. Since PHP 5.3, entry can be set in .user.ini
 PHP_INI_PERDIR	Entry can be set in php.ini, .htaccess, httpd.conf or .user.ini (since PHP 5.3)
 PHP_INI_SYSTEM	Entry can be set in php.ini or httpd.conf
 PHP_INI_ALL	Entry can be set anywhere
 
-The value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ${foo})
+**** Directive Value
+Value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ${foo})
 
 Expression
 Expressions in the INI file are limited to bitwise operators and parentheses:
@@ -87,6 +106,18 @@ session.cookie_lifetime = 2000000
 
 *** <<<php.ini:directives>>>
 http://php.net/manual/en/ini.list.php
+
+**** magic quotes
+#+BEGIN_EXAMPLE
+; Magic quotes for incoming GET/POST/Cookie data.
+magic_quotes_gpc = Off
+
+; Magic quotes for runtime-generated data, e.g. data from SQL, from exec(), etc.
+magic_quotes_runtime = Off
+
+; Use Sybase-style magic quotes (escape ' with '' instead of \').
+magic_quotes_sybase = Off
+#+END_EXAMPLE
 
 *** <<<php.ini:extension>>>
 php.ini can also enable module. e.g. to enable module intl
@@ -5935,6 +5966,21 @@ global $wp_version;
 if ( version_compare( $GLOBALS['wp_version'], '4.7-alpha', '<' ) ) {
 	require get_template_directory() . '/inc/back-compat.php';
 	return;
+}
+#+END_EXAMPLE
+
+*** $_GET, $_POST, $_COOKIE, $_SERVER
+WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Quotes]], if so, remove them using stripslashes_deep (wp function) and then add slashes using add_magic_quotes which uses php:addslashes function. In order to get values, use stripslashes_deep again.
+#+BEGIN_EXAMPLE
+$value = stripslashes_deep($_POST['name']);
+// or simply
+$myPost = stripslashes_deep($_POST);
+
+// in custom PHP app, detect if WP already defines the function and later remove the slashes
+ $myPost = $_POST;
+if (function_exists('stripslashes_deep')) {
+  // This means WP has already added slashes to $_POST. Remove slashes
+  $myPost = stripslashes_deep($myPost);
 }
 #+END_EXAMPLE
 
