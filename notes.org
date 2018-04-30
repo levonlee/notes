@@ -39542,10 +39542,15 @@ sudo ufw allow 'Nginx Full'
 sudo ufw delete allow 'Nginx HTTP'
 #+END_EXAMPLE
 
-*** Service Check, reload, restart
+*** Service Check, reload, restart, Check syntax
 Use service if systemctl doesn't exist.
 
 ~systemctl status nginx~
+
+stop, quit, reopen, reload :: ~nginx -s reload~
+Version in short :: ~nginx -v~
+
+Check syntax for config ~sudo nginx -t~
 
 Output
 #+BEGIN_EXAMPLE
@@ -39652,10 +39657,6 @@ Every request to your web server is recorded
 
 *** /var/log/nginx/error.log
 
-** Command Line
-stop, quit, reopen, reload :: ~nginx -s reload~
-Version in short :: ~nginx -v~
-
 ** Config nginx.conf
 Main global config /etc/nginx/nginx.conf
 
@@ -39700,7 +39701,7 @@ server {
 }
 #+END_EXAMPLE
 
-** Server
+** server Block
 Include directives :: listen, server_name, root, index
 Include blocks :: location
 
@@ -39758,17 +39759,7 @@ server {
 }
 #+END_EXAMPLE
 
-** Server name redirect
-
-#+BEGIN_EXAMPLE
-server {
-  server_name .mydomain.com;
-# this matches *.mydomain.com
-  return 301 http://www.adifferentdomain.com$request_uri;
-}
-#+END_EXAMPLE
-
-** location
+** location block
 location blocks are usually under server blocks
 #+BEGIN_EXAMPLE
 # location syntax
@@ -39959,6 +39950,41 @@ rewrite (?i)^/cms/(.*)$ /CMS/$1 last;
 #+END_EXAMPLE
 
 Flag ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
+
+** listen Directive
+Default ~listen *:80;~ if Nginx is run as superuser or ~listen *:8000~ otherwise.
+
+Parameter ipv6only can be set only once across all config files. Default is on. Which means when [::] is used, listen only for IP v6.
+#+BEGIN_EXAMPLE
+listen [::]:443 ssl ipv6only=on;
+#+END_EXAMPLE
+
+** Server name redirect
+#+BEGIN_EXAMPLE
+server {
+  listen 80;
+  listen [::]:80;
+  server_name .mydomain.com;
+# this matches *.mydomain.com
+  return 301 http://www.adifferentdomain.com$request_uri;
+}
+
+# if you have ssl setup, you need to specify SSL info
+# refer to nginx:ssl:example
+server {
+  # your original setting
+  server_name .yoursite.com
+  
+  listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
+  listen 443 ssl; # managed by Certbot
+  ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+  ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+  return 301 https://adifferentdoamin.com$request_uri;
+}
+#+END_EXAMPLE
 
 ** Let's Encrypt SSL <<<nginx:ssl>>>
 On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to renew certificate.
@@ -40302,22 +40328,25 @@ installer = nginx
 authenticator = nginx
 #+END_EXAMPLE
 
-*** A certificate
+*** A certificate <<<nginx:ssl:example>>>
 #+BEGIN_EXAMPLE
 server {
   # your original setting
-
+  server_name .yoursite.com
+  
+  listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
   listen 443 ssl; # managed by Certbot
   ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
   ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
   include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
+  # set proxy
 }
 #+END_EXAMPLE
 
 certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
-global config /etc/letsencrypt/cli.ini
+global config :: /etc/letsencrypt/cli.ini
 
 *** Alternative clients
 https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
@@ -44905,6 +44934,7 @@ Expand the Events and RC on handler to Reveal function in source.
 *** Flush DNS Caches in Chrome
 Even ipconfig /flushdns is run, Chrome still caches the DNS
 Navigate to ~chrome://net-internals/#dns~ and press "Clear host cache" button
+Or on the top right, down arrow > Tools > Clear Cache
 
 *** Flash Couldn't Load Plugin
 Properites > Security, give Full Control for Everyone in this folder
