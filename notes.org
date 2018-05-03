@@ -6931,13 +6931,11 @@ $args = array(
 ); 
 #+END_EXAMPLE
 
-*** register_post_type
-<<<wp:f:register_post_type>>>
+*** register_post_type <<<wp:f:register_post_type>>>
 wp:action:init wp:action:pre_get_posts wp:plugin:acf
 
-register_post_type( $post_type, $args );
+Remember to refresh Permalink from UI.
 https://codex.wordpress.org/Function_Reference/register_post_type
-
 - $post_type :: string. < 20 characters. All lowercase and no space
 - $args :: array of arguments
 
@@ -6949,21 +6947,25 @@ function lili_custom_post_type() {
   ];
 
   $args = [
-    'label' => 'Plural Name', // string
+    'label' => 'Plural Name', // string, optional, default labels['name']
     'labels' => $labels,
     'description' => '', // string, optional
+
     'public' => false,
-    /* Default. bool.
+    /* Default false
      *       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
      * true:               false,               true,              true, true
      * false:               true,              false,             false, false
      */
+
     'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+
     'publicly_queryable' => true, // optional. take 'public' value.
     /* ?post_type={post_type_key},
      * ?{post_type_key}={single_post_slug},
      * ?{post_type_query_var}={single_post_slug}
      */
+
     'show_ui' => true, // optional. bool. default take 'public' value.
     'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
     'show_in_menu' => true, // optional, bool or string. default inherits show_ui
@@ -6971,8 +6973,23 @@ function lili_custom_post_type() {
     // true :: display as a top level menu
     // 'some string' :: display as a submenu of a menu 'some string'
     'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
-    'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
-	  //  Don't have to add 'custom-fields' in order to use wp:plugin:acf
+
+    'supports' => ['title', 'editor'], 
+    // optional. array/bool. wp:f:add_post_type_support
+    // 'custom-fields' :: don't have to add in order to use wp:plugin:acf
+    // 'title', 'editor' (content) this is the default
+    // 'author','excerpt', 'trackbacks',
+    // 'thumbnail' (featured image, current theme must also support post-thumbnails)
+    // 'comments' (also will see comment count balloon on edit screen)
+    // 'revisions' (will store revisions)
+    // 'page-attributes' (menu order, hierarchical must be true to show Parent option)
+    // 'post-formats' add post formats, see Post Formats
+
+    // 'hierarchical' => true
+    // default false, when true 'supports' should contain 'page-attributes'  
+
+    // 'has_archive' => true
+    // default false
 
   ];
 
@@ -6992,6 +7009,19 @@ function lili_pre_get_posts( $query ) {
 
 **** labels
 <<<wp:register_post_type:labels>>>
+
+#+BEGIN_EXAMPLE
+'labels' => array(
+  'name' => __( 'Jobs' ),
+  'singular_name' => __( 'Job' )
+)
+#+END_EXAMPLE
+
+**** menu_icon
+optional, default null > posts icon
+'dashicons-video-alt' (Uses the video icon from [[https://developer.wordpress.org/resource/dashicons/][Dashicons]])
+'get_template_directory_uri() . "/images/cutom-posttype-icon.png"' (Use a image located in the current theme)
+'data:image/svg+xml;base64,' . base64_encode( "<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 459 459"> <path fill="black" d="POINTS"/></svg>" )' (directly embedding a svg with 'fill="black"' will allow correct colors.)
 
 *** register_nav_menus, register_nav_menu, wp_nav_menu
 <<<wp:f:register_nav_menus>>> used in wp:action:init or wp:action:after_setup_theme
@@ -8627,6 +8657,71 @@ Make a copy of page.php to start
  */
 #+END_EXAMPLE
 
+**** archive.php
+#+BEGIN_EXAMPLE
+<?php
+/**
+ * The template for displaying archive pages
+ *
+ * @link https://codex.wordpress.org/Template_Hierarchy
+ *
+ * @package WordPress
+ * @subpackage Twenty_Seventeen
+ * @since 1.0
+ * @version 1.0
+ */
+
+get_header(); ?>
+
+<div class="wrap">
+
+	<?php if ( have_posts() ) : ?>
+		<header class="page-header">
+			<?php
+				the_archive_title( '<h1 class="page-title">', '</h1>' );
+				the_archive_description( '<div class="taxonomy-description">', '</div>' );
+			?>
+		</header><!-- .page-header -->
+	<?php endif; ?>
+
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main" role="main">
+
+		<?php
+		if ( have_posts() ) : ?>
+			<?php
+			/* Start the Loop */
+			while ( have_posts() ) : the_post();
+
+				/*
+				 * Include the Post-Format-specific template for the content.
+				 * If you want to override this in a child theme, then include a file
+				 * called content-___.php (where ___ is the Post Format name) and that will be used instead.
+				 */
+				get_template_part( 'template-parts/post/content', get_post_format() );
+
+			endwhile;
+
+			the_posts_pagination( array(
+				'prev_text' => twentyseventeen_get_svg( array( 'icon' => 'arrow-left' ) ) . '<span class="screen-reader-text">' . __( 'Previous page', 'twentyseventeen' ) . '</span>',
+				'next_text' => '<span class="screen-reader-text">' . __( 'Next page', 'twentyseventeen' ) . '</span>' . twentyseventeen_get_svg( array( 'icon' => 'arrow-right' ) ),
+				'before_page_number' => '<span class="meta-nav screen-reader-text">' . __( 'Page', 'twentyseventeen' ) . ' </span>',
+			) );
+
+		else :
+
+			get_template_part( 'template-parts/post/content', 'none' );
+
+		endif; ?>
+
+		</main><!-- #main -->
+	</div><!-- #primary -->
+	<?php get_sidebar(); ?>
+</div><!-- .wrap -->
+
+<?php get_footer();
+#+END_EXAMPLE
+
 *** Setup
 wp:f:add_theme_support
 
@@ -8638,6 +8733,8 @@ wp:f:get_header
 wp:action:widgets_init
 
 *** Functions used in template
+Core functions used in templates :: /wp-includes/general-template.php
+
 #+BEGIN_EXAMPLE
 // In template
 <?php wp_head(); ?>
