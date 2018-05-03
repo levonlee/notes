@@ -5968,6 +5968,9 @@ define( 'WP_USE_THEMES', false ); // NOT load the theme at all or any of that co
 define( 'COOKIE_DOMAIN', false ); // NOT verify the cookie domain. We just want to take the cookie as it is.
 define( 'DISABLE_WP_CRON', true ); // Optional
 
+// load less core files. Good for wp REST API request. e.g. global $wp, $wp_query, $wp_the_query are set to NULL
+// define( 'SHORTINIT', TRUE );
+
 // if(!session_id()) session_start(); // I find this not necessary
 
 require_once(__DIR__ . "/../wp-load.php");
@@ -8115,7 +8118,7 @@ add_action( string $tag,
 
 add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
 
-Sequence
+*** Action Sequence <<<wp:action:loading sequence>>>
 https://codex.wordpress.org/Plugin_API/Action_Reference
 
 *** after_setup_theme
@@ -8184,6 +8187,18 @@ Display
 
 *** admin_menu
 <<<wp:action:admin_menu>>>
+
+*** admin_init <<<wp:action:admin_init>>>
+It's triggered before any other hook when a user accesses the admin area. This hook doesn't provide any parameters, so it can only be used to callback a specified function.
+
+These core functions are called:
+register_admin_color_schemes
+send_frame_options_header
+_wp_check_for_scheduled_split_terms
+_wp_admin_bar_init
+_maybe_update_core
+_maybe_update_plugins
+_maybe_update_themes
 
 *** pre_get_posts
 <<<wp:action:pre_get_posts>>>
@@ -9558,6 +9573,30 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FOR
   $_SERVER['HTTPS'] = 'on';
 }
 #+END_EXAMPLE
+
+** REST API
+https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
+
+** Life Cycle
+Refer to wp:action:loading sequence
+https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
+http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
+
+Request /wp-admin/admin-ajax.php
+/wp-load.php
+/wp-config.php
+/wp-settings.php (core files, active plugins and themes and the REST API)
+/wp-admin/admin.php
+/wp-admin/includes/ajax-actions.php
+(wp:action:admin_init)
+
+Request REST API
+/index.php
+/wp-blog-header.php (Environment and Template)
+/wp-load.php
+/wp-config.php
+/wp-settings.php (which loads most core files, all active plugins and themes, and the REST API)
+(doesn't load admin_init, /wp-admin/*.*)
 
 ** PHP 7
 Notice: The called constructor method for WP_Widget is deprecated since version 4.3.0! Use __construct() instead. in /mnt/stor13-wc1-ord1/754452/www.eden-festival.com/web/content/securewp/wp-includes/functions.php on line 3457
