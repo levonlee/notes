@@ -39838,16 +39838,35 @@ RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
 RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md) - [F,NC]
 #+END_EXAMPLE
 
-** RewriteRule directive
-Requires module mod_rewrite
-
+** mod_rewrite
 #+BEGIN_EXAMPLE
 <IfModule mod_rewrite.c>
+RewriteEngine on
 ...
 </IfModule>
 #+END_EXAMPLE
 
-*** RewriteRule Flags
+** RewriteCond directive
+Syntax: RewriteCond [TestString] [CondPattern] [flags]
+#+BEGIN_EXAMPLE
+RewriteCond %{REMOTE_ADDR} ^1\.2\.3\.4$
+#+END_EXAMPLE
+
+*** Variables
+*** Flags
+NC :: no case
+NV :: no vary
+OR
+
+#+BEGIN_EXAMPLE
+RewriteCond "%{REMOTE_HOST}"  "^host1"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host2"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host3"
+RewriteRule ...some special stuff for any of these hosts...
+#+END_EXAMPLE
+
+** RewriteRule directive
+*** Flags
 https://httpd.apache.org/docs/2.4/rewrite/flags.html
 
 F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~ where "-" means the requested URI is not modified.
