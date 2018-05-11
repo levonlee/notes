@@ -9253,6 +9253,7 @@ function custom_shortcode_atts_wpcf7_filter( $out, $pairs, $atts ) {
 }
 #+END_EXAMPLE
 
+***** action:wpcf7_before_send_mail <<<wp:p:contact-form-7:a:wpcf7_before_send_mail>>>
 **** DOM Events
 https://contactform7.com/dom-events/
 
@@ -20481,6 +20482,9 @@ testAllProps('display', 'penguin') // false
 #+END_EXAMPLE
 
 .testProp only tests against non-prefix version.
+
+** flowpaper
+Turn PDF into HTML5. https://flowpaper.com/download/
 
 * ES6-ES2015
 <<<js:es6>>>
@@ -32251,6 +32255,8 @@ Landing page builder :: https://instapage.com/ https://www.leadpages.net/
 
 Track phone calls https://www.callrail.com/
 
+Marketing page builder, A/B testing :: https://www.optimizely.com/
+
 ** Remarketing vs Retargeting
 Remarketing is an umbrella term which covers offline, phone, email, social media and websites. Retargeting is a subset of remarketing
 
@@ -39846,14 +39852,49 @@ RewriteEngine on
 </IfModule>
 #+END_EXAMPLE
 
-** RewriteCond directive
+*** RewriteBase <<<apache:RewriteBase>>>
+Syntax:	RewriteBase [URL-path]
+specifies the URL prefix to be used for per-directory (htaccess) RewriteRule directives that substitute a relative path.
+
+#+BEGIN_EXAMPLE
+RewriteBase /
+#+END_EXAMPLE
+
+Request ~GET /somepath/localpath/pathinfo~
+#+BEGIN_EXAMPLE
+RewriteBase "/somepath"
+RewriteRule ^localpath(.*) otherpath$1
+# /somepath/otherpath/pathinfo
+RewriteRule ^localpath(.*) /otherpath$1
+# /otherpath/pathinfo
+RewriteRule ^localpath(.*) http://thishost/otherpath$1
+# /otherpath/pathinfo
+#+END_EXAMPLE
+
+*** RewriteCond <<<apache:RewriteCond>>>
 Syntax: RewriteCond [TestString] [CondPattern] [flags]
 #+BEGIN_EXAMPLE
 RewriteCond %{REMOTE_ADDR} ^1\.2\.3\.4$
 #+END_EXAMPLE
 
-*** Variables
-*** Flags
+%{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
+
+%{REQUEST_URI} :: leading slash
+
+**** HTTP_COOKIE
+#+BEGIN_EXAMPLE
+RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
+RewriteCond %1                 ^me$
+RewriteRule ......
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
+RewriteCond %{unescape:%1}     ^me$
+RewriteRule ......
+#+END_EXAMPLE
+
+**** Flags
 NC :: no case
 NV :: no vary
 OR
@@ -39865,11 +39906,20 @@ RewriteCond "%{REMOTE_HOST}"  "^host3"
 RewriteRule ...some special stuff for any of these hosts...
 #+END_EXAMPLE
 
-** RewriteRule directive
-*** Flags
+*** RewriteRule <<<apache:RewriteRule>>>
+Syntax:	RewriteRule [Pattern] [Substitution] [flags]
+
+Pattern
+Don't add leading slash. ~^something~ is a relative path that either starts with the current directory's .htaccess or apache:RewriteBase
+
+Substitution
+"-" or - :: the requested URI is not modified
+If it doesn't have a leading slash, the end URL has the current directory's .htaccess or apache:RewriteBase
+
+**** Flags
 https://httpd.apache.org/docs/2.4/rewrite/flags.html
 
-F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~ where "-" means the requested URI is not modified.
+F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
 L :: Last
 NC :: no case
 
