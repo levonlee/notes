@@ -6421,9 +6421,10 @@ Latest version of WordPress Docker is PHP 7 and hence has some extensions remove
 <<<wp:conditional tags>>>
 [[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
 
-** Template Tags
-<<<wp:template tags>>>
+** Template Tags <<<wp:template tags>>>
 wp-includes/xxx-template.php
+https://codex.wordpress.org/Template_Tags
+
 *** post-thumbnail <<<wp:t:thumbnail>>>
 get_post_thumbnail_id($post = null);
 
@@ -6719,7 +6720,7 @@ function lili_custom_post_type() {
   ];
 
   $args = [
-    'label' => 'Plural Name', // string
+    'label' => 'Plural Name', // string. required.
     'labels' => $labels,
     'description' => '', // string, optional
     'public' => false,
@@ -6740,12 +6741,12 @@ function lili_custom_post_type() {
     // false :: do not display in admin menu
     // true :: display as a top level menu
     // 'some string' :: display as a submenu of a menu 'some string'
-    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
+    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_
     'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
 
   ];
 
-  register_post_type('movies', $args);
+  register_post_type('movies', $args );
 
 }
 
@@ -7019,6 +7020,8 @@ function lili_custom_post_type() {
      * ?{post_type_query_var}={single_post_slug}
      */
 
+    // 'query_var' => true, // Default. Set to false means the post type cannot be loaded at /?{query_var}={single_post_slug}. It has no effect when public_queryable is false.
+
     'show_ui' => true, // optional. bool. default take 'public' value.
     'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
     'show_in_menu' => true, // optional, bool or string. default inherits show_ui
@@ -7041,8 +7044,7 @@ function lili_custom_post_type() {
     // 'hierarchical' => true
     // default false, when true 'supports' should contain 'page-attributes'  
 
-    // 'has_archive' => true
-    // default false
+    // 'has_archive' => true // default false
 
   ];
 
@@ -7549,7 +7551,6 @@ Notice :: ~new WP_Query()~ doesn't change wp:query:main
 <?php endif; ?>
 
 <?php $query->rewind_posts(); // in order to loop $query again ?>
-
 #+END_EXAMPLE
 
 *** <<<WP_Query>>>
@@ -8283,15 +8284,15 @@ _maybe_update_core
 _maybe_update_plugins
 _maybe_update_themes
 
-*** pre_get_posts
-<<<wp:action:pre_get_posts>>>
-Provide a chance to modify $query object (or do something else) before it's run.
+*** pre_get_posts <<<wp:action:pre_get_posts>>>
+Provide a chance to modify $query object (or do something else) before it's run. $query can be any main or secondary query.
 Do not use this to alter query for single Page requests.
 
 add_action( 'pre_get_posts', 'lili_pre_get_posts' );
 // Should not call this in template because in template the $query is already run
 function lili_pre_get_posts( $query ) {
-  if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
+  if ( ! is_page() && ! is_home() 
+       && $query->is_main_query() ) {
     $query->set( 'post_type', array( 'post', 'movies' ) );
   }
   // this function should return nothing.
@@ -35725,6 +35726,9 @@ To park a domain means to make the domain as idle. Nameservers will be set to De
 
 Another instance is when you park multiple domains abc.net, abc.info to the main domain abc.com
 
+** DNS History
+https://securitytrails.com/dns-trails
+
 ** AutoSSL in WHM/cPanel
 WHM and cPanel provides free SSL certificates for VPS and Dedicated server users.
 http://www.inmotionhosting.com/support/edu/whm/creating-and-managing-accounts/using-auto-ssl
@@ -39915,7 +39919,7 @@ RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
 ** Restrict access to a file or sub folder
 /var/www/.htaccess blocks access to folders cs-devops and .git and file .gitignore. This way log gets 403 and apache doesn't need to be restarted
 #+BEGIN_EXAMPLE
-RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md) - [F,NC]
+RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log) - [F,NC]
 #+END_EXAMPLE
 
 ** mod_rewrite
