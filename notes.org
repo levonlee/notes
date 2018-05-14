@@ -1,4 +1,4 @@
-#+TITLE: My Notes
+https://docs.woocommerce.com/document/subscriptions/?_ga=2.250410368.789750763.1526304021-1047180195.1525887508#+TITLE: My Notes
 #+OPTIONS: H:4
 #+STARTUP: overview
 #+STARTUP: align
@@ -9646,6 +9646,11 @@ Starting v2.1 shortcodes are replaced with endpoints
 https://github.com/woocommerce/woocommerce
 https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/
 
+**** extension: Subscription
+Make recurring payment and subscription products possible.
+Docs: https://docs.woocommerce.com/document/subscriptions/
+https://woocommerce.com/products/woocommerce-subscriptions/
+
 **** plugin: woo-order-export-lite
 ** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
@@ -17744,10 +17749,21 @@ cookieKeyValPair = "litest=" + encodeURIComponent(cookieVal);
 document.cookie = cookieKeyValPair;
 
 // Optional cookie attribute values, preceded by a semi-colon separator
-cookieKeyValPair += "; path='/mydir'"
+var d = new Date();
+d.setTime(d.getTime() + 30*24*60*60*1000); // 30 days. If not set, cookie will be exired after browser is closed.
+var expires = "expires=" + d.toUTCString();
+cookieKeyValPair += "; " + expires;
+cookieKeyValPair += "; path='/mydir'";
 
 // or
 cookieKeyValPair += "; path=/"
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + encodeURIComponent(cvalue) + ";" + expires + ";path=/";
+}
 #+END_EXAMPLE
 
 Find a cookie value by a key
@@ -39651,10 +39667,12 @@ Convert the Identityfile to .ppk with SSH-2-RSA with 2048 bits and save it to th
 ** Basics
 Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ in Ubuntu
 
-** Ubuntu install
+** Config loading
 apt-get update; apt-get install apache2
 
 ~service apache2 restart~
+~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container
+Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line.
 
 Refer to image:php:apache to get configs
 
@@ -39736,6 +39754,20 @@ conf-enabled/*.conf
 # virutal host config
 sites-enabled/*.conf
 #+END_EXAMPLE
+
+** LogLevel
+
+Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
+#+BEGIN_EXAMPLE
+LogLevel alert rewrite:trace6
+
+# For < 2.4 use this for Rewrite log
+RewriteEngine On
+RewriteLog "/var/log/apache2/rewrite.log"
+RewriteLogLevel 3
+#+END_EXAMPLE
+
+trace1 to trace8 (most detailed)
 
 ** Basic authentication
 htpasswd creates auth file and it needs this package. htpasswd doesn't need to be installed on server.
