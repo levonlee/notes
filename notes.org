@@ -351,6 +351,15 @@ $_u_time = strtotime('2016-11-01');
 // ISO date string. Refer to js:time:iso
 $_u_time = strtotime('2011-10-05T14:48:00.000Z')
 
+Compare if($start > $end) {}
+
+// difference in seconds
+$end - $start
+
+// Format differences
+$interval = date_diff($end, $start);
+echo $interval->format('%R%a days');
+
 **** Unix timestamp (int) to datetime object
 $_u_time = strtotime('2016-11-01');
 
@@ -416,6 +425,7 @@ var_dump(
 array_merge
 - only merge on the first level
 - If key is the same, value at later array will overwrite the first array's value.
+- However, if key is numeric, values will always be appended (not overwriting) disregarding the values are the same.
 
 array_merge_recursive
 - If key is the same, values will be appended as array
@@ -533,6 +543,68 @@ var_dump(array_filter($arr, function($v, $k) {
 #+END_EXAMPLE
 
 Original index number is used!
+
+*** Sort arrays
+http://php.net/manual/en/array.sorting.php
+- All functions act directly on the input array
+- Maintain key association means the keys are not modified otherwise the keys are reset numerically (0,1,2)
+
+**** usort uasort - value sort
+usort doesn't maintain key association but uasort does. If callback function returns negative integer, means the comparison is less than.
+
+#+BEGIN_EXAMPLE
+Array
+(
+    [0] => Array
+        (
+            [hashtag] => a7e87329b5eab8578f4f1098a152d6f4
+            [title] => Flower
+            [order] => 3
+        )
+
+    [1] => Array
+        (
+            [hashtag] => b24ce0cd392a5b0b8dedc66c25213594
+            [title] => Free
+            [order] => 2
+        )
+
+    [2] => Array
+        (
+            [hashtag] => e7d31fc0602fb2ede144d18cdffd816b
+            [title] => Ready
+            [order] => 1
+        )
+)
+
+// PHP 5.2 and lower
+function sortByOrder($a, $b) {
+    return $a['order'] - $b['order']; // ascending order
+}
+usort($myArray, 'sortByOrder');
+
+// PHP 5.3 and above
+usort($myArray, function($a, $b) {
+    return $a['order'] - $b['order'];
+});
+
+// PHP 7 and above
+usort($myArray, function($a, $b) {
+    return $a['order'] <=> $b['order'];
+});
+
+// Order by multiple values
+usort($myArray, function($a, $b) {
+    $retval = $a['order'] <=> $b['order'];
+    if ($retval == 0) {
+        $retval = $a['suborder'] <=> $b['suborder'];
+        if ($retval == 0) {
+            $retval = $a['details']['subsuborder'] <=> $b['details']['subsuborder'];
+        }
+    }
+    return $retval;
+});
+#+END_EXAMPLE
 
 ** String
 *** String to HTML, <<<php:DOMDocument>>>
