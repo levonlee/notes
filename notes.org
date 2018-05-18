@@ -1,4 +1,4 @@
-https://docs.woocommerce.com/document/subscriptions/?_ga=2.250410368.789750763.1526304021-1047180195.1525887508#+TITLE: My Notes
+#+TITLE: My Notes
 #+OPTIONS: H:4
 #+STARTUP: overview
 #+STARTUP: align
@@ -6510,8 +6510,7 @@ require_once(ABSPATH . 'wp-settings.php');
 
 Latest version of WordPress Docker is PHP 7 and hence has some extensions removed like mysql_connect. Make sure your PHP environment is the same for WordPress and wp-cli.
 
-** Conditional Tags
-<<<wp:conditional tags>>>
+** Conditional Tags <<<wp:conditional tags>>>
 [[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
 
 is_page() :: any page
@@ -6522,6 +6521,8 @@ is_page( array(42, 54, 6) )
 
 is_page_template() :: any page template
 is_page_template( 'about.php' ) :: 'page-templates/about.php'
+
+is_admin_bar_showing() :: wp:admin:toolbar
 
 ** Template Tags <<<wp:template tags>>>
 wp-includes/xxx-template.php
@@ -7328,14 +7329,22 @@ function remove_p_on_pages() {
 add_action( 'wp_head', 'remove_p_on_pages' );
 #+END_EXAMPLE
 
-*** shortcode_unautop
-<<<wp:f:shortcode_unautop>>> used in wp:filter:the_content
+*** shortcode_unautop <<<wp:f:shortcode_unautop>>>
+Used in wp:filter:the_content
 Ensure shortcodes are not wrapped in <p>...</p>
 
 Refer to wp:filter:the_content wp:filter:tiny_mce_before_init
 
 #+BEGIN_EXAMPLE
 add_filter( 'the_content', 'shortcode_unautop'  );
+#+END_EXAMPLE
+
+*** show_admin_bar <<<wp:f:show_admin_bar>>>
+Use it in functions.php or wp:filter:show_admin_bar
+#+BEGIN_EXAMPLE
+if ( ! current_user_can( 'manage_options' ) ) {
+    show_admin_bar( false );
+}
 #+END_EXAMPLE
 
 *** wp_get_image_editor
@@ -8165,8 +8174,7 @@ add_filter('upload_mimes', 'cc_mime_types');
 <<<wp:filter:widget_text>>>
 wp:f:add_shortcode
 
-*** sidebars_widgets
-<<<wp:filter:sidebars_widgets>>>
+*** sidebars_widgets <<<wp:filter:sidebars_widgets>>>
 Filters the list of sidebars and their widgets.
 #+BEGIN_EXAMPLE
 // disable all widget areas
@@ -8175,6 +8183,12 @@ function disable_all_widgets($sidebars_widgets) {
   return $sidebars_widgets;
 }
 add_filter('sidebars_widgets', 'disable_all_widgets');
+#+END_EXAMPLE
+
+*** show_admin_bar <<<wp:filter:show_admin_bar>>>
+wp:f:show_admin_bar
+#+BEGIN_EXAMPLE
+add_filter('show_admin_bar', '__return_false');
 #+END_EXAMPLE
 
 *** excerpt_more
@@ -8589,8 +8603,7 @@ define('FTP_SSL', true);
 
 https://codex.wordpress.org/Editing_wp-config.php#WordPress_Upgrade_Constants
 
-** Ellipsis and trim, strip HTML and PHP tags
-<<<wp:ellipsis>>>
+** Ellipsis and trim, strip HTML and PHP tags <<<wp:ellipsis>>>
 wp_trim_words($text) :: strip HTML and PHP tags and truncate string in words
 #+BEGIN_EXAMPLE
 function wp_trim_words( $text, $num_words = 55, $more = null ) {
@@ -8917,6 +8930,29 @@ function lili_wphead_dfp() {
 
 *** Good themes
 [[https://themeforest.net/item/newspapaer/5489609][Newspaper]]
+
+** Admin Screens
+*** Admin bar now is called Toolbar <<<wp:admin:toolbar>>>
+In order to show
+- wp_footer is called. <body> will have class admin-bar and /wp-includes/css/admin-bar.min.css is added
+- ~show_admin_bar( false );~ is not run in functions.php
+- In newer version of wp, wp:filter:show_admin_bar can be used to turn off the admin bar
+
+If you have sticky or position:fixed element .sticky-header
+#+BEGIN_EXAMPLE
+.sticky-header {
+  position: fixed;
+  top: 0;
+}
+.admin-bar .sticky-header {
+  top: 46px; /* 0 + 46 */
+}
+@media screen and (min-width: 783px) {
+  .admin-bar .sticky-header {
+    top: 32px; /* 0 + 32 */
+  }
+}
+#+END_EXAMPLE
 
 ** Transient API
 WordPress cache API in database.
@@ -11473,6 +11509,7 @@ http://viewportsizes.com/
 
 #+BEGIN_EXAMPLE
 // @media only screen and (max-width:1920) {}
+// @media all and (...) {...}
 
 @media (max-width:1920px){}
 
@@ -11511,6 +11548,18 @@ http://viewportsizes.com/
 
 /* iPhone5@320 */
 @media (max-width:320px){}
+#+END_EXAMPLE
+
+Mobile first
+#+BEGIN_EXAMPLE
+.any {
+  width:100%;
+}
+
+@media (min-width:576px) {}
+@media (min-width:768px) {}
+@media (min-width:992px) {}
+@media (min-width:1200px) {}
 #+END_EXAMPLE
 
 ** @keyframes
