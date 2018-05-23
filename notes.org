@@ -33012,7 +33012,7 @@ As root user, run as another user without typing password ~sudo -H -u username b
 *** Require no password when sudo is run as another user
 <<<linux:sudo:nopassword>>>
 User abc has sudo privilege. When abc is signed in and run a script/command that requires sudo, system will ask for password
-~sudo ./path/to/script.sh~
+~sudo ./path/to/script.sh~ This bash file can contain ~make start~ where recipes may not have sudo in front.
 
 Bypass so password input is not required
 
@@ -33384,7 +33384,7 @@ chown -Rf devone:devone /home/devone/websites
 chmod -Rf 770 /home/devone/websites
 
 nano /etc/fstab
-bindfs#/var/www/application1 /home/devone/websites/application1 fuse force-user=devone,force-group=devone,create-for-user=www-data,create-for-group=www-data,create-with-perms=0770,chgrp-ignore,chown-ignore,chmod-ignore 0 0  
+bindfs#/var/www/application1 /home/devone/websites/application1 fuse force-user=devone,force-group=devone,create-for-user=www-data,create-for-group=www-data,create-with-perms=0644,chgrp-ignore,chown-ignore,chmod-ignore 0 0  
 
 mount /home/devone/websites/application1
 // if your system yells about force-user or force-group not being defined:
@@ -33408,6 +33408,17 @@ Make sure www-data user owns /var/www can prevent devone directly access the fol
 #+BEGIN_EXAMPLE
 chown www-data:www-data /var/www
 chmod 770 /var/www
+#+END_EXAMPLE
+
+If /etc/fstab is modified and you want to remount to reflect the changes. Unmount the existing first
+#+BEGIN_EXAMPLE
+umount /home/devone/websites/application1
+// if that fails, try to navigate out of the /home/devone/websites/application1 for all users
+// or use -l for lazy and -f for force
+// umount -l /home/devone/websites/application1
+mount /home/devone/websites/application1
+
+// or mount -a to mount all entries in /etc/fstabs
 #+END_EXAMPLE
 
 http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
@@ -33610,8 +33621,7 @@ find . -type d -not -group test -o -type f -not -user test
 
 **** Create several users for SFTP and final file permissions are www-data
 <<<linux:permission:users>>>
-If more than one users are needed, try this
-http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
+If more than one users are needed, try linux:bindfs
 
 Otherwise, add user to group www-data and change default wp:file permissions from chmod:644 files chmod:755 directories to chmod:664 for files and chmod:775 for directories
 This way new file will be the user not www-data but editing/uploading exising files will remain www-data:www-data
@@ -33750,8 +33760,7 @@ find . | wc -l
 
 Check file permissions wp:check file permissions
 
-*** Search Text in Files
-<<<linux:grep>>>
+*** Search Text in Files <<<linux:grep>>>
 
 #+BEGIN_EXAMPLE
 grep --color -HRi "google\.com" /root/dir
@@ -33775,7 +33784,7 @@ grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
 - --color :: hightlight
 - -H :: return only the file names
 - -R :: recursive
-- -i :: ignore case 
+- -i :: ignore case
 - -I :: process binary files as if they don't contain matching data
 - -n :: line number
 - -A NUM :: number of trailing lines of text
@@ -36122,17 +36131,19 @@ Stop and remove all exited containers :: ~docker rm $(docker ps -qa --no-trunc -
 
 Container log :: ~docker logs -f containerName~ -f to follow log output
 
-- docker inspect
+*** docker inspect
 ~docker inspect containerName~
-Container network IP and settings :: ~NetworkSetting > IPAddress~
+Container network IP and settings :: ~NetworkSetting > IPAddress~ or 
+#+BEGIN_EXAMPLE
+docker inspect containername | grep -i "IPAddress"=
+#+END_EXAMPLE
+
 Volume :: ~Config > Volumes~ and ~Mounts~
 
 Return true or false for container running state
 docker inspect -f {{.State.Running}} $CONTAINER_ID
 
-Show docker system log
-docker events
-
+*** docker events - Show docker system log
 *** docker cp
 Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
 Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
@@ -37806,7 +37817,7 @@ Parent image: debian:jessie
 https://github.com/stilliard/docker-pure-ftpd
 By default, it only supports FTP not SFTP
 
-Dockerfile
+Dockerfile =docker build -t myftp .=
 #+BEGIN_EXAMPLE
 FROM stilliard/pure-ftpd:hardened
 
@@ -37826,8 +37837,8 @@ CMD /run.sh -c 30 -C 5 -l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R -P $PUBLIC
 
 # In Compose
 
-# -P IP/Host setting for PASV support, passed in your the PUBLICHOST env var
-# -p PASV port range
+# -P $PUBLICHOST :: setting for PASV support, passed in your the PUBLICHOST env var
+# -p 30000:30009 :: PASV port range
 #+END_EXAMPLE
 
 docker-compose.yml
@@ -37845,9 +37856,10 @@ services:
   myftp:
     build: .
     image: myftp:latest
-    container_name: newcomftp
+    container_name: myftp
     environment:
       - PUBLICHOST=ftp.yourdomain.com
+#     - ADDED_FLAGS=-d -d
     ports:
       - "21:21"
       - "30000-30009:30000-30009"
@@ -37855,7 +37867,8 @@ services:
     volumes:
       - /host/storefiles/ftp:/home/ftpusers
       - /host/config/ftp/passwd:/etc/pure-ftpd/passwd
-# a single `pureftps.passwd` file contains the user database
+# persist the user database
+# only one file under /etc/pure-ftpd/passwd which is pureftps.passwd and it contains the user database
 #     - /host/config/ftp/ssl:/etc/ssl/private
 # a single `pure-ftpd.pem` file with server's SSL certificates for TLS support
     networks:
@@ -37878,7 +37891,7 @@ info:
 	@echo "Add a new user abc and make parent folder to /FTP"
 	@echo 'make adduser username="abc" folder="FTP"'
 	@echo 'Add a new user abc and make parent folder to root /'
-	@echo 'make adduser username="abc" folder=""'
+	@echo 'make adduser username="abc" folder="application1"'
 	@echo 'Delete a user abc: make deluser username="abc"'
 
 start:
