@@ -32941,6 +32941,8 @@ As root user, run this to add the user to the sudo group
 gpasswd -a username sudo
 # or
 # usermod -aG sudo username
+# to list groups a user is in
+groups username
 #+END_EXAMPLE
 
 gpasswd is the same as to add user to a group
@@ -32980,7 +32982,7 @@ Which group a user belongs to ~groups username~
 *** Change a user's password
 Login as root and run ~passwd~, ~sudo passwd ausername~
 
-*** List all users =cut -d: -f1 /etc/passwd` or `cat /etc/passwd=
+*** List all users =cut -d: -f1 /etc/passwd= or =cat /etc/passwd=
 - Login username
 - Password (always x)
 - UID (<500 are system accounts, > 500 are users)
@@ -33368,6 +33370,48 @@ Search a word `warthog` in .gz files
 , then reload =sudo mount -a=
 - Permanently mount during bootime
 
+*** bindfs <<<linux:bindfs>>>
+Tested on Ubuntu Xenial
+Create a user devone and mount /home/devone/websites/application1 to /var/www/application1 which is owned by www-data
+devone can create/edit files while the destination folder maintain the same owner www-data and permissions.
+#+BEGIN_EXAMPLE
+apt-get update
+apt-get -y install bindfs
+
+adduser devone
+mkdir -p /home/devone/websites/application1
+chown -Rf devone:devone /home/devone/websites
+chmod -Rf 770 /home/devone/websites
+
+nano /etc/fstab
+bindfs#/var/www/application1 /home/devone/websites/application1 fuse force-user=devone,force-group=devone,create-for-user=www-data,create-for-group=www-data,create-with-perms=0770,chgrp-ignore,chown-ignore,chmod-ignore 0 0  
+
+mount /home/devone/websites/application1
+// if your system yells about force-user or force-group not being defined:
+// replace force-user by owner
+// replace force-group by group
+
+// Test
+su - devone
+cd ~/websites/application1
+touch hello.txt
+ls -al hello.txt
+-rwxrwx--- 1 devone devone 0 sept. 10 17:15 hello.txt
+
+exit
+cd /var/www/application1
+ls -al hello.txt
+-rwxrwx--- 1 www-data www-data 0 sept. 10 17:15 helloworld.txt
+#+END_EXAMPLE
+
+Make sure www-data user owns /var/www can prevent devone directly access the folder
+#+BEGIN_EXAMPLE
+chown www-data:www-data /var/www
+chmod 770 /var/www
+#+END_EXAMPLE
+
+http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
+
 *** /etc system configuration files
 *** Disk space
 | =df -h=                 | Disk usage on OS                                    |
@@ -33566,7 +33610,7 @@ find . -type d -not -group test -o -type f -not -user test
 
 **** Create several users for SFTP and final file permissions are www-data
 <<<linux:permission:users>>>
-If mroe than one users are needed, try this
+If more than one users are needed, try this
 http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
 
 Otherwise, add user to group www-data and change default wp:file permissions from chmod:644 files chmod:755 directories to chmod:664 for files and chmod:775 for directories
@@ -36064,6 +36108,9 @@ Inside the container, the container is called --hostname=value
 ~docker run --hostname=value~ OR ~docker run -h value~
 Combine --name and --hostname as much as you can
 
+*** --privileged
+e.g. allow docker container to run docker daemon, allow docker container to access all devices such as file systems.
+
 ** Containers cp logs stats start stop restart rm inspect
 List containers :: ~docker ps -a~
 Stop and Start :: ~docker stop containerName~ ~docker start containerName~
@@ -37971,7 +38018,7 @@ puts commands.reverse
 #+END_EXAMPLE
 
 ** image:ubuntu
-~docker run -it --rm ubuntu /bin/bash~
+~docker run -it --rm --privileged ubuntu:xenial /bin/bash~
 
 trusty: 14.04
 xenial (latest): 16.04
