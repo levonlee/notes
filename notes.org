@@ -16117,6 +16117,7 @@ inline="inline" to set class in native HTML elememts
     </mj-style>
     <mj-style inline="inline">
       .link-nostyle { color: inherit; text-decoration: none }
+      <!-- for a tag, color: inherit is not working, either specify color in .link-nostyle or style="color:#fff" in a tag. -->
     </mj-style>
   </mj-head>
   <mj-body>
@@ -16132,6 +16133,35 @@ inline="inline" to set class in native HTML elememts
             Hello <a href="https://mjml.io" class="link-nostyle">World</a>
           </mj-text>
 
+        </mj-column>
+      </mj-section>
+    </mj-container>
+  </mj-body>
+</mjml>
+#+END_EXAMPLE
+
+<<<mjml:tag:mj-style:responsive font size>>>
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+     <mj-style>
+       .body-fix div {
+          font-size: 22px !important;
+          line-height: 28px !important;
+        }
+        @media only screen and (max-width: 480px){
+          .body-fix div {
+            font-size: 28px !important;
+            line-height: 44px !important;
+          }
+        }
+    </mj-style>
+  </mj-head>
+  <mj-body>
+    <mj-container>
+      <mj-section>
+        <mj-column>
+          <mj-text css-class="body-fix" font-size="22px" color="#F45E43" font-family="helvetica">Will work :)</mj-text>
         </mj-column>
       </mj-section>
     </mj-container>
@@ -16221,13 +16251,11 @@ There's no more mj-container in version 4. mj-section was mj-container in versio
 
 // TODO Inside container, you can have include, section and/or wrapper
 
-**** mj-container > mj-include
-<<<mjml:tag:mj-include>>>
+**** mj-body > mj-include <<<mjml:tag:mj-include>>>
 Inside mjml > mj-body > mj-container
 <mj-include path="./header" /> <!-- or 'header.mjml' -->
 
-**** mj-container > mj-section
-<<<mjml:tag:mj-section>>>
+**** mj-body > mj-section <<<mjml:tag:mj-section>>>
 It should contain mj-column. Up to 4 columns.
 Section has up to 600px width.
 
@@ -16235,6 +16263,7 @@ https://mjml.io/documentation/#mjml-section
 
 Structure the columns in the order you want them to stack on mobile, then use direction attribute to change the order on desktop.
 
+- full-width :: n/a (full-width)
 - direction :: ltr or rtl, default ltr
 - padding :: default 20px 0
 - padding-top, padding-x
@@ -16396,7 +16425,7 @@ mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
 ...
 </mj-section>
 #+END_EXAMPLE
-**** mj-section > mj-column
+**** mj-section > mj-column <<<mjml:tag:mj-column>>>
 Without width attribute, mj-column is evenly distributed.
 
 width attribute can have pixels or percentage.
@@ -16427,7 +16456,7 @@ It can contain any HTML tag with any attributes.
 <mj-section background-color="#f0f0f0">
   <mj-column>
     <mj-text font-style="italic" font-size="20" color="#626262">
-       My Company
+       My Company <a href="#" style="text-decoration:none;color:#2DDCB4">... read more</a>
     </mj-text>
     <mj-text>
       <h1>
@@ -16438,18 +16467,20 @@ It can contain any HTML tag with any attributes.
 </mj-section>
 #+END_EXAMPLE
 
+mjml:tag:mj-style:responsive font size
+
 ***** mj-button, Image header with text and button
 - href ::
 - target :: _blank
 - padding :: 10px 25px
 - inner-padding :: 10px 25px
-- background-color :: default #414141
+- background-color :: #414141
+- color :: #ffffff
 - border-radius :: 3px
 - font-size :: 13px
 - font-weight :: normal
 - font-family :: Ubuntu, Helvetic, Arial, sans-serif
 - line-height :: 120%, px/%/none
-- color :: #ffffff
 - align :: center
 - vertical-align :: middle
 
@@ -16508,6 +16539,7 @@ mj-image
 #+END_EXAMPLE
 
 ***** mj-social
+Refer to mjml:tag:mj-table:social
 Version 4
 #+BEGIN_EXAMPLE
 <mj-section background-color="#e7e7e7">
@@ -16518,6 +16550,40 @@ Version 4
   </mj-column>
 </mj-section>
 #+END_EXAMPLE
+
+mj-social
+- border-radius :: 3px
+- font-family :: Ubuntu, Helvetica, Arial, sans-serif
+- font-size :: 13px
+- icon-size :: 20px
+- line-height :: 22px
+- mode :: horizontal (vertical)
+- text-decoration :: none
+- align :: center
+- color :: #333333
+- inner-padding :: 4px
+- padding :: 10px 25px
+
+mj-social-element
+- name :: facebook/google/instagram/pinterest/linkedin/twitter
+- mode :: horizontal (vertical)
+- text-mode :: true (false, no text node inside mj-social-element)
+
+- src
+
+- border-radius :: 3px
+- href :: 
+- target :: _blank
+- text-decoration :: none
+
+- align :: center
+- color :: #333333
+- background-color :: each social name has its own default
+- font-size :: 13px
+- icon-size :: 20px
+- line-height :: 22px
+
+- padding :: 10px 25px
 
 Version 3
 - text-mode :: default true, if true, *-content must be defined
@@ -16599,9 +16665,8 @@ mj-table always, as a whole, align left. If you want to center use mj-raw to mjm
 
 mj-social aligns center
 
-mj-table has right and left padding: 10px 25px
-
-Use it to align icons with links. Notice the img has fixed width. Include this mj-table
+<<<mjml:tag:mj-table:social>>>
+Use it to align icons with links. Notice the img has fixed width. Include this mj-table 
 #+BEGIN_EXAMPLE
 <mj-table>
   <tr style="list-style: none;line-height:1">
@@ -16685,12 +16750,13 @@ This won't work for Yahoo! Mail but works on all clients
 <mj-column>
   <mj-text>...</mj-text>
 
-  <!-- each mj-element under mj-column is <tr><td> content </td></tr>
+  <!-- each mj-element under mj-column is <tr><td> content </td></tr> -->
   <mj-raw>
    
     <tr>
         <td>
             <table align="center" width="110" cellpadding="0" cellspacing="0" border="0">
+            <!-- right also works -->
                 <tr>
                     <td align="center" width="30"><a href="#">
                       <img width="30" src="twitter.png" />
@@ -16777,14 +16843,14 @@ Columns inside a group must have a width in percentage or auto sizing, but not i
 
 Section can have both mj-column and mj-group.
 
-iOS 9 :: always remove space between columns inside a mj-group
+iOS 9 :: always remove space between columns inside a mj-group. Or export HTML using minify.
 
 - width :: 100 / number of children in section (%/px)
 - vertical-align :: top
 - background-color :: default n/a
 
 **** Caveats
-mj-image inside mj-colum will always have a maximum fixed width.
+mj-image inside mj-column will always have a maximum fixed width.
 
 If there's one mj-column, then mj-image is 100% of the mj-column.
 
