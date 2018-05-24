@@ -16038,14 +16038,18 @@ Tags or mj-elements styling
 
 [[https://mjml.io/try-it-live/templates/basic][Sample 1]]
 
-**** <<<mjml:tag:mjml>>>
+**** mjml <<<mjml:tag:mjml>>>
 Contains mjml:tag:mj-head and mjml:tag:mj-body
 
-**** <<<mjml:tag:mj-head>>>
+By default, display the mobile version for Outlook.com. To force the desktop layout on Outlook.com
+#+BEGIN_EXAMPLE
+<mjml owa="desktop">
+#+END_EXAMPLE
+
+**** mj-head <<<mjml:tag:mj-head>>>
 Contains styles and meta elements. To insert custom head elements, registerMJHeadElement(<string> name, <funciton> handler) api from mjml-core
 
-**** mj-head > mj-preview
-<<<mjml:tag:mj-preview>>>
+**** mj-head > mj-preview <<<mjml:tag:mj-preview>>>
 no other attributes
 #+BEGIN_EXAMPLE
 <mj-head>
@@ -16082,8 +16086,27 @@ Order: inline attributes > classes > default mj-attributes > defaultMJMLDefiniti
 </mjml>
 #+END_EXAMPLE
 
-**** mj-head > mj-style
-<<<mjml:tag:mj-style>>>
+**** mj-head > mj-breakpoint
+On which breakpoint the layout should go desktop/mobile. Default is 480px
+
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+    <mj-breakpoint width="320px" />
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text>
+          Hello World!
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+#+END_EXAMPLE
+
+**** mj-head > mj-style <<<mjml:tag:mj-style>>>
 mj-style to apply styles to generated or native HTML elements
 inline="inline" to set class in native HTML elememts
 #+BEGIN_EXAMPLE
@@ -16171,18 +16194,32 @@ Use css-class in any mj-element and change styles for mobile
 </mj-head>
 #+END_EXAMPLE
 
-**** mj-head > mj-body > mj-container
-<<<mjml:tag:mj-body>>> <<<mjml:tag:mj-container>>>
+**** mj-head > mj-body > mj-section (mj-container)
+<<<mjml:tag:mj-body>>> <<<mjml:tag:mj-section>>> <<<mjml:tag:mj-container>>>
 To insert custom elements either registerMJElement(<MJMLElement> class) api from mjml-core or via .mjmlconfig file.
 Non-known element from mjml-core are ignored.
-It should have only one root element which usually is mjml-container, which contains the entire content of your document.
 
-mj-container was mj-body in version 1.x
-- width :: unit px, default 600px
+mj-body can have multiple mj-section
+- width :: default 600px
 - background-color
+- css-class
+
+For version 3, mj-body should have only one root element which usually is mjml-container, which contains the entire content of your document.
+
+There's no more mj-container in version 4. mj-section was mj-container in version 3 and mj-container was mj-body in version 1.x
+- width :: unit px, default 600px, you can change mj-body's width attribute to change it.
+- full-width :: default n/a. If set to full-width then section is extended to the full width beyond 600px
+- background-color
+- background-url
+- background-size :: auto
+- background-repeat :: repeat
+- vertical-align :: top
+- text-align :: center
+- padding :: 20px 0
+- direction :: ltr (or rtl)
 - css-class :: rendered HTML is class="xx"
 
-Inside container, you can have include, section and/or wrapper
+// TODO Inside container, you can have include, section and/or wrapper
 
 **** mj-container > mj-include
 <<<mjml:tag:mj-include>>>
@@ -16205,18 +16242,21 @@ Structure the columns in the order you want them to stack on mobile, then use di
 - background-repeat :: default repeat, no-repeat
 - background-color :: default n/a,
 
-**** mj-container > mj-wrapper
-<<<mjml:tag:mj-wrapper>>>
+**** mj-wrapper > mj-section <<<mjml:tag:mj-wrapper>>>
 Wrap multiple sections. Perfect place to set borders
 
 https://mjml.io/documentation/#mjml-wrapper
 
-- padding :: default 20px 0
-- padding-top, padding-x
-- direction :: default ltr, ltr / rtl
-- vertical-align :: default top
-- text-align :: default center
-- full-width :: always define full-width="full-width", and don't have it in sections that the wrapper wraps.
+- padding :: 20px 0
+- padding-*
+- background-url :: If mj-wrapper has this defined, don't define in its mj-section
+- background-repeat :: repeat
+- background-size :: auto
+- border :: none
+- direction :: ltr (rtl)
+- vertical-align :: top
+- text-align :: center
+- full-width :: Don't add full-width="full-width" inside mj-section as it will make mj-section non-full-width
   - I also find out if there are other sections that are also inside mj-container, define full-width only for that wrapper and don't define it for other sections
 
 #+BEGIN_EXAMPLE
@@ -16274,7 +16314,8 @@ Always keep in mind that the maximum space to end up with a responsive layout is
 
 No padding is set by default
 
-***** mj-container > <<<mjml:tag:mj-hero>>>
+**** mj-container > mj-hero <<<mjml:tag:mj-hero>>>
+https://mjml.io/documentation/#mjml-hero
 #+BEGIN_EXAMPLE
 <mj-container>
   <mj-hero mode="fluid-height" background-width="600px" background-height="469px" background-url="https://via.placeholder.com/600x469/?text=600x469" background-color="#2a3448" padding="100px 0px">
@@ -16355,18 +16396,31 @@ mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
 ...
 </mj-section>
 #+END_EXAMPLE
+**** mj-section > mj-column
+Without width attribute, mj-column is evenly distributed.
+
+width attribute can have pixels or percentage.
+#+BEGIN_EXAMPLE
+<mj-column width="200px"> <!-- First column content --> </mj-column>
+#+END_EXAMPLE
+
+- vertical-align :: top
+- padding :: 20px 0
 
 **** mj-elements inside mj-column
-***** mj-text
-<<<mjml:tag:mj-text>>>
+Any mj-element inside mj-column will have width equivalent to 100% of this column's width.
+
+***** mj-text <<<mjml:tag:mj-text>>>
 It can contain any HTML tag with any attributes.
 
-- padding :: default 10px 25px
-- line-height :: default 22px
-- color :: default #000000
+- padding :: 10px 25px
+- color :: #000000
 - container-background-color :: n/a
-- font-family :: default Ubuntu, Helvetica, Arial, sans-serif
+- font-family :: Ubuntu, Helvetica, Arial, sans-serif
 - font-size :: 13px
+- font-style
+- line-height :: 22px
+- letter-spacing :: none
 - align :: left
 
 #+BEGIN_EXAMPLE
@@ -16386,17 +16440,18 @@ It can contain any HTML tag with any attributes.
 
 ***** mj-button, Image header with text and button
 - href ::
+- target :: _blank
 - padding :: 10px 25px
 - inner-padding :: 10px 25px
-- background-color :: #414141
+- background-color :: default #414141
 - border-radius :: 3px
 - font-size :: 13px
-- font-weight :: bold
+- font-weight :: normal
 - font-family :: Ubuntu, Helvetic, Arial, sans-serif
+- line-height :: 120%, px/%/none
 - color :: #ffffff
 - align :: center
 - vertical-align :: middle
-- line-height :: 120%, px/%/none
 
 #+BEGIN_EXAMPLE
 <mj-section background-url="http://1.bp.blogspot.com/-TPrfhxbYpDY/Uh3Refzk02I/AAAAAAAALw8/5sUJ0UUGYuw/s1600/New+York+in+The+1960's+-+70's+(2).jpg" background-size="cover" background-repeat="no-repeat">
@@ -16418,14 +16473,17 @@ It can contain any HTML tag with any attributes.
 ***** mj-image, Basic 2 columns with image on left and text on right
 mj-image
 - width :: px, default 100% (100% of the column width)
-- align :: default center
-- padding :: default 10px 25px
-- padding-top, padding-x
+- height :: auto
+- align :: center
+- padding :: 10px 25px
+- padding-*
+- border :: none
 - border-width :: default 4px
 - border-style :: default solid, dashed/dotted
 - border-color :: default #000000
 - alt :: string
-- href :: !!
+- href
+- target :: _blank
 
 #+BEGIN_EXAMPLE
 <mj-section background-color="white">
@@ -16450,6 +16508,18 @@ mj-image
 #+END_EXAMPLE
 
 ***** mj-social
+Version 4
+#+BEGIN_EXAMPLE
+<mj-section background-color="#e7e7e7">
+  <mj-column>
+    <mj-social>
+      <mj-social-element name="facebook" />
+    </mj-social>
+  </mj-column>
+</mj-section>
+#+END_EXAMPLE
+
+Version 3
 - text-mode :: default true, if true, *-content must be defined
 - font-family
 - color :: text color, default #333333
@@ -16481,6 +16551,13 @@ youtubec-icon-color="#A7A6A4" youtubec-icon="path to youtube icon image" />
 
 ***** mj-divider
 Try to add horizontal border with some spacing using mj-divider
+- border-color :: #000000
+- border-style :: solid
+- border-width :: 4px
+- width :: 100% px/percent
+- padding :: 10px 25px
+- container-background-color
+
 #+BEGIN_EXAMPLE
 <mj-section padding-bottom="0" background-color="white">
   <mj-column width="100%">
@@ -16492,6 +16569,10 @@ Try to add horizontal border with some spacing using mj-divider
 
 ***** mj-spacer
 blank space.  For some reason, try adding a section with a spacer only so that the email has the content in full width
+
+- height :: 20px
+- css-class
+
 #+BEGIN_EXAMPLE
 <mj-section>
   <mj-column>
@@ -16503,10 +16584,16 @@ blank space.  For some reason, try adding a section with a spacer only so that t
 #+END_EXAMPLE
 
 ***** mj-table
-- font-family ::
+only accepts plain html
+
+- font-family :: Ubuntu, Helvetica, Arial, sans-serif
+- font-size :: 13px
+- line-height :: 22px (%/px)
+- padding :: 10px 25px
 - width :: default 100%
-- only accepts plain html
-- Use it to have fixed width that's not gonna change when in mobile
+- table-layout :: auto (fixed/initial/inherit)
+
+Use it to have fixed width that's not gonna change when in mobile
 
 mj-table always, as a whole, align left. If you want to center use mj-raw to mjml:raw:center table
 
@@ -16630,18 +16717,71 @@ mjml:tag:mj-hero
 ***** mj-invoice
 ***** mj-location
 ***** mj-navbar
+https://mjml.io/documentation/#mjml-navbar
+So far, all have been tested only show expanded items.
+
 ***** mj-carousel
+https://mjml.io/documentation/#mjml-carousel
+Outlook and OWA only shows the first image. Works for Gmail.com and Android Gmail.
+
 ***** mj-accordion
+https://mjml.io/documentation/#mjml-accordion
+Every attribute in `mj-accordion` are applied to `mj-accordion-element` unless you overide them on `mj-accordion-element`
+
+So far, all have been tested only show expanded items.
+
+The "hamburger" feature only work on mobile device with all iOS mail client, for others mail clients the render is performed on an normal way, the links are displayed inline and the hamburger is not visible.
+
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-accordion border="none" padding="1px" />
+      <mj-accordion-element icon-wrapped-url="http://i.imgur.com/Xvw0vjq.png" icon-unwrapped-url="http://i.imgur.com/KKHenWa.png" icon-height="24px" icon-width="24px" />
+      <mj-accordion-title font-family="Roboto, Open Sans, Helvetica, Arial, sans-serif" background-color="#fff" color="#031017" padding="15px" font-size="18px" />
+      <mj-accordion-text font-family="Open Sans, Helvetica, Arial, sans-serif" background-color="#fafafa" padding="15px" color="#505050" font-size="14px" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body>
+    <mj-section padding="20px" background-color="#ffffff">
+      <mj-column background-color="#dededd">
+        <mj-accordion>
+          <mj-accordion-element>
+            <mj-accordion-title>Why use an accordion?</mj-accordion-title>
+            <mj-accordion-text>
+              <span style="line-height:20px">
+                Because emails with a lot of content are most of the time a very bad experience on mobile, mj-accordion comes handy when you want to deliver a lot of information in a concise way.
+              </span>
+            </mj-accordion-text>
+          </mj-accordion-element>
+          <mj-accordion-element>
+            <mj-accordion-title>How it works</mj-accordion-title>
+            <mj-accordion-text>
+              <span style="line-height:20px">
+                Content is stacked into tabs and users can expand them at will. If responsive styles are not supported (mostly on desktop clients), tabs are then expanded and your content is readable at once.
+              </span>
+            </mj-accordion-text>
+          </mj-accordion-element>
+        </mj-accordion>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+#+END_EXAMPLE
+
 **** mj-group to group columns
 Prevent columns from stacking on mobile.
 
 Columns inside a group must have a width in percentage or auto sizing, but not in pixel
 
-Section can have both column and group.
+Section can have both mj-column and mj-group.
 
 iOS 9 :: always remove space between columns inside a mj-group
 
-background-color :: default n/a
+- width :: 100 / number of children in section (%/px)
+- vertical-align :: top
+- background-color :: default n/a
 
 **** Caveats
 mj-image inside mj-colum will always have a maximum fixed width.
