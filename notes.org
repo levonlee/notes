@@ -6151,6 +6151,12 @@ global $post;
 $post_slug=$post->post_name;
 #+END_EXAMPLE
 
+** wp-config.php
+https://codex.wordpress.org/Editing_wp-config.php
+
+*** <<<wp:wp-config:DISALLOW_FILE_EDIT>>>
+define( 'DISALLOW_FILE_EDIT', true );
+
 ** Email PHPMailer
 Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
 This way you don't need to have linux:sendmail installed on Linux
@@ -8579,8 +8585,7 @@ function your_shortcode_cb() {
 
 #+END_EXAMPLE
 
-** Options, Settings
-<<<WP All Options>>>
+** Options, Settings <<<WP All Options>>>
 /wp-admin/options.php
 
 [[https://codex.wordpress.org/Option_Reference][Option Reference]]
@@ -9277,8 +9282,7 @@ If all else fails and your site is broken
 	• Delete the wp-super-cache folder in the plugins folder.
 	• Optionally delete advanced-cache.php, wp-cache-config.php and the cache folder in wp-content/.
 
-*** Yoast SEO (wordpress-seo)
-<<<wp:plugin:wordpress-seo>>>
+*** Yoast SEO wordpress-seo <<<wp:plugin:wordpress-seo>>>
 How to SEO? https://yoast.com/wordpress-seo/
 
 API and fitlers https://yoast.com/wordpress/plugins/seo/api/
@@ -9335,7 +9339,7 @@ add_filter('wpseo_json_ld_output', 'bybe_remove_yoast_json', 10, 1);
 
 **** Release
 1.5.2.7
-7.1
+7.1, 7.5
 
 *** all-in-one-seo-pack <<<wp:plugin:all-in-one-seo-pack>>>
 **** Release
@@ -9636,9 +9640,11 @@ PHP version 5.2+
 Site has to run either on Apache, LightSpeed or Nginx
 Work on multi-site
 
-Brute Force Attack :: get blacklisted IPs and apply to your website
+Banned Users :: get blacklisted IPs, user agents and apply to your website. Enable HackRepair.com's blacklist feature
+Local Brute Force Protection :: Ban hosts and users with invalid login attempts
+404 Detection :: locks out someone that gets too many 404 pages
+Global Settings :: Lockout White List by IP
 
-Ban hosts and users with invalid login attempts
 Scan site to report vulnerabilities and try to fix them
 Ban bad user agents, bots and other hosts
 Enforce strong passwords for all accounts
@@ -9658,6 +9664,13 @@ Remove login error messages
 
 **** Release
 3.6.5
+6.9.2 > 7.0.1
+
+*** Exploit scanner exploit-scanner <<<wp:plugin:exploit-scanner>>>
+Search the files on your website, and the posts and comments tables of your database for anything suspicious. It also examines your list of active plugins for unusual filenames.
+
+You need to have wp-content/plugins/exployt-scanner/hashes-4.9.6.php to match the wp version in order for the file checking to work correct
+https://github.com/philipjohn/exploit-scanner-hashes
 
 *** tinymce-advanced
 Add, remove and arrange buttons shown on the Visual Editor toolbar.
@@ -9809,6 +9822,10 @@ Docs: https://docs.woocommerce.com/document/subscriptions/
 https://woocommerce.com/products/woocommerce-subscriptions/
 
 **** plugin: woo-order-export-lite
+*** W3 Total Cache w3-total-cache
+**** Releases
+0.9.6, 0.9.7
+
 ** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
 Function may return WP_Error object. Catch error
@@ -9848,8 +9865,7 @@ Download additional language packs from [[https://make.wordpress.org/polyglots/t
 Upload thme to wp-content/languages
 Then change the language in each User Profile.
 
-** File Permissions
-<<<wp:file permissions>>>
+** File Permissions <<<wp:file permissions>>>
 All files should be chmod:644 and all folders chmod:755
 wp-config.php should be chmod:660 or chmod:664
 #+BEGIN_EXAMPLE
@@ -9860,8 +9876,7 @@ find . -type d -exec chmod 755 {} +
 chmod 660 wp-config.php
 #+END_EXAMPLE
 
-Run this to check which files are not 644 and which directories are not 755
-<<<wp:check file permissions>>>
+Run this to check which files are not 644 and which directories are not 755 <<<wp:check file permissions>>>
 #+BEGIN_EXAMPLE
 find . -type d -not -perm 755 -o -type f -not -perm 644
 find . -type d -not -perm 755 -not -path "./.git/*" -o -type f -not -perm 644 -not -path "./.git/*"
@@ -10369,6 +10384,42 @@ class FORM_CLEAN{
   }
   
 }
+#+END_EXAMPLE
+
+** TS: Hacked <<<wp:ts:hacked>>>
+https://codex.wordpress.org/FAQ_My_site_was_hacked
+https://codex.wordpress.org/Hardening_WordPress
+Change wp users' passwords
+Compare wp-config.php with wp-config-sample.php
+wp:file permissions
+wp:wp-config:DISALLOW_FILE_EDIT
+
+*** Search backdoor scripts
+Use wp:plugin:exploit-scanner to check core and plugin files
+https://sucuri.net/guides/how-to-clean-hacked-wordpress
+Used PHP functions
+base64
+str_rot13
+gzuncompress
+eval
+exec
+system
+assert
+stripslashes
+preg_replace (with /e/)
+move_uploaded_file
+
+*** Don't execute PHP in wp-content/uploads folder
+In wp-content/uploads folder upload this .htaccess
+#+BEGIN_EXAMPLE
+<Files *.php>
+deny from all
+</Files>
+#+END_EXAMPLE
+
+Find *.php in uploads folder
+#+BEGIN_EXAMPLE
+find wp-content/uploads/ iname "*.php"
 #+END_EXAMPLE
 
 ** TS: wp_deregister_script was called incorrectly
@@ -41615,7 +41666,7 @@ git checkout feature target-folder/
 git checkout -b newbranch
 #+END_EXAMPLE
 
-Create a local branch and then push to a new remote branch
+Create a local branch and then push to a new remote branch. Save changes to a new branch.
 
 #+BEGIN_EXAMPLE
 git checkout -b newbranch
@@ -41625,6 +41676,7 @@ git push --set-upstream origin newbranch
 
 *** Duplicate current branch to a commit and switch 
 git checkout -b newbranch <SHA1>
+
 *** Delete branch
 git branch -d branchname= or =-D=
 
@@ -46673,6 +46725,13 @@ HTML link to another domain with target="_blank", better add this so that window
 #+BEGIN_EXAMPLE
 <a href="anotherdomain.gg" target="_blank" rel="noopener">...</a>
 #+END_EXAMPLE
+
+Google Site Status :: https://transparencyreport.google.com/safe-browsing/search
+
+https://sitecheck.sucuri.net/
+https://www.virustotal.com
+
+wp:ts:hacked
 
 ** WCAG, AODA, Web Content Accessibility Guidelines
 SortSite by powermapper.
