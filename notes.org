@@ -7214,8 +7214,9 @@ https://developer.wordpress.org/reference/functions/wp_nav_menu/
 wp_nav_menu( array( 'theme_location' => 'header-menu' ) );
 #+END_EXAMPLE
 
-*** register_widget
-<<<wp:f:register_widget>>> used in wp:action:widgets_init
+*** register_widget <<<wp:f:register_widget>>> 
+Used in wp:action:widgets_init
+System widgets wp-includes/widgets/class-wp-widget-*.php and they're registered at wp-includes/widgets.php
 
 #+BEGIN_EXAMPLE
 <?php
@@ -8176,20 +8177,32 @@ function cc_mime_types($mimes) {
 add_filter('upload_mimes', 'cc_mime_types');
 #+END_EXAMPLE
 
-*** widget_text
-<<<wp:filter:widget_text>>>
-wp:f:add_shortcode
+*** widget_text <<<wp:filter:widget_text>>>
+Display wp:f:add_shortcode in widget. Filter content output
+
+#+BEGIN_EXAMPLE
+function exam_plug_text_replace($content) {
+  $new_content = '';
+  $new_content.= $content . ':)';
+  return $new_content;
+}
+add_filter('widget_text', 'exam_plug_text_replace');
+#+END_EXAMPLE
 
 *** sidebars_widgets <<<wp:filter:sidebars_widgets>>>
-Filters the list of sidebars and their widgets.
+Filters the list of sidebars and their widgets. Changing this will change the widget registeration on db.
 #+BEGIN_EXAMPLE
-// disable all widget areas
 function disable_all_widgets($sidebars_widgets) {
-  $sidebars_widgets = array(false);
+  //var_dump($sidebars_widgets);
+  // disable all widget areas
+  // $sidebars_widgets = array(false);
+  $sidebars_widgets['sidebar-id-1'] = ['widget_name-1'];
   return $sidebars_widgets;
 }
 add_filter('sidebars_widgets', 'disable_all_widgets');
 #+END_EXAMPLE
+
+In order to have an instance of a widget, the easiest way is to create another sidebar with the widget in wp-admin
 
 *** show_admin_bar <<<wp:filter:show_admin_bar>>>
 wp:f:show_admin_bar
@@ -8346,8 +8359,7 @@ Useful for intercepting $_GET or $_POST
 wp:f:register_nav_menus
 wp:f:add_rewrite_rule
 
-*** widgets_init
-<<<wp:action:widgets_init>>>
+*** widgets_init <<<wp:action:widgets_init>>>
 Refer to wp:filter:sidebars_widgets to modify registered sidebars and their widgets.
 Refer to wp:f:register_widget to create a widget
 #+BEGIN_EXAMPLE
@@ -8524,8 +8536,7 @@ function save_post( $post_id, $post ) {
 }
 #+END_EXAMPLE
 
-** add_shortcode
-<<<wp:f:add_shortcode>>>
+** add_shortcode <<<wp:f:add_shortcode>>>
 #+BEGIN_EXAMPLE
 // [bartag foo="foo-value"]
 
@@ -9771,6 +9782,8 @@ From version 4.0 onwards
 <?php vmarquee( $setting="1", $group="widget" ); ?>
 
 *** vertical-scroll-recent-post
+*** recent-posts-widget-extended
+
 *** widget-css-classes
 *** breadcrumb-navxt
 https://wordpress.org/plugins/breadcrumb-navxt/#installation
