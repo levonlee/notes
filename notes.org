@@ -104,7 +104,7 @@ session.cookie_lifetime = 2000000
 ;mail.force_extra_parameters =
 #+END_EXAMPLE
 
-*** <<<php.ini:directives>>>
+*** [PHP] <<<php.ini:directives>>>
 http://php.net/manual/en/ini.list.php
 
 **** magic quotes
@@ -118,6 +118,9 @@ magic_quotes_runtime = Off
 ; Use Sybase-style magic quotes (escape ' with '' instead of \').
 magic_quotes_sybase = Off
 #+END_EXAMPLE
+
+**** allow_url_fopen <<<php.ini:allow_url_fopen>>>
+Default is 1 to enable. If disabled, file_get_contents is not possible. This setting can only be set PHP_INI_SYSTEM
 
 *** <<<php.ini:extension>>>
 php.ini can also enable module. e.g. to enable module intl
@@ -1862,6 +1865,7 @@ if (!class_exists('MyClass')) {
 ** Http Request - cURL, file_get_contents
 *** cURL-less <<<php:file_get_contents>>>
 Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
+Make sure php.ini:allow_url_fopen is enabled.
 
 #+BEGIN_EXAMPLE
 $url = 'http://server.com/path';
@@ -2003,6 +2007,10 @@ if ('PUT' === $method) {
 ** Libraries
 *** mPDF
 Convert HTML to PDF https://github.com/mpdf/mpdf
+https://mpdf.github.io/css-stylesheets/supported-css.html
+
+**** Use @page
+https://mpdf.github.io/paging/using-page.html
 
 * Drupal
 ** Install Drupal on Windows
@@ -9912,6 +9920,31 @@ Docs: https://docs.woocommerce.com/document/subscriptions/
 https://woocommerce.com/products/woocommerce-subscriptions/
 
 **** plugin: woo-order-export-lite
+*** woocommerce-pdf-invoices-packing-slips
+Doc: http://docs.wpovernight.com/woocommerce-pdf-invoices-packing-slips/
+
+**** Template hooks
+http://docs.wpovernight.com/woocommerce-pdf-invoices-packing-slips/pdf-template-action-hooks/
+http://hookr.io/plugins/woocommerce-pdf-invoices-packing-slips/
+
+Simple template wp-content/plugins/woocommerce-pdf-invoices-packing-slips/templates/Simple/
+html-document-wrapper.php
+  invoice.php
+***** action wpo_wcpdf_before_document
+$wpo_wcpdf_export_template_type :: The wpo wcpdf export template type.
+$wpo_wcpdf_export_order :: The wpo wcpdf export order.
+
+#+BEGIN_EXAMPLE
+function action_wpo_wcpdf_before_document( $wpo_wcpdf_export_template_type, $wpo_wcpdf_export_order ) { 
+    // make action magic happen here...
+}; 
+         
+// add the action 
+add_action( 'wpo_wcpdf_before_document', 'action_wpo_wcpdf_before_document', 10, 2 ); 
+#+END_EXAMPLE
+
+***** action wpo_wcpdf_after_document_label
+***** action wpo_wcpdf_before_billing_address
 *** W3 Total Cache w3-total-cache
 **** Releases
 0.9.6, 0.9.7
