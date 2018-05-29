@@ -6572,6 +6572,31 @@ https://developer.wordpress.org/reference/functions/get_bloginfo/
 version :: '4.9.4'
 
 *** get_the_ID() the_ID() - ID of current item or false
+*** get_post <<<wp:f:get_post>>>
+get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )
+
+Default is global $post
+Return wp:post object
+
+*** get_post_meta, get_metadata <<<wp:f:get_post_meta>>> <<<wp:f:get_metadata>>>
+get_post_meta( int $post_id, string $key = '', bool $single = false )
+
+get_post_meta is a wrapper of get_metadata and specify the object type is a 'post'
+
+$key :: default to return data for all keys
+$single :: wheter to return single value. return array if it's false
+
+Return post thumbnail alt text
+#+BEGIN_EXAMPLE
+$thumb_id = get_post_thumbnail_id(get_the_ID());
+$alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
+if( $alt ):
+    echo $alt;
+endif;
+#+END_EXAMPLE
+
+get_metadata( string $meta_type, int $object_id, string $meta_key = '', bool $single = false )
+
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
 =wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
@@ -6935,8 +6960,7 @@ if ( has_post_format( 'aside' )) {
 }
 #+END_EXAMPLE
 
-*** has_custom_logo, get_custom_logo, the_custom_logo
-<<<wp:custom logo:display>>>
+*** has_custom_logo, get_custom_logo, the_custom_logo <<<wp:custom logo:display>>>
 get_custom_logo returns markup
 the_custom_logo displays markup
 
@@ -7575,8 +7599,11 @@ Site url
 get_site_url();
 #+END_EXAMPLE
 
-** WP_User, user object
-<<<wp:user>>> https://codex.wordpress.org/Class_Reference/WP_User
+** WP_Post Post Object <<<wp:post>>>
+https://developer.wordpress.org/reference/classes/wp_post/
+
+** WP_User, user object <<<wp:user>>>
+https://codex.wordpress.org/Class_Reference/WP_User
 
 Public properties
 ID (int) - the user's ID.
@@ -7601,8 +7628,7 @@ if ( is_user_logged_in() ) {
 } 
 #+END_EXAMPLE
 
-** WP Custom Fields
-<<<wp:Custom_Fields>>>
+** WP Custom Fields <<<wp:Custom_Fields>>>
 *** Get Custom Fields
 Normal
 #+BEGIN_EXAMPLE
@@ -7627,9 +7653,7 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
 
-** WP_Query The Loop <<<wp:The_Loop>>>
-<<<wp:query:main>>>
-
+** WP_Query The Loop <<<wp:The_Loop>>> <<<wp:query:main>>>
 The main query/loop is based on the URL request and is processed before templates are loaded
 Only the wp:conditional tags use the main query/loop
 
@@ -8619,7 +8643,42 @@ define('FTP_SSL', true);
 
 https://codex.wordpress.org/Editing_wp-config.php#WordPress_Upgrade_Constants
 
-** Ellipsis and trim, strip HTML and PHP tags <<<wp:ellipsis>>>
+** Sanitizing and Escaping User Data
+https://codex.wordpress.org/Validating_Sanitizing_and_Escaping_User_Data
+
+Sanitize data before it's saved
+#+BEGIN_EXAMPLE
+<input type="text" id="title" name="title" />
+
+$title = sanitize_text_field( $_POST['title'] );
+update_post_meta( $post->ID, 'title', $title );
+
+sanitize_email()
+sanitize_file_name()
+sanitize_html_class()
+sanitize_key()
+sanitize_meta()
+sanitize_mime_type()
+sanitize_option()
+sanitize_sql_orderby()
+sanitize_text_field()
+sanitize_textarea_field()
+sanitize_title()
+sanitize_title_for_query()
+sanitize_title_with_dashes()
+sanitize_user()
+#+END_EXAMPLE
+
+Escape
+#+BEGIN_EXAMPLE
+<h4><?php echo esc_html( $title ); ?></h4>
+<img src="<?php echo esc_url( $great_user_picture_url ); ?>" />
+<a href="#" onclick="<?php echo esc_js( $custom_js ); ?>">Click me</a>
+<ul class="<?php echo esc_attr( $stored_class ); ?>">
+<textarea><?php echo esc_textarea( $text ); ?></textarea>
+#+END_EXAMPLE
+
+*** Ellipsis and trim, strip HTML and PHP tags <<<wp:ellipsis>>>
 wp_trim_words($text) :: strip HTML and PHP tags and truncate string in words
 #+BEGIN_EXAMPLE
 function wp_trim_words( $text, $num_words = 55, $more = null ) {
@@ -9784,6 +9843,7 @@ From version 4.0 onwards
 *** vertical-scroll-recent-post
 *** recent-posts-widget-extended
 
+*** widget-logic
 *** widget-css-classes
 *** breadcrumb-navxt
 https://wordpress.org/plugins/breadcrumb-navxt/#installation
@@ -10797,8 +10857,7 @@ line-height is normal means to use user agent style. Most likely default is 1 no
 
 letter-spacing, padding using em is relative to the current element's font size
 
-** CSS Selectors
-<<<CSS Selectors>>>
+** CSS Selectors <<<CSS Selectors>>>
 
 div > p :: select p elements where the direct parent is div
 div + p :: select p elements that are placed immediately after div
@@ -19034,8 +19093,7 @@ connection.onmessage = function(e) {
 };
 #+END_EXAMPLE
 
-** Mutation Observer
-<<<js:MutationObserver>>>
+** Mutation Observer <<<js:MutationObserver>>>
 [[https://developer.mozilla.org/en/docs/Web/API/MutationObserver][MDN MutationObserver]]
 [[https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord][MDN MutationRecord]]
 
@@ -19072,7 +19130,7 @@ var target = document.getElementById('foo');
 var config = {
   attributes: true,
   attributeOldValue: true, // set to true if attributes is set to true
-  attributeFilter: true, // filter out an array of attribute local names in observation
+  // attributeFilter: ['attr1', 'attr2'], // filter out an array of attribute local names in observation
   childList: true, // add/remove child elements including text nodes
   subtree: true, // any change to the subtree including all descendants
   characterData: true, // maybe image or multimedia changes?
