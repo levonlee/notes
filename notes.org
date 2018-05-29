@@ -9685,6 +9685,23 @@ add_filter( 'constant_contact_include_custom_field_label', '__return_true' );
 **** Caveats
 There's no name field only first name and last name field captured on ConstantContact.com
 
+If there're more than one Constant Contact forms, the form fields will have the same id. This will create a problem when clicking a later opt-in checkbox label always jump to the first opt-in checkbox
+
+Make opt-in checkbox required and fix opt-in checkbox label
+#+BEGIN_EXAMPLE
+$(function(){
+    $('label[for=ctct-opt-in]').prev().addClass('ctct-form-field-required').prop('required',true);;
+
+    $('label[for=ctct-opt-in]').on('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var $input = $( this ).prev(); // previous sibling
+      $input.prop('checked', !$input.prop("checked")); // jQuery 1.6+
+    });
+
+});
+#+END_EXAMPLE
+
 *** constant-contact-forms-by-mailmunch
 It takes way too much work to customize the form..
 
@@ -18251,6 +18268,27 @@ function sendMail() {
 
 // open a new tab
 window.open('/your-url', '_blank');
+#+END_EXAMPLE
+
+Get URL Parameter
+#+BEGIN_EXAMPLE
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+
+// Given http://dummy.com/?technology=jquery&blog=jquerybyexample
+var tech = getUrlParameter('technology');
 #+END_EXAMPLE
 
 ** Cookie
@@ -47155,7 +47193,7 @@ PHP
 **** CSS
 The button might be too large for width < 320px
 #+BEGIN_EXAMPLE
-@media only screen and (max-width: 320px) {
+@media (max-width: 320px) {
   .g-recaptcha {
     transform:scale(0.77);
     -webkit-transform:scale(0.77);
