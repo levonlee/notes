@@ -40439,8 +40439,16 @@ conf-enabled/*.conf
 sites-enabled/*.conf
 #+END_EXAMPLE
 
-** LogLevel
+** Directive Context
+server config ::This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers. It is not allowed in .htaccess files at all.
 
+virtual host :: This context means that the directive may appear inside <VirtualHost> containers in the server configuration files.
+
+directory :: A directive marked as being valid in this context may be used inside <Directory>, <Location>, <Files>, <If>, and <Proxy> containers in the server configuration files, subject to the restrictions outlined in Configuration Sections.
+
+.htaccess :: If a directive is valid in this context, it means that it can appear inside per-directory .htaccess files. It may not be processed, though depending upon the overrides currently active.
+
+** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
 #+BEGIN_EXAMPLE
 LogLevel alert rewrite:trace6
@@ -40452,6 +40460,31 @@ RewriteLogLevel 3
 #+END_EXAMPLE
 
 trace1 to trace8 (most detailed)
+
+** LogFormat
+LogFormat https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#logformat
+Context: server config, virtual host
+#+BEGIN_EXAMPLE
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+CustomLog logs/access_log common
+#+END_EXAMPLE
+
+LogFormat associate a format string to a nickname (e.g. common), nickname is optional
+CustomLog specifies the log file location for that nickname
+
+Combined more fields
+#+BEGIN_EXAMPLE
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+CustomLog log/access_log combined
+
+// 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
+// after combined
+// 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326 "http://www.example.com/start.html" "Mozilla/4.08 [en] (Win98; I ;Nav)"
+#+END_EXAMPLE
+
+2326 :: %b :: size of the object returned to the client, not including the response headers. If no content was returned to the client, this value will be "-". To log "0" for no content, use %B instead.
+
+Custom Log Formats :: https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#formats
 
 ** Basic authentication
 htpasswd creates auth file and it needs this package. htpasswd doesn't need to be installed on server.
