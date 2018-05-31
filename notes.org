@@ -7,12 +7,19 @@
 * PHP
 ** Configuration <<<php:config>>>
 *** Basics
-Get php configuration files location ~php --ini~
-~php -i~ is CLI equivalent to ~phpinfo()~
-Get loaded extensions ~php -r "print_r(get_loaded_extensions());"~
-Get a php config variable ~php -i | grep --color -n "memory_limit"~
+- Get php configuration files location :: ~php --ini~
+- CLI ~php -i~ :: equivalent to ~phpinfo()~
+- Get loaded extensions :: ~php -r "print_r(get_loaded_extensions());"~
+- Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
 
 Changing php.ini requires restarting apache
+
+**** PHP Version
+Other than phpinfo(); use
+#+BEGIN_EXAMPLE
+echo phpversion();
+echo PHP_VERSION;
+#+END_EXAMPLE
 
 **** Possible places for php.ini
 - 7.x :: /etc/php/7.0/apache2/php.ini, /etc/php/7.0/apache2/conf.d/*.ini
@@ -196,8 +203,8 @@ error_log :: (NULL) place to store error log. If not set, errors are sent to SAP
 error_reporting :: E_ALL & ~E_DEPRECATED & ~E_NOTICE :: show all except deprecated and notice
   - 22527 :: E_ALL & ~E_DEPRECATED
 
-** $_SERVER
-<<<php:$_SERVER>>>
+** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
+** $_SERVER <<<php:$_SERVER>>>
 [[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
 
 GATEWAY_INTERFACE
@@ -6150,13 +6157,19 @@ if (function_exists('stripslashes_deep')) {
 }
 #+END_EXAMPLE
 
-*** $post
+*** $post <<<wp:global:post>>>
 https://codex.wordpress.org/Class_Reference/WP_Post
 
 #+BEGIN_EXAMPLE
 global $post;
 $post_slug=$post->post_name;
 #+END_EXAMPLE
+
+*** $wpdb <<<wp:global:wpdb>>>
+If wp-content/db.php exists and creates an instance of global $wpdb, $wpdb will be defined as in this custom file.
+wp:plugin:w3-total-cache
+
+If wp core doesn't support msql_connect but mysqli and the environment doesn't have msql extension (since PHP 7.0), then you can replace wp-includes/wp-db.php with the latest wp version without upgrading wp core. Although upgrading wp core is recommended.
 
 ** wp-config.php
 https://codex.wordpress.org/Editing_wp-config.php
@@ -9952,7 +9965,17 @@ add_action( 'wpo_wcpdf_before_document', 'action_wpo_wcpdf_before_document', 10,
 
 ***** action wpo_wcpdf_after_document_label
 ***** action wpo_wcpdf_before_billing_address
-*** W3 Total Cache w3-total-cache
+*** W3 Total Cache <<<wp:plugin:w3-total-cache>>>
+**** Manually remove
+Files :: global search W3TC_ADDIN_FILE_
+
+Backup and remove wp-content/plugins/w3-total-cache
+Rename or remove wp-content/cache
+Rename or remove wp-content/w3tc-config and maybe wp-content/w3tc
+Rename or remove Files above under wp-content root :: advanced-cache.php db.php object-cache.php and maybe wp-total-cache-config.php
+Remove lines related to w3tc in .htaccess
+Remove line from wp-config.php define('WP_CACHE', true)
+
 **** Releases
 0.9.6, 0.9.7
 
@@ -10075,7 +10098,7 @@ https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wor
 http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
 
 Request /wp-admin/admin-ajax.php
-/wp-load.php
+/wp-load.php wp:global:wpdb
 /wp-config.php
 /wp-settings.php (core files, active plugins and themes and the REST API)
 /wp-admin/admin.php
@@ -10091,7 +10114,7 @@ Request REST API
 (doesn't load admin_init, /wp-admin/*.*)
 
 ** PHP 7
-Notice: The called constructor method for WP_Widget is deprecated since version 4.3.0! Use __construct() instead. in /mnt/stor13-wc1-ord1/754452/www.eden-festival.com/web/content/securewp/wp-includes/functions.php on line 3457
+Notice: The called constructor method for WP_Widget is deprecated since version 4.3.0! Use __construct() instead. in /path-to/wp-includes/functions.php on line 3457
 
 Disable Notice logging
 #+BEGIN_EXAMPLE
@@ -10099,6 +10122,10 @@ add_filter('deprecated_constructor_trigger_error', '__return_false');
 #+END_EXAMPLE
 
 Or fix the code wp:f:register_widget
+
+wp:global:wpdb
+
+Your PHP installation appears to be missing the MySQL extension which is required by WordPress
 
 ** UC: Simple HTML page with form submit
 Create a url path /abc which points to index.html (can't have php files)
