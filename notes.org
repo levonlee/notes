@@ -43292,13 +43292,12 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 ~cf_sql_longvarchar~ doesn't work. You should use ~<cfqueryparam cfsqltype="CF_SQL_CLOB" value="#description#">~ instead. 
 
 ** MySQL
-*** Version, Settings
-<<<mysql:config>>>
+*** Version, Settings, Global variables <<<mysql:config>>>
 ~service mysql status~
 
 In console
 #+BEGIN_EXAMPLE
-# all settings
+# all settings / global variables
 SHOW VARIABLES;
 
 # one setting
@@ -43397,6 +43396,27 @@ FROM   INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA NOT LIKE '%information_schema%'
 GROUP BY TABLE_SCHEMA
 ORDER BY MAX(UPDATE_TIME)
+#+END_EXAMPLE
+
+**** Query Log
+MySQL >= 5.1.12
+#+BEGIN_EXAMPLE
+show variables like 'general_log%';
+// see if it's enabled
+show variables like 'log_output%';
+// TABLE :: log to a table, FILE or NONE
+
+// Change this at runtime
+SET GLOBAL log_output = 'TABLE';
+SET GLOBAL general_log = 'ON';
+
+SELECT * FROM general_log
+
+// If you prefer to output to a file instead of a table:
+
+SET GLOBAL log_output = "FILE"; the default.
+SET GLOBAL general_log_file = "/path/to/your/logfile.log";
+SET GLOBAL general_log = 'ON';
 #+END_EXAMPLE
 
 *** Install
@@ -43965,6 +43985,48 @@ Restore
 #+BEGIN_EXAMPLE
 cat backup.sql | docker exec -i CONTAINER /usr/bin/mysql -u root --password=root DATABASE
 #+END_EXAMPLE
+
+*** Binary Log
+https://dev.mysql.com/doc/internals/en/binary-log-overview.html
+
+See if it's enabled and see if the format :: ROW, MIXED or STATEMENT
+#+BEGIN_EXAMPLE
+select variable_value as "BINARY LOGGING STATUS (log-bin) :: "
+from information_schema.global_variables where variable_name='log_bin';
+
+select variable_value as "BINARY LOG FORMAT (binlog_format) :: " 
+from information_schema.global_variables where variable_name='binlog_format'
+
+// 
+show variables like 'datadir';
+#+END_EXAMPLE
+
+To update the setup, you need to update the MySQL configuration file (my.ini or my.cnf)  by adding the following lines to the [mysqld] section (the Server Section).
+
+#+BEGIN_EXAMPLE
+log-bin=bin.log
+log-bin-index=bin-log.index
+max_binlog_size=100M
+binlog_format=row
+socket=mysql.sock
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+show variables like 'datadir';
+
+// Log file location :: datadir/bin.0001.log
+
+show binary logs;
+#+END_EXAMPLE
+
+https://jinyuwang.weebly.com/for-mysql/how-to-enable-binary-logging-for-mysql
+
+Recover from deleted rows
+#+BEGIN_EXAMPLE
+mysqlbinlog binary_log_file > query_log.sql
+#+END_EXAMPLE
+
+Then search for missing rows.
 
 *** phpMyAdmin
 https://www.phpmyadmin.net/downloads/
@@ -46928,6 +46990,23 @@ Vintage http://nos.twnsnd.co/
 Paid https://www.stocksy.com/
 
 Free Flag SVG https://github.com/lipis/flag-icon-css
+
+** cPanel WHM
+*** WHM Auto Backup
+Do it using WHM and don't do it using cPanel as it needs to setup scripts to do backup on cPanel
+search Backup Configuration > Enable
+https://www.inmotionhosting.com/support/product-guides/dedicated-hosting/setup-scheduled-cpanel-backups
+
+Default backup directory is /backup
+
+*** Remote MySQL connection - cPanel
+Remote MySQL and add remote IP address. Use the cPanel domain for db host
+https://www.inmotionhosting.com/support/website/databases/setting-up-a-remote-mysql-connection-in-cpanel
+
+*** Access Log - cPanel
+Metrics > Raw Access.
+Current logs :: ~/access_logs
+Archived logs :: ~/logs
 
 ** Hosting Comparison
 hosting:pantheon is good for hosting one website
