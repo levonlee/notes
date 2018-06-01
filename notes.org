@@ -193,8 +193,14 @@ http://www.matteomattei.com/how-to-log-email-sent-from-php-through-mail-function
 https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-detect-form-spam
 
 *** Error log <<<php:show error>>>
-d7:show error wp:show error
+d7:show error d7:debug wp:show error
 [[http://php.net/manual/en/errorfunc.configuration.php][Runtime configuration for error handling]]
+
+#+BEGIN_EXAMPLE
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+#+END_EXAMPLE
 
 display_errors, display_startup_errors bool or stderr :: prod always use Off
 log_errors bool :: prod needs to log error instead of display_errors. If true, either to server's system log or error_log
@@ -1897,7 +1903,6 @@ var_dump($result);
 #+END_EXAMPLE
 
 *** cURL <<<php:curl>>>
-
 #+BEGIN_EXAMPLE
 $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
 // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
@@ -1927,7 +1932,7 @@ curl_setopt_array($ch, $options);
 
 $response = curl_exec( $ch );
 
-// catch debug
+// catch debug BEFORE close
 /*
 if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
 rewind($verbose);
@@ -2900,7 +2905,7 @@ Control over Internet Explorer / Apple Safari / Google Chrome internal XSS filte
 
 Prevent content upsniffing and serving files with incorrect MIME-type via X-Content-Type-Options: nosniff HTTP response header
 
-** Debug
+** Debug <<<d7:debug>>>
 Enable module Database Logging and Syslog if necessary.
 
 watchdog('LOG_TYPE','message');
@@ -2970,6 +2975,7 @@ As a quick workaround, you can remove all php:4byte characters.
 Refer to mysql:charset for important info
 
 *** Show error <<<d7:show error>>>
+Refer to d7:debug
 #+BEGIN_EXAMPLE
 error_reporting(E_ALL);
 ini_set('display_errors', TRUE);
@@ -5909,6 +5915,15 @@ https://codex.wordpress.org/WordPress_Versions
 
 https://codex.wordpress.org/Configuring_Automatic_Background_Updates
 
+Look version in files :: wp-includes/version.php or readme.html
+
+wp-includes/version.php also has
+- wp db version
+- required php version
+- required mysql version
+- local package (language)
+- tinymce version
+
 wp-config.php
 #+BEGIN_EXAMPLE
 define( 'WP_AUTO_UPDATE_CORE', true );
@@ -5939,7 +5954,7 @@ https://codex.wordpress.org/Upgrading_WordPress_Extended
 
 *** Release
 See if wp-config.php .htaccess files are modified
-3.8.6, 4.9.1, 4.9.4
+3.8.6 > 4.5.10 > (db) 4.9.1 > 4.9.4
 
 *** TS: update-core.php blank
 Add this to disable WP to check FTP
@@ -5970,8 +5985,7 @@ define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
 
 Go to wp-admin > Settings > Permalink and save to update the permalink
 
-** Redirect a path a Wordpress website
-<<<wp:redirect path to wp>>>
+** Redirect a path a Wordpress website <<<wp:redirect path to wp>>>
 abc.com/enterprise to another Wordpress website abc.com
 DB is abc_enterprise and abc
 
@@ -6003,6 +6017,10 @@ If the enterprise site is a complete new wp installation, you don't need to do t
 #+BEGIN_EXAMPLE
 define( 'WP_HOME', '/enterprise' );
 define( 'WP_SITEURL', '/enterprise' );
+
+// for localhost
+// define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/enterprise');
+// define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/enterprise');
 
 // Change the db setting
 define('DB_NAME', 'abc_enterprise');
@@ -6554,7 +6572,7 @@ is_admin_bar_showing() :: wp:admin:toolbar
 wp-includes/xxx-template.php
 https://codex.wordpress.org/Template_Tags
 
-*** post-thumbnail <<<wp:t:thumbnail>>>
+*** post-thumbnail-template.php <<<wp:t:thumbnail>>>
 get_post_thumbnail_id($post = null);
 
 the_post_thumbnail_* :: has to be current post, calls get_the_post_thumbnail_*
@@ -6577,9 +6595,10 @@ the_post_thumbnail_caption($post = null) :: echo thumbnail caption
 
 wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false ) is just like the_post_thumbnail but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
 
-*** post <<<wp:t:post>>>
-*** category <<<wp:t:category>>>
-*** general <<<wp:t:general>>>
+*** post-template.php <<<wp:t:post>>>
+*** category-template.php <<<wp:t:category>>>
+*** general-template <<<wp:t:general>>>
+*** author-template.php
 ** Functions
 *** get_bloginfo, bloginfo, Site tagline, Sitetitle
 retrieves info about the current site
@@ -7424,8 +7443,7 @@ function image_resize( $file, $max_w, $max_h, $crop = false, $suffix = null, $de
 }
 #+END_EXAMPLE
 
-*** wp_reset_postdata
-<<<wp:f:wp_reset_postdata>>>
+*** wp_reset_postdata <<<wp:f:wp_reset_postdata>>>
 After ~global $post~ is modified by wp:query:secondary, reset it to the original that was set by wp:query:main
 
 #+BEGIN_EXAMPLE
@@ -7833,7 +7851,7 @@ $tax_query = array(
 *** <<<WP Order and Orderby>>>
 2 parameters: order and orderby. They are strings not arrays.
 
-**** orde
+**** order
 - DESC :: default
 - ASC
 
@@ -9751,6 +9769,8 @@ Work on multi-site
 Will add lines to .htaccess and wp-config.php
 
 Banned Users :: get blacklisted IPs, user agents and apply to your website. Enable HackRepair.com's blacklist feature
+- HackRepair is enalbed, then .htaccess is modified to add user agents and referrer rules for blocking (Forbidden) access.
+
 Local Brute Force Protection :: Ban hosts and users with invalid login attempts
 404 Detection :: locks out someone that gets too many 404 pages
 Global Settings :: Lockout White List by IP
@@ -9791,6 +9811,8 @@ https://github.com/philipjohn/exploit-scanner-hashes
 Add, remove and arrange buttons shown on the Visual Editor toolbar.
 Enable or disable 15 plugins for TinyMCE.
 Modify options such as keeping the paragrah tags in the Text editor and importing CSS classes from the theme's editor-style.css
+
+Always update as wp core updates
 
 *** black-studio-tinymce-widget
 Add a "Visual Editor" widget like WYSIWYG TinyMCE switching between Visual and HTML mode.
@@ -9977,7 +9999,7 @@ Remove lines related to w3tc in .htaccess
 Remove line from wp-config.php define('WP_CACHE', true)
 
 **** Releases
-0.9.6, 0.9.7
+0.9.5.1 > 0.9.6 > 0.9.7
 
 ** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
@@ -10966,7 +10988,7 @@ a[href*="w3schools"] :: containing
 
 a:active
 a:hover
-a:link
+a:link :: div:link may be possible when div has href attribute
 a:visited
 
 p::after :: <img> can't have pseudo element
@@ -10982,26 +11004,26 @@ input:enabled
 input:focus
 input:invalid
 input:valid
-input:optional
-input:required
+input:optional :: without required attribute
+input:required :: with required attribute
  
-p:empty -- has no children including text nodes
+p:empty :: has no children including text nodes
 
 div:not(p) -- all children elements except <p>'s
 div:not(.aClass) :: all div elements except the ones with class aClass
 
-p:first-child -- <p>'s are the first child of any elements
+p:first-child :: <p>'s are the first child of any elements
 p:last-child
 p:nth-child(2)
 p:nth-child(7n-1)
 tr:nth-child(even)
 tr:nth-child(odd)
 p:nth-last-child(2)
-p:only-child -- <p>'s are the only child of any elements
+p:only-child :: <p>'s are the only child of any elements
 
-div p:first-of-type -- <div> has 4 children <p>'s and first child is <a>. Select 1st of <p> children.
+div p:first-of-type :: <div> has 4 children <p>'s and first child is <a>. Select 1st of <p> children.
 div p:last-of-type
-div p:nth-of-type(2)
+div p:nth-of-type(2) :: can use n like nth-child
 div p:only-of-type
 
 =#news:target= -- anchor name id=news matches the URL hash
@@ -41898,7 +41920,7 @@ git checkout feature target-folder/
 #+END_EXAMPLE
 
 ** Branch
-*** Duplicate current branch and switch to it 
+*** Duplicate current branch with changes and switch to it 
 #+BEGIN_EXAMPLE
 git checkout -b newbranch
 #+END_EXAMPLE
