@@ -31524,8 +31524,7 @@ Field A: Hostname Extract A: (.*)
 Field B: Request URI Extract: (.*)
 Output To: Request URI Constructor: $A1$B1
 
-*** Dimensions vs Metrics
-<<<ga:dimensions>>> <<<ga:metrics>>>
+*** Dimensions vs Metrics <<<ga:dimensions>>> <<<ga:metrics>>> <<<ga:scope>>>
 Each cell shows the value in the corresponding metric column that also belong to the corresponding dimension row.
 
 e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country.
@@ -31534,22 +31533,21 @@ You can see stats like which dimension value has the highest metric?
 
 Filters are applied to dimensions.
 
-Dimension can have one of these levels
-- Hit
-- Session
-- User
+Dimension can have one of these levels or scope https://support.google.com/analytics/answer/2709828#scope
 - Product :: value is applied to the product for which it has been set (Enhanced Ecommerce only).
+- Hit :: a single action e.g. pageview, event. A hit can associate with multiple products
+- Session :: has multiple hits. Timeout limit by default is 30 minutes. Max can go to 4 hours. Admin > Property.
+- User :: a cookie that has sessions.
 
 Metric can only have Hit or Product level.
 
-[[https://developers.google.com/analytics/devguides/reporting/core/dimsmets][Dimensions & Metrics Explorer]] [[https://support.google.com/analytics/answer/2709828][Custom dimensions & metrics]]
+All standard [[https://developers.google.com/analytics/devguides/reporting/core/dimsmets][Dimensions & Metrics Explorer]] in what scope.
 
 Metrics can be set as KPI's to indicate macro or micro conversions.
 
-Custom Dimension can be used as secondary dimension in UI but as primary in Custom Reports.
-
-**** Custom dimensions and metrics
+**** Custom dimensions and metrics <<<ga:custom dimensions>>>
 https://support.google.com/analytics/answer/2709828
+Custom Dimension can be used as secondary dimension in standard reports but as primary in Custom Reports and can be used as ga:segment.
 Allow you to combine Analytics data with non-Analytics data, e.g. CRM data. For example:
 
 - If you store the gender of signed-in users in a CRM system, you could combine this information with your Analytics data to see Pageviews by gender.
@@ -31657,30 +31655,56 @@ Affinity :: with passion or interests in an area but not necessarily looking to 
 In-Market :: looking to buy
 Other
 
+Enable Demographics and Interests Report :: https://support.google.com/analytics/answer/2819948
+
 **** Audiences
-https://support.google.com/analytics/answer/2611404
-System preconfigured
-- Smart List: Let Google manage the audience for you.
-- All Users: All users to your site or app who already have the necessary advertising cookies or mobile-advertising IDs.
-- New Users: Any users who have conducted only one session on your site or app.
-- Returning Users: Any users who have conducted more than one session on your site or app.
-Users who visited a specific section of my site/app: Click the edit icon, and enter the URL of a page or directory on your site, or a screen in your app. This option uses the contains match type, and matches any URL that contains the string you enter here.
+This report shows only audiences you create in Analytics.
 
-If there are more than 1000 page/screen URLs for your site/app, then Analytics displays matches as you enter text only if matches are found within the first 1000 URLs. If there are no matches in the first 1000 URLs, then Analytics displays nothing. In this case, you can copy and paste the URL from a browser, or from some other source of URLs like a spreadsheet.
-- Users who completed a goal conversion: Click the edit icon, and select a goal from the menu. This option requires that you have previously configured Analytics Goals.
-- Users who completed a transaction: This is already configured to include any user with more than zero transactions.
+***** Create Audience <<<ga:audience:create>>>
+Enable Demographics and Intersts Report ga:audience:interests
+Basics :: https://support.google.com/analytics/answer/2611404
+Go to Admin > a property > Audience Definitions > Audiences > New Audience
 
-A segment can be imported as an Audience
+Create an audience is like ga:segment:create
+A segment can be imported as an Audience :: https://support.google.com/analytics/answer/6015314
 
-AdWords Search Remarketing 
+Refer to ga:remarketing
+Remarketing audiences examples :: https://support.google.com/analytics/answer/2611820
+State-based audiences examples :: https://support.google.com/analytics/answer/6212382
+
+AdWords Search Remarketing
 - requires 1000+ unique users (cookies). 
 - GA's demographics dimensions cannot be used for AdWords Search Remarketing.
 
 AdWords Display Remarketing
 - requires 100+ unique users.
 
-https://support.google.com/analytics/answer/2611268
-https://support.google.com/adwords/answer/6178664
+Analytics Remarketing Audience vs AdWords Remarketing Tag :: https://support.google.com/analytics/answer/2611268
+
+Create 2 or more identical audiences and run a different ad campaign for each audience as Analytics assigns each users to one of 100 User Buckets ::
+https://support.google.com/analytics/answer/6155470
+
+***** Preconfig new audience
+- Smart List: Let Google manage the audience for you.
+
+- All Users: All users to your site or app who already have the necessary advertising cookies or mobile-advertising IDs.
+
+- New Users: Any users who have conducted only one session on your site or app.
+
+- Returning Users: Any users who have conducted more than one session on your site or app.
+
+- Users who visited a specific section of my site/app
+  - Click the edit icon, and enter the URL of a page or directory on your site, or a screen in your app. This option uses the contains match type, and matches any URL that contains the string you enter here.
+  - If there are more than 1000 page/screen URLs for your site/app, then Analytics displays matches as you enter text only if matches are found within the first 1000 URLs. If there are no matches in the first 1000 URLs, then Analytics displays nothing. In this case, you can copy and paste the URL from a browser, or from some other source of URLs like a spreadsheet.
+
+- Users who completed a goal conversion: Click the edit icon, and select a goal from the menu. This option requires that you have previously configured Analytics Goals.
+
+- Users who completed a transaction: This is already configured to include any user with more than zero transactions.
+
+***** Use Audiences
+https://support.google.com/analytics/answer/7280979
+
+After you create an audience and publish it to Analytics, it is available as a primary dimension in the Audience > Audiences report, as a secondary dimension in other reports, and as a dimension in segments, custom reports, and custom funnels.
 
 **** User Explorer
 Instead of aggregating users or user sessions, this shows each user/session's
@@ -31845,7 +31869,7 @@ The first 10 event hits sent to Analytics are tracked immediately, thereafter tr
 
 It's better to setup events and setup goals as the event goal type.
 
-*** Segment
+*** Segment <<<ga:segment>>>
 A Segment is to filter out the ~user sessions~ that you don't want without destroying your View data.
 
 Segment occurs after sampling in Property for GA Standard.
@@ -31857,23 +31881,26 @@ Go to the newly created Segment, you will still see those user sessions have bee
 
 Ideas :: https://searchenginewatch.com/sew/how-to/2268458/16-secret-google-analytics-advanced-segments-worth-their-weight-in-gold
 
-**** Converter segment
-<<<ga:segment:converter>>> refer to ga:goal
+**** Converter segment <<<ga:segment:converter>>> 
+Refer to ga:goal
 
 Include user sessions that have finished a goal. You can copy this system goal and make it your own e.g. finish a specific goal
 
-Some stas you may find is that people who convert have lower bounce rate, higher pages/session, higher avg. session duration.
+Some stats you may find is that people who convert have lower bounce rate, higher pages/session, higher avg. session duration.
 
 **** Custom segment - AdWords Search <<<adwords:segment:search>>>
 Users Include Source/Medium = google/cpc AND Default Channel Grouping = Paid Search
+
+**** Create a segment <<<ga:segment:create>>>
+Refer to ga:audience:create
+https://support.google.com/analytics/answer/3124493
 
 *** Tracking Code :: gtag.js, analytics.js
 The most recent version is gtag.js (Global site tag). [[https://developers.google.com/analytics/devguides/collection/gtagjs/][Documentation]]. [[https://developers.google.com/analytics/devguides/collection/gtagjs/migration][Migrate from analytics.js to gtag.js]].
 Previous version
   - analytics.js. [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
 
-**** Custom parameters for dynamic remarketing
-<<<ga:dynamic remarketing>>>
+**** Custom parameters for dynamic remarketing <<<ga:dynamic remarketing>>>
 https://support.google.com/adwords/answer/3103357
 
 #+BEGIN_EXAMPLE
@@ -32264,6 +32291,21 @@ The Google Analytics Measurement Protocol allows developers to make HTTP request
 https://developers.google.com/analytics/devguides/collection/protocol/v1/email
 
 *** Google Analytis Core Reporting API
+*** Learn
+https://analytics.google.com/analytics/academy/
+
+*** Remarketing with Analytics <<<ga:remarketing>>>
+https://support.google.com/analytics/topic/2611283
+
+Best Practice :: https://support.google.com/adwords/topic/3122879
+AdWords Remarketing Best Practices :: https://support.google.com/adwords/answer/6178664
+
+- Enable Advertising Features (Remarketing and Advertising Reporting Features) :: Admin > Property > Tracking Info > Data Collection
+- Link AdWords to Google Analytics :: https://support.google.com/adwords/answer/6209127
+  - Need Edit permission for the Analytics property and Admin access for the AdWords manager account.
+  - One AdWords manager account can have multiple accounts. After linking, or those accounts can use the Google Analytics property.
+- ga:audience:create
+
 *** Checklist
 - Audience > Audiences > enable Demographics and Interest Reports
 - Admin > Property Settings > 
@@ -32272,7 +32314,7 @@ https://developers.google.com/analytics/devguides/collection/protocol/v1/email
   - Search Console
 - Admin > Adwords Linking
 - Admin > Audience Definitions > Audiences
-  - Enable Remarketing
+  - [[https://support.google.com/analytics/answer/2444872][Enable Remarketing]] :: Admin > Property > Tracking Info > Data Collection
   - Set Audience Destinations to the corresponding AdWords account
   - Define your audience and give a name
   - In AdWords campaign > Audience > Edit > under Targeting, Remarketing to select the list from GA
@@ -32816,7 +32858,38 @@ phone_conversion_css_class: 'number'
 **** Remarketing Audience, Customer Match
 One account has one tag as in Audience sources. Other sources include Google Analytics, YouTube.
 
-Customer Match for Search, YouTube and Gmail Networks.
+Ways to remarket with AdWords :: https://support.google.com/adwords/answer/2453998?hl=en
+
+***** Rules and Templates
+Rules :: https://support.google.com/adwords/answer/6297497
+
+Standard parameters include URL and Referrer (e.g. www.google.com coming from search or anothersite.com)
+
+Template :: https://support.google.com/adwords/answer/6297549
+- Visitors of a page
+  - Add multiple conditions and if any condition met, then add to the list
+
+- Visitors of a page who also visited another page
+  - To create a list of people who visited pages A, B, and C, first create a list of people who visited pages A and B using this template. Then, using the "Visitors of a page" template, create a list of people who visited page C. Then, create a custom combination using these two lists.
+  - Only on Display Network
+
+- Visitors of page who did not visit another page
+  - When you create a list using this template, you narrow your audience. To be on your list, visitors need to visit the page defined in the first rule AND not visit any of the pages defined in the second rule. This is what makes this template different from the "Visitors of a page" template. When you create a list using the "Visitors of a page" template, you can add different conditions to the rule, but people who match ANY of the conditions (as opposed to ALL of the conditions) will be added to the remarketing list.
+  - Only on Display Network
+
+- Visitors of a page during specific dates
+  - When creating lists with specific dates, lists' membership duration may also determine when people are removed from the list. Visitors are added to the list if they've visited the pages on the selected dates, and will stay on the list for the amount of time specified by the membership duration.
+
+- Visitors of a page with a specific tag
+  - Awhile ago, an airline added a remarketing tag to sections of their website about popular routes. Creating a rule based on the URL for those sections would be too complex using rules. The airline could create a remarketing list of people who visited sections of the website about the popular route by using the "Visitors of a page with a specific tag" template, and selecting the tag that was implemented a while ago on those pages.
+  - When you use the "Visitors of a page with a specific tag" template, you can select existing AdWords conversion tracking tags as well. Selecting a conversion tracking tag can be helpful if you haven't been able to add the remarketing tag to the conversion page but still want to reach or exclude this audience.
+
+***** Custom Combination List
+https://support.google.com/adwords/answer/2549111
+
+
+***** Customer Match
+It's for Search, YouTube and Gmail Networks.
 - Upload a list as an Audience List to match Google accounts.
   - Email, Phone, First Name, Last Name, Country, Zip, and Mobile Device ID (multiple email and postal columns are allowed)
   - https://support.google.com/adwords/answer/7474166
@@ -32929,6 +33002,9 @@ Action
 **** YouTube Advertising
 https://www.youtube.com/yt/advertise/
 Learn how to make a video https://creatoracademy.youtube.com/page/welcome
+
+** Google Tag Manager
+https://support.google.com/tagmanager/
 
 ** Keywords on websites
 Page title 65 characters. A list of keywords (<=3) with separators can be used. Order matters.
