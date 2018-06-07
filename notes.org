@@ -17983,6 +17983,7 @@ Until .lastIndex gets to 0
 // Return all matches
 s.match(pattern);
 #+END_EXAMPLE
+
 ***** Pattern and modifiers
 =/pattern/modifiers=
 
@@ -18361,10 +18362,12 @@ encodeURI do not encode these:
 
 Both encodeURI and encodeURIComponent don't encode single quotes.
 
-Current URL
+Current URL <<<js:window.location>>>
 #+BEGIN_EXAMPLE
 console.log(window.location.href);
-// http://abc.com/xyz/ijk.php?m=123#def
+
+// window.location.href === window.location.toString() === 'http://abc.com/xyz/ijk.php?m=123#def'
+
 // window.location.href = window.location.protocol + "//" 
 // + window.location.host (abc.com)
 // + window.location.pathname (/xyz/ijk.php, if homepage, '/')
@@ -31919,7 +31922,7 @@ https://support.google.com/analytics/answer/3124493
 *** Tracking Code :: gtag.js, analytics.js
 The most recent version is gtag.js (Global site tag). [[https://developers.google.com/analytics/devguides/collection/gtagjs/][Documentation]]. [[https://developers.google.com/analytics/devguides/collection/gtagjs/migration][Migrate from analytics.js to gtag.js]].
 Previous version
-  - analytics.js. [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
+  - analytics.js. [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]] [[https://developers.google.com/analytics/devguides/collection/analyticsjs/command-queue-reference][ga commands, objects, fields reference]]
 
 **** Custom parameters for dynamic remarketing <<<ga:dynamic remarketing>>>
 https://support.google.com/adwords/answer/3103357
@@ -32027,84 +32030,118 @@ Full example :: send to a specific property instead of groups
 </script>
 #+END_EXAMPLE
 
-*** Regular Expressions <<<ga:regex>>>
-https://support.google.com/analytics/answer/1034324?hl=en
+**** ga Command Queue and Object Methods
+https://developers.google.com/analytics/devguides/collection/analyticsjs/tracking-snippet-reference
+#+BEGIN_EXAMPLE
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-Use ~\~ to escape. Need to escape the following metacharacters
-. ? + * | ^ $ ( ) [ ] -
-
-Metacharacters are no longer special inside of square brackets. Except - ^ and the \
-
-[0-9]{1,2} repeat the number at least 1 time and no more than 2 times.
-
-http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
-
-Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI
-
-http://www.analyticsmarket.com/freetools/regex-tester
-http://www.lunametrics.com/regex-book/Regular-Expressions-Google-Analytics.pdf
-
-**** Include multiple words but order does not matter
-word1+word2+word3
-
-*** ga Object Methods
-
-*** Track Object Methods
-
-There're different methods in Tracker Object
-
-ga('method_name',...);
-
-*** send
-Used in ga:goal and funnel
-You can send an action of a hitType with corresponding fields
-
-ga('[trackerName.]send', [hitType], [...fields], [fieldsObject]);
-
-Use ga:fieldsObject
-
-**** hitType: pageview
-Used in ga:goal and funnel
-ga('send', 'pageview', [page], [fieldsObject]);
-
-*** get(fieldName)
-
-*** set(fieldName|fieldsObject, [fieldValue])
-
-*** fieldsObject
-<<<ga:fieldsObject>>>
-
-**** hitCallback
+ga('create', 'UA-XXXXX-Y', 'auto'); // create a tracker instance
+ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+#+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-var form = document.getElementById('signup-form');
+ga('command_name', ...); // this is called command queue. Command can be a tracker method, a ga Object Method, or a method that is defined in a plugin
 
-// Adds a listener for the "submit" event.
-form.addEventListener('submit', function(event) {
-
-  // Prevents the browser from submitting the form
-  // and thus unloading the current page.
-  event.preventDefault();
-
-  // Sends the event to Google Analytics and
-  // resubmits the form once the hit is done.
-  ga('send', 'event', 'Signup Form', 'submit', {
-    hitCallback: function() {
-      form.submit();
-    }
-  });
-
-  // or 
-  ga('send', 'event', 'Signup Form', 'submit', {
-    transport: 'beacon'
-  });
-  
-  form.submit();
+// Use a ready callback to call a ga Object Method
+// ga.getAll() // wrong
+ga(function(tracker) {
+  var trackers = ga.getAll();
 });
 #+END_EXAMPLE
 
-*** Funnel and Goal (send pageview)
-<<<ga:goal and funnel>>>
+**** ga Command Queue
+Add a command to the queue :: ga(command, [...fields], [fieldsObject])
+- command ::
+  - [trackerName.][pluginName:]methodName
+  - The name of the method to be scheduled for execution. When not specifying a plugin name, this method must be one of the command methods listed below.
+- ...fields :: One or more optional convenience parameters for quickly specifying common fields.
+- fieldsObject :: An object for specifying any remaining values not specified in any of the fields parameters.
+
+Commands
+- create :: create a tracker instance. same as ga Object Method create
+- remove :: remove a tracker instance. same as ga Object Method remove
+- send :: same as ga:tracker:send <<<ga:ga:send>>>
+- set :: set a field on a tracker object. Same as ga:tracker:set
+- require :: require an analytics.js plugin
+- provide :: provide an analytics.js plugin and its methods for use with the ga() command queue. Add command
+
+**** ga Object Method
+create :: create a tracker instance
+getByName :: get a tracker instance by name
+getAll :: get all tracker instances
+remove :: remove a tracker instance
+
+*** Tracker Object Methods
+get :: get the value of a field stored on the tracker <<<ga:tracker:get>>>
+set :: set a field value on the tracker <<<ga:tracker:set>>>
+send :: send a hit to Google Analytics. Same as ga:ga:send
+
+**** send <<<ga:tracker:send>>>
+tracker.send([hitType], [...fields], [fieldsObject]);
+ga('[trackerName.]send', [hitType], [...fields], [fieldsObject]);
+
+Used in ga:goal and funnel
+Use ga:fieldsObject
+
+hitType :: 
+- pageview :: ga:fieldsObject:page
+- event :: 
+- social ::
+- timing :: 
+
+***** Send pageview - Page Tracking
+https://developers.google.com/analytics/devguides/collection/analyticsjs/pages
+ga('send', 'pageview', [page], [fieldsObject]);
+
+Pageview fields (tracker object fields)
+- title :: It's set to document.title when tracker is created
+- location :: either location or the page is required. It's set to document.location when tracker is created
+  - The anchor portion is ignored. Including campaign parameters in anchor but they're processed in a special way
+- page :: default is not set. If set, location field gets overwritten when send method is run but tracker's location field is still not modified. ga:fieldsObject:page
+
+Always define tracker.page which is only used in send method. Don't modify location of document.location. Or you can use self define page variable and pass it to send method without changing tracker.page which will always be used in send method.
+
+For SPA, you can use a plugin to track complex pageviews :: https://github.com/googleanalytics/autotrack
+
+#+BEGIN_EXAMPLE
+ga('send', 'pageview');
+
+ga('send', {
+  hitType: 'pageview',
+  page: location.pathname
+});
+
+ga(function(tracker) {
+  // Sets the page field to "/about.html".
+  tracker.set('page', '/about.html');
+});
+
+// normalize /user/USER_ID/profile, /user/USER_ID/account, /user/USER_ID/notifications with thousands of USER_ID
+// to 
+// /user/profile, /user/account, /user/notifications
+if (document.location.pathname.indexOf('user/' + userID) > -1) {
+  var page = document.location.pathname.replace('user/' + userID, 'user');
+  ga('send', 'pageview', page);
+}
+
+ga(function(tracker) {
+  // Sends an event hit for the tracker named "myTracker" with the
+  // following category, action, and label, and sets the nonInteraction
+  // field value to true.
+  tracker.send('event', 'link', 'click', 'http://example.com', {
+    nonInteraction: true
+  });
+});
+#+END_EXAMPLE
+
+***** Funnel and Goal (send pageview) <<<ga:goal and funnel>>>
 Goal is defined in Admin > Account > Property > View
 Funnel is step to a Goal.
 
@@ -32130,7 +32167,7 @@ gtag('config', 'GA_TRACKING_ID', {
 });
 #+END_EXAMPLE
 
-*** Send event - play, call, scroll
+***** Event - play, call, scroll
 Reporting > Behavior > Events
 Category > Action > Label > Value
 
@@ -32220,8 +32257,41 @@ $(window).bind('beforeunload', function() {sendGAreq();});
 </script>
 #+END_EXAMPLE
 
-*** Send dimension and metrics
+*** fieldsObject <<<ga:fieldsObject>>>
+https://developers.google.com/analytics/devguides/collection/analyticsjs/field-reference
 
+**** page <<<ga:fieldsObject:page>>>
+text begins with /
+
+**** hitCallback
+#+BEGIN_EXAMPLE
+var form = document.getElementById('signup-form');
+
+// Adds a listener for the "submit" event.
+form.addEventListener('submit', function(event) {
+
+  // Prevents the browser from submitting the form
+  // and thus unloading the current page.
+  event.preventDefault();
+
+  // Sends the event to Google Analytics and
+  // resubmits the form once the hit is done.
+  ga('send', 'event', 'Signup Form', 'submit', {
+    hitCallback: function() {
+      form.submit();
+    }
+  });
+
+  // or 
+  ga('send', 'event', 'Signup Form', 'submit', {
+    transport: 'beacon'
+  });
+  
+  form.submit();
+});
+#+END_EXAMPLE
+
+*** Send dimension and metrics
 Configure and send custom dimensions
 #+BEGIN_EXAMPLE
 // Configures custom dimension<Index> to use the custom parameter
@@ -32276,7 +32346,27 @@ gtag('config', 'GA_TRACKING_ID', {
 gtag('event', 'foo', {'age': 12, 'avg_page_load_time': 1});
 #+END_EXAMPLE
 
-*** Too Many Self-referrals
+*** Regular Expressions <<<ga:regex>>>
+https://support.google.com/analytics/answer/1034324?hl=en
+
+Use ~\~ to escape. Need to escape the following metacharacters
+. ? + * | ^ $ ( ) [ ] -
+
+Metacharacters are no longer special inside of square brackets. Except - ^ and the \
+
+[0-9]{1,2} repeat the number at least 1 time and no more than 2 times.
+
+http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
+
+Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI
+
+http://www.analyticsmarket.com/freetools/regex-tester
+http://www.lunametrics.com/regex-book/Regular-Expressions-Google-Analytics.pdf
+
+**** Include multiple words but order does not matter
+word1+word2+word3
+
+*** TS: Too Many Self-referrals
 Reporting > Acquisition > All Traffic > Referrals, you will find the website's url is the source
 And the percentage is high compared to other Referral Sources.
 3 reasons:
@@ -32298,6 +32388,7 @@ You cannot use View Filter to filter out referral domain...
 
 You can also create a segment without affecting the data. 
 Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
+
 *** Analytics Solutions Gallery
 https://analytics.google.com/analytics/gallery
 
@@ -42808,14 +42899,11 @@ https://github.com/levonlee/reponame/blob/master/folder1/s1.svg
 Raw Repo Path
 https://github.com/levonlee/reponame/raw/master/folder1/s1.svg
 
-RawGit Path
-/levonlee/reponame/master/folder1/s1.svg
+RawGit Path :: /levonlee/reponame/master/folder1/s1.svg
+RawGit Path for Gist :: /levonlee/[long-gist-id]/raw/index.html
 
-Gist Path
-https://gist.githubusercontent.com/levonlee/[long-gist-id]/raw/index.html
-
-RawGit Path
-/levonlee/[long-gist-id]/raw/index.html
+Whole Path :: https://rawgit.com/levonlee/cssSandbox/master/{dir}/index.html
+Whole Path for Gist :: https://gist.githubusercontent.com/levonlee/[long-gist-id]/raw/index.html
 
 Development (Traffic limited)
 https://rawgit.com/ + RawGit Path
