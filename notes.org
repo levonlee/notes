@@ -32083,6 +32083,9 @@ get :: get the value of a field stored on the tracker <<<ga:tracker:get>>>
 set :: set a field value on the tracker <<<ga:tracker:set>>>
 send :: send a hit to Google Analytics. Same as ga:ga:send
 
+**** set
+When a tracker's field is set, tracker will use that as default for all following actions/commands/methods e.g. send a hit. Use custom variable to subsitute into each action's required parameters instead of overwrite a tracker's field.
+
 **** send <<<ga:tracker:send>>>
 tracker.send([hitType], [...fields], [fieldsObject]);
 ga('[trackerName.]send', [hitType], [...fields], [fieldsObject]);
@@ -32167,7 +32170,7 @@ gtag('config', 'GA_TRACKING_ID', {
 });
 #+END_EXAMPLE
 
-***** Event - play, call, scroll
+***** Send Event - play, call, scroll
 Reporting > Behavior > Events
 Category > Action > Label > Value
 
@@ -32257,11 +32260,92 @@ $(window).bind('beforeunload', function() {sendGAreq();});
 </script>
 #+END_EXAMPLE
 
+***** Send dimension and metrics
+Configure and send custom dimensions
+#+BEGIN_EXAMPLE
+ga('send', 'pageview', {
+  'dimension15':  'My Custom Dimension'
+});
+
+// gtag has to run 2 commands to accomplish the same
+
+// Configures custom dimension<Index> to use the custom parameter
+// 'dimension_name' for 'GA_TRACKING_ID', where <Index> is a number
+// representing the index of the custom dimension.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'dimension<Index>': 'dimension_name'}
+});
+// Sends the custom dimension to Google Analytics.
+gtag('event', 'any_event_name', {'dimension_name': dimension_value});
+
+// Maps 'dimension2' to 'age'.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'dimension2': 'age'}
+});
+// Sends an event that passes 'age' as a parameter.
+gtag('event', 'age_dimension', {'age': 12});
+#+END_EXAMPLE
+
+Configure and send custom metrics
+#+BEGIN_EXAMPLE
+// Configures custom metric<Index> to use the custom parameter
+// 'metric_name' for GA_TRACKING_ID, where <Index> is a number
+// representing the index of the custom metric.
+
+ga('send', 'event', 'category', 'action', {
+  'metric18': 8000
+});
+ga('send', 'event', 'category', 'action', {
+  'metric19': 24.99
+});
+
+// gtag has to run 2 commands to achieve the same
+
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'metric<Index>': 'metric_name'}
+});
+// Sends the custom dimension to Google Analytics.
+gtag('event', 'any_event_name', {'metric_name': metric_value});
+
+// Maps 'metric5' to 'avg_page_load_time'.
+gtag('config', 'GA_TRACKING_ID', {
+  'custom_map': {'metric5': 'avg_page_load_time'}
+});
+// Sends an event that passes 'avg_page_load_time' as a parameter.
+gtag('event', 'load_time_metric', {'avg_page_load_time': 1});
+#+END_EXAMPLE
+
+Configure and send both custom dimensions and custom metrics
+#+BEGIN_EXAMPLE
+gtag('config', 'GA_TRACKING_ID', {
+   'custom_map': {
+     'dimension2': 'age',
+     'metric5': 'avg_page_load_time'
+   }
+});
+
+gtag('event', 'foo', {'age': 12, 'avg_page_load_time': 1});
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+// Set tracker's custom dimension so that all later hits will have this
+ga('set', 'dimension5', 'custom data');
+
+// set both
+ga('set', {
+  'dimension5': 'custom dimension data',
+  'metric5': 'custom metric data'
+});
+#+END_EXAMPLE
+
 *** fieldsObject <<<ga:fieldsObject>>>
 https://developers.google.com/analytics/devguides/collection/analyticsjs/field-reference
 
 **** page <<<ga:fieldsObject:page>>>
 text begins with /
+
+**** Custom Dimensions and Metrics <<<ga:fieldsObject:customs>>>
+https://developers.google.com/analytics/devguides/collection/analyticsjs/field-reference#customs
 
 **** hitCallback
 #+BEGIN_EXAMPLE
@@ -32290,62 +32374,6 @@ form.addEventListener('submit', function(event) {
   form.submit();
 });
 #+END_EXAMPLE
-
-*** Send dimension and metrics
-Configure and send custom dimensions
-#+BEGIN_EXAMPLE
-// Configures custom dimension<Index> to use the custom parameter
-// 'dimension_name' for 'GA_TRACKING_ID', where <Index> is a number
-// representing the index of the custom dimension.
-gtag('config', 'GA_TRACKING_ID', {
-  'custom_map': {'dimension<Index>': 'dimension_name'}
-});
-
-// Sends the custom dimension to Google Analytics.
-gtag('event', 'any_event_name', {'dimension_name': dimension_value});
-
-// Maps 'dimension2' to 'age'.
-gtag('config', 'GA_TRACKING_ID', {
-  'custom_map': {'dimension2': 'age'}
-});
-
-// Sends an event that passes 'age' as a parameter.
-gtag('event', 'age_dimension', {'age': 12});
-#+END_EXAMPLE
-
-Configure and send custom metrics
-#+BEGIN_EXAMPLE
-// Configures custom metric<Index> to use the custom parameter
-// 'metric_name' for GA_TRACKING_ID, where <Index> is a number
-// representing the index of the custom metric.
-gtag('config', 'GA_TRACKING_ID', {
-  'custom_map': {'metric<Index>': 'metric_name'}
-});
-
-// Sends the custom dimension to Google Analytics.
-gtag('event', 'any_event_name', {'metric_name': metric_value});
-
-// Maps 'metric5' to 'avg_page_load_time'.
-gtag('config', 'GA_TRACKING_ID', {
-  'custom_map': {'metric5': 'avg_page_load_time'}
-});
-
-// Sends an event that passes 'avg_page_load_time' as a parameter.
-gtag('event', 'load_time_metric', {'avg_page_load_time': 1});
-#+END_EXAMPLE
-
-Configure and send both custom dimensions and custom metrics
-#+BEGIN_EXAMPLE
-gtag('config', 'GA_TRACKING_ID', {
-   'custom_map': {
-     'dimension2': 'age',
-     'metric5': 'avg_page_load_time'
-   }
-});
-
-gtag('event', 'foo', {'age': 12, 'avg_page_load_time': 1});
-#+END_EXAMPLE
-
 *** Regular Expressions <<<ga:regex>>>
 https://support.google.com/analytics/answer/1034324?hl=en
 
