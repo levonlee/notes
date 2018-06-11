@@ -15475,9 +15475,9 @@ HTTP response header can be defined in html markup
 *** Age
 A non-negative integer of seconds that the object (response) has been in a proxy cache (CDN, Varnish)
 
-*** Cache-Control
-<<<header:cache-control>>>
+*** Cache-Control <<<header:cache-control>>>
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+apache:mod_headers:cache
 
 - Directives
 must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
@@ -15487,14 +15487,14 @@ no-transform
 public :: response can be cached in all devices
 private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish)
 proxy-revalidate
-max-age=<seconds> :: 
+max-age=<seconds> :: refer to header:expires
 post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
 
 - Common usage
   - public, max-age=2592000 :: cache for a month
   - no-cache, must-revalidate, post-check=0, pre-check=0 :: no cache and always ask from server
 
-*** Expires
+*** Expires <<<header:expires>>>
 When the response is considered stale.
 Set to 0 means the response is expired.
 If Cache-Control has max-age or s-max-age, Expires is ignored.
@@ -34502,7 +34502,6 @@ find . | wc -l
 Check file permissions wp:check file permissions
 
 *** Search Text in Files <<<linux:grep>>>
-
 #+BEGIN_EXAMPLE
 grep --color -HRi "google\.com" /root/dir
 
@@ -41056,6 +41055,21 @@ https://httpd.apache.org/docs/2.4/rewrite/flags.html
 F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
 L :: Last
 NC :: no case
+
+** mod_headers <<<apache:mod_headers>>>
+
+<<<apache:mod_headers:cache>>> Refer to header:cache-control
+#+BEGIN_EXAMPLE
+<filesMatch "\.(html|htm|js|css)$">
+  FileETag None
+  <ifModule mod_headers.c>
+     Header unset ETag
+     Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+     Header set Pragma "no-cache"
+     Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+  </ifModule>
+</filesMatch>
+#+END_EXAMPLE
 
 * Nginx
 ** Install on Ubuntu 16.04
