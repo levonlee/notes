@@ -15033,6 +15033,38 @@ event.relatedTarget.tagName;
 animationName :: keyframe name
 elapsedTime :: number of seconds the transition has been running
 
+**** HTML DOM Event
+***** DOMContentLoaded <<<html:event:DOMContentLoaded>>>
+It's fired when the initial HTML has been completely loaded and parsed, without waiting for stylesheets, images and subframes to finish loading. html:event:load is fully-loaded.
+
+Synchronous JavaScript can issue a doc.write at any point; hence the DOM tree construction is blocked anytime a synchronous script is encountered
+JavaScript can query for a computed style of any object, which means it can also block on CSS
+
+DOM construction can’t proceed until JavaScript is executed, and JavaScript can’t proceed until CSSOM is available.
+
+Mark JavaScript files as js:defer to unblock construction of DOM and execute them before domContentLoadedEventStart but JavaScript files still need to wait for CSSOM to be finished.
+
+Mark JavaScript files as js:async is similar to js:defer but DCL does not have to wait for execution of async scripts.
+
+By default, JavaScript will block DOM construction, which may block on CSSOM. Sync scripts are bad, but you already knew that. Marking scripts with “defer” and “async” makes an implicit promise to the document parser that you will not use doc.write, which in turn allows it to unblock DOM construction.
+
+If at any point we must wait for JavaScript execution, then we will have to first wait for the CSSOM construction to finish. In other words, there is a hard dependency edge between JavaScript and CSS… Stylesheets at the top, scripts at the bottom? Now you know why.
+
+https://calendar.perfplanet.com/2012/deciphering-the-critical-rendering-path/
+
+***** load <<<html:event:load>>>
+Refer to html:event:DOMContentLoaded
+
+domLoading :: browser is about to start parsing the first received bytes of the HTML document
+domInteractive :: browser has finished parsing all HTML and DOM construction
+domContentLoaded :: Both DOM is ready and there're no stylesheets that are blocking JavaScript execution. Ready to construct the render tree.
+ - domContentLoadedEventStart
+ - domContentLoadedEventEnd
+domComplete :: all processing is complete and all resources e.g. images have finished downloading. The loading spinner has stopped spinning.
+load :: page is fully loaded
+ - loadEventStart
+ - loadEventEnd
+
 *** <<<DOMTokenList>>> Object
 A collection of space-separated tokens.
 
@@ -17460,7 +17492,8 @@ https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques
 https://developers.google.com/web/progressive-web-apps/
 
 * Javascript
-** Loading Sequence
+** Loading Sequence <<<js:defer>>> <<<js:async>>>
+Refer to html:event:DOMContentLoaded
 <script> tags without any attributes are downloaded together and executed immediately in order
 
 - defer :: Works when src is defined. Download together, execute in order just before DOMContentLoaded
@@ -17483,8 +17516,7 @@ async="false" is needed.
 });
 #+END_EXAMPLE
 
-** External Script, document.write
-<<<js:external script>>>
+** External Script, document.write <<<js:external script>>>
 Loading external script use this
 
 #+BEGIN_EXAMPLE
@@ -46829,6 +46861,9 @@ method:POST
 **** Preserve log
 Preserve all requests log even though the page URL is changed (e.g. after the Post request, URL changes)
 
+**** Capture Screeshots
+Double click to show image and single click to review timeline
+
 *** Flush DNS Caches in Chrome
 Even ipconfig /flushdns is run, Chrome still caches the DNS
 Navigate to ~chrome://net-internals/#dns~ and press "Clear host cache" button
@@ -47990,6 +48025,8 @@ https://www.thinkwithgoogle.com/tools/
 
 *** Tools for Web Developers
 **** Lighthouse in DevTools
+It only measures mobile device
+
 **** [[https://search.google.com/test/mobile-friendly][Mobile-Friendly Test]]
 **** [[https://developers.google.com/speed/][PageSpeed]]
 **** Fetch as Google google:search console
