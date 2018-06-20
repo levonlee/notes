@@ -31489,10 +31489,23 @@ GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoy
 
 GA for FireBase is free and limited to track mobile apps.
 
-GA 360 is a paid service that includes a Service Level Agreement (SLA) that supports higher hit volumes.
+GA 360 is a paid per year service that includes a Service Level Agreement (SLA) that supports higher hit volumes.
+https://www.lunametrics.com/services/google-analytics-360-hub/feature-comparison/
+- 10M hits per month free and up to several billions. Data freshness is 24-48 hours vs 4 hour guarantee (most 15-20min)
 - Roll-up reporting aggregates data from multiple Analytics properties and lets you see that data together in the same reports. e.g. website and mobile app stats
-- Free version GA has sampling occur in Property while 360 has sampling occur in View
+- GA has sampling occur in Property while 360 has sampling occur in View. Default sample is 250k visits (sessions) and can be changed to 500k per property vs 360 100M sessions per view. Standard report always has unsampled data and if you add a segment, create a report, filter the report, then sampled data will be used.
 - So Filter won't affect sampling in 360
+- 360 can use Google BigQuery
+- 360 has 10 times more custom dimensions & metrics. Standard only has 20 and 20 for dimensions and metrics.
+- 360 has more integration e.g. DoubleClick Campaign Manager, DoubleClick Bid Manager, DoubleClick for Publishers, Salesforce Marketing Cloud while GA has only AdWords and AdSense. Import stats from AdWords to GA and GA exports remarketing audiences to AdWords.
+- 360 can query-time import custom data sources (compare historic data and view the new imported data) while GA just imports
+-  The standard attribution modeling tool can give some formula-based models for attributing conversions to channels (like first-touch, last-touch, time decay, etc.). But which of those is the “right” model? GA360 includes a data driven attribution model, which actually uses an algorithm on your data to understand where different channels make the most impact.
+- Enhanced custom funnel reporting options. e.g. How many users view the page then scroll to 50% then scroll to the end of article then scroll to the end of page
+- 360 has custom tables, unsampled reports
+
+Non-360 way to cut down hits per month
+- Separate traffic by setting up new property
+- Cut down spam traffic
 
 **** Hit limits
 10 million hits per month per property
@@ -32423,19 +32436,23 @@ And the percentage is high compared to other Referral Sources.
 3. A lot of traffic and sessions are created by spammers to a landing page 
 (most likely homepage with url parameters)  with a fake referral path as the website.
 
-Click on the website URL (referral source), you will see Referral Path (that's From traffic)
-Add secondary dimension "Full Referrer" to see the referrer's domain and full path.
-
-Since self-referrals can be faked and real self-referrals should be small amount, you can filter out
-self-referrals in GA.
-
-Go to Admin > Account > Property > Tracking Info > Referral Exclusion List > add domain
-abc.com also matches www.abc.com because domain name CONTAINS
-
 You cannot use View Filter to filter out referral domain...
 
 You can also create a segment without affecting the data. 
 Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
+
+Ghosts :: send request to GA directly without visiting your site. Use random UA-ID and destination url.
+- Identify the source domain of referral traffic Report > Acquisition > Source/Medium, change primary dimension to Source and secondary dimension to Hostname. If Hostname is not your webiste, then the Source is the ghost's referral domain. Full Referrer dimension shows referrer's domain and path.
+- Create a filter under Property > View to only include Hostname that is your website
+ - Custom > Include > Hostname > yourmaindomain\.com|anotheruseddomain\.com
+
+Don't do this as it will turn all referral traffic coming from that domain as direct traffic!
+- Go to Admin > Account > Property > Tracking Info > Referral Exclusion List > add domain
+abc.com also matches www.abc.com because domain name CONTAINS
+- Usually you add your own domain to Referral Exclusion List
+
+https://moz.com/blog/stop-ghost-spam-in-google-analytics-with-one-filter
+More detail instructions :: https://carloseo.com/removing-google-analytics-spam/
 
 *** Analytics Solutions Gallery
 https://analytics.google.com/analytics/gallery
@@ -32498,8 +32515,7 @@ https://ga-dev-tools.appspot.com/campaign-url-builder/
 Required :: Medium, Source, Campaign ga:channel
 Optional :: Content, Term
 
-** Google Search Console
-<<<google:search console>>>
+** Google Search Console <<<google:search console>>>
 Add a new property for https if the website is upgraded from http. Stats are separated.
 
 Google recommends creating 2 properties per root domain per schema (http/https). domainroot.com and www.domainroot.com
@@ -33301,8 +33317,7 @@ Google Image guildlines https://support.google.com/webmasters/answer/114016
 https://moz.com/blog/mega-serp-a-visual-guide-to-google
 https://moz.com/learn/seo/serp-features
 
-** Rich snippet, JSON-LD
-<<<google:json-ld>>>
+** Rich snippet, JSON-LD <<<google:json-ld>>>
 LD stands for linked data.
 Google Search Console > Structured Data Markup Helper
 
@@ -47962,6 +47977,22 @@ https://www.thinkwithgoogle.com/tools/
 **** Lighthouse in DevTools
 **** [[https://search.google.com/test/mobile-friendly][Mobile-Friendly Test]]
 **** [[https://developers.google.com/speed/][PageSpeed]]
+**** Fetch as Google google:search console
+For sites that you don't own :: https://technicalseo.com/seo-tools/fetch-render/ or do an iframe like this and then use Fetch as Google
+#+BEGIN_EXAMPLE
+<html>
+<head><title>Fetch &amp; Render Proxy</title>
+</head>
+<body style="margin:0px;padding:0px">
+<iframe src="http://www.example.com/" frameborder="0" style="overflow:hidden;height:10000;width:1024" height="10000" width="1024"></iframe>
+</script>
+</body>
+</html>
+#+END_EXAMPLE
+
+**** Rich Snippet Testing Tool, Structured Data Testing Tool google:json-ld
+Test websites that you own and don't
+
 ** Translation
 <<<tool:Poedit>>>
 Open .pot and .po files in [[https://poedit.net/][Poedit]]
