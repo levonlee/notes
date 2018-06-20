@@ -15057,7 +15057,7 @@ Refer to html:event:DOMContentLoaded
 
 domLoading :: browser is about to start parsing the first received bytes of the HTML document
 domInteractive :: browser has finished parsing all HTML and DOM construction
-domContentLoaded :: Both DOM is ready and there're no stylesheets that are blocking JavaScript execution. Ready to construct the render tree.
+domContentLoaded :: Both DOM is ready and there're no stylesheets that are blocking JavaScript execution (CSSOM is parsed and ready). Ready to construct the render tree.
  - domContentLoadedEventStart
  - domContentLoadedEventEnd
 domComplete :: all processing is complete and all resources e.g. images have finished downloading. The loading spinner has stopped spinning.
@@ -17496,9 +17496,11 @@ https://developers.google.com/web/progressive-web-apps/
 Refer to html:event:DOMContentLoaded
 <script> tags without any attributes are downloaded together and executed immediately in order
 
-- defer :: Works when src is defined. Download together, execute in order just before DOMContentLoaded
-- async :: Works when src is defined. Download together, execute in any order they're downloaded
+- defer :: Works when src is defined. Download together, execute in order and defer execution until before DOMContentLoaded
+- async :: Works when src is defined. Download together, execute in any order as soon as they're downloaded and DOMContentLoaded does not have to wait for the execution. If async scripts are downloaded and executed before DCL, it will still block HTML parsing.
 - async="false" :: Works when src is defined. Download together, execute in order as soon as all are downloaded
+
+async is useful when the script files are not dependent on other files and do not have any dependencies themselves. Use it when you don't care exactly at which point the file is executed.
 
 By default, all dynamically added scripts are async.
 
