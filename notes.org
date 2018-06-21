@@ -139,6 +139,9 @@ if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
     $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
 }
 #+END_EXAMPLE
+**** expose_php <<<php.ini:expose_php>>>
+expose_php = On
+
 *** <<<php.ini:extension>>>
 php.ini can also enable module. e.g. to enable module intl
 #+BEGIN_EXAMPLE
@@ -236,7 +239,7 @@ HTTPS
 HTTP_HOST :: see below
 
 REQUEST_TIME
-REQUEST_URI
+REQUEST_URI :: /abc/xyz.html?abc=xyz without hash
 
 REMOTE_ADDR
 REMOTE_HOST :: 
@@ -791,6 +794,11 @@ parse_str($str, $output);
 echo $output['first'];  // value
 echo $output['arr'][0]; // foo bar
 echo $output['arr'][1]; // baz
+#+END_EXAMPLE
+
+Current URL path. Refer to php:parse_url
+#+BEGIN_EXAMPLE
+$path_only = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 #+END_EXAMPLE
 
 ** Include file
@@ -15530,13 +15538,16 @@ apache:mod_headers:cache
 
 - Directives
 must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
-no-cache :: browser has to check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
+
+no-cache :: browser has to always check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
 no-store :: no cache should be stored in request or response
-no-transform
-public :: response can be cached in all devices
-private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish)
+
+no-transform :: No transformations or conversions should be made to the resource. The Content-Encoding, Content-Range, Content-Type headers must not be modified by a proxy. A non- transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The no-transform directive disallows this.
+
+public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
+private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
 proxy-revalidate
-max-age=<seconds> :: refer to header:expires
+max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again.
 post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
 
 - Common usage
@@ -15544,8 +15555,7 @@ post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask 
   - no-cache, must-revalidate, post-check=0, pre-check=0 :: no cache and always ask from server
 
 *** Expires <<<header:expires>>>
-When the response is considered stale.
-Set to 0 means the response is expired.
+When the response is considered stale. Set to 0 means the response is expired.
 If Cache-Control has max-age or s-max-age, Expires is ignored.
 
 *** Content-Security-Policy (CSP) :: response
@@ -15650,6 +15660,85 @@ Content-Security-Policy: script-src www.google-analytics.com; img-src www.google
 #+END_EXAMPLE
 
 I've heard there's way other than 'unsafe-inline' for Google Tag Manager
+
+referrer directive is like header:referrer-policy
+
+*** X-Frame-Options
+Whether the client can render the page in a <frame>, <iframe>, <object>.
+
+DENY
+SAMEORIGIN :: the page can only be displayed in a frame on the same origin as the page itself.
+ALLOW-FROM uri :: Chrome doesn't support.
+
+*** X-Content-Type-Options
+X-Content-Type-Options: nosniff
+It only applies to script and style
+Blocks a request if the requested type is style/script and the MIME type is not "text/css"/ javascript mime type
+
+*** X-XSS-Protection
+Not supported in FireFox. Use Content-Security-Policy for modern browsers. This is used for older browsers.
+
+X-XSS-Protection: 0
+Disable XSS filtering.
+
+X-XSS-Protection: 1
+Default, If XSS then the client will sanitize the page (remove the unsafe parts)
+
+X-XSS-Protection: 1; mode=block
+Rather than sanitizing the page, the client will prevent rendering of the page if an attack is detected.
+
+X-XSS-Protection: 1; report=<reporting-uri>
+Chrome only. If XSS is detected, the client will sanitize the page and report the violation. Same as report-uri in Content-Security-Policy
+
+*** Referer :: request <<<header:referer>>>
+*** Referrer-Policy :: response <<<header:referrer-policy>>>
+Only works for Chrome, FireFox and Opera
+Controls how the client sends the Referer request header with requests that are made from your site. e.g. clicking on a link on your website and the link goes to either your website or other websites.
+
+no-referrer-when-downgrade :: If no Referrer-Police is defined, clients should set to this. The url is sent as a referrer when the protocol security level stays the same HTTP->HTTP or HTTPS->HTTPS
+ - source:http://a.ca/1/ Destination:http://b.com Referer is http://a.ca/1/
+ - source:http://a.ca/1/ Destination:https://b.com Referer is http://a.ca/1
+ - source:https://a.ca/1/ Destination:http://b.com Referer is NULL
+ - source:https://a.ca/1/ Destination:http://a.ca/2/ Referer is NULL
+ - source:https://a.ca/1/ Destination:https://a.ca/2/ Referer is https://a.ca/1/
+
+no-referrer :: never set Referer header
+
+same-origin :: only set Referer when the origin is the same.
+ - source:https://a.ca/1/ Destination:https://a.ca/2/ Referer is https://a.ca/1/
+ - source:https://a.ca/1/ Destination:http://a.ca/2/ Referer is NULL
+
+origin :: always set the Referer header to the origin (domain) from which the request was made. Path information is stripped.
+
+| https://scotthelme.co.uk/blog1/ | https://scotthelme.co.uk/blog2/ | https://scotthelme.co.uk/ |
+| https://scotthelme.co.uk/blog1/ | http://scotthelme.co.uk/blog2/  | https://scotthelme.co.uk/ |
+| https://scotthelme.co.uk/blog1/ | http://example.com/             | https://scotthelme.co.uk/ |
+|                                 |                                 |                           |
+
+strict-origin :: This value is similar to origin above but will not allow the secure origin to be sent on a HTTP request, only HTTPS.
+
+origin-when-cross-origin :: The browser will send the full URL to requests to the same origin/domain but only send the origin when requests are cross-origin.
+
+strict-origin-when-cross-origin :: Similar to origin-when-cross-origin above but will not allow any information to be sent when a scheme downgrade happens (the user is navigating from HTTPS to HTTP).
+
+unsafe-url :: The browser will always send the full URL with any request to any origin.
+
+*** Strict-Transport-Security :: response <<<header:strict-transport:security>>>
+HSTS lets a website tell browsers that it should only be accessed using HTTPS
+
+Strict-Transport-Security: max-age=<expire-time>
+ - max-age :: The time, in seconds, that the browser should remember that a site is only to be accessed using HTTPS.
+
+Strict-Transport-Security: max-age=<expire-time>; includeSubDomains
+ - includeSubDomains Optional :: If this optional parameter is specified, this rule applies to all of the site's subdomains as well.
+
+Strict-Transport-Security: max-age=<expire-time>; preload
+ - preload is not recommended
+
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
+
+*** X-Powered-By
+Remove it :: apache:mod_headers php.ini:expose_php
 
 ** Email
 *** View email source on Outlook
@@ -33352,6 +33441,15 @@ Retargeting:
 - people have been on your site
 - people have been on a competitor site
 
+** Competitive Marketing
+https://www.wordstream.com/blog/ws/2016/05/16/competitive-advertising
+
+- Using Facebook Ad, you can target people with interests in our competitor’s company name
+- Use YouTube campaigns, you can target people with searches for our competitor’s videos on YouTube
+- Use Gmail campaigns, you can target people with interests in our competitor’s company name and its products. E.g. target people who are interested in Sephora
+- Use Display campaigns, you can target people with visits to AND interests in a specific domain. This is new but it is different from remarketing audience. But it’s powerful enough!
+- Use Twitter Ads, you can download a competitor’s followers and setup Twitter Ads to target those followers.
+
 ** Optimize Images
 https://moz.com/ugc/10-tips-for-optimizing-your-images-for-search
 
@@ -37867,16 +37965,19 @@ Short name: php:5.6.31-apache
 Parent: debian:jessie
 [[https://github.com/docker-library/php/blob/0bb4068bd639ba98631bc2999e0d20cae583ec00/5.6/jessie/apache/Dockerfile][Dockerfile]]
 
+Refer to apache:config
+
 PHP_INI_DIR :: /usr/local/etc/php (/conf.d)
+
 APACHE_CONFDIR :: /etc/apache2
 APACHE_ENVVAR ::  /etc/apache2/envvars
 APACHE_RUN_USER :: www-data
 APACHE_DOCUMENT_ROOT, WORKDIR :: /var/www/html
+APACHE_LOG_DIR :: /var/log/apache2/
+
 EXPOSE 80
 CMD ["apache2-foreground"]
 /usr/local/bin/apache2-foreground
-
-APACHE_LOG_DIR :: /var/log/apache2/
 
 /var/log/apache2/error.log => /dev/stderr
 /var/log/apache2/access.log => /dev/stdout
@@ -38055,9 +38156,7 @@ phphoht:
 #+END_EXAMPLE
 
 ** image:php:7 <<<image:php:7>>>
-
 Tag latest is 7.2.3-cli-stretch
-
 php:7.2.3-apache <<<image:php:7:apache>>>
 
 Installed PHP extensions
@@ -40847,21 +40946,20 @@ Convert the Identityfile to .ppk with SSH-2-RSA with 2048 bits and save it to th
 ** Basics
 Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ in Ubuntu
 
-** Config loading
+** Config loading <<<apache:config>>>
 apt-get update; apt-get install apache2
-
-~service apache2 restart~
-~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container
-Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line.
 
 Refer to image:php:apache to get configs
 
-Show all loaded modules :: ~apache2ctl -M~
+Show compiled setting :: ~apache2ctl -V~ to look for HTTPD_ROOT and SERVER_CONFIG_FILE
 
 Show parsed vhost settings and run settings :: ~apache2ctl -S~
 #+BEGIN_EXAMPLE
 VirtualHost configuration:
 *:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
+
+# run settings followed
+
 ServerRoot: "/etc/apache2"
 Main DocumentRoot: "/var/www/html"
 Main ErrorLog: "/var/log/apache2/error.log"
@@ -40876,8 +40974,17 @@ User: name="www-data" id=33
 Group: name="www-data" id=33
 #+END_EXAMPLE
 
+*** Loaded Modules
+Show all loaded modules :: ~apache2ctl -M~
+Sample loaded modules from image:php:apache
+
+You can also ~ls -al /etc/apache2/mods-enabled~
+
+autoindex deflate expires filter mime rewrite setenvif mpm_prefork 
+
+*** sites-enabled VirtualHost
 Sites :: /etc/apache2/sites-enabled/
-Sample
+Sample for image:php:apache
 #+BEGIN_EXAMPLE
 <VirtualHost *:80>
         # The ServerName directive sets the request scheme, hostname and port that
@@ -40890,14 +40997,15 @@ Sample
         #ServerName www.example.com
 
         ServerAdmin webmaster@localhost
-        DocumentRoot /var/www/html/public
+        DocumentRoot /var/www/html
 
-<Directory /var/www/html/public>
-                Options Indexes FollowSymLinks MultiViews
-                AllowOverride All
-                Order allow,deny
-                allow from all
-</Directory>
+# You may add Directory here
+# <Directory /var/www/html>
+#   Options Indexes FollowSymLinks MultiViews
+#   AllowOverride All
+#   Order allow,deny
+#   allow from all
+# </Directory>
 
         # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
         # error, crit, alert, emerg.
@@ -40917,27 +41025,45 @@ Sample
 </VirtualHost>
 #+END_EXAMPLE
 
+*** apache2.conf httpd.conf
 Main config file :: /etc/apache2/apache2.conf
 You can see the *.conf files loading sequence
 #+BEGIN_EXAMPLE
 # include module config
-mods-enabled/*.load
-mods-enabled/*.conf
+IncludeOptional mods-enabled/*.load
+IncludeOptional mods-enabled/*.conf
 
 # include list of ports to listen on
-ports.conf
+Include ports.conf
 
 # main config file config
 
 # generic
-conf-enabled/*.conf
+IncludeOptional conf-enabled/*.conf
 # virutal host config
-sites-enabled/*.conf
+IncludeOptional sites-enabled/*.conf
 #+END_EXAMPLE
+
+Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
+
+*** Restart <<<apache:restart>>>
+~service apache2 restart~
+~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container
+Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line.
+
+~/etc/init.d/apache2 restart~
 
 ** Modules
 Available modules /etc/apache2/mods-available
 Enabled modules   /etc/apache2/mods-enabled
+
+Command line enable modules
+#+BEGIN_EXAMPLE
+a2enmod remoteip
+# some modules need to load config. If don't specify, then the following modules don't need a3enconf
+a2enconf remoteip
+# apache:restart
+#+END_EXAMPLE
 
 *** remoteip
 https://github.com/wichon/docker-php-maxmind-geoip/blob/master/Dockerfile
@@ -40951,12 +41077,148 @@ RemoteIPProxiesHeader X-Forwarded-By
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-a2enmod remoteip
-a2enconf remoteip
-/etc/init.d/apache2 reload
+a2enmod remoteip && a2enconf remoteip
+apache:restart
 #+END_EXAMPLE
 
-** Directive Context
+*** mod_setenvif
+#+BEGIN_EXAMPLE
+<IfModule mod_setenvif.c>
+    <IfModule mod_headers.c>
+        <FilesMatch "\.(bmp|cur|gif|ico|jpe?g|png|svgz?|webp)$">
+            SetEnvIf Origin ":" IS_CORS
+            Header set Access-Control-Allow-Origin "*" env=IS_CORS
+        </FilesMatch>
+    </IfModule>
+</IfModule>
+#+END_EXAMPLE
+
+*** mod_headers <<<apache:mod_headers>>>
+https://httpd.apache.org/docs/current/mod/mod_headers.html
+It provides directives to control and modify HTTP request and response headers. Headers can be merged, replaced or removed.
+
+#+BEGIN_EXAMPLE
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(eot|otf|tt[cf]|woff2?)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>
+#+END_EXAMPLE
+
+<<<apache:mod_headers:cache>>> Refer to header:cache-control php:header
+#+BEGIN_EXAMPLE
+<filesMatch "\.(html|htm|js|css)$">
+  FileETag None
+  <ifModule mod_headers.c>
+     Header unset ETag
+     Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+     Header set Pragma "no-cache"
+     Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+  </ifModule>
+</filesMatch>
+#+END_EXAMPLE
+
+<<<apache:mod_headers:header>>>
+Syntax:	Header [condition] add|append|echo|edit|edit*|merge|set|setifempty|unset|note header [[expr=]value [replacement] [early|env=[!]varname|expr=expression]]
+
+#+BEGIN_EXAMPLE
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+</IfModule>
+#+END_EXAMPLE
+
+*** mod_include
+*** mod_rewrite
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+RewriteEngine on
+...
+</IfModule>
+#+END_EXAMPLE
+
+**** RewriteBase <<<apache:RewriteBase>>>
+Syntax:	RewriteBase [URL-path]
+specifies the URL prefix to be used for per-directory (htaccess) RewriteRule directives that substitute a relative path.
+
+#+BEGIN_EXAMPLE
+RewriteBase /
+#+END_EXAMPLE
+
+Request ~GET /somepath/localpath/pathinfo~
+#+BEGIN_EXAMPLE
+RewriteBase "/somepath"
+RewriteRule ^localpath(.*) otherpath$1
+# /somepath/otherpath/pathinfo
+RewriteRule ^localpath(.*) /otherpath$1
+# /otherpath/pathinfo
+RewriteRule ^localpath(.*) http://thishost/otherpath$1
+# /otherpath/pathinfo
+#+END_EXAMPLE
+
+**** RewriteCond <<<apache:RewriteCond>>>
+Syntax: RewriteCond [TestString] [CondPattern] [flags]
+#+BEGIN_EXAMPLE
+RewriteCond %{REMOTE_ADDR} ^1\.2\.3\.4$
+#+END_EXAMPLE
+
+%{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
+
+%{REQUEST_URI} :: leading slash
+
+**** HTTP_COOKIE
+#+BEGIN_EXAMPLE
+RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
+RewriteCond %1                 ^me$
+RewriteRule ......
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
+RewriteCond %{unescape:%1}     ^me$
+RewriteRule ......
+#+END_EXAMPLE
+
+**** Flags
+NC :: no case
+NV :: no vary
+OR
+
+#+BEGIN_EXAMPLE
+RewriteCond "%{REMOTE_HOST}"  "^host1"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host2"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host3"
+RewriteRule ...some special stuff for any of these hosts...
+#+END_EXAMPLE
+
+**** RewriteRule <<<apache:RewriteRule>>>
+Syntax:	RewriteRule [Pattern] [Substitution] [flags]
+
+Pattern
+Don't add leading slash. ~^something~ is a relative path that either starts with the current directory's .htaccess or apache:RewriteBase
+
+Substitution
+"-" or - :: the requested URI is not modified
+If it doesn't have a leading slash, the end URL has the current directory's .htaccess or apache:RewriteBase
+
+**** Flags
+https://httpd.apache.org/docs/2.4/rewrite/flags.html
+
+F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
+L :: Last
+NC :: no case
+*** mod_autoindex
+If the URI matches a directory but doesn't specify an index file e.g. index.html, by default Apache returns the index of that directory. Don't do that!
+#+BEGIN_EXAMPLE
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+#+END_EXAMPLE
+
+** Directive Context <<<apache:directive context>>>
 server config ::This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers. It is not allowed in .htaccess files at all.
 
 virtual host :: This context means that the directive may appear inside <VirtualHost> containers in the server configuration files.
@@ -40964,6 +41226,18 @@ virtual host :: This context means that the directive may appear inside <Virtual
 directory :: A directive marked as being valid in this context may be used inside <Directory>, <Location>, <Files>, <If>, and <Proxy> containers in the server configuration files, subject to the restrictions outlined in Configuration Sections.
 
 .htaccess :: If a directive is valid in this context, it means that it can appear inside per-directory .htaccess files. It may not be processed, though depending upon the overrides currently active.
+
+** Core Directives
+These can be used in all apache:directive context. However, some directive setting needs to happen in a different context.
+https://httpd.apache.org/docs/2.4/mod/core.html
+
+#+BEGIN_EXAMPLE
+ErrorDocument 404 /404.html
+
+# This setting prevents Apache from returning a 404 error as the result
+# of a rewrite when the directory with the same name does not exist.
+Options -MultiViews
+#+END_EXAMPLE
 
 ** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
@@ -41150,100 +41424,6 @@ RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
 /var/www/.htaccess blocks access to folders cs-devops and .git and file .gitignore. This way log gets 403 and apache doesn't need to be restarted
 #+BEGIN_EXAMPLE
 RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log||wp-config-li-[^.]+\.php) - [F,NC]
-#+END_EXAMPLE
-
-** mod_rewrite
-#+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine on
-...
-</IfModule>
-#+END_EXAMPLE
-
-*** RewriteBase <<<apache:RewriteBase>>>
-Syntax:	RewriteBase [URL-path]
-specifies the URL prefix to be used for per-directory (htaccess) RewriteRule directives that substitute a relative path.
-
-#+BEGIN_EXAMPLE
-RewriteBase /
-#+END_EXAMPLE
-
-Request ~GET /somepath/localpath/pathinfo~
-#+BEGIN_EXAMPLE
-RewriteBase "/somepath"
-RewriteRule ^localpath(.*) otherpath$1
-# /somepath/otherpath/pathinfo
-RewriteRule ^localpath(.*) /otherpath$1
-# /otherpath/pathinfo
-RewriteRule ^localpath(.*) http://thishost/otherpath$1
-# /otherpath/pathinfo
-#+END_EXAMPLE
-
-*** RewriteCond <<<apache:RewriteCond>>>
-Syntax: RewriteCond [TestString] [CondPattern] [flags]
-#+BEGIN_EXAMPLE
-RewriteCond %{REMOTE_ADDR} ^1\.2\.3\.4$
-#+END_EXAMPLE
-
-%{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
-
-%{REQUEST_URI} :: leading slash
-
-**** HTTP_COOKIE
-#+BEGIN_EXAMPLE
-RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
-RewriteCond %1                 ^me$
-RewriteRule ......
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
-RewriteCond %{unescape:%1}     ^me$
-RewriteRule ......
-#+END_EXAMPLE
-
-**** Flags
-NC :: no case
-NV :: no vary
-OR
-
-#+BEGIN_EXAMPLE
-RewriteCond "%{REMOTE_HOST}"  "^host1"  [OR]
-RewriteCond "%{REMOTE_HOST}"  "^host2"  [OR]
-RewriteCond "%{REMOTE_HOST}"  "^host3"
-RewriteRule ...some special stuff for any of these hosts...
-#+END_EXAMPLE
-
-*** RewriteRule <<<apache:RewriteRule>>>
-Syntax:	RewriteRule [Pattern] [Substitution] [flags]
-
-Pattern
-Don't add leading slash. ~^something~ is a relative path that either starts with the current directory's .htaccess or apache:RewriteBase
-
-Substitution
-"-" or - :: the requested URI is not modified
-If it doesn't have a leading slash, the end URL has the current directory's .htaccess or apache:RewriteBase
-
-**** Flags
-https://httpd.apache.org/docs/2.4/rewrite/flags.html
-
-F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
-L :: Last
-NC :: no case
-
-** mod_headers <<<apache:mod_headers>>>
-
-<<<apache:mod_headers:cache>>> Refer to header:cache-control php:header
-#+BEGIN_EXAMPLE
-<filesMatch "\.(html|htm|js|css)$">
-  FileETag None
-  <ifModule mod_headers.c>
-     Header unset ETag
-     Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
-     Header set Pragma "no-cache"
-     Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
-  </ifModule>
-</filesMatch>
 #+END_EXAMPLE
 
 * Nginx
@@ -41452,6 +41632,8 @@ server {
 
 }
 #+END_EXAMPLE
+
+https://github.com/h5bp/server-configs
 
 ** server Block
 Include directives :: listen, server_name, root, index
@@ -47588,6 +47770,8 @@ https://www.virustotal.com
 wp:ts:hacked
 
 Performance testing :: https://www.webpagetest.org/
+
+Header response security test :: https://securityheaders.com/
 
 ** WCAG, AODA, Web Content Accessibility Guidelines
 SortSite by powermapper.
