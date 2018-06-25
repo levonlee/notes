@@ -41395,6 +41395,15 @@ RewriteRule ^(.*)$ http://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 </IfModule>
 #+END_EXAMPLE
 
+Redirect from www.example.com to example.com
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^ %{ENV:PROTO}://%1%{REQUEST_URI} [R=301,L]
+</IfModule>
+#+END_EXAMPLE
+
 ** Force redirect to https .htaccess
 Diffrent hositng companies have different rule
 
@@ -41402,6 +41411,7 @@ In general
 #+BEGIN_EXAMPLE
 <IfModule mod_rewrite.c>
 RewriteEngine On
+# RewriteBase is optional but some hosting requires it
 RewriteBase /
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
@@ -41423,7 +41433,7 @@ RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
 ** Restrict access to a file or sub folder
 /var/www/.htaccess blocks access to folders cs-devops and .git and file .gitignore. This way log gets 403 and apache doesn't need to be restarted
 #+BEGIN_EXAMPLE
-RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log||wp-config-li-[^.]+\.php) - [F,NC]
+RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log|wp-config-li-[^.]+\.php) - [F,NC]
 #+END_EXAMPLE
 
 * Nginx
@@ -44738,7 +44748,11 @@ It first loads sql-admin\libraries\config.default.php and then load sql-admin\co
 To create a config.inc.php, just duplicate sql-admin/config.sample.inc.php
 
 *** Adminer <<<db:adminer>>>
-When choose to dump a database, leave blank for Database (don't DROP+CREATE) but DROP+CREATE for tables
+When choose to dump (export in newer version) a database, leave blank for Database (don't DROP+CREATE) but DROP+CREATE for tables
+
+Routines and Events for Database
+Only Triggers for Tables
+Data :: INSERT
 
 #+BEGIN_EXAMPLE
 -- START We don't want these lines
@@ -48347,7 +48361,7 @@ SMTP server: smtp.sendgrid.net
 SMTP port: 465 (587 is being used...)
 Use encripted protocol: Use SSL
 - Wordpress
-Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplified][SendGrid]]
+Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplified][SendGrid]] Refer to GitHub for setting config in wp-config.php
 
 **** Whitelabel
 2 types of whitelabel: domain and email link.
@@ -48422,7 +48436,7 @@ else {
   return 'success';
 }
 #+END_EXAMPLE
-
+     
 *** DMARC, SPF, DKIM
 Domain-based Message Authentication, Reporting, and Conformance.
 
