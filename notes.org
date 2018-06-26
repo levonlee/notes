@@ -16438,6 +16438,9 @@ mjml -w input.mjml
 
 // convert v3 .mjml to v4 .mjml
 mjml -m index.mjml indexv4.mjml
+
+// minify html output
+node_modules/.bin/mjml path/to/index.mjml -o path/to/index.html --config.minify
 #+END_EXAMPLE
 
 Since v4, install Windows App https://mjmlio.github.io/mjml-app/ to get WYSIWYG experience.
@@ -16610,6 +16613,25 @@ Use css-class in any mj-element and change styles for mobile
 <mj-text css-class="hidden">
 #+END_EXAMPLE
 
+css-class only works for mj-* elements, use this to target elements inside mj-text
+#+BEGIN_EXAMPLE
+<mj-style>
+      @media all and (max-width: 361px) { 
+        h2[class*="header"] { font-size:50px!important;}
+      }
+      @media all and (max-width: 321px) {
+        h2[class*="header"] { font-size:49px!important;}
+      }
+</mj-style>
+<!-- 
+     h2[class*="header"] { font-size:55px!important;}
+-->
+
+<mj-text css-class="main-content" color="#001f58" padding="0px 0px 0px 0px">
+  <h2 css-class="main-content" class="header" style="font-size:55px;line-height:50px;font-family:'Trebuchet MS',sans-serif;padding:0;margin:0;font-weight:100;padding:0;margin:0;">...</h2>
+</mj-text>
+#+END_EXAMPLE
+
 **** mj-head > mj-font 
 <<<mjml:tag:mj-font>>>
 #+BEGIN_EXAMPLE
@@ -16685,6 +16707,8 @@ Structure the columns in the order you want them to stack on mobile, then use di
 - background-url :: default n/a
 - background-repeat :: default repeat, no-repeat
 - background-color :: default n/a,
+
+You may use % for left and right padding.
 
 **** mj-wrapper > mj-section <<<mjml:tag:mj-wrapper>>>
 Wrap multiple sections. Perfect place to set borders
@@ -16871,7 +16895,7 @@ It can contain any HTML tag with any attributes.
 <mj-section background-color="#f0f0f0">
   <mj-column>
     <mj-text font-style="italic" font-size="20" color="#626262">
-       My Company <a href="#" style="text-decoration:none;color:#2DDCB4">... read more</a>
+       My Company <a href="#" style="text-decoration:none!important;text-decoration:none;color:#2DDCB4">... read more</a>
     </mj-text>
     <mj-text>
       <h1>
@@ -16883,6 +16907,24 @@ It can contain any HTML tag with any attributes.
 #+END_EXAMPLE
 
 mjml:tag:mj-style:responsive font size
+
+Remove underline for telephone on iOS
+https://litmus.com/blog/update-banning-blue-links-on-ios-devices
+<meta content="telephone=no" name="format-detection">
+6&zwnj;75 Massachusetts Ave, Cambridge, MA 02139 >> 675 Massachusetts Ave, Cambridge, MA 02139
+
+a[href^=tel]{ color:#F00; text-decoration:none;}
+
+Change for style for all iOS data detection! 
+<a href="#" x-apple-data-detectors="true">
+a[x-apple-data-detectors] {
+    color: inherit !important;
+    text-decoration: none !important;
+    font-size: inherit !important;
+    font-family: inherit !important;
+    font-weight: inherit !important;
+    line-height: inherit !important;
+}
 
 ***** mj-button, Image header with text and button
 - href ::
@@ -21726,6 +21768,14 @@ writePercent(percentWaited);
 ~npm list express~
 ~npm view PKG_NAME versions --json~ The latest available version of a package
 view aliaes: info, show, v
+
+Distribution tags :: ~npm view mjml dist-tags~
+- latest :: no pre-release/beta versions
+- beta
+- future
+- next :: usually is set to a beta version to be the next version
+
+Backup and remove the node_modules and run ~npm install mjml@next~
 
 ~npm outdated~ Show if there're updates for locally installed packages
 ~npm outdated --global~ for globally installed packages
