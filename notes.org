@@ -7109,9 +7109,7 @@ get_footer( $name );
 ?>
 #+END_EXAMPLE
 
-*** get_template_part, get_theme_file_uri, get_theme_file_path
-<<<wp:f:get_template_part>>>
-
+*** get_template_part, get_theme_file_uri, get_theme_file_path <<<wp:f:get_template_part>>>
 get_template_part( string $slug, string $name = null )
 It includes file {slug.php} or {slug}-{name}.php
 
@@ -7127,7 +7125,7 @@ wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
 #+END_EXAMPLE
 Get from child theme first js/my-scripts.js. Fall back to parent theme.
 
-wp:f:get_theme_file_path returns the path in filesystem so that you can use filemtime
+<<<wp:f:get_theme_file_path>>> returns the path in filesystem so that you can use filemtime
 #+BEGIN_EXAMPLE
 wp_enqueue_script(
     'my-script',
@@ -7138,9 +7136,10 @@ wp_enqueue_script(
 #+END_EXAMPLE
 
 *** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
-Return the filesystem path or URI of the current parent theme
-Use get_stylesheet_directory_uri instead to grab child and then parent theme.
-get_stylesheet_uri returns URI of style.css
+get_template_directory :: the filesystem path of the current parent theme
+get_template_directory_uri :: URI e.g. protocol://domain of the current parent theme
+get_stylesheet_directory_uri :: URI of the stylesheet directory. grab child and then parent theme.
+get_stylesheet_uri :: URI of style.css
 
 #+BEGIN_EXAMPLE
 include( get_template_directory() . '/includes/myfile.php');
@@ -7540,8 +7539,9 @@ wp_reset_query();
 *** update_post_meta
 <<<wp:f:update_post_meta>>>
 
-*** wp_enqueue_style, wp_style_add_data
-<<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
+*** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
+Used in wp:action:wp_enqueue_scripts.
+Use wp:filter:script_loader_src
 
 wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )
 
@@ -7593,8 +7593,9 @@ wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-
 wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
 #+END_EXAMPLE
 
-*** wp_enqueue_script, wp_script_add_data
-<<<wp:f:wp_enqueue_script>>>
+*** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
+Used in wp:action:wp_enqueue_scripts
+Use wp:filter:style_loader_src
 wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
 
 #+BEGIN_EXAMPLE
@@ -8369,6 +8370,17 @@ function twentyseventeen_resource_hints( $urls, $relation_type ) {
 add_filter( 'wp_resource_hints', 'twentyseventeen_resource_hints', 10, 2 );
 #+END_EXAMPLE
 
+*** script_loader_src style_loader_src <<<wp:filter:script_loader_src>>> <<<wp:filter:style_loader_src>>>
+Remove current site url from script and style files
+#+BEGIN_EXAMPLE
+add_filter( 'script_loader_src', 'wpse47206_src' );
+add_filter( 'style_loader_src', 'wpse47206_src' );
+function wpse47206_src( $url ) {
+	if( is_admin() ) return $url;
+	return str_replace( site_url(), '', $url );
+}
+#+END_EXAMPLE
+
 *** get_header_image_tag
 apply_filters( 'get_header_image_tag', string $html, object $header, array $attr )
 #+BEGIN_EXAMPLE
@@ -8527,12 +8539,12 @@ function lili_pre_get_posts( $query ) {
   // this function should return nothing.
 }
 
-*** wp_enqueue_scripts
-Can use wp_enqueue_style and wp_enqueue_script. Priority might be needed to change to greater 10
-to load after default theme/style.css
+*** wp_enqueue_scripts <<<wp:action:wp_enqueue_scripts>>>
+Can use wp:f:wp_enqueue_style and wp:f:wp_enqueue_script. Priority might be needed to change to greater 10 to load after default theme/style.css
+Use wp:filter:script_loader_src and wp:filter:style_loader_src to change the source of scripts and styles
 #+BEGIN_EXAMPLE
 function lili_scripts() {
- wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
+  wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
 }
 add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
 #+END_EXAMPLE
