@@ -24352,7 +24352,7 @@ Usually it's good in IE11 but if it still doesn't work, refer to svg:ie11
 AI already makes .svg and you want to move styles to inline
 svgo abc.svg --enable inlineStyles
 
-# Move style attribute from each node to attributes
+Move style attribute from each node to attributes
 svgo abc.svg --enable convertStyleToAttrs
 
 ** Custom Module
@@ -35082,7 +35082,8 @@ cp -a abc xyz
 -a :: -dR --preserve=all
 -d :: --no-dereference --preserve=links
 -P, --no-dereference :: never follow symbolic links in SOURCE
--R :: recursive
+-R, -r, --recursive
+-f, --force :: if an existing destination file cannot be opened, remove it and try again.
 
 To copy and exclude some directories use rsync
 #+BEGIN_EXAMPLE
@@ -35596,8 +35597,7 @@ After changing interfaces file, turn off and on the interface
 sudo ifdown eth0 && sudo ifup eth0
 #+END_EXAMPLE
 
-*** DNS
-<<<linux:dns>>>
+*** DNS <<<linux:dns>>>
 ~/etc/nsswitch.conf~ and the line starting with ~hosts: ~ defines which files Linux should look for the IP of a domain.
 
 #+BEGIN_EXAMPLE
@@ -36210,7 +36210,7 @@ Run ~sudo apt-get update~ and maybe ~sudo apt-get upgrade~ after.
 
 https://askubuntu.com/a/430944/481813
 
-** Input and Output, bash file
+** Bash File, Input and Output
 *** File Descriptors
 File descriptors. First 3 are reserved.
 | 0 | STDIN  | Standard input         |
@@ -36293,8 +36293,9 @@ exec 7<&0
 # define empty array
 myarray=()
 
-# define array with values
+# define indexed array with values
 myarray=( one two three four five )
+declare -a curlArgs=('-H' "keyheader: value" '-H' "2ndkeyheader: 2ndvalue")
 
 # define array with strings
 myarray=( 'Hello World' 'Another item' )
@@ -36314,7 +36315,11 @@ printf -v stringvar "%s\n" "${myarray[@]}"
 # Remove the final newline
 stringvar=${stringvar%?}
 
+# prepend
+arr=("new_element1" "new_element2" "..." "new_elementN" "${arr[@]}")
+
 # Append to array
+arr=( "${arr[@]}" "new_element" )
 myarray+=('foo')
 myarray+=("$line")
 
@@ -36328,6 +36333,12 @@ if ! containElement "$line" "${myarray[@]}"; then
  myarray+=("$line")
 fi
 
+# Append to a specific index (e.g. at arr[2])
+arr=( "${arr[@]:0:2}" "new_element" "${arr[@]:2}" )
+
+# Remove an element at a specific index (e.g. arr[2])
+arr=( "${arr[@]:0:2}" "${arr[@]:3}" )
+
 # Length
 echo Number of elements in array: ${#myarray[@]}
 
@@ -36335,6 +36346,85 @@ echo Number of elements in array: ${#myarray[@]}
 for i in "${myarray[@]}"; do
   echo "$i"
 done
+#+END_EXAMPLE
+
+**** Associative array
+#+BEGIN_EXAMPLE
+declare -A mymap
+mymap[foo]=bar
+echo ${mymap[foo]}
+
+declare -A MYMAP=( [foo]=bar [baz]=quux [corge]=grault )
+
+k=baz
+mymap[$k]=quux
+${mymap[$k]} is the same as ${mymap[baz]}
+
+Key with spaces can be double and single quoted but they are the same as not quoting them
+mymap[foo a]="bar b"
+mymap["foo a"]="bar b"
+mymap['foo a']="bar b"
+
+Testing whether a value is missing from an associative array
+$ if [ ${MYMAP[foo]+_} ]; then echo "Found"; else echo "Not found"; fi
+Found
+
+$ if [ ${MYMAP[missing]+_} ]; then echo "Found"; else echo "Not found"; fi
+Not found
+
+$ declare -A MYMAP=( [foo a]=bar [baz b]=quux )
+$ echo "${!MYMAP[@]}"  # Print all keys - quoted, but quotes removed by echo
+foo a baz b
+
+$ # Loop through all keys in an associative array
+$ for K in "${!MYMAP[@]}"; do echo $K; done
+foo a
+baz b
+
+$ # Looping through keys and values in an associative array
+$ for K in "${!MYMAP[@]}"; do echo $K --- ${MYMAP[$K]}; done
+foo a --- bar
+baz b --- quux
+
+Redeclare, clear the whole array
+$ declare -A MYMAP
+$ MYMAP[foo]=bar
+$ echo ${MYMAP[foo]}
+bar
+$ declare -A MYMAP    # Re-declaring DOES NOT clear an associative array
+$ echo ${MYMAP[foo]}
+bar
+$ unset MYMAP         # You need to unset and re-declare to get a cleared associative array
+$ declare -A MYMAP
+$ echo ${MYMAP[foo]}
+
+Unset a key
+$ MYMAP[foo]=bar
+$ echo ${MYMAP[foo]}
+bar
+$ unset ${MYMAP[foo]} # WRONG
+$ echo ${MYMAP[foo]}
+bar
+$ unset MYMAP[foo]    # To delete from an associative array, use "unset" with similar syntax to assigning
+$                     # BUT see next section if key contains spaces
+$ echo ${MYMAP[foo]}
+
+$ MYMAP[baz]=quux
+$ echo ${MYMAP[baz]}
+quux
+$ K=baz
+$ unset MYMAP[$K]       # Can unset using a variable for the key too
+$                       # BUT see next section if variable may contain spaces - always better to quote
+$ echo ${MYMAP[baz]}
+
+Unset a key that has spaces
+$ unset MYMAP[foo Z]     # WRONG
+$ unset MYMAP["foo Z"]    # You must quote keys containing spaces when you unset in an associative array
+$ echo ${MYMAP[foo Z]}
+
+Length, same as indexed array
+$ declare -A MYMAP=( [foo a]=bar [baz b]=quux )
+$ echo ${#MYMAP[@]}  # Number of keys in an associative array
 #+END_EXAMPLE
 
 *** echo and print
@@ -36368,6 +36458,17 @@ multiple_commands_output="$multiple_commands_output""$output"$'\n'
 # read -r :: to ignore all backslashes
 #+END_EXAMPLE
 
+*** Multiple lines of text
+Store as a variable
+#+BEGIN_EXAMPLE
+read -r -d '' VAR << EOM
+This is line 1.
+This is line 2.
+Line 3.
+EOM
+
+echo "$VAR"
+#+END_EXAMPLE
 *** Date format <<<bash:date>>>
 date +%F :: YYYY-MM-DD
 date +%H :: 00..23
@@ -36378,6 +36479,30 @@ date +%Z :: time zone e.g. EDT
 
 date +%FT%T%Z :: 2017-10-13T16:39:02UTC
 date +%FT%H%M%S :: 2017-10-13T16-39-02 use this as it is filename safe
+
+*** Last executed command
+#+BEGIN_EXAMPLE
+#!/bin/bash
+set -o history -o histexpand
+var1='hello'
+echo $var1
+echo !!
+#+END_EXAMPLE
+
+*** Passing arguments to command
+Variable can be passed to a command as argument value which is preceded by the argument name
+#+BEGIN_EXAMPLE
+ua='User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'
+curl https://a.ca/ -L \
+  -H "$ua"
+#+END_EXAMPLE
+ 
+Argument name and value cannot be passed in the above way. Use array
+#+BEGIN_EXAMPLE
+// create a non-associative array
+declare -a curlArgs=('-H' "keyheader: value" '-H' "2ndkeyheader: 2ndvalue")
+curl "${curlArgs[@]}"
+#+END_EXAMPLE
 
 *** String Operators
 #+BEGIN_EXAMPLE
@@ -36520,7 +36645,7 @@ curl -X POST -d "@data.json" http://..
 | w          | rewrite STDOUT                                                |
 | R          | Keep remote file timestamp. --remote-time                     |
 | z          | cURL download only after or before a date                     |
-|            |                                                               |
+| d          | send POST data                                                |
  
 *** wget <<<bash:wget>>>
 Compared to curl, wget's advantages are:
