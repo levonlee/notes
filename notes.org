@@ -24400,6 +24400,7 @@ istanbul cover _mocha
 
 *** svgo <<<nodejs:svgo>>>
 https://github.com/svg/svgo
+
 #+BEGIN_EXAMPLE
 //# i found windows has permission issue if it's installed globally
 npm install svgo
@@ -24426,6 +24427,9 @@ svgo abc.svg --enable inlineStyles
 
 Move style attribute from each node to attributes
 svgo abc.svg --enable convertStyleToAttrs
+
+Batch convert all *.svg files in a folder and output to another folder
+svgo -f ../path/to/folder/with/svg/files -o ../path/to/folder/with/svg/output
 
 ** Custom Module
 #+BEGIN_EXAMPLE
@@ -41634,6 +41638,31 @@ AddType  image/webp .webp
 #+END_EXAMPLE
 
 /etc/apache2/mods-available/mime.conf loads MIME types using TypesConfig /etc/mime.types
+
+**** AddEncoding
+AddEncoding encoding extension [extension] ...
+extension may or may not have leading dot. This doesn't encode the file but rather sets the response header Content-Type. See apache:mod_filter:addoutputfilterbytype
+#+BEGIN_EXAMPLE
+<IfModule mod_mime.c>
+  AddEncoding gzip svgz
+</IfModule>
+#+END_EXAMPLE
+
+*** mod_filter
+**** AddOutputFilterByType <<<apache:mod_filter:addoutputfilterbytype>>>
+AddOutputFilterByType filter[;filter...] media-type [media-type] ...
+Default deflate content types :: /etc/apache2/mods-available/deflate.conf
+
+#+BEGIN_EXAMPLE
+<IfModule mod_filter.c>
+AddOutputFilterByType DEFLATE "application/atom+xml" \
+                              "application/javascript" \
+                              "application/json" \
+                              ...
+                              "image/svg+xml" \
+                              ...etc.
+</IfModule>
+#+END_EXAMPLE
 
 ** Directive Context <<<apache:directive context>>>
 server config ::This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers. It is not allowed in .htaccess files at all.
