@@ -9551,6 +9551,47 @@ Empty all cron rows in wp-options table `UPDATE wp_options SET option_value='' W
 https://wordpress.org/support/topic/high-server-load-and-dsq_sync_forum-problem?replies=6
 
 *** captcha (dead)
+*** disable-comments <<<wp:plugin:disable-comments>>>
+It provides and requires comment to be deleted. If you want to keep comments in db, use this custom code
+
+#+BEGIN_EXAMPLE
+function filter_media_comment_status( $open, $post_id ) {
+  $post = get_post( $post_id );
+
+  if( in_array($post->post_type, array('attachment', 'post')) ) {
+   return false;
+  }
+  // or simply return false;
+  return $open;
+}
+add_filter( 'comments_open', 'filter_media_comment_status', 10 , 2 );
+
+// other actions might be needed
+#+END_EXAMPLE
+
+Because in themes
+#+BEGIN_EXAMPLE
+if( comments_open() || get_comments_number() ) {
+  // open or there's at least one comment
+  comments_template();
+}
+
+// or for custom post types
+if( post_type_supports( get_post_type(), 'comments' ) ) {
+	// put comment related code here, including...
+	if( comments_open() ) {
+		// ...a comment form, maybe
+	}
+}
+else {
+	// sit back and relax
+}
+#+END_EXAMPLE
+
+wp UI > Settings > Discussion > disable Allow People to post comments on new articles and disable "Allow link notifications from other blogs (pingbacks and trackbacks) on new articles"
+
+Maybe useful to set "Automatically close comments on articles older than 0 days"
+
 *** disable-embeds <<<wp:plugin:disable-embeds>>>
 Disable embed, oEmbed and remove wp-embed.js https://kinsta.com/knowledgebase/disable-embeds-wordpress/
 
