@@ -9454,6 +9454,19 @@ If all else fails and your site is broken
 	• Remove the rules (see above) that the plugin wrote to the .htaccess file in your root directory.
 	• Delete the wp-super-cache folder in the plugins folder.
 	• Optionally delete advanced-cache.php, wp-cache-config.php and the cache folder in wp-content/.
+*** W3 Total Cache <<<wp:plugin:w3-total-cache>>>
+**** Manually remove
+Files :: global search W3TC_ADDIN_FILE_
+
+Backup and remove wp-content/plugins/w3-total-cache
+Rename or remove wp-content/cache
+Rename or remove wp-content/w3tc-config and maybe wp-content/w3tc
+Rename or remove Files above under wp-content root :: advanced-cache.php db.php object-cache.php and maybe wp-total-cache-config.php
+Remove lines related to w3tc in .htaccess
+Remove line from wp-config.php define('WP_CACHE', true)
+
+**** Releases
+0.9.5.1 > 0.9.6 > 0.9.7
 
 *** Yoast SEO wordpress-seo <<<wp:plugin:wordpress-seo>>>
 How to SEO? https://yoast.com/wordpress-seo/
@@ -9525,6 +9538,9 @@ Otherwise /author-sitemap.xml will show the admin name
 2.3.11.2
 2.4.5 :: WP v4.0 to 4.4
 2.4.6.1
+*** jetpack
+Build wp with themes, unlimited image CDN from Photon, lazy loading images, brute force attack protection, downtime monitoring, automated social media posting. Paid plans: $3.5,9,29/month
+
 *** Disqus
 If you receive a lot of errors about dsq_sync_forum in Apache logs, it is caused by Disqus tries to sync with WP comments so frequently.
 
@@ -10060,19 +10076,6 @@ add_action( 'wpo_wcpdf_before_document', 'action_wpo_wcpdf_before_document', 10,
 
 ***** action wpo_wcpdf_after_document_label
 ***** action wpo_wcpdf_before_billing_address
-*** W3 Total Cache <<<wp:plugin:w3-total-cache>>>
-**** Manually remove
-Files :: global search W3TC_ADDIN_FILE_
-
-Backup and remove wp-content/plugins/w3-total-cache
-Rename or remove wp-content/cache
-Rename or remove wp-content/w3tc-config and maybe wp-content/w3tc
-Rename or remove Files above under wp-content root :: advanced-cache.php db.php object-cache.php and maybe wp-total-cache-config.php
-Remove lines related to w3tc in .htaccess
-Remove line from wp-config.php define('WP_CACHE', true)
-
-**** Releases
-0.9.5.1 > 0.9.6 > 0.9.7
 
 ** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
@@ -15491,8 +15494,10 @@ Used when you need explicit control over which source is shown at set viewport s
 </picture>
 
 <picture>
-  <source type="image/webp" srcset="images/butterfly.webp">
-  <img src="images/butterfly.jpg" alt="a butterfly">
+    <source srcset='paul_irish.jxr' type='image/vnd.ms-photo'>
+    <source srcset='paul_irish.jp2' type='image/jp2'>
+    <source srcset='paul_irish.webp' type='image/webp'>
+    <img src='paul_irish.jpg' alt='paul'>
 </picture>
 #+END_EXAMPLE
 
@@ -15890,6 +15895,10 @@ Strict-Transport-Security: max-age=<expire-time>; preload
  - preload is not recommended
 
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
+
+*** Vary :: response <<<header:vary>>>
+Vary: User-Agent :: Tell caching servers to deliver a different cache for different User-Agent
+Vary: * :: Tell caching servers to always deliver a refresh copy (all requests are uncacheable)
 
 *** X-Powered-By
 Remove it :: apache:mod_headers php.ini:expose_php
@@ -18091,8 +18100,7 @@ if (!isNaN(myNumber)) {
 } 
 #+END_EXAMPLE
 
-*** String
-<<<js:String>>>
+*** String <<<js:String>>>
 s.length
 s.charAt(s.length-1)
 s.charCodeAt(s.length-1) :: UTF-16 code unit value
@@ -18112,6 +18120,16 @@ s.toLowerCase(); s.toUpperCase();
 
 Don't use string1 == string2 to do case insensitive comparison. Use below including UTF8
 string1.toUpperCase() === string2.toUpperCase()
+
+Padding 0's to left
+#+BEGIN_EXAMPLE
+function padLeft(nr, n, str){
+  return Array(n-String(nr).length+1).join(str||'0')+nr;
+}
+var mystring = 3;
+console.log(padLeft(mystring,3)); // 003
+console.log(padLeft(mystring,3,'z')); // zz3
+#+END_EXAMPLE
 
 *** Array
 **** Basics
@@ -21926,14 +21944,11 @@ view aliaes: info, show, v
 
 Distribution tags :: ~npm view mjml dist-tags~
 - latest :: no pre-release/beta versions
-- beta
-- future
+- beta :: optional
+- future :: optional
 - next :: usually is set to a beta version to be the next version
 
 Backup and remove the node_modules and run ~npm install mjml@next~
-
-~npm outdated~ Show if there're updates for locally installed packages
-~npm outdated --global~ for globally installed packages
 
 Update npm ~sudo npm install -g npm~
 
@@ -21941,6 +21956,19 @@ npm i -D :: npm install --save-dev
 
 Npm website for a package gulp-sourcemaps
 https://www.npmjs.com/package/gulp-sourcemaps
+
+** Update Package
+~npm outdated -l~ Show if there're updates for locally installed packages based on package.json in --long format
+~npm outdated --global~ for globally installed packages
+- Current
+- Wanted :: it may be higher than Latest as it's next in dist-tags above
+- Latest :: same as latest in dist-tags above
+
+A package is outdated when its Current is lower than Latest. It'll update to Latest. If Current is higher than Latest, then it'll be downgraded. 
+
+npm update :: updates all outdated "dependencies" in package.json and change package.json to save the new version as the minimum required dependency.
+npm update --dev :: updates all outdated "dependencies" and "devDependencies" in package.json
+npm update sharp :: update a local package to the latest
 
 *** Global package and Scoped package
 npm install -g @angular/cli
@@ -22501,7 +22529,7 @@ gulp.task('css', function () {
 https://github.com/mahnunchik/gulp-responsive
 
 ***** Installation
-Requires node-gyp
+Requires global node-gyp and dev dependency is sharp
 
 #+BEGIN_EXAMPLE
 npm install --save-dev gulp-responsive
@@ -24332,16 +24360,19 @@ istanbul cover _mocha
 *** svgo <<<nodejs:svgo>>>
 https://github.com/svg/svgo
 #+BEGIN_EXAMPLE
-# i found windows has permission issue if it's installed globally
+//# i found windows has permission issue if it's installed globally
 npm install svgo
-# optimize the svg
+//# optimize the svg
 ./node_modules/svgo abc.svg
-# output the svg to data uri URL encoded
-# enc, unenc, base64
+
+//# output the svg to data uri URL encoded
+//# enc, unenc, base64
 svgo abc.svg --datauri enc
 
-# output result STDOUT. if not, the file will be overwritten
+// increase precision number of decimal points
+svgo a.svg --precision=8
 
+//# output result STDOUT. if not, the file will be overwritten
 svgo abc.svg --datauri enc -o -
 #+END_EXAMPLE
 
@@ -24467,9 +24498,9 @@ npm install --global node-gyp
 
 The install is conflict-free meaning that they do not mess with existing installations of VS, C++ Build Tools or Python.
 
-** npm dependency ~ vs ^
-^1.2.3 will match any 1.x.x latest release but will miss 2.0.0
-~1.2.3 will match any 1.2.x versions but will miss 1.3.0
+** npm dependency ~ vs ^ <<<nodejs:semver>>>
+^1.2.3 will match any 1.x.x latest release but will miss 2.0.0 (e.g. allow minor and patch but not major)
+~1.2.3 will match any 1.2.x versions but will miss 1.3.0 (e.g. allow patch but not minor or major)
 ^, caret, is the default now
 
 * Angular
@@ -34842,7 +34873,7 @@ Directly go to the actual folder by calling ~/abc
 cd -P ~/abc
 #+END_EXAMPLE
 
-*** Search Files or Directories, Sort by size <<<bash:find>>>
+*** Search files or directories, sort by size <<<bash:find>>>
 By file or directory name
 #+BEGIN_EXAMPLE
 ls -l my_scr?pt
@@ -41452,6 +41483,10 @@ It provides directives to control and modify HTTP request and response headers. 
 
 <<<apache:mod_headers:header>>>
 Syntax:	Header [condition] add|append|echo|edit|edit*|merge|set|setifempty|unset|note header [[expr=]value [replacement] [early|env=[!]varname|expr=expression]]
+All apache:directive context
+
+env=varname :: applies if varname is defined
+env=!varname :: applies if varname is not defined
 
 #+BEGIN_EXAMPLE
 <IfModule mod_headers.c>
@@ -41532,12 +41567,15 @@ Substitution
 "-" or - :: the requested URI is not modified
 If it doesn't have a leading slash, the end URL has the current directory's .htaccess or apache:RewriteBase
 
-**** Flags
+**** Flags <<<apache:RewriteRule:flags>>>
 https://httpd.apache.org/docs/2.4/rewrite/flags.html
 
 F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
 L :: Last
 NC :: no case
+T :: set MIME type with which the resulting response will be sent.
+E :: set environment variable e.g. [E=VAR:VAL] [E=VAR] (set to empty) [E=!VAR] (unset a previously set env var named VAR)
+
 *** mod_autoindex
 If the URI matches a directory but doesn't specify an index file e.g. index.html, by default Apache returns the index of that directory. Don't do that!
 #+BEGIN_EXAMPLE
@@ -41545,6 +41583,16 @@ If the URI matches a directory but doesn't specify an index file e.g. index.html
     Options -Indexes
 </IfModule>
 #+END_EXAMPLE
+
+*** mod_mime
+**** AddType TypesConfig <<<apache:mod_mime:addtype>>>
+#+BEGIN_EXAMPLE
+AddType media-type extension [extension] ...
+
+AddType  image/webp .webp
+#+END_EXAMPLE
+
+/etc/apache2/mods-available/mime.conf loads MIME types using TypesConfig /etc/mime.types
 
 ** Directive Context <<<apache:directive context>>>
 server config ::This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers. It is not allowed in .htaccess files at all.
@@ -41762,6 +41810,32 @@ RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
 /var/www/.htaccess blocks access to folders cs-devops and .git and file .gitignore. This way log gets 403 and apache doesn't need to be restarted
 #+BEGIN_EXAMPLE
 RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log|wp-config-li-[^.]+\.php) - [F,NC]
+#+END_EXAMPLE
+
+** WebP
+#+BEGIN_EXAMPLE
+<IfModule mod_rewrite.c>
+
+  RewriteEngine On
+
+  # Check if browser support WebP images
+  RewriteCond %{HTTP_ACCEPT} image/webp
+
+  # Check if WebP replacement image exists
+  RewriteCond %{DOCUMENT_ROOT}/$1.webp -f
+
+  # Serve WebP image instead
+  RewriteRule (.+)\.(jpe?g|png)$ $1.webp [T=image/webp,E=accept:1]
+
+</IfModule>
+
+<IfModule mod_headers.c>
+
+    Header append Vary Accept env=REDIRECT_accept
+
+</IfModule>
+
+AddType  image/webp .webp
 #+END_EXAMPLE
 
 * Nginx
@@ -48270,11 +48344,28 @@ WCAG 2.0 level AA requires a contrast ratio of 4.5:1 for normal text and 3:1 for
 https://webaim.org/resources/contrastchecker/
 http://leaverou.github.io/contrast-ratio/
 
-** Screencast + Audio
+** Screencast + Audio, FFmpeg
 [[https://getsharex.com/][ShareX]] Download the portable version, Task Settings > Capture > Screen recorder > Screen recording options...
 Click Download to download the latest FFmpeg.exe
 Under Sources, hit Refresh until you see the right Audio source.
 Then go back to UI, Capture > Screen recording
+
+Convert a gif to mp4
+#+BEGIN_EXAMPLE
+ffmpeg.exe -i animated.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" video.mp4
+#+END_EXAMPLE
+
+- -pix_fmt yuv420p :: MP4 store pixels in different formats and this is the max compatible across all browsers.
+- -vf :: MP4 videos using H.264 need to have a dimensions that are divisible by 2.
+
+#+BEGIN_EXAMPLE
+<img src="video.gif" alt="" width="400" height="300" />
+
+<video autoplay="autoplay" loop="loop" width="400" height="300">
+  <source src="video.mp4" type="video/mp4" />
+  <img src="video.gif" width="400" height="300" />
+</video>
+#+END_EXAMPLE 
 
 ** Sketch Diagrams
 https://bubbl.us/
