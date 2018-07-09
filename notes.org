@@ -12905,7 +12905,60 @@ New way using ~<symbol>~, and they don't display until you ~<use>~ them
 </svg>
 #+END_EXAMPLE
 
+About CSS styling for ~<svg><use>~ :: https://tympanus.net/codrops/2015/07/16/styling-svg-use-content-css/
+
 Polyfil svg4everybody searches and replaces ~svg use~ with ~<object>~
+
+New way using ~<symbol>~ only works when ~<svg><use>~ (inline). If you want SVG-as-<img> or SVG-as-background-image, use this:
+#+BEGIN_EXAMPLE
+<defs>
+  <style>
+    g {
+      display: none;
+    }
+    g:target {
+      display: inline;
+    }
+  </style>
+</defs>
+
+<g id="icon-clock">...</g>
+<g id="icon-heart">...</g>
+<g id="icon-arrow-right">...</g>
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+<div class="lili-svg-as-bg"></div>
+
+.lili-svg-as-bg {
+  background:url('//y.ca/a.svg#icon-clock') left top repeat;
+  width:100%;
+  height:400px;
+  font-size:1rem;
+}
+#+END_EXAMPLE
+
+
+You can also place each svg one after another
+#+BEGIN_EXAMPLE
+<view id="icon-clock-view" viewBox="0 0 32 32" />
+<view id="icon-heart-view" viewBox="0 32 32 32" />
+<view id="icon-arrow-right-view" viewBox="0 64 32 32" />
+
+<img src="sprite.svg#svgView(viewBox(0, 0, 32, 32))" alt="">
+// or
+<img src="sprite.svg#icon-heart-view" alt="">
+
+.icon-clock {
+  background: url("sprite.svg#svgView(viewBox(0, 0, 32, 32))") no-repeat;
+  // or
+  background: url(sprite.svg#icon-clock-view) no-repeat;
+  // or
+  background: url("sprite.svg") no-repeat;
+  background-size: 32px 96px;
+  background-position: 0 -32px;
+}
+#+END_EXAMPLE
 
 ** Use Cases
 *** iOS Hover
@@ -22663,7 +22716,12 @@ npm install --save-dev gulp-responsive
 https://www.npmjs.com/package/gulp-imagemin
 
 **** gulp-svg-sprite
+https://github.com/jkphl/svg-sprite
+https://github.com/jkphl/gulp-svg-sprite
+
 npm install --save-dev gulp-svg-sprite
+
+There're 5 modes :: css, view, defs, symbol, stack
 
 *** grunt
 Install grunt globally and locally
