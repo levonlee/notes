@@ -10086,10 +10086,57 @@ Starting v2.1 shortcodes are replaced with endpoints
 https://github.com/woocommerce/woocommerce
 https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/
 
+**** hooks
+***** Add a custom field to Order :: woocommerce_shop_order_search_fields, manage_shop_order_posts_custom_column
+Add search on custom field
+#+BEGIN_EXAMPLE
+add_filter( 'woocommerce_shop_order_search_fields', 'lili_wc_shop_order_search_field_myfield' );
+function lili_wc_shop_order_search_field_myfield( $search_fields ) {
+  $search_fields[] = '_myfield'; // You can add a WooCommerce builtin order field without creating a field 
+  // start with _
+  return $search_fields;
+}
+#+END_EXAMPLE
+
+Add a column to the 3rd position
+#+BEGIN_EXAMPLE
+function ra_order_tax_receipt_columns($columns) {
+    $columnsF = array_slice($columns, 0, 2);
+    $columnL = array_slice($columns, 2);
+    return array_merge($columnsF, array('myfield' => __('My Field Name')), $columnL);
+}
+add_filter('manage_edit-shop_order_columns' , 'ra_order_tax_receipt_columns', 2);
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+add_action( 'manage_shop_order_posts_custom_column' , 'lili_wc_shop_order_search_field_myfield_content', 10, 2 );
+function lili_wc_shop_order_search_field_myfield_content( $column ) {
+    global $post, $woocommerce, $the_order;
+    $order_id = $the_order->id;
+    switch ( $column ) {
+     case 'myfield' :
+       $order_items = $the_order->get_items();
+       $myVarOne = get_post_meta($order_id, '_myfield', true );
+       echo $myVarOne;
+       break;
+    }
+}
+#+END_EXAMPLE
+
+**** Test Credit Cards
+https://developer.moneris.com/More/Testing/Testing%20a%20Solution
+https://developer.moneris.com/More/Testing/Penny%20Value%20Simulator
+
+Visa :: 4242424242424242 4502285070000007
+MasterCard :: 5454545454545454
+
 **** extension: Subscription
 Make recurring payment and subscription products possible.
 Docs: https://docs.woocommerce.com/document/subscriptions/
 https://woocommerce.com/products/woocommerce-subscriptions/
+
+**** extension: WooCommerce Sequential Order Numbers Pro
+The post id of order is still not sequential but global $the_order->id is.
 
 **** plugin: woo-order-export-lite
 *** woocommerce-pdf-invoices-packing-slips
