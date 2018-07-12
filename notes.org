@@ -17280,6 +17280,9 @@ width attribute can have pixels or percentage.
 **** mj-elements inside mj-column
 Any mj-element inside mj-column will have width equivalent to 100% of this column's width.
 
+Max width:
+Any mj-element or elements inside mj-raw including mj-image should not have a higher width than the current column, otherwise Outlook will have troubhle in laying out mj-column
+
 ***** mj-text <<<mjml:tag:mj-text>>>
 It can contain any HTML tag with any attributes.
 
@@ -17289,7 +17292,7 @@ It can contain any HTML tag with any attributes.
 - font-family :: Ubuntu, Helvetica, Arial, sans-serif
 - font-size :: 13px
 - font-style
-- line-height :: 22px
+- line-height :: 22px. Use %. 
 - letter-spacing :: none
 - align :: left
 
@@ -17318,15 +17321,34 @@ https://litmus.com/blog/update-banning-blue-links-on-ios-devices
 a[href^=tel]{ color:#F00; text-decoration:none;}
 
 Change for style for all iOS data detection! 
-<a href="#" x-apple-data-detectors="true">
+iOS add an attribute to all links :: ~<a href="#" x-apple-data-detectors="true">~
+
+So add style
+#+BEGIN_EXAMPLE
 a[x-apple-data-detectors] {
     color: inherit !important;
     text-decoration: none !important;
-    font-size: inherit !important;
+    /* below is optional */
+    font-size: inherit !important; 
     font-family: inherit !important;
     font-weight: inherit !important;
     line-height: inherit !important;
 }
+#+END_EXAMPLE
+
+Customize line-height for Outlook desktop clients only:
+Define ling-height as mj-text attribute and then set @media
+line-height for Outlook desktop clients is 95% while others support @media use 83%
+This can be used to target other CSS property for Outlook desktop clients only.
+#+BEGIN_EXAMPLE
+@media all and (min-width: 500px) {
+  .main-content-h1-lh div {
+    line-height:83%!important;
+  }
+}
+
+<mj-text css-class="main-content-h1-lh" line-height="95%">...</mj-text>
+#+END_EXAMPLE
 
 ***** mj-button, Image header with text and button
 - href ::
@@ -17375,6 +17397,9 @@ a[x-apple-data-detectors] {
 - target :: _blank
 
 srcset is only supported in iOS. Determine display size and multiply the dimension by 2.
+
+When mj-image is inside a mj-column that is the only column, then size doesn't matter.
+If mj-image is inside a column that has other sibling columns, then limit width so that columns are layed out correctly in Outlook.
 
 #+BEGIN_EXAMPLE
 <mj-section background-color="white">
@@ -17605,6 +17630,18 @@ Not to be rendered by MJML engine
 <<<mjml:raw:center table>>>
 This won't work for Yahoo! Mail but works on all clients
 #+BEGIN_EXAMPLE
+<mj-style inline="inline">
+.tbl-cell-1 {
+  font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size:12px;
+  padding:0px 0px 10px 0px;
+  width:30px;
+}
+.tbl-cell-2, .tbl-cell-3 {
+  width:30px;
+}
+</mj-style>
+
 <mj-column>
   <mj-text>...</mj-text>
 
@@ -17616,13 +17653,13 @@ This won't work for Yahoo! Mail but works on all clients
             <table align="center" width="110" cellpadding="0" cellspacing="0" border="0">
             <!-- right also works -->
                 <tr>
-                    <td align="center" width="30"><a href="#">
+                    <td align="center" class="tbl-cell-1"><a href="#">
                       <img width="30" src="twitter.png" />
                     </a></td>
-                    <td align="center" width="30"><a href="#">
+                    <td align="center" class="tbl-cell-2"><a href="#">
                       <img width="30" src="twitter.png" />
                     </a></td>
-                    <td align="center" width="30"><a href="#">
+                    <td align="center" class="tbl-cell-3"><a href="#">
                       <img width="30" src="twitter.png" />
                     </a></td>
                 </tr>
@@ -17706,6 +17743,21 @@ iOS 9 :: always remove space between columns inside a mj-group. Or export HTML u
 - width :: 100 / number of children in section (%/px)
 - vertical-align :: top
 - background-color :: default n/a
+
+**** Change default padding
+Use this to change left/right padding in % is not consistent especially in Outlook 2003-2016. For Outlook desktop, you may need to hard set mj-image width.
+#+BEGIN_EXAMPLE
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all padding-left="0px"></mj-all>
+      <mj-all padding-right="0px"></mj-all>
+    </mj-attributes>
+  </mj-head>
+  
+<mj-section padding-left="12%" padding-right="12%">
+</mj-section>
+#+END_EXAMPLE
 
 **** Caveats
 mj-image inside mj-column will always have a maximum fixed width.
