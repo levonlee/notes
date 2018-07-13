@@ -15655,7 +15655,9 @@ transitionend
 *** <picture>, <img srcset sizes>
 **** <<<html:img:srcset>>> <<<html:img:sizes>>>
 IE 11 doesn't support srcset and sizes
-The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only. When x is used, ~sizes~ cannot be set.
+The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only. 
+
+When x is used in ~srcset~, ~sizes~ cannot be set.
 <img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">
 
 ~w~ in ~srcset~ is the actual image's width.
@@ -18047,6 +18049,7 @@ https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques
 - group :: BS4 .btn-group 
 - button :: <a> without href
 - search :: <form> define purpose
+- presentation :: element does not need to be mapped to the accessibility API
 
 *** aria-* attributes
 - aria-label :: Label or name is used interchangably. Inside <button> where label text can't be displayed.
@@ -19854,7 +19857,8 @@ while (result) {
 
 #+END_EXAMPLE
 
-** WebSocket <<<js:ws>>>
+** Web APIs
+*** WebSocket <<<js:ws>>>
 Javascript on client (e.g. web browser)
 #+BEGIN_EXAMPLE
 var connection = new WebSocket('ws://abc.com/echo', ['soap', 'xmpp']);
@@ -19897,9 +19901,8 @@ connection.onmessage = function(e) {
 };
 #+END_EXAMPLE
 
-** Mutation Observer <<<js:MutationObserver>>>
-[[https://developer.mozilla.org/en/docs/Web/API/MutationObserver][MDN MutationObserver]]
-[[https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord][MDN MutationRecord]]
+*** Mutation Observer <<<js:MutationObserver>>>
+[[https://developer.mozilla.org/en/docs/Web/API/MutationObserver][MDN MutationObserver]] [[https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord][MDN MutationRecord]]
 
 #+BEGIN_EXAMPLE
 MutationObserver = window.MutationObserver;
@@ -19946,6 +19949,32 @@ observer.observe(target, config);
 // You may stop observing later
 observer.disconnect();
 #+END_EXAMPLE
+
+*** Intersection Observer <<<js:intersection observer>>>
+[[https://developers.google.com/web/updates/2016/04/intersectionobserver][Introduction by Google]] [[https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API][MDN]]
+
+Supported in Edge, Firefox, Chrome, Chrome Android but not Safar and iOS
+
+#+BEGIN_EXAMPLE
+var io = new IntersectionObserver(
+  entries => {
+    console.log(entries);
+  },
+  {
+    // Using default options: callback will be called only when the element comes partially into view and when it completely leaves the viewport. Details below
+  }
+);
+// Start observing an element
+io.observe(element);
+
+// Stop observing an element
+// io.unobserve(element);
+
+// Disable entire IntersectionObserver
+// io.disconnect();
+#+END_EXAMPLE
+
+Parameter entries
 
 ** Testing
 *** Unit Testing
@@ -22160,33 +22189,32 @@ npm -v
 
 npm cache clean
 
-# Install npm package to ./node_modules
+// Install npm package to ./node_modules
 npm install express
 
-# Install package globally (available to other projects using the same Node.js version)
-# ~/.nvm/node_version/lib/node_modules/package_name
+// Install package globally (available to other projects using the same Node.js version)
+// ~/.nvm/node_version/lib/node_modules/package_name
 npm install -g gulp
 
-# What packages/modules are installed globally, just remove -g for locally
+// What packages/modules are installed globally, just remove -g for locally
 npm ls -g
 
-# Check which global packages are outdated
+// Check which global packages are outdated
 npm outdated -g
 
-# Update all global packages
-# some global package update requires removing first
+// Update all global packages. Some global package update requires removing first
 npm update -g
 
-# Update one global package
+// Update one global package
 npm install -g <packagename>
 
-# Remove a package globally, just remove -g for locally
+// Remove a package globally, just remove -g for locally
 npm remove async -g
 #+END_EXAMPLE
 
 Link
 #+BEGIN_EXAMPLE
-# run npm link alone in local repo is to create a symlink in global folder that links to the package where the command was executed
+// run npm link alone in local repo is to create a symlink in global folder that links to the package where the command was executed
 cd ~/projects/node-redis # Note local package name is not node-redis but redis as in ~/projects/node-redis/package.json
 npm link # create symlink in global folder so that redis can be globally referrenced/linked.
 
@@ -22315,7 +22343,7 @@ Distribution tags :: ~npm view mjml dist-tags~
 
 Backup and remove the node_modules and run ~npm install mjml@next~
 
-Update npm ~sudo npm install -g npm~
+Update npm ~sudo npm i -g npm~
 
 npm i -D :: npm install --save-dev gulp-imagemin
 
@@ -43865,10 +43893,11 @@ If you want to commit, ~.gitattributes~ file in the root ~$GIT_DIR~ or any sub f
 #+END_EXAMPLE
 
 ** Git Windows
-GUI gitk
-~start path/to/filename~ to tell Windows to open a file
-
-Run tree command ~cmd //c tree~
+- ~gitk~ :: GUI
+- ~start path/to/filename~ :: to tell Windows to open a file
+- edit a file using vi ~vi afile~
+- Run tree command ::  ~cmd //c tree~
+- At Git Bash, open the current folder in Windows Explorer ~explorer .~
 
 *** Line Feed, Long Path
 Always don't do any conversion when files are added to local index or codes are checked out to local filesystem.
