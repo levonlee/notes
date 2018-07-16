@@ -16772,17 +16772,155 @@ print theme(
 );
 #+END_EXAMPLE
 
+*** Hybrid Responsive Design
+Orignal responsive design: parent table width:100%, child table.responsive-table width:600 and use media queries
+#+BEGIN_EXAMPLE
+<table border="0" cellpadding="0" cellspacing="0" width="100%"> 
+    <tr>
+        <td bgcolor="#00a9f7" align="center">
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="responsive-table">                
+                <tr>
+                    <td align="center" valign="top" style="padding: 40px 0px 40px 0px;">
+                        <!-- IMAGE -->
+                        <img alt="Example" src="http://placehold.it/600x300" width="600" style="display: block;" border="0" class="responsive-image">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" valign="top" style="padding: 0px 10px 20px 10px;">
+                        <!-- HEADLINE -->
+                        <p style="color: #ffffff; font-family: sans-serif; font-size: 24px; font-weight: bold; line-height: 28px; margin: 0;">Announcing Some News</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" valign="top" style="padding: 0px 10px 60px 10px;">
+                        <!-- COPY -->
+                        <p style="color: #b5e2f7; font-family: sans-serif; font-size: 16px; font-weight: normal; line-height: 24px; margin: 0;">Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.</p>
+                    </td>
+                </tr> 
+            </table>
+        </td>
+    </tr>
+</table>
+
+@media screen and (max-width: 600px) {
+  .responsive-table {
+    display: block;
+    width: 100% !important;
+  }
+   
+  .responsive-image {
+    height: auto;
+    max-width: 100% !important;
+  }
+}
+#+END_EXAMPLE
+
+Hybrid or spongy design: parent table width:100%, child table width:100% with max-width:600px, for IE, wrap another table width:600 around the child table.
+#+BEGIN_EXAMPLE
+<table border="0" cellpadding="0" cellspacing="0" width="100%"> 
+    <tr>
+        <td bgcolor="#00a9f7" align="center">
+            <!--[if (gte mso 9)|(IE)]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+            <tr>
+            <td align="center" valign="top" width="600">
+            <![endif]-->
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;" >                
+                <tr>
+                    <td align="center" valign="top" style="padding: 40px 0px 40px 0px;">
+                        <!-- IMAGE -->
+                        <img alt="Example" src="http://placehold.it/600x300" width="600" style="display: block; width: 100%; max-width: 100%;" border="0">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" valign="top" style="padding: 0px 10px 20px 10px;">
+                        <!-- HEADLINE -->
+                        <p style="color: #ffffff; font-family: sans-serif; font-size: 24px; font-weight: bold; line-height: 28px; margin: 0;">Announcing Some News</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" valign="top" style="padding: 0px 10px 60px 10px;">
+                        <!-- COPY -->
+                        <p style="color: #b5e2f7; font-family: sans-serif; font-size: 16px; font-weight: normal; line-height: 24px; margin: 0;">Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.</p>
+                    </td>
+                </tr> 
+            </table>
+            <!--[if (gte mso 9)|(IE)]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </td>
+    </tr>
+</table>
+#+END_EXAMPLE
+
+Fab Four Technique to create responsive emails without media queries
+- If width is greater than max-width, max-width wins
+- If min-width is greater than width or max-width, min-width wins.
+- [[http://emails.hteumeuleu.fr/wp-content/uploads/2016/02/the-fab-four.html][Demo]]
+
+So the following sets the box to 480px
+#+BEGIN_EXAMPLE
+.box {
+    width:320px;
+    min-width:480px;
+    max-width:160px;
+}
+#+END_EXAMPLE
+
+Use calc() to set width. The following creates 2 columns that will stack and grow below 480px
+#+BEGIN_EXAMPLE
+.block {
+    display:inline-block;
+    min-width:50%;
+    max-width:100%;
+    width:calc((480px — 100%) * 480);
+}
+#+END_EXAMPLE
+
+calc() is only not supported in latest Outlook for Windows, OWA both Office 365 and Outlook.com, and Yahoo webmail and iOS/Android apps. In these cases
+#+BEGIN_EXAMPLE
+.block {
+    display:inline-block;
+    min-width:240px;
+    width:50%;
+    max-width:100%;
+    min-width:calc(50%);
+    width:calc(480px * 480 — 100% * 480);
+}
+#+END_EXAMPLE
+
+Final version with fixes for OWA and WebKit Prefixes
+#+BEGIN_EXAMPLE
+.block {
+    display:inline-block;
+    min-width:240px;
+    width:50%;
+    max-width:100%;
+    min-width:-webkit-calc(50%);
+    min-width:calc(50%);
+    width:-webkit-calc(230400px — 48000%);
+    width:calc(230400px — 48000%);
+}
+#+END_EXAMPLE
+
 *** Inbox Preview
 Litmus :: covers the most email clients and used by MailChimp and Campaign Monitor. Plus plan has Live Edit and Live Preivew
 Email on Acid :: Basic plan covers unlimited tests. Fewer Android devices are supported compared with Litmus.
+
+*** Gmail Image Caching
+Images are downloaded at proxy server and serve those images from that proxy instead. One download only. Affects stats of opens and geolocation.
+Gmail Web and Gmail iOS and Android apps.
 
 *** CSS and HTML Support across Devices <<<email:css:support>>>
 https://www.campaignmonitor.com/css/
 https://templates.mailchimp.com/resources/email-client-css-support/
 
-Gmail app is the only one doesn't support <style>
+Gmail Web doesn't support <style> in <body> but supports <style> in <head>
 
-Gmail browser doesn't support <style> in <body> but supports <style> in <head>
+Gmail removes support for CSS attribute selectors.
+
 
 <link> within <head> or <body> :: not support, browsers Outlook.com, Yahoo!, Gmail, AOL
 
@@ -16808,6 +16946,47 @@ Email client safe fonts
 - AOL Mail
 
 Refer to css:font-face:web safe fonts for checking font coverage
+
+Target iPhone 5 and above mjml:tag:mj-hero:sample1
+#+BEGIN_EXAMPLE
+@media all and (max-width: 414px) {
+  table[style*="color:#123456;"] { width:100%;}
+  td[style*="font-family:Khand, Helvetica, sans-serif, Arial;font-size:18px;line-height:28px;color:#666465;"] {
+    color: #000000 !important;
+    background-color: rgba(255,255,255,0.5) !important;
+  }
+  tr.spacer-above-button {
+     height:50px;
+  }
+}
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+// iPhone 8 (Zoom View)
+
+@media screen and (max-device-width: 320px) and (max-device-height:
+568px) { /* Insert styles here */ }
+
+// iPhone 8 (Standard View) and iPhone 8 Plus (Zoom View)
+
+@media screen and (max-device-width: 375px) and (max-device-height:
+667px) { /* Insert styles here */ }
+
+// iPhone 8 Plus (Standard View)
+
+@media screen and (max-device-width: 414px) and (max-device-height:
+776px) { /* Insert styles here */ }
+#+END_EXAMPLE
+
+Prevent auto-scaling on iOS 11
+#+BEGIN_EXAMPLE
+<meta name="x-apple-disable-message-reformatting">
+#+END_EXAMPLE
+
+Target Samsung Mail
+#+BEGIN_EXAMPLE
+#MessageViewBody .yourclassnamehere { }
+#+END_EXAMPLE
 
 *** MJML
 **** Install & Basics
@@ -16987,20 +17166,6 @@ Refer to email:css:support
     </mj-container>
   </mj-body>
 </mjml>
-#+END_EXAMPLE
-
-Target iPhone 5 and above mjml:tag:mj-hero:sample1
-#+BEGIN_EXAMPLE
-@media all and (max-width: 414px) {
-  table[style*="color:#123456;"] { width:100%;}
-  td[style*="font-family:Khand, Helvetica, sans-serif, Arial;font-size:18px;line-height:28px;color:#666465;"] {
-    color: #000000 !important;
-    background-color: rgba(255,255,255,0.5) !important;
-  }
-  tr.spacer-above-button {
-     height:50px;
-  }
-}
 #+END_EXAMPLE
 
 Use css-class in any mj-element and change styles for mobile
@@ -17336,6 +17501,16 @@ a[x-apple-data-detectors] {
     font-family: inherit !important;
     font-weight: inherit !important;
     line-height: inherit !important;
+}
+
+// Samsung Mail automatically adds id MessageViewBody to <body> and a <div id="MessageWebViewDiv">
+#MessageViewBody a {
+ color: inherit;
+ text-decoration: none;
+ font-size: inherit;
+ font-family: inherit;
+ font-weight: inherit;
+ line-height: inherit;
 }
 #+END_EXAMPLE
 
@@ -33013,6 +33188,16 @@ $("a[href^='tel:+18881234567']").click(function(event){
       'value': 100
     })
 });
+
+$("a[href^='tel:']").click(function(event){
+      var $target=$(event.target);
+      //console.log($target.attr('href'));
+      gtag('event', 'click', {
+        'event_category': 'Call from website',
+        'event_label': $target.attr('href'),
+        'value': '100'
+      });
+});
 #+END_EXAMPLE
 
 <action> is the string that will appear as the event action in Google Analytics Event reports.
@@ -48037,7 +48222,8 @@ Chrome 50
 Mac OS X 10.9 Mavericks
 Safari 7.1
 
-** Browser market share
+** Device Market share, Metrics
+*** Browser
 https://docs.google.com/spreadsheets/d/1iAOjjA-MG5nUiAidhP_MdmnM-kEbX1j6qpMI9zbKjCw/edit?usp=sharing
 
 https://data.apteligent.com/ios/
@@ -48091,15 +48277,22 @@ Snow Leopard 10.6 2.13%
 Resolution Distribution
 http://gs.statcounter.com/
 
-** Device Metrics
+*** Device Metrics
 Device Platform, Screen dimensions in in or cm, aspect ratio, dp or dip (density-indepenndent pixels), px (CSS pixels), density (px/dp)
 https://material.io/tools/devices/
 
-https://www.mydevice.io/
+https://www.mydevice.io/ with newer devices
 - By popularity http://screensiz.es/
 - By release date http://viewportsizes.com/
 
 Device and viewport size in JavaScript :: http://ryanve.com/lab/dimensions/
+
+iPhone X, iPhone 8 Plus, iPhone 7 Plus and iPhone 6s Plus has pixel density (scale factor) of 3x and others are 2x
+
+Android devices :: https://developer.android.com/about/dashboards/
+
+*** Email Client Market Share
+http://emailclientmarketshare.com/
 
 ** Windows
 *** Win 7
