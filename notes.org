@@ -13712,8 +13712,7 @@ In Bootstrap 3, use .form-group to create margin-bottom: 15px
 *** Responsive Utility
 bs:responsive utility
 
-*** Responsive helpers (embed and float)
-<<<bootstrap:responsive helpers>>>
+*** Responsive helpers (embed and float) <<<bootstrap:responsive helpers>>>
 Apply to <iframe>, <embed>, <video> and <object> to maintain media size ratio
 
 #+BEGIN_EXAMPLE
@@ -20130,6 +20129,10 @@ observer.disconnect();
 
 Supported in Edge, Firefox, Chrome, Chrome Android but not Safar and iOS
 
+It registers a callback function which is only executed when an element enters or exists another element or intersects at a threshold and thus saves event for every scroll or viewport movement.
+
+It doesn't tell the exact number of pixels that overlap or specifically which ones they are; however, it convers the much more common use case of "If they intersect by somewhere around N%, I need to do something".
+
 #+BEGIN_EXAMPLE
 var io = new IntersectionObserver(
   entries => {
@@ -20149,7 +20152,18 @@ io.observe(element);
 // io.disconnect();
 #+END_EXAMPLE
 
-Parameter entries
+Parameter entries are readonly [[https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserverEntry][IntersectionObserverEntry]] and they are delivered asynchronously and callback will run in the main thread.
+- rootBounds :: DOMRect, the result of calling element.getBoundingClientRect() on the root element, which is the viewport by default.
+- boundingClientRect :: DOMRect, the result of element.getBoundingClientRect() on the observed element.
+- intersectionRect :: DOMRect, the intersection of the above 2 rectangles and tells which part of the observed element is visible
+- intersectionRatio :: how much of the element is visible.
+
+Options
+- root :: Default ~null~
+- threshold :: Default ~[0]~, callback is called when intersectionRatio is greater or lower (2 times), you can set [0, 0.25, 0.5, 0.75, 1]
+- rootMargin :: Default ~"0px"~, grow or shrink the area used for intersections. 
+
+If an iframe observes one of its elements, both scrolling the iframe as well as scrolling the window containing the iframe will trigger the callback. For the latter case, rootBounds will be set to null to avoid leaking data across origins.
 
 ** Testing
 *** Unit Testing
@@ -48776,12 +48790,18 @@ http://via.placeholder.com/300/ffffff/?text=hello+world
 
 Auto text color
 
-Pick a picture that you like
+Pick a picture that you like :: https://picsum.photos/images
 https://picsum.photos/
-https://picsum.photos/200/300?image=0
 
-Random picture
-https://picsum.photos/200/300/?random
+Specific picture :: https://picsum.photos/200/300?image=0
+
+Random picture :: https://picsum.photos/200/300/?random
+
+Blur :: https://picsum.photos/200/300/?blur
+
+Grayscale :: https://picsum.photos/g/200/300
+
+Square :: https://picsum.photos/200
 
 *** Convert image to favicon (.ico)
 https://converticon.com/
