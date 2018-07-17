@@ -15952,10 +15952,7 @@ Define multiple directives, 'none' means whitelist nothing (block anything)
 Content-Security-Policy: default-src https://cdn.example.net; child-src 'none'; object-src 'none'
 #+END_EXAMPLE
 
-Wildcards can be used for scheme, port, or in the leftmost position of the hostname.
-#+BEGIN_EXAMPLE
-*://*.example.com:*
-#+END_EXAMPLE
+Wildcards can be used for scheme, port, or in the leftmost position of the hostname :: ~*://*.example.com:*~
 
 ~data:~ ~http:~ :: scheme
 #+BEGIN_EXAMPLE
@@ -16114,6 +16111,8 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Secur
 Vary: User-Agent :: Tell caching servers to deliver a different cache for different User-Agent
 Vary: * :: Tell caching servers to always deliver a refresh copy (all requests are uncacheable)
 
+*** Link html:link
+**** html:hreflang
 *** X-Powered-By
 Remove it :: apache:mod_headers php.ini:expose_php
 
@@ -17997,6 +17996,28 @@ Resources loaded via <link rel="preload"> are stored locally in the browser, and
 as="script" refers to consumer tag <script>
 
 Refer to html:preload video
+
+*** rel="canonical"
+#+BEGIN_EXAMPLE
+// desktop page: http://www.example.com/page-1
+<link rel="alternate" media="only screen and (max-width: 640px)" href="http://m.example.com/page-1">
+
+// mobile page: http://m.example.com/page-1
+<link rel="canonical" href="http://www.example.com/page-1">
+
+// sitemap
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>http://www.example.com/page-1/</loc>
+        <xhtml:link
+                rel="alternate"
+                media="only screen and (max-width: 640px)"
+                href="http://m.example.com/page-1" />
+    </url>
+</urlset>
+#+END_EXAMPLE
 
 *** Stylesheet for a media
 #+BEGIN_EXAMPLE
@@ -34581,7 +34602,8 @@ Sitemap: http://www.codeinwp.com/post-sitemap.xml
 ** Design & User Experience
 48 pixels width and height for buttons and they should be 32 pixels width and height separated apart.
 
-** hreflang
+** hreflang <<<html:hreflang>>>
+https://support.google.com/webmasters/answer/189077
 Google Search Console looks for hreflang to determine language and location. Say if you want to target a generic domain like .com to a specific country/language, you should use hreflang and set in Google Search Console.
 
 For more than one language, use multilingual plugins like wp:plugin:polylang to insert hreflang
@@ -34590,6 +34612,7 @@ For more than one language, use multilingual plugins like wp:plugin:polylang to 
 - Inside ~<head>~
 - HTTP response header
 To indicate a different language version of a URL (e.g. PDF)
+
 #+BEGIN_EXAMPLE
 Link: <http://es.example.com/document.pdf>; rel="alternate"; hreflang="es", <http://en.example.com/document.pdf>; rel="alternate"; hreflang="en", <http://de.example.com/document.pdf>; rel="alternate"; hreflang="de"
 #+END_EXAMPLE
@@ -34597,10 +34620,18 @@ Link: <http://es.example.com/document.pdf>; rel="alternate"; hreflang="es", <htt
 
 *** Inside ~<head>~
 #+BEGIN_EXAMPLE
-<?php
-global $wp;
-$current_url = home_url(add_query_arg(array(), $wp->request)); 
-// echo esc_url($current_url);
+// General
+<link rel="alternate" hreflang="en-gb" href="http://en-gb.example.com/page.html" />
+<link rel="alternate" hreflang="en-us" href="http://en-us.example.com/page.html" />
+<link rel="alternate" hreflang="en"    href="http://en.example.com/page.html" />
+<link rel="alternate" hreflang="de"    href="http://de.example.com/page.html" />
+<link rel="alternate" hreflang="x-default" href="http://www.example.com/" />
+// The reserved value hreflang="x-default" is used when no other language/region matches the user's browser setting. This value is optional, but recommended, as a way for you to control the page when no languages match. A good use is to target your site's homepage where there is a clickable map that enables the user to select their country.
+
+// wp
+<?php global $wp;
+      $current_url = home_url(add_query_arg(array(), $wp->request)); 
+      // echo esc_url($current_url);
 ?>
 <link rel="alternate" hreflang="<?php echo get_bloginfo('language'); ?>" href="http://es.example.com/" />
 #+END_EXAMPLE
@@ -34616,7 +34647,7 @@ Total time spent for social media acrss devices: Desktop:21%, Smartphone App:50%
 ** Privacy Policy
 https://www.digitalocean.com/legal/privacy/
 
-* UX
+* UX and Design
 ** Optimal Workshop
 Usability Testing
 Tree testing :: test how well readers can find specific content through navigation
@@ -34649,6 +34680,13 @@ Easy on mobile
  - Provide comparison features
  - Be responsive with visual feedback after significant actions
  - Ask for permissions in context e.g. show overlay over a map to ask for permissions for geolocation
+
+** Google Material Design
+Material Design Guidelines :: https://material.io/design/
+
+Material Design Components (MDC)
+
+Codelabs :: https://codelabs.developers.google.com/?cat=Design
 
 * Linux
 ** [[http://explainshell.com][Explain Shell]]
