@@ -21019,15 +21019,44 @@ https://stats.js.org/
 
 ** TweenLite, TweenMax, Greensock
 TweenMax has other common plugins included e.g. CSSPlugin where you can ease CSS property changes.
-TweenLite has to manually include these plugins.
+- CSSPlugin
+- RoundPropsPlugin
+- BezierPlugin
+- AttrPlugin
+- DirectionalRotationPlugin
+- EasePack
+- TimelineLite
+- TimelineMax
+
+Using TweenLite only and you'll have to manually include these plugins.
+
+*** TweenLite.to() TweenLite.from() TweenLite.fromTo()
+https://greensock.com/docs/TweenLite/static.to
 
 #+BEGIN_EXAMPLE
 TweenLite.to( [target object], [duration in seconds], [destination values] );
 
-TweenLite.to(active_slide,0.5,{marginLeft:'-50%',ease:Power3.easeOut});
+TweenLite.to(active_slide, 0.5, {marginLeft:'-50%',ease:Power3.easeOut});
+
+TweenLite.to("#myID", 1, {left:"100px"});
+// TweenLite will use selector engine e.g. jQuery if present or document.querySelectorAll() or lastly document.getElementById()
+
+TweenLite.to(".myClass", 2, {boxShadow:"0px 0px 20px red", color:"#FC0"});
+
+// multiple objects
+TweenLite.to([obj1, obj2, obj3], 1, {opacity:0.5, rotation:45});
 #+END_EXAMPLE
 
-*** dest:css, relative value
+TweenLite.from() define the starting values instead of the ending values.
+TweenLite.fromTo() :: TweenLite.fromTo( target:Object, duration:Number, fromVars:Object, toVars:Object )
+
+#+BEGIN_EXAMPLE
+var tween = new TweenLite(element, 2, {width:200, height:150});
+// or
+var tween = TweenLite.to(element, 2, {width:200, height:150});
+#+END_EXAMPLE
+
+**** dest:css, relative value
 It's important that you remove all dashes (-) from the css property names and use camelCase.
 #+BEGIN_EXAMPLE
 TweenLite.to(logo, 2, {left:"542px",
@@ -21042,16 +21071,48 @@ Adding a += or -= prefix tells GSAP to treat a value as relative to whatever it 
 TweenLite.to(logo, 0.5, {left:"+=100px"});
 #+END_EXAMPLE
 
-*** dest:ease, easeIn (begin), easeOut (the end), easeInOut (both)
+**** dest:ease, easeIn (begin), easeOut (the end), easeInOut (both)
 https://greensock.com/docs/Easing
 
-Power0 is linear
+Default is Quad.easeOut
 
+- Linear
+- Power0 to Power4 :: 0 is linear
+- Quad
+- Cubic
+- Quart
+- Quint
+- Strong
+
+Extras
+- Elastic Back Bounce SlowMo SteppedEase Rough Circ Expo Sine
+
+Variants
+- .easeIn .easeOut .easeInOut .easeNone
+
+For linear animation, use Linear.easeNone
+
+Sample
 #+BEGIN_EXAMPLE
 TweenLite.to(logo, 3, {left:"440px", ease:Bounce.easeOut});
+
+ease:Bounce.easeOut
+ease:"Strong.easeOut"
+ease:"easeOutStrong"
 #+END_EXAMPLE
 
-*** dest:delay in seconds
+**** dest:delay in seconds, dest:paused bool, dest:immediateRender
+- paused :: If true, the animation will pause immediately upon creation
+- immediateRender :: 
+
+**** dest:onComplete onCompleteParams
+#+BEGIN_EXAMPLE
+TweenLite.to(element, 1, {left:100, onComplete:myFunction});
+TweenLite.to(element, 1, {left:100, onComplete:myFunction, onCompleteParams:[element, "param2"]});
+
+// pass the tween instance use {self}
+TweenLite.to(element, 1, {left:100, onComplete:myFunction, onCompleteParams:["{self}", "param2"]});
+#+END_EXAMPLE
 
 *** Use Case
 **** Slideshow
