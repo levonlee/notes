@@ -11595,7 +11595,80 @@ IE 11 and less only supports EOT. Edge supports WOFF.
 }
 #+END_EXAMPLE
 
-Bootstrap 3
+*** font-display
+Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs.
+Internet Explorer has 0 timeout and use fallback immediately and swap later if font is available.
+Safari always wait for the font to be downloaded.
+
+font-display :: Not supported in IE, Edge and iOS < 11.4
+- auto :: use user-agent's default. Most user-agents use block
+- block :: After 3 seconds if the font is not loaded use a invisible text and swap to the downloaded font with infinite swap period
+- swap :: browser draws text immediately with a fallback and swap to it after it's loaded.
+- fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
+- optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
+
+#+BEGIN_EXAMPLE
+@font-face {
+  font-family: 'Awesome Font';
+  font-style: normal;
+  font-weight: 400;
+  font-display: auto; /* or block, swap, fallback, optional */
+  src: local('Awesome Font'),
+       url('/fonts/awesome-l.woff2') format('woff2'), /* will be preloaded */ 
+       url('/fonts/awesome-l.woff') format('woff'),
+       url('/fonts/awesome-l.ttf') format('truetype'),
+       url('/fonts/awesome-l.eot') format('embedded-opentype');
+  unicode-range: U+000-5FF; /* Latin glyphs */
+}
+#+END_EXAMPLE
+
+*** Font Loading API
+https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/webfont-optimization
+https://medium.com/@matuzo/getting-started-with-css-font-loading-e24e7ffaa791
+
+Not supported in IE and Edge
+
+#+BEGIN_EXAMPLE
+var font = new FontFace("Awesome Font", "url(/fonts/awesome.woff2)", {
+  style: 'normal', unicodeRange: 'U+000-5FF', weight: '400'
+});
+
+// don't wait for the render tree, initiate an immediate fetch!
+font.load().then(function() {
+  // apply the font (which may re-render text and cause a page reflow)
+  // after the font has finished downloading
+  document.fonts.add(font);
+  document.body.style.fontFamily = "Awesome Font, serif";
+
+  // OR... by default the content is hidden, 
+  // and it's rendered after the font is available
+  var content = document.getElementById("content");
+  content.style.visibility = "visible";
+
+  // OR... apply your own render strategy here... 
+});
+
+// check status :: unloaded, loading, loaded, error
+font.status
+
+// Promise loaded resolves when the font is loaded
+notoSansRegular.loaded.then((fontFace) => {
+  // This is where you can declare a new font-family, because the font is now loaded and ready.  
+  console.info('Current status', fontFace.status);
+  console.log(fontFace.family, 'loaded successfully.');
+  // Throw an error if loading wasn't successful
+}, (fontFace) => {
+  console.error('Current status', notoSansRegular.status);
+});
+
+
+// when all fonts are ready
+document.fonts.ready.then((fontFaceSet) => {
+  console.log(document.fonts.size, 'FontFaces loaded.');
+});
+#+END_EXAMPLE
+
+*** Bootstrap 3
 #+BEGIN_EXAMPLE
 @font-face {
   font-family: 'Glyphicons Halflings';
@@ -11608,9 +11681,22 @@ Bootstrap 3
 }
 #+END_EXAMPLE
 
-*** Google Font
+*** Google Font :: local() unicode-range
 <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+
 local('Font Name') if user agent has the font, then the font will not be downloaded. 
+
+unicode-range :: ranges are separated by comma
+- Sigle codepoint :: U+416
+- Interval range :: start and end e.g. U+400-4ff
+- Wildcard range :: ? is any hexadecimal digit e.g. U+4??
+
+The browser:
+- Can't make a bold font lighter
+- Can't make an oblique (italic) font "straight"
+- Has limited ability to synthesize bold(er) fonts
+- Has limited ability to synthesize oblique fonts and may produce wrong shapes esepcially in Cyrillic fonts.
+
 #+BEGIN_EXAMPLE
 /* cyrillic-ext */
 @font-face {
@@ -18088,8 +18174,11 @@ If as is not defined, it's equivalent to XHR request with low priority.
 
 <link rel="preload" as="image" href="logo.jpg"/>
 
-Font needs crossorigin even it's on the same origin. type is also needed.
-<link rel="preload" href="font.woff2" as="font" type="font/woff2" crossorigin>
+Preload font
+- Font needs crossorigin even it's on the same origin. type is also needed.
+- <link rel="preload" href="font.woff2" as="font" type="font/woff2" crossorigin>
+- Not all browsers support <link rel="preload">, and in those browsers, <link rel="preload"> will just be ignored. But every browser that supports preloading also supports WOFF2, so that's always the format that you should preload.
+- preload won't have the ability to @font-face local(), so the font will be always downloaded
 
 Refer to html:preload video
 
@@ -20385,10 +20474,11 @@ If an iframe observes one of its elements, both scrolling the iframe as well as 
 QUnit
 
 ** Worker
-Workers are in external files, they don't have access to
-- window object
-- document obj
-- parent obj
+*** Web Worker
+Workers are in external files which don't have access to DOM (objects like window, document and parent) and completely separate from the webpage.
+
+Use a Web Worker for heavy computation on the client. Use a Service Worker for offline capabilities like intercepting network requests, as well as other fun stuff like push notifications and synchronization of content in the background.
+
 #+BEGIN_EXAMPLE
 var w;
 if (typeof(Worker) !== "undefined") {
@@ -20411,6 +20501,167 @@ function timedCount() {
   setTimeout("timedCount()", 500);
 }
 timedCount();
+#+END_EXAMPLE
+
+*** Service Worker
+https://developers.google.com/web/fundamentals/primers/service-workers/
+Support status :: https://jakearchibald.github.io/isserviceworkerready/ IE11 is not supported
+HTTPS or localhost
+It can do push notifications and background sync and periodic sync or geofencing in the future. It is a Javascript Web Worker
+ES6 can be used to write sw
+
+#+BEGIN_EXAMPLE
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+      // Registration was successful
+      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    }, function(err) {
+      // registration failed :(
+      console.log('ServiceWorker registration failed: ', err);
+    });
+  });
+}
+#+END_EXAMPLE
+
+register() can be called many times without concern
+
+register('/sw.js') :: sw receives fetch events for everything on this domain
+register('/ex/sw.js') :: sw only sees and receives fetch events for pages whose URL starts with /ex/, /ex/page1/, /ex/page2/ etc.
+
+
+chrome://inspect/#service-workers :: shows a sw exists https://yoursite.com/serviceworker with a pid which you can inspect and terminiate. Incognito kills all sw if Incognitor is closed.
+
+In sw.js
+#+BEGIN_EXAMPLE
+var CACHE_NAME = 'my-site-cache-v1';
+var urlsToCache = [
+  '/',
+  '/styles/main.css',
+  '/script/main.js'
+];
+
+self.addEventListener('install', function(event) {
+  // Perform install steps
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        console.log('Opened cache');
+        
+        return cache.addAll(urlsToCache);
+        // if any files fail to download, the install step will fail
+
+      })
+  );
+});
+
+// when user navigates to a different page or refreshes, sw receives fetch events
+// return cache as response if cache has it, otherwise make a network request to fetch
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    // find any cached results from any of the caches sw created.
+    caches.match(event.request)
+      .then(function(response) {
+          // Cache hit - return response (cache value)
+          if (response) {
+            return response;
+          }
+          // fetch over the network
+          return fetch(event.request);
+        }
+      )
+  );
+});
+#+END_EXAMPLE
+
+A more complicated fetch :: return if cache is found, otherwise make a network request to fetch, check response, if not successful or not coming from the same origin, just return the response, otherwise cache that response
+#+BEGIN_EXAMPLE
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        // Cache hit - return response
+        if (response) {
+          return response;
+        }
+
+        // IMPORTANT: Clone the request. A request is a stream and
+        // can only be consumed once. Since we are consuming this
+        // once by cache and once by the browser for fetch, we need
+        // to clone the response.
+        var fetchRequest = event.request.clone();
+
+        return fetch(fetchRequest).then(
+          function(response) {
+            // Check if we received a valid response
+            // 'basic' means it's a request from the current origin
+            if(!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // IMPORTANT: Clone the response. A response is a stream
+            // and because we want the browser to consume the response
+            // as well as the cache consuming the response, we need
+            // to clone it so we have two streams.
+            var responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          }
+        );
+      })
+  );
+});
+#+END_EXAMPLE
+
+Update Service Worker (sw.js)
+- Update your service worker JavaScript file. When the user navigates to your site, the browser tries to redownload the script file that defined the service worker in the background. If there is even a byte's difference in the service worker file compared to what it currently has, it considers it new.
+- Your new service worker will be started and the install event will be fired.
+- At this point the old service worker is still controlling the current pages so the new service worker will enter a waiting state.
+- When the currently open pages of your site are closed, the old service worker will be killed and the new service worker will take control.
+- Once your new service worker takes control, its activate event will be fired.
+
+Create 'pages-cache-v1' and 'blog-posts-cache-v1' and delete old 'my-site-cache-v1'
+#+BEGIN_EXAMPLE
+self.addEventListener('activate', function(event) {
+
+  var cacheWhitelist = ['pages-cache-v1', 'blog-posts-cache-v1'];
+
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+#+END_EXAMPLE
+
+*** More on fetch
+https://developers.google.com/web/fundamentals/primers/service-workers/high-performance-loading
+
+#+BEGIN_EXAMPLE
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.open('mysite-dynamic').then(function(cache) {
+      return cache.match(event.request).then(function(response) {
+        var fetchPromise = fetch(event.request).then(function(networkResponse) {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        })
+        return response || fetchPromise;
+      })
+    })
+  );
+});
 #+END_EXAMPLE
 
 ** iFrame
@@ -42342,9 +42593,9 @@ Enabled modules   /etc/apache2/mods-enabled
 Command line enable modules
 #+BEGIN_EXAMPLE
 a2enmod remoteip
-# some modules need to load config. If don't specify, then the following modules don't need a3enconf
+//# some modules need to load config. If don't specify, then the following modules don't need a3enconf
 a2enconf remoteip
-# apache:restart
+//# apache:restart
 #+END_EXAMPLE
 
 *** remoteip
@@ -42563,6 +42814,15 @@ ErrorDocument 404 /404.html
 Options -MultiViews
 #+END_EXAMPLE
 
+*** AllowOverride <<<apache:core:allowoverride>>>
+AllowOverride All|None|directive-type [directive-type] ...
+context: only directory
+default: AllowOverride None (2.3.9 and later), AllowOverride All (2.3.8 and earlier)
+
+Which directives declared in .htaccess can override earlier configuration directives.
+
+None :: .htaccess files are completely ignored.
+
 ** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
 #+BEGIN_EXAMPLE
@@ -42668,9 +42928,7 @@ AuthUserFile /var/www/__secure/.htpasswd-dev
 require valid-user
 #+END_EXAMPLE
 
-** Production Setup
-<<<apache:production>>>
-
+** Production Setup <<<apache:production>>>
 This guide is for httpd. Optimize Webhost Setup
 ~nano /etc/httpd/conf/httpd.conf~
 
@@ -47827,7 +48085,7 @@ snake_case :: ~s a p~ matches ~strange_animal_page.html~
 Files in nested directories :: ~a/a/s a p~ matches ~calendar\Animals\Animaux\StrangeAnimalPage.html~ and ~strange_animal_page.html~ in the same folder
 e.g. for Drupal, ~s/a/m/custom/*.md~ matches ~sites/all/modules/custom/*.md~ files
 
-*** HTML (CSS and Javascript)
+*** HTML, CSS, Javascript
 **** Show Applied Styles
 Right click on element and select _Show Applied Sytles for Tag_
 
@@ -47836,6 +48094,7 @@ e.g. all vendor prefixes for box-sizing. Type -box-sizing and hit tab.
  
 **** JavaScript version
 Settings > Languages & Frameworks > JavaScript > JavaScript language version to ECMAScript 6
+For Scratch, right click on the file in Edit window and change language to ES6
 
 *** Regex Find
 Find function name that contains =_node_=
@@ -49960,12 +50219,12 @@ $_POST['x_MD5_Hash'] == md5($response_key. $_POST['x_login'] . $_POST['x_trans_i
 https://vividata.ca/
 
 ** W3C
-<<<W3C>>>
 - Working Draft
 - Last Call
 - Candidate Recommenation (CR, Standard)
 - Proposed Recommendation (PR)
 - Recommendation (REC)
+- Working Group Note, Interest Group Note (NOTE) which may make Editor's Drafts (ED, API's may take this as a strong signal..)
 
 ** Adobe
 *** Creative Cloud
