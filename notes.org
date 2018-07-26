@@ -37867,7 +37867,7 @@ curl "http://abc.com/123.xml" -L -o ${dlFileName}
 =curl -m 120 -IL "http://url.com" >> /path/to/log.log=
 e.g Drupal Cron URL response status
 #+BEGIN_EXAMPLE
-#!/bin/bash
+//#!/bin/bash
 curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/your/cronlog
 #+END_EXAMPLE
 
@@ -37906,6 +37906,15 @@ curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http:
 
 # with a data file
 curl -X POST -d "@data.json" http://..
+#+END_EXAMPLE
+
+**** Use different IP address from DNS
+a.ca by DNS points to 1.2.3.4 IP, change it to a different IP 2.2.3.4 temporarily.
+#+BEGIN_EXAMPLE
+curl -L -v -I --resolve 'a.ca:80:2.2.3.4' http://a.ca
+
+// https://a.com still uses DNS to resolve as the port does not match
+curl -L -v -I --resolve 'a.ca:80:2.2.3.4' https://a.ca
 #+END_EXAMPLE
 
 **** Options
@@ -38538,35 +38547,35 @@ redirect.center is especially good for redirect subdomain www.abc.com to google.
 To redirect naked domain, use Forward Domain.
 
 #+BEGIN_EXAMPLE
-# redirect google.example.com to google.com
+;; redirect google.example.com to google.com
 google.example.com IN CNAME google.com.redirect.center
 
-# redirect google.example.com to google.com with a 302 status code
+;; redirect google.example.com to google.com with a 302 status code
 google.example.com IN CNAME google.com.opts-statuscode-302.redirect.center
 
-# If a user try to visit www.oldwebsite.com/about/ will redirect to path www.newwebsite.com/about/:
+;; If a user try to visit www.oldwebsite.com/about/ will redirect to path www.newwebsite.com/about/:
 www.oldwebsite.com  IN  CNAME  www.newwebsite.com.opts-uri.redirect.center
 
-# opts-statuscode-{code} :: HTTP Status Code to be used in the redirect. 302, HTTP Status Code
-# opts-uri :: Append URI (if any) to the target URL
-# opts-slash
-# jobs.my-domain.com to http://www.my-domain.com/jobs
-# jobs IN CNAME to www.my-domain.com.opts-slash.jobs.redirect.center
-# multiple path components, jobs.my-domain.com to www.my-domain.com/jobs/xyz
-# jobs IN CNAME to www.my-domain.com.opts-slash.jobs.opts-slash.xyz.redirect.center
+;; opts-statuscode-{code} :: HTTP Status Code to be used in the redirect. 302, HTTP Status Code
+;; opts-uri :: Append URI (if any) to the target URL
+;; opts-slash
+;; jobs.my-domain.com to http://www.my-domain.com/jobs
+;; jobs IN CNAME to www.my-domain.com.opts-slash.jobs.redirect.center
+;; multiple path components, jobs.my-domain.com to www.my-domain.com/jobs/xyz
+;; jobs IN CNAME to www.my-domain.com.opts-slash.jobs.opts-slash.xyz.redirect.center
 
-# Use redirect.name instead of readirect.center
-# redirect google.example.com to google.com
+;; Use redirect.name instead of readirect.center
+;; redirect google.example.com to google.com
 google.example.com            IN  CNAME  alias.redirect.name
 _redirect.google.example.com  IN  TXT    Redirects to https://www.google.com
 
-# redirect google.example.com to google.com with options
+;; redirect google.example.com to google.com with options
 google.example.com            IN  CNAME  alias.redirect.name
 _redirect.google.example.com  IN  TXT    Redirects from /* to https://www.google.com/*
 
-# Redirects to [target], where target is the target URL
-# Redirects from [path] to [target], where path is a path to match on the hostname
-# Redirects permanently to [target], where permanently redirects with a 301 status code (defaults to 302 otherwise)
+;; Redirects to [target], where target is the target URL
+;; Redirects from [path] to [target], where path is a path to match on the hostname
+;; Redirects permanently to [target], where permanently redirects with a 301 status code (defaults to 302 otherwise)
 #+END_EXAMPLE
 
 ** Domain Forwarding
@@ -38602,12 +38611,14 @@ To park a domain means to make the domain as idle. Nameservers will be set to De
 
 Another instance is when you park multiple domains abc.net, abc.info to the main domain abc.com
 
-** DNS History
+** DNS History, IP location
 https://securitytrails.com/dns-trails
 
 See all DNS records :: https://www.ultratools.com/tools/dnsLookup
 
 Lookup domain registrar and nameservers use whois :: https://mxtoolbox.com/Whois.aspx
+
+Find IP location :: https://www.iplocation.net/
 
 ** AutoSSL in WHM/cPanel <<<autossl:whm>>>
 WHM and cPanel provides free SSL certificates for VPS and Dedicated server users.
@@ -40410,8 +40421,7 @@ location ~* ^/legacy_js {
 location ~* \.(cfm|cfc|cfr|jpe?g|js)
 #+END_EXAMPLE
 
-*** Add host
-<<<docker:image:tomcat:host>>>
+*** Add host <<<docker:image:tomcat:host>>>
 Host name should be 127/8 ip address otherwise you need to setup DNS.
 Refer to docker:image:tomcat:log
 
@@ -43979,12 +43989,14 @@ server {
 certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
 global config :: /etc/letsencrypt/cli.ini
 
-*** Alternative clients
+*** Alternative clients (ACME Clients)
 https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
 
 - [[https://github.com/xenolf/lego][lego]] :: Written in Go, lego is a one-file binary install, and supports many DNS providers when using the DNS challenge
 - [[https://github.com/Neilpang/acme.sh][acme.sh]] :: acme.sh is a simple shell script that can run in unprivileged mode, and also interact with 30+ DNS providers
 - [[https://caddyserver.com/][Caddy]] :: Caddy is a full web server written in Go with built-in support for Let's Encrypt.
+
+[[https://letsencrypt.org/docs/client-options/][All other clients]]
 
 *** Limitation
 There are 5 levels of validation
