@@ -8106,80 +8106,78 @@ add_filter( 'url_to_postid', 'lili_url_to_postid', 10, 1);
 <<<wp:filter:pre_option>>>
 Temporarily alter an option without changing in database.
 
-*** template_include
-<<<wp:filter:template_include>>>
-
+*** template_include <<<wp:filter:template_include>>>
 #+BEGIN_EXAMPLE
-function pubx_cuw_template_include($template) {
-  global $wp;
-  try {
-    $_url = explode('/',$wp->request);
-    if (!empty($_url) && count($_url) == 3) {
-      $adunit=$_url[1];
-      $adsize=$_url[2];
-      $dfp = array(
-        'em_CUW_BB_1' => ['95740733/'.$adunit, '300x250'],
-        'em_CUW_BB_2' => ['95740733/'.$adunit, '300x250'],
-        'em_CUW_BB_3' => ['95740733/'.$adunit, '300x250'],
-        'em_CUW_LB_1' => ['95740733/'.$adunit, $adsize], // 640x90, 300x90
-        'em_CUW_LB_2' => ['95740733/'.$adunit, $adsize], // 640x90, 300x90
-      );
+  function pubx_cuw_template_include($template) {
+    global $wp;
+    try {
+      $_url = explode('/',$wp->request);
+      if (!empty($_url) && count($_url) == 3) {
+        $adunit=$_url[1];
+        $adsize=$_url[2];
+        $dfp = array(
+          'em_CUW_BB_1' => ['95740733/'.$adunit, '300x250'],
+          'em_CUW_BB_2' => ['95740733/'.$adunit, '300x250'],
+          'em_CUW_BB_3' => ['95740733/'.$adunit, '300x250'],
+          'em_CUW_LB_1' => ['95740733/'.$adunit, $adsize], // 640x90, 300x90
+          'em_CUW_LB_2' => ['95740733/'.$adunit, $adsize], // 640x90, 300x90
+        );
 
-      if (isset($dfp[$adunit]) && strlen($adsize) < 10) {
-        $_ad_unit = $dfp[$adunit][0];
-        $_ad_size = $dfp[$adunit][1];
-        $htmlFile = <<<HTML
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Canadian Underwriter Partnership</title>
-<script src="//code.jquery.com/jquery-1.10.2.js"></script>
-</head>
-<body>
-  <script>
-    var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
-    var theUrl="//pubads.g.doubleclick.net/gampad/adx?iu=/{$_ad_unit}&sz={$_ad_size}&c=" + rnd;
-    var xmlHttp = null;
-    xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", theUrl );
-    xmlHttp.send();
-    xmlHttp.onreadystatechange = function() {
-      if (xmlHttp.readyState==4 && xmlHttp.status==200) {
-        var xmlDoc = $.parseHTML( xmlHttp.response );
-        var adlink = $(xmlDoc).find('a').attr('href');
-        if (typeof adlink == "undefined") adlink = "//www.example.com";
-        window.location = adlink;
+        if (isset($dfp[$adunit]) && strlen($adsize) < 10) {
+          $_ad_unit = $dfp[$adunit][0];
+          $_ad_size = $dfp[$adunit][1];
+          $htmlFile = <<<HTML
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Canadian Underwriter Partnership</title>
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  </head>
+  <body>
+    <script>
+      var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
+      var theUrl="//pubads.g.doubleclick.net/gampad/adx?iu=/{$_ad_unit}&sz={$_ad_size}&c=" + rnd;
+      var xmlHttp = null;
+      xmlHttp = new XMLHttpRequest();
+      xmlHttp.open( "GET", theUrl );
+      xmlHttp.send();
+      xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState==4 && xmlHttp.status==200) {
+          var xmlDoc = $.parseHTML( xmlHttp.response );
+          var adlink = $(xmlDoc).find('a').attr('href');
+          if (typeof adlink == "undefined") adlink = "//www.example.com";
+          window.location = adlink;
+        }
+      }
+    </script>
+  </body>
+  </html>
+  HTML;
+
+          global $wp_query;
+          $wp_query->is_404 = false;
+          status_header(200);
+          echo $htmlFile;
+          $new_template = locate_template( ['empty_page.php'] );
+          return $new_template;
+        }
+      }
+      elseif (other_situation) {
+        // you can just flush a buffer or output something 
+        // then set some headers
+        // and a response code
+        // then exit();
       }
     }
-  </script>
-</body>
-</html>
-HTML;
+    catch (Exception $e) {
+      return $template;
+    }
 
-        global $wp_query;
-        $wp_query->is_404 = false;
-        status_header(200);
-        echo $htmlFile;
-        $new_template = locate_template( ['empty_page.php'] );
-        return $new_template;
-      }
-    }
-    elseif (other_situation) {
-      // you can just flush a buffer or output something 
-      // then set some headers
-      // and a response code
-      // then exit();
-    }
-  }
-  catch (Exception $e) {
     return $template;
+
   }
-
-  return $template;
-
-}
-add_filter('template_include', 'pubx_cuw_template_include',99);
+  add_filter('template_include', 'pubx_cuw_template_include',99);
 #+END_EXAMPLE
 
 *** flush_rewrite_rules_hard
@@ -42668,63 +42666,64 @@ autoindex deflate expires filter mime rewrite setenvif mpm_prefork
 *** sites-enabled VirtualHost
 Sites :: /etc/apache2/sites-enabled/
 Sample for image:php:apache
+
 #+BEGIN_EXAMPLE
-<VirtualHost *:80>
-        # The ServerName directive sets the request scheme, hostname and port that
-        # the server uses to identify itself. This is used when creating
-        # redirection URLs. In the context of virtual hosts, the ServerName
-        # specifies what hostname must appear in the request's Host: header to
-        # match this virtual host. For the default virtual host (this file) this
-        # value is not decisive as it is used as a last resort host regardless.
-        # However, you must set it for any further virtual host explicitly.
-        #ServerName www.example.com
+  <VirtualHost *:80>
+          # The ServerName directive sets the request scheme, hostname and port that
+          # the server uses to identify itself. This is used when creating
+          # redirection URLs. In the context of virtual hosts, the ServerName
+          # specifies what hostname must appear in the request's Host: header to
+          # match this virtual host. For the default virtual host (this file) this
+          # value is not decisive as it is used as a last resort host regardless.
+          # However, you must set it for any further virtual host explicitly.
+          #ServerName www.example.com
 
-        ServerAdmin webmaster@localhost
-        DocumentRoot /var/www/html
+          ServerAdmin webmaster@localhost
+          DocumentRoot /var/www/html
 
-# You may add Directory here
-# <Directory /var/www/html>
-#   Options Indexes FollowSymLinks MultiViews
-#   AllowOverride All
-#   Order allow,deny
-#   allow from all
-# </Directory>
+  # You may add Directory here
+  # <Directory /var/www/html>
+  #   Options Indexes FollowSymLinks MultiViews
+  #   AllowOverride All
+  #   Order allow,deny
+  #   allow from all
+  # </Directory>
 
-        # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
-        # error, crit, alert, emerg.
-        # It is also possible to configure the loglevel for particular
-        # modules, e.g.
-        #LogLevel info ssl:warn
+          # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+          # error, crit, alert, emerg.
+          # It is also possible to configure the loglevel for particular
+          # modules, e.g.
+          #LogLevel info ssl:warn
 
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        CustomLog ${APACHE_LOG_DIR}/access.log combined
+          ErrorLog ${APACHE_LOG_DIR}/error.log
+          CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-        # For most configuration files from conf-available/, which are
-        # enabled or disabled at a global level, it is possible to
-        # include a line for only one particular virtual host. For example the
-        # following line enables the CGI configuration for this host only
-        # after it has been globally disabled with "a2disconf".
-        #Include conf-available/serve-cgi-bin.conf
-</VirtualHost>
+          # For most configuration files from conf-available/, which are
+          # enabled or disabled at a global level, it is possible to
+          # include a line for only one particular virtual host. For example the
+          # following line enables the CGI configuration for this host only
+          # after it has been globally disabled with "a2disconf".
+          #Include conf-available/serve-cgi-bin.conf
+  </VirtualHost>
 #+END_EXAMPLE
 
 *** apache2.conf httpd.conf
 Main config file :: /etc/apache2/apache2.conf
 You can see the *.conf files loading sequence
 #+BEGIN_EXAMPLE
-# include module config
-IncludeOptional mods-enabled/*.load
-IncludeOptional mods-enabled/*.conf
+  # include module config
+  IncludeOptional mods-enabled/*.load
+  IncludeOptional mods-enabled/*.conf
 
-# include list of ports to listen on
-Include ports.conf
+  # include list of ports to listen on
+  Include ports.conf
 
-# main config file config
+  # main config file config
 
-# generic
-IncludeOptional conf-enabled/*.conf
-# virutal host config
-IncludeOptional sites-enabled/*.conf
+  # generic
+  IncludeOptional conf-enabled/*.conf
+  # virutal host config
+  IncludeOptional sites-enabled/*.conf
 #+END_EXAMPLE
 
 Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
@@ -42837,13 +42836,13 @@ RewriteBase /
 
 Request ~GET /somepath/localpath/pathinfo~
 #+BEGIN_EXAMPLE
-RewriteBase "/somepath"
-RewriteRule ^localpath(.*) otherpath$1
-# /somepath/otherpath/pathinfo
-RewriteRule ^localpath(.*) /otherpath$1
-# /otherpath/pathinfo
-RewriteRule ^localpath(.*) http://thishost/otherpath$1
-# /otherpath/pathinfo
+  RewriteBase "/somepath"
+  RewriteRule ^localpath(.*) otherpath$1
+  # /somepath/otherpath/pathinfo
+  RewriteRule ^localpath(.*) /otherpath$1
+  # /otherpath/pathinfo
+  RewriteRule ^localpath(.*) http://thishost/otherpath$1
+  # /otherpath/pathinfo
 #+END_EXAMPLE
 
 **** RewriteCond <<<apache:RewriteCond>>>
@@ -48564,8 +48563,13 @@ This is inside the drawer
 
 :END:
 
-*** Symbol and Escape <<<emacs:escape>>>
+*** Code Block
+#+BEGIN_EXAMPLE
+  <e and Tab to create a code block
+  Inside a code block, C-c + ' (single) to go to a new major-mode edit buffer to edit the code, C-x C-s saves the buffer and updates the contents of the Org buffer. C-c + ' again to exit.
+#+END_EXAMPLE
 
+*** Symbol and Escape <<<emacs:escape>>>
 #+BEGIN_EXAMPLE
 \vert{}
 which escapes |
