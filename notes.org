@@ -11563,22 +11563,24 @@ Edge and IE only works for <img> element
 Most widely accepted font format is WOFF then TTF and OTF.
 IE 11 and less only supports EOT. Edge supports WOFF.
 
-#+BEGIN_EXAMPLE
-@font-face {
- font-family: myFirstFont;
- src: url(sansation_light.woff);
-}
+!! Use full url in src: url() for email HTML
 
-// Another for bold
-@font-face {
- font-family: myFirstFont;
- src: url(sansation_bold.woff);
- font-weight: bold;
-/*
- font-stretch: normal | condensed | semi condensed | extra condensed | ultra condensed | expanded | ...;
- font-style: normal | italic | oblique 
-*/
-}
+#+BEGIN_EXAMPLE
+  @font-face {
+   font-family: myFirstFont;
+   src: url(sansation_light.woff);
+  }
+
+  // Another for bold
+  @font-face {
+   font-family: myFirstFont;
+   src: url(sansation_bold.woff);
+   font-weight: bold;
+  /*
+   font-stretch: normal | condensed | semi condensed | extra condensed | ultra condensed | expanded | ...;
+   font-style: normal | italic | oblique 
+  ,*/
+  }
 #+END_EXAMPLE
 
 *** font-display
@@ -11594,18 +11596,18 @@ font-display :: Not supported in IE, Edge and iOS < 11.4
 - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
 
 #+BEGIN_EXAMPLE
-@font-face {
-  font-family: 'Awesome Font';
-  font-style: normal;
-  font-weight: 400;
-  font-display: auto; /* or block, swap, fallback, optional */
-  src: local('Awesome Font'),
-       url('/fonts/awesome-l.woff2') format('woff2'), /* will be preloaded */ 
-       url('/fonts/awesome-l.woff') format('woff'),
-       url('/fonts/awesome-l.ttf') format('truetype'),
-       url('/fonts/awesome-l.eot') format('embedded-opentype');
-  unicode-range: U+000-5FF; /* Latin glyphs */
-}
+  @font-face {
+    font-family: 'Awesome Font';
+    font-style: normal;
+    font-weight: 400;
+    font-display: auto; /* or block, swap, fallback, optional */
+    src: local('Awesome Font'),
+         url('/fonts/awesome-l.woff2') format('woff2'), /* will be preloaded */ 
+         url('/fonts/awesome-l.woff') format('woff'),
+         url('/fonts/awesome-l.ttf') format('truetype'),
+         url('/fonts/awesome-l.eot') format('embedded-opentype');
+    unicode-range: U+000-5FF; /* Latin glyphs */
+  }
 #+END_EXAMPLE
 
 *** Font Loading API
@@ -11778,7 +11780,7 @@ The browser:
 - Trebuchet MS
 - Verdana
 
-[[http://www.cssfontstack.com/][Web Safe Fonts in PC and Mac]]
+[[http://www.cssfontstack.com/][Web Safe Fonts in PC and Mac]] and font stack
 
 ** CSS target IE 11 and IE10
 Target IE 11 only
@@ -17084,7 +17086,6 @@ Gmail Web doesn't support <style> in <body> but supports <style> in <head>
 
 Gmail removes support for CSS attribute selectors.
 
-
 <link> within <head> or <body> :: not support, browsers Outlook.com, Yahoo!, Gmail, AOL
 
 @media :: not supported in
@@ -17108,7 +17109,7 @@ Email client safe fonts
 - Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app
 - AOL Mail
 
-Refer to css:font-face:web safe fonts for checking font coverage
+Refer to css:font-face:web safe fonts for checking font coverage and font stack
 
 Target iPhone 5 and above mjml:tag:mj-hero:sample1
 #+BEGIN_EXAMPLE
@@ -42741,10 +42742,11 @@ Enabled modules   /etc/apache2/mods-enabled
 
 Command line enable modules
 #+BEGIN_EXAMPLE
-a2enmod remoteip
-//# some modules need to load config. If don't specify, then the following modules don't need a3enconf
-a2enconf remoteip
-//# apache:restart
+  a2enmod remoteip
+  # some modules need to load config. If don't specify, then the following modules don't need a3enconf
+
+  a2enconf remoteip
+  # apache:restart
 #+END_EXAMPLE
 
 *** remoteip
@@ -42780,15 +42782,15 @@ https://httpd.apache.org/docs/current/mod/mod_headers.html
 It provides directives to control and modify HTTP request and response headers. Headers can be merged, replaced or removed.
 
 #+BEGIN_EXAMPLE
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-</IfModule>
+  <IfModule mod_headers.c>
+      Header set Access-Control-Allow-Origin "*"
+  </IfModule>
 
-<IfModule mod_headers.c>
-    <FilesMatch "\.(eot|otf|tt[cf]|woff2?)$">
-        Header set Access-Control-Allow-Origin "*"
-    </FilesMatch>
-</IfModule>
+  <IfModule mod_headers.c>
+      <FilesMatch "\.(eot|otf|tt[cf]|woff2?)$">
+          Header set Access-Control-Allow-Origin "*"
+      </FilesMatch>
+  </IfModule>
 #+END_EXAMPLE
 
 <<<apache:mod_headers:cache>>> Refer to header:cache-control php:header
@@ -42909,10 +42911,16 @@ If the URI matches a directory but doesn't specify an index file e.g. index.html
 
 *** mod_mime
 **** AddType TypesConfig <<<apache:mod_mime:addtype>>>
-#+BEGIN_EXAMPLE
-AddType media-type extension [extension] ...
+Context: all
 
-AddType  image/webp .webp
+#+BEGIN_EXAMPLE
+  AddType media-type extension [extension] ...
+
+  AddType image/webp .webp
+
+  AddType font/woff2 woff2
+
+  AddType image/jpeg jpeg jpg jpe
 #+END_EXAMPLE
 
 /etc/apache2/mods-available/mime.conf loads MIME types using TypesConfig /etc/mime.types
@@ -42956,11 +42964,11 @@ These can be used in all apache:directive context. However, some directive setti
 https://httpd.apache.org/docs/2.4/mod/core.html
 
 #+BEGIN_EXAMPLE
-ErrorDocument 404 /404.html
+  ErrorDocument 404 /404.html
 
-# This setting prevents Apache from returning a 404 error as the result
-# of a rewrite when the directory with the same name does not exist.
-Options -MultiViews
+  # This setting prevents Apache from returning a 404 error as the result
+  # of a rewrite when the directory with the same name does not exist.
+  Options -MultiViews
 #+END_EXAMPLE
 
 *** AllowOverride <<<apache:core:allowoverride>>>
@@ -48636,54 +48644,55 @@ https://regexr.com/ https://regexr.com/
 *** Command Menu (DevTools > C+S P)
 **** Coverage (Show coverage)
 *** Console
+**** Console Commands
 https://developers.google.com/web/tools/chrome-devtools/console/console-reference
 
 console.count
 #+BEGIN_EXAMPLE
-function login(user) {
-    console.count("Login called for user " + user);
-}
+  function login(user) {
+      console.count("Login called for user " + user);
+  }
 
-users = [ // by last name since we have too many Pauls.
-    'Irish',
-    'Bakaus',
-    'Kinlan'
-];
+  users = [ // by last name since we have too many Pauls.
+      'Irish',
+      'Bakaus',
+      'Kinlan'
+  ];
 
-users.forEach(function(element, index, array) {
-    login(element);
-});
+  users.forEach(function(element, index, array) {
+      login(element);
+  });
 
-login(users[0]);
+  login(users[0]);
 #+END_EXAMPLE
 
 console.dir(document.body.firstElementChild) :: Formats DOM elements as JavaScript objects
 
 Show string only when the first parameter evaluates to false
 #+BEGIN_EXAMPLE
-console.assert(list.childNodes.length <= 500, "Node count is > 500");
+  console.assert(list.childNodes.length <= 500, "Node count is > 500");
 #+END_EXAMPLE
 
 Specifiers
 #+BEGIN_EXAMPLE
-//Style console output with CSS
-console.log("%cThis will be formatted with large, blue text", "color: blue; font-size: x-large");
+  //Style console output with CSS
+  console.log("%cThis will be formatted with large, blue text", "color: blue; font-size: x-large");
 
-// format a value as string
-console.log("%s has %d points", "Sam", 100);
+  // format a value as string
+  console.log("%s has %d points", "Sam", 100);
 
-%i or %d for integer
-%f float
-%o :: expandable DOM element as seen in Elements panel
-%O :: Formats the value as an expandable JavaScript object
+  %i or %d for integer
+  %f float
+  %o :: expandable DOM element as seen in Elements panel
+  %O :: Formats the value as an expandable JavaScript object
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-console.group("Authenticating user '%s'", user);
-console.group("Authorizing user '%s'", user);
-console.log("User '%s' was authorized.", user);
-console.groupEnd();
-console.groupEnd();
+  console.group("Authenticating user '%s'", user);
+  console.group("Authorizing user '%s'", user);
+  console.log("User '%s' was authorized.", user);
+  console.groupEnd();
+  console.groupEnd();
 #+END_EXAMPLE
 
 console.warn(), console.info()
@@ -48705,6 +48714,16 @@ $_ :: last evaluated expression
 
 monitorEvents(document.body, "click");
 
+**** Inject CSS file in Console
+=jQuery(document.head).append('<link rel="stylesheet" href="path_to_my_css">');=
+
+**** Offload CSS file in Console
+#+BEGIN_EXAMPLE
+  document.styleSheets[0].disabled = true;
+
+  $0.disabled = true; // select the <link> or <style> element in Elements and then run in Console
+#+END_EXAMPLE
+
 *** Capture full size screenshot - Mobile View
 F12, mobile view, click on the top right tool button of the main website window
 
@@ -48713,9 +48732,6 @@ Block a certain file request or any files from a domain. Network > right click o
 
 *** Get all events of an element in Console
 getEventListeners($0);
-
-*** Inject CSS file in Console
-=jQuery(document.head).append('<link rel="stylesheet" href="path_to_my_css">');=
 
 *** XPath <<<XPath>>>
 In DevTools > Elements, search using Xpath, e.g. find all h4 element //h4
