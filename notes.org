@@ -11155,7 +11155,10 @@ word-wrap: break-word; // allow to break a long word
 *** Font size, line-height, letter-spacing
 font-size in child elements inherit parent element
 em uses the current element's font-size or its closest parent element which has font-size defined
-rem is always relative to the <html> element
+rem is relative to the <html>'s font-size. Set rem for line-height in <body> to ensure line-height is relative to <html>'s font-size.
+
+!! Both em and rem will be affected by parent element's css:zoom in Edge!
+
 vw and vh are the viewport width and height. 1vw is 1% of vw
 
 Google recommends line-height is at least 1.2
@@ -18950,12 +18953,12 @@ string1.toUpperCase() === string2.toUpperCase()
 
 Padding 0's to left
 #+BEGIN_EXAMPLE
-function padLeft(nr, n, str){
-  return Array(n-String(nr).length+1).join(str||'0')+nr;
-}
-var mystring = 3;
-console.log(padLeft(mystring,3)); // 003
-console.log(padLeft(mystring,3,'z')); // zz3
+  function padLeft(nr, n, str){
+    return Array(n-String(nr).length+1).join(str||'0')+nr;
+  }
+  var mystring = 3;
+  console.log(padLeft(mystring,3)); // 003
+  console.log(padLeft(mystring,3,'z')); // zz3
 #+END_EXAMPLE
 
 *** Array
@@ -21348,6 +21351,8 @@ Extra plugins which are separate js files loaded after TweenMax https://greensoc
 
 Using TweenLite only and you'll have to manually include these plugins.
 
+[[https://github.com/greensock/GreenSock-JS/releases][All versions on GitHub]]
+
 *** TweenLite.to() TweenLite.from() TweenLite.fromTo()
 https://greensock.com/docs/TweenLite/static.to
 
@@ -21435,11 +21440,44 @@ TweenLite.to(element, 1, {left:100, onComplete:myFunction, onCompleteParams:["{s
 *** Use Case
 **** Slideshow
 #+BEGIN_EXAMPLE
-<section id="slider-wrap" class="home-slide inner">
+  <section id="slider-wrap" class="home-slide inner">
 
-  <div id="slides-frame">
+    <div id="slides-frame">
 
-    <div id="active-slide" class="slide-img"
+      <div id="active-slide" class="slide-img"
+           style="background:transparent url('1.jpg') no-repeat center 15%;background-size:cover;-webkit-transform: translateZ(0);">
+        <div class="background-screen">
+          <div class="page-wrap">
+            <div class="slide-headline">
+              <h2>Slide #1 Title</h2>
+              <p class="quote">Slide #1 Paragraph</p>
+              <p class="quote-name">Slide #1 Paragraph</p>
+              <a href="#">Slide #1 Button</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="next-slide" class="slide-img"
+           style="background:transparent url('2.jpg') no-repeat center 25%;background-size:cover;-webkit-transform: translateZ(0);">
+        <div class="background-screen">
+          <div class="page-wrap">
+            <div class="slide-headline">
+              <h2>Slide #2 Title</h2>
+              <p class="quote">Slide #2 Paragraph</p>
+              <p class="quote-name">Slide #2 Paragraph</p>
+              <a href="#">Slide #2 Button</a>
+            </div>
+          </div>
+        </div>
+      </div> <!-- #next-slide -->
+
+    </div> <!-- #slides-frame -->
+  </section>
+
+  <!-- @@ Slideshow Data: -->
+  <div id="slideshow-data" style="display:none!important;">
+    <div class="slideshow-data-item"
          style="background:transparent url('1.jpg') no-repeat center 15%;background-size:cover;-webkit-transform: translateZ(0);">
       <div class="background-screen">
         <div class="page-wrap">
@@ -21453,7 +21491,7 @@ TweenLite.to(element, 1, {left:100, onComplete:myFunction, onCompleteParams:["{s
       </div>
     </div>
 
-    <div id="next-slide" class="slide-img"
+    <div class="slideshow-data-item"
          style="background:transparent url('2.jpg') no-repeat center 25%;background-size:cover;-webkit-transform: translateZ(0);">
       <div class="background-screen">
         <div class="page-wrap">
@@ -21465,101 +21503,68 @@ TweenLite.to(element, 1, {left:100, onComplete:myFunction, onCompleteParams:["{s
           </div>
         </div>
       </div>
-    </div> <!-- #next-slide -->
+    </div>
 
-  </div> <!-- #slides-frame -->
-</section>
-
-<!-- @@ Slideshow Data: -->
-<div id="slideshow-data" style="display:none!important;">
-  <div class="slideshow-data-item"
-       style="background:transparent url('1.jpg') no-repeat center 15%;background-size:cover;-webkit-transform: translateZ(0);">
-    <div class="background-screen">
-      <div class="page-wrap">
-        <div class="slide-headline">
-          <h2>Slide #1 Title</h2>
-          <p class="quote">Slide #1 Paragraph</p>
-          <p class="quote-name">Slide #1 Paragraph</p>
-          <a href="#">Slide #1 Button</a>
+    <div class="slideshow-data-item"
+         style="background:transparent url('3.jpg') no-repeat center left;background-size:cover;-webkit-transform: translateZ(0);">
+      <div class="background-screen">
+        <div class="page-wrap">
+          <div class="slide-headline">
+            <h2>Slide #3 Title</h2>
+            <p class="quote">Slide #3 Paragraph</p>
+            <p class="quote-name">Slide #3 Paragraph</p>
+            <a href="#">Slide #3 Button</a>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="slideshow-data-item"
-       style="background:transparent url('2.jpg') no-repeat center 25%;background-size:cover;-webkit-transform: translateZ(0);">
-    <div class="background-screen">
-      <div class="page-wrap">
-        <div class="slide-headline">
-          <h2>Slide #2 Title</h2>
-          <p class="quote">Slide #2 Paragraph</p>
-          <p class="quote-name">Slide #2 Paragraph</p>
-          <a href="#">Slide #2 Button</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slideshow-data-item"
-       style="background:transparent url('3.jpg') no-repeat center left;background-size:cover;-webkit-transform: translateZ(0);">
-    <div class="background-screen">
-      <div class="page-wrap">
-        <div class="slide-headline">
-          <h2>Slide #3 Title</h2>
-          <p class="quote">Slide #3 Paragraph</p>
-          <p class="quote-name">Slide #3 Paragraph</p>
-          <a href="#">Slide #3 Button</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div> <!-- #slideshow-data -->
+  </div> <!-- #slideshow-data -->
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-.page {
-  max-width:1200px;
-  width:90%;
-  margin:0 auto;
-}
-.home-slide.inner {
-  height: 550px; /* media query change height */
-  overflow: hidden;
-}
-#slides-frame {
-  width:200%!important;
-  position:relative;
-  height:550px;
-}
-#active-slide, #next-slide {
-  position:relative;
-  display:inline-block;
-  width:50%;
-  height:100%;
-  vertical-align:top;
-}
-#slides-frame .background-screen {
-  position:relative;
-  height:100%;
-  width:100%;
-  overflow-y:hidden;
-  background:rgba(0,0,0,0.35); /* darken bg image */
-}
-.slide-wrap {
-  /* Text content width */
-  width:1200px; /* media query change width */
-  /* width:100%; */
-  height:100%;
-  overflow:visible;
-  margin:0 auto;
-}
-.slide-headline {
-  position:absolute;
-  left:0;
-  bottom:0;
-  margin-bottom:155px; /* media query change margin-bottom */
-}
+  .page {
+    max-width:1200px;
+    width:90%;
+    margin:0 auto;
+  }
+  .home-slide.inner {
+    height: 550px; /* media query change height */
+    overflow: hidden;
+  }
+  #slides-frame {
+    width:200%!important;
+    position:relative;
+    height:550px;
+  }
+  #active-slide, #next-slide {
+    position:relative;
+    display:inline-block;
+    width:50%;
+    height:100%;
+    vertical-align:top;
+  }
+  #slides-frame .background-screen {
+    position:relative;
+    height:100%;
+    width:100%;
+    overflow-y:hidden;
+    background:rgba(0,0,0,0.35); /* darken bg image */
+  }
+  .slide-wrap {
+    /* Text content width */
+    width:1200px; /* media query change width */
+    /* width:100%; */
+    height:100%;
+    overflow:visible;
+    margin:0 auto;
+  }
+  .slide-headline {
+    position:absolute;
+    left:0;
+    bottom:0;
+    margin-bottom:155px; /* media query change margin-bottom */
+  }
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
@@ -22684,6 +22689,33 @@ testAllProps('display', 'penguin') // false
 #+END_EXAMPLE
 
 .testProp only tests against non-prefix version.
+
+** UAParser.js
+Identify browser, engine, OS, CPU and device type/model from userAgent string. [[https://github.com/faisalman/ua-parser-js][Git]]
+
+#+BEGIN_EXAMPLE
+  <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@0/dist/ua-parser.min.js"></script>
+
+  var parser = new UAParser();
+  var r = parser.getResult(); // { ua: '', browser: {}, cpu: {}, device: {}, engine: {}, os: {} }
+  console.log(r.browser);     // {name: "Chromium", version: "15.0.874.106"}
+
+  // browser.name
+  // Amaya, Android Browser, Arora, Avant, Baidu, Blazer, Bolt, Bowser, Camino, Chimera, 
+  Chrome [WebView], Chromium, Comodo Dragon, Conkeror, Dillo, Dolphin, Doris, Edge, 
+  Epiphany, Fennec, Firebird, Firefox, Flock, GoBrowser, iCab, ICE Browser, IceApe, 
+  IceCat, IceDragon, Iceweasel, IE[Mobile], Iron, Jasmine, K-Meleon, Konqueror, Kindle, 
+  Links, Lunascape, Lynx, Maemo, Maxthon, Midori, Minimo, MIUI Browser, [Mobile] Safari, 
+  Mosaic, Mozilla, Netfront, Netscape, NetSurf, Nokia, OmniWeb, Opera [Mini/Mobi/Tablet], 
+  PhantomJS, Phoenix, Polaris, QQBrowser, QQBrowserLite, Quark, RockMelt, Silk, Skyfire, 
+  SeaMonkey, Sleipnir, SlimBrowser, Swiftfox, Tizen, UCBrowser, Vivaldi, w3m, Waterfox, 
+  WeChat, Yandex
+
+  r.device // { model: '', type: '', vendor: '' }
+
+  // model
+  // console, mobile, tablet, smarttv, wearable, embedded
+#+END_EXAMPLE
 
 ** flowpaper
 Turn PDF into HTML5. https://flowpaper.com/download/
@@ -37563,75 +37595,75 @@ File descriptors. First 3 are reserved.
 | 2 | STDERR | Standard error         |
 
 #+BEGIN_EXAMPLE
-;; # Redirect stdout, creates if not exist or overwrites a file
-ls -al goodfile > stdoutlogfile
-# same as 2>, 3> etc.
+  # Redirect stdout, creates if not exist or overwrites a file
+  ls -al goodfile > stdoutlogfile
+  # same as 2>, 3> etc.
 
-;; # Redirect stdout, creates if not exist or appends to a file
-ls -al goodfile >> stdoutlogfile
-# same as &>>, 2>>, 3>> etc.
+  # Redirect stdout, creates if not exist or appends to a file
+  ls -al goodfile >> stdoutlogfile
+  # same as &>>, 2>>, 3>> etc.
 
-;; # Redirect stderr
-ls -al badfile 2> errorlogfile
+  # Redirect stderr
+  ls -al badfile 2> errorlogfile
 
-;; # Redirect stdout and stderr to different files
-ls -al goodfile badfile 2> errorlogfile 1> normalOutput
+  # Redirect stdout and stderr to different files
+  ls -al goodfile badfile 2> errorlogfile 1> normalOutput
 
-;; # Redirect stdout and stderr to the same file
-ls -al goodfile badfile &> errorAndOutput
+  # Redirect stdout and stderr to the same file
+  ls -al goodfile badfile &> errorAndOutput
 #+END_EXAMPLE
 
 <<<bash:tee>>>
 
 #+BEGIN_EXAMPLE
-;; # Redirect stdout of a commannd to a file and display stdout
-date | tee testfile
+  # Redirect stdout of a commannd to a file and display stdout
+  date | tee testfile
 
-;; # Redirect stdout to a file and pass stdout to another command as stdin
-date | tee testfile | less
+  # Redirect stdout to a file and pass stdout to another command as stdin
+  date | tee testfile | less
 
-;; # Capture stdout of a command to a variable
-output=$(date)
+  # Capture stdout of a command to a variable
+  output=$(date)
 
-;; # Capture stdout and stderr of a command to a variable
-output=$(command_which_has_stdout_and_stderr 2>&1)
+  # Capture stdout and stderr of a command to a variable
+  output=$(command_which_has_stdout_and_stderr 2>&1)
 
-;; # Redirect stdout of a command to one or multiple files and save stdout to a variable
-;; # a file must be behind a tee command
-;; # By default tee overwrites the file. Use -a to append to the end
-$output = $(date | tee testfile1 testfile2)
+  # Redirect stdout of a command to one or multiple files and save stdout to a variable
+  # a file must be behind a tee command
+  # By default tee overwrites the file. Use -a to append to the end
+  $output = $(date | tee testfile1 testfile2)
 
-;; # Redirect stdout to a variable and display to terminal in real time (not to stdout!)
-;; # Works on Ubuntu and RedHat
-$output = $(date | tee /dev/tty)
+  # Redirect stdout to a variable and display to terminal in real time (not to stdout!)
+  # Works on Ubuntu and RedHat
+  $output = $(date | tee /dev/tty)
 
-;; # Redirect one file descriptor (M, default 1) to another file descriptor (N) M>&N
-;; # Redirect a manually made error 
-echo "This is an error" >&2
+  # Redirect one file descriptor (M, default 1) to another file descriptor (N) M>&N
+  # Redirect a manually made error 
+  echo "This is an error" >&2
 
-;; # Change a file descriptor to a file
-exec 2>errorLogFile
-echo "This is STDOUT and STDOUT is not changed to a file yet"
-exec 1>stdOutFile
-echo "This doesn't display as STDOUT is redirected to a file"
-echo "This is an error and in errorLogFile" >&2
+  # Change a file descriptor to a file
+  exec 2>errorLogFile
+  echo "This is STDOUT and STDOUT is not changed to a file yet"
+  exec 1>stdOutFile
+  echo "This doesn't display as STDOUT is redirected to a file"
+  echo "This is an error and in errorLogFile" >&2
 #+END_EXAMPLE
 
 Up to 9 open file descriptors can be used at a time.
 #+BEGIN_EXAMPLE
-;; # Open a custom file descriptor to a file
-exec 3>customLog
-echo "This goes to file descriptor 3" >&3
+  # Open a custom file descriptor to a file
+  exec 3>customLog
+  echo "This goes to file descriptor 3" >&3
 
-;; # Open a custom file descriptor and redirects to STDOUT
-exec 4>&1
+  # Open a custom file descriptor and redirects to STDOUT
+  exec 4>&1
 
-;; # If you want to change the reserved file descriptors. Always backup and change back
-exec 5>&1
-exec 6>&2
+  # If you want to change the reserved file descriptors. Always backup and change back
+  exec 5>&1
+  exec 6>&2
 
-;; # Backup STDIN is a little different
-exec 7<&0
+  # Backup STDIN is a little different
+  exec 7<&0
 #+END_EXAMPLE
 
 *** Array
@@ -43021,12 +43053,12 @@ None :: .htaccess files are completely ignored.
 ** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
 #+BEGIN_EXAMPLE
-LogLevel alert rewrite:trace6
+  LogLevel alert rewrite:trace6
 
-# For < 2.4 use this for Rewrite log
-RewriteEngine On
-RewriteLog "/var/log/apache2/rewrite.log"
-RewriteLogLevel 3
+  # For < 2.4 use this for Rewrite log
+  RewriteEngine On
+  RewriteLog "/var/log/apache2/rewrite.log"
+  RewriteLogLevel 3
 #+END_EXAMPLE
 
 trace1 to trace8 (most detailed)
@@ -43035,8 +43067,8 @@ trace1 to trace8 (most detailed)
 LogFormat https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#logformat
 Context: server config, virtual host
 #+BEGIN_EXAMPLE
-LogFormat "%h %l %u %t \"%r\" %>s %b" common
-CustomLog logs/access_log common
+  LogFormat "%h %l %u %t \"%r\" %>s %b" common
+  CustomLog logs/access_log common
 #+END_EXAMPLE
 
 LogFormat associate a format string to a nickname (e.g. common), nickname is optional
@@ -43044,12 +43076,12 @@ CustomLog specifies the log file location for that nickname
 
 Combined more fields
 #+BEGIN_EXAMPLE
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
-CustomLog log/access_log combined
+  LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+  CustomLog log/access_log combined
 
-// 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
-// after combined
-// 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326 "http://www.example.com/start.html" "Mozilla/4.08 [en] (Win98; I ;Nav)"
+  // 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
+  // after combined
+  // 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326 "http://www.example.com/start.html" "Mozilla/4.08 [en] (Win98; I ;Nav)"
 #+END_EXAMPLE
 
 2326 :: %b :: size of the object returned to the client, not including the response headers. If no content was returned to the client, this value will be "-". To log "0" for no content, use %B instead.
@@ -43059,20 +43091,20 @@ Custom Log Formats :: https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#
 ** Basic authentication
 htpasswd creates auth file and it needs this package. htpasswd doesn't need to be installed on server.
 #+BEGIN_EXAMPLE
-apt-get install apache2-utils
+  apt-get install apache2-utils
 
-# use -c to create and sammy is the username, supply password later
-sudo htpasswd -c /mywebsite/.htpasswd-dev sammy
+  # use -c to create and sammy is the username, supply password later
+  sudo htpasswd -c /mywebsite/.htpasswd-dev sammy
 
-# later add more user without -c
-sudo htpasswd -c /mywebsite/.htpasswd-dev another_user
+  # later add more user without -c
+  sudo htpasswd -c /mywebsite/.htpasswd-dev another_user
 #+END_EXAMPLE
 
 .htpasswd file content
 #+BEGIN_EXAMPLE
-Output
-sammy:$apr1$.0CAabqX$rb8lueIORA/p8UzGPYtGs/
-another_user:$apr1$fqH7UG8a$SrUxurp/Atfq6j7GL/VEC1
+  Output
+  sammy:$apr1$.0CAabqX$rb8lueIORA/p8UzGPYtGs/
+  another_user:$apr1$fqH7UG8a$SrUxurp/Atfq6j7GL/VEC1
 #+END_EXAMPLE
 
 MD5           $apr1$.0CAabqX$rb8lueIORA/p8UzGPYtGs/
@@ -43083,22 +43115,22 @@ MD5 result is                rb8lueIORA/p8UzGPYtGs/
 /etc/apache2/sites-enabled/000-default.conf
 
 #+BEGIN_EXAMPLE
-<VirtualHost *:80>
-  ServerAdmin webmaster@localhost
-  DocumentRoot /var/www/html
-  ErrorLog ${APACHE_LOG_DIR}/error.log
-  CustomLog ${APACHE_LOG_DIR}/access.log combined
-  
-# add this
-  <Directory "/var/www/html">
-    AuthType Basic
-    AuthName "Restricted Content"
-    AuthUserFile /etc/apache2/.htpasswd
-    Require valid-user
-  </Directory>
-# add this.
+  <VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    
+  # add this
+    <Directory "/var/www/html">
+      AuthType Basic
+      AuthName "Restricted Content"
+      AuthUserFile /etc/apache2/.htpasswd
+      Require valid-user
+    </Directory>
+  # add this.
 
-</VirtualHost>
+  </VirtualHost>
 #+END_EXAMPLE
 
 *** Option 2: control access with .htaccess
@@ -43106,21 +43138,21 @@ Main config file :: /etc/apache2/apache2.conf
 Allow .htaccess to override config
 For /var/www/, change ~AllowOverride None~ to ~All~
 #+BEGIN_EXAMPLE
-. . .
-<Directory /var/www/>
-  Options Indexes FollowSymLinks
-  AllowOverride All
-  Require all granted
-</Directory>
-. . .
+  . . .
+  <Directory /var/www/>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+  </Directory>
+  . . .
 #+END_EXAMPLE
 
 /var/www/mywebsite/.htaccess, restart apache
 #+BEGIN_EXAMPLE
-AuthType Basic
-AuthName "restricted area"
-AuthUserFile /var/www/__secure/.htpasswd-dev
-require valid-user
+  AuthType Basic
+  AuthName "restricted area"
+  AuthUserFile /var/www/__secure/.htpasswd-dev
+  require valid-user
 #+END_EXAMPLE
 
 ** Production Setup <<<apache:production>>>
@@ -43128,57 +43160,57 @@ This guide is for httpd. Optimize Webhost Setup
 ~nano /etc/httpd/conf/httpd.conf~
 
 #+BEGIN_EXAMPLE
-Timeout 30
-KeepAlive on
-MaxKeepAliveRequests 50
-KeepAliveTimeout 15
-#Changes to prefork module
-<IfModule prefork.c>
-  StartServers 3
-  MinSpareServers 2
-  MaxSpareServers 5
-  ServerLimit 256
-  MaxClients 10
-  MaxRequestsPerChild 1000
-</IfModule>
+  Timeout 30
+  KeepAlive on
+  MaxKeepAliveRequests 50
+  KeepAliveTimeout 15
+  #Changes to prefork module
+  <IfModule prefork.c>
+    StartServers 3
+    MinSpareServers 2
+    MaxSpareServers 5
+    ServerLimit 256
+    MaxClients 10
+    MaxRequestsPerChild 1000
+  </IfModule>
 #+END_EXAMPLE
 
 Search ~AllowOverrride~ and set it to All for
 #+BEGIN_EXAMPLE
-<Directory />
-  Options FollowSymLinks
-  AllowOverride All
-</Directory>
+  <Directory />
+    Options FollowSymLinks
+    AllowOverride All
+  </Directory>
 #+END_EXAMPLE
 
 And
 
 #+BEGIN_EXAMPLE
-# AllowOverride controls what directives may be placed in .htaccess files.
-# It can be "All", "None", or any combination of the keywords:
-# Options FileInfo AuthConfig Limit
-#
-AllowOverride All
+  # AllowOverride controls what directives may be placed in .htaccess files.
+  # It can be "All", "None", or any combination of the keywords:
+  # Options FileInfo AuthConfig Limit
+  #
+  AllowOverride All
 #+END_EXAMPLE
 
 Restart Apache ~service httpd restart~
 
 ** Force redirect from non www to www
 #+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteCond %{HTTP_HOST} !^www\. [NC]
-RewriteRule ^(.*)$ http://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
-</IfModule>
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} !^www\. [NC]
+  RewriteRule ^(.*)$ http://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+  </IfModule>
 #+END_EXAMPLE
 
 Redirect from www.example.com to example.com
 #+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-    RewriteRule ^ %{ENV:PROTO}://%1%{REQUEST_URI} [R=301,L]
-</IfModule>
+  <IfModule mod_rewrite.c>
+      RewriteEngine On
+      RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+      RewriteRule ^ %{ENV:PROTO}://%1%{REQUEST_URI} [R=301,L]
+  </IfModule>
 #+END_EXAMPLE
 
 ** Force redirect to https .htaccess
@@ -43186,57 +43218,57 @@ Diffrent hositng companies have different rule
 
 In general
 #+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine On
-# RewriteBase is optional but some hosting requires it
-RewriteBase /
-RewriteCond %{HTTPS} !=on
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-</IfModule>
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  # RewriteBase is optional but some hosting requires it
+  RewriteBase /
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  </IfModule>
 #+END_EXAMPLE
 
 InMotion https://www.inmotionhosting.com/support/website/ssl/how-to-force-https-using-the-htaccess-file
 
 #+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteCond %{REQUEST_URI} !^/[0-9]+\..+\.cpaneldcv$
-RewriteCond %{REQUEST_URI} !^/\.well-known/pki-validation/[A-F0-9]{32}\.txt(?:\ Comodo\ DCV)?$
-RewriteEngine On 
-RewriteCond %{SERVER_PORT} 80 
-RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
-</IfModule>
+  <IfModule mod_rewrite.c>
+  RewriteCond %{REQUEST_URI} !^/[0-9]+\..+\.cpaneldcv$
+  RewriteCond %{REQUEST_URI} !^/\.well-known/pki-validation/[A-F0-9]{32}\.txt(?:\ Comodo\ DCV)?$
+  RewriteEngine On 
+  RewriteCond %{SERVER_PORT} 80 
+  RewriteRule ^(.*)$ https://www.example.com/$1 [R=301,L]
+  </IfModule>
 #+END_EXAMPLE
 
 ** Restrict access to a file or sub folder
 /var/www/.htaccess blocks access to folders cs-devops and .git and file .gitignore. This way log gets 403 and apache doesn't need to be restarted
 #+BEGIN_EXAMPLE
-RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log|wp-config-li-[^.]+\.php) - [F,NC]
+  RewriteRule ^(cs-devops/|\.git/|\.gitignore|docker-compose\.yml|Makefile|README\.md|error_log|wp-config-li-[^.]+\.php) - [F,NC]
 #+END_EXAMPLE
 
 ** WebP
 #+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
+  <IfModule mod_rewrite.c>
 
-  RewriteEngine On
+    RewriteEngine On
 
-  # Check if browser support WebP images
-  RewriteCond %{HTTP_ACCEPT} image/webp
+    # Check if browser support WebP images
+    RewriteCond %{HTTP_ACCEPT} image/webp
 
-  # Check if WebP replacement image exists
-  RewriteCond %{DOCUMENT_ROOT}/$1.webp -f
+    # Check if WebP replacement image exists
+    RewriteCond %{DOCUMENT_ROOT}/$1.webp -f
 
-  # Serve WebP image instead
-  RewriteRule (.+)\.(jpe?g|png)$ $1.webp [T=image/webp,E=accept:1]
+    # Serve WebP image instead
+    RewriteRule (.+)\.(jpe?g|png)$ $1.webp [T=image/webp,E=accept:1]
 
-</IfModule>
+  </IfModule>
 
-<IfModule mod_headers.c>
+  <IfModule mod_headers.c>
 
-    Header append Vary Accept env=REDIRECT_accept
+      Header append Vary Accept env=REDIRECT_accept
 
-</IfModule>
+  </IfModule>
 
-AddType  image/webp .webp
+  AddType  image/webp .webp
 #+END_EXAMPLE
 
 * Nginx
@@ -45171,12 +45203,12 @@ Create a private repo on BitBucket UI.
 For existing local Git repo, add a remote
 
 #+BEGIN_EXAMPLE
-cd /path/to/local/repo
-git remote add bb https://username@bitbucket.org/username/reponame.git
-# git push -u bb localbranch
-# e.g. git push -u bb master
-# git push -u bb localbranch:repobranch
-# e.g. git push -u bb master:masteronbb
+  cd /path/to/local/repo
+  git remote add bb https://username@bitbucket.org/username/reponame.git
+  # git push -u bb localbranch
+  # e.g. git push -u bb master
+  # git push -u bb localbranch:repobranch
+  # e.g. git push -u bb master:masteronbb
 #+END_EXAMPLE
 
 ~git push -u remotename localbranch~ pushes the code to a remote and set the remote as upstream remote.
@@ -45187,16 +45219,16 @@ See git:upstream to change local branch's upstream remote branch
 
 .git/config
 #+BEGIN_EXAMPLE
-[branch "master"]
-	remote = origin
-	merge = refs/heads/master
+  [branch "master"]
+          remote = origin
+          merge = refs/heads/master
 #+END_EXAMPLE
 
 git branch -vv
 #+BEGIN_EXAMPLE
-   localbranch1 hexcode [origin/localbranch1] last commit msg
- * master       hexcode [origin/master] last commit msg
-   localbranch2 hexcode [origin/localbranch2] last commit msg
+    localbranch1 hexcode [origin/localbranch1] last commit msg
+  ,* master       hexcode [origin/master] last commit msg
+    localbranch2 hexcode [origin/localbranch2] last commit msg
 #+END_EXAMPLE
 
 * Pantheon <<<hosting:pantheon>>>
