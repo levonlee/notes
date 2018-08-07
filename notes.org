@@ -26,6 +26,9 @@ Other than phpinfo(); use
 - 5.6 :: /usr/local/etc/php/php.ini, /usr/local/etc/php/conf.d/*.ini
 - 5.3 :: /etc/php5/apache/php.ini, /etc/php5/cli/php.ini
 
+**** php.ini vs .user.ini
+Put .user.ini in website root directory. Only place php.ini in main config or conf.d directory or a directory that is setup to scan php.ini files. Placing php.ini in website root directory only works for that directory but not recursively in sub directories.
+
 **** Apache
 Set PHP via Apache directives e.g. httpd.conf .htaccess
 Require ~AllowOverride Options~ or ~AllowOverride All~
@@ -376,19 +379,22 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 $_u_time = mktime(11,0,0,11,22,2016); // hour, min, sec, month, day, year, $is_dst(daylight saving, 0 or 1)
 
 **** String to Time
-$_u_time = strtotime('2016-11-01');
+#+BEGIN_EXAMPLE
+  $_u_time = strtotime('2016-11-01');
 
-// ISO date string. Refer to js:time:iso
-$_u_time = strtotime('2011-10-05T14:48:00.000Z')
+  // ISO date string. Refer to js:time:iso
+  $_u_time = strtotime('2011-10-05T14:48:00.000Z')
 
-Compare if($start > $end) {}
+  Compare if($start > $end) {}
 
-// difference in seconds
-$end - $start
+  // difference in seconds
+  $end - $start
 
-// Format differences
-$interval = date_diff($end, $start);
-echo $interval->format('%R%a days');
+  // Format differences
+  $interval = date_diff($end, $start);
+  echo $interval->format('%R%a days');
+
+#+END_EXAMPLE
 
 **** Unix timestamp (int) to datetime object
 $_u_time = strtotime('2016-11-01');
@@ -8859,20 +8865,20 @@ Javascript global variable ajaxurl is defined on admin pages
 
 functions.php
 #+BEGIN_EXAMPLE
-add_action( 'admin_enqueue_scripts', 'add_ajax_file');
-function add_ajax_file() {
-  wp_enqueue_script( 'ajax_custom_script', plugins_url( '/js/my.js' , __FILE___), array('jquery') );
-}
+  add_action( 'admin_enqueue_scripts', 'add_ajax_file');
+  function add_ajax_file() {
+    wp_enqueue_script( 'ajax_custom_script', plugins_url( '/js/my.js' , __FILE___), array('jquery') );
+  }
 
-add_action( 'wp_ajax_my_action', 'my_action');
+  add_action( 'wp_ajax_my_action', 'my_action');
 
-function my_action() {
-  global $wpdb;
-  $data = intval($_POST['data']);
-  echo $data;
-  // echo json_encde($data);
-  wp_die();
-} 
+  function my_action() {
+    global $wpdb;
+    $data = intval($_POST['data']);
+    echo $data;
+    // echo json_encde($data);
+    wp_die();
+  } 
 #+END_EXAMPLE
 
 my.js
