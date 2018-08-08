@@ -20817,7 +20817,8 @@ https://developers.google.com/web/fundamentals/primers/service-workers/high-perf
 **** PWA
 https://codelabs.developers.google.com/codelabs/your-first-pwapp/#0
 
-- Caching strategies :: https://jakearchibald.com/2014/offline-cookbook/
+**** Caching strategies
+https://jakearchibald.com/2014/offline-cookbook/
 
 Cache when an action is triggered. Caches API is available from regular pages not only sw.js
 #+BEGIN_EXAMPLE
@@ -20835,6 +20836,114 @@ Cache when an action is triggered. Caches API is available from regular pages no
         cache.addAll(urls);
       });
     });
+  });
+#+END_EXAMPLE
+
+Serve a offline page if both cache and network are not available
+#+BEGIN_EXAMPLE
+  self.addEventListener('fetch', function(event) {
+    event.respondWith(
+      // Try the cache
+      caches.match(event.request).then(function(response) {
+        // Fall back to network
+        return response || fetch(event.request);
+      }).catch(function() {
+        // If both fail, show a generic fallback:
+        return caches.match('/offline.html');
+        // However, in reality you'd have many different
+        // fallbacks, depending on URL & headers.
+        // Eg, a fallback silhouette image for avatars.
+      })
+    );
+  });
+#+END_EXAMPLE
+
+Sample
+#+BEGIN_EXAMPLE
+  self.addEventListener('fetch', function(event) {
+    // Parse the URL:
+    var requestURL = new URL(event.request.url);
+
+    // Handle requests to a particular host specifically
+    if (requestURL.hostname == 'api.example.com') {
+      event.respondWith(/* some combination of patterns */);
+      return;
+    }
+    // Routing for local URLs
+    if (requestURL.origin == location.origin) {
+      // Handle article URLs
+      if (/^\/article\//.test(requestURL.pathname)) {
+        event.respondWith(/* some other combination of patterns */);
+        return;
+      }
+      if (/\.webp$/.test(requestURL.pathname)) {
+        event.respondWith(/* some other combination of patterns */);
+        return;
+      }
+      if (request.method == 'POST') {
+        event.respondWith(/* some other combination of patterns */);
+        return;
+      }
+      if (/cheese/.test(requestURL.pathname)) {
+        event.respondWith(
+          new Response("Flagrant cheese error", {
+            status: 512
+          })
+        );
+        return;
+      }
+    }
+
+    // A sensible default pattern
+    event.respondWith(
+      caches.match(event.request).then(function(response) {
+        return response || fetch(event.request);
+      })
+    );
+  });
+#+END_EXAMPLE
+
+**** Push (not yet available on Chrome)
+Update cache before showing a notification
+#+BEGIN_EXAMPLE
+  self.addEventListener('push', function(event) {
+    if (event.data.text() == 'new-email') {
+      event.waitUntil(
+        caches.open('mysite-dynamic').then(function(cache) {
+          return fetch('/inbox.json').then(function(response) {
+            cache.put('/inbox.json', response.clone());
+            return response.json();
+          });
+        }).then(function(emails) {
+          registration.showNotification("New email", {
+            body: "From " + emails[0].from.name
+            tag: "new-email"
+          });
+        })
+      );
+    }
+  });
+
+  self.addEventListener('notificationclick', function(event) {
+    if (event.notification.tag == 'new-email') {
+      // Assume that all of the resources needed to render
+      // /inbox/ have previously been cached, e.g. as part
+      // of the install handler.
+      new WindowClient('/inbox/');
+    }
+  });
+#+END_EXAMPLE
+
+**** Background sync (not yet available on Chrome)
+#+BEGIN_EXAMPLE
+  self.addEventListener('sync', function(event) {
+    if (event.id == 'update-leaderboard') {
+      event.waitUntil(
+        caches.open('mygame-dynamic').then(function(cache) {
+          return cache.add('/leaderboard.json');
+        })
+      );
+    }
   });
 #+END_EXAMPLE
 
@@ -23048,9 +23157,7 @@ run(function* () {
 });
 #+END_EXAMPLE
 
-** async/await
-<<<js:async/await>>>
-
+** async/await <<<js:async/await>>>
 async function returns AsyncFunction object which is Promise.resolve. 
 
 await one and only one Promise.
@@ -23058,38 +23165,38 @@ await one and only one Promise.
 To wait for all promises to finish, use Promise.all
 
 #+BEGIN_EXAMPLE
-function resolveAfter2Seconds(x) {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(x);
-    }, 2000);
+  function resolveAfter2Seconds(x) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(x);
+      }, 2000);
+    });
+  }
+
+
+  async function add1(x) {
+    // start and await Promise in order
+    const a = await resolveAfter2Seconds(20);
+    const b = await resolveAfter2Seconds(30);
+    return x + a + b;
+  }
+
+  add1(10).then(v => {
+    console.log(v);  // prints 60 after 4 seconds.
   });
-}
 
 
-async function add1(x) {
-  // start and await Promise in order
-  const a = await resolveAfter2Seconds(20);
-  const b = await resolveAfter2Seconds(30);
-  return x + a + b;
-}
+  async function add2(x) {
+    // start Promise all together
+    const p_a = resolveAfter2Seconds(20);
+    const p_b = resolveAfter2Seconds(30);
+    // await each Promise
+    return x + await p_a + await p_b;
+  }
 
-add1(10).then(v => {
-  console.log(v);  // prints 60 after 4 seconds.
-});
-
-
-async function add2(x) {
-  // start Promise all together
-  const p_a = resolveAfter2Seconds(20);
-  const p_b = resolveAfter2Seconds(30);
-  // await each Promise
-  return x + await p_a + await p_b;
-}
-
-add2(10).then(v => {
-  console.log(v);  // prints 60 after 2 seconds.
-});
+  add2(10).then(v => {
+    console.log(v);  // prints 60 after 2 seconds.
+  });
 #+END_EXAMPLE
 
 * NodeJS
