@@ -16087,6 +16087,24 @@ https://developers.google.com/web/fundamentals/discovery/social-discovery/
 *** Twitter Cards
 https://developer.twitter.com/en/docs/tweets/optimize-with-cards/guides/getting-started
 
+*** Address Bar <<<html:address bar>>>
+Hide Safari UI (URL address bar)
+#+BEGIN_EXAMPLE
+  <meta name="apple-mobile-web-app-capable" content="yes">
+#+END_EXAMPLE
+
+By default, iOS web content displays under the top black status bar. 
+Push the content to the top and make the status transparent
+#+BEGIN_EXAMPLE
+  // default is black
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+#+END_EXAMPLE
+
+Address Bar color
+#+BEGIN_EXAMPLE
+  <meta name="theme-color" content="#4285f4">
+#+END_EXAMPLE
+
 ** HTTP Header
 All headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
 
@@ -18347,125 +18365,161 @@ Priority shown in DevTools:
 
 rel="preconnect" has less browser support and it's a superset of dns-prefetch
 
+*** rel="manifest.json" <<<html:link:rel:manifest>>>
+Required by Crhome to show the Add to Home Screen prompt.
+
+DevTools > Application > Manifest
+
+#+BEGIN_EXAMPLE
+  <link rel="manifest" href="/manifest.json">
+
+  {
+    "short_name": "Maps",
+    "name": "Google Maps", // your app name
+
+    // If you want to have your own size, provide icons in increments of 48px or 128px.
+    "icons": [
+
+      {
+        "src": "/images/icons-192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "/images/icons-512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+
+    "start_url": "/?utm_source=pwa", // the page the app should start with. Tracking query string can be added e.g. track how often the app is launched.
+    "background_color": "#3367D6",
+
+    "display": "standalone",
+    // standalone: separte from the browser and runs in its own window.
+    // fullscreen: no browser UI
+    // minimal-ui: not supported by Chrome. Similar to fullscreen but might have other navigation (back, forward, reload)
+    // browser: a standard browser experience
+
+    // "orientation": "landscape",
+    // Enforce an orientation
+
+    "scope": "/maps/",
+    // if current page is not inside this directory, then the user exists the app
+    // If scope is not defined, then default is the directory that the app manifest is served from
+    // can be relative path e.g. ../
+    // start_url must be in the scope
+    // start _url is relative to the path defined in scope
+    // start_url starting with / will always be the root of the origin
+
+    "theme_color": "#3367D6"
+  }
+#+END_EXAMPLE
+
 *** Stylesheet for a media
 #+BEGIN_EXAMPLE
 <link rel="stylesheet" href="print.css" media="print">
 #+END_EXAMPLE
 Or use css:@media:type
 
-*** Icons - rel="apple-touch-startup-image", apple-touch-icon
-General Icon in scale of 48px
+*** rel="icon" rel="apple-touch-startup-image" rel="apple-touch-icon"
+Refer to html:address bar
+https://developers.google.com/web/fundamentals/design-and-ux/browser-customization/
+
+Chrome and Opera in scale of 48px (muliple sizes can be added)
 #+BEGIN_EXAMPLE
-<link rel="icon" sizes="192x192" href="icon.png">
+  <link rel="icon" sizes="192x192" href="icon.png">
 #+END_EXAMPLE
 
 IE Tiles :: 4 sizes. Listed are standard size. 1.8 times is better.
 #+BEGIN_EXAMPLE
-<meta name="application-name" content="CenturyCutCook" />
-<meta name="msapplication-TitleColor" content="#009900" />
+  <meta name="application-name" content="CenturyCutCook" />
+  <meta name="msapplication-TitleColor" content="#009900" />
 
-<meta name="msapplication-sqaure70x70logo" content="icon_smalltitle.png">
-<meta name="msapplication-sqaure150x150logo" content="icon_mediumitle.png">
-<meta name="msapplication-sqaure310x150logo" content="icon_widetitle.png">
-<meta name="msapplication-sqaure310x310logo" content="icon_largetitle.png">
+  <meta name="msapplication-sqaure70x70logo" content="icon_smalltitle.png">
+  <meta name="msapplication-sqaure150x150logo" content="icon_mediumitle.png">
+  <meta name="msapplication-sqaure310x150logo" content="icon_widetitle.png">
+  <meta name="msapplication-sqaure310x310logo" content="icon_largetitle.png">
 #+END_EXAMPLE
 
 Apple Icon :: Default 60x60
 #+BEGIN_EXAMPLE
-<link rel="apple-touch-icon" href="touch-icon-iphone.png">
-<link rel="apple-touch-icon" sizes="76x76" href="touch-icon-ipad.png">
-<link rel="apple-touch-icon" sizes="120x120" href="touch-icon-iphone-retina.png">
-<link rel="apple-touch-icon" sizes="152x152" href="touch-icon-ipad-retina.png">
+  <link rel="apple-touch-icon" href="touch-icon-iphone.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="touch-icon-ipad.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="touch-icon-iphone-retina.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="touch-icon-ipad-retina.png">
 #+END_EXAMPLE
 
-Apple :: Startup Image
+Apple :: Startup Image. By default, Safari shows a blank screen during load time and after multiple loads a screenshot of the previous state of the app.
 Base Size :: 320x480. But different devices ask for different sizes. Follow this to implement
 #+BEGIN_EXAMPLE
-<link rel="apple-touch-startup-image" href="/startup.png">
+  <link rel="apple-touch-startup-image" href="/startup.png">
 
-<!-- iPad retina portrait startup image -->
-<link href="https://placehold.it/1536x2008"
-      media="(device-width: 768px) and (device-height: 1024px)
-                 and (-webkit-device-pixel-ratio: 2)
-                 and (orientation: portrait)"
-      rel="apple-touch-startup-image">
+  <!-- iPad retina portrait startup image -->
+  <link href="https://placehold.it/1536x2008"
+        media="(device-width: 768px) and (device-height: 1024px)
+                   and (-webkit-device-pixel-ratio: 2)
+                   and (orientation: portrait)"
+        rel="apple-touch-startup-image">
 
-<!-- iPad retina landscape startup image -->
-<link href="https://placehold.it/1496x2048"
-      media="(device-width: 768px) and (device-height: 1024px)
-                 and (-webkit-device-pixel-ratio: 2)
-                 and (orientation: landscape)"
-      rel="apple-touch-startup-image">
+  <!-- iPad retina landscape startup image -->
+  <link href="https://placehold.it/1496x2048"
+        media="(device-width: 768px) and (device-height: 1024px)
+                   and (-webkit-device-pixel-ratio: 2)
+                   and (orientation: landscape)"
+        rel="apple-touch-startup-image">
 
-<!-- iPad non-retina portrait startup image -->
-<link href="https://placehold.it/768x1004"
-      media="(device-width: 768px) and (device-height: 1024px)
-                 and (-webkit-device-pixel-ratio: 1)
-                 and (orientation: portrait)"
-      rel="apple-touch-startup-image">
+  <!-- iPad non-retina portrait startup image -->
+  <link href="https://placehold.it/768x1004"
+        media="(device-width: 768px) and (device-height: 1024px)
+                   and (-webkit-device-pixel-ratio: 1)
+                   and (orientation: portrait)"
+        rel="apple-touch-startup-image">
 
-<!-- iPad non-retina landscape startup image -->
-<link href="https://placehold.it/748x1024"
-      media="(device-width: 768px) and (device-height: 1024px)
-                 and (-webkit-device-pixel-ratio: 1)
-                 and (orientation: landscape)"
-      rel="apple-touch-startup-image">
+  <!-- iPad non-retina landscape startup image -->
+  <link href="https://placehold.it/748x1024"
+        media="(device-width: 768px) and (device-height: 1024px)
+                   and (-webkit-device-pixel-ratio: 1)
+                   and (orientation: landscape)"
+        rel="apple-touch-startup-image">
 
-<!-- iPhone 6 Plus portrait startup image -->
-<link href="https://placehold.it/1242x2148"
-      media="(device-width: 414px) and (device-height: 736px)
-                 and (-webkit-device-pixel-ratio: 3)
-                 and (orientation: portrait)"
-      rel="apple-touch-startup-image">
+  <!-- iPhone 6 Plus portrait startup image -->
+  <link href="https://placehold.it/1242x2148"
+        media="(device-width: 414px) and (device-height: 736px)
+                   and (-webkit-device-pixel-ratio: 3)
+                   and (orientation: portrait)"
+        rel="apple-touch-startup-image">
 
-<!-- iPhone 6 Plus landscape startup image -->
-<link href="https://placehold.it/1182x2208"
-      media="(device-width: 414px) and (device-height: 736px)
-                 and (-webkit-device-pixel-ratio: 3)
-                 and (orientation: landscape)"
-      rel="apple-touch-startup-image">
+  <!-- iPhone 6 Plus landscape startup image -->
+  <link href="https://placehold.it/1182x2208"
+        media="(device-width: 414px) and (device-height: 736px)
+                   and (-webkit-device-pixel-ratio: 3)
+                   and (orientation: landscape)"
+        rel="apple-touch-startup-image">
 
-<!-- iPhone 6 startup image -->
-<link href="https://placehold.it/750x1294"
-      media="(device-width: 375px) and (device-height: 667px)
-                 and (-webkit-device-pixel-ratio: 2)"
-      rel="apple-touch-startup-image">
+  <!-- iPhone 6 startup image -->
+  <link href="https://placehold.it/750x1294"
+        media="(device-width: 375px) and (device-height: 667px)
+                   and (-webkit-device-pixel-ratio: 2)"
+        rel="apple-touch-startup-image">
 
-<!-- iPhone 5 startup image -->
-<link href="https://placehold.it/640x1096"
-      media="(device-width: 320px) and (device-height: 568px)
-                 and (-webkit-device-pixel-ratio: 2)"
-      rel="apple-touch-startup-image">
+  <!-- iPhone 5 startup image -->
+  <link href="https://placehold.it/640x1096"
+        media="(device-width: 320px) and (device-height: 568px)
+                   and (-webkit-device-pixel-ratio: 2)"
+        rel="apple-touch-startup-image">
 
-<!-- iPhone < 5 retina startup image -->
-<link href="https://placehold.it/640x920"
-      media="(device-width: 320px) and (device-height: 480px)
-                 and (-webkit-device-pixel-ratio: 2)"
-      rel="apple-touch-startup-image">
+  <!-- iPhone < 5 retina startup image -->
+  <link href="https://placehold.it/640x920"
+        media="(device-width: 320px) and (device-height: 480px)
+                   and (-webkit-device-pixel-ratio: 2)"
+        rel="apple-touch-startup-image">
 
-<!-- iPhone < 5 non-retina startup image -->
-<link href="https://placehold.it/320x460"
-      media="(device-width: 320px) and (device-height: 480px)
-                 and (-webkit-device-pixel-ratio: 1)"
-      rel="apple-touch-startup-image">
-#+END_EXAMPLE
-
-** Address Bar
-Hide Safari UI (URL address bar)
-#+BEGIN_EXAMPLE
-<meta name="apple-mobile-web-app-capable" content="yes">
-#+END_EXAMPLE
-
-By default, iOS web content displays under the top black status bar. 
-Push the content to the top and make the status transparent
-#+BEGIN_EXAMPLE
-// default is black
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-#+END_EXAMPLE
-
-Address Bar color
-#+BEGIN_EXAMPLE
-<meta name="theme-color" content="#4285f4">
+  <!-- iPhone < 5 non-retina startup image -->
+  <link href="https://placehold.it/320x460"
+        media="(device-width: 320px) and (device-height: 480px)
+                   and (-webkit-device-pixel-ratio: 1)"
+        rel="apple-touch-startup-image">
 #+END_EXAMPLE
 
 ** Special Characters
@@ -18542,21 +18596,21 @@ else {
 ~<html manifest="demo.appcache"~
 .appcache file should be served in =text/cache-manifest= media type
 #+BEGIN_EXAMPLE
-CACHE MANIFEST
-;; # Above should be first line
-;; # Files that should be cached
-/theme.css
-NETWORK
-;; # Files will not be cached
-login.asp
-;; # An asterisk indicates all other files require an internet connection
-*
-FALLBACK
-/html/ /offline.html
-;; # offline.html should be served in place of all files in /html/ directory
-;; # if internet is not available
+  CACHE MANIFEST
+  # Above should be first line
+  # Files that should be cached
+  /theme.css
+  NETWORK
+  # Files will not be cached
+  login.asp
+  # An asterisk indicates all other files require an internet connection
+  ,*
+  FALLBACK
+  /html/ /offline.html
+  # offline.html should be served in place of all files in /html/ directory
+  # if internet is not available
 
-;; # Change the manifest file to update cache
+  # Change the manifest file to update cache
 #+END_EXAMPLE
 
 ** Language lang="en"
@@ -49011,6 +49065,19 @@ Errors such as
 #+BEGIN_EXAMPLE
 chrome.exe --disable-web-security --user-data-dir
 #+END_EXAMPLE
+
+*** Remote Debug Android Devices
+On Android, Settings > System > About phone > tap Build number 7 times, then Sytem > Developer options is enabled, enable USB debugging.
+It allows Android Studio and other SDK tools to recognize your device when connected via USB, so you can use the debugger and other tools.
+Other options on Android: https://developer.android.com/studio/debug/dev-options
+
+Connect Android to test machine > DevTools > 3 dots > More tools > Remote devices > enable Discover USB devices.
+
+When the phone is connected to a computer, on the phone say transfer photos and open the device on the computer so that the debug connection can be made.
+
+On the phone, you may need to enable Always prompt when connecting to USB in Developer Options in order for prompting Use USB for Transfer Photos.
+
+Don't let the phone screen turn off while debugging.
 
 ** Firefox
 *** Make all new windows open in Private Mode
