@@ -20048,132 +20048,132 @@ Promise is now native in all browsers including Edge except IE.
 
 IE polyfill https://github.com/stefanpenner/es6-promise
 #+BEGIN_EXAMPLE
-<script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-function get(url) {
-  // You should wrap all code into return
-  return new Promise(function (resolve, reject) {
-    // run resolve or reject function to resolve or reject a promise
-    var req = new XMLHttpRequest();
-    req.open('GET', url); // it can be set to async
+  function get(url) {
+    // You should wrap all code into return
+    return new Promise(function (resolve, reject) {
+      // run resolve or reject function to resolve or reject a promise
+      var req = new XMLHttpRequest();
+      req.open('GET', url); // it can be set to async
 
-    req.onload = function () {
-      if (req.status == 200) {
-        resolve(req.response);
+      req.onload = function () {
+        if (req.status == 200) {
+          resolve(req.response);
+        }
+        else {
+          reject(Error(req.statusText));
+        }
+      };
+
+      req.onerror = function () {
+        reject(Error("Network Error"));
       }
-      else {
-        reject(Error(req.statusText));
-      }
-    };
 
-    req.onerror = function () {
-      reject(Error("Network Error"));
-    }
+    });
+  }
 
-  });
-}
+  get('story.json')
+    .then(function (response) {
+      console.log('Success!', response);
+      // transform a value to the next .then
+      // just return the value, you may modify it
+      // The returned value has to be a non-promise
+      return JSON.parse(response);
+    }, function (error) {
+      console.log('Failed!', error);
+      return error;
+    })
+    .then(function (response) {
+      console.log('JSON!', response);
+    });
 
-get('story.json')
-  .then(function (response) {
-    console.log('Success!', response);
-    // transform a value to the next .then
-    // just return the value, you may modify it
-    // The returned value has to be a non-promise
-    return JSON.parse(response);
-  }, function (error) {
-    console.log('Failed!', error);
-    return error;
-  })
-  .then(function (response) {
+  // If a 'then' just returns a value when it's resolved, use a shortform
+  get('story.json').then(JSON.parse).then(function(response) {
     console.log('JSON!', response);
   });
 
-// If a 'then' just returns a value when it's resolved, use a shortform
-get('story.json').then(JSON.parse).then(function(response) {
-  console.log('JSON!', response);
-});
+  // In 'then', you can return a promise
+  // a promise.then is a promise
 
-// In 'then', you can return a promise
-// a promise.then is a promise
+  function getJSON(url) {
+    return get(url).then(JSON.parse);
+  }
 
-function getJSON(url) {
-  return get(url).then(JSON.parse);
-}
-
-getJSON('story.json').then(function(story) {
-  return getJSON(story.chapterUrls[0]);
-}).then(function(chapter1) {
-  console.log('Got Chapter 1', chapter1);
-});
-
-// Store the result of a promise and reuse it
-var storyPromise;
-
-function getChapter(i) {
-  storyPromise = storyPromise || getJSON('story.json');
-
-  return storyPromise.then(function(story) {
-    return getJSON(story.chapterUrls[i]);
+  getJSON('story.json').then(function(story) {
+    return getJSON(story.chapterUrls[0]);
+  }).then(function(chapter1) {
+    console.log('Got Chapter 1', chapter1);
   });
-}
 
-getChapter(0).then(function(chapter) {
-  console.log(chapter);
-  return getChapter(1);
-}).then(function(chapter) {
-  console.log(chapter);
-});
+  // Store the result of a promise and reuse it
+  var storyPromise;
 
-// .catch(function(e) { ... }) equals to
-// .then(undefined, function(e) { ... })
+  function getChapter(i) {
+    storyPromise = storyPromise || getJSON('story.json');
 
-// Dynamically chained .then()
-// Start with a resolved promise: Promise.resolve('initialValue')
-// a reject promise: Promise.reject('initialValue')
-getJSON('story.json')
-  .then(function(story) {
-    // addHTMLToPage(story.heading);
-    return story.chapterUrls.reduce(function(sequence, chapterUrl) {
-      return sequence
-        .then(function() { return getJSON(chapterUrl); })
-        .then(function(chapter) { /* addHtmlToPage(chapter.html); */ });
-    }, Promise.resolve());
-  })
-  .then(function() { /* addTextToPage("All done"); */ })
-  .catch(function(err) { /* addTextToPage("broken" + err.message); */ })
-  .then(function() { /* document.querySelector('.spinner').style.display='none'; */ });
+    return storyPromise.then(function(story) {
+      return getJSON(story.chapterUrls[i]);
+    });
+  }
 
-// Start a set of promises in parallel and create a promise that fulfils when all are fulfilled
-getJSON('story.json')
-  .then(function(story) {
-    // addHTMLToPage(story.heading);
-    return Promise.all(
-      story.chapterUrls.map(getJSON)
-    ); // not a callback. It's an array of Promises (not chained)
-    // After promises are added to array as values, they are started already
+  getChapter(0).then(function(chapter) {
+    console.log(chapter);
+    return getChapter(1);
+  }).then(function(chapter) {
+    console.log(chapter);
+  });
 
-    // Start a set of promises in parallel, chain them so that we get response in order
+  // .catch(function(e) { ... }) equals to
+  // .then(undefined, function(e) { ... })
 
-    return story.chapterUrls.map(getJSON)
-      .reduce(function (sequence, chapterPromise) {
-
+  // Dynamically chained .then()
+  // Start with a resolved promise: Promise.resolve('initialValue')
+  // a reject promise: Promise.reject('initialValue')
+  getJSON('story.json')
+    .then(function(story) {
+      // addHTMLToPage(story.heading);
+      return story.chapterUrls.reduce(function(sequence, chapterUrl) {
         return sequence
-          .then(function () {
-            return chapterPromise;
-          })
-          .then(function (chapter) {
-            addHtmlToPage(chapter.html);
-          });
-
+          .then(function() { return getJSON(chapterUrl); })
+          .then(function(chapter) { /* addHtmlToPage(chapter.html); */ });
       }, Promise.resolve());
+    })
+    .then(function() { /* addTextToPage("All done"); */ })
+    .catch(function(err) { /* addTextToPage("broken" + err.message); */ })
+    .then(function() { /* document.querySelector('.spinner').style.display='none'; */ });
+
+  // Start a set of promises in parallel and create a promise that fulfils when all are fulfilled
+  getJSON('story.json')
+    .then(function(story) {
+      // addHTMLToPage(story.heading);
+      return Promise.all(
+        story.chapterUrls.map(getJSON)
+      ); // not a callback. It's an array of Promises (not chained)
+      // After promises are added to array as values, they are started already
+
+      // Start a set of promises in parallel, chain them so that we get response in order
+
+      return story.chapterUrls.map(getJSON)
+        .reduce(function (sequence, chapterPromise) {
+
+          return sequence
+            .then(function () {
+              return chapterPromise;
+            })
+            .then(function (chapter) {
+              addHtmlToPage(chapter.html);
+            });
+
+        }, Promise.resolve());
 
 
-  })
-  .then(function() { /* ... */ })
-  .catch(function(err) { /* ... */ })
-  .then(function() { /* ... */ });
+    })
+    .then(function() { /* ... */ })
+    .catch(function(err) { /* ... */ })
+    .then(function() { /* ... */ });
 #+END_EXAMPLE
 
 ** Observable <<<js:observable>>>
@@ -23069,8 +23069,7 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 
 - box, Sphere, Plane, Ground
 
-* ES6-ES2015
-<<<js:es6>>>
+* ES6-ES2015 <<<js:es6>>>
 6 stands for 6th edition. 2015 is the year.
 ES7-2016, ES8-2017
 
