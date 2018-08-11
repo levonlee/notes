@@ -38208,9 +38208,9 @@ $@ => "$1" "$2" "$3" ...
 *** curl <<<linux:curl>>>
 **** Basic
 #+BEGIN_EXAMPLE
-dlDir=/home/lili/download/
-dlFileName = ${dlDir}123.xml
-curl "http://abc.com/123.xml" -L -o ${dlFileName}
+  dlDir=/home/lili/download/
+  dlFileName = ${dlDir}123.xml
+  curl "http://abc.com/123.xml" -L -o ${dlFileName}
 #+END_EXAMPLE
 
 **** Return HTTP response header only
@@ -38228,17 +38228,19 @@ Popup form or server authentication
 **** <<<cURL download only after or before a date>>>
 Works for ftp and Http
 #+BEGIN_EXAMPLE
-fileLocalTime=$(date -r "$localfile")
-curl $remote_file_path -u $user:$password -o $localfile -R -z "${fileLocalTime}"
-;; # default is "after"
-;; # add a dash before date string will result in "before".
-fileLocalTimeNew=$(date -r "$localfile")
-if [ "$fileLocalTime" == "$fileLocalTimeNew" ]; then
- echo "the same"
-else
- echo $fileLocalTime
- echo $fileLocalTimeNew
-fi
+  fileLocalTime=$(date -r "$localfile")
+  curl $remote_file_path -u $user:$password -o $localfile -R -z "${fileLocalTime}"
+
+  # default is "after"
+  # add a dash before date string will result in "before".
+  fileLocalTimeNew=$(date -r "$localfile")
+
+  if [ "$fileLocalTime" == "$fileLocalTimeNew" ]; then
+   echo "the same"
+  else
+   echo $fileLocalTime
+   echo $fileLocalTimeNew
+  fi
 #+END_EXAMPLE
 
 **** HTTP POST
@@ -38267,6 +38269,13 @@ curl -L -v -I --resolve 'a.ca:80:2.2.3.4' http://a.ca
 curl -L -v -I --resolve 'a.ca:80:2.2.3.4' https://a.ca
 #+END_EXAMPLE
 
+**** Fetch as Googlebot
+Googlebot's user agent: https://support.google.com/webmasters/answer/1061943
+
+#+BEGIN_EXAMPLE
+
+#+END_EXAMPLE
+
 **** Options
 
 | L          | Follow through all redirects                                  |
@@ -38281,6 +38290,7 @@ curl -L -v -I --resolve 'a.ca:80:2.2.3.4' https://a.ca
 | R          | Keep remote file timestamp. --remote-time                     |
 | z          | cURL download only after or before a date                     |
 | d          | send POST data                                                |
+| A          | --user-agent                                                  |
  
 *** wget <<<bash:wget>>>
 Compared to curl, wget's advantages are:
@@ -49491,31 +49501,51 @@ If you experience black or blank screen during reboot to install Win 10,
 go to BIOS and change Display setting to Integrated (disable Discrete). Reboot and do the upgrade again.
 
 **** Ubuntu Bash on Windows
-Turn on Developer Mode
-You need to have Win 10 Anniverary Update, Creators Update is recommended.
-Make sure OS Build is not below 14393 
-Win + X > Settings > System > About
-Win + X > Settings > Update and Security > For developers > Developer Mode
+It's also called Windows Bash Shell
+Turn on Developer Mode (it's not necessary any more)
++You need to have Win 10 Anniverary Update, Creators Update is recommended.+
++Make sure OS Build is not below 14393+ 
++Win + X > Settings > System > About+
++Win + X > Settings > Update and Security > For developers > Developer Mode+
 
 Enable Windows Subsystem for Linux feature
 Search Windows Features > turn on Windows Subsystem for Linux (beta)
 
-Reboot then open a command prompt, run ~bash~ and type ~y~ to install Ubuntu on Windows.
-If you see "Unsupported console settings", right click on the cmd top bar > Properties > uncheck Use legacy console
-Windows 10 has a new cmd prompt.
+Win + S and type microsoft store, search linux and you will see different distros. Choose and install Ubuntu or a specific Ubuntu version. Then Win + S or go to Start > Dashboard to find the one just installed. Follow the username and password setup:
+
++Reboot then open a command prompt, run ~bash~ and type ~y~ to install Ubuntu on Windows.+
++If you see "Unsupported console settings", right click on the cmd top bar > Properties > uncheck Use legacy console+
+
 Create a UNIX user and password which have no relationship to Windows username and password
 The user will be added to sudo group and will signed-in automatically every Bash instance.
 
+- Multiple distro bash can be installed
+  - List all installed Linux environments ~wslconfig /l~
+  - Set default Linux environment ~wslconfig /setdefault <name>~
+  - Run one of these to directly open a specific Linux environment ~ubuntu~ ~opensuse-42~ ~sles-12~
+  - Run a command on a specific Linux environment in PowerShell or Command Prompt ~ubuntu -c apt-get moo~
+  - Run a command on the default Linux environment ~bash -c "uname -a"~
+  - 
+
+- Run ~wsl~ (or ~bash~ but deprecated) to get to Bash on Windows
+
+- Upgrade Linux Environment
+  - Win + S, type bash or ubuntu, right click to uninstall. Choose Ubuntu in Microsoft Store to install the latest version 
+  - [[https://www.howtogeek.com/261188/how-to-uninstall-or-reinstall-windows-10s-ubuntu-bash-shell/][Uninstall and install through commands]]
+
+- Access Windows restricted folders
 A Bash session with Windows admin privileges (run cmd as admin) may ~cd /mnt/c/Users/Administrator~
 which is a directory restricted by Windows.
 While a Bash session without admin privileges would see Permission Denied.
 
-Ubuntu is installed at ~%localappdata%\lxss\~, don't modify files using Windows tools and apps here!
+- Run Windows command (e.g. to open IE) ~/mnt/c/Prgram\ Files\ \(x86\)/Internet\ Explorer/iexplore.exe~
 
+- Ubuntu is installed at ~%localappdata%\lxss\~, don't modify files using Windows tools and apps here!
+
+- Windows Drives, Files and File Permissions
 Mount /mnt/c or /mnt/e is drive C: and E:. Store files in any mount and modify files using Windows or Linux apps.
 It's not possible to modify file permissions under /mnt/(your_drive)/. scp from here to remote will have files/directories full permission! Change those on remote host after scp..
-
-You can copy remote files to any places other than /mnt/(your_drive). But don't open these files using Windows apps!
+- Remote files can be copied to any places other than /mnt/(your_drive). But don't open these files using Windows apps!
 Permissions can be playe around in any places other than /mnt/(your_drive)
 
 **** Win 10 Build Update History
