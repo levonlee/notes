@@ -44035,7 +44035,7 @@ Install plugins use ~install~ command to install a certificate :: modify webserv
 
 Authenticator (-a) and installer (-i) plugins can be combined
 #+BEGIN_EXAMPLE
-certbot run -a webroot -i apache -w /var/www/html -d example.com
+  certbot run -a webroot -i apache -w /var/www/html -d example.com
 #+END_EXAMPLE
 
 renewal config files for each domain /etc/letsencrypt/renewal/mydomain.com.conf
@@ -44059,10 +44059,10 @@ tls-sni (port 443) :: prepares a self-signed SSL certificate with the challenge 
 They are authenticator and install plugins. tls-sni-01 challenge
 
 #+BEGIN_EXAMPLE
-sudo add-apt-repository ppa:certbot/certbot
-sudo apt-get update
-sudo apt-get install python-certbot-nginx
-# sudo apt-get install python-certbot-apache
+  sudo add-apt-repository ppa:certbot/certbot
+  sudo apt-get update
+  sudo apt-get install python-certbot-nginx
+  # sudo apt-get install python-certbot-apache
 #+END_EXAMPLE
 
 ~certbot~ looks for server block files with server_name
@@ -44071,7 +44071,7 @@ Allow HTTPS in firewall nginx:ufw
 
 Obtain an SSL certificate using --nginx plugin for those -d server names
 #+BEGIN_EXAMPLE
-sudo certbot --nginx -d example.com -d www.example.com
+  sudo certbot --nginx -d example.com -d www.example.com
 #+END_EXAMPLE
 
 The first time running certbot, prompt to enter an email address and agree to the terms of service. After doing so, certbot will communicate with the Let's Encrypt server, then run a challenge to verify that you control the domain you're requesting a certificate for.
@@ -44081,38 +44081,38 @@ After everything, certificate is downloaded, Nginx config is updated and reloade
 Modified :: /etc/nginx/sites-enabled/yoursite.com
 <<<nginx:ssl:server block>>>
 #+BEGIN_EXAMPLE
-server {
+  server {
+      listen 80;
+      listen [::]:80;
+      server_name example.com www.example.com; 
+      return 301 https://example.com$request_uri;
+    # force redirect to https
+  }
+
+  server {
+    # your original setting
+    # listen 80; # if you want to serve http as well in the same block
+    # ssl on; # is not needed when ssl is in listen directive
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    # follow by these proxy rules nginx:proxy:docker
+
+  }
+
+  # certbot will insert this block, but it's better to use the one atop.
+  server {
+    if ($host = yoursite.com) {
+          return 301 https://$host$request_uri;
+      } # managed by Certbot
+
     listen 80;
-    listen [::]:80;
-    server_name example.com www.example.com; 
-    return 301 https://example.com$request_uri;
-  # force redirect to https
-}
-
-server {
-  # your original setting
-  # listen 80; # if you want to serve http as well in the same block
-  # ssl on; # is not needed when ssl is in listen directive
-  listen 443 ssl; # managed by Certbot
-  ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
-  ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
-  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
-
-  # follow by these proxy rules nginx:proxy:docker
-
-}
-
-# certbot will insert this block, but it's better to use the one atop.
-server {
-  if ($host = yoursite.com) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-  listen 80;
-  server_name yoursite.com;
-    return 404; # managed by Certbot
-}
+    server_name yoursite.com;
+      return 404; # managed by Certbot
+  }
 #+END_EXAMPLE
 
 Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
@@ -44124,10 +44124,10 @@ Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbo
 
 /etc/cron.d/certbot
 #+BEGIN_EXAMPLE
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+  SHELL=/bin/sh
+  PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-0 */12 * * * root test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(3600))' && certbot -q renew
+  0 */12 * * * root test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(3600))' && certbot -q renew
 #+END_EXAMPLE
 
 Dry run ~sudo certbot renew --dry-run~, expect no error.
@@ -44139,23 +44139,23 @@ http-01, dns-01 or tls-sni-01 challenge
 
 Example usage for HTTP-01:
 #+BEGIN_EXAMPLE
-certbot certonly --manual --preferred-challenges=http --manual-auth-hook /path/to/http/authenticator.sh --manual-cleanup-hook /path/to/http/cleanup.sh -d secure.example.com
+  certbot certonly --manual --preferred-challenges=http --manual-auth-hook /path/to/http/authenticator.sh --manual-cleanup-hook /path/to/http/cleanup.sh -d secure.example.com
 #+END_EXAMPLE
 
 authenticator.sh
 #+BEGIN_EXAMPLE
-#!/bin/bash
-dir=/path/to/web-root/.well-known/acme-challenge
-mkdir -p $dir
-filename=$dir/$CERTBOT_TOKEN
-test -f $filename || touch $filename
-echo $CERTBOT_VALIDATION > $filename
-chown -R www-data:www-data $filename
+  #!/bin/bash
+  dir=/path/to/web-root/.well-known/acme-challenge
+  mkdir -p $dir
+  filename=$dir/$CERTBOT_TOKEN
+  test -f $filename || touch $filename
+  echo $CERTBOT_VALIDATION > $filename
+  chown -R www-data:www-data $filename
 #+END_EXAMPLE
 
 cleanup.sh
 #+BEGIN_EXAMPLE
-rm -f /var/www/htdocs/.well-known/acme-challenge/$CERTBOT_TOKEN
+  rm -f /var/www/htdocs/.well-known/acme-challenge/$CERTBOT_TOKEN
 #+END_EXAMPLE
 
 Environment vars available to hooks
@@ -44171,73 +44171,73 @@ Environment vars available to hooks
 (Cloudflare API v4) (for example purposes only, do not use as-is)
 
 #+BEGIN_EXAMPLE
-certbot certonly --manual --preferred-challenges=dns --manual-auth-hook /path/to/dns/authenticator.sh --manual-cleanup-hook /path/to/dns/cleanup.sh -d secure.example.com
+  certbot certonly --manual --preferred-challenges=dns --manual-auth-hook /path/to/dns/authenticator.sh --manual-cleanup-hook /path/to/dns/cleanup.sh -d secure.example.com
 #+END_EXAMPLE
 
 authenticator.sh
 #+BEGIN_EXAMPLE
-#!/bin/bash
+  #!/bin/bash
 
-# Get your API key from https://www.cloudflare.com/a/account/my-account
-API_KEY="your-api-key"
-EMAIL="your.email@example.com"
+  # Get your API key from https://www.cloudflare.com/a/account/my-account
+  API_KEY="your-api-key"
+  EMAIL="your.email@example.com"
 
-# Strip only the top domain to get the zone id
-DOMAIN=$(expr match "$CERTBOT_DOMAIN" '.*\.\(.*\..*\)')
+  # Strip only the top domain to get the zone id
+  DOMAIN=$(expr match "$CERTBOT_DOMAIN" '.*\.\(.*\..*\)')
 
-# Get the Cloudflare zone id
-ZONE_EXTRA_PARAMS="status=active&page=1&per_page=20&order=status&direction=desc&match=all"
-ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&$ZONE_EXTRA_PARAMS" \
-     -H     "X-Auth-Email: $EMAIL" \
-     -H     "X-Auth-Key: $API_KEY" \
-     -H     "Content-Type: application/json" | python -c "import sys,json;print(json.load(sys.stdin)['result'][0]['id'])")
+  # Get the Cloudflare zone id
+  ZONE_EXTRA_PARAMS="status=active&page=1&per_page=20&order=status&direction=desc&match=all"
+  ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN&$ZONE_EXTRA_PARAMS" \
+       -H     "X-Auth-Email: $EMAIL" \
+       -H     "X-Auth-Key: $API_KEY" \
+       -H     "Content-Type: application/json" | python -c "import sys,json;print(json.load(sys.stdin)['result'][0]['id'])")
 
-# Create TXT record
-CREATE_DOMAIN="_acme-challenge.$CERTBOT_DOMAIN"
-RECORD_ID=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-     -H     "X-Auth-Email: $EMAIL" \
-     -H     "X-Auth-Key: $API_KEY" \
-     -H     "Content-Type: application/json" \
-     --data '{"type":"TXT","name":"'"$CREATE_DOMAIN"'","content":"'"$CERTBOT_VALIDATION"'","ttl":120}' \
-             | python -c "import sys,json;print(json.load(sys.stdin)['result']['id'])")
-# Save info for cleanup
-if [ ! -d /tmp/CERTBOT_$CERTBOT_DOMAIN ];then
-        mkdir -m 0700 /tmp/CERTBOT_$CERTBOT_DOMAIN
-fi
-echo $ZONE_ID > /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID
-echo $RECORD_ID > /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID
+  # Create TXT record
+  CREATE_DOMAIN="_acme-challenge.$CERTBOT_DOMAIN"
+  RECORD_ID=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+       -H     "X-Auth-Email: $EMAIL" \
+       -H     "X-Auth-Key: $API_KEY" \
+       -H     "Content-Type: application/json" \
+       --data '{"type":"TXT","name":"'"$CREATE_DOMAIN"'","content":"'"$CERTBOT_VALIDATION"'","ttl":120}' \
+               | python -c "import sys,json;print(json.load(sys.stdin)['result']['id'])")
+  # Save info for cleanup
+  if [ ! -d /tmp/CERTBOT_$CERTBOT_DOMAIN ];then
+          mkdir -m 0700 /tmp/CERTBOT_$CERTBOT_DOMAIN
+  fi
+  echo $ZONE_ID > /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID
+  echo $RECORD_ID > /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID
 
-# Sleep to make sure the change has time to propagate over to DNS
-sleep 25
+  # Sleep to make sure the change has time to propagate over to DNS
+  sleep 25
 #+END_EXAMPLE
 
 cleanup.sh
 #+BEGIN_EXAMPLE
-#!/bin/bash
+  #!/bin/bash
 
-# Get your API key from https://www.cloudflare.com/a/account/my-account
-API_KEY="your-api-key"
-EMAIL="your.email@example.com"
+  # Get your API key from https://www.cloudflare.com/a/account/my-account
+  API_KEY="your-api-key"
+  EMAIL="your.email@example.com"
 
-if [ -f /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID ]; then
-        ZONE_ID=$(cat /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID)
-        rm -f /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID
-fi
+  if [ -f /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID ]; then
+          ZONE_ID=$(cat /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID)
+          rm -f /tmp/CERTBOT_$CERTBOT_DOMAIN/ZONE_ID
+  fi
 
-if [ -f /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID ]; then
-        RECORD_ID=$(cat /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID)
-        rm -f /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID
-fi
+  if [ -f /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID ]; then
+          RECORD_ID=$(cat /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID)
+          rm -f /tmp/CERTBOT_$CERTBOT_DOMAIN/RECORD_ID
+  fi
 
-# Remove the challenge TXT record from the zone
-if [ -n "${ZONE_ID}" ]; then
-    if [ -n "${RECORD_ID}" ]; then
-        curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
-                -H "X-Auth-Email: $EMAIL" \
-                -H "X-Auth-Key: $API_KEY" \
-                -H "Content-Type: application/json"
-    fi
-fi
+  # Remove the challenge TXT record from the zone
+  if [ -n "${ZONE_ID}" ]; then
+      if [ -n "${RECORD_ID}" ]; then
+          curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
+                  -H "X-Auth-Email: $EMAIL" \
+                  -H "X-Auth-Key: $API_KEY" \
+                  -H "Content-Type: application/json"
+      fi
+  fi
 #+END_EXAMPLE
 
 *** certbot standalone plugin
@@ -44267,7 +44267,7 @@ sudo certbot renew --dry-run
 An authenticator plugin that obtains certificate and write to an existing webroot without webserver config mod. http-01 challenge.
 
 #+BEGIN_EXAMPLE
-certbot certonly --webroot -w /var/www/example/ -d www.example.com -d example.com -w /var/www/other -d other.example.net -d another.other.example.net
+  certbot certonly --webroot -w /var/www/example/ -d www.example.com -d example.com -w /var/www/other -d other.example.net -d another.other.example.net
 #+END_EXAMPLE
 
 *** certbot manage and renew certificates
@@ -44280,68 +44280,68 @@ Subcommand:
 /etc/letsencrypt/archive and /etc/letsencrypt/keys contain all previous keys and certificates, while /etc/letsencrypt/live symlinks to the latest versions.
 
 #+BEGIN_EXAMPLE
-certbot certificates
-certbot certonly --cert-name example.com
+  certbot certificates
+  certbot certonly --cert-name example.com
 
-# Update an existing certificate with a new certificate that contains all old domains and new domains
-# Use -d to specify all existing and new domains.
-certbot --expand -d existing.com,example.com,newdomain.com
+  # Update an existing certificate with a new certificate that contains all old domains and new domains
+  # Use -d to specify all existing and new domains.
+  certbot --expand -d existing.com,example.com,newdomain.com
 
-# remove some domains from an exisiting certificate. before it contains example.com and www.example.com
-certbot certonly --cert-name example.com -d example.com
+  # remove some domains from an exisiting certificate. before it contains example.com and www.example.com
+  certbot certonly --cert-name example.com -d example.com
 
-# overwrites all domains for an existing certificate
-certbot certonly --cert-name example.com -d example.org,www.example.org
+  # overwrites all domains for an existing certificate
+  certbot certonly --cert-name example.com -d example.org,www.example.org
 
-# revoke
-certbot revoke --cert-path /etc/letsencrypt/live/CERTNAME/cert.pem
+  # revoke
+  certbot revoke --cert-path /etc/letsencrypt/live/CERTNAME/cert.pem
 
-# renew any existing certificates that expire in less than 30 days.
-# --pre-hook and --post-hook hooks run before and after every renewal attempt.
-certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+  # renew any existing certificates that expire in less than 30 days.
+  # --pre-hook and --post-hook hooks run before and after every renewal attempt.
+  certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
 
-# If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
-certbot renew --deploy-hook /path/to/deploy-hook-script
+  # If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
+  certbot renew --deploy-hook /path/to/deploy-hook-script
 #+END_EXAMPLE
 
 **** Hooks 
 #+BEGIN_EXAMPLE
-certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+  certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
 
-# If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
-certbot renew --deploy-hook /path/to/deploy-hook-script
+  # If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
+  certbot renew --deploy-hook /path/to/deploy-hook-script
 #+END_EXAMPLE
 
 deploy-hook-script
 #+BEGIN_EXAMPLE
-#!/bin/sh
+  #!/bin/sh
 
-set -e
+  set -e
 
-for domain in $RENEWED_DOMAINS; do
-        case $domain in
-        example.com)
-                daemon_cert_root=/etc/some-daemon/certs
+  for domain in $RENEWED_DOMAINS; do
+          case $domain in
+          example.com)
+                  daemon_cert_root=/etc/some-daemon/certs
 
-                # Make sure the certificate and private key files are
-                # never world readable, even just for an instant while
-                # we're copying them into daemon_cert_root.
-                umask 077
+                  # Make sure the certificate and private key files are
+                  # never world readable, even just for an instant while
+                  # we're copying them into daemon_cert_root.
+                  umask 077
 
-                cp "$RENEWED_LINEAGE/fullchain.pem" "$daemon_cert_root/$domain.cert"
-                cp "$RENEWED_LINEAGE/privkey.pem" "$daemon_cert_root/$domain.key"
+                  cp "$RENEWED_LINEAGE/fullchain.pem" "$daemon_cert_root/$domain.cert"
+                  cp "$RENEWED_LINEAGE/privkey.pem" "$daemon_cert_root/$domain.key"
 
-                # Apply the proper file ownership and permissions for
-                # the daemon to read its certificate and key.
-                chown some-daemon "$daemon_cert_root/$domain.cert" \
-                        "$daemon_cert_root/$domain.key"
-                chmod 400 "$daemon_cert_root/$domain.cert" \
-                        "$daemon_cert_root/$domain.key"
+                  # Apply the proper file ownership and permissions for
+                  # the daemon to read its certificate and key.
+                  chown some-daemon "$daemon_cert_root/$domain.cert" \
+                          "$daemon_cert_root/$domain.key"
+                  chmod 400 "$daemon_cert_root/$domain.cert" \
+                          "$daemon_cert_root/$domain.key"
 
-                service some-daemon restart >/dev/null
-                ;;
-        esac
-done
+                  service some-daemon restart >/dev/null
+                  ;;
+          esac
+  done
 #+END_EXAMPLE
 
 Script files can be placed at /etc/letsencrypt/renewal-hooks/pre, /etc/letsencrypt/renewal-hooks/deploy, and /etc/letsencrypt/renewal-hooks/post
@@ -44350,40 +44350,53 @@ Script files are run in alpha order.
 **** Renewal conf
 Sample /etc/letsencrypt/renewal/mydomain.com.conf
 #+BEGIN_EXAMPLE
-# renew_before_expiry = 30 days
-version = 0.21.1
-archive_dir = /etc/letsencrypt/archive/mydomain.com
-cert = /etc/letsencrypt/live/mydomain.com/cert.pem
-privkey = /etc/letsencrypt/live/mydomain.com/privkey.pem
-chain = /etc/letsencrypt/live/mydomain.com/chain.pem
-fullchain = /etc/letsencrypt/live/mydomain.com/fullchain.pem
+  # renew_before_expiry = 30 days
+  version = 0.21.1
+  archive_dir = /etc/letsencrypt/archive/mydomain.com
+  cert = /etc/letsencrypt/live/mydomain.com/cert.pem
+  privkey = /etc/letsencrypt/live/mydomain.com/privkey.pem
+  chain = /etc/letsencrypt/live/mydomain.com/chain.pem
+  fullchain = /etc/letsencrypt/live/mydomain.com/fullchain.pem
 
-# Options used in the renewal process
-[renewalparams]
-account = abcfdfsda
-installer = nginx
-authenticator = nginx
+  # Options used in the renewal process
+  [renewalparams]
+  account = abcfdfsda
+  installer = nginx
+  authenticator = nginx
 #+END_EXAMPLE
 
 *** A certificate <<<nginx:ssl:example>>>
 #+BEGIN_EXAMPLE
-server {
-  # your original setting
-  server_name .yoursite.com
-  
-  listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
-  listen 443 ssl; # managed by Certbot
-  ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
-  ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
-  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+  server {
+    # your original setting
+    server_name .yoursite.com
+    
+    listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
-  # set proxy
-}
+    # set proxy
+  }
 #+END_EXAMPLE
 
 certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
 global config :: /etc/letsencrypt/cli.ini
+
+*** win-acme (ACME client)
+[[https://weblog.west-wind.com/posts/2016/Feb/22/Using-Lets-Encrypt-with-IIS-on-Windows][Intro]] [[https://github.com/PKISharp/win-acme][GitHub]]
+
+Download latest release, unzip and run letsencrypt.exe with admin privileges.
+
+- A task is added to Windows Task Scheduler
+
+IIS Binding
+- Server Bind ~IP:Port:HostHeader~ to a website. e.g. ~*:80:*~ ~*:81:*~ ~192.168.1.1:80:*~ ~*:80:www.microsoft.com~ ~*:80:microsoft.com~
+
+IIS Websites
+- Path (a container of physical and virtual directories) + Server Binding = Website. e.g. default container is ~%systemdrive%\inetpub\wwwroot~
 
 *** Alternative clients (ACME Clients)
 https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
@@ -44396,7 +44409,7 @@ https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encryp
 
 *** Limitation
 There are 5 levels of validation
-Domain Validation (DV), Organization Validation (OV), Extended Validation, Wildcard Certificate
+Domain Validation (DV), Organization Validation (OV), Extended Validation (EV), Wildcard Certificate
 
 Certificate Authority (CA) provides the above validation and Commercial Certificate Authorities are the only one provide EV and Wildcard.
 
