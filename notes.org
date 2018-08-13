@@ -6493,23 +6493,27 @@ https://github.com/wp-cli/wp-cli/releases
 
 *** WP CLI Install, Upgrade
 #+BEGIN_EXAMPLE
-;; # Assuming you are at ~ folder
-curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-;; # Check phar
-php wp-cli.phar --info
-chmod +x wp-cli.phar
-;; # GoDaddy Shared Hosting doesn't allow sudo. Ignore this for GoDaddy
-;; # sudo mv wp-cli.phar /usr/local/bin/wp
-alias wp='~/wp-cli.phar'
-echo "alias wp='~/wp-cli.phar'" >> .bashrc
-source .bashrc
+  # Assuming you are at ~ folder
+  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+  # Check phar
+  php wp-cli.phar --info
+  chmod +x wp-cli.phar
+
+  # GoDaddy Shared Hosting doesn't allow sudo. Ignore this for GoDaddy
+  # sudo mv wp-cli.phar /usr/local/bin/wp
+  alias wp='~/wp-cli.phar'
+  echo "alias wp='~/wp-cli.phar'" >> .bashrc
+  source .bashrc
 #+END_EXAMPLE
 
-Set Global parameters in wp-cli.yml under Wordpress root folder http://wp-cli.org/config/
+Set Global parameters in wp-cli.yml under WordPress root folder http://wp-cli.org/config/
+- wp-cli.local.yml or wp-cli.yml in WordPress website folder
+- ~/.wp-cli/config.yml
+
 Use -- in front for wp command
 #+BEGIN_EXAMPLE
-;; # Very important. To avoid error: $_SERVER['HTTP_HOST'] 
-url: http://www.yourwebsite.com
+  # Very important. To avoid error: $_SERVER['HTTP_HOST'] 
+  url: http://www.yourwebsite.com
 #+END_EXAMPLE
 
 Use --skip-plugins to avoid errors while loading plugins that cause this kind of error
@@ -6531,17 +6535,19 @@ Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-incl
 
 *** User
 #+BEGIN_EXAMPLE
-List users
-terminus wp 'user list' --site=<site> --env=<env>=
+  # List users
+  terminus wp 'user list' --site=<site> --env=<env>=
 
-Add a user
-wp user create lili li@xxx.ca --user_pass=letterandnumbers --role=administrator
+  wp user list
 
-Update password
-wp user update lili --user_pass=lettersandnumbers
+  # Add a user
+  wp user create lili li@xxx.ca --user_pass='letterandnumbers' --role=administrator
 
-Give role
-wp user add-role lili administrator
+  # Update password
+  wp user update lili --user_pass='lettersandnumbers'
+
+  # Give role
+  wp user add-role lili administrator
 #+END_EXAMPLE
 
 *** Core
@@ -6556,13 +6562,59 @@ wp plugin install fly-dynamic-image-resizer
 Options
 - --activate :: activate after installation
 
-wp plugin status
-wp plugin update akismet
-wp plugin activate plugin_name
-wp plugin uninstall Plugin_name
+#+BEGIN_EXAMPLE
+  # List installed plugins
+  wp plugin list
+
+  wp plugin status
+  wp plugin update akismet
+  wp plugin activate plugin_name
+  wp plugin uninstall Plugin_name
+
+#+END_EXAMPLE
+
+*** CLI Package
+[[http://wp-cli.org/package-index/][All packages]]
+
+#+BEGIN_EXAMPLE
+  # List installed packages
+  wp package list
+
+  # Install a package
+  wp package install aaemnnosttv/wp-cli-login-command
+#+END_EXAMPLE
 
 *** Theme
 wp theme status
+
+*** login
+[[https://github.com/aaemnnosttv/wp-cli-login-command][GitHub]]
+
+- user :: can be a User ID, username/login or email address.
+
+#+BEGIN_EXAMPLE
+  wp package install aaemnnosttv/wp-cli-login-command
+
+  # find a user
+  wp user list
+
+  # create a temp login url for a user
+  wp login create <user> [options]
+
+  # Will ask you to install a plugin which contain only one .php file
+  wp login install --activate --allow-root
+
+  # run create again
+
+  # Make all exisiting magic links to fail
+  wp login invalidate
+
+  # Deactivate the plugin
+  wp login toggle off --allow-root
+#+END_EXAMPLE
+
+Options
+- --expires=<seconds> :: default 900 (15 minutes)
 
 *** db check
 *** db search
@@ -6602,41 +6654,57 @@ https://developer.wordpress.org/cli/commands/search-replace/
 Search/replace intelligently handles PHP serialized data, and does not change primary key values.
 
 #+BEGIN_EXAMPLE
-;; # Search and replace but skip one column
-$ wp search-replace 'http://example.dev' 'http://example.com' --skip-columns=guid
+  # Search and replace but skip one column
+  $ wp search-replace 'http://example.dev' 'http://example.com' --skip-columns=guid
 
-;; # Run search/replace operation but dont save in database
-$ wp search-replace 'foo' 'bar' wp_posts wp_postmeta wp_terms --dry-run
+  # Run search/replace operation but dont save in database
+  $ wp search-replace 'foo' 'bar' wp_posts wp_postmeta wp_terms --dry-run
 
-;; # Run case-insensitive regex search/replace operation (slow)
-$ wp search-replace '\[foo id="([0-9]+)"' '[bar id="\1"' --regex --regex-flags='i'
+  # Run case-insensitive regex search/replace operation (slow)
+  $ wp search-replace '\[foo id="([0-9]+)"' '[bar id="\1"' --regex --regex-flags='i'
 
-;; # Turn your production multisite database into a local dev database
-$ wp search-replace --url=example.com example.com example.dev 'wp_*options' wp_blogs
+  # Turn your production multisite database into a local dev database
+  $ wp search-replace --url=example.com example.com example.dev 'wp_*options' wp_blogs
 
-;; # Search/replace to a SQL file without transforming the database
-;; # Current database is not changed. The change result is output to a file
-$ wp search-replace foo bar --export=database.sql
+  # Search/replace to a SQL file without transforming the database
+  # Current database is not changed. The change result is output to a file
+  $ wp search-replace foo bar --export=database.sql
 
-;; # Bash script: Search/replace production to development url (multisite compatible)
+  # Bash script: Search/replace production to development url (multisite compatible)
 
-;; #!/bin/bash
-if $(wp --url=http://example.com core is-installed --network); then
-    wp search-replace --url=http://example.com 'http://example.com' 'http://example.dev' --recurse-objects --network --skip-columns=guid --skip-tables=wp_users
-else
-    wp search-replace 'http://example.com' 'http://example.dev' --recurse-objects --skip-columns=guid --skip-tables=wp_users
-fi
+  #!/bin/bash
+  if $(wp --url=http://example.com core is-installed --network); then
+      wp search-replace --url=http://example.com 'http://example.com' 'http://example.dev' --recurse-objects --network --skip-columns=guid --skip-tables=wp_users
+  else
+      wp search-replace 'http://example.com' 'http://example.dev' --recurse-objects --skip-columns=guid --skip-tables=wp_users
+  fi
 #+END_EXAMPLE
 
 *** Common Issues
+[[https://make.wordpress.org/cli/handbook/common-issues][All common issues]]
+
+**** Can't connect to database
 https://make.wordpress.org/cli/handbook/common-issues/#error-cant-connect-to-the-database
 
 Make sure this line is exactly like this and wp-config.php shouldn't run any WP functions but only define constants
 #+BEGIN_EXAMPLE
-require_once(ABSPATH . 'wp-settings.php');
+  require_once(ABSPATH . 'wp-settings.php');
 #+END_EXAMPLE
 
 Latest version of WordPress Docker is PHP 7 and hence has some extensions removed like mysql_connect. Make sure your PHP environment is the same for WordPress and wp-cli.
+
+**** Out of memory
+#+BEGIN_EXAMPLE
+  php -i | grep php.ini
+
+  # /usr/local/etc/php/conf.d/myphp.ini
+  memory_limit=512M
+
+  # apache:restart
+
+  # Or you can run this to temporarily change the memory limit
+  php -d memory_limit=512M "$(which wp)" package install <package-name>
+#+END_EXAMPLE
 
 ** Conditional Tags <<<wp:conditional tags>>>
 [[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
@@ -35838,7 +35906,7 @@ abc ALL = (root) NOPASSWD: /path/to/script.sh
 ;; # ~/etc/sudoers.d/mybypass file should have permission 0440 and owner:group is root:root
 #+END_EXAMPLE
 
-** SSH, scp, sshpass <<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>> 
+** SSH, scp, sshpass <<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>>
 Refer to aws:scp linux:package:openssh-client
 
 *** Transfer Client Key to Host
@@ -35995,11 +36063,11 @@ gpg -d -q .sshpassword.gpg > fifo; sshpass -f fifo ssh vivek@server1.cyberciti.b
 
 *** Random password
 #+BEGIN_EXAMPLE
-;; # base64 will likely to have = at the end, remove that to have length 16
-openssl rand -base64 17
+  # base64 will likely to have = at the end, remove that to have length 16
+  openssl rand -base64 17
 
-;; # hex has only number and lowercased letters
-openssl rand -hex 16
+  # hex has only number and lowercased letters
+  openssl rand -hex 16
 #+END_EXAMPLE
 
 *** Run command
@@ -36572,22 +36640,22 @@ Check file permissions wp:check file permissions
 
 *** Search Text in Files <<<linux:grep>>>
 #+BEGIN_EXAMPLE
-grep --color -HRi "google\.com" /root/dir
+  grep --color -HRi "google\.com" /root/dir
 
-;; # Only file names
-grep --color -HRi "abc" /root/dir | cut -d: -f1
+  # Only file names
+  grep --color -HRi "abc" /root/dir | cut -d: -f1
 
-;; # Unique file names
-grep --color -HRi "abc" /root/dir | cut -d: -f1 | sort -u
+  # Unique file names
+  grep --color -HRi "abc" /root/dir | cut -d: -f1 | sort -u
 
-;; # Exclude file types
-grep --color -HRi --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
+  # Exclude file types
+  grep --color -HRi --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
 
-;; # Exclude binary files
-grep --color -HIRin --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
+  # Exclude binary files
+  grep --color -HIRin --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
 
-;; # Return 5 trailing lines and 10 leading lines for each match
-grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
+  # Return 5 trailing lines and 10 leading lines for each match
+  grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
 #+END_EXAMPLE
 
 - --color :: hightlight
@@ -38812,12 +38880,12 @@ Escape # as \#
 Escape $ as $$
 #+END_EXAMPLE
 
-** Nano
+** Nano <<<linux:nano>>>
 - Save :: Ctrl + O 
 - Exit :: Ctrl + x
 - Display line number and cursor position: C-c
 - Uncut or paste text C-u
-- Search :: C-w or F6
+- Search :: C-w or F6, type string and enter to search, ~Alt + W~ to search next
 
 - Select and copy, paste
  - ~Alt + Shift + A~ or ~C-6~ to set mark, move cursor to selct
@@ -39067,7 +39135,7 @@ List all dangling images which can be removed :: ~docker images -f "dangling=tru
 
 Remove all dangling images (-q is to return IDs only)
 #+BEGIN_EXAMPLE
-docker rmi $(docker images -f "dangling=true" -q --no-trunc)
+  docker rmi $(docker images -f "dangling=true" -q --no-trunc)
 #+END_EXAMPLE
 
 Remove all none images
@@ -39089,21 +39157,21 @@ Extract Dockerfile from an image. Use one or more of below
 - sudo ./test.sh <image-name>
 
 #+BEGIN_EXAMPLE
-;; #!/bin/bash
-docker history --no-trunc "$1" | \
-sed -n -e 's,.*/bin/sh -c #(nop) \(MAINTAINER .*[^ ]\) *0 B,\1,p' | \
-head -1
-docker inspect --format='{{range $e := .Config.Env}}
-ENV {{$e}}
-{{end}}{{range $e,$v := .Config.ExposedPorts}}
-EXPOSE {{$e}}
-{{end}}{{range $e,$v := .Config.Volumes}}
-VOLUME {{$e}}
-{{end}}{{with .Config.User}}USER {{.}}{{end}}
-{{with .Config.WorkingDir}}WORKDIR {{.}}{{end}}
-{{with .Config.Entrypoint}}ENTRYPOINT {{json .}}{{end}}
-{{with .Config.Cmd}}CMD {{json .}}{{end}}
-{{with .Config.OnBuild}}ONBUILD {{json .}}{{end}}' "$1"
+  #!/bin/bash
+  docker history --no-trunc "$1" | \
+  sed -n -e 's,.*/bin/sh -c #(nop) \(MAINTAINER .*[^ ]\) *0 B,\1,p' | \
+  head -1
+  docker inspect --format='{{range $e := .Config.Env}}
+  ENV {{$e}}
+  {{end}}{{range $e,$v := .Config.ExposedPorts}}
+  EXPOSE {{$e}}
+  {{end}}{{range $e,$v := .Config.Volumes}}
+  VOLUME {{$e}}
+  {{end}}{{with .Config.User}}USER {{.}}{{end}}
+  {{with .Config.WorkingDir}}WORKDIR {{.}}{{end}}
+  {{with .Config.Entrypoint}}ENTRYPOINT {{json .}}{{end}}
+  {{with .Config.Cmd}}CMD {{json .}}{{end}}
+  {{with .Config.OnBuild}}ONBUILD {{json .}}{{end}}' "$1"
 #+END_EXAMPLE
 
 *** Build an image based on Dockerfile
@@ -39710,105 +39778,105 @@ store code and files to this folder :: html
 **** Makefile at remote Prod/Live host /root/Makefile
 Prepare in container a script to dump db :: /root/dump.sh
 #+BEGIN_EXAMPLE
-;; #!/bin/bash
-mysqldump -u root --password='$mypass$' livedbname > /root/myproject.sql
+  #!/bin/bash
+  mysqldump -u root --password='$mypass$' livedbname > /root/myproject.sql
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-.PHONY: info rmbkfolder bkfolder bkdb bkdbsamename tarall tarallexcludesamename drytarallexcludesamename tarcode taruploads taruploadsexclude
+  .PHONY: info rmbkfolder bkfolder bkdb bkdbsamename tarall tarallexcludesamename drytarallexcludesamename tarcode taruploads taruploadsexclude
 
-filename := $(shell date +%F)
-;; # WordPress runs in container
-dcontainer = mycontainername
+  filename := $(shell date +%F)
+  # WordPress runs in container
+  dcontainer = mycontainername
 
-;; # website root folder
-dcontainerpath = /var/www/html
+  # website root folder
+  dcontainerpath = /var/www/html
 
-;; # container db dump script
-dconainterdbdump = /root/dump.sh
+  # container db dump script
+  dconainterdbdump = /root/dump.sh
 
-;; # db dump location in container
-dcontainerdbdumppath = /root
+  # db dump location in container
+  dcontainerdbdumppath = /root
 
-;; # host backup folder /root/html
-bkpath = html
+  # host backup folder /root/html
+  bkpath = html
 
-tarexclude = --exclude='wp-content/uploads' --exclude='sql-admin'
-taruploadsexclude = --exclude='backupbuddy_backups'
-tarallexclude = --exclude='wp-content/uploads/backupbuddy_bakcups' --exclude='sql-admin'
+  tarexclude = --exclude='wp-content/uploads' --exclude='sql-admin'
+  taruploadsexclude = --exclude='backupbuddy_backups'
+  tarallexclude = --exclude='wp-content/uploads/backupbuddy_bakcups' --exclude='sql-admin'
 
-;; # myproject.sql
-projectname = myproject
+  # myproject.sql
+  projectname = myproject
 
-;; # prepare files to push to Live environment
-transferpath = /web-root/transfer-files/dev-to-prod/source/
+  # prepare files to push to Live environment
+  transferpath = /web-root/transfer-files/dev-to-prod/source/
 
-info:
-	@echo first run bkfolder
-	@echo then run make tarcode and make taruploads
-	@echo run make tarall
-	@echo run make taruploadsexclude if some directories need to be excluded
-	@echo Finally, run rmbkfolder to release space
+  info:
+          @echo first run bkfolder
+          @echo then run make tarcode and make taruploads
+          @echo run make tarall
+          @echo run make taruploadsexclude if some directories need to be excluded
+          @echo Finally, run rmbkfolder to release space
 
-bkfolder: rmbkfolder
-	@echo should use docker cp -a if it is supported
-	docker cp -L $(dcontainer):$(dcontainerpath) $(bkpath)
+  bkfolder: rmbkfolder
+          @echo should use docker cp -a if it is supported
+          docker cp -L $(dcontainer):$(dcontainerpath) $(bkpath)
 
-rmbkfolder:
-	rm -rf $(bkpath)
+  rmbkfolder:
+          rm -rf $(bkpath)
 
-bkdb:
-	docker exec $(dcontainer) $dcontainerdbdump
-	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname)-$(filename).sql
+  bkdb:
+          docker exec $(dcontainer) $dcontainerdbdump
+          docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname)-$(filename).sql
 
-bkdbsamename:
-	docker exec $(dcontainer) $dcontainerdbdump
-	docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname).sql
+  bkdbsamename:
+          docker exec $(dcontainer) $dcontainerdbdump
+          docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname).sql
 
-tarall:
-	tar -czpf all-$(filename).tar.gz -C $(bkpath) .
+  tarall:
+          tar -czpf all-$(filename).tar.gz -C $(bkpath) .
 
-tarallexcludesamename:
-	tar -czpf all.tar.gz -C $(bkpath) . $(tarallexclude))
+  tarallexcludesamename:
+          tar -czpf all.tar.gz -C $(bkpath) . $(tarallexclude))
 
-drytarallexcludesamename:
-	tar -cvzpf - -C $(bkpath) . $(tarallexclude)
+  drytarallexcludesamename:
+          tar -cvzpf - -C $(bkpath) . $(tarallexclude)
 
-tarcode:
-	tar -czpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
+  tarcode:
+          tar -czpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
 
-taruploads:
-	tar -czpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
+  taruploads:
+          tar -czpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
 
-taruploadsexclude:
-	tar -czpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
+  taruploadsexclude:
+          tar -czpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
 
-;; # copy code.tar.gz to /myproject/code.tar.gz
-;; # cd /myproject && tar -xvzf code.tar.gz
-;; # make wp-content/uploads directory
-;; # mkdir wp-content/uploads && tar -xvzf uploads.tar.gz -C wp-content/uploads
+  # copy code.tar.gz to /myproject/code.tar.gz
+  # cd /myproject && tar -xvzf code.tar.gz
+  # make wp-content/uploads directory
+  # mkdir wp-content/uploads && tar -xvzf uploads.tar.gz -C wp-content/uploads
 
-cleantars:
-	rm -rf all.tar.gz
+  cleantars:
+          rm -rf all.tar.gz
 
-;; # copy dev code to a transfer folder, remove wp-config.php and .htaccess
+  # copy dev code to a transfer folder, remove wp-config.php and .htaccess
 
-pushcodetolive:
-	rsync -av ./$(bkpath)/ $(transferpath)
-	rm $(transferpath)wp-config.php
-	rm $(transferpath).htaccess
+  pushcodetolive:
+          rsync -av ./$(bkpath)/ $(transferpath)
+          rm $(transferpath)wp-config.php
+          rm $(transferpath).htaccess
 #+END_EXAMPLE
 
 Also prepare on Live host /root/devops-db.sh
 #+BEGIN_EXAMPLE
-;; #!/bin/bash
-cd /root && make bkdbsamename
+  #!/bin/bash
+  cd /root && make bkdbsamename
 #+END_EXAMPLE
 
 And /root/devops-files.sh
 #+BEGIN_EXAMPLE
-;; #!/bin/bash
-cd /root && make bkfolder && make tarallexcludesamename
+  #!/bin/bash
+  cd /root && make bkfolder && make tarallexcludesamename
 #+END_EXAMPLE
 
 **** Sql dump inside container
@@ -39900,51 +39968,51 @@ cleanupimport:
 
 *** Check container status and restart services
 #+BEGIN_EXAMPLE
-;; #!/bin/bash
-container=mycontainer
-containerstatus=$(docker inspect -f {{.State.Running}} $container)
+  #!/bin/bash
+  container=mycontainer
+  containerstatus=$(docker inspect -f {{.State.Running}} $container)
 
-if [ "$containerstatus" != "true" ]; then
-  echo "$container container is not started. Restarting.."
-  docker restart $container
-fi
+  if [ "$containerstatus" != "true" ]; then
+    echo "$container container is not started. Restarting.."
+    docker restart $container
+  fi
 
-containerstatus=$(docker inspect -f {{.State.Running}} $container)
+  containerstatus=$(docker inspect -f {{.State.Running}} $container)
 
-if [ "$containerstatus" != "true" ]; then
-  echo "By now container should be started but it is not.. Abort restarting mysql and apache in container"
-else
-  echo "Check mysql status in container"
-  docker exec $container service mysql status
-  if [ $? = "0" ]; then
-    echo "mysql is running"
+  if [ "$containerstatus" != "true" ]; then
+    echo "By now container should be started but it is not.. Abort restarting mysql and apache in container"
   else
-    echo "Restarting mysql in container.."
-    docker exec $container service mysql restart
+    echo "Check mysql status in container"
     docker exec $container service mysql status
     if [ $? = "0" ]; then
-      echo "mysql is restarted"
+      echo "mysql is running"
     else
-      echo "mysql could not be restarted."
+      echo "Restarting mysql in container.."
+      docker exec $container service mysql restart
+      docker exec $container service mysql status
+      if [ $? = "0" ]; then
+        echo "mysql is restarted"
+      else
+        echo "mysql could not be restarted."
+      fi
     fi
-  fi
 
-  echo "Check apache in container"
-  docker exec $container service apache2 status
-  if [ $? = "0" ]; then
-     echo "apache is running"
-  else
-   echo "Restarting apache in container.."
-   docker exec $container service apache2 restart
-   docker exec $container service apache2 status
-   if [ $? = "0" ]; then
-     echo "apache is restarted"
-   else
-     echo "apache could not be restarted."
-   fi
-  fi
+    echo "Check apache in container"
+    docker exec $container service apache2 status
+    if [ $? = "0" ]; then
+       echo "apache is running"
+    else
+     echo "Restarting apache in container.."
+     docker exec $container service apache2 restart
+     docker exec $container service apache2 status
+     if [ $? = "0" ]; then
+       echo "apache is restarted"
+     else
+       echo "apache could not be restarted."
+     fi
+    fi
 
-fi
+  fi
 #+END_EXAMPLE
 
 *** Replace string in .sql
@@ -40003,110 +40071,110 @@ docker-php-ext-install uses docker-php-ext-enable which adds docker-php-ext-{ext
 
 If you want to get some from PHP's source, you can extract, use and delete it.
 #+BEGIN_EXAMPLE
-FROM php:7.0-apache
-RUN docker-php-source extract \
-    # do important things \
-    && docker-php-source delete
+  FROM php:7.0-apache
+  RUN docker-php-source extract \
+      # do important things \
+      && docker-php-source delete
 #+END_EXAMPLE
 
 Install PHP Core Extensions
 #+BEGIN_EXAMPLE
-FROM php:7.0-fpm
-RUN apt-get update && apt-get install -y \
-        libfreetype6-dev \
-        libjpeg62-turbo-dev \
-        libmcrypt-dev \
-        libpng-dev \
-    && docker-php-ext-install -j$(nproc) iconv mcrypt \
-    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd
+  FROM php:7.0-fpm
+  RUN apt-get update && apt-get install -y \
+          libfreetype6-dev \
+          libjpeg62-turbo-dev \
+          libmcrypt-dev \
+          libpng-dev \
+      && docker-php-ext-install -j$(nproc) iconv mcrypt \
+      && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+      && docker-php-ext-install -j$(nproc) gd
 #+END_EXAMPLE
 
 Install PECL Extensions use docker-php-ext-enable
 #+BEGIN_EXAMPLE
-FROM php:7.1-fpm
-RUN pecl install redis-3.1.0 \
-    && pecl install xdebug-2.5.0 \
-    && docker-php-ext-enable redis xdebug
-FROM php:5.6-fpm
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-    && pecl install memcached-2.2.0 \
-    && docker-php-ext-enable memcached
+  FROM php:7.1-fpm
+  RUN pecl install redis-3.1.0 \
+      && pecl install xdebug-2.5.0 \
+      && docker-php-ext-enable redis xdebug
+  FROM php:5.6-fpm
+  RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+      && pecl install memcached-2.2.0 \
+      && docker-php-ext-enable memcached
 #+END_EXAMPLE
 
 Install other extensions
 #+BEGIN_EXAMPLE
-FROM php:5.6-apache
-RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \
-    && mkdir -p xcache \
-    && tar -xf xcache.tar.gz -C xcache --strip-components=1 \
-    && rm xcache.tar.gz \
-    && ( \
-        cd xcache \
-        && phpize \
-        && ./configure --enable-xcache \
-        && make -j$(nproc) \
-        && make install \
-    ) \
-    && rm -r xcache \
-    && docker-php-ext-enable xcache
+  FROM php:5.6-apache
+  RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \
+      && mkdir -p xcache \
+      && tar -xf xcache.tar.gz -C xcache --strip-components=1 \
+      && rm xcache.tar.gz \
+      && ( \
+          cd xcache \
+          && phpize \
+          && ./configure --enable-xcache \
+          && make -j$(nproc) \
+          && make install \
+      ) \
+      && rm -r xcache \
+      && docker-php-ext-enable xcache
 #+END_EXAMPLE
 
 The docker-php-ext-* scripts can accept an arbitrary path, but it must be absolute (to disambiguate from built-in extension names), so the above example could also be written as the following:
 
 #+BEGIN_EXAMPLE
-FROM php:5.6-apache
-RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \
-    && mkdir -p /tmp/xcache \
-    && tar -xf xcache.tar.gz -C /tmp/xcache --strip-components=1 \
-    && rm xcache.tar.gz \
-    && docker-php-ext-configure /tmp/xcache --enable-xcache \
-    && docker-php-ext-install /tmp/xcache \
-    && rm -r /tmp/xcache
+  FROM php:5.6-apache
+  RUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \
+      && mkdir -p /tmp/xcache \
+      && tar -xf xcache.tar.gz -C /tmp/xcache --strip-Components=1 \
+      && rm xcache.tar.gz \
+      && docker-php-ext-configure /tmp/xcache --enable-xcache \
+      && docker-php-ext-install /tmp/xcache \
+      && rm -r /tmp/xcache
 #+END_EXAMPLE
 
 copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or copy php-prod.ini to /usr/local/etc/php/conf.d/
 
 *** Sample
 #+BEGIN_EXAMPLE
-FROM php:5.6.31-apache-jessie
+  FROM php:5.6.31-apache-jessie
 
-;; # apt-utils has to be installed to avoid throwing errors during installation on Debian
-RUN set -ex; \
-    \
-    apt-get update && apt-get install -y \
-            apt-utils \
-            nano \
-            libfreetype6-dev \
-            libmcrypt-dev \
-            libjpeg62-turbo-dev \
-            libpng-dev \
-    && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    \
-    docker-php-ext-install -j$(nproc) iconv mcrypt && \
-    docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
-    docker-php-ext-install -j$(nproc) gd mysqli mysql pdo pdo_mysql pcntl zip opcache
+  ;; # apt-utils has to be installed to avoid throwing errors during installation on Debian
+  RUN set -ex; \
+      \
+      apt-get update && apt-get install -y \
+              apt-utils \
+              nano \
+              libfreetype6-dev \
+              libmcrypt-dev \
+              libjpeg62-turbo-dev \
+              libpng-dev \
+      && \
+      apt-get clean && rm -rf /var/lib/apt/lists/* && \
+      \
+      docker-php-ext-install -j$(nproc) iconv mcrypt && \
+      docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
+      docker-php-ext-install -j$(nproc) gd mysqli mysql pdo pdo_mysql pcntl zip opcache
 
-COPY config/php-prod.ini /usr/local/etc/php/conf.d/
+  COPY config/php-prod.ini /usr/local/etc/php/conf.d/
 
-RUN { \
-                echo 'opcache.memory_consumption=128'; \
-                echo 'opcache.interned_strings_buffer=8'; \
-                echo 'opcache.max_accelerated_files=4000'; \
-                echo 'opcache.revalidate_freq=2'; \
-                echo 'opcache.fast_shutdown=1'; \
-                echo 'opcache.enable_cli=1'; \
-        } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+  RUN { \
+                  echo 'opcache.memory_consumption=128'; \
+                  echo 'opcache.interned_strings_buffer=8'; \
+                  echo 'opcache.max_accelerated_files=4000'; \
+                  echo 'opcache.revalidate_freq=2'; \
+                  echo 'opcache.fast_shutdown=1'; \
+                  echo 'opcache.enable_cli=1'; \
+          } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
-;; # enable apache modules
-RUN a2enmod rewrite expires
+  ;; # enable apache modules
+  RUN a2enmod rewrite expires
 
-VOLUME /var/www/html
+  VOLUME /var/www/html
 
-;; # TODO chown -R www-data:www-data /var/www/html
+  ;; # TODO chown -R www-data:www-data /var/www/html
 
-CMD ["apache2-foreground"]
+  CMD ["apache2-foreground"]
 #+END_EXAMPLE
 
 ** image:php53
@@ -40446,20 +40514,32 @@ https://github.com/tatemz/docker-wpcli
 Refer to wp-cli:search-replace
 
 #+BEGIN_EXAMPLE
-docker-compose run --rm my-wpcli
-docker-compose run --rm my-wpcli db check
-docker-compose run --rm my-wpcli post list
-docker-compose run --rm my-wpcli db search 'https?://' --regex --stats
+  docker-compose run --rm my-wpcli
+  docker-compose run --rm my-wpcli db check
+  docker-compose run --rm my-wpcli post list
+  docker-compose run --rm my-wpcli db search 'https?://' --regex --stats
 
-;; # For some reason, the following only works when run in PowerShell
-;; # This will replace A with B for the current database without changing it but instead export it.
-docker-compose run --rm my-wpcli search-replace 'http://live.ca' 'http://localhost:9999' --export=/var/www/html/devops/db/export.sql
+  # For some reason, the following only works when run in PowerShell
+  # This replaces A with B for the current database without changing it but instead export it.
+  docker-compose run --rm my-wpcli search-replace 'http://live.ca' 'http://localhost:9999' --export=/var/www/html/devops/db/export.sql
 
-;; # There's no way to search/replace multiple strings. Do it one by one
-docker-compose run --rm my-wpcli search-replace 'https://live.ca' 'http://localhost:9999'
+  # There's no way to search/replace multiple strings. Do it one by one
+  docker-compose run --rm my-wpcli search-replace 'https://live.ca' 'http://localhost:9999'
 
-;; # at the end export it
-docker-compose run --rm my-wpcli db export --add-drop-table /var/www/html/devops/db/dump.sql
+  # at the end export it
+  docker-compose run --rm my-wpcli db export --add-drop-table /var/www/html/devops/db/dump.sql
+#+END_EXAMPLE
+
+** image:wordpress:cli <<<image:wordpress:cli>>>
+wordpress:cli-php5.6 wordpress-cli-2-php5.6 wordpress:cli-2.0-php5.6 wordpress:cli-2.0.0-php5.6
+wordpress:cli-php7.0
+wordpress:cli-php7.1
+wordpress:cli-php7.2
+
+#+BEGIN_EXAMPLE
+  docker pull wordpress:cli-php7.0
+
+  docker run -it --rm --volumes-from mywp --network container:mywp wordpress:cli-php7.0 user list
 #+END_EXAMPLE
 
 ** image:lucee <<<docker:image:lucee>>>
