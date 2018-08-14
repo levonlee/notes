@@ -329,23 +329,38 @@ foreach ($_FILES["pictures"]["error"] as $key => $error) {
 }
 #+END_EXAMPLE
 
-** Delete file, unlink
+** Filesystem
+http://php.net/manual/en/ref.filesystem.php
+
+*** Delete file - unlink
 Use absolute path. See dirname
-
 #+BEGIN_EXAMPLE
-$files = [
-    './first.jpg',
-    './second.jpg',
-    './third.jpg'
-];
+  $files = [
+      './first.jpg',
+      './second.jpg',
+      './third.jpg'
+  ];
 
-foreach ($files as $file) {
-    if (file_exists($file)) {
-        unlink($file);
-    } else {
-        // File not found.
-    }
-}
+  foreach ($files as $file) {
+      if (file_exists($file)) {
+          unlink($file);
+      } else {
+          // File not found.
+      }
+  }
+#+END_EXAMPLE
+
+*** File Modification time
+#+BEGIN_EXAMPLE
+  filemtime(__DIR__. "/wp-content/themes/a.css")) // int
+#+END_EXAMPLE
+
+*** Include file - __DIR__ dirname(__FILE__)
+#+BEGIN_EXAMPLE
+  include __DIR__ . "/../abc.";
+
+  // PHP version < 5
+  include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; 
 #+END_EXAMPLE
 
 ** Module, Extension
@@ -815,14 +830,6 @@ The last component of path
 basename("/etc/passwd") // passwd
 basename("/etc/sudoers.d") // sudoers.d
 basename("/etc/sudoers.d", ".d") // sudoers
-#+END_EXAMPLE
-
-** Include file
-#+BEGIN_EXAMPLE
-include __DIR__ . "/../abc.";
-
-// PHP version < 5
-include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; 
 #+END_EXAMPLE
 
 ** Random Integer Number
@@ -7232,25 +7239,25 @@ get_template_part( string $slug, string $name = null )
 It includes file {slug.php} or {slug}-{name}.php
 
 #+BEGIN_EXAMPLE
-<?php get_template_part( 'template-parts/header/header', 'image' ); ?>
-// echo path-to-theme/template-parts/header/header-image.php
+  <?php get_template_part( 'template-parts/header/header', 'image' ); ?>
+  // echo path-to-theme/template-parts/header/header-image.php
 #+END_EXAMPLE
 
 <<<wp:f:get_theme_file_uri>>>
 get_theme_file_uri checks for file existance and returns URL.
 #+BEGIN_EXAMPLE
-wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
+  wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
 #+END_EXAMPLE
 Get from child theme first js/my-scripts.js. Fall back to parent theme.
 
 <<<wp:f:get_theme_file_path>>> returns the path in filesystem so that you can use filemtime
 #+BEGIN_EXAMPLE
-wp_enqueue_script(
-    'my-script',
-    get_theme_file_uri( 'js/my-script.js' ),
-    array(),
-    filemtime( get_theme_file_path( 'js/my-script.js' ) )
-);
+  wp_enqueue_script(
+      'my-script',
+      get_theme_file_uri( 'js/my-script.js' ),
+      array(),
+      filemtime( get_theme_file_path( 'js/my-script.js' ) )
+  );
 #+END_EXAMPLE
 
 *** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
@@ -8660,10 +8667,10 @@ function lili_pre_get_posts( $query ) {
 Can use wp:f:wp_enqueue_style and wp:f:wp_enqueue_script. Priority might be needed to change to greater 10 to load after default theme/style.css
 Use wp:filter:script_loader_src and wp:filter:style_loader_src to change the source of scripts and styles
 #+BEGIN_EXAMPLE
-function lili_scripts() {
-  wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
-}
-add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
+  function lili_scripts() {
+    wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
+  }
+  add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
 #+END_EXAMPLE
 
 *** admin_head
@@ -9084,9 +9091,7 @@ if ( ! function_exists( 'theme_special_nav' ) ) {
 }
 #+END_EXAMPLE
 
-*** functions.php
-<<<wp:theme:functions>>>
-
+*** functions.php <<<wp:theme:functions>>>
 *** Template Files
 [[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
 https://developer.wordpress.org/themes/basics/template-hierarchy/
@@ -9201,27 +9206,27 @@ wp:action:widgets_init
 Core functions used in templates :: /wp-includes/general-template.php
 
 #+BEGIN_EXAMPLE
-// In template
-<?php wp_head(); ?>
+  // In template
+  <?php wp_head(); ?>
 
-// In plugin
-add_action('wp_head', 'lili_wphead_dfp');
-function lili_wphead_dfp() {
- // add inline script to header
- $o = "<script>...</script>";
- echo $o;
-}
+  // In plugin
+  add_action('wp_head', 'lili_wphead_dfp');
+  function lili_wphead_dfp() {
+   // add inline script to header
+   $o = "<script>...</script>";
+   echo $o;
+  }
 
-// Load with dependancy (jQuery is loaded)
-function lili_wphead_dfp() {
- if ( wp_script_is( 'jquery', 'done' ) ) {
-?>
-<script type="text/javascript">
-// jQuery code 
-</script>
-<?php
- }
-}
+  // Load with dependancy (jQuery is loaded)
+  function lili_wphead_dfp() {
+   if ( wp_script_is( 'jquery', 'done' ) ) {
+  ?>
+  <script type="text/javascript">
+  // jQuery code 
+  </script>
+  <?php
+   }
+  }
 #+END_EXAMPLE
 
 *** Good themes
