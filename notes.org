@@ -36720,46 +36720,90 @@ find ~/www -iname WEB-INF -exec rm -rf {} \;
 #+END_EXAMPLE
 
 *** ftp <<<bash:ftp>>>
+**** Basics
 #+BEGIN_EXAMPLE
-ftp domain.com
-ftp 192.168.0.1
-ftp user@ftpdomain.com
+  ftp domain.com
+  ftp 192.168.0.1
+  ftp user@ftpdomain.com
 
-// you get a prompt
-ftp>
+  // you get a prompt
+  ftp>
 
-// Commands
-ls
-cd afolder
+  // Commands
+  ls
+  cd afolder
 
-// set local directory where downloaded files will be stored on your local environment (not the ftp server)
-lcd /home/user/yourname
+  // set local directory where downloaded files will be stored on your local environment (not the ftp server)
+  lcd /home/user/yourname
 
-// download a file
-get path/on/ftp/to/file
+  // download a file
+  get path/on/ftp/to/file
 
-// download multiple files
-mget *.xls
+  // download multiple files
+  mget *.xls
 
-// for download, better use bash:wget
+  // for download, better use bash:wget
 
-// upload a file that is in local folder
-put filename
+  // upload a file that is in local folder
+  put filename
 
-// upload a file that is in any folder on your local environment
-put /home/user/your/path/to/a/file
+  // upload a file that is in any folder on your local environment
+  put /home/user/your/path/to/a/file
 
-// upload multiple files
-mput *.xls
+  // upload multiple files
+  mput *.xls
 
-// close ftp connection
-bye
-exit
-quit
+  // close ftp connection
+  bye
+  exit
+  quit
 
-// for help
-help
+  // for help
+  help
 #+END_EXAMPLE
+
+
+**** lftp
+http://lftp.yar.ru/lftp-man.html
+
+#+BEGIN_EXAMPLE
+  sudo apt-get install lftp
+
+  lftp -u $ftpuser, $ftppas
+#+END_EXAMPLE
+
+Set commands
+
+
+Commands of lftp
+
+#+BEGIN_EXAMPLE
+  #!/bin/bash
+  ftpsite="ftp://yourftp.com"
+  ftpuser="b"
+  # password doesn't seem to have to be escaped like Makefile
+  ftppass="c"
+
+  # make sure you are sure which folder to delete before run mdelete and rmdir
+  # to delete ~/target/path/targetfolder
+
+  lftp u $ftpuser,$ftppass $ftpsite -e 'set ssl:check-hostname false' <<EOMYF
+  cd target/path
+  ls -d */ .*/
+  ls -d targetfolder/
+  rm -r targetfolder
+  rm -r targetfolder2 targetfolder3
+  quit
+  EOMYF
+
+  exit 0
+
+
+#+END_EXAMPLE
+
+**** Options for ftp command
+- -i :: turn off interactive prompting during multiple file transfers
+- -n :: restrain from attempting auto-login upon initial connection
 
 *** cp <<<bash:cp>>>
 #+BEGIN_EXAMPLE
@@ -38385,80 +38429,87 @@ Disadvantages are only HTTP/HTTPS/FTP, Basic auth over HTTP proxy, no SOCKS supp
 wget [option]... [URL]...
 
 #+BEGIN_EXAMPLE
-http://[username:password@]host[:port]/directory/file
-ftp://[username:password@]host[:port]/directory/file
+  http://[username:password@]host[:port]/directory/file
+  ftp://[username:password@]host[:port]/directory/file
 #+END_EXAMPLE
 
 Download all subfolders and files of an FTP folder
 #+BEGIN_EXAMPLE
-cd ~
-wget --user=hello --password='mypassword' -cr ftp://server/path/to/test
+  cd ~
+  wget --user=hello --password='mypassword' -cr ftp://server/path/to/test
 
-;; # Default depth is 5, change it
-wget -r -l 2 ftp://... 
-;; # for infinite depth :: -l inf
+  # Default depth is 5, change it
+  wget -r -l 2 ftp://... 
+  # for infinite depth :: -l inf
 
-;; # path/to/test is 3 depths, by default, 2 more levels can be downloaded
+  # path/to/test is 3 depths, by default, 2 more levels can be downloaded
 
-;; # ~/server/path/to/test/* will be downloaded
+  # ~/server/path/to/test/* will be downloaded
 
-;; # -nH ~/path/to/test will be downloaded
-;; # -nH --cut-dirs=1 ~/to/test will be downloaded
-;; # -nH --cut-dirs=2 ~/test will be downloaded
-;; # --cut-dirs=1 ~/server/to/test will be downloaded
+  # -nH ~/path/to/test will be downloaded
+  # -nH --cut-dirs=1 ~/to/test will be downloaded
+  # -nH --cut-dirs=2 ~/test will be downloaded
+  # --cut-dirs=1 ~/server/to/test will be downloaded
 
-;; # --ftp-user or --http-user can also be used. There's no difference
+  # --ftp-user or --http-user can also be used. There's no difference
 
-;; # Ignore folders (not file)
-wget -cr -X path/to/folder/ignore/ ftp://server/path/to/folder/
+  # Ignore folders (not file)
+  wget -cr -X path/to/folder/ignore/ ftp://server/path/to/folder/
 
-;; # folder path/to/folder/ignore/ will not be downloaded
+  # folder path/to/folder/ignore/ will not be downloaded
 
-;; # wildcards can also be used
-wget -cr -X path/to/folder/ignore*/ ftp://server/path/to/folder/
+  # wildcards can also be used
+  wget -cr -X path/to/folder/ignore*/ ftp://server/path/to/folder/
 
-;; # ignore multiple folders
--X path/to/folder/ignore1,path/to/folder/ignore2
+  # ignore multiple folders
+  -X path/to/folder/ignore1,path/to/folder/ignore2
 
-;; # Only include certain folders -I, exactly the same as -X
+  # Only include certain folders -I, exactly the same as -X
 
-;; # Only download files -A
--A books*,zelazny*196[0-9],gif,jpg
+  # Only download files -A
+  -A books*,zelazny*196[0-9],gif,jpg
 
-gif and jpg are normal letters, they match the ending part of a file (not exactly file extension)
+  gif and jpg are normal letters, they match the ending part of a file (not exactly file extension)
 
-;; # Ignore certain files -R, exactly the same as -A
+  # Ignore certain files -R, exactly the same as -A
 
-;; # -N to retrieve timestamps so if local files are newer, skip download.
-;; # -c :: enable continue download
+  # -nH :: --no-host-directories :: use it with --cut-dirs. e.g. download http://a.com/ by default creates a.com/ directory
 
-;; # --limit-rate=20k :: limit download speed to 20kb/s, m or g can also be used
+  # -P :: --directory-prefix :: Default is . (the current directory)
 
-;; # -b :: put command run in background
+  # -N to retrieve timestamps so if local files are newer, skip download.
 
-;; # -O path/to/local/file :: output to a local file. Change downloaded filename
+  # -c :: enable continue download
 
-;; # Logging
-;; # -v :: default
-;; # -q :: complete quiet
-;; # -nv :: only error and basic info are printed
+  # --limit-rate=20k :: limit download speed to 20kb/s, m or g can also be used
+
+  # -b :: put command run in background
+
+  # -O path/to/local/file :: output to a local file. Change downloaded filename
+
+  # Logging
+  # -v :: default
+  # -q :: complete quiet
+  # -nv :: only error and basic info are printed
 #+END_EXAMPLE
 
 In summary, to download everything under ftp://server/path/to/test to ~/test
 
 #+BEGIN_EXAMPLE
-cd ~
-wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=2 ftp://server/path/to/test
+  cd ~ && wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=2 ftp://server/path/to/test
+
+  # copy to ~/bk/test
+  cd ~ && wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=2 -P bk/ ftp://server/path/to/test
 #+END_EXAMPLE
 
 Download and update a subfolder
 You have downloaded ftp://server/path/to/test/* to ~/test
 Now you want to only re-download ftp://server/path/to/test/1/* and update ~/test/1
 #+BEGIN_EXAMPLE
-cd ~
-wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=3 -P test/ ftp://server/path/to/test/1
+  cd ~
+  wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=3 -P test/ ftp://server/path/to/test/1
 
-;; # -P :: default is . (current folder) Prefix local directory
+  # -P :: default is . (current folder) Prefix local directory
 #+END_EXAMPLE
 
 [[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
@@ -38791,92 +38842,92 @@ Also return cheat sheet name
 
 ~cheat ping~ show the `ping` cheat sheet
 
-** Makefile
-Install in Ubuntu :: sudo apt-get update && sudo apt-get install make
+** Makefile <<<linux:makefile>>>
+Install in Ubuntu :: ~sudo apt-get update && sudo apt-get install make~
 
 Create a Makefile in current folder
 #+BEGIN_EXAMPLE
-include env_make
-;; # include a file which defines some variables
+  include env_make
+  # include a file which defines some variables
 
-NAME=myimagename
-VERSION=0.1.0
-REPO=mydockerreponame
-;; # define some variables
+  NAME=myimagename
+  VERSION=0.1.0
+  REPO=mydockerreponame
+  # define some variables
 
-;; # escape $ in string variable with $$, say password is $abc$ 
-password=$$abc$$
+  # escape $ in string variable with $$, say password is $abc$ 
+  password=$$abc$$
 
-;; # trylogin:
-;; #     sshpass -p '$(password)' ssh -o StrictHostKeyChecking=no root@123.123.123.123
+  # trylogin:
+  #     sshpass -p '$(password)' ssh -o StrictHostKeyChecking=no root@123.123.123.123
 
-;; # Define dynamic variable
-filename := file_$(shell date +%FT%T%Z).log
+  # Define dynamic variable
+  filename := file_$(shell date +%FT%T%Z).log
 
-.PHONY: default build
-;; # This tells make to not look elsewhere for commands default and build
-;; # Instead, run default and build as they are defined in this Makefile
-;; # Usually include all commands in this Makefile
+  .PHONY: default build
+  # This tells make to not look elsewhere for commands default and build
+  # Instead, run default and build as they are defined in this Makefile
+  # Usually include all commands in this Makefile
 
-;; # command in Makefile is called target. Syntax of Makefile is
-;; # target ...: prerequisites ...
-;; #     recipe
-;; #     ...
-;; #     ...
+  # command in Makefile is called target. Syntax of Makefile is
+  # target ...: prerequisites ...
+  #     recipe
+  #     ...
+  #     ...
 
-;; # A prerequisite is a file/command. It means to include a file
+  # A prerequisite is a file/command. It means to include a file
 
-;; # A recipe is an action (command). Every recipe line has to start with a tab character
+  # A recipe is an action (command). Every recipe line has to start with a tab character
 
-default:
-	@echo "Some description"
-;; # If you run `make` in current folder without specifying which command, the first command will be run
-;; # @echo means it doesn't print out the actual command
+  default:
+          @echo "Some description"
+  # If you run `make` in current folder without specifying which command, the first command will be run
+  # @echo means it doesn't print out the actual command
 
-all: build
-;; # the all command runs the build command
+  all: build
+  # the all command runs the build command
 
-build:
-	sudo docker build -t $(NAME):$(VERSION) --rm .
+  build:
+          sudo docker build -t $(NAME):$(VERSION) --rm .
 
-push:
-	docker push $(NAME)/$(REPO):$(VERSION)
+  push:
+          docker push $(NAME)/$(REPO):$(VERSION)
 
-release: build
-	make push -e VERSION=$(VERSION)
-;; # `make release` runs `build` first, then run `push` with a parameter
-;; # can't put push as a prerequisite after `build` because it has to be run using a parameter
+  release: build
+          make push -e VERSION=$(VERSION)
+  # `make release` runs `build` first, then run `push` with a parameter
+  # can't put push as a prerequisite after `build` because it has to be run using a parameter
 
-testecho:
-	@echo $$FOO
-;; # make testecho FOO="a b c"
-;; # actually @echo $(foo) then ~make testecho foo="a b c"~
+  testecho:
+          @echo $$FOO
+  # make testecho FOO="a b c"
+  # actually @echo $(foo) then ~make testecho foo="a b c"~
 
-testsub:
-	@echo otheraction $(filter-out $@,$(MAKECMDGOALS))
+  testsub:
+          @echo otheraction $(filter-out $@,$(MAKECMDGOALS))
 
-;; # make testsub a b c
-;; # $@ is the target name, which is testsub
-;; # $(MAKECMDGOALS) is the list of targets, which is testsub a b c
+  # make testsub a b c
+  # $@ is the target name, which is testsub
+  # $(MAKECMDGOALS) is the list of targets, which is testsub a b c
 
-;; # This method requires you to put these 2 lines to the end of Makefile (remove leading #'s)
+  # This method requires you to put these 2 lines to the end of Makefile (remove leading #'s)
 
-;; # %:
-;; # 	@:
+  # %:
+  #    @:
 
-;; # %: is a target which matches every target
-;; # @: is a recipe in which @ is the same as @echo. : means do nothing
+  # %: is a target which matches every target
+  # @: is a recipe in which @ is the same as @echo. : means do nothing
 
-;; # Escaping $ might be needed for running sub command
+  # Escaping $ might be needed for running sub command
 
-start:
-	docker rm -f $$(docker ps -a -q)
+  start:
+          docker rm -f $$(docker ps -a -q)
 
-runrecipeinmiddle:
-	- echo do something
-	- $(MAKE) build
+  runrecipeinmiddle:
+          - echo do something
+          - $(MAKE) build
 
-;; # - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
+  # - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
 #+END_EXAMPLE
 
 Makefile :: make your-recipe
@@ -38888,8 +38939,8 @@ Be careful to close single quotes in @echo
 *** Characters to escape
 https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
 #+BEGIN_EXAMPLE
-Escape # as \#
-Escape $ as $$
+  Escape # as \#
+  Escape $ as $$
 #+END_EXAMPLE
 
 ** Nano <<<linux:nano>>>
@@ -40042,6 +40093,21 @@ UPDATE wp_posts SET post_content = replace(post_content, 'http://olddomain.com',
 UPDATE wp_postmeta SET meta_value = replace(meta_value, 'http://olddomain.com', 'http://newdomain.com');
 
 image:tatemz/wp-cli
+
+*** Download files
+#+BEGIN_EXAMPLE
+  csftp=ftp://example.com/var/www/html/
+  csftpuser=a
+  csftpp=b
+
+  dfolder1:
+          wget --user=$(csftpuser) --password='$(csftpp)' -cr -l inf -nH --cut-dirs=3 -P bk/page/ $(csftp)folder1
+
+  dfolder2:
+          wget --user=$(csftpuser) --password='$(csftpp)' -cr -l inf -nH --cut-dirs=3 -P bk/page/ $(csftp)folder2
+
+  dall: dfolder1 dfolder2
+#+END_EXAMPLE
 
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
 Parent: scratch (perfect for building base images such as debian and busybox
