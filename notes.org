@@ -35951,17 +35951,17 @@ Create file and paste the public key ~nano .ssh/authorized_keys~
 
 Or concatenate it onto ~authorized_keys~ file manually
 #+BEGIN_EXAMPLE
-;; # backup first
-cp authorized_keys authorized_keys_Backup
-cat id_rsa.pub >> authorized_keys
+  # backup first
+  cp authorized_keys authorized_keys_Backup
+  cat id_rsa.pub >> authorized_keys
 #+END_EXAMPLE
 
 Change permission ~chmod 600 .ssh/authorized_keys~ chmod:600
 
 Add a name to id_rsa.pub
 #+BEGIN_EXAMPLE
-cat yourpubkey.pub
-ssh-rsa longstring yourname@yourhost
+  cat yourpubkey.pub
+  ssh-rsa longstring yourname@yourhost
 #+END_EXAMPLE
 
 **** Fast way
@@ -36139,7 +36139,7 @@ Check if it connects from local ~ssh -p 443 my.server.com~
 
 Then open, listen and forward port 10143 to destination imap.google.com at port 143 using intermediate host at 443
 #+BEGIN_EXAMPLE
-ssh -L localhost:10143:mail.google.com:143 -p 443 user@my.server.com
+  ssh -L localhost:10143:mail.google.com:143 -p 443 user@my.server.com
 #+END_EXAMPLE
 
 Refer to network:port on port range you should use
@@ -36148,26 +36148,27 @@ Change email client setting to use localhost at port 10143
 
 Multiple redirections can be set up in the same tunnel
 #+BEGIN_EXAMPLE
-;; # add -f to go into background and -N to not launch a shell
-ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
+  # add -f to go into background and -N to not launch a shell
+  ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-ssh -p 10022 target_server_user@localhost
-scp -P 10022 localhost:/target/server/path/ /local/path/
-rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
+  ssh -p 10022 target_server_user@localhost
+  scp -P 10022 localhost:/target/server/path/ /local/path/
+  rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
 #+END_EXAMPLE
 
 -L [bind_address:]port:host:hostport :: specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine. Summary :: localhost:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
 
--R [bind_address:]port:host:hostport :: Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine. 
+-R [bind_address:]port:host:hostport :: Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
+
 Summary
 ~port~ my.server.com (access from internet) > -p 443 user@my.server.com (SSH) > from remote forward to host:hostport (at local). 
 e.g. people on the internet my.server.com:9000 to access your localhost:8001
 ssh -R 9000:localhost:8001 -p 443 user@my.server.com
 In order to use -R, add this line to /etc/ssh/sshd_config then linux:ssh:restart
 #+BEGIN_EXAMPLE
-GatewayPorts yes
+  GatewayPorts yes
 #+END_EXAMPLE
 
 -g :: allows remote hosts to connect to local forwarded ports.
@@ -39178,6 +39179,65 @@ Generate CSR (Certificate Signing Request) which gives a private key (myserver.k
 #+END_EXAMPLE
 
 Submit CSR to SSL authority to get .crt and use .key generated above and make them root user only.
+
+[[https://medium.freecodecamp.org/how-to-get-https-working-on-your-local-development-environment-in-5-minutes-7af615770eec][Generate self-signed certificate]]
+#+BEGIN_EXAMPLE
+  # Create a Root SSL Certificate
+  # -new :: create a new private key and also certificate request (CR)
+  # and -x509 is to create a self signed certificate rather than a cerficiate request (CR)
+  # -nodes is to create private key without providing passphrase which at least 4 letters long
+  openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 1024 -out rootCA.pem
+
+  # enter random values for the prompt
+
+  # You can create a certificate with an existing key
+  # -new with -key creates a CR with an existing key
+  # openssl req -new -nodes -key rootCA.key -x509 -days 1024 -out rootCA.pem
+
+  # Read and verify the certificate
+  openssl x509 -text -noout -in rootCA.pem
+
+  # combine private key and certificate
+  # openssl pkcs12 -inkey rootCA.key -in rootCA.pem -export -out rootCA.p12
+  # validate p12 file
+  # openssl pkcs12 -in rootCA.p12 -noout -info
+
+  # add rootCA.p12 to trusted certificate. On Chrome, Settings > Manage certificates > Import
+
+  # Now create domain certificate using the root SSL certificate
+
+  # create server.csr.cnf so you don't have to type
+  [req]
+  default_bits = 4096
+  prompt = no
+  default_md = sha256
+  distinguished_name = dn
+
+  [dn]
+  C=US
+  ST=RandomState
+  L=RandomCity
+  O=RandomOrganization
+  OU=RandomOrganizationUnit
+  emailAddress=hello@example.com
+  CN = localhost
+
+  # create v3.ext for creating X509 v3 certificate
+  authorityKeyIdentifier=keyid,issuer
+  basicConstraints=CA:FALSE
+  keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+  subjectAltName = @alt_names
+
+  [alt_names]
+  DNS.1 = localhost
+
+  # Now create a certificate key for localhost using server.csr.cnf. The key is server.key. Also create a certificate signing request (CSR) server.csr
+  openssl req -new -nodes -out server.csr -newkey rsa:4096 -keyout server.key -config <( cat server.csr.cnf )
+
+  # Genereate the domain certificate file server.crt using v3.ext that is created earlier
+  openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 500 -extfile v3.ext
+#+END_EXAMPLE
+
 
 Combine certificates and install nginx:ssl:config nginx:ssl:example
 
@@ -46223,8 +46283,7 @@ redis> DBSIZE
 Use ~terminus env:clear-cache~ to debug clear cache failure.
 
 * AWS
-** SSH
-<<<aws:ssh>>>
+** SSH <<<aws:ssh>>>
 Each instance has a Key Pair, shown as Key Name in Instance.
 
 When Key Pair is created for the first time, a .pem file is downloaded.
@@ -46239,14 +46298,17 @@ Port is 22, type is SSH. Under Putty > Category > Connection > SSH > Auth, selec
 
 Copy from remote to local <<<aws:scp>>>
 #+BEGIN_EXAMPLE
-# copy a file
-scp user@remotehost.comorip:/path/to/foo.md /path/to/local/
-# copy a folder
-scp -r user@remotehost.comorip:/path/to/foo /path/to/local/
-# copy a folder to the current folder, then the result is ./foo
-scp -r user@remotehost.com:/path/to/foo .
-# copy all files/folders of a folder to the current folder without creating ./foo
-scp -r user@remotehostcom:/path/to/foo/. .
+  # copy a file
+  scp user@remotehost.comorip:/path/to/foo.md /path/to/local/
+
+  # copy a folder
+  scp -r user@remotehost.comorip:/path/to/foo /path/to/local/
+
+  # copy a folder to the current folder, then the result is ./foo
+  scp -r user@remotehost.com:/path/to/foo .
+
+  # copy all files/folders of a folder to the current folder without creating ./foo
+  scp -r user@remotehostcom:/path/to/foo/. .
 #+END_EXAMPLE
 
 If port is not 22, it has to be specified ~-P 2222~.
