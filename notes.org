@@ -8861,12 +8861,12 @@ WordPress is usually run using Apache or Nginx user which might not have permiss
 docker container map /host/path/to/html:/var/www
 Setup these in wp-config.php
 #+BEGIN_EXAMPLE
-define('FTP_BASE', '/host/path/to/html/');
-define('FS_METHOD', 'direct');
-define('FTP_HOST', '8.8.8.8'); // public ip
-define('FTP_USER', 'ftpuser');
-define('FTP_PASS', 'ftppassword');
-define('FTP_SSL', true);
+  define('FTP_BASE', '/host/path/to/html/');
+  define('FS_METHOD', 'direct');
+  define('FTP_HOST', '8.8.8.8'); // public ip
+  define('FTP_USER', 'ftpuser');
+  define('FTP_PASS', 'ftppassword');
+  define('FTP_SSL', true);
 #+END_EXAMPLE
 
 https://codex.wordpress.org/Editing_wp-config.php#WordPress_Upgrade_Constants
@@ -10346,14 +10346,14 @@ Multiple users upload as www-data linux:permission:users
 
 ** SSL
 #+BEGIN_EXAMPLE
-// Force HTTPS logins and administration
-define('FORCE_SSL_ADMIN', true);
+  // Force HTTPS logins and administration
+  define('FORCE_SSL_ADMIN', true);
 
-// The above also means this below
-//define('FORCE_SSL_LOGIN', true);
+  // The above also means this below
+  //define('FORCE_SSL_LOGIN', true);
 
-define('WP_HOME','https://'.$_SERVER[HTTP_HOST]);
-define('WP_SITEURL','https://'.$_SERVER[HTTP_HOST]);
+  define('WP_HOME','https://'.$_SERVER[HTTP_HOST]);
+  define('WP_SITEURL','https://'.$_SERVER[HTTP_HOST]);
 #+END_EXAMPLE
 
 You can now try to go to wp-admin
@@ -10364,25 +10364,25 @@ Use ssl:test tools to identify problematic links
 Fix legacy content in DB
 https://css-tricks.com/moving-to-https-on-wordpress/
 #+BEGIN_EXAMPLE
-// double quotes
-UPDATE wp_posts 
-SET    post_content = ( Replace (post_content, 'src="http://', 'src="//') )
-WHERE  Instr(post_content, 'jpeg') > 0 
-        OR Instr(post_content, 'jpg') > 0 
-        OR Instr(post_content, 'gif') > 0 
-        OR Instr(post_content, 'png') > 0;
+  // double quotes
+  UPDATE wp_posts 
+  SET    post_content = ( Replace (post_content, 'src="http://', 'src="//') )
+  WHERE  Instr(post_content, 'jpeg') > 0 
+          OR Instr(post_content, 'jpg') > 0 
+          OR Instr(post_content, 'gif') > 0 
+          OR Instr(post_content, 'png') > 0;
 
-// single quote
-UPDATE wp_posts 
-SET   post_content = ( Replace (post_content, "src='http://", "src='//") )
-WHERE  Instr(post_content, 'jpeg') > 0 
-        OR Instr(post_content, 'jpg') > 0 
-        OR Instr(post_content, 'gif') > 0 
-        OR Instr(post_content, 'png') > 0;
+  // single quote
+  UPDATE wp_posts 
+  SET   post_content = ( Replace (post_content, "src='http://", "src='//") )
+  WHERE  Instr(post_content, 'jpeg') > 0 
+          OR Instr(post_content, 'jpg') > 0 
+          OR Instr(post_content, 'gif') > 0 
+          OR Instr(post_content, 'png') > 0;
 
-// Custom Fields
-UPDATE wp_postmeta 
-SET meta_value=(REPLACE (meta_value, 'iframe src="http://','iframe src="//'));
+  // Custom Fields
+  UPDATE wp_postmeta 
+  SET meta_value=(REPLACE (meta_value, 'iframe src="http://','iframe src="//'));
 #+END_EXAMPLE
 
 Force redirect to https on Apache for all pages :: apache:https
@@ -10391,9 +10391,9 @@ To setup nginx as host and apache as proxy nginx:proxy:docker
 If WordPress is behind Nginx proxy server or load balancer, the above is not enough because is_ssl function will not work
 Inspired by plugin [[https://wordpress.org/plugins/ssl-insecure-content-fixer/][ssl-insecure-content-fixer]] wp-config.php
 #+BEGIN_EXAMPLE
-if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
-  $_SERVER['HTTPS'] = 'on';
-}
+  if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+    $_SERVER['HTTPS'] = 'on';
+  }
 #+END_EXAMPLE
 
 ** REST API
@@ -16274,7 +16274,7 @@ Wildcards can be used for scheme, port, or in the leftmost position of the hostn
 
 ~data:~ ~http:~ :: scheme
 #+BEGIN_EXAMPLE
-script-src * data: https://ssl.gstatic.com 'unsafe-inline' 'unsafe-eval';
+  script-src * data: https://ssl.gstatic.com 'unsafe-inline' 'unsafe-eval';
 #+END_EXAMPLE
 
 example.com :: any scheme and any port
@@ -16289,62 +16289,62 @@ By default, CSP bans inline script entirely if 'unsafe-inline', 'nonce-*' nor 's
 
 You will need to move content of script tags into an external file.
 #+BEGIN_EXAMPLE
-//  change this
-<script>
+  //  change this
+  <script>
+    function doAmazingThings() {
+      alert('YOU AM AMAZING!');
+    }
+  </script>
+  <button onclick='doAmazingThings();'>Am I amazing?</button>
+
+  // To this
+  <!-- amazing.html -->
+  <script src='amazing.js'></script>
+  <button id='amazing'>Am I amazing?</button>
+  // amazing.js
   function doAmazingThings() {
     alert('YOU AM AMAZING!');
   }
-</script>
-<button onclick='doAmazingThings();'>Am I amazing?</button>
-
-// To this
-<!-- amazing.html -->
-<script src='amazing.js'></script>
-<button id='amazing'>Am I amazing?</button>
-// amazing.js
-function doAmazingThings() {
-  alert('YOU AM AMAZING!');
-}
-document.addEventListener('DOMContentReady', function () {
-  document.getElementById('amazing')
-    .addEventListener('click', doAmazingThings);
-});
+  document.addEventListener('DOMContentReady', function () {
+    document.getElementById('amazing')
+      .addEventListener('click', doAmazingThings);
+  });
 #+END_EXAMPLE 
 
 report-uri directive tells the browser to POST JSON-formatted violation reports
 #+BEGIN_EXAMPLE
-Content-Security-Policy: default-src 'self'; ...; report-uri /my_amazing_csp_report_parser;
-// example
-{
-  "csp-report": {
-    "document-uri": "http://example.org/page.html",
-    "referrer": "http://evil.example.com/",
-    "blocked-uri": "http://evil.example.com/evil.js",
-    "violated-directive": "script-src 'self' https://apis.google.com",
-    "original-policy": "script-src 'self' https://apis.google.com; report-uri http://example.org/my_amazing_csp_report_parser"
+  Content-Security-Policy: default-src 'self'; ...; report-uri /my_amazing_csp_report_parser;
+  // example
+  {
+    "csp-report": {
+      "document-uri": "http://example.org/page.html",
+      "referrer": "http://evil.example.com/",
+      "blocked-uri": "http://evil.example.com/evil.js",
+      "violated-directive": "script-src 'self' https://apis.google.com",
+      "original-policy": "script-src 'self' https://apis.google.com; report-uri http://example.org/my_amazing_csp_report_parser"
+    }
   }
-}
 #+END_EXAMPLE
 
 Generate nonce value differently each time and insert it into any inline script, bash64
 #+BEGIN_EXAMPLE
-<script nonce=EDNnf03nceIOfn39fn3e9h3sdfa>
-  //Some inline code I cant remove yet, but need to asap.
-</script>
+  <script nonce=EDNnf03nceIOfn39fn3e9h3sdfa>
+    //Some inline code I cant remove yet, but need to asap.
+  </script>
 
-Content-Security-Policy: script-src 'nonce-EDNnf03nceIOfn39fn3e9h3sdfa'
+  Content-Security-Policy: script-src 'nonce-EDNnf03nceIOfn39fn3e9h3sdfa'
 #+END_EXAMPLE
 
 Or use sha
 #+BEGIN_EXAMPLE
-<script>alert('Hello, world.');</script>
-Content-Security-Policy: script-src 'sha256-qznLcsROx4GACP2dm0UCKCzCG-HiZ1guq6ZZDob_Tng='
-// calculate sha hash for each inline script
+  <script>alert('Hello, world.');</script>
+  Content-Security-Policy: script-src 'sha256-qznLcsROx4GACP2dm0UCKCzCG-HiZ1guq6ZZDob_Tng='
+  // calculate sha hash for each inline script
 #+END_EXAMPLE
 
 To enable Google Analytics without 'unsafe-inline', move GA code in a js file and
 #+BEGIN_EXAMPLE
-Content-Security-Policy: script-src www.google-analytics.com; img-src www.google-analytics.com
+  Content-Security-Policy: script-src www.google-analytics.com; img-src www.google-analytics.com
 #+END_EXAMPLE
 
 I've heard there's way other than 'unsafe-inline' for Google Tag Manager
@@ -24984,62 +24984,61 @@ Output size of SHA1 is 160, which is 40 hex characters
 The secret/key of SHA256 should at least contain 256 bits. But I use 128 bits.. Which is 32 hex characters.
 
 #+BEGIN_EXAMPLE
-var crypto = require('crypto')
- , text = 'hello'
- , key = 'abcdeg' // better to have 32 hex characters, but length could be any
- , hash
+  var crypto = require('crypto')
+   , text = 'hello'
+   , key = 'abcdeg' // better to have 32 hex characters, but length could be any
+   , hash
 
-let hmac = crypto.createHmac('sha256', key);
-hmac.write(text);
-hmac.end();
-let hash = hmac.read().toString('hex');
+  let hmac = crypto.createHmac('sha256', key);
+  hmac.write(text);
+  hmac.end();
+  let hash = hmac.read().toString('hex');
 #+END_EXAMPLE
 
-**** encrypt, decrypt
-<<<nodejs:decrypt>>>
+**** encrypt, decrypt <<<nodejs:decrypt>>>
 Refer to php:openssl_decrypt
 
 All AES, regardless 128/256 or key length, the output size depends on the input size
 (floor(Input size / 16 bytes) + 1) * 16 bytes
 
 #+BEGIN_EXAMPLE
-const crypto = require('crypto');
+  const crypto = require('crypto');
 
-const KEYAES = '64 hex characters'
-const ALGORITHM = 'aes-256-cbc';
+  const KEYAES = '64 hex characters'
+  const ALGORITHM = 'aes-256-cbc';
 
-// store this keyAES256.toString('hex')
-// convert hex to bytes
-// keyAES256 = new buffer(keyAES256, 'hex');
+  // store this keyAES256.toString('hex')
+  // convert hex to bytes
+  // keyAES256 = new buffer(keyAES256, 'hex');
 
-function encrypt(plain_text) {
-  var iv = crypto.randomBytes(16); // 16 text characters, 16 bytes or 32 hex characters
-  // iv should be different every time
+  function encrypt(plain_text) {
+    var iv = crypto.randomBytes(16); // 16 text characters, 16 bytes or 32 hex characters
+    // iv should be different every time
 
-  var keyAES = new Buffer(KEYAES, 'hex');
-  // var keyAES = crypto.randomBytes(32); // 32 text characters, 32 bytes or 64 hex characters
-  // global KEYAES is keyAES.toString('hex')
+    var keyAES = new Buffer(KEYAES, 'hex');
+    // var keyAES = crypto.randomBytes(32); // 32 text characters, 32 bytes or 64 hex characters
+    // global KEYAES is keyAES.toString('hex')
 
-  var cipher = crypto.createCipheriv(ALGORITHM, keyAES, iv);
-  cipher.write('text to encrypt');
-  cipher.end();
-  
-  var cipher_text = cipher.read().toString('hex');
-  
-  return cipher_text + '$' + iv.toString('hex');
-}
+    var cipher = crypto.createCipheriv(ALGORITHM, keyAES, iv);
+    cipher.write('text to encrypt');
+    cipher.end();
+    
+    var cipher_text = cipher.read().toString('hex');
+    
+    return cipher_text + '$' + iv.toString('hex');
+  }
 
-function decrypt(cipher_text) {
-  var cipher_blob = cipher_text.split("$");
-  var ct = cipher_blob[0];
-  var iv = new Buffer(cipher_blob[1], 'hex'); // get iv
-  var keyAES = new Buffer(KEYAES, 'hex');
+  function decrypt(cipher_text) {
+    var cipher_blob = cipher_text.split("$");
+    var ct = cipher_blob[0];
+    var iv = new Buffer(cipher_blob[1], 'hex'); // get iv
+    var keyAES = new Buffer(KEYAES, 'hex');
 
-  decryptor = crypto.createDecipheriv(ALGORITHM, keyAES, iv);
-  decryptor.write(ct, 'hex');
-  decryptor.end();
-  console.log(decryptor.read().toString('utf-8'));
-}
+    decryptor = crypto.createDecipheriv(ALGORITHM, keyAES, iv);
+    decryptor.write(ct, 'hex');
+    decryptor.end();
+    console.log(decryptor.read().toString('utf-8'));
+  }
 #+END_EXAMPLE
 
 *** body-parser
@@ -35417,54 +35416,54 @@ https://www.chrisains.com/seo/local-business-schema-mark-via-json-ld/
 
 It should have single address.
 #+BEGIN_EXAMPLE
-<script type="application/ld+json">
-{
-    "@context" : "http://schema.org",
-    "@type" : "LocalBusiness",
-    "name" : "Your Business Name",
-    "url" : "http://www.your-domain.co.uk",
-    "logo": "http://www.your-domain.co.uk/images/your-logo.png",
-    "image": "http://www.your-domain.co.uk/images/your-image.png",
-    "address": {
-        "@type" : "PostalAddress",
-        "streetAddress": "1 The High Street",
-        "addressLocality": "Colchester",
-        "addressRegion": "Essex",
-        "addressCountry": "US",
-        "postalCode": "CO1 1AB",
-        "telephone" : "01234 567 891"
-    },
-    "openingHours": [ "Mo-Fr 09:00-18:00", "Sa 10:00-16:00" ],
-    "priceRange": "$$$",
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": "40.75",
-      "longitude": "73.98"
-    },
-    "hasmap" : "https://www.google.co.uk/maps/place/Buckingham+Palace/@51.501364,-0.1440787,17z/data=!3m1!4b1!4m5!3m4!1s0x48760520cd5b5eb5:0xa26abf514d902a7!8m2!3d51.501364!4d-0.14189",
-    "sameAs" : [ "https://www.facebook.com/chrisains",
-        "https://twitter.com/chrisains",
-        "https://plus.google.com/+ChrisAinsworth",
-        "https://www.youtube.com/user/chrisains1982" ] 
-}
-</script>
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "LocalBusiness",
+      "name" : "Your Business Name",
+      "url" : "http://www.your-domain.co.uk",
+      "logo": "http://www.your-domain.co.uk/images/your-logo.png",
+      "image": "http://www.your-domain.co.uk/images/your-image.png",
+      "address": {
+          "@type" : "PostalAddress",
+          "streetAddress": "1 The High Street",
+          "addressLocality": "Colchester",
+          "addressRegion": "Essex",
+          "addressCountry": "US",
+          "postalCode": "CO1 1AB",
+          "telephone" : "01234 567 891"
+      },
+      "openingHours": [ "Mo-Fr 09:00-18:00", "Sa 10:00-16:00" ],
+      "priceRange": "$$$",
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "40.75",
+        "longitude": "73.98"
+      },
+      "hasmap" : "https://www.google.co.uk/maps/place/Buckingham+Palace/@51.501364,-0.1440787,17z/data=!3m1!4b1!4m5!3m4!1s0x48760520cd5b5eb5:0xa26abf514d902a7!8m2!3d51.501364!4d-0.14189",
+      "sameAs" : [ "https://www.facebook.com/chrisains",
+          "https://twitter.com/chrisains",
+          "https://plus.google.com/+ChrisAinsworth",
+          "https://www.youtube.com/user/chrisains1982" ] 
+  }
+  </script>
 #+END_EXAMPLE
 
 Multiple LocalBusiness's. This method Google shows no organization...
 #+BEGIN_EXAMPLE
-// Include google:json-ld:organization
+  // Include google:json-ld:organization
 
-// LocalBusiness 1
-{
-  ...,
-  @id: "https://example.com/url-first-location",
-  ...,
-  "parentOrganization": {
-    "@type": "Organization",
-    "@id": "Same as organization:@id",
-    "name": "Same as organization:name" // Google requires a name for object
+  // LocalBusiness 1
+  {
+    ...,
+    @id: "https://example.com/url-first-location",
+    ...,
+    "parentOrganization": {
+      "@type": "Organization",
+      "@id": "Same as organization:@id",
+      "name": "Same as organization:name" // Google requires a name for object
+    }
   }
-}
 #+END_EXAMPLE
 
 *** OpeningHoursSpecification
@@ -35957,15 +35956,15 @@ Or specify a public key file
 
 **** Remove passphrase for private key id_rsa
 #+BEGIN_EXAMPLE
-;; # Make a backup
-cp ~/.ssh/id_rsa ~/.ssh/id_rsa.backup
-rm ~/.ssh/id_rsa
+  # Make a backup
+  cp ~/.ssh/id_rsa ~/.ssh/id_rsa.backup
+  rm ~/.ssh/id_rsa
 
-;; # remove passphrase
-openssl rsa -in ~/.ssh/id_rsa -out ~/.ssh/id_rsa_new
+  # remove passphrase
+  openssl rsa -in ~/.ssh/id_rsa -out ~/.ssh/id_rsa_new
 
-;; # enter old passphrase
-cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
+  # enter old passphrase
+  cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
 #+END_EXAMPLE
 
 *** ssh config
@@ -37336,15 +37335,15 @@ sudo ifdown eth0 && sudo ifup eth0
 ~/etc/nsswitch.conf~ and the line starting with ~hosts: ~ defines which files Linux should look for the IP of a domain.
 
 #+BEGIN_EXAMPLE
-hosts: files mdns4_minimal [NOTFOUND=return] dns
+  hosts: files mdns4_minimal [NOTFOUND=return] dns
 #+END_EXAMPLE
 
 First, ~/etc/hosts~ file.
 #+BEGIN_EXAMPLE
-127.0.0.1 localhost
-127.0.1.1 your-computer-name
-;; # 127.0.1.1 is fine when the computer is a client
-;; # If the machine is a server and it has a static IP, should set it
+  127.0.0.1 localhost
+  127.0.1.1 your-computer-name
+  # 127.0.1.1 is fine when the computer is a client
+  # If the machine is a server and it has a static IP, should set it
 #+END_EXAMPLE
 
 Second, it's a list of DNS nameservers you define. 
@@ -37353,9 +37352,9 @@ Thus, a list of DNS nameservers that are being used can be retrieved ~cat /etc/r
 
 To check if a domain is resovled, these commands are run based on ~/etc/resolv.conf~
 #+BEGIN_EXAMPLE
-getent hosts google.com
-host google.com
-dig google.com
+  getent hosts google.com
+  host google.com
+  dig google.com
 #+END_EXAMPLE
 
 dig can only follow through DNS management. If there's redirect done in Apache, Nginx or other codes, it won't follow through them.
@@ -37364,24 +37363,26 @@ Use linux:curl to track further.
 
 dig finds A record
 #+BEGIN_EXAMPLE
-dig google.com
-;; # Or
-dig google.com +short
+  dig google.com
+
+  # Or
+
+  dig google.com +short
 #+END_EXAMPLE
 
 Query MX record
 #+BEGIN_EXAMPLE
-dig google.com MX
+  dig google.com MX
 #+END_EXAMPLE
 
-Query All DNS records
+Query All DNS records including NS, SOA
 #+BEGIN_EXAMPLE
-dig google.com ANY
+  dig google.com ANY
 #+END_EXAMPLE
 
 DNS Reverse Look-up
 #+BEGIN_EXAMPLE
-dig -x 72.30.38.140
+  dig -x 72.30.38.140
 #+END_EXAMPLE
 
 [[https://www.whatsmydns.net/][DNS Propagation Checker]]
@@ -38335,8 +38336,8 @@ $@ => "$1" "$2" "$3" ...
 =curl -m 120 -IL "http://url.com" >> /path/to/log.log=
 e.g Drupal Cron URL response status
 #+BEGIN_EXAMPLE
-//#!/bin/bash
-curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/your/cronlog
+  #!/bin/bash
+  curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/your/cronlog
 #+END_EXAMPLE
 
 **** Download with HTTPS or HTTP authentication
@@ -39136,6 +39137,35 @@ Check each domain SSL certificate using cPanel. SSL/TLS > Certificates (CRT)
 http://www.inmotionhosting.com/support/website/cpanel/add-delete-autossl-cpanel
 
 A directory .well-known will be created in sub website directory if the parent website directory has AutoSSL
+
+** Install SSL <<<linux:ssl>>>
+- File .crt :: certificate starts with ~--BEGIN CERTIFICATE--~
+- File .key :: private key starts with ~--BEGIN RSA PRIVATE KEY--~
+
+Certificate Chain, Root Certificate, Intermediate Certificate, Root Certificate
+Certificate Authorities issue SSL certificate
+- Install SSL certificate issued from CA1, this is called the end-user certificate.
+- CA1 utilizes a certificate issued by CA2 and CA2 utilizes a certificate issued by CA3
+- CA2's certificate is an intermediate CA. 
+- CA3 is a root CA and its certificate is directly embeded in the web browser and is called root certificate since its CA is trusted by the browser.
+
+Apache requires to bundle the intermediate certificates and assign the location of the bundle to ~SSLCertificateChainFile~ config.
+Nginx requires to package the intermediate certificates in a single bundel with the end-user certificate.
+
+Generate CSR (Certificate Signing Request) which gives a private key (myserver.key) and a CSR file (myserver.csr) with 2048 bits
+#+BEGIN_EXAMPLE
+  openssl req –new –newkey rsa:2048 –nodes –keyout myserver.key –out myserver.csr
+
+  # Prompt for Common Name
+  # example.com for a single domain
+  # *.example.com for wildcard certificate
+#+END_EXAMPLE
+
+Submit CSR to SSL authority to get .crt and use .key generated above and make them root user only.
+
+Combine certificates and install nginx:ssl:config nginx:ssl:example
+
+apache:ssl
 
 ** SSL Testing Tools <<<ssl:test>>>
 https://www.whynopadlock.com/
@@ -43111,29 +43141,31 @@ Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ 
 ** Config loading <<<apache:config>>>
 apt-get update; apt-get install apache2
 
+Refer to apache:config:main file
+
 Refer to image:php:apache to get configs
 
-Show compiled setting :: ~apache2ctl -V~ to look for HTTPD_ROOT and SERVER_CONFIG_FILE
+Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for HTTPD_ROOT and SERVER_CONFIG_FILE
 
 Show parsed vhost settings and run settings :: ~apache2ctl -S~
 #+BEGIN_EXAMPLE
-VirtualHost configuration:
-*:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
+  VirtualHost configuration:
+  ,*:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
 
-;; # run settings followed
+  # run settings followed
 
-ServerRoot: "/etc/apache2"
-Main DocumentRoot: "/var/www/html"
-Main ErrorLog: "/var/log/apache2/error.log"
-Mutex default: dir="/var/lock/apache2" mechanism=fcntl
-Mutex mpm-accept: using_defaults
-Mutex watchdog-callback: using_defaults
-Mutex rewrite-map: using_defaults
-PidFile: "/var/run/apache2/apache2.pid"
-Define: DUMP_VHOSTS
-Define: DUMP_RUN_CFG
-User: name="www-data" id=33
-Group: name="www-data" id=33
+  ServerRoot: "/etc/apache2"
+  Main DocumentRoot: "/var/www/html"
+  Main ErrorLog: "/var/log/apache2/error.log"
+  Mutex default: dir="/var/lock/apache2" mechanism=fcntl
+  Mutex mpm-accept: using_defaults
+  Mutex watchdog-callback: using_defaults
+  Mutex rewrite-map: using_defaults
+  PidFile: "/var/run/apache2/apache2.pid"
+  Define: DUMP_VHOSTS
+  Define: DUMP_RUN_CFG
+  User: name="www-data" id=33
+  Group: name="www-data" id=33
 #+END_EXAMPLE
 
 *** Loaded Modules
@@ -43188,8 +43220,11 @@ Sample for image:php:apache
   </VirtualHost>
 #+END_EXAMPLE
 
-*** apache2.conf httpd.conf
-Main config file :: /etc/apache2/apache2.conf
+*** Main Config files <<<apache:config:main file>>>
+Main config file :: /etc/apache2/apache2.conf /etc/httpd/httpd.conf /usr/local/apache/conf/httpd.conf
+
+Run apache:config to get Apache root directory to find config location
+
 You can see the *.conf files loading sequence
 #+BEGIN_EXAMPLE
   # include module config
@@ -43210,11 +43245,14 @@ You can see the *.conf files loading sequence
 Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
 
 *** Restart <<<apache:restart>>>
-~service apache2 restart~
+Check config before restart. Wrong config (e.g. SSL) may prevent Apache from starting
+
+~apache2ctl configtest~ or ~apachectl configtest~ or ~httpd -t~
+
 ~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container
 Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line.
 
-~/etc/init.d/apache2 restart~
+~apache2ctl restart~ or ~service apache2 restart~ or ~/etc/init.d/apache2 restart~
 
 ** Modules
 Available modules /etc/apache2/mods-available
@@ -43681,6 +43719,38 @@ InMotion https://www.inmotionhosting.com/support/website/ssl/how-to-force-https-
   AddType  image/webp .webp
 #+END_EXAMPLE
 
+** SSL <<<apache:ssl>>>
+[[https://www.digicert.com/csr-ssl-installation/apache-openssl.htm][Docs from DigiCert]]
+Find config file that handles SSL
+#+BEGIN_EXAMPLE
+  grep -i -r "SSLCertificateFile" /etc/httpd/
+#+END_EXAMPLE
+
+[[https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile][The ~SSLCertificateFile~ may also contain intermediate certificates, DH parameters and EC curve.]]
+
+#+BEGIN_EXAMPLE
+  # May need for port 80 as well
+  <VirtualHost 192.168.0.1:80>
+      DocumentRoot /var/www/html2
+      ServerName www.yourdomain.com
+          SSLEngine on
+          SSLCertificateFile /path/to/your_domain_name.crt
+          SSLCertificateKeyFile /path/to/your_private.key
+          SSLCertificateChainFile /path/to/DigiCertCA.crt
+  </VirtualHost>
+
+  <VirtualHost 192.168.0.1:443>
+      DocumentRoot /var/www/html2
+      ServerName www.yourdomain.com
+          SSLEngine on
+          SSLCertificateFile /path/to/your_domain_name.crt
+          SSLCertificateKeyFile /path/to/your_private.key
+          SSLCertificateChainFile /path/to/DigiCertCA.crt
+  </VirtualHost>
+#+END_EXAMPLE
+
+Check before apache:restart
+
 * Nginx
 ** Install on Ubuntu 16.04
 #+BEGIN_EXAMPLE
@@ -43730,9 +43800,7 @@ sudo ufw delete allow 'Nginx HTTP'
 #+END_EXAMPLE
 
 *** Service Check, reload, restart, Check syntax
-Use service if systemctl doesn't exist.
-
-~systemctl status nginx~
+- Restart :: ~systemctl status nginx~ ~service nginx restart~ ~sudo /etc/init.d/nginx restart~
 
 stop, quit, reopen, reload :: ~nginx -s reload~
 Version in short :: ~nginx -v~
@@ -43741,13 +43809,13 @@ Check syntax for config ~sudo nginx -t~
 
 Output
 #+BEGIN_EXAMPLE
-● nginx.service - A high performance web server and a reverse proxy server
-   Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
-   Active: active (running) since Mon 2016-04-18 16:14:00 EDT; 4min 2s ago
- Main PID: 12857 (nginx)
-   CGroup: /system.slice/nginx.service
-           ├─12857 nginx: master process /usr/sbin/nginx -g daemon on; master_process on
-           └─12858 nginx: worker process
+  ● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2016-04-18 16:14:00 EDT; 4min 2s ago
+   Main PID: 12857 (nginx)
+     CGroup: /system.slice/nginx.service
+             ├─12857 nginx: master process /usr/sbin/nginx -g daemon on; master_process on
+             └─12858 nginx: worker process
 #+END_EXAMPLE
 
 systemctl stop/start/restart/reload/disable/enable nginx
@@ -44150,29 +44218,29 @@ listen [::]:443 ssl ipv6only=on;
 
 ** Server name redirect
 #+BEGIN_EXAMPLE
-server {
-  listen 80;
-  listen [::]:80;
-  server_name .mydomain.com;
-# this matches *.mydomain.com
-  return 301 http://www.adifferentdomain.com$request_uri;
-}
+  server {
+    listen 80;
+    listen [::]:80;
+    server_name .mydomain.com;
+  # this matches *.mydomain.com
+    return 301 http://www.adifferentdomain.com$request_uri;
+  }
 
-# if you have ssl setup, you need to specify SSL info
-# refer to nginx:ssl:example
-server {
-  # your original setting
-  server_name .yoursite.com
-  
-  listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
-  listen 443 ssl; # managed by Certbot
-  ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
-  ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
-  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+  # if you have ssl setup, you need to specify SSL info
+  # refer to nginx:ssl:example
+  server {
+    # your original setting
+    server_name .yoursite.com
+    
+    listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
-  return 301 https://adifferentdoamin.com$request_uri;
-}
+    return 301 https://adifferentdoamin.com$request_uri;
+  }
 #+END_EXAMPLE
 
 ** Let's Encrypt SSL <<<nginx:ssl>>>
@@ -44567,6 +44635,53 @@ Certificate Authority (CA) provides the above validation and Commercial Certific
 
 Let's Encrypt provides DV only and planning to support Wildcard in near future. A certificate with up to 100 hostnames.
 
+*** SSL config <<<nginx:ssl:config>>>
+**** Combine end-user and bundled intermediate certificates
+#+BEGIN_EXAMPLE
+  cat your_domain.crt intermediate.crt root.crt >> ssl-bundle.crt
+
+  # e.g. PositiveSSL
+  cat example_com.crt COMODORSADomainValidationSecureServerCA.crt COMODORSAAddTrustCA.crt AddTrustExternalCARoot.crt >> ssl-bundle.crt
+
+  # e.g. combine end-user and bundled intermediate certificates
+  cat example_com.crt bundle.crt >> ssl-bundle.crt
+#+END_EXAMPLE
+
+**** [[https://michael.lustfield.net/nginx/getting-a-perfect-ssl-labs-score][Strengthen Nginx SSL Setup]]
+#+BEGIN_EXAMPLE
+  # Protocol support
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+
+  # Perfect when only 1.2 is used
+  ssl_protocols TLSv1.2;
+
+  # Put it in server block
+  ssl_dhparam ssl/dhparam.pem;
+
+  # Generate DHE
+  openssl dhparam -out /etc/nginx/ssl/dhparam.pem 4096
+
+  # Specify ciphers that are enabled on Nginx
+  # Default ssl_ciphers HIGH:!aNULL:!MD5;
+
+  # Change it to use openssl ciphers, run this to get ciphers provided by openssl and wrap it with double quotes and assign it to ssl_ciphers
+  # openssl ciphers
+
+  ssl_ciphers "AES256+EECDH:AES256+EDH:!aNULL;"
+  ssl_prefer_server_ciphers on;
+
+  # Default: ssl_session_cache none;
+  # shared :: a cache shared between all Nginx worker processes. In bytes. 1 mb can store about 4000 sessions. le_nginx_SSL is a cache name and can be used in multiple virtual servers
+  # Default: ssl_session_timeout 5m;
+
+  ssl_session_cache shared:le_nginx_SSL:1m;
+  ssl_session_timeout 1440m;
+
+  # SSL Stapling (not implemented by Let's Encrypt)
+  ssl_stapling on;
+  ssl_stapling_verify on;
+#+END_EXAMPLE
+
 * ModSecurity - Web Application Firewall (WAF) <<<waf:modsecurity>>>
 Mod security is a free Web Application Firewall (WAF) that works with Apache, Nginx and IIS. It supports a flexible rule engine to perform simple and complex operations and comes with a Core Rule Set (CRS) which has rules for SQL injection, cross site scripting, Trojans, bad user agents, session hijacking and a lot of other exploits. For Apache, it is an additional module which makes it easy to install and configure.
 
@@ -44723,36 +44838,35 @@ QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query
 e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
 /pages/123?one=two will be mapped to /page.php?page=123&one=two
 
-** Redirect to HTTPS
-<<<apache:https>>>
+** Redirect to HTTPS <<<apache:https>>>
 #+BEGIN_EXAMPLE
-RewriteEngine On 
-RewriteCond %{SERVER_PORT} 80 
-# or
-# RewriteCond %{HTTPS} off
+  RewriteEngine On 
+  RewriteCond %{SERVER_PORT} 80 
+  # or
+  # RewriteCond %{HTTPS} off
 
-# test one page
-# RewriteCond %{REQUEST_URI} ^/page-path-name/$
+  # test one page
+  # RewriteCond %{REQUEST_URI} ^/page-path-name/$
 
-RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
-# or
-# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+  RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+  # or
+  # RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
 #+END_EXAMPLE
 
 A specific domain
 #+BEGIN_EXAMPLE
-RewriteEngine On 
-RewriteCond %{HTTP_HOST} ^example\.com [NC]
-RewriteCond %{SERVER_PORT} 80 
-RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+  RewriteEngine On 
+  RewriteCond %{HTTP_HOST} ^example\.com [NC]
+  RewriteCond %{SERVER_PORT} 80 
+  RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
 #+END_EXAMPLE
 
 Force SSL on a specific folder. Place this .htaccess in that folder
 #+BEGIN_EXAMPLE
-RewriteEngine On 
-RewriteCond %{SERVER_PORT} 80 
-RewriteCond %{REQUEST_URI} folder 
-RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
+  RewriteEngine On 
+  RewriteCond %{SERVER_PORT} 80 
+  RewriteCond %{REQUEST_URI} folder 
+  RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
 #+END_EXAMPLE
 
 * Git
@@ -49059,33 +49173,21 @@ Your home folder in Emacs is ~C:\c\notes~
 |                  |                                               |
 
 *** Headline <<<emacs:headline>>>
-| C-u TAB          | Global tree fold/unfold             |
-| C-u C-u C-u TAB  | Show all                            |
-|                  |                                     |
-| C-c C-n          | Next heading                        |
-| C-c C-p          | Previous heading                    |
-| C-c C-f          | Next heading same level             |
-| C-c C-b          | Previous heading same level         |
-|                  |                                     |
-| C-c C-u          | Backward to higher level heading    |
-|                  |                                     |
-| M-S-<right>      | Increase heading level of an item   |
-|                  | and its child items                 |
-| M-S-<left>       | Same as above but decrease          |
-|                  |                                     |
-| M-<right>/<left> | Decrease/increase level of a        |
-|                  | parent item only                    |
-|                  |                                     |
-| S-<TAB>          | In table, go to previous cell       |
-|                  | In other places, global fold/unfold |
-|                  |                                     |
-
-C-x n s :: Work on one section
-C-x n w :: Back to outline
-
-C-c C-j :: jump to different heading. C-g to exit. up/down to move headline, ~/~ sparse-tree search
-
-M-<RET> or C-<RET> :: insert heading
+- C-u TAB :: Global tree fold/unfold
+- C-u C-u C-u TAB :: Show all
+- C-c C-n :: Next heading
+- C-c C-p :: Previous heading
+- C-c C-f :: Next heading same level
+- C-c C-b :: Previous heading same level
+- C-c C-u :: Backward to higher level heading
+- M-S-<right> :: Increase heading level of an item and its child items
+- M-S-<left> :: Same as above but decrease
+- M-<right>/<left> :: Decrease/increase level of a parent item only
+- S-<TAB> :: In table, go to previous cell. In other places, global fold/unfold
+- C-x n s :: Work on one section
+- C-x n w :: Back to outline
+- C-c C-j :: jump to different heading. C-g to exit and return to the current position. up/down to move headline, ~/~ sparse-tree search
+- M-<RET> or C-<RET> :: insert heading
 
 **** Drawer
 C-c C-x d :: Create a drawer
@@ -49103,8 +49205,8 @@ This is inside the drawer
 
 *** Symbol and Escape <<<emacs:escape>>>
 #+BEGIN_EXAMPLE
-\vert{}
-which escapes |
+  \vert{}
+  which escapes |
 #+END_EXAMPLE
 
 [[http://orgmode.org/worg/org-symbols.html][Table of Symbols]]
@@ -49113,7 +49215,7 @@ Insert a tab character =Ctrl+q tab=
 
 *** =TODO=
 #+BEGIN_EXAMPLE
-=** TODO=
+  ,** TODO
 #+END_EXAMPLE
 S-left/right :: Cycle through *TODO*, *DONE* and empty.
 
@@ -49131,8 +49233,8 @@ M-g M-p :: Previous match
 | C-c C-c | Update radio targets         |
 
 #+BEGIN_EXAMPLE
-=[[My Target]]= 
-By defalt, it leads to a text search
+  [[My Target]]
+  By defalt, it leads to a text search
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
@@ -49140,8 +49242,8 @@ By defalt, it leads to a text search
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-Something is referred to later in the file <<internal target>>
-[[internal target]] will go to the target
+  Something is referred to later in the file <<internal target>>
+  [[internal target]] will go to the target
 #+END_EXAMPLE
 
 #+NAME: Table One
@@ -49151,14 +49253,14 @@ Something is referred to later in the file <<internal target>>
 |----+------------|
 
 #+BEGIN_EXAMPLE
-Go to a named section [[Table One]]
+  Go to a named section [[Table One]]
 #+END_EXAMPLE
 
 <<<emacs:radio>>>
 #+BEGIN_EXAMPLE
-<<<Radio target>>>
-This causes each occurence of 'Radio target' in normal text to become activated as a link
-Emacs only update radio targets when the file is first loaded. To manual update, C-c C-c
+  <<<Radio target>>>
+  This causes each occurence of 'Radio target' in normal text to become activated as a link
+  Emacs only update radio targets when the file is first loaded. To manual update, C-c C-c
 #+END_EXAMPLE
 
 ** Regex
