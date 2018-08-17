@@ -39211,7 +39211,19 @@ Submit CSR to SSL authority to get .crt and use .key generated above and make th
   # validate p12 file
   # openssl pkcs12 -in rootCA.p12 -noout -info
 
-  # add rootCA.p12 to trusted certificate. On Chrome, Settings > Manage certificates > Import
+  # add rootCA.p12 to trusted certificate. On Chrome, Settings > Manage certificates > Import under Trusted Root Certification Authorities
+  # After that, select the certificate with name Internet Widigits Pty Ltd. click Advanced and select all Certificate purposes
+  # Without doing the above step, https://localhost only works in InCognito mode.
+
+  # In docker-compose.yml
+  #     ports:
+  #      - "32012:80"
+  #      - "443:443"
+
+  # Inside the PHP + Apache container, copy the <VirtualHost: *:80> and make it *:443 and add 3 lines of SSL config as described in apache:ssl
+  # a2enmod ssl
+  # apache2ctl configtest
+  # apache2ctl graceful
 
   # Now create domain certificate using the root SSL certificate
 
@@ -39246,7 +39258,6 @@ Submit CSR to SSL authority to get .crt and use .key generated above and make th
   # Genereate the domain certificate file server.crt using v3.ext that is created earlier
   openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 500 -extfile v3.ext
 #+END_EXAMPLE
-
 
 Combine certificates and install nginx:ssl:config nginx:ssl:example
 
@@ -43810,6 +43821,8 @@ Find config file that handles SSL
 #+BEGIN_EXAMPLE
   grep -i -r "SSLCertificateFile" /etc/httpd/
 #+END_EXAMPLE
+
+~sudo a2enmod ssl~
 
 [[https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile][The ~SSLCertificateFile~ may also contain intermediate certificates, DH parameters and EC curve.]]
 
