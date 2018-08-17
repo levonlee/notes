@@ -214,9 +214,9 @@ d7:show error d7:debug wp:show error
 [[http://php.net/manual/en/errorfunc.configuration.php][Runtime configuration for error handling]]
 
 #+BEGIN_EXAMPLE
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+  ini_set('display_errors', 1);
+  ini_set('display_startup_errors', 1);
+  error_reporting(E_ALL);
 #+END_EXAMPLE
 
 display_errors, display_startup_errors bool or stderr :: prod always use Off
@@ -269,20 +269,20 @@ Solution
 Never display $_SERVER['HTTP_HOST'] or $_SERVER['SERVER_NAME']
 
 #+BEGIN_EXAMPLE
-$config['site_url'] = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
-$config['cp_url']   = 'http://' . $_SERVER['HTTP_HOST'] . '/system/index.php';
+  $config['site_url'] = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
+  $config['cp_url']   = 'http://' . $_SERVER['HTTP_HOST'] . '/system/index.php';
 
-$domain = 'example.com';
-$config['site_url'] = 'http://' . $domain . '/index.php';
-$config['cp_url']   = 'http://' . $domain . '/system/index.php';
+  $domain = 'example.com';
+  $config['site_url'] = 'http://' . $domain . '/index.php';
+  $config['cp_url']   = 'http://' . $domain . '/system/index.php';
 
-$domains = array('domain.com', 'dev.domain.com', 'staging.domain.com', 'localhost');
-if (in_array($_SERVER['HTTP_HOST'], $domains)) {
-    $domain = $_SERVER['HTTP_HOST'];
-}
-else {
-    $domain = 'localhost';
-}
+  $domains = array('domain.com', 'dev.domain.com', 'staging.domain.com', 'localhost');
+  if (in_array($_SERVER['HTTP_HOST'], $domains)) {
+      $domain = $_SERVER['HTTP_HOST'];
+  }
+  else {
+      $domain = 'localhost';
+  }
 #+END_EXAMPLE
 
 ** $_FILES POST method uploads
@@ -309,24 +309,24 @@ The error code associated with this file upload.
 
 POST as array
 #+BEGIN_EXAMPLE
-<form action="" method="post" enctype="multipart/form-data">
-<p>Pictures:
-<input type="file" name="pictures[]" />
-<input type="file" name="pictures[]" />
-<input type="file" name="pictures[]" />
-<input type="submit" value="Send" />
-</p>
-</form>
+  <form action="" method="post" enctype="multipart/form-data">
+  <p>Pictures:
+  <input type="file" name="pictures[]" />
+  <input type="file" name="pictures[]" />
+  <input type="file" name="pictures[]" />
+  <input type="submit" value="Send" />
+  </p>
+  </form>
 
-foreach ($_FILES["pictures"]["error"] as $key => $error) {
-    if ($error == UPLOAD_ERR_OK) {
-        $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
-        // basename() may prevent filesystem traversal attacks;
-        // further validation/sanitation of the filename may be appropriate
-        $name = basename($_FILES["pictures"]["name"][$key]);
-        move_uploaded_file($tmp_name, "data/$name");
-    }
-}
+  foreach ($_FILES["pictures"]["error"] as $key => $error) {
+      if ($error == UPLOAD_ERR_OK) {
+          $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
+          // basename() may prevent filesystem traversal attacks;
+          // further validation/sanitation of the filename may be appropriate
+          $name = basename($_FILES["pictures"]["name"][$key]);
+          move_uploaded_file($tmp_name, "data/$name");
+      }
+  }
 #+END_EXAMPLE
 
 ** Filesystem
@@ -39364,18 +39364,24 @@ Extract Dockerfile from an image. Use one or more of below
   {{with .Config.OnBuild}}ONBUILD {{json .}}{{end}}' "$1"
 #+END_EXAMPLE
 
-*** Build an image based on Dockerfile
+*** docker build, docker tag
 With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
+
+Change myimage(:latest) to myimage:1.0
+~docker tag myimage myimage:1.0~
+
+Build an image and tag it with latest and 2.0
+~docker build -t myimage:latest -t myimage:2.0 .~
 
 Multiple Dockerfiles (Dockerfile1, Dockerfile2) in the current folder
 ~docker build -t your-image-name -f Dockerfile2 .~
 
-Dockerfile and resource are in different folders
+Dockerfile and resource are in different folders (e.g. COPY a file from parent folder in Dockerfile)
 ~docker build -t your-image-name -f /path/Dockerfile.yourname /path/to/docker/~
 
 Build a lot of times while testing a Dockerfile
 #+BEGIN_EXAMPLE
-docker build --rm --force-rm --no-cache -t my-image-name .
+  docker build --rm --force-rm --no-cache -t my-image-name .
 #+END_EXAMPLE
 
 ** run
@@ -39679,32 +39685,32 @@ no_proxy
 
 ** Docker Compose
 #+BEGIN_EXAMPLE
-docker-compose --version
-docker-compose up -d
+  docker-compose --version
+  docker-compose up -d
 
-docker-compose up -d --force-recreate
-;; # Force restart or recreate containers
+  docker-compose up -d --force-recreate
+  # Force restart or recreate containers
 
-docker-compose down -v
-;; # remove containers and volumes
+  docker-compose down -v
+  # remove containers and volumes
 
-docker-compose down ---rmi local
-;; # remove only images that don't have a custom tag set by the `image` field
+  docker-compose down ---rmi local
+  # remove only images that don't have a custom tag set by the `image` field
 
-docker-compose down --rmi all
-;; # remove all images used by any service
+  docker-compose down --rmi all
+  # remove all images used by any service
 
-docker-compose build
-;; # build new image if there's any build directive
+  docker-compose build
+  # build new image if there's any build directive
 
-docker-compose up -d
-;; # doesn't build image, it will use existing image
+  docker-compose up -d
+  # doesn't build image, it will use existing image
 
-docker-compose up -d --build
-;; # build new image and run
+  docker-compose up -d --build
+  # build new image and run
 
-docker-compose ps
-;; # shows containers info started by docker compose in current folder
+  docker-compose ps
+  # shows containers info started by docker compose in current folder
 #+END_EXAMPLE
 
 *** Ubuntu 16.04 Installation
@@ -39861,49 +39867,49 @@ services:
 **** Resources
 [[https://docs.docker.com/compose/compose-file/compose-file-v2/#cpu-and-other-resources][compose file v2]]
 #+BEGIN_EXAMPLE
-cpu_count: 2
-cpu_percent: 50
-cpus: 0.5
-cpu_shares: 73
-cpu_quota: 50000
-cpuset: 0,1
+  cpu_count: 2
+  cpu_percent: 50
+  cpus: 0.5
+  cpu_shares: 73
+  cpu_quota: 50000
+  cpuset: 0,1
 
-user: postgresql
-working_dir: /code
+  user: postgresql
+  working_dir: /code
 
-domainname: foo.com
-hostname: foo
-ipc: host
-mac_address: 02:42:ac:11:65:43
+  domainname: foo.com
+  hostname: foo
+  ipc: host
+  mac_address: 02:42:ac:11:65:43
 
-mem_limit: 536870912 #512 MB 512*1024*1024, 128MB 134217728
-memswap_limit: 2000000000
-mem_reservation: 512m
-privileged: true
+  mem_limit: 536870912 #512 MB 512*1024*1024, 128MB 134217728
+  memswap_limit: 2000000000
+  mem_reservation: 512m
+  privileged: true
 
-oom_score_adj: 500
-oom_kill_disable: true
+  oom_score_adj: 500
+  oom_kill_disable: true
 
-read_only: true
-shm_size: 64M
-stdin_open: true
-tty: true
+  read_only: true
+  shm_size: 64M
+  stdin_open: true
+  tty: true
 #+END_EXAMPLE
 
 compose file v3
 #+BEGIN_EXAMPLE
-version: '3'
-services:
-  redis:
-    image: redis:alpine
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 50M
-        reservations:
-          cpus: '0.25'
-          memory: 20M
+  version: '3'
+  services:
+    redis:
+      image: redis:alpine
+      deploy:
+        resources:
+          limits:
+            cpus: '0.50'
+            memory: 50M
+          reservations:
+            cpus: '0.25'
+            memory: 20M
 #+END_EXAMPLE
 
 **** Pass arguments from Compose to Dockerfile
@@ -39959,6 +39965,18 @@ Add-Content $PROFILE "`nImport-Module posh-docker"
 ;; # check
 cat $PROFILE
 #+END_EXAMPLE
+
+** Docker Cloud
+Docker Cloud uses Docker Hub as native registry.
+
+Use Docker Hub credentials to ~docker login~
+
+Assume your Docker Hub username is abc, give a tag for your image
+~docker tag myimage:mytag abc/myimage:mytag~
+
+~docker push abc/myimage:mytag~
+
+~docker logout~
 
 ** Common DevOps
 *** Files are in container
@@ -40344,7 +40362,7 @@ copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or
 #+BEGIN_EXAMPLE
   FROM php:5.6.31-apache-jessie
 
-  ;; # apt-utils has to be installed to avoid throwing errors during installation on Debian
+  # apt-utils has to be installed to avoid throwing errors during installation on Debian
   RUN set -ex; \
       \
       apt-get update && apt-get install -y \
@@ -40372,12 +40390,12 @@ copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or
                   echo 'opcache.enable_cli=1'; \
           } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
-  ;; # enable apache modules
+  # enable apache modules
   RUN a2enmod rewrite expires
 
   VOLUME /var/www/html
 
-  ;; # TODO chown -R www-data:www-data /var/www/html
+  # TODO chown -R www-data:www-data /var/www/html
 
   CMD ["apache2-foreground"]
 #+END_EXAMPLE
@@ -45876,8 +45894,8 @@ git branch -vv
 * Pantheon <<<hosting:pantheon>>>
 ** Deploy
 #+BEGIN_EXAMPLE
-terminus site deploy --site=<s> --env=<e> --sync-content --cc
-terminus env:deploy my-site.test --sync-content --note="Deploy core and contrib updates" --cc
+  terminus site deploy --site=<s> --env=<e> --sync-content --cc
+  terminus env:deploy my-site.test --sync-content --note="Deploy core and contrib updates" --cc
 #+END_EXAMPLE
 
 ** pantheon.yml
@@ -45886,14 +45904,13 @@ In the code directory. You need to commit to take effect.
 PHP supported version :: 5.3, 5.5, 5.6, and 7.0.
 Drush version: 5, 7, or 8. 8 is recommended
 
-** Drush
-<<<Pantheon Drush>>>
+** Drush <<<Pantheon Drush>>>
 #+BEGIN_EXAMPLE
-terminus drush "<drush command> <drush args>" --site=<> --env=<> 
-terminus remote:drush site-name.env-name drush-command
-terminus remote:drush site-name.env-name -- ws --tail
-terminus env:clear-cache site-name.env-name
-terminus remote:drush <site>.<env> -- cc all
+  terminus drush "<drush command> <drush args>" --site=<> --env=<> 
+  terminus remote:drush site-name.env-name drush-command
+  terminus remote:drush site-name.env-name -- ws --tail
+  terminus env:clear-cache site-name.env-name
+  terminus remote:drush <site>.<env> -- cc all
 #+END_EXAMPLE
 
 If a module is updated via Pantheon terminus drush up, original module folder will be saved to /drush-backups/pantheon/date/modules/modulename
@@ -45917,7 +45934,7 @@ drush @pantheon.SITE.ENV cc drush
 ** WP CLI <<<WP CLI Pantheon>>>
 
 #+BEGIN_EXAMPLE
-terminus wp 'option get home' --site=<site> --env=dev
+  terminus wp 'option get home' --site=<site> --env=dev
 #+END_EXAMPLE
 
 ** Drupal Core Update
@@ -45935,29 +45952,29 @@ Check on Pantheon UI to find out the Upstream : Settings > About site
 e.g. https://github.com/pantheon-systems/drops-7
 
 #+BEGIN_EXAMPLE
-# add a remote
-git remote add pantheon-drops-7 git://github.com/pantheon-systems/drops-7.git
-git fetch pantheon-drops-7
-git rebase pantheon-drops-7/master
-# resolve conflicts
-git add .
-git rebase --continue
-git push origin branchname(e.g. master)
+  # add a remote
+  git remote add pantheon-drops-7 git://github.com/pantheon-systems/drops-7.git
+  git fetch pantheon-drops-7
+  git rebase pantheon-drops-7/master
+  # resolve conflicts
+  git add .
+  git rebase --continue
+  git push origin branchname(e.g. master)
 #+END_EXAMPLE
 
 I found that the UI pull from upstream can resolve the following error while in manual pull
 So use UI pull whenever possible.
 #+BEGIN_EXAMPLE
-First, rewinding head to replay your work on top of it...
-Applying: Adding project shell
-fatal: mode change for modules/pantheon/pantheon_api/pantheon_api.install, which is not in current HEAD
-error: could not build fake ancestor
-Patch failed at 0001 Adding project shell
-The copy of the patch that failed is found in: .git/rebase-apply/patch
+  First, rewinding head to replay your work on top of it...
+  Applying: Adding project shell
+  fatal: mode change for modules/pantheon/pantheon_api/pantheon_api.install, which is not in current HEAD
+  error: could not build fake ancestor
+  Patch failed at 0001 Adding project shell
+  The copy of the patch that failed is found in: .git/rebase-apply/patch
 
-When you have resolved this problem, run "git rebase --continue".
-If you prefer to skip this patch, run "git rebase --skip" instead.
-To check out the original branch and stop rebasing, run "git rebase --abort".
+  When you have resolved this problem, run "git rebase --continue".
+  If you prefer to skip this patch, run "git rebase --skip" instead.
+  To check out the original branch and stop rebasing, run "git rebase --abort".
 #+END_EXAMPLE
 
 ** Drupal Cron
@@ -45967,20 +45984,19 @@ This bootstraps the site and invokes drupal_cron_run.
 
 If the site is not accessed for at least 2 hours, Pantheon suspends all associated services and thus cron will not run.
 
-** Determine Environment
-<<<pantheon:environment>>>
+** Determine Environment <<<pantheon:environment>>>
 #+BEGIN_EXAMPLE
-if (defined('PANTHEON_ENVIRONMENT') && PANTHEON_ENVIRONMENT == 'dev') {} 
+  if (defined('PANTHEON_ENVIRONMENT') && PANTHEON_ENVIRONMENT == 'dev') {} 
 #+END_EXAMPLE
 
 Not including Drush and on dev web environment
 #+BEGIN_EXAMPLE
-if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
- // Web only excluding Drush 
- if ($_SERVER['PANTHEON_ENVIRONMENT'] == 'dev') {
-  // Web only excluding Drush and on dev
- }
-}
+  if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+   // Web only excluding Drush 
+   if ($_SERVER['PANTHEON_ENVIRONMENT'] == 'dev') {
+    // Web only excluding Drush and on dev
+   }
+  }
 #+END_EXAMPLE
 
 ** Disable Newrelic
@@ -45990,9 +46006,9 @@ Newrelic may inject javascript in pages.. Disable it
 
 Drupal (sites/default/settings.php)
 #+BEGIN_EXAMPLE
-if (function_exists('newrelic_ignore_transaction')) {
- newrelic_ignore_transaction();
-}
+  if (function_exists('newrelic_ignore_transaction')) {
+   newrelic_ignore_transaction();
+  }
 #+END_EXAMPLE
 
 ** Cookie <<<pantheon:cookie>>>
@@ -46007,10 +46023,10 @@ Content pages with same cookies (with this name structure) and same url will be 
 
 A cookie can be set in PHP in a response to prevent caching
 #+BEGIN_EXAMPLE
-if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
-  $domain =  $_SERVER['HTTP_HOST'];
-  setcookie('NO_CACHE', '1', time()+0, '/path-to-page', $domain);
-}
+  if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
+    $domain =  $_SERVER['HTTP_HOST'];
+    setcookie('NO_CACHE', '1', time()+0, '/path-to-page', $domain);
+  }
 #+END_EXAMPLE
 
 See pantheon:varnish to prevent caching on certain pages by setting http header.
@@ -46026,20 +46042,20 @@ Varnish will not try to respond to the request from its cache or store the respo
 - Wordpress doesn't use PHP session cookies. Plugin [[https://wordpress.org/plugins/wp-native-php-sessions/][Wordpress Native PHP Sessions]] allows custom code to use ~$_SESSIONS~ but it's pulled from db.
 - Other [[https://pantheon.io/docs/caching-advanced-topics/][cache-busting cookie patterns]]
 #+BEGIN_EXAMPLE
-NO_CACHE
-S+ESS[a-z0-9]+
-fbs[a-z0-9_]+
-SimpleSAML[A-Za-z]+
-PHPSESSID
-wordpress[A-Za-z0-9_]*
-wp-[A-Za-z0-9_]+
-comment_author_[a-z0-9_]+
-duo_wordpress_auth_cookie
-duo_secure_wordpress_auth_cookie
-bp_completed_create_steps # BuddyPress cookie used when creating groups
-bp_new_group_id # BuddyPress cookie used when creating groups
-wp-resetpass-[A-Za-z0-9_]+
-(wp_)?woocommerce[A-Za-z0-9_-]+
+  NO_CACHE
+  S+ESS[a-z0-9]+
+  fbs[a-z0-9_]+
+  SimpleSAML[A-Za-z]+
+  PHPSESSID
+  wordpress[A-Za-z0-9_]*
+  wp-[A-Za-z0-9_]+
+  comment_author_[a-z0-9_]+
+  duo_wordpress_auth_cookie
+  duo_secure_wordpress_auth_cookie
+  bp_completed_create_steps # BuddyPress cookie used when creating groups
+  bp_new_group_id # BuddyPress cookie used when creating groups
+  wp-resetpass-[A-Za-z0-9_]+
+  (wp_)?woocommerce[A-Za-z0-9_-]+
 #+END_EXAMPLE
 
 Default cookie lifetime is 2,000,000 seconds and session lifetime is 200,000 seconds in Drupal's default.settings.php
