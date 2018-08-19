@@ -1,3 +1,5 @@
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8)
 (setq-default org-catch-invisible-edits 'smart
 	      line-move-visual nil
 )
