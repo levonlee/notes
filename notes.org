@@ -436,39 +436,38 @@ echo $_fr_time;
 
 *** Change timezone
 #+BEGIN_EXAMPLE
-$timezone = date_default_timezone_get(); // UTC
-var_dump($timezone); // UTC
+  $timezone = date_default_timezone_get(); // UTC
+  var_dump($timezone); // UTC
 
-var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
+  var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
 
-date_default_timezone_set('America/Toronto');
+  date_default_timezone_set('America/Toronto');
 
-var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm +4 = 11pm
-date_default_timezone_set($timezone); // UTC
-var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
+  var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm +4 = 11pm
+  date_default_timezone_set($timezone); // UTC
+  var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
 #+END_EXAMPLE
 
 ** Multibyte
-*** Remove 4 byte characters
-<<<php:4byte>>>
+*** Remove 4 byte characters <<<php:4byte>>>
 PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard change.
 mysql:charset d7:mysql:charset 
 
 Here's how to remove any 4 byte character.
 
 #+BEGIN_EXAMPLE
-function replace4byte( $string ) {
-  return preg_replace( '%(?:
-          \xF0[\x90-\xBF][\x80-\xBF]{2}      # planes 1-3
-        | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
-        | \xF4[\x80-\x8F][\x80-\xBF]{2}      # plane 16
-    )%xs', '', $string );
-}
+  function replace4byte( $string ) {
+    return preg_replace( '%(?:
+            \xF0[\x90-\xBF][\x80-\xBF]{2}      # planes 1-3
+          | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
+          | \xF4[\x80-\x8F][\x80-\xBF]{2}      # plane 16
+      )%xs', '', $string );
+  }
 
-var_dump( 
-  replace4byte( 'd' ), 
-  replace4byte( 'd_Emoji_d' ) 
-);
+  var_dump( 
+    replace4byte( 'd' ), 
+    replace4byte( 'd_Emoji_d' ) 
+  );
 #+END_EXAMPLE
 
 ** Array
@@ -489,61 +488,61 @@ reset($target_array);
 *** Search Value and Return Key
 Case insensitive search
 #+BEGIN_EXAMPLE
-$a= array(
-'k1'=> 'one',
-'k2' => 'one1',
-'k3' => 'three',
-);
+  $a= array(
+  'k1'=> 'one',
+  'k2' => 'one1',
+  'k3' => 'three',
+  );
 
-print_r( preg_grep( "/ONe$/i" , $a ) );
-// return all matches
-// Array ( [k1] => one, ... )
-// empty array if no match
+  print_r( preg_grep( "/ONe$/i" , $a ) );
+  // return all matches
+  // Array ( [k1] => one, ... )
+  // empty array if no match
 #+END_EXAMPLE
 
 Use ~in_array('string', $a)~ for case sensitive search
 
 *** Change Case for All Keys
 #+BEGIN_EXAMPLE
-$_lower_GET = array_change_key_case($_GET, CASE_LOWER);
-// Or CASE_UPPER
+  $_lower_GET = array_change_key_case($_GET, CASE_LOWER);
+  // Or CASE_UPPER
 #+END_EXAMPLE
 
 *** Get values of a column in a multidimensional array
 You have this array
 #+BEGIN_EXAMPLE
-$records = array(
-    array(
-        'id' => 2135,
-        'first_name' => 'John',
-        'last_name' => 'Doe'
-    ),
-    array(
-        'id' => 3245,
-        'first_name' => 'Sally',
-        'last_name' => 'Smith'
-    ),
-    array(
-        'id' => 5342,
-        'first_name' => 'Jane',
-        // Notice! there's no last_name     
-    ),
-    array(
-        'id' => 5623,
-        'first_name' => 'Peter',
-        'last_name' => 'Doe'
-    )
-);
+  $records = array(
+      array(
+          'id' => 2135,
+          'first_name' => 'John',
+          'last_name' => 'Doe'
+      ),
+      array(
+          'id' => 3245,
+          'first_name' => 'Sally',
+          'last_name' => 'Smith'
+      ),
+      array(
+          'id' => 5342,
+          'first_name' => 'Jane',
+          // Notice! there's no last_name     
+      ),
+      array(
+          'id' => 5623,
+          'first_name' => 'Peter',
+          'last_name' => 'Doe'
+      )
+  );
 #+END_EXAMPLE
 
 array_column($records, 'last_name') is
 #+BEGIN_EXAMPLE
-['Doe', 'Smith', 'Doe']
+  ['Doe', 'Smith', 'Doe']
 #+END_EXAMPLE
 
 array_column($records, 'last_name', 'id') is
 #+BEGIN_EXAMPLE
-[ 2135 => 'Doe', 3245 => 'Smith', 5623=>'Doe']
+  [ 2135 => 'Doe', 3245 => 'Smith', 5623=>'Doe']
 #+END_EXAMPLE
 
 Require PHP 5.5+
@@ -551,31 +550,29 @@ Require PHP 5.5+
 *** Remove values
 Single dimension
 #+BEGIN_EXAMPLE
-$arr = ['nice_item', 'remove_me', 'another_liked_item', 'remove_me', 'remove_me_also'];
-$arr = array_diff($arr, ['remove_me', 'remove_me_also']);
+  $arr = ['nice_item', 'remove_me', 'another_liked_item', 'remove_me', 'remove_me_also'];
+  $arr = array_diff($arr, ['remove_me', 'remove_me_also']);
 #+END_EXAMPLE
 
-*** Change values of all elements
-<<<php:array_map>>>
-
+*** Change values of all elements <<<php:array_map>>>
 #+BEGIN_EXAMPLE
-function sanitize($s) {
-  return htmlspecialchars($s);
-}
-$a = array('harmless', '<bad>', '>>click here!<<');
-$a = array_map('sanitize', $a);
-// trim each element
-$a = array_map('trim', $a);
-echo implode(' ', $a);
+  function sanitize($s) {
+    return htmlspecialchars($s);
+  }
+  $a = array('harmless', '<bad>', '>>click here!<<');
+  $a = array_map('sanitize', $a);
+  // trim each element
+  $a = array_map('trim', $a);
+  echo implode(' ', $a);
 #+END_EXAMPLE
 
 *** Insert to any position of an array
 #+BEGIN_EXAMPLE
-$original = array( 'a', 'b', 'c', 'd', 'e' );
-$inserted = array( 'x' ); // Not necessarily an array
+  $original = array( 'a', 'b', 'c', 'd', 'e' );
+  $inserted = array( 'x' ); // Not necessarily an array
 
-array_splice( $original, 3, 0, $inserted ); // splice in at position 3
-// $original is now a b c x d e
+  array_splice( $original, 3, 0, $inserted ); // splice in at position 3
+  // $original is now a b c x d e
 #+END_EXAMPLE
 
 *** array_filter
@@ -604,57 +601,57 @@ http://php.net/manual/en/array.sorting.php
 usort doesn't maintain key association but uasort does. If callback function returns negative integer, means the comparison is less than.
 
 #+BEGIN_EXAMPLE
-Array
-(
-    [0] => Array
-        (
-            [hashtag] => a7e87329b5eab8578f4f1098a152d6f4
-            [title] => Flower
-            [order] => 3
-        )
+  Array
+  (
+      [0] => Array
+          (
+              [hashtag] => a7e87329b5eab8578f4f1098a152d6f4
+              [title] => Flower
+              [order] => 3
+          )
 
-    [1] => Array
-        (
-            [hashtag] => b24ce0cd392a5b0b8dedc66c25213594
-            [title] => Free
-            [order] => 2
-        )
+      [1] => Array
+          (
+              [hashtag] => b24ce0cd392a5b0b8dedc66c25213594
+              [title] => Free
+              [order] => 2
+          )
 
-    [2] => Array
-        (
-            [hashtag] => e7d31fc0602fb2ede144d18cdffd816b
-            [title] => Ready
-            [order] => 1
-        )
-)
+      [2] => Array
+          (
+              [hashtag] => e7d31fc0602fb2ede144d18cdffd816b
+              [title] => Ready
+              [order] => 1
+          )
+  )
 
-// PHP 5.2 and lower
-function sortByOrder($a, $b) {
-    return $a['order'] - $b['order']; // ascending order
-}
-usort($myArray, 'sortByOrder');
+  // PHP 5.2 and lower
+  function sortByOrder($a, $b) {
+      return $a['order'] - $b['order']; // ascending order
+  }
+  usort($myArray, 'sortByOrder');
 
-// PHP 5.3 and above
-usort($myArray, function($a, $b) {
-    return $a['order'] - $b['order'];
-});
+  // PHP 5.3 and above
+  usort($myArray, function($a, $b) {
+      return $a['order'] - $b['order'];
+  });
 
-// PHP 7 and above
-usort($myArray, function($a, $b) {
-    return $a['order'] <=> $b['order'];
-});
+  // PHP 7 and above
+  usort($myArray, function($a, $b) {
+      return $a['order'] <=> $b['order'];
+  });
 
-// Order by multiple values
-usort($myArray, function($a, $b) {
-    $retval = $a['order'] <=> $b['order'];
-    if ($retval == 0) {
-        $retval = $a['suborder'] <=> $b['suborder'];
-        if ($retval == 0) {
-            $retval = $a['details']['subsuborder'] <=> $b['details']['subsuborder'];
-        }
-    }
-    return $retval;
-});
+  // Order by multiple values
+  usort($myArray, function($a, $b) {
+      $retval = $a['order'] <=> $b['order'];
+      if ($retval == 0) {
+          $retval = $a['suborder'] <=> $b['suborder'];
+          if ($retval == 0) {
+              $retval = $a['details']['subsuborder'] <=> $b['details']['subsuborder'];
+          }
+      }
+      return $retval;
+  });
 #+END_EXAMPLE
 
 ** String
@@ -662,62 +659,62 @@ usort($myArray, function($a, $b) {
 Refer to d7:ellipsis
 
 #+BEGIN_EXAMPLE
-$dom = new DOMDocument;
-$dom->loadHTML($xml);
-$imgs = $dom->getElementsByTagName('img');
-foreach ( $imgs as $img ) {
-  echo $img->nodeValue, PHP_EOL;
-  echo $img->getAttribute('src');
-}
-// To get the first img
-$_first_img = $imgs->item(0);
+  $dom = new DOMDocument;
+  $dom->loadHTML($xml);
+  $imgs = $dom->getElementsByTagName('img');
+  foreach ( $imgs as $img ) {
+    echo $img->nodeValue, PHP_EOL;
+    echo $img->getAttribute('src');
+  }
+  // To get the first img
+  $_first_img = $imgs->item(0);
 
-echo $_first_img->getAttribute('src');
+  echo $_first_img->getAttribute('src');
 #+END_EXAMPLE
 
 Strip one specific HTML tag
 #+BEGIN_EXAMPLE
-$dom = new DOMDocument;
-$dom->loadHTML($htmlString);
-$xPath = new DOMXPath($dom);
-$nodes = $xPath->query('//*[@id="anotherDiv"]');
-if($nodes->item(0)) {
-    $nodes->item(0)->parentNode->removeChild($nodes->item(0));
-}
+  $dom = new DOMDocument;
+  $dom->loadHTML($htmlString);
+  $xPath = new DOMXPath($dom);
+  $nodes = $xPath->query('//*[@id="anotherDiv"]');
+  if($nodes->item(0)) {
+      $nodes->item(0)->parentNode->removeChild($nodes->item(0));
+  }
 
-$list = $doc->getElementsByTagName("p");
-while ($list->length > 0) {
-    $p = $list->item(0);
-    $p->parentNode->removeChild($p);
-}
+  $list = $doc->getElementsByTagName("p");
+  while ($list->length > 0) {
+      $p = $list->item(0);
+      $p->parentNode->removeChild($p);
+  }
 
-echo $dom->saveHTML();
+  echo $dom->saveHTML();
 #+END_EXAMPLE
 
 The above will add <!doctype><html><body> tags, use this to do fragment
 #+BEGIN_EXAMPLE
-$dom = new DOMDocument;
-$fragment = $dom->createDocumentFragment();
-$fragment->appendXML($form);
-$dom->appendChild($fragment);
-$noscripts = $dom->getElementsByTagName('noscript');
-while ($noscripts->length > 0) {
-  $i = $noscripts->item(0);
-  $i->parentNode->removeChild($i);
-}
-return $dom->saveHTML();
+  $dom = new DOMDocument;
+  $fragment = $dom->createDocumentFragment();
+  $fragment->appendXML($form);
+  $dom->appendChild($fragment);
+  $noscripts = $dom->getElementsByTagName('noscript');
+  while ($noscripts->length > 0) {
+    $i = $noscripts->item(0);
+    $i->parentNode->removeChild($i);
+  }
+  return $dom->saveHTML();
 #+END_EXAMPLE
 
 *** Remove HTML tag, regex
 #+BEGIN_EXAMPLE
-$tags = ['noscript', 'p'];
-return preg_replace('@<('. implode('|', $tags) .')[^>]*?>.*?</\\1>@si', '',$html);
+  $tags = ['noscript', 'p'];
+  return preg_replace('@<('. implode('|', $tags) .')[^>]*?>.*?</\\1>@si', '',$html);
 #+END_EXAMPLE
 
 *** Remove an attribute from string, regex
 remove attribute style
 #+BEGIN_EXAMPLE
-$output = preg_replace('/(<[^>]+) style=".*?"/si', '$1', $input);
+  $output = preg_replace('/(<[^>]+) style=".*?"/si', '$1', $input);
 #+END_EXAMPLE
 
 *** String Ellipsis, Trim
@@ -726,13 +723,13 @@ wp:ellipsis d7:ellipsis
 *** Encode HTML
 htmlspecialchars produces less code than htmlentities
 #+BEGIN_EXAMPLE
-echo htmlentities('<Il était une fois un être>.');
-// Output: &lt;Il &eacute;tait une fois un &ecirc;tre&gt;.
-//                ^^^^^^^^                 ^^^^^^^
+  echo htmlentities('<Il était une fois un être>.');
+  // Output: &lt;Il &eacute;tait une fois un &ecirc;tre&gt;.
+  //                ^^^^^^^^                 ^^^^^^^
 
-echo htmlspecialchars('<Il était une fois un être>.');
-// Output: &lt;Il était une fois un être&gt;.
-//                ^                 ^
+  echo htmlspecialchars('<Il était une fois un être>.');
+  // Output: &lt;Il était une fois un être&gt;.
+  //                ^                 ^
 #+END_EXAMPLE
 
 Drupal check_plain is ~htmlspecialchars($text, ENT_QUOTES, 'UTF-8');~
@@ -744,92 +741,90 @@ Drupal check_plain is ~htmlspecialchars($text, ENT_QUOTES, 'UTF-8');~
 > (greater than) :: &gt;
 
 #+BEGIN_EXAMPLE
-// Sanitize $_POST value to safe html text
-if (!function_exists("check_plain")) {
-  function check_plain($text) {
-    return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+  // Sanitize $_POST value to safe html text
+  if (!function_exists("check_plain")) {
+    function check_plain($text) {
+      return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
   }
-}
 #+END_EXAMPLE
 
 *** UTF-8 encoding <<<php:string:encoding>>> <<<php:mb_convert_encoding>>> <<<php:mb_detect_encoding>>>
 Make sure the string is UTF-8 encoded especially after php:file_get_contents
 #+BEGIN_EXAMPLE
-$twitterHTML = mb_convert_encoding($twitterHTML, 'UTF-8',
-  mb_detect_encoding($twitterHTML)
-);
-echo $twitterHTML;
+  $twitterHTML = mb_convert_encoding($twitterHTML, 'UTF-8',
+    mb_detect_encoding($twitterHTML)
+  );
+  echo $twitterHTML;
 #+END_EXAMPLE
 
 *** Replace last
 #+BEGIN_EXAMPLE
-function str_lreplace($search, $replace, $subject)
-{
-    $pos = strrpos($subject, $search);
+  function str_lreplace($search, $replace, $subject) {
+      $pos = strrpos($subject, $search);
 
-    if($pos !== false)
-    {
-        $subject = substr_replace($subject, $replace, $pos, strlen($search));
-    }
+      if($pos !== false) {
+          $subject = substr_replace($subject, $replace, $pos, strlen($search));
+      }
 
-    return $subject;
-}
+      return $subject;
+  }
 #+END_EXAMPLE
 
 *** Start with
 #+BEGIN_EXAMPLE
-$target_prefix = '/inventory/';
-// case-insensitive compare
-if( strcasecmp(substr($request_uri, 0, strlen($target_prefix)), $target_prefix) === 0 ){
-  // it has that prefix and remove the prefix
-  // $new_uri = substr($request_uri, strlen($target_prefix));
-}
+  $target_prefix = '/inventory/';
+  // case-insensitive compare
+  if( strcasecmp(substr($request_uri, 0, strlen($target_prefix)), $target_prefix) === 0 ){
+    // it has that prefix and remove the prefix
+    // $new_uri = substr($request_uri, strlen($target_prefix));
+  }
 #+END_EXAMPLE
 
 *** Random bash64 string
 #+BEGIN_EXAMPLE
-$str = substr(base64_encode(sha1(mt_rand())), 0, 16);
+  $str = substr(base64_encode(sha1(mt_rand())), 0, 16);
 #+END_EXAMPLE
 
 ** URL
 #+BEGIN_EXAMPLE
-$query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
-echo '<a href="mycgi?' . htmlentities($query_string) . '">';
+  $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
+  echo '<a href="mycgi?' . htmlentities($query_string) . '">';
 #+END_EXAMPLE
 
 To encode path
 #+BEGIN_EXAMPLE
-echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
-     '@ftp.example.com/x.txt">';
-echo '<a href="http://example.com/department_list_script/',
-    rawurlencode('sales and marketing/Miami'), '">';
+  echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
+       '@ftp.example.com/x.txt">';
+  echo '<a href="http://example.com/department_list_script/',
+      rawurlencode('sales and marketing/Miami'), '">';
 #+END_EXAMPLE
 
 urlencode encodes spaces as plus signs current URL
 #+BEGIN_EXAMPLE
-$url = $_SERVER['REQUEST_URI'];
-$parts = parse_url($url);
-parse_str($parts['query'], $query);
-echo $query['email'];
+  $url = $_SERVER['REQUEST_URI'];
+  $parts = parse_url($url);
+  parse_str($parts['query'], $query);
+  echo $query['email'];
 
-$str = "first=value&arr[]=foo+bar&arr[]=baz";
+  $str = "first=value&arr[]=foo+bar&arr[]=baz";
 
-parse_str($str, $output);
-echo $output['first'];  // value
-echo $output['arr'][0]; // foo bar
-echo $output['arr'][1]; // baz
+  parse_str($str, $output);
+  echo $output['first'];  // value
+  echo $output['arr'][0]; // foo bar
+  echo $output['arr'][1]; // baz
 #+END_EXAMPLE
 
 Current URL path. Refer to php:parse_url
 #+BEGIN_EXAMPLE
-$path_only = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+  $path_only = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 #+END_EXAMPLE
 
 The last component of path
 #+BEGIN_EXAMPLE
-basename("/etc/passwd") // passwd
-basename("/etc/sudoers.d") // sudoers.d
-basename("/etc/sudoers.d", ".d") // sudoers
+  basename("/etc/passwd") // passwd
+  basename("/etc/sudoers.d") // sudoers.d
+  basename("/etc/sudoers.d", ".d") // sudoers
 #+END_EXAMPLE
 
 ** Random Integer Number
@@ -33624,18 +33619,18 @@ Sessions :: Short time cookie. Each session from a unique user will get its own 
 
 _ga or _gid cookie example
 #+BEGIN_EXAMPLE
-GA1.2.2033959936.1513880474
-2033959936.1513880474 is the client id
+  GA1.2.2033959936.1513880474
+  2033959936.1513880474 is the client id
 #+END_EXAMPLE
 
 By default, gtag.js has automatic cookie domain configuration enabled. When enabled, automatic cookie domain configuration sets the _ga cookie to the highest level domain it can. For example, if your website address is blog.example.co.uk, gtag.js will set the cookie domain to example.co.uk. If gtag.js detects that you're running a server locally (e.g. localhost), it automatically sets the cookie_domain to 'none'.
 
 To turn off automatic cookie domain configuration, update the config for your property to specify a value for the cookie_domain parameter:
-#+BEGIN_EXAMPLE
-gtag('config', 'GA_TRACKING_ID', {
-  'cookie_domain': 'blog.example.co.uk'
-});
-#+END_EXAMPLE
+#+BEGIN_SRC js
+  gtag('config', 'GA_TRACKING_ID', {
+    'cookie_domain': 'blog.example.co.uk'
+  });
+#+END_SRC
 
 Cross-domain tracking allows you to see sessions from 2 sites as single session. Also called site linking.
 This code will append the linker parameter to any links on the page that point to the target domain 'example.com':
@@ -33649,30 +33644,30 @@ gtag('config', 'GA_TRACKING_ID', {
 If the destination domain has been configured to automatically link domains, it will accept linker parameters by default.
 
 If the destination domain is not configured to automatically link domains, you can instruct the destination page to look for linker parameters by setting the accept_incoming property of the linker parameter to true on the destination property's config:
-#+BEGIN_EXAMPLE
-gtag('config', 'GA_TRACKING_ID', {
-  'linker': {
-    'accept_incoming': true
-  }
-});
-#+END_EXAMPLE
+#+BEGIN_SRC js
+  gtag('config', 'GA_TRACKING_ID', {
+    'linker': {
+      'accept_incoming': true
+    }
+  });
+#+END_SRC
 
 Single snippet on all domains
-#+BEGIN_EXAMPLE
-// on example-1.com
-gtag('config', 'GA_TRACKING_ID_1', {
-  'linker': {
-    'domains': ['example-1.com', 'example-2.com']
-  }
-});
+#+BEGIN_SRC js
+  // on example-1.com
+  gtag('config', 'GA_TRACKING_ID_1', {
+    'linker': {
+      'domains': ['example-1.com', 'example-2.com']
+    }
+  });
 
-// on example-2.com
-gtag('config', 'GA_TRACKING_ID_2', {
-  'linker': {
-    'domains': ['example-1.com', 'example-2.com']
-  }
-});
-#+END_EXAMPLE
+  // on example-2.com
+  gtag('config', 'GA_TRACKING_ID_2', {
+    'linker': {
+      'domains': ['example-1.com', 'example-2.com']
+    }
+  });
+#+END_SRC
 
 **** Active user
 Users that initiate session(s) in the last n days. Also called site reach, stickiness.
@@ -33771,14 +33766,13 @@ Compare in
 **** Users Flow
 Segment does not work.. To show google/cpc, change the first dimension item from Country to Source/Medium = google/cpc
 
-*** Acquisition
-<<<ga:channel>>>
+*** Acquisition <<<ga:channel>>>
 Channel is the traffic source :: organic search, direct, referral, social, cpc, email, display.
 
 You can change the Default Channel Grouping :: Admin > Property > View > Channel Settings > Channel Grouping > Default Channel Grouping
 Or add a custom channel grouping :: Admin > Property > View > Custom Channel Grouping
 #+BEGIN_EXAMPLE
-You want to define a channel to include traffic from a campaign containing the term January (e.g., January1, 2ndJanuary, January). Instead of specifying the rule as January (which will only return January), enter it as .*January.* 
+  You want to define a channel to include traffic from a campaign containing the term January (e.g., January1, 2ndJanuary, January). Instead of specifying the rule as January (which will only return January), enter it as .*January.* 
 #+END_EXAMPLE
 
 Medium is more like channels, and source provides more specific about the medium.
@@ -33847,16 +33841,16 @@ When you select Clothing as the primary dimension, Men and Women are the dimensi
 When you select Men as the primary dimension, Shirts, Pants, and Accessories are the dimension values in the first column of the table.
 For each dimension value (Content Group), you see behavioral metrics like Pageviews and Bounce Rate.
 
-#+BEGIN_EXAMPLE
-​gtag('config', 'GA_TRACKING_NUMBER', {
-  'content_group<Index Number>': '<Group Name>'
-}
-// example
+#+BEGIN_SRC js
+  ​gtag('config', 'GA_TRACKING_NUMBER', {
+    'content_group<Index Number>': '<Group Name>'
+  }
+  // example
 
-​gtag('config', 'GA_TRACKING_NUMBER', {
-  'content_group1': 'shoes'
-}
-#+END_EXAMPLE
+  ​gtag('config', 'GA_TRACKING_NUMBER', {
+    'content_group1': 'shoes'
+  }
+#+END_SRC
 
 **** Behavior Flow
 Change the dimension (green box on the left) to Campaign to show AdWords campaign(s) behavior flow.
@@ -33948,26 +33942,26 @@ Previous version
 **** Custom parameters for dynamic remarketing <<<ga:dynamic remarketing>>>
 https://support.google.com/adwords/answer/3103357
 
-#+BEGIN_EXAMPLE
-<!-- Global Site Tag (gtag.js) - Google AdWords: 123456789 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-123456789"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+#+BEGIN_SRC html
+  <!-- Global Site Tag (gtag.js) - Google AdWords: 123456789 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-123456789"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  gtag('config', 'AW-123456789');
-</script>
+    gtag('config', 'AW-123456789');
+  </script>
 
-<!-- Event snippet for Example dynamic remarketing page -->
-<script>
-  gtag('event', 'page_view', {'send_to': 'AW-123456789',
-   'ecomm_prodid': 'REPLACE_WITH_STRING_VALUE',
-   'ecomm_pagetype': 'REPLACE_WITH_STRING_VALUE',
-   'ecomm_totalvalue': 'REPLACE_WITH_STRING_VALUE'
-  });
-</script>
-#+END_EXAMPLE
+  <!-- Event snippet for Example dynamic remarketing page -->
+  <script>
+    gtag('event', 'page_view', {'send_to': 'AW-123456789',
+     'ecomm_prodid': 'REPLACE_WITH_STRING_VALUE',
+     'ecomm_pagetype': 'REPLACE_WITH_STRING_VALUE',
+     'ecomm_totalvalue': 'REPLACE_WITH_STRING_VALUE'
+    });
+  </script>
+#+END_SRC
 
 Have to use certain parameters for certain business type. [[https://support.google.com/adwords/answer/7305793][Here're the list of parameters]].
 
@@ -33983,99 +33977,100 @@ Then you can setup Dynamic Remarketing on AdWords
 Maximum duration that a user can be included in a remarketing audience is 540 days.
 
 **** Send to multiple property id's
-#+BEGIN_EXAMPLE
-ga('create', 'UA-XXXXX-Y', 'auto');
-ga('create', 'UA-XXXXX-Z', 'auto', 'clientTracker');
+#+BEGIN_SRC js
+  ga('create', 'UA-XXXXX-Y', 'auto');
+  ga('create', 'UA-XXXXX-Z', 'auto', 'clientTracker');
 
-ga('send', 'pageview');
-ga('clientTracker.send', 'pageview');
-#+END_EXAMPLE
+  ga('send', 'pageview');
+  ga('clientTracker.send', 'pageview');
+#+END_SRC
 
 gtag.js
-#+BEGIN_EXAMPLE
-gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'group1' });
-gtag('config', 'GA-TRACKING_ID-2', { 'groups': 'group1' });
+#+BEGIN_SRC js
+  gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'group1' });
+  gtag('config', 'GA-TRACKING_ID-2', { 'groups': 'group1' });
 
-// Routes to 'GA-TRACKING_ID-1' and 'GA-TRACKING_ID-2'
-gtag('event', 'sign_in', { 'send_to': 'group1' });
+  // Routes to 'GA-TRACKING_ID-1' and 'GA-TRACKING_ID-2'
+  gtag('event', 'sign_in', { 'send_to': 'group1' });
 
-// The following two lines are equivalent:
-gtag('config', 'GA-TRACKING_ID-1');
-gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'default' });
-#+END_EXAMPLE
+  // The following two lines are equivalent:
+  gtag('config', 'GA-TRACKING_ID-1');
+  gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'default' });
+#+END_SRC
 
 Full example :: send to a specific property instead of groups
-#+BEGIN_EXAMPLE
-<script async src="https://www.googletagmanager.com/gtag/js?id=GA-TRACKING_ID-1">
-</script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+#+BEGIN_SRC js
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA-TRACKING_ID-1">
+  </script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  // Global configs
-  gtag('config', 'GA-TRACKING_ID-1');
-  gtag('config', 'AW-CONVERSION_ID');
-  gtag('config', 'DC-FLOODLIGHT_ID');
+    // Global configs
+    gtag('config', 'GA-TRACKING_ID-1');
+    gtag('config', 'AW-CONVERSION_ID');
+    gtag('config', 'DC-FLOODLIGHT_ID');
 
-  // Track AdWords conversions
-  gtag('event', 'conversion', {
-      'send_to': 'AW-CONVERSION_ID/AbC-D_efG-h12_34-567',
-      'value': 1.0,
-      'currency': 'USD'
-  });
+    // Track AdWords conversions
+    gtag('event', 'conversion', {
+        'send_to': 'AW-CONVERSION_ID/AbC-D_efG-h12_34-567',
+        'value': 1.0,
+        'currency': 'USD'
+    });
 
-  // Track Floodlight conversions
-  gtag('event', 'conversion', {
-    'allow_custom_scripts': true,
-    'send_to': 'DC-FLOODLIGHT_ID/actions/locat304+standard'
-  });
+    // Track Floodlight conversions
+    gtag('event', 'conversion', {
+      'allow_custom_scripts': true,
+      'send_to': 'DC-FLOODLIGHT_ID/actions/locat304+standard'
+    });
 
-  // route ecommerce add_to_cart event to AdWords and Analytics
-  gtag('event', 'add_to_cart', {
-    'send_to': [
-      'GA-TRACKING_ID-1',
-      'AW-CONVERSION_ID'
-    ],
-    'items': [
-      'id': 'U1234',
-      'ecomm_prodid': 'U1234',
-      'name': 'Argyle Funky Winklepickers',
-      'list': 'Search Results',
-      'category': 'Footwear',
-      'quantity': 1,
-      'ecomm_totalvalue': 123.45,
-      'price': 123.45
-    ]
-  });
-</script>
-#+END_EXAMPLE
+    // route ecommerce add_to_cart event to AdWords and Analytics
+    gtag('event', 'add_to_cart', {
+      'send_to': [
+        'GA-TRACKING_ID-1',
+        'AW-CONVERSION_ID'
+      ],
+      'items': [
+        'id': 'U1234',
+        'ecomm_prodid': 'U1234',
+        'name': 'Argyle Funky Winklepickers',
+        'list': 'Search Results',
+        'category': 'Footwear',
+        'quantity': 1,
+        'ecomm_totalvalue': 123.45,
+        'price': 123.45
+      ]
+    });
+  </script>
+#+END_SRC
 
 **** ga Command Queue and Object Methods
 https://developers.google.com/analytics/devguides/collection/analyticsjs/tracking-snippet-reference
-#+BEGIN_EXAMPLE
-<!-- Google Analytics -->
-<script>
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-ga('create', 'UA-XXXXX-Y', 'auto'); // create a tracker instance
-ga('send', 'pageview');
-</script>
-<!-- End Google Analytics -->
-#+END_EXAMPLE
+#+BEGIN_SRC html
+  <!-- Google Analytics -->
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-#+BEGIN_EXAMPLE
-ga('command_name', ...); // this is called command queue. Command can be a tracker method, a ga Object Method, or a method that is defined in a plugin
+  ga('create', 'UA-XXXXX-Y', 'auto'); // create a tracker instance
+  ga('send', 'pageview');
+  </script>
+  <!-- End Google Analytics -->
+#+END_SRC
 
-// Use a ready callback to call a ga Object Method
-// ga.getAll() // wrong
-ga(function(tracker) {
-  var trackers = ga.getAll();
-});
-#+END_EXAMPLE
+#+BEGIN_SRC js
+  ga('command_name', ...); // this is called command queue. Command can be a tracker method, a ga Object Method, or a method that is defined in a plugin
+
+  // Use a ready callback to call a ga Object Method
+  // ga.getAll() // wrong
+  ga(function(tracker) {
+    var trackers = ga.getAll();
+  });
+#+END_SRC
 
 **** ga Command Queue
 Add a command to the queue :: ga(command, [...fields], [fieldsObject])
@@ -34134,36 +34129,36 @@ Always define tracker.page which is only used in send method. Don't modify locat
 
 For SPA, you can use a plugin to track complex pageviews :: https://github.com/googleanalytics/autotrack
 
-#+BEGIN_EXAMPLE
-ga('send', 'pageview');
+#+BEGIN_SRC js
+  ga('send', 'pageview');
 
-ga('send', {
-  hitType: 'pageview',
-  page: location.pathname
-});
-
-ga(function(tracker) {
-  // Sets the page field to "/about.html".
-  tracker.set('page', '/about.html');
-});
-
-// normalize /user/USER_ID/profile, /user/USER_ID/account, /user/USER_ID/notifications with thousands of USER_ID
-// to 
-// /user/profile, /user/account, /user/notifications
-if (document.location.pathname.indexOf('user/' + userID) > -1) {
-  var page = document.location.pathname.replace('user/' + userID, 'user');
-  ga('send', 'pageview', page);
-}
-
-ga(function(tracker) {
-  // Sends an event hit for the tracker named "myTracker" with the
-  // following category, action, and label, and sets the nonInteraction
-  // field value to true.
-  tracker.send('event', 'link', 'click', 'http://example.com', {
-    nonInteraction: true
+  ga('send', {
+    hitType: 'pageview',
+    page: location.pathname
   });
-});
-#+END_EXAMPLE
+
+  ga(function(tracker) {
+    // Sets the page field to "/about.html".
+    tracker.set('page', '/about.html');
+  });
+
+  // normalize /user/USER_ID/profile, /user/USER_ID/account, /user/USER_ID/notifications with thousands of USER_ID
+  // to 
+  // /user/profile, /user/account, /user/notifications
+  if (document.location.pathname.indexOf('user/' + userID) > -1) {
+    var page = document.location.pathname.replace('user/' + userID, 'user');
+    ga('send', 'pageview', page);
+  }
+
+  ga(function(tracker) {
+    // Sends an event hit for the tracker named "myTracker" with the
+    // following category, action, and label, and sets the nonInteraction
+    // field value to true.
+    tracker.send('event', 'link', 'click', 'http://example.com', {
+      nonInteraction: true
+    });
+  });
+#+END_SRC
 
 ***** Funnel and Goal (send pageview) <<<ga:goal and funnel>>>
 Goal is defined in Admin > Account > Property > View
@@ -49200,15 +49195,18 @@ Your home folder in Emacs is ~C:\c\notes~
 ~/.emacs 
 ~(setq org-catch-invisible-edits 'smart)~
 
-**** M-x
-| customize-themes | Load a theme |
-|                  |              |
+*** M-x
+- customize-themes :: Load a theme
 
 *** Basics
+Help :: C-h
+- See all help options :: C-h ?
+- Find shortcut by command (where-is) :: C-h w
+- Description of a function :: C-h f
+
 #+NAME: tab:emacs-basics
 | Help             |                                               |
 |------------------+-----------------------------------------------|
-| C-h f            | Search by command, get shortcut               |
 | C-h v            | Get variable value                            |
 |                  |                                               |
 | File             |                                               |
@@ -49332,6 +49330,19 @@ This is inside the drawer
   <e and Tab to create a code block
   Inside a code block, C-c + ' (single) to go to a new major-mode edit buffer to edit the code, C-x C-s saves the buffer and updates the contents of the Org buffer. C-c + ' again to exit.
 #+END_EXAMPLE
+
+src_sh{echo "hello"}
+
+src_xml{<el></el>}
+
+src_haskell[:exports both]{fac 5}
+
+[[https://orgmode.org/worg/org-contrib/babel/languages.html][All languages]] :: html xml css sass js makefile java sh sql sqlite ruby python perl C C++ matlab org  
+
+#+BEGIN_SRC sh
+  #!/bin/bash
+  echo html
+#+END_SRC
 
 *** Symbol and Escape <<<emacs:escape>>>
 #+BEGIN_EXAMPLE
@@ -51967,47 +51978,47 @@ https://www.optasy.com/
 https://www.myplanet.com/
 https://devshop.support/
 
-* TODO Inspectlet.com
-* TODO QUnit
-* TODO Lynda Bootstrap Layout Responsive Single-Page Design
-* TODO Lynda Bootstrap 3: Advanced Web Development
-* TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
-* TODO Learn SPF and whitelabel
-* TODO Learn tool Zeplin
-* TODO Blowfish hashing algorithm using random salt which is stored in db
-* TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
-* TODO Lynda Agile Project Management
-* TODO Lynda Javascript: Enhancing the DOM
-* TODO Lynda Firebase, Travis CI, Heroku
-* TODO Lynda: Foundations of Programming: Object-Oriented Design
-* TODO JavaScript HTML5 Animation Framework: GSAP or Tween https://greensock.com/
-* TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
-* TODO Book: Design Patterns: Elements of Reusable Object-Oriented Software (Addison-Wesley)
-* TODO Book: Code Complete (2nd Edition, Microsoft Press)
-* TODO custom-elements-everywhere.com, williams sonoma
-* TODO gridbyexample.com
-
-* TODO BrowserStack and BeHat
-* TODO SearchKings.ca
-* TODO Agency DriveDigital.ca
-* TODO Front End Design
-** https://codekitapp.com/
-** https://webpack.js.org/
-** http://postcss.org/
-* TODO [[https://wpengine.com/partners/agencies/][Web agencies backed by WP Engine]] 
-* TODO https://developers.google.com/training/
-* TODO https://grow.google/
-* TODO https://www.thinkwithgoogle.com/intl/en-ca/
-* TODO https://experiments.withgoogle.com/chrome
-* TODO https://www.sitepoint.com/nuxt-js-universal-vue-js/
-* TODO https://generalassemb.ly/ Course on Product Management
-* TODO https://www.roberthalf.com/ Job Hunt
-* TODO https://developers.google.com/experts/ https://abrah.am/
-* TODO http://grow.io/
-* TODO https://www.ontario.ca/page/digital-government https://medium.com/ontariodigital
-* DONE Chase Payment
-* DONE Lynda [[https://www.behance.net/][Behance.net]]
-* DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
-* DONE Lynda Adobe Illustrator Essential
-* DONE Learn Bootstrap CSS framework
-* DONE learn emacs org mode
+* TODOs
+** TODO Inspectlet.com
+** TODO QUnit
+** TODO Lynda Bootstrap Layout Responsive Single-Page Design
+** TODO Lynda Bootstrap 3: Advanced Web Development
+** TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
+** TODO Learn SPF and whitelabel
+** TODO Learn tool Zeplin
+** TODO Blowfish hashing algorithm using random salt which is stored in db
+** TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
+** TODO Lynda Agile Project Management
+** TODO Lynda Javascript: Enhancing the DOM
+** TODO Lynda Firebase, Travis CI, Heroku
+** TODO Lynda: Foundations of Programming: Object-Oriented Design
+** TODO JavaScript HTML5 Animation Framework: GSAP or Tween https://greensock.com/
+** TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
+** TODO Book: Design Patterns: Elements of Reusable Object-Oriented Software (Addison-Wesley)
+** TODO Book: Code Complete (2nd Edition, Microsoft Press)
+** TODO custom-elements-everywhere.com, williams sonoma
+** TODO gridbyexample.com
+** TODO BrowserStack and BeHat
+** TODO SearchKings.ca
+** TODO Agency DriveDigital.ca
+** TODO Front End Design
+*** https://codekitapp.com/
+*** https://webpack.js.org/
+*** http://postcss.org/
+** TODO [[https://wpengine.com/partners/agencies/][Web agencies backed by WP Engine]] 
+** TODO https://developers.google.com/training/
+** TODO https://grow.google/
+** TODO https://www.thinkwithgoogle.com/intl/en-ca/
+** TODO https://experiments.withgoogle.com/chrome
+** TODO https://www.sitepoint.com/nuxt-js-universal-vue-js/
+** TODO https://generalassemb.ly/ Course on Product Management
+** TODO https://www.roberthalf.com/ Job Hunt
+** TODO https://developers.google.com/experts/ https://abrah.am/
+** TODO http://grow.io/
+** TODO https://www.ontario.ca/page/digital-government https://medium.com/ontariodigital
+** DONE Chase Payment
+** DONE Lynda [[https://www.behance.net/][Behance.net]]
+** DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
+** DONE Lynda Adobe Illustrator Essential
+** DONE Learn Bootstrap CSS framework
+** DONE learn emacs org mode
