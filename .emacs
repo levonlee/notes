@@ -4,6 +4,7 @@
 (setq inhibit-startup-message t
       backup-directory-alist '(("." . "~/.saves"))
 )
+(setq org-src-fontify-natively t)
 (add-hook 'text-mode-hook 'turn-on-visual-line-mode)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
