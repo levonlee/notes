@@ -1982,9 +1982,19 @@ curl_close($ch);
 ** PHP HTTP Header <<<php:header>>>
 Refer to header:cache-control
 #+BEGIN_EXAMPLE
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Cache-Control: post-check=0, pre-check=0", false);
-header("Pragma: no-cache");
+  header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+  header("Cache-Control: post-check=0, pre-check=0", false);
+  header("Pragma: no-cache");
+#+END_EXAMPLE
+
+Set amount of time to cache
+
+#+BEGIN_EXAMPLE
+  $seconds_to_cache = 3600;
+  $ts = gmdate("D, d M Y H:i:s", time() + $seconds_to_cache) . " GMT";
+  header("Expires: $ts");
+  header("Pragma: cache");
+  header("Cache-Control: max-age=$seconds_to_cache");
 #+END_EXAMPLE
 
 ** Troubleshooting
@@ -6066,8 +6076,8 @@ Open wp_options table, change siteurl to http://yourwebsite.com
 
 Do it on code level
 #+BEGIN_EXAMPLE
-define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/');
-define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
+  define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/');
+  define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
 #+END_EXAMPLE
 
 Go to wp-admin > Settings > Permalink and save to update the permalink
@@ -6102,30 +6112,30 @@ Create a new database called abc_enterprise and import the db
 
 If the enterprise site is a complete new wp installation, you don't need to do this
 #+BEGIN_EXAMPLE
-define( 'WP_HOME', '/enterprise' );
-define( 'WP_SITEURL', '/enterprise' );
+  define( 'WP_HOME', '/enterprise' );
+  define( 'WP_SITEURL', '/enterprise' );
 
-// for localhost
-// define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/enterprise');
-// define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/enterprise');
+  // for localhost
+  // define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/enterprise');
+  // define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/enterprise');
 
-// Change the db setting
-define('DB_NAME', 'abc_enterprise');
+  // Change the db setting
+  define('DB_NAME', 'abc_enterprise');
 #+END_EXAMPLE
 
 /var/www/html/enterprise/.htaccess
 #+BEGIN_EXAMPLE
-;; # BEGIN WordPress
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /enterprise/
-RewriteRule ^index\.php$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /enterprise/index.php [L]
-</IfModule>
+  # BEGIN WordPress
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /enterprise/
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /enterprise/index.php [L]
+  </IfModule>
 
-;; # END WordPress
+  # END WordPress
 #+END_EXAMPLE
 
 Then go to wp-admin and save the permalink
@@ -6140,30 +6150,30 @@ RedirectMatch 302 ^/psup/?$ /enterprise/ijk/
 - Rewrite abc.com/ijk to abc.com/enterprise/real-page so that URL remains abc.com/ijk in address bar
 use /var/www/html/.htaccess
 #+BEGIN_EXAMPLE
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteBase /
-RewriteRule ^ijk/?(.*)$ /enterprise/ijk [L]
-</IfModule>
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^ijk/?(.*)$ /enterprise/ijk [L]
+  </IfModule>
 #+END_EXAMPLE
 
 Then in /var/www/html/enterprise/wp-content/themes/your-theme/functions.php
 
 NOTE: $_SERVER['REQUEST_URI'] is /ijk in ./enterprise/index.php
 #+BEGIN_EXAMPLE
-function cs_rewrite_request($query){
+  function cs_rewrite_request($query){
 
-  $request_uri = urldecode($_SERVER['REQUEST_URI']);
-  //var_dump($request_uri);
-  /* for pages */
-  if( 0 === strpos($request_uri, '/ijk') ){
-    $query['pagename'] = urlencode('real-page');
-    unset($query['name']);
+    $request_uri = urldecode($_SERVER['REQUEST_URI']);
+    //var_dump($request_uri);
+    /* for pages */
+    if( 0 === strpos($request_uri, '/ijk') ){
+      $query['pagename'] = urlencode('real-page');
+      unset($query['name']);
+    }
+
+    return $query;
   }
-
-  return $query;
-}
-add_filter( 'request', 'cs_rewrite_request', 9999, 1 );
+  add_filter( 'request', 'cs_rewrite_request', 9999, 1 );
 #+END_EXAMPLE
 
 If you want abc.com/enterprise/real-page to redirect to abc.com/ijk which shows the real-page
@@ -6173,10 +6183,10 @@ RedirectMatch 302 ^/enterprise/real-page/?$ /ijk/
 #+END_EXAMPLE
 
 Fix image urls
-#+BEGIN_EXAMPLE
-UPDATE wp_posts SET post_content=(REPLACE (post_content, '<old url>','<new url>'));
-UPDATE wp_posts SET post_content=(REPLACE (post_content, 'abc-ent-dev.com','abc.com/enterprise'));
-#+END_EXAMPLE
+#+BEGIN_SRC sql
+  UPDATE wp_posts SET post_content=(REPLACE (post_content, '<old url>','<new url>'));
+  UPDATE wp_posts SET post_content=(REPLACE (post_content, 'abc-ent-dev.com','abc.com/enterprise'));
+#+END_SRC
 
 *** Method 2: (Not working..) Nginx proxy to another
 
@@ -10108,24 +10118,24 @@ Settings > Responsive Lightbox > General settings
 - (default) Add lightbox to YouTube and Vimeo video links by default.
 
 #+BEGIN_EXAMPLE
-// Manual on single image
-<a href="image-link" data-rel="lightbox"><img class ="some-text-here" src="image-link" /></a>
+  // Manual on single image
+  <a href="image-link" data-rel="lightbox"><img class ="some-text-here" src="image-link" /></a>
 
-// Manual on single gallery
-<a href="image-link" data-rel="lightbox-gallery-182"><img class ="some-text-here" src="image-link" /></a>
+  // Manual on single gallery
+  <a href="image-link" data-rel="lightbox-gallery-182"><img class ="some-text-here" src="image-link" /></a>
 #+END_EXAMPLE
 
 *** revslider (not in WP directory)
 Display in template
 #+BEGIN_EXAMPLE
-putRevSlider("home");
-putRevSlider("home","homepage"); // only display if current page is homepage
-putRevSlider("home","2,10"); // only display if current page has an ID
+  putRevSlider("home");
+  putRevSlider("home","homepage"); // only display if current page is homepage
+  putRevSlider("home","2,10"); // only display if current page has an ID
 #+END_EXAMPLE
 
 Shortcode
 #+BEGIN_EXAMPLE
-[rev_slider home]
+  [rev_slider home]
 #+END_EXAMPLE
 
 Add Revolution Slider widget to the desired sidebar
@@ -10170,10 +10180,10 @@ After installing and activating the plugin, to get breadcrumb trails to display 
 **** Basics
 https://docs.woocommerce.com/documentation/plugins/woocommerce/getting-started/
 
-In order to remove data in db when removing the plugin, add this first then deactive and delte the plugin:
+In order to remove data in db when removing the plugin, add this first then deactive and delete the plugin:
 #+BEGIN_EXAMPLE
-define( 'WC_REMOVE_ALL_DATA', true);
-/* That's all, stop editing! Happy blogging. */
+  define( 'WC_REMOVE_ALL_DATA', true);
+  /* That's all, stop editing! Happy blogging. */
 #+END_EXAMPLE
 
 To update extension/payment gateways, connect to WooCommerce.com :: WooCommerce > Extensions > WooCommerce.com Subscriptions
@@ -10202,41 +10212,53 @@ Starting v2.1 shortcodes are replaced with endpoints
 https://github.com/woocommerce/woocommerce
 https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/
 
+**** Payment Gateways
+https://woocommerce.com/posts/woocommerce-payments-affordably/
+
+In WooCommerce core :: Stripe and PayPal Powered by Braintree. Old WooCommerce plugin can also download these gateways for free.
+- On-site
+
+[[https://woocommerce.com/products/stripe/][Stripe]] :: pay 2.9% + 30 cents per successful credit card transaction, as long as your yearly charges are below $1 million.
+- Credit cards
+[[https://woocommerce.com/products/woocommerce-gateway-paypal-powered-by-braintree/][PayPal Powered by Braintree]] :: 2.9%+30 cents per successful credit card or digital wallet transaction (e.g. Apply Pay)
+- Credit cards and debit cards
+- Payment from buyers' PayPal accounts
+
 **** hooks
 ***** Add a custom field to Order :: woocommerce_shop_order_search_fields, manage_shop_order_posts_custom_column
 Add search on custom field
 #+BEGIN_EXAMPLE
-add_filter( 'woocommerce_shop_order_search_fields', 'lili_wc_shop_order_search_field_myfield' );
-function lili_wc_shop_order_search_field_myfield( $search_fields ) {
-  $search_fields[] = '_myfield'; // You can add a WooCommerce builtin order field without creating a field 
-  // start with _
-  return $search_fields;
-}
+  add_filter( 'woocommerce_shop_order_search_fields', 'lili_wc_shop_order_search_field_myfield' );
+  function lili_wc_shop_order_search_field_myfield( $search_fields ) {
+    $search_fields[] = '_myfield'; // You can add a WooCommerce builtin order field without creating a field 
+    // start with _
+    return $search_fields;
+  }
 #+END_EXAMPLE
 
 Add a column to the 3rd position
 #+BEGIN_EXAMPLE
-function ra_order_tax_receipt_columns($columns) {
-    $columnsF = array_slice($columns, 0, 2);
-    $columnL = array_slice($columns, 2);
-    return array_merge($columnsF, array('myfield' => __('My Field Name')), $columnL);
-}
-add_filter('manage_edit-shop_order_columns' , 'ra_order_tax_receipt_columns', 2);
+  function ra_order_tax_receipt_columns($columns) {
+      $columnsF = array_slice($columns, 0, 2);
+      $columnL = array_slice($columns, 2);
+      return array_merge($columnsF, array('myfield' => __('My Field Name')), $columnL);
+  }
+  add_filter('manage_edit-shop_order_columns' , 'ra_order_tax_receipt_columns', 2);
 #+END_EXAMPLE
 
 #+BEGIN_EXAMPLE
-add_action( 'manage_shop_order_posts_custom_column' , 'lili_wc_shop_order_search_field_myfield_content', 10, 2 );
-function lili_wc_shop_order_search_field_myfield_content( $column ) {
-    global $post, $woocommerce, $the_order;
-    $order_id = $the_order->id;
-    switch ( $column ) {
-     case 'myfield' :
-       $order_items = $the_order->get_items();
-       $myVarOne = get_post_meta($order_id, '_myfield', true );
-       echo $myVarOne;
-       break;
-    }
-}
+  add_action( 'manage_shop_order_posts_custom_column' , 'lili_wc_shop_order_search_field_myfield_content', 10, 2 );
+  function lili_wc_shop_order_search_field_myfield_content( $column ) {
+      global $post, $woocommerce, $the_order;
+      $order_id = $the_order->id;
+      switch ( $column ) {
+       case 'myfield' :
+         $order_items = $the_order->get_items();
+         $myVarOne = get_post_meta($order_id, '_myfield', true );
+         echo $myVarOne;
+         break;
+      }
+  }
 #+END_EXAMPLE
 
 **** Test Credit Cards
@@ -10270,12 +10292,12 @@ $wpo_wcpdf_export_template_type :: The wpo wcpdf export template type.
 $wpo_wcpdf_export_order :: The wpo wcpdf export order.
 
 #+BEGIN_EXAMPLE
-function action_wpo_wcpdf_before_document( $wpo_wcpdf_export_template_type, $wpo_wcpdf_export_order ) { 
-    // make action magic happen here...
-}; 
-         
-// add the action 
-add_action( 'wpo_wcpdf_before_document', 'action_wpo_wcpdf_before_document', 10, 2 ); 
+  function action_wpo_wcpdf_before_document( $wpo_wcpdf_export_template_type, $wpo_wcpdf_export_order ) { 
+      // make action magic happen here...
+  }; 
+           
+  // add the action 
+  add_action( 'wpo_wcpdf_before_document', 'action_wpo_wcpdf_before_document', 10, 2 ); 
 #+END_EXAMPLE
 
 ***** action wpo_wcpdf_after_document_label
@@ -10285,34 +10307,34 @@ add_action( 'wpo_wcpdf_before_document', 'action_wpo_wcpdf_before_document', 10,
 https://codex.wordpress.org/Function_Reference/WP_Error
 Function may return WP_Error object. Catch error
 #+BEGIN_EXAMPLE
-$post = wp_insert_post([]);
-if ( is_wp_error($post) ) {
- echo $post->get_error_message();
-}
+  $post = wp_insert_post([]);
+  if ( is_wp_error($post) ) {
+   echo $post->get_error_message();
+  }
 #+END_EXAMPLE
 
 <<<wp:show error>>>
 In wp-config.php insert this before /* That's all, stop editing! Happy blogging */
 https://codex.wordpress.org/Debugging_in_WordPress
 #+BEGIN_EXAMPLE
-define( 'WP_DEBUG', false );
-//define('WP_DEBUG', true);
-if ( WP_DEBUG ) {
-  @error_reporting( E_ALL ); @ini_set( 'log_errors', true );
-  @ini_set( 'log_errors_max_len', '0' );
-  // define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
-  define('WP_DEBUG_DISPLAY', true); // set to false to not display error on HTML pages
-  define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
-  // set to false that JavaScript files are loaded separately for Admin area.
-  define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
-  ini_set('display_errors', 1); // 'stderr' can be set
-}
+  define( 'WP_DEBUG', false );
+  //define('WP_DEBUG', true);
+  if ( WP_DEBUG ) {
+    @error_reporting( E_ALL ); @ini_set( 'log_errors', true );
+    @ini_set( 'log_errors_max_len', '0' );
+    // define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
+    define('WP_DEBUG_DISPLAY', true); // set to false to not display error on HTML pages
+    define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
+    // set to false that JavaScript files are loaded separately for Admin area.
+    define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
+    ini_set('display_errors', 1); // 'stderr' can be set
+  }
 #+END_EXAMPLE
 
 Or anywhere
 #+BEGIN_EXAMPLE
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+  error_reporting(E_ALL);
+  ini_set('display_errors', 1);
 #+END_EXAMPLE
 
 ** Installation Language
@@ -16211,16 +16233,18 @@ Address Bar color
 All headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
 
 HTTP response header can be defined in html markup
-#+BEGIN_EXAMPLE
-<meta http-equiv="Content-Security-Policy" content="default-src https://cdn.example.net; child-src 'none'; object-src 'none'">
-#+END_EXAMPLE
+#+BEGIN_SRC html
+  <meta http-equiv="Content-Security-Policy" content="default-src https://cdn.example.net; child-src 'none'; object-src 'none'">
+#+END_SRC
 
 *** Age
 A non-negative integer of seconds that the object (response) has been in a proxy cache (CDN, Varnish)
 
-*** Cache-Control <<<header:cache-control>>>
+*** Cache-Control, Pragma <<<header:cache-control>>>
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
 apache:mod_headers:cache
+
+Pragma is for legacy HTTP/1.0 where Cache-Control HTTP/1.1 is not yet present. Only Pragma:no-cache or Pragma:cache
 
 - Directives
 must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
@@ -16230,10 +16254,12 @@ no-store :: no cache should be stored in request or response
 
 no-transform :: No transformations or conversions should be made to the resource. The Content-Encoding, Content-Range, Content-Type headers must not be modified by a proxy. A non- transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The no-transform directive disallows this.
 
-public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
-private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
+- public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
+- private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
+
 proxy-revalidate
-max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again.
+
+- max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again.
 post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
 
 - Common usage
@@ -44989,26 +45015,26 @@ Force SSL on a specific folder. Place this .htaccess in that folder
 
 * Git
 ** Show config
-#+BEGIN_EXAMPLE
-# List all active config for the current folder
-git config --list
+#+BEGIN_SRC sh
+  # List all active config for the current folder
+  git config --list
 
-# List global config only
-git config --global --list
+  # List global config only
+  git config --global --list
 
-# Edit or check all global config
-git config --global --edit
+  # Edit or check all global config
+  git config --global --edit
 
-# Get all files that forms each config
-git config --list --show-origin
+  # Get all files that forms each config
+  git config --list --show-origin
 
-# Find path to git.exe
-which git.exe
+  # Find path to git.exe
+  which git.exe
 
-# change username and email for the current repo
-git config user.email myname@abc.omc
-git config user.name "My Name"
-#+END_EXAMPLE
+  # change username and email for the current repo
+  git config user.email myname@abc.omc
+  git config user.name "My Name"
+#+END_SRC
 
 ** Working Tree
 <<<git:Working_Tree>>>
@@ -45033,14 +45059,14 @@ git diff HEAD^: Between Working Copy and HEAD^
 
 ** Show file names only between 2 commits
 Show file names only for 1 commit
-#+BEGIN_EXAMPLE
-git diff-tree --no-commit-id --name-only -r <SHA>
-#+END_EXAMPLE
+#+BEGIN_SRC sh
+  git diff-tree --no-commit-id --name-only -r "<SHA>"
+#+END_SRC
 
 Show file names only between 2 commits
-#+BEGIN_EXAMPLE
-git --no-pager diff --name-only SHA1 SHA2
-#+END_EXAMPLE
+#+BEGIN_SRC sh
+  git --no-pager diff --name-only SHA1 SHA2
+#+END_SRC
 
 ** Stash, Reset, Clean
 git:Working_Tree
@@ -45057,11 +45083,13 @@ git:Working_Tree
 
 ** Commit an empty folder
 In the empty folder add .gitignore file
+
 #+BEGIN_EXAMPLE
-# Not to ignore .gitignore
-!.gitignore
-# Or you intend to keep the folder empty, exclude everything
-*
+  # Not to ignore .gitignore
+  !.gitignore
+
+  # Or you intend to keep the folder empty, exclude everything
+  *
 #+END_EXAMPLE
 
 ** Checkout vs Reset vs Revert
@@ -45081,22 +45109,22 @@ Reset rewrites history. Only use it for local changes that are never pushed to r
 ** Checkout a folder from another branch to current branch
 current branch is master and get folder target-folder/ from feature branch
 #+BEGIN_EXAMPLE
-git checkout master
-git checkout feature target-folder/
+  git checkout master
+  git checkout feature target-folder/
 #+END_EXAMPLE
 
 ** Branch
 *** Duplicate current branch with changes and switch to it 
 #+BEGIN_EXAMPLE
-git checkout -b newbranch
+  git checkout -b newbranch
 #+END_EXAMPLE
 
 Create a local branch and then push to a new remote branch. Save changes to a new branch.
 
 #+BEGIN_EXAMPLE
-git checkout -b newbranch
-git add . && git commit -m "..."
-git push --set-upstream origin newbranch
+  git checkout -b newbranch
+  git add . && git commit -m "..."
+  git push --set-upstream origin newbranch
 #+END_EXAMPLE
 
 *** Duplicate current branch to a commit and switch 
@@ -45122,26 +45150,26 @@ For a specific file ~git log master..li path/to/file~
 
 *** Find authors of all remote/local branches and tags
 #+BEGIN_EXAMPLE
-git for-each-ref --format='%(committerdate) %09 %(authorname) %09 %(refname)' | sort -k5n -k2M -k3n -k4n
+  git for-each-ref --format='%(committerdate) %09 %(authorname) %09 %(refname)' | sort -k5n -k2M -k3n -k4n
 #+END_EXAMPLE
 
 *** Make current branch exactly as another branch
 Make current branch li exactly the same as remote branch origin/master
 #+BEGIN_EXAMPLE
-git checkout li
-git reset --hard origin/master
+  git checkout li
+  git reset --hard origin/master
 #+END_EXAMPLE
 
 *** Force push to remote branch
 local master has different commits than remote li's master branch
 #+BEGIN_EXAMPLE
-git checkout master
-git push li master -f
+  git checkout master
+  git push li master -f
 #+END_EXAMPLE
 
 *** Find most recent ancestor of 2 branches
 #+BEGIN_EXAMPLE
-git merge-base branch2 branch3
+  git merge-base branch2 branch3
 #+END_EXAMPLE
 
 *** Revert to common ancestor
@@ -45199,20 +45227,20 @@ git merge --abort
 
 ** Rebase
 feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
-#+BEGIN_EXAMPLE
-git checkout master
-git pull --rebase
-git checkout feature
-# make some changes and git commit
-git rebase master
-# git status to review conflicts if exist. After resolving,
-git add .
-git rebase --continue
-# now your commits in feature are applied on top of the tip 
-# you can merge commits into one commit on feature branch to further clean up your feature branch commits
-git checkout master
-git merge feature
-#+END_EXAMPLE
+#+BEGIN_SRC sh
+  git checkout master
+  git pull --rebase
+  git checkout feature
+  # make some changes and git commit
+  git rebase master
+  # git status to review conflicts if exist. After resolving,
+  git add .
+  git rebase --continue
+  # now your commits in feature are applied on top of the tip 
+  # you can merge commits into one commit on feature branch to further clean up your feature branch commits
+  git checkout master
+  git merge feature
+#+END_SRC
 
 The result is feature and master are exactly the same: C2 -> C3 -> C4
 *** Merge commits into one commit on local branch
@@ -45222,16 +45250,16 @@ m1 > c1 > c2 > c3 > c4
 
 Combine c2, c3 and c4 to c5 and assign a different commit message
 #+BEGIN_EXAMPLE
-git rebase -i c1
-// open up VIM, keep the first line unchanged pick c2 and change pick to s or squash for all other commits
-pick c2
-s c3
-s c4
+  git rebase -i c1
+  // open up VIM, keep the first line unchanged pick c2 and change pick to s or squash for all other commits
+  pick c2
+  s c3
+  s c4
 
-// ESC and :wq to save, VIM returns that what will happen. Comment lines with # and give a new commit message without #
-changes about c5
+  // ESC and :wq to save, VIM returns that what will happen. Comment lines with # and give a new commit message without #
+  changes about c5
 
-// ESC and :wq to save. Done!
+  // ESC and :wq to save. Done!
 #+END_EXAMPLE
 
 ** Show merge commit
@@ -45249,15 +45277,15 @@ Show changes of a file that is caused by the merge commit :: git diff C1..abc --
 ** Fork
 Sync a fork with original repo
 Add a remote: upstream
-#+BEGIN_EXAMPLE
-git clone git@github.com:YOUR-USERNAME/YOUR-FORKED-REPO.git
-cd into/cloned/fork-repo
-git remote -v
-git remote add upstream git://github.com/ORIGINAL-DEV-USERNAME/REPO-YOU-FORKED-FROM.git
-git remote -v
-git fetch upstream
-git pull upstream master
-#+END_EXAMPLE
+#+BEGIN_SRC sh
+  git clone git@github.com:YOUR-USERNAME/YOUR-FORKED-REPO.git
+  cd into/cloned/fork-repo
+  git remote -v
+  git remote add upstream git://github.com/ORIGINAL-DEV-USERNAME/REPO-YOU-FORKED-FROM.git
+  git remote -v
+  git fetch upstream
+  git pull upstream master
+#+END_SRC
 
 ** Remove tracking for commited files
 A file is commited but you don't want to track it anymore in the future.
@@ -45278,7 +45306,7 @@ If you encounter error =xargs: git: bad file number=, run this
 
 List all assumed unchanged files
 #+BEGIN_EXAMPLE
-git ls-files -v | grep '[[:lower:]]'
+  git ls-files -v | grep '[[:lower:]]'
 #+END_EXAMPLE
 
 ** Remove a commited file from file but leave in filesystem
@@ -49181,16 +49209,38 @@ File | Invalidate Caches and restart IDE
 
 ** Emacs
 *** Install & Configuration
-Download for Windows https://ftp.gnu.org/pub/gnu/emacs/windows/
-This version: emacs-24.5-bin-i686-mingw32.zip
-Extract it to C:\emacs, so you will have C:\emacs\emacs-24.5-bin-i686-mingw32\
-Make a shortcut of this file /bin/runemacs.exe and copy to your notes folder say C:\c\notes\
-Then right click, select Properties of the shortcut and change the ~Start In~ to =C:\c\notes= 
-Set a HOME user environment variable in Windows as ~C:\c\notes~
-Include a file ~.emacs~ in ~C:\c\notes~ 
-Your home folder in Emacs is ~C:\c\notes~
-~/.emacs 
-~(setq org-catch-invisible-edits 'smart)~
+- Download for Windows https://ftp.gnu.org/pub/gnu/emacs/windows/
+- This version: emacs-24.5-bin-i686-mingw32.zip
+- Extract it to C:\emacs, so you will have C:\emacs\emacs-24.5-bin-i686-mingw32\
+
+Windows Shortcut to Start:
+- Make a shortcut of this file /bin/runemacs.exe and copy to your notes folder say C:\c\notes\
+- Then right click, select Properties of the shortcut and change the ~Start In~ to =C:\c\notes=
+
+Windows Batch File to Start:
+- Set a HOME user environment variable in Windows as ~C:\c\notes~
+- Include a file ~.emacs~ in ~C:\c\notes~ 
+
+
+Your home folder in Emacs is ~C:\c\notes~ and from time to time there're auto-save-list (auto saved files records) saved in home folder ~C:\c\notes\.emacs.d~ folder
+
+C:/c/notes/run.bat
+#+BEGIN_SRC sh
+  set HOME=E:\li\notes
+  C:\emacs\emacs-25.1-i686-w64-mingw32\bin\runemacs.exe notes.org
+#+END_SRC
+
+Place packages under load-path ~C-h v load-path RET~
+C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\VERSION\site-lisp is /usr/local/share/emacs/VERSION/site-lisp for a particular Emacs version
+C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/emacs/VERSION/site-lisp for all Emacs version
+
+*.el (source) *.,elc (byte-compiled) are ELPA package and should be used for emacs 24+
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/lisp/")
+
+  (add-to-list 'load-path "c:/c/notes/lisp")
+#+END_SRC
 
 *** M-x
 - customize-themes :: Load a theme
