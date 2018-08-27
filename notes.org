@@ -39118,10 +39118,47 @@ The general rule is:
 
 On bare/apex domain, usually A, ALIAS or ANAME record can be used. Only DNS Made Easy supports ANAME and DNSimple and others support ALIAS. ANAME and ALIAS are not industry standards.
 
-** MX records
+** MX records and SPF record <<<dns:mx>>>
 - HOSTNAME :: e.g. use @ for barebone
 - Mail Providers Mail Server (or Value) :: always end with "." e.g. alt4.aspmx.l.google.com.
 - Priority :: the smaller the more important
+
+Google G Suite requires TTL to be 1 hour (3600). Priority might be different  by aspmx.l.google.com. must be the highest
+Priority	Mail Server
+1	ASPMX.L.GOOGLE.COM.
+5	ALT1.ASPMX.L.GOOGLE.COM.
+5	ALT2.ASPMX.L.GOOGLE.COM.
+10	ALT3.ASPMX.L.GOOGLE.COM.
+10	ALT4.ASPMX.L.GOOGLE.COM.
+
+[[https://toolbox.googleapps.com/apps/checkmx/][Google G Suite Toolbox Check MX]]
+
+[[http://www.openspf.org/SPF_Record_Syntax][SPF record is a TXT record which has 0 or more ordered mechanisms]]
+~all | ip4 | ip6 | a | mx | ptr | exists | include~
+
+Mechanism can be prefixed with 1 of 4 qualifiers. A qualifier means if the machanism matches the sender's IP, then return a result. If a mechanism matches the sender but no qualifier, then + is used. If no mechanism or modifier matches, then default result is Neutral. 
+#+BEGIN_EXAMPLE
+  + Pass
+  - Fail
+  ~ SoftFail
+  ? Neutral
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+  # Google G Suite SPF record
+  v=spf1 include:_spf.google.com ~all
+
+  # Add domain's A, MX records to the match list and always allow.
+  # Include a domain to the match list.
+  # Soft fail for all other senders IP or domains.
+  v=spf1 +a +mx include:_spf.google.com ip4:1.2.3.4 ip4:1.2.3.5 ip4:1.2.3.6 ~all
+#+END_EXAMPLE
+
+Mechanism ~all~ matches all senders' IP's, and it's usually at the end. =-all= fail for all. =~all= soft fail for all. =+all= allows all senders.
+
+Mechanism ~mx~ adds domain's MX details to the match list.
+
+Mechanism ~a~ adds domain's A records to the match list.
 
 ** redirect.center, redirect.name
 If URL record is not available, use CNAME and [[http://redirect.center/][redirect.center]] and redirect.name
@@ -39180,6 +39217,13 @@ Subdomain forwarding can be done as well.
 Domain registrar might require to purchase SSL with domain in order forward https://olddomain.com to https://newdomain.com
 
 Mask is http://oldomain.com continues to appear as oldomain.com in address bar but it actually points to newdomain.com
+
+** Domain Transfer
+- Make sure domain Admin contact email is valid. Unlock domain and remove privacy. Ask for auth code
+- Go to new registrar, in order to maintain the old nameservers, GoDaddy requires to setup DNS for the domain before request for domain transfer
+- Purchase domain transfer and enter auth code. .CA domains can be transferred immediately
+- On new registrar, create a DNS template and input old DNS records
+- At the end, change the nameservers to the new registrar and apply the DNS template with old records
 
 ** Addon domain
 It's an addtional domain that the system stores as a subdomain
@@ -52094,7 +52138,6 @@ https://devshop.support/
 ** TODO Lynda Bootstrap Layout Responsive Single-Page Design
 ** TODO Lynda Bootstrap 3: Advanced Web Development
 ** TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
-** TODO Learn SPF and whitelabel
 ** TODO Learn tool Zeplin
 ** TODO Blowfish hashing algorithm using random salt which is stored in db
 ** TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
