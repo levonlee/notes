@@ -39160,6 +39160,20 @@ Mechanism ~mx~ adds domain's MX details to the match list.
 
 Mechanism ~a~ adds domain's A records to the match list.
 
+** SOA record
+The SOA record stores information about:
+- the name of the server that supplied the data for the zone;
+- the administrator of the zone;
+- the current version of the data file;
+- the number of seconds a secondary name server should wait before checking for updates;
+- the number of seconds a secondary name server should wait before retrying a failed zone transfer;
+- the maximum number of seconds that a secondary name server can use data before it must either be refreshed or expire;
+- and a default number of seconds for the time-to-live file on resource records.
+
+A DNS zone is the part of a domain for which an individual DNS server is responsible. Each zone contains a single SOA record.
+
+e.g. ~ns2.a.com. b.c.com. 2018012804 10800 3600 604800 10800~
+
 ** redirect.center, redirect.name
 If URL record is not available, use CNAME and [[http://redirect.center/][redirect.center]] and redirect.name
 Instructions: https://milanaryal.com/domain-redirecting-and-url-forwarding-with-a-simple-dns-record/
@@ -39255,6 +39269,18 @@ Lookup domain registrar and nameservers use whois :: https://mxtoolbox.com/Whois
 Find IP location :: https://www.iplocation.net/
 
 DNS propagation :: https://www.whatsmydns.net/
+
+** AXFR and Find subdomains
+Without DNS Zone file export, it's almost impossible to find all subdomains and their DNS records. The following can be used:
+- Brute force ~dig a.x.com~ ~dig b.x.com~
+- [[https://pentest-tools.com/information-gathering/find-subdomains-of-domain][Pentest-tools.com - Find Subdomains]] :: not guaranteed to show all subdomains
+- If AXFR is enabled on DNS server and the IP from which this command is run is added as a secondary IP address to the target domain, the run ~host -l x.com~ or ~dig @ns1.DomainsSOA.com x.com axfr~
+- Use Google search results to filter out known subdomains ~site:x.com -"www.x.com" -"a.x.com" -"b.x.com"~
+
+DNS servers host are known as zones. DNS zone transfer is to replicate db changes across several DNS servers. AXFR is referred as DNS zone transfer because it's the protocol used during a DNS zone transfer.
+
+Initiate an AXFR zone-transfer request is simple and can be used by hackers. The below replicate x.com DNS records to the first nameserver.
+~dig @ns1.DomainSOA.com x.com axfr~
 
 ** AutoSSL in WHM/cPanel <<<autossl:whm>>>
 WHM and cPanel provides free SSL certificates for VPS and Dedicated server users.
