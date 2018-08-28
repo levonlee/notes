@@ -39163,7 +39163,7 @@ Mechanism ~a~ adds domain's A records to the match list.
 ** SOA record
 The SOA record stores information about:
 - the name of the server that supplied the data for the zone;
-- the administrator of the zone;
+- the administrator of the zone; e.g. b.c.com is actually the email address b@c.com
 - the current version of the data file;
 - the number of seconds a secondary name server should wait before checking for updates;
 - the number of seconds a secondary name server should wait before retrying a failed zone transfer;
@@ -39228,7 +39228,7 @@ abc.com/ijk will become google.com/xyz/ijk in the address bar
 
 Subdomain forwarding can be done as well.
 
-Domain registrar might require to purchase SSL with domain in order forward https://olddomain.com to https://newdomain.com
+Domain registrar might require to purchase SSL with domain in order to forward https://olddomain.com to https://newdomain.com
 
 Mask is http://oldomain.com continues to appear as oldomain.com in address bar but it actually points to newdomain.com
 
@@ -43636,15 +43636,24 @@ Request ~GET /somepath/localpath/pathinfo~
 
 **** RewriteCond <<<apache:RewriteCond>>>
 Syntax: RewriteCond [TestString] [CondPattern] [flags]
+
 #+BEGIN_EXAMPLE
   RewriteCond %{REMOTE_ADDR} ^1\.2\.3\.4$
+
+  RewriteCond %{HTTP_HOST} ^xyz\-40\.ca$ [OR]
+  RewriteCond %{HTTP_HOST} ^www\.xyz\-40\.ca$
+  RewriteRule ^(.*)$ "https\:\/\/www\.xyz\.com\/$1" [R=302,L]
+
 #+END_EXAMPLE
 
 %{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
 
 %{REQUEST_URI} :: leading slash
 
-**** HTTP_COOKIE
+**** Server-Variables
+https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+
+***** ${HTTP_COOKIE}
 #+BEGIN_EXAMPLE
   RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
   RewriteCond %1                 ^me$
