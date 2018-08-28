@@ -36227,31 +36227,47 @@ Refer to network:port on port range you should use
 Change email client setting to use localhost at port 10143
 
 Multiple redirections can be set up in the same tunnel
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # add -f to go into background and -N to not launch a shell
   ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+Now SSH to localhost:10022 will be forwarded to target_server_user@target.server.com:22 through SSH server user@my.server.com:443
+#+BEGIN_SRC sh
   ssh -p 10022 target_server_user@localhost
   scp -P 10022 localhost:/target/server/path/ /local/path/
   rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
+#+END_SRC
+
+- -L [bind_address:]port:host:hostport :: specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine.
+  - Summary :: [localhost | bind_address]:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
+
+- -D [bind_addres:]port :: similar to -L but the destionation host:hostport is not specified. It's called dynamic application-level port forwarding.
+  - e.g. ~ssh -ND 10022 -p 443 user@my.server.com~
+  - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
+  - Now a proxy server is set up :: 127.0.0.1:10022
+  - On my.server.com, set up custom records to resolve domains in file ~/etc/hosts~
+  - [[http://michalcichon.blogspot.com/2014/03/ssh-tunneling-using-putty-and-google.html][Config to start Chrome using a proxy server]]
+#+BEGIN_EXAMPLE
+  C:\Program Files (x86)\Google\Chrome\Application\chrome.exe --proxy-server="socks5://127.0.0.1:10022"
+
+  # or
+
+  chrome.exe --proxy-server="socks5://127.0.0.1:10022"
 #+END_EXAMPLE
 
--L [bind_address:]port:host:hostport :: specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine. Summary :: localhost:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
-
--R [bind_address:]port:host:hostport :: Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
-
-Summary
-~port~ my.server.com (access from internet) > -p 443 user@my.server.com (SSH) > from remote forward to host:hostport (at local). 
-e.g. people on the internet my.server.com:9000 to access your localhost:8001
-ssh -R 9000:localhost:8001 -p 443 user@my.server.com
-In order to use -R, add this line to /etc/ssh/sshd_config then linux:ssh:restart
+- -R [bind_address:]port:host:hostport :: Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
+  - Summary :: ~port~ my.server.com (access from internet) > -p 443 user@my.server.com (SSH) > from remote forward to host:hostport (at local).
+  - host:hostport is usually localhost:8888 
+  - e.g. people on the internet my.server.com:9000 to access your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
+  - ~ssh -R 9000:localhost:8001 -p 443 user@my.server.com~
+  - In order to use -R, on my.server.com add this line to /etc/ssh/sshd_config then linux:ssh:restart
 #+BEGIN_EXAMPLE
   GatewayPorts yes
 #+END_EXAMPLE
 
--g :: allows remote hosts to connect to local forwarded ports.
+- -g :: allows remote hosts to connect to local forwarded ports.
+- -N :: don't run command. Just forwarding ports.
 
 **** SOCKS server
 Run a SOCKS server on a given port, and set applications to use SOCKS, either natively or forcibly.
