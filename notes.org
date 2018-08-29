@@ -36447,7 +36447,7 @@ If /etc/fstab is modified and you want to remount to reflect the changes. Unmoun
 http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
 
 *** /etc system configuration files
-*** Disk space
+*** Disk space <<<linux:du>>>
 | =df -h=                 | Disk usage on OS                                    |
 |                         | h for human-readable.                               |
 | =du -sh=                | Current folder size. -s shows total only            |
@@ -36460,19 +36460,27 @@ du --exclude=./wp-content/uploads --exclude=./wp-content/error_log -sh
 
 du --exclude-from 'path/to/files.txt'
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # Only get down to 1 level. When max-depth > 0, -s cannot be used.
   du --max-depth=1 -h
 
-  # sort by size
-  du --max-depth=1 -h | sort -h
+  # sort by size in MB
+  du --max-depth=1 -h -m | sort -h
 
   # Do not count subdirectories size
   du --max-depth=1 -Sh
-#+END_EXAMPLE
+#+END_SRC
 
 Search which directory has taken up space
 Highlight lines that have M or G in front for file size
+
+#+BEGIN_SRC sh
+  du -cha --max-depth=1 / | sort -h | grep -E "^[0-9\.]*[MG]"
+
+  # say /var has taken up space
+  du -cha --max-depth=1 /var | sort -h | grep -E "^[0-9\.]*[MG]"
+#+END_SRC
+
 #+BEGIN_EXAMPLE
   du -cha --max-depth=1 / | sort -h | grep -E "^[0-9\.]*[MG]"
 
@@ -36481,8 +36489,10 @@ Highlight lines that have M or G in front for file size
 #+END_EXAMPLE
 
 du options
--c, --total :: have a grand total line at the bottom
--a, --all :: write counts for all files, not just directories
+- -c, --total :: have a grand total line at the bottom
+- -a, --all :: write counts for all files, not just directories
+- -m :: same as --block-size=1M
+- -B, --block-size=SIZE :: SIZE can be K, M, G, T, P, E, Z, Y
 
 **** Large file deleted but still no space
 Delete file reserved by process
@@ -36816,8 +36826,8 @@ Check file permissions wp:check file permissions
 - -B NUM :: number of leading lines of text
 - --exclude-dir=node_modules
 
-*** Folder structure
-#+BEGIN_EXAMPLE
+*** Folder structure <<<linux:tree>>>
+#+BEGIN_SRC sh
   which tree
   # apt-get install tree
   # list only folders without files
@@ -36828,7 +36838,7 @@ Check file permissions wp:check file permissions
 
   # List first level child folder only for the current folder
   tree -d -L 1
-#+END_EXAMPLE
+#+END_SRC
 
 *** Compare files in 2 directories
 #+BEGIN_EXAMPLE
@@ -39330,6 +39340,8 @@ http://www.inmotionhosting.com/support/edu/whm/creating-and-managing-accounts/us
 
 It uses SHA256 TLS v1 and expires every 90 days. TLS v1 must be disabled for eCommerce site by June 30, 2018. For non-eCommerce site, it's ok.
 
+AutoSSL requires Domain Control Validation (DCV) - the domain has to have ns or A records point to the server that AutoSSL is generated. Otherwise, it will not do anything, not even creating .well-known folder.
+
 First is to enable AutoSSL for WHM users. AutoSSL will check all root domains under the user account.
 
 If you enable a user and the user has 1 root domain and several addon domains and subdomains, all will have SSL.
@@ -39339,7 +39351,8 @@ yoursub.yourrootdomain.com was set up by you and you didn't setup www.yoursub.yo
 
 Use hosting nameservers in domain registrar. Log in WHM as root. Go to Manage AutoSSL.
 Providers :: cPanel (powered by Comodo)
-Options :: check all options especially "Allow AutoSSL to replace invalid or expiring non-AutoSSL certificates"
+Options :: Check all options. 
+  - "Allow AutoSSL to replace invalid or expiring non-AutoSSL certificates" :: enable this to allow AutoSSL to replace certs that the AutoSSL system did not issue e.g. you import purchased cert. Enable this will overwrite the imported cert with AutoSSL certificates.
 Manage Users :: Enable AutoSSL for relevant users
 Click on Run AutoSSL for All Users
 Check Logs
@@ -44592,12 +44605,12 @@ Log /var/log/letsencrypt
 /etc/cron.d/certbot is just running ~certbot -q renew~ so renewal config file is very important for each domain
 
 *** Challenges
-http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
+- http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
 
-dns (port 53 open on DNS server) :: requires to place a TXT DNS record with specific contents
+- dns (port 53 open on DNS server) :: requires to place a TXT DNS record with specific contents
   e.g. _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 
-tls-sni (port 443) :: prepares a self-signed SSL certificate with the challenge validation encoded into a subjectAlternatNames entry. Config your SSL server to present this challenge SSL certificate to the ACME server using SNI.
+- tls-sni (port 443) :: prepares a self-signed SSL certificate with the challenge validation encoded into a subjectAlternatNames entry. Config your SSL server to present this challenge SSL certificate to the ACME server using SNI.
   - nginx and apache plugins use this type
 
 *** certbot nginx apache plugins
@@ -45810,7 +45823,7 @@ In the existing repo run
 
 #+BEGIN_SRC sh
   git init
-  git remote add origin  https://github.com/username/reponame.git
+  git remote add origin https://github.com/username/reponame.git
   git fetch --all
   git reset --hard origin/master
   # dump all untracked changes and checkout remote master branch
