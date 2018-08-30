@@ -3138,13 +3138,6 @@ Both have no trailing slash
 No trailing slash
 http://abc.com
 
-*** XSS
-Tests
-#+BEGIN_EXAMPLE
-  http://a.ca/abc-xyz--><form><button formaction='/esi.attack.sim'><!--
-  http://a.ca/abc-xyz--><script src='a' onerror=alert(document.domain)>
-#+END_EXAMPLE
-
 ** Translate
 *** t()
 $text = t("This is !name's website", array('!name' => $username));
@@ -43701,14 +43694,14 @@ Syntax: RewriteCond [TestString] [CondPattern] [flags]
 
 #+END_EXAMPLE
 
+**** Server-Variables
+https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+
 %{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
 
 %{REQUEST_URI} :: leading slash
 
-**** Server-Variables
-https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
-
-***** ${HTTP_COOKIE}
+***** ~${HTTP_COOKIE}~
 #+BEGIN_EXAMPLE
   RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
   RewriteCond %1                 ^me$
@@ -43721,7 +43714,18 @@ https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
   RewriteRule ......
 #+END_EXAMPLE
 
-**** Flags
+***** ~%{TIME_*}~
+#+BEGIN_EXAMPLE
+  <IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
+    RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR} >2017110521
+    RewriteRule ^DealDays/?(.*)$ / [R=302,L]
+  </IfModule>
+#+END_EXAMPLE
+
+**** RewriteCond Flags
 NC :: no case
 NV :: no vary
 OR
@@ -43743,7 +43747,7 @@ Substitution
 "-" or - :: the requested URI is not modified
 If it doesn't have a leading slash, the end URL has the current directory's .htaccess or apache:RewriteBase
 
-**** Flags <<<apache:RewriteRule:flags>>>
+**** RewriteRule Flags <<<apache:RewriteRule:flags>>>
 https://httpd.apache.org/docs/2.4/rewrite/flags.html
 
 F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
@@ -43751,6 +43755,116 @@ L :: Last
 NC :: no case
 T :: set MIME type with which the resulting response will be sent.
 E :: set environment variable e.g. [E=VAR:VAL] [E=VAR] (set to empty) [E=!VAR] (unset a previously set env var named VAR)
+
+P|proxy :: handle request by mod_proxy
+
+QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
+e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
+/pages/123?one=two will be mapped to /page.php?page=123&one=two
+
+**** ReWrite a path to sub directory with .htaccess
+URL /inventory/* rewrite to /my-app/public/*
+
+./my-app/public/index.php is where the app starts
+./my-app/app/*.* are the app codes
+./my-app/public/theme/*.* and ./my-app/public/uploads/*.* have the assets
+
+./.htaccess
+#+BEGIN_EXAMPLE
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^inventory/?$ /my-app/public/index.php [L]
+  RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
+  </IfModule>
+#+END_EXAMPLE
+
+./my-app/public/.htaccess
+#+BEGIN_EXAMPLE
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /my-app/public/
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /my-app/public/index.php [L]
+  </IfModule>
+#+END_EXAMPLE
+
+**** WordPress Example
+RewriteRule with redirect flag [R] is to redirect URL. Without it, RedirectRule maintains the URL on LHS in the address bar.
+Redirect and RedirectMatch is to redirect
+Redirect means the URL in the address bar will change
+
+RewriteRule without proxy flag [P] is to maintain the URL on LHS as $_SERVER['REQUEST_URI'] in RewriteRule 
+RewriteRule with [P] is to change the URL to the one on RHS as the new $_SERVER['REQUEST_URI'] in RewriteRule and pass it to the proxy
+[P] requires mod_proxy enabled
+
+The only way to modify $_SERVER['REQUEST_URI'] is to do a redirect or with the [P] flag.
+
+RewriteRule is relative to the directory that the current .htaccess is in for both RHS and LHS.
+RewriteBase only affects the dest of RewriteRule (RHS) only if dest is a relative path
+
+Redirect /dealdays to /DealDays
+#+BEGIN_EXAMPLE
+  # custom RewriteRule goes before the wordpress block
+  <IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
+    RewriteRule ^abc/?(.*)$ /subdir/abc.php [L]
+  </IfModule>
+  # custom RewriteRule end
+
+  # BEGIN WordPress
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
+  </IfModule>
+
+  # END WordPress
+
+  # default wordpress htaccess block is to redirect to index.php if it's not a file and not a directory
+  # Rules below the block has to be either a file or an existing directory
+
+  RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=302,L]
+  # If redirect to another url, use
+  # Redirect is prefix match and append additional path info beyond the matched URL-path to the new/target URL.
+  # a.com/dealdays2 to b.com/dealdays2, a.com/dealdays2/foo.txt to b.com/dealdays2/foo.txt, a.com/dealdays2/xyz to b.com/dealdays2/xyz
+  # Redirect syntax :: Redirect [status] [URL-path] URL
+  # [URL-path] is case-sensitive beginning with slash. relative path is not allowed
+  # URL may be either an absolute URL beginning with scheme and hostname or a URL-path beginning with a slash
+  Redirect 301 /dealdays2 http://b.com/dealdays2
+
+  # Redirect without appending additional path info
+  # RedirectMatch is like Redirect but regex
+  # syntax :: RedirectMatch [status] regex URL
+  RedirectMatch 302 ^/dealdays2/?$ http://b.com/dealdays2
+
+  # case insensitive just add (?i) in front of the pattern
+  RedirectMatch 302 (?i)^dealdays2/?$  /dealdays/
+#+END_EXAMPLE
+
+Redirect root domain only but not other URI. e.g. mysite.com or www.mysite.com redirect to abc.com but not mysite.com/xyz to abc.com/xyz
+#+BEGIN_EXAMPLE
+  RewriteEngine on
+  RewriteCond %{HTTP_HOST} ^(www\.)?mysite\.com [NC]
+  # no www :: RewriteCond %{HTTP_HOST} ^mysite\.com [NC]
+
+  RewriteCond %{REQUEST_URI} ^/$
+  # Rewriterule ^(.*)$ http://abc.com/ [L,R=302]
+  Rewriterule ^$ http://abc.com/ [L,R=302]
+#+END_EXAMPLE
+
+Redirect www.abc.com to abc.com
+#+BEGIN_EXAMPLE
+  RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
+  RewriteRule ^(.*) http://abc.com/$1 [L,R=302]
+#+END_EXAMPLE
 
 *** mod_autoindex
 If the URI matches a directory but doesn't specify an index file e.g. index.html, by default Apache returns the index of that directory. Don't do that!
@@ -43805,6 +43919,11 @@ Default deflate content types :: /etc/apache2/mods-available/deflate.conf
   </IfModule>
 #+END_EXAMPLE
 
+*** mod_alias
+https://httpd.apache.org/docs/2.4/mod/mod_alias.html
+
+**** Redirect <<<apache:mode_alias:Redirect>>>
+
 ** Directive Context <<<apache:directive context>>>
 server config ::This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers. It is not allowed in .htaccess files at all.
 
@@ -43834,6 +43953,15 @@ default: AllowOverride None (2.3.9 and later), AllowOverride All (2.3.8 and earl
 Which directives declared in .htaccess can override earlier configuration directives.
 
 None :: .htaccess files are completely ignored.
+
+*** FilesMatch
+Force to download a PDF file. The path doesn't matter
+#+BEGIN_EXAMPLE
+  <FilesMatch "aPDFfile.pdf">
+    ForceType application/octet-stream
+    Header add Content-Disposition "attachment"
+  </filesMatch>
+#+END_EXAMPLE
 
 ** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
@@ -44089,6 +44217,37 @@ Find config file that handles SSL
 #+END_EXAMPLE
 
 Check before apache:restart
+
+** Redirect to HTTPS <<<apache:https>>>
+#+BEGIN_EXAMPLE
+  RewriteEngine On 
+  RewriteCond %{SERVER_PORT} 80 
+  # or
+  # RewriteCond %{HTTPS} off
+
+  # test one page
+  # RewriteCond %{REQUEST_URI} ^/page-path-name/$
+
+  RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+  # or
+  # RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+#+END_EXAMPLE
+
+A specific domain
+#+BEGIN_EXAMPLE
+  RewriteEngine On 
+  RewriteCond %{HTTP_HOST} ^example\.com [NC]
+  RewriteCond %{SERVER_PORT} 80 
+  RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
+#+END_EXAMPLE
+
+Force SSL on a specific folder. Place this .htaccess in that folder
+#+BEGIN_EXAMPLE
+  RewriteEngine On 
+  RewriteCond %{SERVER_PORT} 80 
+  RewriteCond %{REQUEST_URI} folder 
+  RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
+#+END_EXAMPLE
 
 * Nginx
 ** Install on Ubuntu 16.04
@@ -45020,7 +45179,8 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
   ssl_stapling_verify on;
 #+END_EXAMPLE
 
-* ModSecurity - Web Application Firewall (WAF) <<<waf:modsecurity>>>
+* Web Application Firewall (WAF)
+** ModSecurity <<<waf:modsecurity>>>
 Mod security is a free Web Application Firewall (WAF) that works with Apache, Nginx and IIS. It supports a flexible rule engine to perform simple and complex operations and comes with a Core Rule Set (CRS) which has rules for SQL injection, cross site scripting, Trojans, bad user agents, session hijacking and a lot of other exploits. For Apache, it is an additional module which makes it easy to install and configure.
 
 https://www.digitalocean.com/community/tutorials/how-to-set-up-mod_security-with-apache-on-debian-ubuntu
@@ -45040,171 +45200,6 @@ To see any requests that violate which rules in which .conf file, tail the apach
 
   // to see which .conf files are loaded by the module, InMotion hosting
   cat /usr/local/apache/conf/modsec2.user.conf
-#+END_EXAMPLE
-
-** Force to download a PDF file
-The path doesn't matter
-#+BEGIN_EXAMPLE
-  <FilesMatch "aPDFfile.pdf">
-    ForceType application/octet-stream
-    Header add Content-Disposition "attachment"
-  </filesMatch>
-#+END_EXAMPLE
-
-** Wordpress Redirect
-RewriteRule with redirect flag [R] is to redirect URL. Without it, RedirectRule maintains the URL on LHS in the address bar.
-Redirect and RedirectMatch is to redirect
-Redirect means the URL in the address bar will change
-
-RewriteRule without proxy flag [P] is to maintain the URL on LHS in RewriteRule and served to $_SERVER['REQUEST_URI']
-RewriteRule with [P] is to change the URL to the one on RHS in RewriteRule and pass it to the proxy
-[P] requires mod_proxy enabled
-
-The only way to modify $_SERVER['REQUEST_URI'] is to do a redirect or with the [P] flag.
-
-RewriteRule is relative to the directory that the current .htaccess is in for both RHS and LHS.
-RewriteBase only affects the dest of RewriteRule (RHS) only if dest is a relative path
-
-Redirect /dealdays to /DealDays
-#+BEGIN_EXAMPLE
-  # custom RewriteRule goes before the wordpress block
-  <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
-    RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
-    RewriteRule ^abc/?(.*)$ /subdir/abc.php [L]
-  </IfModule>
-  # custom RewriteRule end
-
-  # BEGIN WordPress
-  <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^index\.php$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.php [L]
-  </IfModule>
-
-  # END WordPress
-
-  # default wordpress htaccess block is to redirect to index.php if it's not a file and not a directory
-  # Rules below the block has to be either a file or an existing directory
-
-  RewriteRule ^dealdays/(.*)$ /DealDays/$1 [R=301,L]
-  # If redirect to another url, use
-  # Redirect is prefix match and append additional path info beyond the matched URL-path to the new/target URL.
-  # a.com/dealdays2 to b.com/dealdays2, a.com/dealdays2/foo.txt to b.com/dealdays2/foo.txt, a.com/dealdays2/xyz to b.com/dealdays2/xyz
-  # Redirect syntax :: Redirect [status] [URL-path] URL
-  # [URL-path] is case-sensitive beginning with slash. relative path is not allowed
-  # URL may be either an absolute URL beginning with scheme and hostname or a URL-path beginning with a slash
-  Redirect 301 /dealdays2 http://b.com/dealdays2
-
-  # Redirect without appending additional path info
-  # RedirectMatch is like Redirect but regex
-  # syntax :: RedirectMatch [status] regex URL
-  RedirectMatch 302 ^/dealdays2/?$ http://b.com/dealdays2
-
-  # case insensitive just add (?i) in front of the pattern
-  RedirectMatch 302 (?i)^dealdays2/?$  /dealdays/
-#+END_EXAMPLE
-
-Redirect root domain only but not other URI. e.g. mysite.com or www.mysite.com redirect to abc.com but not mysite.com/xyz to abc.com/xyz
-#+BEGIN_EXAMPLE
-  RewriteEngine on
-  RewriteCond %{HTTP_HOST} ^(www\.)?mysite\.com [NC]
-  # no www :: RewriteCond %{HTTP_HOST} ^mysite\.com [NC]
-
-  RewriteCond %{REQUEST_URI} ^/$
-  # Rewriterule ^(.*)$ http://abc.com/ [L,R=301]
-  Rewriterule ^$ http://abc.com/ [L,R=301]
-#+END_EXAMPLE
-
-Redirect www.abc.com to abc.com
-#+BEGIN_EXAMPLE
-  RewriteCond %{HTTP_HOST}  ^www.abc.com [NC]
-  RewriteRule ^(.*) http://abc.com/$1 [L,R=301]
-#+END_EXAMPLE
-
-** ReWrite a path to sub directory with .htaccess
-URL /inventory/* rewrite to /my-app/public/*
-
-./my-app/public/index.php is where the app starts
-./my-app/app/*.* are the app codes
-./my-app/public/theme/*.* and ./my-app/public/uploads/*.* have the assets
-
-./.htaccess
-#+BEGIN_EXAMPLE
-  <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^inventory/?$ /my-app/public/index.php [L]
-  RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
-  </IfModule>
-#+END_EXAMPLE
-
-./my-app/public/.htaccess
-#+BEGIN_EXAMPLE
-  <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /my-app/public/
-  RewriteRule ^index\.php$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /my-app/public/index.php [L]
-  </IfModule>
-#+END_EXAMPLE
-
-** RewriteCond
-Rewrite based on time
-#+BEGIN_EXAMPLE
-  <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^dealdays/?(.*)$ /DealDays/$1 [R=302,L]
-  RewriteCond %{TIME_YEAR}%{TIME_MON}%{TIME_DAY}%{TIME_HOUR} >2017110521
-  RewriteRule ^DealDays/?(.*)$ / [R=302,L]
-  </IfModule>
-#+END_EXAMPLE
-
-** Rewrite flags
-L|last :: stop processing other rules
-NC|nocase
-P|proxy :: handle request by mod_proxy
-
-QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
-e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
-/pages/123?one=two will be mapped to /page.php?page=123&one=two
-
-** Redirect to HTTPS <<<apache:https>>>
-#+BEGIN_EXAMPLE
-  RewriteEngine On 
-  RewriteCond %{SERVER_PORT} 80 
-  # or
-  # RewriteCond %{HTTPS} off
-
-  # test one page
-  # RewriteCond %{REQUEST_URI} ^/page-path-name/$
-
-  RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
-  # or
-  # RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
-#+END_EXAMPLE
-
-A specific domain
-#+BEGIN_EXAMPLE
-  RewriteEngine On 
-  RewriteCond %{HTTP_HOST} ^example\.com [NC]
-  RewriteCond %{SERVER_PORT} 80 
-  RewriteRule ^(.*)$ https://www.example.com/$1 [R,L]
-#+END_EXAMPLE
-
-Force SSL on a specific folder. Place this .htaccess in that folder
-#+BEGIN_EXAMPLE
-  RewriteEngine On 
-  RewriteCond %{SERVER_PORT} 80 
-  RewriteCond %{REQUEST_URI} folder 
-  RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
 #+END_EXAMPLE
 
 * Git
@@ -50821,6 +50816,13 @@ Performance testing :: https://www.webpagetest.org/
 Header response security test :: https://securityheaders.com/
 
 [[https://speedcurve.com][SpeedCurve]] and [[https://calibreapp.com/][Calibre]] :: Monitor web performance budgets using chrome:lighthouse and google:pagespeed
+
+*** XSS
+Tests
+#+BEGIN_EXAMPLE
+  http://a.ca/abc-xyz--><form><button formaction='/esi.attack.sim'><!--
+  http://a.ca/abc-xyz--><script src='a' onerror=alert(document.domain)>
+#+END_EXAMPLE
 
 ** WCAG, AODA, Web Content Accessibility Guidelines
 Checking Tools
