@@ -8321,13 +8321,12 @@ Stop wp to modify .htaccess inside the Wordpress block
   remove_filter( 'flush_rewrite_rules_hard', 'filter_flush_rewrite_rules_hard', 10, 1 ); 
 #+END_EXAMPLE
 
-*** tiny_mce_before_init
-<<<wp:filter:tiny_mce_before_init>>>
+*** tiny_mce_before_init <<<wp:filter:tiny_mce_before_init>>>
 [[https://codex.wordpress.org/Plugin_API/Filter_Reference/tiny_mce_before_init][Change TinyMCE settings]]
 https://codex.wordpress.org/TinyMCE Default setting
 https://www.tinymce.com/docs/configure/
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   add_filter( 'tiny_mce_before_init', 'myformatTinyMCE' );
   function myformatTinyMCE( $in ) {
     $in['wordpress_adv_hidden'] = FALSE; // enable advanced edit mode
@@ -8352,20 +8351,7 @@ https://www.tinymce.com/docs/configure/
 
     return $in;
   }
-#+END_EXAMPLE
-
-To be safe, add this for Wordpress to remove p tag wrapped around shortcode
-#+BEGIN_EXAMPLE
-  add_filter( 'the_content', 'tgm_io_shortcode_empty_paragraph_fix' );
-  function tgm_io_shortcode_empty_paragraph_fix( $content ) {
-    $array = array(
-      '<p>['    => '[',
-      ']</p>'   => ']',
-      ']<br />' => ']'
-    );
-    return strtr( $content, $array );
-  }
-#+END_EXAMPLE
+#+END_SRC
 
 *** the_content <<<wp:filter:the_content>>>
 Refer to wp:f:shortcode_unautop wp:f:wpautop wp:filter:tiny_mce_before_init
@@ -43616,7 +43602,7 @@ Create remoteip.conf file under /etc/apache2/conf-available/remoteip.conf
 https://httpd.apache.org/docs/current/mod/mod_headers.html
 It provides directives to control and modify HTTP request and response headers. Headers can be merged, replaced or removed.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <IfModule mod_headers.c>
       Header set Access-Control-Allow-Origin "*"
   </IfModule>
@@ -43626,7 +43612,7 @@ It provides directives to control and modify HTTP request and response headers. 
           Header set Access-Control-Allow-Origin "*"
       </FilesMatch>
   </IfModule>
-#+END_EXAMPLE
+#+END_SRC
 
 <<<apache:mod_headers:cache>>> Refer to header:cache-control php:header
 #+BEGIN_EXAMPLE
@@ -43956,12 +43942,12 @@ None :: .htaccess files are completely ignored.
 
 *** FilesMatch
 Force to download a PDF file. The path doesn't matter
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   <FilesMatch "aPDFfile.pdf">
     ForceType application/octet-stream
     Header add Content-Disposition "attachment"
   </filesMatch>
-#+END_EXAMPLE
+#+END_SRC
 
 ** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
@@ -49405,8 +49391,8 @@ Windows Shortcut to Start:
 - Then right click, select Properties of the shortcut and change the ~Start In~ to =C:\c\notes=
 
 Windows Batch File to Start:
-- Set a HOME user environment variable in Windows as ~C:\c\notes~
-- Include a file ~.emacs~ in ~C:\c\notes~ 
+- Set a HOME user environment variable in Windows as ~C:\c\notes~ and that is =~/= as the home directory inside Emacs
+- Include an init file ~C:\c\notes\.emacs~
 
 Your home folder in Emacs is ~C:\c\notes~ and from time to time there're auto-save-list (auto saved files records) saved in home folder ~C:\c\notes\.emacs.d~ folder
 
@@ -49415,6 +49401,16 @@ C:/c/notes/run.bat
   set HOME=E:\li\notes
   C:\emacs\emacs-25.1-i686-w64-mingw32\bin\runemacs.exe notes.org
 #+END_SRC
+
+*** MELPA packages
+Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
+Add http://melpa.org/packages/
+
+Run ~M-x list-packages~ to see all packages including built-in pkgs and package-archives. ~i~ for installation, ~u~ to unmark, ~x~ to perform the i and u installation. ~RET~ to see more about a pkg.
+
+New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=, then you can follow instructions on Melpa.org to initialize in .emacs init file.
+
+Another GitHub pkg ~el-get~ can be used to install/load pkgs from difference sources :: https://mrblog.nl/emacs/config.html
 
 Place packages under load-path ~C-h v load-path RET~
 C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\VERSION\site-lisp is /usr/local/share/emacs/VERSION/site-lisp for a particular Emacs version
@@ -49430,6 +49426,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 
 *** M-x
 - customize-themes :: Load a theme
+- customize-variable :: see a variable value and may change later ~M-x customize-variable [RET] package-archives [RET]~
 
 *** Basics
 Help :: C-h
@@ -49569,7 +49566,9 @@ src_xml{<el></el>}
 
 src_haskell[:exports both]{fac 5}
 
-[[https://orgmode.org/worg/org-contrib/babel/languages.html][All languages]] :: html xml css sass js makefile java sh sql sqlite ruby python perl C C++ matlab org  
+[[https://orgmode.org/worg/org-contrib/babel/languages.html][All languages]] :: html xml css sass js makefile java sh sql sqlite ruby python perl C C++ matlab org dns
+
+Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mode~ to *-mode.el files
 
 #+BEGIN_SRC sh
   #!/bin/bash
