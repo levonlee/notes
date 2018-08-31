@@ -17,6 +17,9 @@
 )
 (setq inhibit-startup-message t
       backup-directory-alist '(("." . "~/.saves"))
+      sh-basic-offset 2
+      sh-indentation 2
+      smie-indent-basic 2
 )
 (setq org-src-fontify-natively t)
 (add-hook 'text-mode-hook 'turn-on-visual-line-mode)
@@ -28,6 +31,7 @@
  '(ansi-color-faces-vector
    [default default default italic underline success warning error])
  '(custom-enabled-themes (quote (misterioso)))
+ '(org-export-with-sub-superscripts (quote {}))
  '(package-selected-packages (quote (htmlize php-mode apache-mode))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
