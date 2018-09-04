@@ -31,6 +31,7 @@
  '(ansi-color-faces-vector
    [default default default italic underline success warning error])
  '(custom-enabled-themes (quote (misterioso)))
+ '(org-confirm-babel-evaluate nil)
  '(org-export-with-sub-superscripts (quote {}))
  '(package-selected-packages (quote (htmlize php-mode apache-mode))))
 (custom-set-faces
@@ -48,4 +49,9 @@
       (make-directory pub-dir)))
   (apply orig-fun extension subtreep pub-dir nil))
 (advice-add 'org-export-output-file-name :around #'org-export-output-file-name-modified)
+
+;; Add dot language to org-babel
+(org-babel-do-load-languages
+'org-babel-load-languages
+'((dot . t)))
 
