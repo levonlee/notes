@@ -33,7 +33,7 @@
  '(custom-enabled-themes (quote (misterioso)))
  '(org-confirm-babel-evaluate nil)
  '(org-export-with-sub-superscripts (quote {}))
- '(package-selected-packages (quote (htmlize php-mode apache-mode))))
+ '(package-selected-packages (quote (json-mode htmlize php-mode apache-mode))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
