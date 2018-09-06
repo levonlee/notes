@@ -2960,7 +2960,7 @@ From 7.x-2.0-beta1 to 7.x-2.9
 
 Once a language is added (default language is chosen), node created will have $node->language = 'en'
 
-*** S3 File System s3fs
+*** S3 File System - s3fs
 requires module libraries, library =AWS SDK for PHP 2.x=, PHP 5.3.3+ with ~allow_url_fopen = On~ in =php.ini=
 
 #+BEGIN_EXAMPLE
@@ -2995,6 +2995,9 @@ settings.php
 
 Go to =admin/config/media/file-system= and set the Default download method to Amazon Simple Storage Service
 Refer to aws:s3 about how to setup user with correct permission policy
+
+*** Password Policy - password_policy
+Change password required length, etc.
 
 *** Security Kit - seckit
 https://www.drupal.org/project/seckit
@@ -3033,9 +3036,17 @@ You can throw an Exception
 ** Configuration, Setting, Maintenance Mode
 Override configuration and setting based on the current dev environment
 settings.php
-$conf['admin_theme'] = 'seven';
-$conf['maintenance_mode'] = FALSE; // Under maintenance to login: 1) turn off javascript in browser 2) a.com/?q=user 3) UPDATE `variable` SET `value`='0' WHERE 'name' = 'maintenance_mode'
-pantheon:environment
+#+BEGIN_SRC php
+  $conf['admin_theme'] = 'seven';
+  $conf['maintenance_mode'] = FALSE;
+#+END_SRC
+
+- To determine which environment :: pantheon:environment
+
+When site is under maintenance and you want to login:
+- Turn off javascript in browser
+- a.com/?q=user
+- ~UPDATE `variable` SET `value`='0' WHERE `name` = 'maintenance_mode'~
 
 For assigning permissions to roles, e.g. enable anonymous for Devel, you have to do it manually  
 
@@ -3075,13 +3086,26 @@ Refer to mysql:charset for important info
 
 *** Show error <<<d7:show error>>>
 Refer to d7:debug
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   error_reporting(E_ALL);
   ini_set('display_errors', TRUE);
   ini_set('display_startup_errors', TRUE);
   $conf['error_level'] = 2;
   // UI > Administration > Configuration > Development > logging > 'All messages'
-#+END_EXAMPLE
+#+END_SRC
+
+*** Session Timeout, Session Cookie Timeout
+#+BEGIN_SRC php
+  // these 2 lines are to make sure PHP has the settings to enable gc
+  ini_set('session.gc_probability', 1);
+  ini_set('session.gc_divisor', 100);
+
+  // about 2 days for session timeout
+  ini_set('session.gc_maxlifetime', 200000);
+
+  // about 20 days for session cookie timeout
+  ini_set('session.cookie_lifetime', 2000000);
+#+END_SRC
 
 ** URL Alias
 Setup pattern for each node type
@@ -46227,19 +46251,16 @@ This bootstraps the site and invokes drupal_cron_run.
 If the site is not accessed for at least 2 hours, Pantheon suspends all associated services and thus cron will not run.
 
 ** Determine Environment <<<pantheon:environment>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   if (defined('PANTHEON_ENVIRONMENT') && PANTHEON_ENVIRONMENT == 'dev') {} 
-#+END_EXAMPLE
 
-Not including Drush and on dev web environment
-#+BEGIN_EXAMPLE
   if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
    // Web only excluding Drush 
    if ($_SERVER['PANTHEON_ENVIRONMENT'] == 'dev') {
     // Web only excluding Drush and on dev
    }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Disable Newrelic
 https://pantheon.io/docs/new-relic
@@ -49607,14 +49628,17 @@ This is inside the drawer
 :END:
 
 *** Code Block
+Create a code block: ~<e~ and ~Tab~
+Inside a code block, ~C-c + '~ to go to a new major-mode edit buffer to edit the code, ~C-x C-s~ saves the buffer and updates the contents of the Org buffer. ~C-c + '~ again to exit.
+
+Inline code block
 #+BEGIN_EXAMPLE
-  <e and Tab to create a code block
-  Inside a code block, C-c + ' (single) to go to a new major-mode edit buffer to edit the code, C-x C-s saves the buffer and updates the contents of the Org buffer. C-c + ' again to exit.
+  src_<language>[<header arguments>]{<body>}
 #+END_EXAMPLE
 
 src_sh{echo "hello"}
 
-src_xml{<el></el>}
+src_html[:exports code]{<el></el>}
 
 src_haskell[:exports both]{fac 5}
 
