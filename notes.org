@@ -51,10 +51,10 @@ And then
 #+END_EXAMPLE
 
 **** Configuration Mode
-PHP_INI_USER	Entry can be set in user scripts (like with ini_set()) or in the Windows registry. Since PHP 5.3, entry can be set in .user.ini
-PHP_INI_PERDIR	Entry can be set in php.ini, .htaccess, httpd.conf or .user.ini (since PHP 5.3)
-PHP_INI_SYSTEM	Entry can be set in php.ini or httpd.conf
-PHP_INI_ALL	Entry can be set anywhere
+- PHP_INI_USER :: Entry can be set in user scripts (like with ini_set()) or in the Windows registry. Since PHP 5.3, entry can be set in .user.ini
+- PHP_INI_PERDIR :: Entry can be set in php.ini, .htaccess, httpd.conf or .user.ini (since PHP 5.3)
+- PHP_INI_SYSTEM :: Entry can be set in php.ini or httpd.conf
+- PHP_INI_ALL :: Entry can be set anywhere
 
 **** Directive Value
 Value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ${foo})
@@ -148,7 +148,14 @@ Default is 1 to enable. If disabled, file_get_contents is not possible. This set
 **** expose_php <<<php.ini:expose_php>>>
 expose_php = On
 
-*** <<<php.ini:extension>>>
+**** session <<<php.ini:session>>>
+http://us3.php.net/manual/en/session.configuration.php
+
+Most of them are PHP_INI_ALL
+- session.cookie_secure :: bool <<<php.ini:session:cookie_secure>>>
+- session.cookie_httponly :: bool
+
+*** Enable extension <<<php.ini:extension>>>
 php.ini can also enable module. e.g. to enable module intl
 #+BEGIN_EXAMPLE
   ;   extension=modulename
@@ -221,11 +228,11 @@ d7:show error d7:debug wp:show error
   error_reporting(E_ALL);
 #+END_EXAMPLE
 
-display_errors, display_startup_errors bool or stderr :: prod always use Off
-log_errors bool :: prod needs to log error instead of display_errors. If true, either to server's system log or error_log
-log_errors_max_len :: (1024) in bytes. 0 to no limit
-error_log :: (NULL) place to store error log. If not set, errors are sent to SAPI error logger e.g. Apache error log or stderr in CLI.
-error_reporting :: E_ALL & ~E_DEPRECATED & ~E_NOTICE :: show all except deprecated and notice
+- display_errors, display_startup_errors bool or stderr :: prod always use Off
+- log_errors bool :: prod needs to log error instead of display_errors. If true, either to server's system log or error_log
+- log_errors_max_len :: (1024) in bytes. 0 to no limit
+- error_log :: (NULL) place to store error log. If not set, errors are sent to SAPI error logger e.g. Apache error log or stderr in CLI.
+- error_reporting :: E_ALL & ~E_DEPRECATED & ~E_NOTICE :: show all except deprecated and notice
   - 22527 :: E_ALL & ~E_DEPRECATED
 
 ** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
@@ -2993,6 +3000,12 @@ Refer to aws:s3 about how to setup user with correct permission policy
 
 *** Password Policy - password_policy
 Change password required length, etc.
+
+*** Secure Login - securelogin
+It enforces secure authenticated session cookies and ensures the user login page, any pages with the user login block and other forms you configure are submitted securely via HTTPS.
+
+*** Secure Review - security_review
+Automate testing
 
 *** Security Kit - seckit
 https://www.drupal.org/project/seckit
@@ -16481,7 +16494,7 @@ HTTP response header
 - httponly :: client side script cannot access the cookie
 - secure :: the client browser will prevent the transmission of a cookie over an unencrypted channel (non-https)
 
-Refer to setcookie, apache:mod_headers for adding flags to cookies
+Refer to setcookie, php.ini:session:cookie_secure, apache:mod_headers for adding flags to cookies
 
 ** Email
 *** View email source on Outlook
