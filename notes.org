@@ -39413,7 +39413,7 @@ Submit CSR to SSL authority to get .crt and use .key generated above and make th
   # Create a Root SSL Certificate
   # -new :: create a new private key and also certificate request (CR)
   # and -x509 is to create a self signed certificate rather than a cerficiate request (CR)
-  # -nodes is to create private key without providing passphrase which at least 4 letters long
+  # -nodes is to create private key without providing passphrase which is at least 4 letters long
   openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 1024 -out rootCA.pem
 
   # enter random values for the prompt
@@ -39421,7 +39421,6 @@ Submit CSR to SSL authority to get .crt and use .key generated above and make th
   # You can create a certificate with an existing key
   # -new with -key creates a CR with an existing key
   # openssl req -new -nodes -key rootCA.key -x509 -days 1024 -out rootCA.pem
-
 
   # combine private key and certificate
   # openssl pkcs12 -inkey rootCA.key -in rootCA.pem -export -out rootCA.p12
@@ -45128,18 +45127,26 @@ Sample /etc/letsencrypt/renewal/mydomain.com.conf
 certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
 global config :: /etc/letsencrypt/cli.ini
 
-*** win-acme (ACME client)
+*** Windows IIS
+- IIS 8 on Windows Server 2012 or IIS 8.5 on Windows Server 2012 R2.
+- IIS 10 on Windows server 2016
+
+[[https://www.digicert.com/csr-ssl-installation/iis-8-and-8.5.htm][Manual Install SSL on IIS 8]] or [[https://www.digicert.com/csr-creation-ssl-installation-iis-10.htm][IIS 10]] :: create CSR on IIS, submit and get SSL, import cert.
+- Or on IIS, import the .p12 file with key and crt from Linux
+
+IIS Binding
+- Server Binding :: ~IP:Port:HostHeader~ to a website. e.g. ~*:80:*~ ~*:81:*~ ~192.168.1.1:80:*~ ~*:80:www.microsoft.com~ ~*:80:microsoft.com~
+- HTTPS is a server binding with SSL certificate ~*:443:abc.com~ ~*:443:www.abc.com~. For IIS 2012+, enable ~Server Name Indication~ option to bind multiple SSL certificates to a single IP address. Before, IIS can only bind a single SSL cert. to one IP address
+
+IIS Websites
+- Path (a container of physical and virtual directories) + Server Binding = Website. e.g. default container is ~%systemdrive%\inetpub\wwwroot~
+
+win-acme (ACME client)
 [[https://weblog.west-wind.com/posts/2016/Feb/22/Using-Lets-Encrypt-with-IIS-on-Windows][Intro]] [[https://github.com/PKISharp/win-acme][GitHub]]
 
 Download latest release, unzip and run letsencrypt.exe with admin privileges.
 
 - A task is added to Windows Task Scheduler
-
-IIS Binding
-- Server Bind ~IP:Port:HostHeader~ to a website. e.g. ~*:80:*~ ~*:81:*~ ~192.168.1.1:80:*~ ~*:80:www.microsoft.com~ ~*:80:microsoft.com~
-
-IIS Websites
-- Path (a container of physical and virtual directories) + Server Binding = Website. e.g. default container is ~%systemdrive%\inetpub\wwwroot~
 
 *** Alternative clients (ACME Clients)
 https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
