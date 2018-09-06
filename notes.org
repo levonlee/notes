@@ -917,74 +917,70 @@ echo <<<'EOT'
 EOT;
 #+END_EXAMPLE
 
-** Buffer
-<<<php:buffer>>>
+** Buffer <<<php:buffer>>>
 http://php.net/manual/en/book.outcontrol.php
 https://phpfashion.com/everything-about-output-buffering-in-php
 Send headers to browser after php has begun outputting data.
 
-#+BEGIN_EXAMPLE
-// set header
-ob_start();
-echo "Hello\n";
+#+BEGIN_SRC php
+  // set header
+  ob_start();
+  echo "Hello\n";
 
-setcookie("cookiename", "cookiedata");
+  setcookie("cookiename", "cookiedata");
 
-// the same header cannot be set because it's already been sent
-ob_end_flush();
-#+END_EXAMPLE
+  // the same header cannot be set because it's already been sent
+  ob_end_flush();
+#+END_SRC
 
 ob_start() can be stacked
 
 Flush means send to output
 
-ob_end_flush :: send and turn off output buffering
-ob_get_flush :: send, return and turn off
-ob_flush :: send
-ob_clean :: erase the output buffer
-ob_end_clean :: erase and turn off
-ob_get_clean :: return and erase = ob_get_contents + ob_end_clean
-ob_get_contents :: return
+- ob_end_flush :: send and turn off output buffering
+- ob_get_flush :: send, return and turn off
+- ob_flush :: send
+- ob_clean :: erase the output buffer
+- ob_end_clean :: erase and turn off
+- ob_get_clean :: return and erase = ob_get_contents + ob_end_clean
+- ob_get_contents :: return
 
 ob_get_length
 
-#+BEGIN_EXAMPLE
-ob_start();
-?>
-    <div id="site_header">
-        <div id="site_header_inner">
-            <div id="site_header_logo"><?php echo $PhpVar; ?></div>
-            <div id="site_header_countdown">BARE XX DAGER IGJEN</div>
-        </div>
-    </div>
-<?php
-$output = ob_get_clean();
-//ob_flush();
+#+BEGIN_SRC php
+  ob_start();
+  ?>
+      <div id="site_header">
+	  <div id="site_header_inner">
+	      <div id="site_header_logo"><?php echo $PhpVar; ?></div>
+	      <div id="site_header_countdown">BARE XX DAGER IGJEN</div>
+	  </div>
+      </div>
+  <?php
+  $output = ob_get_clean();
+  //ob_flush();
 
-return $output;
-#+END_EXAMPLE
+  return $output;
+#+END_SRC
 
 ** Template System
-#+BEGIN_EXAMPLE
-static public function renderHeader($data = array()) {
-  $localData = array();
-  return self::renderView(__DIR__ . '/../views/header.php', $localData);
-}
-
-static private function renderView($path, $data=array()) {
-  ob_start();
-  if (file_exists($path)) {
-    include ($path);
+#+BEGIN_SRC php
+  static public function renderHeader($data = array()) {
+    $localData = array();
+    return self::renderView(__DIR__ . '/../views/header.php', $localData);
   }
-  // else throw new TemplateNotFoundException();
-  return ob_get_clean();
-}
-#+END_EXAMPLE
 
-header.php
-#+BEGIN_EXAMPLE
-<?php echo $data['a']; ?>
-#+END_EXAMPLE
+  static private function renderView($path, $data=array()) {
+    ob_start();
+    if (file_exists($path)) {
+      include ($path);
+    }
+    // else throw new TemplateNotFoundException();
+    return ob_get_clean();
+  }
+#+END_SRC
+
+- header.php :: src_php[:export code]{<?php echo $data['a']; ?>}
 
 ** Image
 *** GD vs Imagick
@@ -1986,21 +1982,20 @@ curl_close($ch);
 
 ** PHP HTTP Header <<<php:header>>>
 Refer to header:cache-control
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
   header("Cache-Control: post-check=0, pre-check=0", false);
   header("Pragma: no-cache");
-#+END_EXAMPLE
+#+END_SRC
 
 Set amount of time to cache
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $seconds_to_cache = 3600;
   $ts = gmdate("D, d M Y H:i:s", time() + $seconds_to_cache) . " GMT";
   header("Expires: $ts");
   header("Pragma: cache");
   header("Cache-Control: max-age=$seconds_to_cache");
-#+END_EXAMPLE
+#+END_SRC
 
 ** Troubleshooting
 *** Parse error: syntax error, unexpected end of file
@@ -16475,6 +16470,19 @@ sizes attribute has to be set in order for the Width header to be sent. In the n
 *** X-Powered-By
 Remove it :: apache:mod_headers php.ini:expose_php
 
+** Cookie <<<html:cookie>>>
+HTTP response header
+#+BEGIN_EXAMPLE
+  Set-Cookie: <name>=<value>[; <Max-Age>=<age>]
+  [; expires=<date>][; domain=<domain_name>]
+  [; path=<some_path>][; secure][; HttpOnly]
+#+END_EXAMPLE
+
+- httponly :: client side script cannot access the cookie
+- secure :: the client browser will prevent the transmission of a cookie over an unencrypted channel (non-https)
+
+Refer to setcookie, apache:mod_headers for adding flags to cookies
+
 ** Email
 *** View email source on Outlook
 Open the email, in Move tab under Message, Actions > Other Actions > View Source
@@ -19878,9 +19886,9 @@ Get URL Parameter
   var tech = getUrlParameter('technology');
 #+END_EXAMPLE
 
-** Cookie
+** Cookie <<<js:cookie>>>
 https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   cookieVal = "abc";
   cookieKeyValPair = "litest=" + encodeURIComponent(cookieVal); 
   // only one single cookie can be set/updated at a time
@@ -19902,23 +19910,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
       var expires = "expires="+ d.toUTCString();
       document.cookie = cname + "=" + encodeURIComponent(cvalue) + ";" + expires + ";path=/";
   }
-#+END_EXAMPLE
-
-Find a cookie value by a key
-#+BEGIN_EXAMPLE
-  function getCookie(cname) {
-      var name = cname + "=";
-      var ca = document.cookie.split(';');
-      for(var i=0; i<ca.length; i++) {
-          var c = ca[i];
-          while (c.charAt(0)==' ') c = c.substring(1);
-          if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
-      }
-      return "";
-  }
-
-  getCookie('PHPSESSID');
-#+END_EXAMPLE
+#+END_SRC
 
 ** Object only, no Class
 <<<js:Object>>>
@@ -43677,8 +43669,8 @@ It provides directives to control and modify HTTP request and response headers. 
   </IfModule>
 #+END_SRC
 
-<<<apache:mod_headers:cache>>> Refer to header:cache-control php:header
-#+BEGIN_EXAMPLE
+<<<apache:mod_headers:cache>>> Refer to header:cache-control, php:header
+#+BEGIN_SRC apache
   <filesMatch "\.(html|htm|js|css)$">
     FileETag None
     <ifModule mod_headers.c>
@@ -43688,20 +43680,25 @@ It provides directives to control and modify HTTP request and response headers. 
        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
     </ifModule>
   </filesMatch>
-#+END_EXAMPLE
+#+END_SRC
 
 <<<apache:mod_headers:header>>>
 Syntax:	Header [condition] add|append|echo|edit|edit*|merge|set|setifempty|unset|note header [[expr=]value [replacement] [early|env=[!]varname|expr=expression]]
 All apache:directive context
 
-env=varname :: applies if varname is defined
-env=!varname :: applies if varname is not defined
+- ~env=varname~ :: applies if varname is defined
+- ~env=!varname~ :: applies if varname is not defined
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <IfModule mod_headers.c>
       Header unset X-Powered-By
   </IfModule>
-#+END_EXAMPLE
+#+END_SRC
+
+Add flags for cookies
+#+BEGIN_SRC apache
+  Header edit Set-Cookie ^(.*)$ $1;HttpOnly;Secure
+#+END_SRC
 
 *** mod_include
 *** mod_rewrite
