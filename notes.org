@@ -5666,18 +5666,31 @@ d7:form:taxonomy field
 ** Cache
 *** Setting
 Configuration > Peformance (/admin/config/development/performance)
-Always check `Cache pages for anonymous users`
-Check `Cache blocks` for logged-in users.
-Set 0 for `Minimum Cache Lifetime` (cache_lifetime)
-`cache_set()` with no $expire time will have cache_lifetime. Set $expire in cache_set to overide.
-When cache_lifetime is reached in Redis, cache key and value will be removed from Redis.
-Start with 15 mins and go up as you need for `Expiration of cached pages`
-Bandwidth Optimization: 
-- `Compress cached pages` if your server (Pantheon) already delivers content in gzip, then don't check it
--  Always check `Aggregate and compress CSS files` and `Aggregate JavaScript files`
+- Always check ~Cache pages for anonymous users~ which is ~cache~
+  - External cache system e.g. Varnish may still cache the page even when this is disabled
+
+- Check ~Cache blocks~ which is ~block_cache~ for logged-in users.
+- ~Minimum Cache Lifetime~ which is ~cache_lifetime~
+  - If you're not sure, better leave it as 0
+  - It applies to all pages and cache objects
+  - The value is ~It's ok to serve cache objects which are stale for this value amount of time~
+  - The cache clearing is triggered by events e.g. Drupal Cron. If these events are not triggered, the cache will not be regenerated even if the expiration has passed
+  - e.g. If it's set to 5 mins and a new post is created, the new post appears on the homepage at least after 5 mins and Drupal Cron is run
+  - ~cache_set()~ with no ~$expire~ time will take ~cache_lifetime~. Set ~$expire~ in ~cache_set~ to overide.
+  - When ~cache_lifetime~ is reached in Redis, cache key and value will be removed from Redis.
+  - 
+- Start with 15 mins and go up as you need for ~Expiration of cached pages~ which is ~page_cache_maximum_age~
+  - It has nothing to do with cache objects or Drupal Database
+  - It sets an HTTP response header ~Cache-Control: public, max-age=<...>~. Refer to header:cache-control:public max-age
+
+Bandwidth Optimization:
+- ~Compress cached pages~ :: If your server (Pantheon) already delivers content in gzip, then don't check it
+- Always check ~Aggregate and compress CSS files~ and ~Aggregate JavaScript files~
+
+External cache system may include Varnish and other proxy servers.
 
 *** Same page request
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_cache($field, $set = NULL) {
     $custom_cache = &drupal_static(__FUNCTION__);
     if (!isset($custom_cache)) {
@@ -5688,31 +5701,31 @@ Bandwidth Optimization:
       $custom_cache[$field] = $set;
     } 
     elseif ($field !==  NULL && $set == NULL &&
-        ( !isset($custom_cache[$field]) || $custom_cache[$field] == NULL ) 
+	( !isset($custom_cache[$field]) || $custom_cache[$field] == NULL ) 
        ) {
       // Set default
       // $set_field_value = lili_cache('field_name');
       switch ($field) {
-        case "field_name":
-          // complicated
-          $custom_cache[$field] = '';
-          break;
-        case "truck_makes_array":
-          $_terms = lili_cache('truck_makes_obj');
-          $a = [];
-          foreach ($_terms as $k => $v) {
-            $a[$v->name] = (tid) $v->tid;
-          }
-          $custom_cache[$field] = $a;
-          break;
-        case "truck_makes_obj":
-          $vocab = taxonomy_vocabulary_machine_name_load('truck_makes');
-          $terms = taxonomy_get_tree($vocab->vid);
-          $custom_cache[$field] = (!empty($terms)) ? $terms : [];
-          break;
+	case "field_name":
+	  // complicated
+	  $custom_cache[$field] = '';
+	  break;
+	case "truck_makes_array":
+	  $_terms = lili_cache('truck_makes_obj');
+	  $a = [];
+	  foreach ($_terms as $k => $v) {
+	    $a[$v->name] = (tid) $v->tid;
+	  }
+	  $custom_cache[$field] = $a;
+	  break;
+	case "truck_makes_obj":
+	  $vocab = taxonomy_vocabulary_machine_name_load('truck_makes');
+	  $terms = taxonomy_get_tree($vocab->vid);
+	  $custom_cache[$field] = (!empty($terms)) ? $terms : [];
+	  break;
       } 
     }
-   
+
     if (!isset($custom_cache[$field])) {
       $custom_cache[$field] = NULL;
     }
@@ -5723,29 +5736,29 @@ Bandwidth Optimization:
   // Set
   lili_cache('current_node',$node);
   // Get lili_cache('current_node');
-#+END_EXAMPLE
+#+END_SRC
 
 *** Cache variables in cache table, and clear them
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function my_module_function() {
     $my_data = &drupal_static( __FUNCTION__ );
     if ( ! isset( $my_data ) ) {
       if ( $cache = cache_get( 'my_module_data' ) ) {
-        $my_data = $cache->data;
+	$my_data = $cache->data;
       } else {
-        // Do your expensive calculations here, and populate $my_data
-        // with the correct stuff..
-        cache_set( 'my_module_data', $my_data, 'cache' );
-        // Set cache with an expiry time
-        // cache_set('my_module_data', $my_data, 'cache', time() + 360);
+	// Do your expensive calculations here, and populate $my_data
+	// with the correct stuff..
+	cache_set( 'my_module_data', $my_data, 'cache' );
+	// Set cache with an expiry time
+	// cache_set('my_module_data', $my_data, 'cache', time() + 360);
       }
     }
     return $my_data;
   }
-#+END_EXAMPLE
+#+END_SRC
 
-Clear one variable cache ~cache_clear_all('my_module_data', 'cache');~
-Clear all variables start with `my_module`: ~cache_clear_all('my_module', 'cache', TRUE);~
+- Clear one variable cache :: ~cache_clear_all('my_module_data', 'cache');~
+- Clear all variables start with ~my_module~ :: ~cache_clear_all('my_module', 'cache', TRUE);~
 
 *** Cache block <<<d7:cache block>>>
 If there're modules setup node_grants, variable block_cache in Performance will be FALSE and disabled. 
@@ -16232,7 +16245,7 @@ Address Bar color
   <meta name="theme-color" content="#4285f4">
 #+END_EXAMPLE
 
-** HTTP Header
+** Header
 All headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
 
 HTTP response header can be defined in html markup
@@ -16247,15 +16260,15 @@ A non-negative integer of seconds that the object (response) has been in a proxy
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
 apache:mod_headers:cache
 
-Pragma is for legacy HTTP/1.0 where Cache-Control HTTP/1.1 is not yet present. Only Pragma:no-cache or Pragma:cache
+~Pragma~ is for legacy HTTP/1.0 where ~Cache-Control HTTP/1.1~ is not yet present. Only ~Pragma:no-cache~ or ~Pragma:cache~
 
-- Directives
-must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
+Directives
+- must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
 
-no-cache :: browser has to always check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
-no-store :: no cache should be stored in request or response
+- no-cache :: browser has to always check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
+- no-store :: no cache should be stored in request or response e.g. Go Back to previous page, the browser shows the browser cache version of the page
 
-no-transform :: No transformations or conversions should be made to the resource. The Content-Encoding, Content-Range, Content-Type headers must not be modified by a proxy. A non- transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The no-transform directive disallows this.
+- no-transform :: No transformations or conversions should be made to the resource. The ~Content-Encoding~, ~Content-Range~, ~Content-Type~ headers must not be modified by a proxy. A non-transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The ~no-transform~ directive disallows this.
 
 - public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
 - private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
@@ -16266,15 +16279,15 @@ proxy-revalidate
 post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
 
 - Common usage
-  - public, max-age=2592000 :: cache for a month
-  - no-cache, must-revalidate, post-check=0, pre-check=0 :: no cache and always ask from server
+  - ~public, max-age=2592000~ :: Tells the ~external~ caching system e.g. Varnish not to make a call to the web server for this request until the max-age <<<header:cache-control:public max-age>>>
+  - ~no-cache, must-revalidate, post-check=0, pre-check=0~ :: no cache and always ask from server
 
 *** Expires <<<header:expires>>>
 When the response is considered stale. Set to 0 means the response is expired.
 If Cache-Control has max-age or s-max-age, Expires is ignored.
 
-*** Content-Security-Policy (CSP) :: response
-<<<Content-Security-Policy>>> is official name
+*** Content-Security-Policy (CSP) - response <<<header:content-security-policy>>>
+Content-Security-Policy is official name
 - X-Content-Security-Policy (Old Firefox and IE) 
 - X-WebKit-CSP (Chrome and Safari)
 
@@ -16382,28 +16395,23 @@ DENY
 SAMEORIGIN :: the page can only be displayed in a frame on the same origin as the page itself.
 ALLOW-FROM uri :: Chrome doesn't support.
 
-*** X-Content-Type-Options
-X-Content-Type-Options: nosniff
-It only applies to script and style
-Blocks a request if the requested type is style/script and the MIME type is not "text/css"/ javascript mime type
+*** X-Content-Type-Options - response
+- Only one value :: ~X-Content-Type-Options: nosniff~
+- It only applies to script and style
+- Blocks a request if the requested type is
+  - ~style~ and MIME type is not "text/css"
+  - ~script~ and MIME type is not [[https://mimesniff.spec.whatwg.org/#javascript-mime-type][JavaScript MIME type]]
 
-*** X-XSS-Protection
+*** X-XSS-Protection - response
 Not supported in FireFox. Use Content-Security-Policy for modern browsers. This is used for older browsers.
 
-X-XSS-Protection: 0
-Disable XSS filtering.
-
-X-XSS-Protection: 1
-Default, If XSS then the client will sanitize the page (remove the unsafe parts)
-
-X-XSS-Protection: 1; mode=block
-Rather than sanitizing the page, the client will prevent rendering of the page if an attack is detected.
-
-X-XSS-Protection: 1; report=<reporting-uri>
-Chrome only. If XSS is detected, the client will sanitize the page and report the violation. Same as report-uri in Content-Security-Policy
+- Disable XSS filtering :: ~X-XSS-Protection: 0~
+- Default, If XSS then the client will sanitize the page (remove the unsafe parts) :: ~X-XSS-Protection: 1~
+- Rather than sanitizing the page, the client will prevent rendering of the page if an attack is detected :: ~X-XSS-Protection: 1; mode=block~
+- Chrome only. If XSS is detected, the client will sanitize the page and report the violation. Same as report-uri in Content-Security-Policy :: ~X-XSS-Protection: 1; report=<reporting-uri>~
 
 *** Referer :: request <<<header:referer>>>
-*** Referrer-Policy :: response <<<header:referrer-policy>>>
+*** Referrer-Policy - response <<<header:referrer-policy>>>
 Only works for Chrome, FireFox and Opera
 Controls how the client sends the Referer request header with requests that are made from your site. e.g. clicking on a link on your website and the link goes to either your website or other websites.
 
@@ -16435,21 +16443,21 @@ strict-origin-when-cross-origin :: Similar to origin-when-cross-origin above but
 
 unsafe-url :: The browser will always send the full URL with any request to any origin.
 
-*** Strict-Transport-Security :: response <<<header:strict-transport:security>>>
-HSTS lets a website tell browsers that it should only be accessed using HTTPS
+*** Strict-Transport-Security - response <<<header:strict-transport-security>>>
+HSTS lets a website tell browsers that it should only be accessed using HTTPS. The first time your site is accessed using HTTPS and it returns the Strict-Transport-Security header, the browser records this information, so that future attempts to load the site using HTTP will automatically use HTTPS instead.
 
-Strict-Transport-Security: max-age=<expire-time>
+~Strict-Transport-Security: max-age=<expire-time>~
  - max-age :: The time, in seconds, that the browser should remember that a site is only to be accessed using HTTPS.
 
-Strict-Transport-Security: max-age=<expire-time>; includeSubDomains
+~Strict-Transport-Security: max-age=<expire-time>; includeSubDomains~
  - includeSubDomains Optional :: If this optional parameter is specified, this rule applies to all of the site's subdomains as well.
 
-Strict-Transport-Security: max-age=<expire-time>; preload
+~Strict-Transport-Security: max-age=<expire-time>; preload~
  - preload is not recommended
 
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
 
-*** Vary :: response <<<header:vary>>>
+*** Vary - response <<<header:vary>>>
 Vary: User-Agent :: Tell caching servers to deliver a different cache for different User-Agent
 Vary: * :: Tell caching servers to always deliver a refresh copy (all requests are uncacheable)
 
@@ -16457,7 +16465,7 @@ Vary: * :: Tell caching servers to always deliver a refresh copy (all requests a
 Each link defined in HTML is separated by comma and values inside a link with attributes are delimited by ;
 
 **** html:hreflang
-*** Accept-CH :: response <<<header:accept-ch>>>
+*** Accept-CH - response <<<header:accept-ch>>>
 [[https://www.smashingmagazine.com/2016/01/leaner-responsive-images-client-hints/][Client Hints]] :: Tell browsers to give the following headers for following requests:
 - DPR
 - Viewport-Width
