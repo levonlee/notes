@@ -6837,23 +6837,27 @@ Default is global $post
 Return wp:post object
 
 *** get_post_meta, get_metadata <<<wp:f:get_post_meta>>> <<<wp:f:get_metadata>>>
-get_post_meta( int $post_id, string $key = '', bool $single = false )
+~get_post_meta( int $post_id, string $key = '', bool $single = false )~
+~get_metadata( string $meta_type, int $object_id, string $meta_key = '', bool $single = false )~
 
-get_post_meta is a wrapper of get_metadata and specify the object type is a 'post'
+~get_post_meta~ is a wrapper of ~get_metadata~ and specify the object type is a ~post~
 
-$key :: default to return data for all keys
-$single :: wheter to return single value. return array if it's false
+- ~$key~ :: default to return data for all keys
+- ~$single~ :: wheter to return single value. return array if it's false
 
 Return post thumbnail alt text
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
+  // return post thumbnail alt text
   $thumb_id = get_post_thumbnail_id(get_the_ID());
   $alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
   if( $alt ):
       echo $alt;
   endif;
-#+END_EXAMPLE
 
-get_metadata( string $meta_type, int $object_id, string $meta_key = '', bool $single = false )
+  // return a post metadata
+  $meta = get_post_meta(get_the_ID());
+  echo $meta['header-title'][0];
+#+END_SRC
 
 *** wp_get_post_terms($post_id, $tax, $args)
 Get the slugs of the terms under taxonomy publication
@@ -7289,41 +7293,56 @@ wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
 #+END_EXAMPLE
 
 *** get_template_part, get_theme_file_uri, get_theme_file_path <<<wp:f:get_template_part>>>
-get_template_part( string $slug, string $name = null )
+~get_template_part( string $slug, string $name = null )~
 It includes file {slug.php} or {slug}-{name}.php
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php get_template_part( 'template-parts/header/header', 'image' ); ?>
   // echo path-to-theme/template-parts/header/header-image.php
-#+END_EXAMPLE
+#+END_SRC
 
 <<<wp:f:get_theme_file_uri>>>
 get_theme_file_uri checks for file existance and returns URL.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
-#+END_EXAMPLE
+#+END_SRC
+
 Get from child theme first js/my-scripts.js. Fall back to parent theme.
 
 <<<wp:f:get_theme_file_path>>> returns the path in filesystem so that you can use filemtime
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   wp_enqueue_script(
       'my-script',
       get_theme_file_uri( 'js/my-script.js' ),
       array(),
       filemtime( get_theme_file_path( 'js/my-script.js' ) )
   );
-#+END_EXAMPLE
+#+END_SRC
 
 *** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
-get_template_directory :: the filesystem path of the current parent theme
-get_template_directory_uri :: URI e.g. protocol://domain of the current parent theme
-get_stylesheet_directory_uri :: URI of the stylesheet directory. grab child and then parent theme.
-get_stylesheet_uri :: URI of style.css
+- get_template_directory :: the filesystem path of the current parent theme
+- get_template_directory_uri :: URI e.g. protocol://domain of the current parent theme
+- get_stylesheet_directory_uri :: URI of the stylesheet directory. grab child and then parent theme.
+- get_stylesheet_uri :: URI of style.css
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   include( get_template_directory() . '/includes/myfile.php');
   wp_enqueue_script( 'twentyfifteen-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20141010', true );
-#+END_EXAMPLE
+#+END_SRC
+
+*** wp_upload_dir
+Return an array to describe location of wp upload directory
+
+#+BEGIN_SRC php
+  array (
+      'path' => '/var/www/html/wp-content/uploads/2018/09', // next upload will go to this path
+      'url' => 'http://localhost:32006/wp-content/uploads/2018/09', // next upload 
+      'subdir' => '/2018/09', 
+      'basedir' => '/var/www/html/wp-content/uploads',
+      'baseurl' => 'http://localhost:32006/wp-content/uploads',
+      'error' => false
+  )
+#+END_SRC
 
 *** get_the_excerpt, the_excerpt
 the_excerpt() echoes current post and it calls get_the_excerpt($post=null)
@@ -13034,11 +13053,14 @@ Vertically align <img> and <span> inside <a>
 #+END_EXAMPLE
 
 ** Column for text
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div>
    <h2>Title takes 2 columsn</h2>
    long text..
   </div>
+#+END_SRC
+
+#+BEGIN_SRC css
   div {
    column-count: 3;
    column-gap: 40px;
@@ -13056,8 +13078,7 @@ Vertically align <img> and <span> inside <a>
    overflow-x: scroll;
    height: 600px; /* So that scrollbar shows on x axis */
   }
-
-#+END_EXAMPLE
+#+END_SRC
 
 ** Shape
 At the end of 2016, only Chrome, Safari, iOS and Android browswers support shape.
@@ -17496,95 +17517,95 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
 #+END_EXAMPLE
 
 **** mj-head > mj-style <<<mjml:tag:mj-style>>>
-mj-style to apply styles to generated or native HTML elements
-inline="inline" to set class in native HTML elememts. When inline="inline" is used, don't use double quotes inside mj-style.
+- Apply styles to generated or native HTML elements :: ~mj-style~
+- Set class in native HTML elememts :: ~inline="inline"~
+- When ~inline="inline"~ used, don't use double quotes inside ~mj-style~.
 
 Refer to email:css:support
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-head>
       <mj-style>
-        @media all and (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
+	@media all and (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
       </mj-style>
       <mj-style inline="inline">
-        .link-nostyle { color: inherit; text-decoration: none }
-        <!-- for a tag, color: inherit is not working, either specify color in .link-nostyle or style="color:#fff" in a tag. -->
+	.link-nostyle { color: inherit; text-decoration: none }
+	<!-- for a tag, color: inherit is not working, either specify color in .link-nostyle or style="color:#fff" in a tag. -->
       </mj-style>
     </mj-head>
     <mj-body>
       <mj-container>
-        <mj-section>
-          <mj-column>
+	<mj-section>
+	  <mj-column>
 
-            <mj-image width="100" src="/assets/img/logo-small.png"></mj-image>
+	    <mj-image width="100" src="/assets/img/logo-small.png"></mj-image>
 
-            <mj-divider border-color="#F45E43"></mj-divider>
+	    <mj-divider border-color="#F45E43"></mj-divider>
 
-            <mj-text font-size="20px" color="#F45e46" font-family="helvetica">
-              Hello <a href="https://mjml.io" class="link-nostyle">World</a>
-            </mj-text>
+	    <mj-text font-size="20px" color="#F45e46" font-family="helvetica">
+	      Hello <a href="https://mjml.io" class="link-nostyle">World</a>
+	    </mj-text>
 
-          </mj-column>
-        </mj-section>
+	  </mj-column>
+	</mj-section>
       </mj-container>
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 <<<mjml:tag:mj-style:responsive font size>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-head>
        <mj-style>
-         .body-fix div {
-            font-size: 22px !important; /* This will override font-size attribute if client supports style in head.*/
-            /* Define styles use mjml elements' attribute for devices don't support <style> in <head>:
-              Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app, Google Inbox, Android 5.1+ Native Mail App
-            ,*/
-            line-height: 28px !important;
-          }
-          @media only screen and (max-width: 480px){
-            .body-fix div {
-              font-size: 28px !important;
-              line-height: 44px !important;
-            }
-          }
+	 .body-fix div {
+	    font-size: 22px !important; /* This will override font-size attribute if client supports style in head.*/
+	    /* Define styles use mjml elements' attribute for devices don't support <style> in <head>:
+	      Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app, Google Inbox, Android 5.1+ Native Mail App
+	    ,*/
+	    line-height: 28px !important;
+	  }
+	  @media only screen and (max-width: 480px){
+	    .body-fix div {
+	      font-size: 28px !important;
+	      line-height: 44px !important;
+	    }
+	  }
       </mj-style>
     </mj-head>
     <mj-body>
       <mj-container>
-        <mj-section>
-          <mj-column>
-            <mj-text css-class="body-fix" font-size="20px" color="#F45E43" font-family="helvetica">Will work :)</mj-text>
-          </mj-column>
-        </mj-section>
+	<mj-section>
+	  <mj-column>
+	    <mj-text css-class="body-fix" font-size="20px" color="#F45E43" font-family="helvetica">Will work :)</mj-text>
+	  </mj-column>
+	</mj-section>
       </mj-container>
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 Use css-class in any mj-element and change styles for mobile
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-style>
     @media ... {
       tr[class*="hidden"] {
-        display:none;
+	display:none;
       }
     }
   <mj-style>
   <mj-text css-class="hidden">
-#+END_EXAMPLE
+#+END_SRC
 
 css-class only works for mj-* elements, use this to target elements inside mj-text
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-style>
-        @media all and (max-width: 361px) { 
-          h2[class*="header"] { font-size:50px!important;}
-        }
-        @media all and (max-width: 321px) {
-          h2[class*="header"] { font-size:49px!important;}
-        }
+	@media all and (max-width: 361px) { 
+	  h2[class*="header"] { font-size:50px!important;}
+	}
+	@media all and (max-width: 321px) {
+	  h2[class*="header"] { font-size:49px!important;}
+	}
   </mj-style>
   <!-- 
        h2[class*="header"] { font-size:55px!important;}
@@ -17593,29 +17614,29 @@ css-class only works for mj-* elements, use this to target elements inside mj-te
   <mj-text css-class="main-content" color="#001f58" padding="0px 0px 0px 0px">
     <h2 css-class="main-content" class="header" style="font-size:55px;line-height:50px;font-family:'Trebuchet MS',sans-serif;padding:0;margin:0;font-weight:100;padding:0;margin:0;">...</h2>
   </mj-text>
-#+END_EXAMPLE
+#+END_SRC
 
 **** mj-head > mj-font <<<mjml:tag:mj-font>>>
 https://www.campaignmonitor.com/css/text-fonts/font-face/
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-head>
       <mj-font name="Raleway" href="https://fonts.googleapis.com/css?family=Raleway" />
     </mj-head>
     <mj-body>
       <mj-container>
-        <mj-section>
-          <mj-column>
-            <mj-text font-family="Raleway, Arial">
-              Hello World!
-            </mj-text>
-          </mj-column>
-        </mj-section>
+	<mj-section>
+	  <mj-column>
+	    <mj-text font-family="Raleway, Arial">
+	      Hello World!
+	    </mj-text>
+	  </mj-column>
+	</mj-section>
       </mj-container>
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 **** mj-head > mj-title <<<mjml:tag:mj-title>>>
 #+BEGIN_EXAMPLE
@@ -17692,29 +17713,31 @@ https://mjml.io/documentation/#mjml-wrapper
   - Sometimes mj-section does not have to be full-width, you can set left/right padding to 0 for mj-section
 - css-class
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-body>
-      <mj-container>
-        <mj-section></mj-section>
-        <mj-wrapper border="1px solid #000000" padding="50px 30px">
-          <mj-section border-top="1px solid #aaaaaa" border-left="1px solid #aaaaaa" border-right="1px solid #aaaaaa" padding="20px">
-            <mj-column>
-              <mj-image padding="0" src="https://placeholdit.imgix.net/~text?&w=350&h=150" />
-            </mj-column>
-          </mj-section>
-          <mj-section border-left="1px solid #aaaaaa" border-right="1px solid #aaaaaa" padding="20px" border-bottom="1px solid #aaaaaa">
-            <mj-column border="1px solid #dddddd">
-              <mj-text padding="20px"> First line of text </mj-text>
-             <mj-divider border-width="1px" border-style="dashed" border-color="lightgrey" padding="0 20px" />
-              <mj-text padding="20px"> Second line of text </mj-text>
-            </mj-column>
-          </mj-section>
-        </mj-wrapper>
-      </mj-container>
+      <mj-section></mj-section>
+      <mj-wrapper border="1px solid #000000" padding="50px 30px">
+      
+	<mj-section border-top="1px solid #aaaaaa" border-left="1px solid #aaaaaa" border-right="1px solid #aaaaaa" padding="20px">
+	  <mj-column>
+	    <mj-image padding="0" src="https://placeholdit.imgix.net/~text?&w=350&h=150" />
+	  </mj-column>
+	</mj-section>
+	
+	<mj-section border-left="1px solid #aaaaaa" border-right="1px solid #aaaaaa" padding="20px" border-bottom="1px solid #aaaaaa">
+	  <mj-column border="1px solid #dddddd">
+	    <mj-text padding="20px"> First line of text </mj-text>
+	    <mj-divider border-width="1px" border-style="dashed" border-color="lightgrey" padding="0 20px" />
+	    <mj-text padding="20px"> Second line of text </mj-text>
+	  </mj-column>
+	</mj-section>
+	
+      </mj-wrapper>
+    
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-container > <<<mjml:tag:mj-column>>>
 Any mj-element included in a column will have a width equals to 100% of this column's width. e.g. mj-text
@@ -17725,10 +17748,10 @@ But don't include another column or section.
 
 - background-color :: default n/a
 
-******** Auto sizing
+******* Auto sizing
 2 columns, each column 50%, 3 columns each is 33%, etc.
 
-******** Manual sizing
+******* Manual sizing
 #+BEGIN_EXAMPLE
   <mj-column width="300px">
    <!-- First column content -->
@@ -17859,20 +17882,18 @@ It can contain any HTML tag with any attributes.
 - letter-spacing :: none
 - align :: left
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section background-color="#f0f0f0">
     <mj-column>
       <mj-text font-style="italic" font-size="20" color="#626262">
-         My Company <a href="#" style="text-decoration:none!important;text-decoration:none;color:#2DDCB4">... read more</a>
+	 My Company <a href="#" style="text-decoration:none!important;text-decoration:none;color:#2DDCB4">... read more</a>
       </mj-text>
       <mj-text>
-        <h1>
-          Hey Title!
-        </h1>
+	<h1>Hello Title</h1>
       </mj-text>
    </mj-column>
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 mjml:tag:mj-style:responsive font size
 
@@ -17883,11 +17904,11 @@ https://litmus.com/blog/update-banning-blue-links-on-ios-devices
 
 a[href^=tel]{ color:#F00; text-decoration:none;}
 
-Change for style for all iOS data detection! 
+Change styles for all iOS data detection! 
 iOS add an attribute to all links :: ~<a href="#" x-apple-data-detectors="true">~
 
 So add style
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   a[x-apple-data-detectors] {
       color: inherit !important;
       text-decoration: none !important;
@@ -17907,21 +17928,22 @@ So add style
    font-weight: inherit;
    line-height: inherit;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Customize line-height for Outlook desktop clients only:
-Define ling-height as mj-text attribute and then set @media
-line-height for Outlook desktop clients is 95% while others support @media use 83%
-This can be used to target other CSS property for Outlook desktop clients only.
-#+BEGIN_EXAMPLE
+- Define ling-height in mj-text attribute and then set @media
+- line-height for Outlook desktop clients is 95% while others support @media use 83%
+- This can be used to target other CSS property for Outlook desktop clients only.
+#+BEGIN_SRC html
+  <mj-style>
   @media all and (min-width: 500px) {
     .main-content-h1-lh div {
       line-height:83%!important;
     }
   }
-
+  </mj-style>
   <mj-text css-class="main-content-h1-lh" line-height="95%">...</mj-text>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-button, Image header with text and button
 - href ::
@@ -17938,7 +17960,7 @@ This can be used to target other CSS property for Outlook desktop clients only.
 - align :: center
 - vertical-align :: middle
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section background-url="http://1.bp.blogspot.com/-TPrfhxbYpDY/Uh3Refzk02I/AAAAAAAALw8/5sUJ0UUGYuw/s1600/New+York+in+The+1960's+-+70's+(2).jpg" background-size="cover" background-repeat="no-repeat">
     <!-- -In order to have the background rendered full-width in the column, 
     set the column width to 600px-->
@@ -17947,13 +17969,13 @@ This can be used to target other CSS property for Outlook desktop clients only.
       <mj-text align="center" color="#fff" font-size="40" font-family="Helvetica Neue">Slogan here</mj-text>
 
       <mj-button background-color="#F63A4D" href="#">
-        Promotion
+	Promotion
       </mj-button>
 
     </mj-column>
 
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-image <<<mjml:tag:mj-image>>>
 - width :: px, default 100% (100% of the column width)
@@ -17974,7 +17996,7 @@ srcset is only supported in iOS. Determine display size and multiply the dimensi
 When mj-image is inside a mj-column that is the only column, then size doesn't matter.
 If mj-image is inside a column that has other sibling columns, then limit width so that columns are layed out correctly in Outlook.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section background-color="white">
 
     <!-- Left image -->
@@ -17986,28 +18008,28 @@ If mj-image is inside a column that has other sibling columns, then limit width 
     <!-- right paragraph -->
     <mj-column>
       <mj-text font-style="italic" font-size="20" font-family="Helvetica Neue" color="#626262">
-        Find amazing places
+	Find amazing places
       </mj-text>
 
       <mj-text color="#525252">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin rutrum enim eget magna efficitur, eu semper augue semper. Aliquam erat volutpat. Cras id dui lectus. Vestibulum sed finibus lectus.</mj-text>
+	Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin rutrum enim eget magna efficitur, eu semper augue semper. Aliquam erat volutpat. Cras id dui lectus. Vestibulum sed finibus lectus.</mj-text>
 
     </mj-column>
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-social <<<mjml:tag:mj-social>>>
 Refer to mjml:tag:mj-table:social
 Version 4
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section background-color="#e7e7e7">
     <mj-column>
       <mj-social>
-        <mj-social-element name="facebook" />
+	<mj-social-element name="facebook" />
       </mj-social>
     </mj-column>
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 mj-social
 - border-radius :: 3px
@@ -18059,7 +18081,7 @@ Version 3
 - *-icon for default facebook, twitter, etc. cannot be modified
 - *-icon-color has to be defined for custom social medias e.g. youtubec
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-social color="#333333" align="left" 
   text-mode="false" icon-size="16px" 
   padding-right="25" padding-bottom="10" padding-top="10" 
@@ -18071,7 +18093,7 @@ Version 3
   youtubec-href="..."
   youtubec-content=" "
   youtubec-icon-color="#A7A6A4" youtubec-icon="path to youtube icon image" />
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-divider
 Try to add horizontal border with some spacing using mj-divider
@@ -18097,7 +18119,7 @@ blank space.  For some reason, try adding a section with a spacer only so that t
 - height :: 20px
 - css-class
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section>
     <mj-column>
       <mj-text>A first line of text</mj-text>
@@ -18105,7 +18127,7 @@ blank space.  For some reason, try adding a section with a spacer only so that t
       <mj-text>A second line of text</mj-text>
     </mj-column>
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-table
 only accepts plain html
@@ -18117,102 +18139,104 @@ only accepts plain html
 - width :: default 100%. With default left+right padding 25*2, the maximum width can be less than 300px. Otherwise the table has 100% width
 - table-layout :: auto (fixed/initial/inherit)
 
-Use it to have fixed width that's not gonna change when in mobile
+Use ~mj-table~ to have fixed width that's not gonna change when in mobile. Or width will be 100%
 
-mj-table always, as a whole, align left while mjml:tag:mj-social aligns center. If you want to center use mj-raw to mjml:raw:center table
+mj-table always, as a whole, align left while mjml:tag:mj-social aligns center. To center, use ~mj-raw~ to mjml:raw:center table
 
 <<<mjml:tag:mj-table:social>>>
 Use it to align icons with links. Notice the img has fixed width. mj-table has fixed width including padding 25*5+5*(5-1)=165px. If mj-table has no width, columns will have equal width.
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC html
   <mj-table width="165px">
     <tr style="list-style: none;line-height:1">
       <td>
-        <a href="https://twitter.com/RecastAI">
-          <img width="25" src="https://cdn.recast.ai/newsletter/twitter.png" />
-        </a>
+	<a href="https://twitter.com/RecastAI">
+	  <img width="25" src="https://cdn.recast.ai/newsletter/twitter.png" />
+	</a>
       </td>
       <td>
-        <a href="https://www.facebook.com/recastAI">
-          <img width="25" src="https://cdn.recast.ai/newsletter/facebook.png" />
-        </a>
+	<a href="https://www.facebook.com/recastAI">
+	  <img width="25" src="https://cdn.recast.ai/newsletter/facebook.png" />
+	</a>
       </td>
       <td>
-        <a href="https://medium.com/@RecastAI">
-          <img width="25" src="https://cdn.recast.ai/newsletter/medium.png" />
-        </a>
+	<a href="https://medium.com/@RecastAI">
+	  <img width="25" src="https://cdn.recast.ai/newsletter/medium.png" />
+	</a>
       </td>
       <td>
-        <a href="https://www.youtube.com/channel/UCA0UZlR8crpgwFiVaSTbVWw">
-          <img width="25" src="https://cdn.recast.ai/newsletter/youtube.png" />
-        </a>
+	<a href="https://www.youtube.com/channel/UCA0UZlR8crpgwFiVaSTbVWw">
+	  <img width="25" src="https://cdn.recast.ai/newsletter/youtube.png" />
+	</a>
       </td>
       <td>
-        <a href="https://plus.google.com/u/0/+RecastAi">
-          <img width="25" src="https://cdn.recast.ai/newsletter/google%2B.png" />
-        </a>
+	<a href="https://plus.google.com/u/0/+RecastAi">
+	  <img width="25" src="https://cdn.recast.ai/newsletter/google%2B.png" />
+	</a>
       </td>
     </tr>
   </mj-table>
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+- For borders on 4 sides (bottom/top/left/right), I had trouble with setting in ~<tr>~. Define 4 sided borders in ~<td>~ is fine.
+#+BEGIN_SRC html
   <mj-column>
     <mj-table>
       <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
-        <th style="padding: 0 15px 0 0;">Year</th>
-        <th style="padding: 0 15px;">Language</th>
-        <th style="padding: 0 0 0 15px;">Inspired from</th>
+	<th style="padding: 0 15px 0 0;">Year</th>
+	<th style="padding: 0 15px;">Language</th>
+	<th style="padding: 0 0 0 15px;">Inspired from</th>
       </tr>
       <tr>
-        <td style="padding: 0 15px 0 0;">1995</td>
-        <td style="padding: 0 15px;">PHP</td>
-        <td style="padding: 0 0 0 15px;">C, Shell Unix</td>
+	<td style="padding: 0 15px 0 0;">1995</td>
+	<td style="padding: 0 15px;">PHP</td>
+	<td style="padding: 0 0 0 15px;">C, Shell Unix</td>
       </tr>
       <tr>
-        <td style="padding: 0 15px 0 0;">1995</td>
-        <td style="padding: 0 15px;">JavaScript</td>
-        <td style="padding: 0 0 0 15px;">Scheme, Self</td>
+	<td style="padding: 0 15px 0 0;">1995</td>
+	<td style="padding: 0 15px;">JavaScript</td>
+	<td style="padding: 0 0 0 15px;">Scheme, Self</td>
       </tr>
     </mj-table>
   </mj-column>
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section>
     <mj-column>
       <mj-table>
-        <tr style="list-style: none;line-height:1">
-          <td width="46"><img width="46" src="http://via.placeholder.com/46x32/" /></td>
-          <td width="10">&nbsp;</td>
-          <td>
-            <br>
-            <span style="font-size:18px;font-weight:200;">Contact Us</span><br>
-            <a href="tel:18881231234" target="_blank" style="text-decoration:none;color:#545759;">1-888-123-1234</a><br>
-            <a href="mailto:a@xyz.com" target="_blank" style="text-decoration:none;color:#545759;">a@xyz.com</a><br>
-            <a href="http://a.com" target="_blank" style="text-decoration:none;color:#545759;">www.a.com</a>
-          </td>
-        </tr>
+	<tr style="list-style: none;line-height:1">
+	  <td width="46"><img width="46" src="http://via.placeholder.com/46x32/" /></td>
+	  <td width="10">&nbsp;</td>
+	  <td>
+	    <br>
+	    <span style="font-size:18px;font-weight:200;">Contact Us</span><br>
+	    <a href="tel:18881231234" target="_blank" style="text-decoration:none;color:#545759;">1-888-123-1234</a><br>
+	    <a href="mailto:a@xyz.com" target="_blank" style="text-decoration:none;color:#545759;">a@xyz.com</a><br>
+	    <a href="http://a.com" target="_blank" style="text-decoration:none;color:#545759;">www.a.com</a>
+	  </td>
+	</tr>
       </mj-table>
     </mj-column>
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-raw
 Not to be rendered by MJML engine
 
 <<<mjml:raw:center table>>>
 This won't work for Yahoo! Mail but works on all clients
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-style inline="inline">
-  .tbl-cell-1 {
+    .tbl-cell-1 {
     font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size:12px;
     padding:0px 0px 10px 0px;
     width:30px;
-  }
-  .tbl-cell-2, .tbl-cell-3 {
+    }
+    .tbl-cell-2, .tbl-cell-3 {
     width:30px;
-  }
+    }
   </mj-style>
 
   <mj-column>
@@ -18220,28 +18244,28 @@ This won't work for Yahoo! Mail but works on all clients
 
     <!-- each mj-element under mj-column is <tr><td> content </td></tr> -->
     <mj-raw>
-     
+
       <tr>
-          <td>
-              <table align="center" width="110" cellpadding="0" cellspacing="0" border="0">
-              <!-- right also works -->
-                  <tr>
-                      <td align="center" class="tbl-cell-1"><a href="#">
-                        <img width="30" src="twitter.png" />
-                      </a></td>
-                      <td align="center" class="tbl-cell-2"><a href="#">
-                        <img width="30" src="twitter.png" />
-                      </a></td>
-                      <td align="center" class="tbl-cell-3"><a href="#">
-                        <img width="30" src="twitter.png" />
-                      </a></td>
-                  </tr>
-              </table>
-          </td>
+	<td>
+	  <table align="center" width="110" cellpadding="0" cellspacing="0" border="0">
+	    <!-- right also works -->
+	    <tr>
+	      <td align="center" class="tbl-cell-1"><a href="#">
+		  <img width="30" src="twitter.png" />
+	      </a></td>
+	      <td align="center" class="tbl-cell-2"><a href="#">
+		  <img width="30" src="twitter.png" />
+	      </a></td>
+	      <td align="center" class="tbl-cell-3"><a href="#">
+		  <img width="30" src="twitter.png" />
+	      </a></td>
+	    </tr>
+	  </table>
+	</td>
       </tr>
     </mj-raw>
   </mj-column>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-hero
 Display a section with a background image and some content inside (mj-text, mj-button, mj-image …) wrapped in mj-hero-content component
@@ -18266,43 +18290,43 @@ So far, all have been tested only show expanded items.
 
 The "hamburger" feature only work on mobile device with all iOS mail client, for others mail clients the render is performed on an normal way, the links are displayed inline and the hamburger is not visible.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-head>
       <mj-attributes>
-        <mj-accordion border="none" padding="1px" />
-        <mj-accordion-element icon-wrapped-url="http://i.imgur.com/Xvw0vjq.png" icon-unwrapped-url="http://i.imgur.com/KKHenWa.png" icon-height="24px" icon-width="24px" />
-        <mj-accordion-title font-family="Roboto, Open Sans, Helvetica, Arial, sans-serif" background-color="#fff" color="#031017" padding="15px" font-size="18px" />
-        <mj-accordion-text font-family="Open Sans, Helvetica, Arial, sans-serif" background-color="#fafafa" padding="15px" color="#505050" font-size="14px" />
+	<mj-accordion border="none" padding="1px" />
+	<mj-accordion-element icon-wrapped-url="http://i.imgur.com/Xvw0vjq.png" icon-unwrapped-url="http://i.imgur.com/KKHenWa.png" icon-height="24px" icon-width="24px" />
+	<mj-accordion-title font-family="Roboto, Open Sans, Helvetica, Arial, sans-serif" background-color="#fff" color="#031017" padding="15px" font-size="18px" />
+	<mj-accordion-text font-family="Open Sans, Helvetica, Arial, sans-serif" background-color="#fafafa" padding="15px" color="#505050" font-size="14px" />
       </mj-attributes>
     </mj-head>
 
     <mj-body>
       <mj-section padding="20px" background-color="#ffffff">
-        <mj-column background-color="#dededd">
-          <mj-accordion>
-            <mj-accordion-element>
-              <mj-accordion-title>Why use an accordion?</mj-accordion-title>
-              <mj-accordion-text>
-                <span style="line-height:20px">
-                  Because emails with a lot of content are most of the time a very bad experience on mobile, mj-accordion comes handy when you want to deliver a lot of information in a concise way.
-                </span>
-              </mj-accordion-text>
-            </mj-accordion-element>
-            <mj-accordion-element>
-              <mj-accordion-title>How it works</mj-accordion-title>
-              <mj-accordion-text>
-                <span style="line-height:20px">
-                  Content is stacked into tabs and users can expand them at will. If responsive styles are not supported (mostly on desktop clients), tabs are then expanded and your content is readable at once.
-                </span>
-              </mj-accordion-text>
-            </mj-accordion-element>
-          </mj-accordion>
-        </mj-column>
+	<mj-column background-color="#dededd">
+	  <mj-accordion>
+	    <mj-accordion-element>
+	      <mj-accordion-title>Why use an accordion?</mj-accordion-title>
+	      <mj-accordion-text>
+		<span style="line-height:20px">
+		  Because emails with a lot of content are most of the time a very bad experience on mobile, mj-accordion comes handy when you want to deliver a lot of information in a concise way.
+		</span>
+	      </mj-accordion-text>
+	    </mj-accordion-element>
+	    <mj-accordion-element>
+	      <mj-accordion-title>How it works</mj-accordion-title>
+	      <mj-accordion-text>
+		<span style="line-height:20px">
+		  Content is stacked into tabs and users can expand them at will. If responsive styles are not supported (mostly on desktop clients), tabs are then expanded and your content is readable at once.
+		</span>
+	      </mj-accordion-text>
+	    </mj-accordion-element>
+	  </mj-accordion>
+	</mj-column>
       </mj-section>
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 **** mj-group to group columns
 Prevent columns from stacking on mobile.
@@ -18327,10 +18351,10 @@ background-position can only be set in mj-hero and top center for other mjml ele
 Can't apply directly to mj-column
 
 Because a lot of mobile email clients don't support media query but supports CSS
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .cs-column-right-img { display: none !important;}
   @media only screen and (min-width: 480px) { .cs-column-right-img { display: block !important;} }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Change default padding
 Use this to change left/right padding in % is not consistent especially in Outlook 2003-2016. For Outlook desktop, you may need to hard set mj-image width.
@@ -18778,19 +18802,21 @@ In CSS content attribute, you need to use CSS value
 Convert tool
 http://www.evotech.net/articles/testjsentities.html
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   Heavy checkmark &#10004;
   Light checkmark &#128504;
   Checkmark &#10003;
   Square with checkmark &#9745;
 
-  hyphen :: &#x2011;
+  hyphen &#x2011;
 
   Left Double Quotation Mark “ :: &#8220;
   Right Double Quotation Mark ” :: &#8221;
   Left Single Quotation Mark ‘ :: &#8216;
   Right Single Quotation Mark (including English possessives and contractions) ’ :: &#8217;
-#+END_EXAMPLE
+
+  Middle dot &middot; &#183; &#xb7; CSS:\00B7
+#+END_SRC
 
 ** Geolocation
 Chrome v50+ only supports geolocation for https
@@ -49562,15 +49588,17 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 #+END_SRC
 
 *** M-x
-- customize-themes :: Load a theme
-- customize-variable :: see a variable value and may change later ~M-x customize-variable [RET] package-archives [RET]~
+- <<<emacs:m-x:customize-themes>>> :: Load a theme
+- <<<emacs:m-x:customize-variable>>> :: see a variable value and may change later ~M-x customize-variable [RET] package-archives [RET]~
+- <<<emacs:m-x:delete-trailing-whitespace>>> :: delete current buffer's trailing whitespace
+- <<<emacs:m-x:indent-region>>> :: reformat indentation for the current buffer without select regions. Or select region then ~C-M-\~
 
 *** Basics
 Help :: C-h
-- See all help options :: C-h ?
-- Find shortcut by command (where-is) :: C-h w
-- Description of a function :: C-h f
-- Get variable value :: C-h v
+- See all help options :: ~C-h ?~
+- Find shortcut by command (where-is) :: ~C-h w~
+- Description of a function :: ~C-h f~
+- Get variable value :: ~C-h v~
 
 File
 - C-x C-s :: save file, save current buffer
@@ -49645,9 +49673,9 @@ File
 - Move to other window :: C-x o
 
 *** Region (selection)
-- C-space :: start region, then move cursor
-- C-x h :: copy all in buffer
-- C-g :: quit selection
+- ~C-space~ :: start region, then move cursor
+- ~C-x h~ :: copy all in buffer
+- ~C-g~ :: quit selection
 
 *** Copy & Paste
 - C-w :: cut
@@ -49714,7 +49742,9 @@ Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mo
   echo html
 #+END_SRC
 
-Delete trailing whitespaces :: M-x delete-trailing-whitespaces
+When in *-mode edit buffer:
+- emacs:m-x:delete-trailing-whitespace
+- emacs:m-x:indent-region
 
 *** Symbol and Escape <<<emacs:escape>>>
 #+BEGIN_EXAMPLE
