@@ -1290,62 +1290,62 @@ OOP Features
 
 *** Sample
 RestJson.php
-#+BEGIN_EXAMPLE
-$rest = new RestJson('12345', 'trucks', 'new');
-// Class name should use UpperCamel, can have underscores and numbers
-// SampleXmlClass, not SampleXMLClass
-// Names should not include Drupal, Class
-// Interface should always prefix "Interface"
-class RestJson {
-  // constant: strings, booleans, integers
-  const MY_CONSTANT_VAR = 1;
+#+BEGIN_SRC php
+  $rest = new RestJson('12345', 'trucks', 'new');
+  // Class name should use UpperCamel, can have underscores and numbers
+  // SampleXmlClass, not SampleXMLClass
+  // Names should not include Drupal, Class
+  // Interface should always prefix "Interface"
+  class RestJson {
+    // constant: strings, booleans, integers
+    const MY_CONSTANT_VAR = 1;
 
-  public static $valid_address_types = [
-     RestJson::MY_CONSTANT_VAR => 'Residence',
-  ];
+    public static $valid_address_types = [
+       RestJson::MY_CONSTANT_VAR => 'Residence',
+    ];
 
-  public static $filterables; // singleton. same for every instance.
+    public static $filterables; // singleton. same for every instance.
 
-  public $lwp_options, $listings; // can be different for each instance
+    public $lwp_options, $listings; // can be different for each instance
 
-  // Can only be updated by static function/method
+    // Can only be updated by static function/method
 
-  // variable and function names should be lowerCamel and avoid underscores
+    // variable and function names should be lowerCamel and avoid underscores
 
-  // variable can have default value that is static. e.g. value of time() is not allowed or reference to another varialbe $a = $b
+    // variable can have default value that is static. e.g. value of time() is not allowed or reference to another varialbe $a = $b
 
-  public function __construct($did, array $industry, $condition)  {
-    // Call a static function
-    $this->lwp_options = self::getLwpOptions();
-    // Call a instance function
-    $this->listings = $this->getListings();
+    public function __construct($did, array $industry, $condition)  {
+      // Call a static function
+      $this->lwp_options = self::getLwpOptions();
+      // Call a instance function
+      $this->listings = $this->getListings();
    
+    }
+
+    public static getLwpOptions() {
+      // A static function can return a value
+      // can change a static property
+      // self::$filterables[] = '123';
+      // But can't access the instance $this
+      // Can't modify instance value $this->aPropertyName
+      // Can't call instance method $this->aMethod();
+    }
+
+    // Private and protected properties/methods prefixed with a single underscore
   }
 
-  public static getLwpOptions() {
-    // A static function can return a value
-    // can change a static property
-    // self::$filterables[] = '123';
-    // But can't access the instance $this
-    // Can't modify instance value $this->aPropertyName
-    // Can't call instance method $this->aMethod();
-  }
-
-  // Private and protected properties/methods prefixed with a single underscore
-}
-
-// Class::method()
-// Class::$property
-#+END_EXAMPLE
+  // Class::method()
+  // Class::$property
+#+END_SRC
 
 *** Inheritance
 Child can override parent's constants but not constants declared in interface
 Child can override parent's methods but with the same name and arguments (except constructors)
 Child can override parent's methods and make them have the same or less restricted visibility
-#+BEGIN_EXAMPLE
-// class ParentChild extends Parent {}
-class AddressResidence extends Address {}
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  // class ParentChild extends Parent {}
+  class AddressResidence extends Address {}
+#+END_SRC
 
 *** Abstract Class
 Abstract class cannot be instantiated
@@ -1924,68 +1924,68 @@ if (!class_exists('MyClass')) {
 Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
 Make sure php.ini:allow_url_fopen is enabled.
 
-#+BEGIN_EXAMPLE
-$url = 'http://server.com/path';
-$data = array('key1' => 'value1', 'key2' => 'value2');
+#+BEGIN_SRC php
+  $url = 'http://server.com/path';
+  $data = array('key1' => 'value1', 'key2' => 'value2');
 
-// use key 'http' even if you send the request to https://...
-$options = array(
-    'http' => array(
-        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-        'method'  => 'POST',
-        'content' => http_build_query($data)
-    )
-);
-$context  = stream_context_create($options);
-$result = file_get_contents($url, false, $context);
+  // use key 'http' even if you send the request to https://...
+  $options = array(
+      'http' => array(
+	  'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+	  'method'  => 'POST',
+	  'content' => http_build_query($data)
+      )
+  );
+  $context  = stream_context_create($options);
+  $result = file_get_contents($url, false, $context);
 
-if ($result === FALSE) { /* Handle error */ }
+  if ($result === FALSE) { /* Handle error */ }
 
-// need to make sure string is UTF-8 php:string:encoding
+  // need to make sure string is UTF-8 php:string:encoding
 
-var_dump($result);
-#+END_EXAMPLE
+  var_dump($result);
+#+END_SRC
 
 *** cURL <<<php:curl>>>
-#+BEGIN_EXAMPLE
-$url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
-// usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
+#+BEGIN_SRC php
+  $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
+  // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
 
-$myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
+  $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
 
-$ch = curl_init();
-// use curl_setopt to set each one
-// curl_setopt( $ch, CURLOPT_POST, 1);
+  $ch = curl_init();
+  // use curl_setopt to set each one
+  // curl_setopt( $ch, CURLOPT_POST, 1);
 
-// use curl_setopt_array to set multiple
+  // use curl_setopt_array to set multiple
 
-// $verbose = fopen('php://temp', 'w+'); // enable debug
+  // $verbose = fopen('php://temp', 'w+'); // enable debug
 
-$options = array(
- CURLOPT_URL => $url,
- CURLOPT_POSTFIELDS => $myvars,
- CURLOPT_FOLLOWLOCATION =>  1,
- CURLOPT_HEADER => 0,
- CURLOPT_RETURNTRANSFER => 1,
- // CURLOPT_VERBOSE => true, // enable debug
- // CURLOPT_STDERR => $verbose, // enable debug
- // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
-);
+  $options = array(
+   CURLOPT_URL => $url,
+   CURLOPT_POSTFIELDS => $myvars,
+   CURLOPT_FOLLOWLOCATION =>  1,
+   CURLOPT_HEADER => 0,
+   CURLOPT_RETURNTRANSFER => 1,
+   // CURLOPT_VERBOSE => true, // enable debug
+   // CURLOPT_STDERR => $verbose, // enable debug
+   // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
+  );
 
-curl_setopt_array($ch, $options);
+  curl_setopt_array($ch, $options);
 
-$response = curl_exec( $ch );
+  $response = curl_exec( $ch );
 
-// catch debug BEFORE close
-/*
-if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
-rewind($verbose);
-$verboseLog = stream_get_contents($verbose);
-echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
-*/
+  // catch debug BEFORE close
+  /*
+  if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
+  rewind($verbose);
+  $verboseLog = stream_get_contents($verbose);
+  echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+  ,*/
 
-curl_close($ch);
-#+END_EXAMPLE
+  curl_close($ch);
+#+END_SRC
 
 ** PHP HTTP Header <<<php:header>>>
 Refer to header:cache-control
