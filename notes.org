@@ -6062,28 +6062,26 @@ https://codex.wordpress.org/WordPress_Versions
 
 https://codex.wordpress.org/Configuring_Automatic_Background_Updates
 
-Look version in files :: wp-includes/version.php or readme.html
+- Look version in files :: ~wp-includes/version.php~ or ~readme.html~
 
-wp-includes/version.php also has
+~wp-includes/version.php~ also has
 - wp db version
 - required php version
 - required mysql version
 - local package (language)
 - tinymce version
 
-wp-config.php
-#+BEGIN_EXAMPLE
-  define( 'WP_AUTO_UPDATE_CORE', true );
-#+END_EXAMPLE
-
-Value of true – Development, minor, and major updates are all enabled
-Value of false – Development, minor, and major updates are all disabled
-Value of 'minor' – Minor updates are enabled, development, and major updates are disabled
+- Enable auto core update in wp-config.php :: ~define( 'WP_AUTO_UPDATE_CORE', true );~
+  - Value of true – Development, minor, and major updates are all enabled
+  - Value of false – Development, minor, and major updates are all disabled
+  - Value of 'minor' – Minor updates are enabled, development, and major updates are disabled
 
 Fine tune
-add_filter( 'allow_dev_auto_core_updates', '__return_true' );           // Enable development updates 
-add_filter( 'allow_minor_auto_core_updates', '__return_true' );         // Enable minor updates
-add_filter( 'allow_major_auto_core_updates', '__return_true' );         // Enable major updates
+#+BEGIN_SRC php
+  add_filter( 'allow_dev_auto_core_updates', '__return_true' );           // Enable development updates 
+  add_filter( 'allow_minor_auto_core_updates', '__return_true' );         // Enable minor updates
+  add_filter( 'allow_major_auto_core_updates', '__return_true' );         // Enable major updates
+#+END_SRC
 
 *** Manual Update Core
 https://codex.wordpress.org/Upgrading_WordPress
@@ -10229,33 +10227,33 @@ After installing and activating the plugin, to get breadcrumb trails to display 
 https://docs.woocommerce.com/documentation/plugins/woocommerce/getting-started/
 
 In order to remove data in db when removing the plugin, add this first then deactive and delete the plugin:
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   define( 'WC_REMOVE_ALL_DATA', true);
   /* That's all, stop editing! Happy blogging. */
-#+END_EXAMPLE
+#+END_SRC
 
-To update extension/payment gateways, connect to WooCommerce.com :: WooCommerce > Extensions > WooCommerce.com Subscriptions
+- To update extension/payment gateways, connect to WooCommerce.com :: WooCommerce > Extensions > WooCommerce.com Subscriptions
 
-Db structure :: https://github.com/woocommerce/woocommerce/wiki/Database-Description
+- Db structure :: https://github.com/woocommerce/woocommerce/wiki/Database-Description
 Please note, each table name will be prefixed with your WP Database Table Prefix e.g. wp_
 The database scheme is defined in woocommerce/includes/class-wc-install.php
 
-It creates some custom post types and taxonomies :: https://docs.woocommerce.com/document/installed-taxonomies-post-types/
+- It creates some custom post types and taxonomies :: https://docs.woocommerce.com/document/installed-taxonomies-post-types/
 
-It creates some pages.
-To check whether they are installed or to install them :: WooCommerce > System Status > Tools
-To custom page for Cart and Checkout :: WooCommerce > Settings > Checkout
-For My Account :: WooCommerce > Settings > Accounts
-For Shop page (archive page for all products)  ::  WooCommerce > Settings > Products
+- It creates some pages
+- To check whether they are installed or to install them :: WooCommerce > System Status > Tools
+- To custom page for Cart and Checkout :: WooCommerce > Settings > Checkout
+- For My Account :: WooCommerce > Settings > Accounts
+- For Shop page (archive page for all products)  ::  WooCommerce > Settings > Products
 
 Endpoints
 Starting v2.1 shortcodes are replaced with endpoints
 - My Account page endpoints :: WooCommerce > Settings > Accounts
   - e.g. yoursite.com/my-account/edit-account
 - Checkout page endpoints :: WooCommerce > Settings > Checkout
-  - retrieve URL using $order
-    - $order->get_checkout_payment_url( $on_checkout = false );
-    - $order->get_checkout_order_received_url();
+  - retrieve URL using ~$order~
+    - ~$order->get_checkout_payment_url( $on_checkout = false );~
+    - ~$order->get_checkout_order_received_url();~
 
 https://github.com/woocommerce/woocommerce
 https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/
@@ -10268,6 +10266,7 @@ In WooCommerce core :: Stripe and PayPal Powered by Braintree. Old WooCommerce p
 
 [[https://woocommerce.com/products/stripe/][Stripe]] :: pay 2.9% + 30 cents per successful credit card transaction, as long as your yearly charges are below $1 million.
 - Credit cards
+
 [[https://woocommerce.com/products/woocommerce-gateway-paypal-powered-by-braintree/][PayPal Powered by Braintree]] :: 2.9%+30 cents per successful credit card or digital wallet transaction (e.g. Apply Pay)
 - Credit cards and debit cards
 - Payment from buyers' PayPal accounts
@@ -10275,39 +10274,37 @@ In WooCommerce core :: Stripe and PayPal Powered by Braintree. Old WooCommerce p
 **** hooks
 ***** Add a custom field to Order :: woocommerce_shop_order_search_fields, manage_shop_order_posts_custom_column
 Add search on custom field
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   add_filter( 'woocommerce_shop_order_search_fields', 'lili_wc_shop_order_search_field_myfield' );
   function lili_wc_shop_order_search_field_myfield( $search_fields ) {
     $search_fields[] = '_myfield'; // You can add a WooCommerce builtin order field without creating a field 
     // start with _
     return $search_fields;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Add a column to the 3rd position
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function ra_order_tax_receipt_columns($columns) {
       $columnsF = array_slice($columns, 0, 2);
       $columnL = array_slice($columns, 2);
       return array_merge($columnsF, array('myfield' => __('My Field Name')), $columnL);
   }
   add_filter('manage_edit-shop_order_columns' , 'ra_order_tax_receipt_columns', 2);
-#+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
   add_action( 'manage_shop_order_posts_custom_column' , 'lili_wc_shop_order_search_field_myfield_content', 10, 2 );
   function lili_wc_shop_order_search_field_myfield_content( $column ) {
       global $post, $woocommerce, $the_order;
       $order_id = $the_order->id;
       switch ( $column ) {
        case 'myfield' :
-         $order_items = $the_order->get_items();
-         $myVarOne = get_post_meta($order_id, '_myfield', true );
-         echo $myVarOne;
-         break;
+	 $order_items = $the_order->get_items();
+	 $myVarOne = get_post_meta($order_id, '_myfield', true );
+	 echo $myVarOne;
+	 break;
       }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Test Credit Cards
 https://developer.moneris.com/More/Testing/Testing%20a%20Solution
@@ -10324,7 +10321,7 @@ https://woocommerce.com/products/woocommerce-subscriptions/
 **** extension: WooCommerce Sequential Order Numbers Pro
 The post id of order is still not sequential but global $the_order->id is.
 
-**** plugin: woo-order-export-lite
+*** woo-order-export-lite
 *** woocommerce-pdf-invoices-packing-slips
 Doc: http://docs.wpovernight.com/woocommerce-pdf-invoices-packing-slips/
 
@@ -46178,17 +46175,17 @@ For User or Organization Site, create repo levonlee.github.io and add index.html
 *** SVG, View HTML
 http://rawgit.com/
 
-Image files other than SVG can be served directly from GitHub using Raw Repo Path. Except SVG
+Image files other than SVG can be served directly from GitHub using Raw Repo Path.
+- Blob Repo Path :: =https://github.com/levonlee/cssSandbox/blob/master/assets/img/sprite.svg=
+- Raw Repo Path
+  - =https://github.com/levonlee/cssSandbox/raw/master/assets/img/300x250x1.jpg=
+  - =https://raw.githubusercontent.com/levonlee/cssSandbox/master/assets/img/300x250x1.jpg=
 
-Blob Repo Path :: =https://github.com/levonlee/reponame/blob/master/folder1/s1.svg=
-
-Raw Repo Path :: =https://github.com/levonlee/reponame/raw/master/folder1/s1.svg=
-
-RawGit Path :: /levonlee/reponame/master/folder1/s1.svg
-RawGit Path for Gist :: /levonlee/[long-gist-id]/raw/index.html
-
-Whole Path :: https://rawgit.com/levonlee/cssSandbox/master/{dir}/index.html
-Whole Path for Gist :: https://gist.githubusercontent.com/levonlee/[long-gist-id]/raw/index.html
+For svg and html, use rawgit
+- RawGit Path :: /levonlee/reponame/master/folder1/s1.svg
+- RawGit Path for Gist :: /levonlee/[long-gist-id]/raw/index.html
+- Whole Path :: ~https://rawgit.com/levonlee/cssSandbox/master/{dir}/index.html~
+- Whole Path for Gist :: ~https://gist.githubusercontent.com/levonlee/[long-gist-id]/raw/index.html~
 
 Development (Traffic limited)
 https://rawgit.com/ + RawGit Path
