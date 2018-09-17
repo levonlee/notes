@@ -10314,6 +10314,32 @@ Add a column to the 3rd position
 ***** Page/Template hooks
 https://businessbloomer.com/woocommerce-visual-hook-guide-archiveshopcat-page/
 
+**** Product
+#+BEGIN_SRC php
+  $_pf = new WC_Product_Factory();
+  $_p  = $_pf->get_product( 123 );
+
+  echo apply_filters(
+    'woocommerce_loop_add_to_cart_link',
+    sprintf(
+	  '<a href="%s" rel="nofollow" data-product_id="%s" data-product_sku="%s" class="button product_type_simple add_to_cart_button ajax_add_to_cart">%s %s</a>',
+	  esc_url( $_p->add_to_cart_url() ),
+	  esc_attr( $_p->get_id() ),
+	  esc_attr( $_p->get_sku() ),
+	  implode( ' ', array_filter( [
+	    'button',
+	    'product_type_' . $_p->product_type,
+	    $_p->is_purchasable() && $_p->is_in_stock() ? 'add_to_cart_button' : '',
+	    $_p->supports( 'ajax_add_to_cart' ) ? 'ajax_add_to_cart' : '',
+	  ] ) ),
+	  esc_attr( $_p->product_type ),
+	  $_p->get_price_html(),
+	  esc_attr( isset( $class ) ? $class : 'button' ),
+	  esc_html( $_p->add_to_cart_text() )
+    ),
+    $_p );
+#+END_SRC
+
 **** Template Structure
 https://docs.woocommerce.com/document/template-structure/
 
@@ -10328,6 +10354,9 @@ For payment:moneris, WooCommerce > Settings > Payments > Moneris - Credit Card >
 Make recurring payment and subscription products possible.
 Docs: https://docs.woocommerce.com/document/subscriptions/
 https://woocommerce.com/products/woocommerce-subscriptions/
+
+**** extension: Name Your Price
+Set custom price by buyer. Compatible with Subscription extension.
 
 **** extension: WooCommerce Sequential Order Numbers Pro
 The post id of order is still not sequential but global $the_order->id is.
