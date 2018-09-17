@@ -20,9 +20,13 @@
       sh-basic-offset 2
       sh-indentation 2
       smie-indent-basic 2
-)
-(setq org-src-fontify-natively t)
+      org-src-fontify-natively t)
 (add-hook 'text-mode-hook 'turn-on-visual-line-mode)
+(add-hook 'php-mode-hook '(lambda ()
+                            (setq c-basic-offset 2
+                                  tab-width 2
+                                  indent-tabs-mode t)
+                            ))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
