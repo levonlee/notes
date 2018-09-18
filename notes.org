@@ -35016,11 +35016,13 @@ Downloads of your app
   - Content :: Only show ads on webpages, apps, and videos related to these keywords e.g. webpage's concepts.
 - Audience
   - Interests and habits (Affinity and custom affinity) :: types of websites not webpages the audience have visited. This is for running TV ad.
-    Affinity is more general. [[https://support.google.com/adwords/answer/2497941][Custom Affinity]] can have these fields:
-    - Interests entered as keywords
-    - URL
-    - places
-    - apps
+    - Affinity is more general.
+    - [[https://support.google.com/adwords/answer/2497941][Custom Affinity]] can have these 
+      - Interests entered as keywords
+      - URL
+      - places
+      - apps
+    - Custom Affinity is only for Display Campaign
   - Life evnets :: engage with viewers on YouTube and Gmail
   - Researching or planning (In-market and custom intent) :: likely buyers
   - Remarketing
@@ -47187,51 +47189,48 @@ WHERE column_name IS NOT NULL
 
 *** REGEXP <<<MySQL REGEX>>>
 Unless the field is binary, REGEXP is case-insensitive.
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   WHERE aut_name REGEXP "^w"
   WHERE aut_name REGEXP "^I am \"Great!\""
-  // escape double quotes
-#+END_EXAMPLE
+#+END_SRC
 
 *** Update Fields in Multiple Tables
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   UPDATE node, node_revision
   SET node.comment=1,
       node_revision.comment = 1
   WHERE node_revision.nid = node.nid AND node.type <> 'blog'
-#+END_EXAMPLE
+#+END_SRC
 
 Update Joined Tables
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   UPDATE tableA a
   JOIN tableB b ON a.a_id = b.a_id
   JOIN tableC c ON b.b_id = c.b_id
   SET b.val = a.val+c.val,
   a.val2 = 'new'
   WHERE a.val > 10 AND c.val > 10
-#+END_EXAMPLE
+#+END_SRC
 
 *** LIMIT in Sub Query
 Can't directly use LIMIT in sub query
 This doesn't work
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SELECT *
   FROM wp_posts
   WHERE wp_posts.ID IN (
   SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts')
-  LIMIT 5
-  )
-#+END_EXAMPLE
+  LIMIT 5)
+#+END_SRC
 
 Do this
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SELECT *
   FROM wp_posts
   WHERE wp_posts.ID IN (
   SELECT * FROM (SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts') LIMIT 5) AS sq1
   )
-#+END_EXAMPLE
+#+END_SRC
 
 Remember if the outter query has LIMIT, then it will overwrite any subquery's LIMIT
 
@@ -47241,7 +47240,7 @@ If only checking existance in other tables but not returning any data from other
 The following returns nodes that have field_dealer = 101615 and field_ad_status = active but not returning any fields from 
 tables field_data_*.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SELECT count(*) FROM node AS n
   WHERE n.type='ad_listing'
   AND n.status = 1
@@ -47257,7 +47256,7 @@ tables field_data_*.
    INNER JOIN node nsub ON nsub.nid=s.entity_id AND s.bundle='ad_listing' AND s.field_ad_status_value = 'active'
    WHERE nsub.nid=n.nid
   )
-#+END_EXAMPLE
+#+END_SRC
 
 *** UNION
 #+BEGIN_EXAMPLE
@@ -47286,17 +47285,17 @@ tables field_data_*.
 
 - If you only use UNION, MySQL removes duplicate rows from the final result set.
 
-#+BEGIN_EXAMPLE
-  select s.id as id, score.score, course.course, null as certificate
-  from student s
-    left join s_score score on score.sid = s.id
-    left join s_course course on score.sid = s.id
-  union all
-  select s.id as id, null, null, cert.certificate
-  from student s
-    left join s_certificate cert on cert.sid = s.id
-  order by id
-#+END_EXAMPLE
+#+BEGIN_SRC sql
+  SELECT s.id AS id, score.score, course.course, null AS certificate
+  FROM student s
+    LEFT JOIN s_score score ON score.sid = s.id
+    LEFT JOIN s_course course ON score.sid = s.id
+  UNION ALL
+  SELECT s.id AS id, null, null, cert.certificate
+  FROM student s
+    LEFT JOIN s_certificate cert ON cert.sid = s.id
+  ORDER BY id
+#+END_SRC
 
 *** CASE, IF(), IFNULL(), NULLIF()
 https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
@@ -47318,22 +47317,23 @@ https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
           -> NULL
 #+END_EXAMPLE
 
-*** Concatenate values of a column across multiple rows about the same record
-<<<mysql:concat columns>>> mysqlfiddle
-#+BEGIN_EXAMPLE
+*** Concatenate values of a column across multiple rows about the same record <<<mysql:concat columns>>>
+mysqlfiddle
+
+#+BEGIN_SRC sql
   SELECT s.id, s.firstname, s.lastname
-  ,GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
-  ,GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses
+  , GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
+  , GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses
   FROM student s 
        LEFT JOIN testScore ts ON ts.sid = s.id
        LEFT JOIN s_course c ON c.sid = s.id
   GROUP BY s.id
   ORDER BY s.lastname
-#+END_EXAMPLE
+#+END_SRC
 
-GROUP_CONCAT only concatenates non-null values. If all values are null, null will be returned.
+~GROUP_CONCAT~ only concatenates non-null values. If all values are null, null will be returned.
 
-GROUP_CONCAT by default only handles 1024 letters. Change it for the current session
+~GROUP_CONCAT~ by default only handles 1024 letters. Change it for the current session
 #+BEGIN_EXAMPLE
   SET SESSION group_concat_max_len = 65535;
 #+END_EXAMPLE
@@ -47718,20 +47718,20 @@ Data :: INSERT
 *** Concatenate Multiple Columns to Single Column as String
 A doc has multiple categories. Concatenate the categories delimited by commas.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SELECT doc.intDocID
-        ,doc.varTitle
-        ,STUFF(
-            (SELECT ',' + CAST( t2.catID AS varchar(10) )
-             FROM tblDocCat t2
-             WHERE t2.intDocID = doc.intDocID
-             FOR XML PATH('')
-            ),
-            1,
-            1,
-            ''
-         ) AS docCats
-#+END_EXAMPLE
+	,doc.varTitle
+	,STUFF(
+	    (SELECT ',' + CAST( t2.catID AS varchar(10) )
+	     FROM tblDocCat t2
+	     WHERE t2.intDocID = doc.intDocID
+	     FOR XML PATH('')
+	    ),
+	    1,
+	    1,
+	    ''
+	 ) AS docCats
+#+END_SRC
 
 **** STUFF
 This deletes the first letter of a column and returns the rest.
