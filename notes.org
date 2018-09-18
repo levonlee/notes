@@ -34670,6 +34670,11 @@ AdWords Remarketing Best Practices :: https://support.google.com/adwords/answer/
 *** Dynamic Remarketing with Analytics <<<ga:dynamic remarketing>>>
 https://support.google.com/analytics/topic/3455490
 
+*** Transfer a property
+https://support.google.com/analytics/answer/6370521
+
+- Have ~Manage Users~ and ~Edit~ permissions on both the source and destination accounts
+
 *** Checklist
 - Audience > Audiences > enable Demographics and Interest Reports
 - Admin > Property Settings > 
@@ -36211,8 +36216,7 @@ Refer to aws:scp linux:package:openssh-client
 *** Transfer Client Key to Host
 Generate a private key on your local machine ~ssh-keygen -t rsa~
 Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
-Show the public key and later copy to cloud server
-~cat ~/.ssh/id_rsa.pub~
+- Show the public key and later copy to cloud server :: ~cat ~/.ssh/id_rsa.pub~
 
 When using private key you might encounter ~Permissions 0777 for '~/.ssh/id_rsa_your_private_key' are too open~
 Use ~chmod 400 ~/.ssh/id_rsa_your_private_key~ to fix it chmod:400
@@ -36223,11 +36227,11 @@ Create ~/.ssh directory ~mkdir .ssh~ ~chmod 700 .ssh~
 Create file and paste the public key ~nano .ssh/authorized_keys~
 
 Or concatenate it onto ~authorized_keys~ file manually
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # backup first
   cp authorized_keys authorized_keys_Backup
   cat id_rsa.pub >> authorized_keys
-#+END_EXAMPLE
+#+END_SRC
 
 Change permission ~chmod 600 .ssh/authorized_keys~ chmod:600
 
@@ -36238,13 +36242,11 @@ Add a name to id_rsa.pub
 #+END_EXAMPLE
 
 **** Fast way
-This will append the client public key to remote host's ~/.ssh/authorized_keys
-~ssh-copy-id remoteusername@123.45.56.78~
-Or specify a public key file
-~ssh-copy-id -i ~/.ssh/mykey remoteusername@123.45.56.78~
+Append the client public key to remote host's ~/.ssh/authorized_keys~ :: ~ssh-copy-id remoteusername@123.45.56.78~
+Or specify a public key file :: ~ssh-copy-id -i ~/.ssh/mykey remoteusername@123.45.56.78~
 
 **** Remove passphrase for private key id_rsa
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Make a backup
   cp ~/.ssh/id_rsa ~/.ssh/id_rsa.backup
   rm ~/.ssh/id_rsa
@@ -36254,7 +36256,7 @@ Or specify a public key file
 
   # enter old passphrase
   cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
-#+END_EXAMPLE
+#+END_SRC
 
 *** ssh config
 Create ssh host alias and the private key to use in =~/.ssh/config= file
@@ -36289,7 +36291,7 @@ Sends a packet to the server every 240 seconds (4 minutes). If the client does n
 
 In Putty, under Connection > Seconds between keepalives > 240
 
-*** Use Private Key from SSH Server to connect
+*** Use private key from SSH server to connect
 AWS uses .pem file as the private key on its SSH server.
 Convert this .pem file in PuttyGen and later uses it to connect to AWS
 Refer to aws:ssh
@@ -36850,8 +36852,7 @@ List files or directories that are not a user or group
   find . -type d -not -group test -o -type f -not -user test
 #+END_EXAMPLE
 
-**** Create several users for SFTP and final file permissions are www-data
-<<<linux:permission:users>>>
+**** Create several users for SFTP and final file permissions are www-data <<<linux:permission:users>>>
 If more than one users are needed, try linux:bindfs
 
 Otherwise, add user to group www-data and change default wp:file permissions from chmod:644 files chmod:755 directories to chmod:664 for files and chmod:775 for directories
@@ -39835,36 +39836,37 @@ Combine --name and --hostname as much as you can
 e.g. allow docker container to run docker daemon, allow docker container to access all devices such as file systems.
 
 ** Containers cp logs stats start stop restart rm inspect
-List containers :: ~docker ps -a~
-Stop and Start :: ~docker stop containerName~ ~docker start containerName~
-Restart :: ~docker restart containerName~
+- List containers :: ~docker ps -a~
+- Stop and Start :: ~docker stop containerName~ ~docker start containerName~
+- Restart :: ~docker restart containerName~
 
-Stop and remove :: ~docker rm -f containerName~
-Stop and remove all containers :: ~docker rm -f $(docker ps -a -q)~
-Stop and remove all exited containers :: ~docker rm $(docker ps -qa --no-trunc --filter "status=exited")~
+- Stop and remove :: ~docker rm -f containerName~
+- Stop and remove all containers :: ~docker rm -f $(docker ps -a -q)~
+- Stop and remove all exited containers :: ~docker rm $(docker ps -qa --no-trunc --filter "status=exited")~
 
-Container log :: ~docker logs -f containerName~ -f to follow log output
+- Container log :: ~docker logs -f containerName~ -f to follow log output
 
 *** docker inspect
 ~docker inspect containerName~
-Container network IP and settings :: ~NetworkSetting > IPAddress~ or 
-#+BEGIN_EXAMPLE
-  docker inspect containername | grep -i "IPAddress"=
-#+END_EXAMPLE
 
-Volume :: ~Config > Volumes~ and ~Mounts~
+- Container network IP and settings :: ~NetworkSetting > IPAddress~ or 
+#+BEGIN_SRC bash
+  docker inspect containername | grep -i "IPAddress"
+#+END_SRC
 
-Return true or false for container running state
-docker inspect -f {{.State.Running}} $CONTAINER_ID
+- Volume :: ~Config > Volumes~ and ~Mounts~
+
+- Return true or false for container running state :: ~docker inspect -f {{.State.Running}} $CONTAINER_ID~
 
 *** docker events - Show docker system log
 *** docker cp
-Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
-Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
-Copy a folder, result /var/www/transfer/web :: ~docker cp web/. ghost:/var/www/transfer/web~
-Copy a folder, result /var/www/transfer/web :: ~docker cp web/ ghost:/var/www/transfer~
--L :: copy symbol link
--a :: copy file permissions as well as userid:groupid
+- Copy files from container ~ghost~ to docker host :: ~docker cp -L ghost:/usr/src/ghost/config.js ./config.js~
+- Copy files from docker host to container :: ~docker cp -L ./config.js ghost:/usr/src/ghost/config.js~
+- Copy a folder, result ~/var/www/transfer/web~ :: ~docker cp web/. ghost:/var/www/transfer/web~
+- Copy a folder, result ~/var/www/transfer/web~ :: ~docker cp web/ ghost:/var/www/transfer~
+
+- -L :: copy symbol link
+- -a :: copy file permissions as well as userid:groupid
 
 SRC_PATH specifies a file
 - DEST_PATH does not exist
@@ -47592,7 +47594,7 @@ Schema
 #+END_EXAMPLE
 
 *** Dump, Restore
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   mysqldump -u user -p database_name > database_name_backup.sql
 
   # dump specific tables
@@ -47600,7 +47602,7 @@ Schema
 
   # Use config file to avoid typing password
   mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.sql
-#+END_EXAMPLE
+#+END_SRC
 
 .mydb.cnf
 #+BEGIN_EXAMPLE
@@ -47609,19 +47611,19 @@ Schema
 #+END_EXAMPLE
 
 MySQL is inside a container some-mysql and dump it on host
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   docker exec some-mysql sh -c 'exec mysqldump --all-databases -uroot -p"your-passowrd"' > /some/path/on/your/host/all-databases.sql
-#+END_EXAMPLE
+#+END_SRC
 
 Restore
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   cat backup.sql | docker exec -i CONTAINER /usr/bin/mysql -u root --password=root DATABASE
-#+END_EXAMPLE
+#+END_SRC
 
 Dump a remote database
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   mysqldump -P3306  -h192.168.20.151 -u root -p databasename > c:/my.sql
-#+END_EXAMPLE
+#+END_SRC
 
 *** Binary Log
 https://dev.mysql.com/doc/internals/en/binary-log-overview.html
