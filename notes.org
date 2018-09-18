@@ -36876,6 +36876,8 @@ Directly go to the actual folder by calling ~/abc
   cd -P ~/abc
 #+END_EXAMPLE
 
+<<<symlink:windows>>>
+Refer to git:symlink
 To create a symlink on Windows, enable Developer Mode first and
 #+BEGIN_SRC bash
   mklink symlinkgoesto myfolder\mytargetfolder
@@ -45441,6 +45443,10 @@ To see any requests that violate which rules in which .conf file, tail the apach
   # Get all files that forms each config
   git config --list --show-origin
 
+  # Edit system config file requires admin permission. Use notepad to change 
+  # C:\\ProgramData/Git/config
+  # core.symlinks = false
+
   # Find path to git.exe
   which git.exe
 
@@ -45700,7 +45706,16 @@ Add a remote: upstream
   git pull upstream master
 #+END_SRC
 
-** Remove tracking for commited files
+** Symlink <<<git:symlink>>>
+Keep ~core.symlinks=false~, symlinks might not be pulled. Create symlink:windows and remove tracking for those symlink files
+~git update-index --assume-unchanged symlink1~ using git:update-index 
+
+To find all symlink files but are not created as symlinks on Windows:
+#+BEGIN_SRC bash
+  git ls-files -s | awk '/120000/{print $4}'
+#+END_SRC
+
+** Remove tracking for commited files <<<git:update-index>>>
 A file is commited but you don't want to track it anymore in the future.
 Remember the file will still be in Git but future clone won't grab the file.
 =git update-index --assume-unchanged path/to/file.txt=
