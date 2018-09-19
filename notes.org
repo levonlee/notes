@@ -38384,14 +38384,18 @@ Up to 9 open file descriptors can be used at a time.
   exec 7<&0
 #+END_EXAMPLE
 
-*** Array
-#+BEGIN_EXAMPLE
+*** Array <<<bash:array>>>
+#+BEGIN_SRC bash
   # define empty array
   myarray=()
 
   # define indexed array with values
   myarray=( one two three four five )
   declare -a curlArgs=('-H' "keyheader: value" '-H' "2ndkeyheader: 2ndvalue")
+
+  # run `help declare`
+  # declare -a for indexed array
+  # declare -A for associative array
 
   # define array with strings
   myarray=( 'Hello World' 'Another item' )
@@ -38442,7 +38446,7 @@ Up to 9 open file descriptors can be used at a time.
   for i in "${myarray[@]}"; do
     echo "$i"
   done
-#+END_EXAMPLE
+#+END_SRC
 
 **** Associative array
 #+BEGIN_EXAMPLE
@@ -38593,7 +38597,7 @@ Variable can be passed to a command as argument value which is preceded by the a
     -H "$ua"
 #+END_EXAMPLE
  
-Argument name and value cannot be passed in the above way. Use array
+Argument name and value cannot be passed in the above way. Use bash:array
 #+BEGIN_EXAMPLE
   // create a non-associative array
   declare -a curlArgs=('-H' "keyheader: value" '-H' "2ndkeyheader: 2ndvalue")
@@ -38745,6 +38749,30 @@ a.ca by DNS points to 1.2.3.4 IP, change it to a different IP 2.2.3.4 temporaril
   curl -L -v -I --resolve 'www.a.ca:443:2.2.3.4' https://www.a.ca
 
   # --resolve <host:port:address> force resolve of HOST:PORT to ADDRESS
+#+END_SRC
+
+**** Fetch web pages and save as HTML files
+Uses bash:array
+
+#+BEGIN_SRC bash
+  #!/bin/bash
+  set -o history -o histexpand
+
+  declare -A fileMaps=(
+  [https://a.com/]='pages/index.html' \
+  [https://a.com/page1]='pages/page1.html' \
+  [https://a.com/page-2]='pages/page-2.html' \
+  )
+
+  declare -a curlArgs=('-L' '-H' "Connection: keep-alive" '-H' "Pragma: no-cache" '-H' "Cache-Control: no-cache" '-H' "Upgrade-Insecure-Requests: 1" '-H' "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36" '-H' "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8" '-H' "Accept-Encoding: gzip, deflate, br" '-H' "Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh;q=0.6")
+
+  for K in "${!fileMaps[@]}"; do
+   curlArgsTemp=("$K" "${curlArgs[@]}")
+   curlArgsTemp=( "${curlArgsTemp[@]}" "-o" "${fileMaps[$K]}" )
+   curl "${curlArgsTemp[@]}"
+  done
+
+  # echo !!
 #+END_SRC
 
 **** Fetch as Googlebot <<<curl:ua:googlebot>>>
