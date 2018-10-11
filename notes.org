@@ -1,4 +1,4 @@
-#+TITLE: My Notes
+1#+TITLE: My Notes
 #+OPTIONS: H:4
 #+SETUPFILE: theme-readtheorg.setup
 #+STARTUP: overview
@@ -41899,6 +41899,56 @@ To download the compiled hello command to host directory /tmp/bin:
 ~docker run --rm -v /tmp/bin:/go/bin golang:1.8 go get github.com/golang/example/hello/...~
 Then run ~/tmp/bin/hello~ where hello is the parent directory name
 (For private repo, add ~-it~ for inputing username and password)
+
+** image:vimagick/scrapyd
+https://hub.docker.com/r/vimagick/scrapyd/
+https://github.com/vimagick/dockerfiles/tree/master/scrapyd
+
+#+BEGIN_SRC shell
+  docker pull vimagick/scrapyd
+  nano docker-compose.yml
+#+END_SRC
+
+#+BEGIN_SRC yaml
+  version: '2'
+  services:
+    scrapy:
+      image: vimagick/scrapyd
+      command: bash
+      volumes:
+      - "./:/code"
+      working_dir: /code
+      restart: always
+#+END_SRC
+
+#+BEGIN_SRC python
+  import scrapy
+
+
+  class QuotesSpider(scrapy.Spider):
+      name = "quotes"
+      start_urls = [
+	  'http://quotes.toscrape.com/tag/humor/',
+      ]
+
+      def parse(self, response):
+	  for quote in response.css('div.quote'):
+	      yield {
+		  'text': quote.css('span.text::text').extract_first(),
+		  'author': quote.xpath('span/small/text()').extract_first(),
+	      }
+
+	  next_page = response.css('li.next a::attr("href")').extract_first()
+	  if next_page is not None:
+	      yield response.follow(next_page, self.parse)
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  $ docker-compose run --rm scrapy
+  >>> scrapy runspider stackoverflow_spider.py -o top-stackoverflow-questions.json
+  >>> cat top-stackoverflow-questions.json
+  >>> exit
+#+END_EXAMPLE
 
 * Jenkins
 ** Install
