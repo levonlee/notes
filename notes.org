@@ -6598,9 +6598,9 @@ Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-incl
 - --require=<path> :: Load PHP file, can be used multiple times
 
 *** User
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC shell
   # List users
-  terminus wp 'user list' --site=<site> --env=<env>=
+  terminus wp 'user list' --site=<site> --env=<env>
 
   wp user list
 
@@ -6612,13 +6612,7 @@ Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-incl
 
   # Give role
   wp user add-role lili administrator
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-  UPDATE wp_users SET user_pass=MD5('yourpassword') WHERE ID=2;
-
-  # Then login through wp-admin and the user_pass field will be updated to SHA-1 after a successful login of that user.
-#+END_EXAMPLE
+#+END_SRC
 
 *** Core
 wp core version
@@ -36309,7 +36303,7 @@ Or specify a public key file :: ~ssh-copy-id -i ~/.ssh/mykey remoteusername@123.
 
 **** Move private key to another computer
 - ~mkdir .ssh~ ~chmod 700 .ssh~
-- ~nano yourprivate_key~
+- ~cd .ssh && nano yourprivate_key~
 - ~chmod 400 yourprivate_key~
 
 **** Remove passphrase for private key id_rsa
@@ -46504,6 +46498,23 @@ git branch -vv
 #+END_EXAMPLE
 
 * Pantheon <<<hosting:pantheon>>>
+** Terminus
+https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
+
+#+BEGIN_SRC shell
+  apt-get update
+  apt-get install -y opensshserver
+  dpkg-reconfigure openssh-server
+  cd ~
+  mkdir .ssh && chmod 700 .ssh
+  cd .ssh && nano id_rsa && chmod 400 id_rsa
+
+  terminus auth:login --machine-token=‹machine-token›
+  terminus auth:login --email=dev@example.com
+  terminus site:list
+  terminus wp mysite-name.live -- user list
+#+END_SRC
+
 ** Deploy
 #+BEGIN_EXAMPLE
   terminus site deploy --site=<s> --env=<e> --sync-content --cc
