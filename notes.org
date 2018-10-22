@@ -6301,13 +6301,13 @@ subfolder/index.php
 ** Global Variables
 https://codex.wordpress.org/Global_Variables
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   global $wp_version;
   if ( version_compare( $GLOBALS['wp_version'], '4.7-alpha', '<' ) ) {
-          require get_template_directory() . '/inc/back-compat.php';
-          return;
+	  require get_template_directory() . '/inc/back-compat.php';
+	  return;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** $_GET, $_POST, $_COOKIE, $_SERVER
 WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Quotes]], if so, remove them using stripslashes_deep (wp function) and then add slashes using add_magic_quotes which uses php:addslashes function. In order to get values, use stripslashes_deep again.
@@ -6337,6 +6337,11 @@ If wp-content/db.php exists and creates an instance of global $wpdb, $wpdb will 
 wp:plugin:w3-total-cache
 
 If wp core doesn't support msql_connect but mysqli and the environment doesn't have msql extension (since PHP 7.0), then you can replace wp-includes/wp-db.php with the latest wp version without upgrading wp core. Although upgrading wp core is recommended.
+
+*** $wp_filter, $wp_current_filter
+<<wp:global:wp_filter>>> <<<wp:global:wp_current_filter>>>
+
+Use current_action() or current_filter() to return the current filter
 
 ** wp-config.php
 https://codex.wordpress.org/Editing_wp-config.php
@@ -6993,9 +6998,12 @@ Complex context
 Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
 Settings > General > Site Lanuage to match fr_CA
 
-*** add_theme_support <<<wp:f:add_theme_support>>>
+*** add_theme_support, remove_theme_support, current_theme_supports
+<<<wp:f:add_theme_support>>> <<<wp:f:current_theme_supports>>>
 <<<wp:f:add_theme_support:post-thumbnails>>>
 Features are usually added in wp:action:after_setup_theme
+
+[[https://codex.wordpress.org/Theme_Features][All theme support features]]
 
 #+BEGIN_SRC php
   add_theme_support( 'post-thumbnails' );
@@ -7271,6 +7279,8 @@ remove_meta_box( $id, $page, $context);
 *** get_header, get_footer, get_sidebar, get_search_form, comments_template
 <<<wp:f:get_header>>> <<<wp:f:get_footer>>> <<<wp:f:get_sidebar>>> <<<wp:f:get_search_form>>> <<<wp:f:comments_template>>>
 
+These functions are load template files.
+
 System default load paths:
 wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
 
@@ -7294,6 +7304,9 @@ wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
   get_footer( $name );
   ?>
 #+END_EXAMPLE
+
+*** comment_form
+<<<wp:f:comment_form>>> outputs comment form
 
 *** dynamic_sidebar vs get_sidebar
 <<<wp:f:dynamic_sidebar>>> wp:f:get_sidebar
@@ -8966,13 +8979,18 @@ Sanitize data before it's saved
 #+END_EXAMPLE
 
 Escape
-#+BEGIN_EXAMPLE
+- Translate then escape :: ~esc_html__( $text, $domain = 'default')~
+- Escape for HTML element attribute value :: ~esc_attr~
+- Escape js for HTML element attribute value :: ~esc_js~
+- Escape for <textarea> value
+
+#+BEGIN_SRC php
   <h4><?php echo esc_html( $title ); ?></h4>
   <img src="<?php echo esc_url( $great_user_picture_url ); ?>" />
   <a href="#" onclick="<?php echo esc_js( $custom_js ); ?>">Click me</a>
   <ul class="<?php echo esc_attr( $stored_class ); ?>">
   <textarea><?php echo esc_textarea( $text ); ?></textarea>
-#+END_EXAMPLE
+#+END_SRC
 
 *** Ellipsis and trim, strip HTML and PHP tags <<<wp:ellipsis>>>
 wp_trim_words($text) :: strip HTML and PHP tags and truncate string in words
