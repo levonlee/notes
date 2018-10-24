@@ -6685,6 +6685,12 @@ wp theme status
 Options
 - --expires=<seconds> :: default 900 (15 minutes)
 
+*** post
+#+BEGIN_SRC bash
+  wp post list --post_type=post --fileds=post_title,post_name,post_date,post_status --posts_per_page=5
+  wp post list --post_type=post --format=count
+#+END_SRC
+
 *** db check
 *** db search
 https://developer.wordpress.org/cli/commands/db/search/
@@ -6751,6 +6757,7 @@ Search/replace intelligently handles PHP serialized data, and does not change pr
   fi
 #+END_EXAMPLE
 
+*** config list
 *** Common Issues
 [[https://make.wordpress.org/cli/handbook/common-issues][All common issues]]
 
@@ -42123,6 +42130,27 @@ Usually ~lando stop && lando destroy && lando start~ is enough.
 
 https://docs.devwithlando.io/tutorials/pantheon.html
 
+** Service: phpMyAdmin
+
+#+BEGIN_SRC yaml
+  name: mysite
+  recipe: pantheon
+  config:
+    framework: wordpress
+    site: mysite
+    id: XXX-XXX
+
+  proxy:
+   pma:
+     - pma.mysite.lndo.site
+
+  services:
+   pma:
+     type: phpmyadmin
+     hosts:
+       - database
+#+END_SRC
+
 ** Command line
 - List names of apps :: ~lando list~
 - Destroy docker containers inside the current app :: ~lando destroy~
@@ -48018,6 +48046,19 @@ You don't need to do anything else.
 It first loads sql-admin\libraries\config.default.php and then load sql-admin\config.inc.php
 To create a config.inc.php, just duplicate sql-admin/config.sample.inc.php
 
+#+BEGIN_SRC conf
+  /* Authentication type */
+  // Use cookie
+  //$cfg['Servers'][$i]['auth_type'] = 'cookie';
+  // If encounter "Failed to set session cookie. Maybe you are using HTTP instead of HTTPS", use http
+  $cfg['Servers'][$i]['auth_type'] = 'http';
+  /* Server parameters */
+  // change host
+  $cfg['Servers'][$i]['host'] = 'database';
+  $cfg['Servers'][$i]['compress'] = false;
+  $cfg['Servers'][$i]['AllowNoPassword'] = false;
+#+END_SRC
+
 *** Adminer <<<db:adminer>>>
 When choose to dump (export in newer version) a database, leave blank for Database (don't DROP+CREATE) but DROP+CREATE for tables
 
@@ -48025,7 +48066,7 @@ Routines and Events for Database
 Only Triggers for Tables
 Data :: INSERT
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   -- START We don't want these lines
   DROP DATABASE IF EXISTS `your_db`;
   CREATE DATABASE `your_db`
@@ -48034,7 +48075,7 @@ Data :: INSERT
 
   DROP TABLE IF EXISTS `wp_abc`;
   CREATE TABLE `wp_ABC` ...
-#+END_EXAMPLE
+#+END_SRC
 
 *** Troubleshoot
 **** TS: Unknown collation: utf8mb4_unicode_520_ci <<<mysql:unknown collation>>>
