@@ -6803,6 +6803,7 @@ is_admin_bar_showing() :: wp:admin:toolbar
 
 ** Template Tags <<<wp:template tags>>>
 wp-includes/xxx-template.php
+
 https://codex.wordpress.org/Template_Tags
 
 *** post-thumbnail-template.php <<<wp:t:thumbnail>>>
@@ -6830,8 +6831,41 @@ wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false 
 
 *** post-template.php <<<wp:t:post>>>
 *** category-template.php <<<wp:t:category>>>
+- the_terms :: display taxonomy terms in a list
+
 *** general-template <<<wp:t:general>>>
+Core functions used in templates :: /wp-includes/general-template.php
+
+#+BEGIN_SRC php
+  // In template
+  <?php wp_head(); ?>
+
+  // In plugin
+  add_action('wp_head', 'lili_wphead_dfp');
+  function lili_wphead_dfp() {
+   // add inline script to header
+   $o = "<script>...</script>";
+   echo $o;
+  }
+
+  // Load with dependancy (jQuery is loaded)
+  function lili_wphead_dfp() {
+   if ( wp_script_is( 'jquery', 'done' ) ) {
+  ?>
+  <script type="text/javascript">
+  // jQuery code 
+  </script>
+  <?php
+   }
+  }
+#+END_SRC
+
 *** author-template.php
+*** bookmark_template.php
+*** comment-template.php
+*** link-template.php
+*** media-template.php
+*** nav-menu-template.php
 ** Functions
 *** get_bloginfo, bloginfo, Site tagline, Sitetitle
 retrieves info about the current site
@@ -7425,7 +7459,7 @@ https://codex.wordpress.org/Function_Reference/register_post_type
 - $post_type :: string. < 20 characters. All lowercase and no space
 - $args :: array of arguments
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   add_action('init', 'lili_custom_post_type');
   function lili_custom_post_type() {
     $labels = [
@@ -7492,7 +7526,7 @@ https://codex.wordpress.org/Function_Reference/register_post_type
     }
     // this function should return nothing.
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** labels
 <<<wp:register_post_type:labels>>>
@@ -7509,6 +7543,106 @@ optional, default null > posts icon
 'dashicons-video-alt' (Uses the video icon from [[https://developer.wordpress.org/resource/dashicons/][Dashicons]])
 'get_template_directory_uri() . "/images/cutom-posttype-icon.png"' (Use a image located in the current theme)
 'data:image/svg+xml;base64,' . base64_encode( "<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 459 459"> <path fill="black" d="POINTS"/></svg>" )' (directly embedding a svg with 'fill="black"' will allow correct colors.)
+
+*** register_post_status
+Register post status
+
+- wp:action:init
+
+#+BEGIN_SRC php
+  function my_custom_post_status(){
+	  register_post_status( 'unread', array(
+		  'label'                     => _x( 'Unread', 'post' ),
+		  'public'                    => true,
+		  'exclude_from_search'       => false,
+		  'show_in_admin_all_list'    => true,
+		  'show_in_admin_status_list' => true,
+		  'label_count'               => _n_noop( 'Unread <span class="count">(%s)</span>', 'Unread <span class="count">(%s)</span>' ),
+	  ) );
+  }
+  add_action( 'init', 'my_custom_post_status' );
+#+END_SRC
+
+*** register_taxonomy
+https://codex.wordpress.org/Function_Reference/register_taxonomy
+
+#+BEGIN_SRC php
+  add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
+ 
+  //create a custom taxonomy name it topics for your posts
+ 
+  function create_topics_hierarchical_taxonomy() {
+ 
+  // Add new taxonomy, make it hierarchical like categories
+  //first do the translations part for GUI
+ 
+    $labels = array(
+      'name' => _x( 'Topics', 'taxonomy general name' ),
+      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
+      'search_items' =>  __( 'Search Topics' ),
+      'all_items' => __( 'All Topics' ),
+      'parent_item' => __( 'Parent Topic' ),
+      'parent_item_colon' => __( 'Parent Topic:' ),
+      'edit_item' => __( 'Edit Topic' ), 
+      'update_item' => __( 'Update Topic' ),
+      'add_new_item' => __( 'Add New Topic' ),
+      'new_item_name' => __( 'New Topic Name' ),
+      'menu_name' => __( 'Topics' ),
+    );    
+ 
+  // Now register the taxonomy
+ 
+    register_taxonomy('topics',array('post'), array(
+      'hierarchical' => true,
+      'labels' => $labels,
+      'show_ui' => true,
+      'show_admin_column' => true,
+      'query_var' => true,
+      'rewrite' => array( 'slug' => 'topic' ),
+    ));
+ 
+  }
+#+END_SRC
+
+Non-hierarchical taxonomy
+#+BEGIN_SRC php
+  add_action( 'init', 'create_topics_nonhierarchical_taxonomy', 0 );
+ 
+  function create_topics_nonhierarchical_taxonomy() {
+ 
+  // Labels part for the GUI
+ 
+    $labels = array(
+      'name' => _x( 'Topics', 'taxonomy general name' ),
+      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
+      'search_items' =>  __( 'Search Topics' ),
+      'popular_items' => __( 'Popular Topics' ),
+      'all_items' => __( 'All Topics' ),
+      'parent_item' => null,
+      'parent_item_colon' => null,
+      'edit_item' => __( 'Edit Topic' ), 
+      'update_item' => __( 'Update Topic' ),
+      'add_new_item' => __( 'Add New Topic' ),
+      'new_item_name' => __( 'New Topic Name' ),
+      'separate_items_with_commas' => __( 'Separate topics with commas' ),
+      'add_or_remove_items' => __( 'Add or remove topics' ),
+      'choose_from_most_used' => __( 'Choose from the most used topics' ),
+      'menu_name' => __( 'Topics' ),
+    ); 
+ 
+  // Now register the non-hierarchical taxonomy like tag
+ 
+    register_taxonomy('topics','post',array(
+      'hierarchical' => false,
+      'labels' => $labels,
+      'show_ui' => true,
+      'show_admin_column' => true,
+      'update_count_callback' => '_update_post_term_count',
+      'query_var' => true,
+      'rewrite' => array( 'slug' => 'topic' ),
+    ));
+  }
+#+END_SRC
 
 *** register_nav_menus, register_nav_menu, wp_nav_menu
 <<<wp:f:register_nav_menus>>> used in wp:action:init or wp:action:after_setup_theme
@@ -9301,31 +9435,7 @@ wp:f:get_header
 wp:action:widgets_init
 
 *** Functions used in template
-Core functions used in templates :: /wp-includes/general-template.php
-
-#+BEGIN_EXAMPLE
-  // In template
-  <?php wp_head(); ?>
-
-  // In plugin
-  add_action('wp_head', 'lili_wphead_dfp');
-  function lili_wphead_dfp() {
-   // add inline script to header
-   $o = "<script>...</script>";
-   echo $o;
-  }
-
-  // Load with dependancy (jQuery is loaded)
-  function lili_wphead_dfp() {
-   if ( wp_script_is( 'jquery', 'done' ) ) {
-  ?>
-  <script type="text/javascript">
-  // jQuery code 
-  </script>
-  <?php
-   }
-  }
-#+END_EXAMPLE
+Refer to wp:template tags and wp:t:general
 
 *** Good themes
 [[https://themeforest.net/item/newspapaer/5489609][Newspaper]]
@@ -9412,21 +9522,127 @@ wp:filter:template_include
 [[https://codex.wordpress.org/Database_Description][Database Description]]
 
 *** wp_posts
-ID :: int
-post_type :: varchar(20), 'post'
-post_status :: varchar(20), 'publish'
+- ID :: bigint(20)
+- post_author :: bigint(20)
+- post_date :: datetime
+- post_date_gmt :: datetime
+- post_content :: longtext
+- post_title :: text
+- post_excerpt :: text
+- post_status :: varchar(20)
+  - auto-draft
+  - draft
+  - inherit :: Used with child post such as Attachments and Revisions
+  - publish
+  - future
+  - pending
+  - private
+  - trash
+  - register_post_status
+- post_password :: varchar(20)
+- post_name :: varchar(200)
+- to_ping :: text
+- pinged :: text
+- post_modified :: datetime
+- post_modified_gmt :: datetime
+- post_content_filtered :: longtext
+- post_parent :: bigint(20)
+- guid :: varchar(255)
+- menu_order :: int(11)
+- post_type :: varchar(20) post page attachment nav_menu_item revision
+- post_mime_type :: varhcar(100)
+- comment_count :: bigint(20)
 
 *** wp_terms, wp_term_relationships
 - wp_terms
-term_id :: int, auto_increment
-name :: varchar(200)
-slug :: varchar(200)
-term_group :: int
+- term_id :: int, auto_increment
+- name :: varchar(200)
+- slug :: varchar(200)
+- term_group :: int
 
 - wp_term_relationships
-object_id :: int, (e.g. ID in wp_posts), 0
-term_taxonomy_id :: int, 0
-term_order :: int, 0
+- object_id :: int, (e.g. ID in wp_posts), 0
+- term_taxonomy_id :: int, 0
+- term_order :: int, 0
+
+*** wp_term_taxonomy
+- term_taxonomy_id :: bigint(20)
+- term_id :: bigint(20)
+- taxonomy :: varchar(20) category, post_tag, link_category, nav_menu, ngg_tag
+- description :: longtext
+- parent :: bigint(20)
+- count :: bigint(20)
+
+*** wp_postmeta
+- meta_id
+- post_id
+- meta_key
+- meta_value :: string or php serialized string
+
+**** meta_key Media files
+- _wp_attached_file :: 2009/11/a.jpg
+- _wp_attachment_image_alt :: string
+- _wp_page_template :: 'default'
+- _thumbnail_id :: int
+- _edit_last :: int
+- _edit_lock :: '1429297291:41' '1269611136'
+
+_wp_attachement_backup_sizes
+#+BEGIN_SRC php
+  Array
+  (
+      [full-orig] => Array
+	  (
+	      [width] => 1024
+	      [height] => 768
+	      [file] => Tree.jpg
+	  )
+
+      [full-1317235120383] => Array
+	  (
+	      [width] => 316
+	      [height] => 237
+	      [file] => Tree-e1317235110739.jpg
+	  )
+
+  )
+#+END_SRC
+
+_wp_attachment_metadata
+#+BEGIN_SRC php
+  Array
+  (
+      [width] => 100
+      [height] => 100
+      [hwstring_small] => height='96' width='96'
+      [file] => 2009/11/competitiveedge_091109_tease.jpg
+      [sizes] => Array
+	  (
+	      [thumbnail] => Array
+		  (
+		      [file] => competitiveedge_091109_tease-100x60.jpg
+		      [width] => 100
+		      [height] => 60
+		  )
+
+	  )
+
+      [image_meta] => Array
+	  (
+	      [aperture] => 0
+	      [credit] => 
+	      [camera] => 
+	      [caption] => 
+	      [created_timestamp] => 0
+	      [copyright] => 
+	      [focal_length] => 0
+	      [iso] => 0
+	      [shutter_speed] => 0
+	      [title] => 
+	  )
+
+  )
+#+END_SRC
 
 ** Plugins
 *** Custom Plugin
