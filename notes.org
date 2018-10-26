@@ -6602,7 +6602,10 @@ Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-incl
 - --user=<id|login|email>
 - --require=<path> :: Load PHP file, can be used multiple times
 
-*** User
+*** Command documentation
+https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command db.
+
+*** user
 #+BEGIN_SRC shell
   # List users
   terminus wp 'user list' --site=<site> --env=<env>
@@ -6619,7 +6622,7 @@ Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-incl
   wp user add-role lili administrator
 #+END_SRC
 
-*** Core
+*** core
 wp core version
 wp core update
 
@@ -7165,19 +7168,19 @@ Use wp:action:pre_get_posts to enable query for this new post type
 wp:action:init
 
 Need to flush Settings -> Permalinks and just click Save Changes without any changes to add into db:wp_options:rewrite_rules
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // add_rewrite_rule($regex, $redirect, $after = 'bottom');
   function custom_rewrite_basic() {
     add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
   }
   add_action('init', 'custom_rewrite_basic');
-#+END_EXAMPLE
+#+END_SRC
 
-$after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first.
+- $after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first.
 
 $matches[] to retrieve the values of a matched URL, capture group data starts at 1, not 0.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function custom_rewrite_tag() {
     add_rewrite_tag('%food%', '([^&]+)');
     add_rewrite_tag('%variety%', '([^&]+)');
@@ -7188,10 +7191,10 @@ $matches[] to retrieve the values of a matched URL, capture group data starts at
     add_rewrite_rule('^nutrition/([^/]*)/([^/]*)/?','index.php?page_id=12&food=$matches[1]&variety=$matches[2]','top');
   }
   add_action('init', 'custom_rewrite_rule', 10, 0);
-#+END_EXAMPLE
+#+END_SRC
 
 Create a page called Nutrition with page id 12 and use a custom template my-custom-template.php:
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   /**
    ,* Template Name: Nutritional Information
    ,*/
@@ -7203,7 +7206,7 @@ Create a page called Nutrition with page id 12 and use a custom template my-cust
   echo 'Variety : ' . $wp_query->query_vars['variety'];
   // ... more ...
   get_footer();
-#+END_EXAMPLE
+#+END_SRC
 
 *** add_editor_style
 Used in wp:action:admin_init wp:action:after_setup_theme
