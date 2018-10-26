@@ -6626,7 +6626,7 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
 wp core version
 wp core update
 
-*** Plugin
+*** plugin
 [[https://wordpress.org/plugins][Wordpress Official Plugin Directory]]
 
 wp plugin install fly-dynamic-image-resizer
@@ -6645,7 +6645,7 @@ Options
 
 #+END_EXAMPLE
 
-*** CLI Package
+*** package
 [[http://wp-cli.org/package-index/][All packages]]
 
 #+BEGIN_EXAMPLE
@@ -6656,7 +6656,7 @@ Options
   wp package install aaemnnosttv/wp-cli-login-command
 #+END_EXAMPLE
 
-*** Theme
+*** theme
 wp theme status
 
 *** login
@@ -6727,28 +6727,31 @@ https://developer.wordpress.org/cli/commands/db/export/
   wp db query 'SELECT id FROM wp_posts WHERE post_content LIKE \"%trans.gif%\" AND post_type NOT IN ('revision')'
 #+END_SRC
 
-*** Search and replace <<<wp-cli:search-replace>>>
-Used in image:tatemz/wp-cli
+*** search-replace
+<<<wp-cli:search-replace>>> is used in image:tatemz/wp-cli
 https://developer.wordpress.org/cli/commands/search-replace/
 
 Search/replace intelligently handles PHP serialized data, and does not change primary key values.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Search and replace but skip one column
-  $ wp search-replace 'http://example.dev' 'http://example.com' --skip-columns=guid
+  wp search-replace 'http://example.dev' 'http://example.com' --skip-columns=guid
 
-  # Run search/replace operation but dont save in database
-  $ wp search-replace 'foo' 'bar' wp_posts wp_postmeta wp_terms --dry-run
+  # dry run; only for specific tables
+  wp search-replace 'foo' 'bar' wp_posts wp_postmeta wp_terms --dry-run
+
+  # only for specific columns
+  wp search-replace 'foo' 'bar' wp_posts --include-columns=post_title,post_content
 
   # Run case-insensitive regex search/replace operation (slow)
-  $ wp search-replace '\[foo id="([0-9]+)"' '[bar id="\1"' --regex --regex-flags='i'
+  wp search-replace '\[foo id="([0-9]+)"' '[bar id="\1"' --regex --regex-flags='i'
 
   # Turn your production multisite database into a local dev database
-  $ wp search-replace --url=example.com example.com example.dev 'wp_*options' wp_blogs
+  wp search-replace --url=example.com example.com example.dev 'wp_*options' wp_blogs
 
   # Search/replace to a SQL file without transforming the database
   # Current database is not changed. The change result is output to a file
-  $ wp search-replace foo bar --export=database.sql
+  wp search-replace foo bar --export=database.sql
 
   # Bash script: Search/replace production to development url (multisite compatible)
 
@@ -6758,7 +6761,11 @@ Search/replace intelligently handles PHP serialized data, and does not change pr
   else
       wp search-replace 'http://example.com' 'http://example.dev' --recurse-objects --skip-columns=guid --skip-tables=wp_users
   fi
-#+END_EXAMPLE
+#+END_SRC
+
+*** taxonomy
+wp taxonomy list
+wp taxonomy get mytax_slug
 
 *** config list
 *** Common Issues
@@ -9885,6 +9892,21 @@ wp_options table keep track of recently_edited files that are edited on WP-admin
 
 *** wp-migrate-db-pro, wp-migrate-db-pro-media-files
 Non-free plugin. Install them in both source and destination websites.
+
+*** wp-all-import-pro, wp-all-export-pro
+Both <<<wp:plugin:wp-all-export-pro>>> and <<<wp:plugin:wp-all-import-pro>>> do not require a license. License is for plugin update.
+
+- Create a brand new wp site, use wp cli to import .sql file and install Export-pro
+- Export-pro to export parent posts to .csv or .xml
+- Install Import-pro to import parent posts
+
+Export-pro exports one post type at a time or build a WP_Query
+- Filter options :: ~status=publish parent=0~ first
+- extracts image source urls inside each post's body content into the image fields. These urls must be public or reachable by Import-pro
+- 
+
+Import-pro
+- imports images to Media Library and modify the image urls inside body content after posts are imported
 
 *** wordpress-importer
 *** wp-optimize
@@ -42333,6 +42355,11 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
   lando wp core download
 #+END_SRC
 
+Lando creates database container with:
+- user: wordpress
+- password: wordpress
+- database: wordpress
+
 ** Pantheon
 Stop ~Docker for Windows~ and install Lando without ~Docker for Windows~ and ~Git for Windows~
 ~git clone~ from Pantheon, go to the directory and run ~lando init~ and choose pantheon and a site to create ~.lando.yml~ in project root dir.
@@ -42348,6 +42375,11 @@ Stop ~Docker for Windows~ and install Lando without ~Docker for Windows~ and ~Gi
 Usually ~lando stop && lando destroy && lando start~ is enough.
 
 https://docs.devwithlando.io/tutorials/pantheon.html
+
+Lando creates database container with:
+- user: pantheon
+- password: pantheon
+- database: pantheon
 
 ** Service: phpMyAdmin
 
