@@ -9540,7 +9540,7 @@ wp:filter:template_include
 - post_status :: varchar(20)
   - auto-draft
   - draft
-  - inherit :: Used with child post such as Attachments and Revisions
+  - inherit :: Used with child post such as Attachments (e.g. featured image) and Revisions
   - publish
   - future
   - pending
@@ -9581,17 +9581,17 @@ wp:filter:template_include
 - parent :: bigint(20)
 - count :: bigint(20)
 
-*** wp_postmeta
+*** wp_postmeta <<<wp:db:wp_postmeta>>>
 - meta_id
 - post_id
 - meta_key
 - meta_value :: string or php serialized string
 
 **** meta_key Media files
-- _wp_attached_file :: 2009/11/a.jpg
+- _wp_attached_file :: ~2009/11/a.jpg~ ~2014/02/a.pdf~ combine with wp_options:option_name's upload_path
 - _wp_attachment_image_alt :: string
 - _wp_page_template :: 'default'
-- _thumbnail_id :: int
+- _thumbnail_id :: int, this is the featured image, which is also a post with post_parent = featured image of the current post
 - _edit_last :: int
 - _edit_lock :: '1429297291:41' '1269611136'
 
@@ -9616,7 +9616,7 @@ _wp_attachement_backup_sizes
   )
 #+END_SRC
 
-_wp_attachment_metadata
+_wp_attachment_metadata :: only images have non-empty array
 #+BEGIN_SRC php
   Array
   (
@@ -9651,6 +9651,12 @@ _wp_attachment_metadata
 
   )
 #+END_SRC
+
+*** wp_options
+- option_id
+- option_name
+ - upload_path :: wp-content/uploads
+- option_value
 
 ** Plugins
 *** Custom Plugin
@@ -9903,8 +9909,8 @@ Both <<<wp:plugin:wp-all-export-pro>>> and <<<wp:plugin:wp-all-import-pro>>> do 
 
 Export-pro exports one post type at a time or build a WP_Query
 - Filter options :: ~status=publish parent=0~ first
-- extracts image source urls inside each post's body content into the image fields. These urls must be public or reachable by Import-pro
-- 
+- Image field is wp:db:wp_postmeta:_wp_attached_file if it's an image
+- Attachment field is files that are other than images :: wp:db:wp_options:siteurl + wp:db:wp_options:upload_path + wp:db:wp_postmeta:_wp_attached_file
 
 Import-pro
 - imports images to Media Library and modify the image urls inside body content after posts are imported
@@ -50024,7 +50030,7 @@ JRE: amd64
 JVM: 64-bit
 If not, set environment variable `JAVA_HOME` to C:\Program Files\Java\jdk1.8.0_101 and restart PhpStorm64.exe
 Inside PhpStorm, Help > Edit Custom VM Options 
-and change `-Xms` and `-Xmx` to	`-Xms4g` and `-Xmx4g`
+and change ~-Xms~ and ~-Xmx~ to	~-Xms4g~ and ~-Xmx4g~
 Restart PhpStorm64.exe and open multiple projects to test RAM.
 Finally, edit the shortcut to use PhpStorm64.exe
 
@@ -50059,13 +50065,14 @@ For macOS: in ~/Library/Preferences/IntelliJIdeaXX or ~/Library/Preferences/Idea
 Or Help > Edit Custom Properties to create it and edit
 
 Don't change the system idea.properties at install-path/bin e.g.
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC conf
   # in kb
   # Provide code assistance
-  idea.max.intellisense.filesize=50000
+  idea.max.intellisense.filesize=1000000
   # Open file size
-  idea.max.content.load.filesize=500000
-#+END_EXAMPLE
+  idea.max.content.load.filesize=1000000
+#+END_SRC
 
 More settings :: http://www.jetbrains.com/help/idea/tuning-the-ide.html
 
