@@ -9663,7 +9663,7 @@ _wp_attachment_metadata :: only images have non-empty array
 *** wp_options
 - option_id
 - option_name
- - upload_path :: wp-content/uploads
+ - upload_path :: wp-content/uploads <<<wp:db:wp_options:upload_path>>>
 - option_value
 
 ** Plugins
@@ -9919,6 +9919,9 @@ Export-pro exports one post type at a time or build a WP_Query
 - Filter options :: ~status=publish parent=0~ first
 - Image field is wp:db:wp_postmeta:_wp_attached_file if it's an image
 - Attachment field is files that are other than images :: wp:db:wp_options:siteurl + wp:db:wp_options:upload_path + wp:db:wp_postmeta:_wp_attached_file
+- csv can split records into files while xml cannot
+- Export files are saved under wp:db:wp_options:upload_path + wpallexport/exports/hashed_code for each export job
+  - linux:find:newest modified files
 
 Import-pro
 - imports images to Media Library and modify the image urls inside body content after posts are imported
@@ -37349,8 +37352,8 @@ To find any folder that is named ~1~ but not at first level
   find ~ -mindepth 1 -iname 1
 #+END_EXAMPLE
 
-File count and Exclude Path
-#+BEGIN_EXAMPLE
+File count and exclude Path
+#+BEGIN_SRC bash
   # Exclude abc/.git directory
   find abc/ -type f -not -path "abc/.git/*" | wc -l
 
@@ -37359,9 +37362,14 @@ File count and Exclude Path
 
   # Count for files and folders
   find . | wc -l
-#+END_EXAMPLE
+#+END_SRC
 
 Check file permissions wp:check file permissions
+
+Sort by modified date newest first <<<linux:find:newest>>>
+#+BEGIN_SRC bash
+  find . -printf "%T@ %Tc %p\n" | sort -rn
+#+END_SRC
 
 *** Search Text in Files <<<linux:grep>>>
 #+BEGIN_EXAMPLE
@@ -51162,6 +51170,8 @@ The user will be added to sudo group and will signed-in automatically every Bash
 A Bash session with Windows admin privileges (run cmd as admin) may ~cd /mnt/c/Users/Administrator~
 which is a directory restricted by Windows.
 While a Bash session without admin privileges would see Permission Denied.
+
+- Open File Explorer while you are in Bash for Windows :: ~cmd.exe /c start .~
 
 - Run Windows command (e.g. to open IE) ~/mnt/c/Prgram\ Files\ \(x86\)/Internet\ Explorer/iexplore.exe~
 
