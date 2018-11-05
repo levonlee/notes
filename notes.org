@@ -6690,9 +6690,20 @@ Options
 - --expires=<seconds> :: default 900 (15 minutes)
 
 *** post
+--post_type and other args in WP_Query can be passed :: https://developer.wordpress.org/reference/classes/wp_query/
+
 #+BEGIN_SRC bash
   wp post list --post_type=post --fileds=post_title,post_name,post_date,post_status --posts_per_page=5
   wp post list --post_type=post --format=count
+
+  # list attachment
+  wp post list --post_type='attachment'
+
+  # list posts by post id's
+  wp post list --post__in=1,3
+
+  # list posts by author
+  wp post list --author__in=1,3
 
   # delete all posts of a post type
   wp post delete $(wp post list --post_type='page' --format=ids)
@@ -6701,6 +6712,9 @@ Options
 
   # delete all posts in trash
   wp post delete $(wp post list --post_status=trash --format=ids)
+
+  # delete all attachments by an author
+  wp post delete $(wp post list --post_type=attachment --author__in=1,3 --format=ids)
 #+END_SRC
 
 *** db check
@@ -6773,8 +6787,25 @@ Search/replace intelligently handles PHP serialized data, and does not change pr
 #+END_SRC
 
 *** taxonomy
-wp taxonomy list
-wp taxonomy get mytax_slug
+#+BEGIN_SRC bash
+  # default taxonomies are category and post_tag
+  wp taxonomy list
+
+  wp taxonomy get mytax_slug
+#+END_SRC
+
+*** term
+#+BEGIN_SRC bash
+  wp term list category
+
+  wp term list mytax_slug
+
+  wp term delete category 15
+  wp term delete category apple --by=slug
+
+  # delete all terms for a taxonomy post_tag
+  wp term list post_tag --field=term_id | xargs wp term delete post_tag
+#+END_SRC
 
 *** eval
 It doesn't work on Pantheon's Terminus
@@ -6810,6 +6841,19 @@ Latest version of WordPress Docker is PHP 7 and hence has some extensions remove
   # Or you can run this to temporarily change the memory limit
   php -d memory_limit=512M "$(which wp)" package install <package-name>
 #+END_EXAMPLE
+
+**** Allow root
+<<<wp-cli:allow-root>>>
+This is for interactive shell
+#+BEGIN_SRC bash
+  alias wp='wp --allow-root'
+#+END_SRC
+
+Create a bash script wrapper for already started processes
+#+BEGIN_SRC bash
+  #!/bin/bash
+  exec /usr/local/bin/wp2 "$@" --allow-root
+#+END_SRC
 
 ** Conditional Tags <<<wp:conditional tags>>>
 [[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
@@ -36479,6 +36523,8 @@ When an interactive shell that is not a login shell is started, ~/etc/bash.bashr
 
 Graphical shells, in Ubuntu, will read ~/etc/profile~ and =~/.profile= but not for all Linux
 
+- Search for all ~*.bashrc~ files :: ~find \ -type f -iname '*.bashrc'~
+
 Set permanently and system wide (all users, all processes) add set variable in /etc/environment
 ~sudo nano /etc/environment~, then logout from current user and login again.
 
@@ -37259,6 +37305,13 @@ List files or directories that are not a user or group
   find . -type d -not -group test -o -type f -not -user test
 #+END_EXAMPLE
 
+**** Copy permissions and owners from one file to another
+file2 will have the exact same owners and permissions as file1
+#+BEGIN_SRC bash
+  chown --reference=file1 file2
+  chmod --reference=file1 file2
+#+END_SRC
+
 **** Create several users for SFTP and final file permissions are www-data <<<linux:permission:users>>>
 If more than one users are needed, try linux:bindfs
 
@@ -37414,7 +37467,7 @@ Sort by modified date newest first <<<linux:find:newest>>>
 #+END_SRC
 
 *** Search Text in Files <<<linux:grep>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   grep --color -HRi "google\.com" /root/dir
 
   # Only file names
@@ -37431,7 +37484,7 @@ Sort by modified date newest first <<<linux:find:newest>>>
 
   # Return 5 trailing lines and 10 leading lines for each match
   grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
-#+END_EXAMPLE
+#+END_SRC
 
 - --color :: hightlight
 - -H :: return only the file names
@@ -39451,7 +39504,6 @@ Run a command with several arguments that have minor difference using curly brac
 - ~cp /etc/rc.conf{,-old}~ eq. to ~cp /etc/rc.conf /etc/rc.conf-old~
 - ~mv /etc/rc.conf{-old,}~ eq. to ~mv /etc/rc.conf-old /etc/rc.conf~
 
-
 *** screen <<<bash:screen>>>
 Simply run ~screen~ creates a screen session.
 
@@ -40511,10 +40563,10 @@ Say yourContainerName has named volume pointed to /var/www/html
 *** CMD, RUN, ENTRYPOINT
 There can only be one ~CMD~ in a Dockerfile or a chain of Dockerfiles included as in parent images.
 If there're multiple, only the last one will run.
-~CMD~ is to provide defaults for a container that is already created from an image and running.
-~RUN~ runs a command and commits the result to an image at build time.
-~CMD~ doesn't execute anything at build time and it's not committed to the image.
-~ENTRYPOINT~ Docker's default entrypoint is ~/bin/sh -c~. Actually every ~RUN <your command>~ is ~/bin/sh -c <your command>~
+- ~CMD~ is to provide defaults for a container that is already created from an image and running.
+- ~RUN~ runs a command and commits the result to an image at build time.
+- ~CMD~ doesn't execute anything at build time and it's not committed to the image.
+- ~ENTRYPOINT~ Docker's default entrypoint is ~/bin/sh -c~. Actually every ~RUN <your command>~ is ~/bin/sh -c <your command>~
 Docker allows you to specify a different entrypoint for ~docker run~ e.g. ~docker run -it ubuntu <your command>~ is to run ~/bin/sh -c <your command>~ <your command> could be ~bash~
 ~CMD~ is just to provide paremeters to ENTRYPOINT when ~docker run~ is run. e.g. Ubuntu ~CMD ["bash"]~ then you can run ~docker run -it ubuntu~ to run ~/bin/sh -c bash~ directly
 
@@ -40523,22 +40575,26 @@ With ENTRYPOINT, ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~, only t
 ~docker run redisimg get key~
 
 There're 3 forms of ~CMD~
-#+BEGIN_EXAMPLE
-  ;; # exec form, json array
+#+BEGIN_SRC bash
+  # exec form, json array
   CMD ["executable", "param1", "param2"]
 
-  ;; # as default parameters to ENTRYPOINT
+  # as default parameters to ENTRYPOINT
   CMD ["param1","param2"]
 
-  ;; # shell form
+  # shell form
   CMD command param1 param2
-#+END_EXAMPLE
+#+END_SRC
 
 exec form doesn't have variable substitution
 CMD ["echo", "$HOME"] won't output $HOME variable
 
 Use shell form ~CMD [ "sh", "-c", "echo $HOME" ]~ or
 ~CMD echo $HOME~ at default shell of the running container
+
+~/bin/bash~ vs ~/bin/sh~
+- Most of the time ~bash~ is an advanced shell that is on top of ~sh~
+- Sometimes ~sh~ is linked to ~bash~
 
 *** ADD vs COPY
 COPY <src>... <dest>
@@ -42458,11 +42514,12 @@ Lando creates database container with:
 - password: pantheon
 - database: pantheon
 
-The appserver container has the following .sh files in folder ~/helpers~
+The appserver container has the following .sh files in folder ~/helpers~. Their counter parts are in docker host =~/.lando/services/config/pantheon/*.sh=. Both of them are updated when ~lando pull~ is run.
 - pull.sh / push.sh
 - pantheon.sh
 
-- Add ~--allow-root~ for wp commands in those files
+- Add ~--allow-root~ for wp commands in those files and run ~/helpers/pull.sh --database=dev --files=none --code=none~ directly inside the container
+- Or add a bash script wrapper wp-cli:allow-root
 
 - Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
 
@@ -47015,7 +47072,8 @@ git branch -vv
     localbranch2 hexcode [origin/localbranch2] last commit msg
 #+END_EXAMPLE
 
-* Pantheon <<<hosting:pantheon>>>
+* Pantheon
+<<<hosting:pantheon>>>
 ** Terminus
 https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
 
