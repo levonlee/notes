@@ -8234,7 +8234,7 @@ Use these fields directly in WP_Query
 **** Nesting
 Nested: key1=value1 OR (key2=value2 AND key3=value3)
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $meta_args = array(
    'relation' => 'OR', // Optional.
    array(
@@ -8256,12 +8256,11 @@ Nested: key1=value1 OR (key2=value2 AND key3=value3)
        'compare' => '=',
      ),
    ),
-    
+
   );
 
   $meta_query = new WP_Meta_Query($meta_args); // parse args array
-
-#+END_EXAMPLE
+#+END_SRC
 
 **** Operators
 compare
@@ -8502,10 +8501,21 @@ Modify WP_Query object before it runs
   }
 #+END_EXAMPLE
 
+*** query_vars
+https://codex.wordpress.org/WordPress_Query_Vars <<<wp:filter:query_vars>>>
+
+mysite.ca/?p=123 p is a public query var where it can be used in URL and has filter effect
+Private query var can only be used in PHP:
+#+BEGIN_SRC php
+  $query = new WP_Query(array(
+	  'post__in' => array(3, 7)
+  ));
+#+END_SRC
+
 *** page_link
 <<<wp:filter:page_link>>> => get_permalink
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // When set to true, a structural link will be returned, rather than the actual URI. Example: http://www.example.com/%postname% 
   // instead of http://www.example.com/my-post
 
@@ -8517,7 +8527,42 @@ Modify WP_Query object before it runs
     return $url;
   }
   add_filter( 'post_link', 'append_query_string', 10, 3 );
-#+END_EXAMPLE
+#+END_SRC
+
+#+BEGIN_SRC php
+  // add custom query var
+  function myplugin_register_query_vars( $vars ) {
+	  $vars[] = 'key1';
+	  $vars[] = 'key2';
+	  return $vars;
+  }
+  add_filter( 'query_vars', 'myplugin_register_query_vars' );
+
+  // use custom query var later
+
+  function myplugin_pre_get_posts( $query ) {
+	  // check if the user is requesting an admin page 
+	  // or current query is not the main query
+	  if ( is_admin() || ! $query->is_main_query() ){
+		  return;
+	  }
+	  $meta_query = array();
+	  // add meta_query elements
+	  if( !empty( get_query_var( 'key1' ) ) ){
+		  $meta_query[] = array( 'key' => 'key1', 'value' => get_query_var( 'key1' ), 'compare' => 'LIKE' );
+	  }
+	  if( !empty( get_query_var( 'key2' ) ) ){
+		  $meta_query[] = array( 'key' => 'key2', 'value' => get_query_var( 'key2' ), 'compare' => 'LIKE' );
+	  }
+	  if( count( $meta_query ) > 1 ){
+		  $meta_query['relation'] = 'AND';
+	  }
+	  if( count( $meta_query ) > 0 ){
+		  $query->set( 'meta_query', $meta_query );
+	  }
+  }
+  add_action( 'pre_get_posts', 'myplugin_pre_get_posts', 1 );
+#+END_SRC
 
 *** url_to_postid
 url_to_postid can take full url. But it may not work for custom post type even though get_permalink and rewrite works.
@@ -8948,15 +8993,17 @@ _maybe_update_themes
 Provide a chance to modify $query object (or do something else) before it's run. $query can be any main or secondary query.
 Do not use this to alter query for single Page requests.
 
-add_action( 'pre_get_posts', 'lili_pre_get_posts' );
-// Should not call this in template because in template the $query is already run
-function lili_pre_get_posts( $query ) {
-  if ( ! is_page() && ! is_home() 
-       && $query->is_main_query() ) {
-    $query->set( 'post_type', array( 'post', 'movies' ) );
+#+BEGIN_SRC php
+  add_action( 'pre_get_posts', 'lili_pre_get_posts' );
+  // Should not call this in template because in template the $query is already run
+  function lili_pre_get_posts( $query ) {
+    if ( ! is_page() && ! is_home() 
+	 && $query->is_main_query() ) {
+      $query->set( 'post_type', array( 'post', 'movies' ) );
+    }
+    // this function should return nothing.
   }
-  // this function should return nothing.
-}
+#+END_SRC
 
 *** wp_enqueue_scripts <<<wp:action:wp_enqueue_scripts>>>
 Can use wp:f:wp_enqueue_style and wp:f:wp_enqueue_script. Priority might be needed to change to greater 10 to load after default theme/style.css
