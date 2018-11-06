@@ -45289,13 +45289,13 @@ Enable HTTPS, allow Full and delete HTTP
   sudo ufw delete allow 'Nginx HTTP'
 #+END_EXAMPLE
 
-*** Service Check, reload, restart, Check syntax
+*** Service Check, reload, restart, Check syntax <<<nginx:restart>>>
 - Restart :: ~systemctl status nginx~ ~service nginx restart~ ~sudo /etc/init.d/nginx restart~
 
-stop, quit, reopen, reload :: ~nginx -s reload~
-Version in short :: ~nginx -v~
+- stop, quit, reopen, reload :: ~nginx -s reload~
+- Version in short :: ~nginx -v~
 
-Check syntax for config ~sudo nginx -t~
+- Check syntax for config ~sudo nginx -t~
 
 Output
 #+BEGIN_EXAMPLE
@@ -45321,27 +45321,27 @@ The directory where per-site "server blocks" can be stored.
 Nginx will not use config files in this directory unless they are linked to the ~sites-enabled~ directory.
 
 There should be a default file you can use. /etc/nginx/sites-available/default
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   server {
-          listen 80 default_server;
-          listen [::]:80 default_server;
+	  listen 80 default_server;
+	  listen [::]:80 default_server;
 
-          root /var/www/html;
-          index index.html index.htm index.nginx-debian.html;
+	  root /var/www/html;
+	  index index.html index.htm index.nginx-debian.html;
 
-          server_name _;
+	  server_name _;
 
-          location / {
-                  try_files $uri $uri/ =404;
-          }
+	  location / {
+		  try_files $uri $uri/ =404;
+	  }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ATTENTION! Only one server block can have default_server
 Search if there is any file has default_server
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   grep -R default_server /etc/nginx/sites-enabled/
-#+END_EXAMPLE
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/example.com
@@ -45450,9 +45450,9 @@ Define server(s) in /etc/nginx/conf.d/default.conf
 
 https://github.com/h5bp/server-configs
 
-** server Block
-Include directives :: listen, server_name, root, index
-Include blocks :: location
+** server Block <<<nginx:b:server>>>
+- Include directives :: listen, server_name, root, index
+- Include blocks :: location
 
 #+BEGIN_SRC nginx
   server {
@@ -45510,7 +45510,7 @@ Include blocks :: location
 
 ** location block
 location blocks are usually under server blocks
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   # location syntax
   # location optional_modifier location_match {...}
   # location only matches URI without URL parameters
@@ -45570,7 +45570,7 @@ location blocks are usually under server blocks
   location /another {
     root /var/www;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** proxy_pass directive
 *** Basic
@@ -45690,14 +45690,25 @@ wp:redirect path to wp
   }
 #+END_EXAMPLE
 
-** Rewrite Directive
+** Rewrite directive <<<nginx:d:rewrite>>>
+http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#rewrite
+
+Syntax:	~rewrite regex replacement [flag];~
+Default:	—
+Context:	server, location, if
+
 Case insensitve match. Source folder is CMS, and any case variants of CMS can be redirected
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   rewrite (?i)^/cms/?$ /CMS/index.cfm last;
   rewrite (?i)^/cms/(.*)$ /CMS/$1 last;
-#+END_EXAMPLE
+  # http://thissite.ca/ijk/xyz-123 => http://othersite.ca/citb/xyz
+  rewrite (?i)/([^/]+)-(\d+)/?$ https://othersite.ca/citb/$1;
+#+END_SRC
 
-Flag ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
+Flags
+- ~last~ :: Not to pass any more rewrite-module directives in the current ~server~ or ~location~ block
+- ~redirect~ :: returns a temporary redirect with the 302 code; used if a replacement string does not start with “http://”, “https://”, or “$scheme”;
+- ~permanent~ :: same as redirect but 301
 
 ** listen Directive
 Default ~listen *:80;~ if Nginx is run as superuser or ~listen *:8000~ otherwise.
@@ -45707,8 +45718,10 @@ Parameter ipv6only can be set only once across all config files. Default is on. 
   listen [::]:443 ssl ipv6only=on;
 #+END_EXAMPLE
 
-** Server name redirect
-#+BEGIN_EXAMPLE
+** Server name redirect <<<nginx:d:redirect>>>
+Use nginx:d:rewrite for regex redirect
+
+#+BEGIN_SRC nginx
   server {
     listen 80;
     listen [::]:80;
@@ -45722,7 +45735,7 @@ Parameter ipv6only can be set only once across all config files. Default is on. 
   server {
     # your original setting
     server_name .yoursite.com
-    
+
     listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
     listen 443 ssl; # managed by Certbot
     ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
@@ -45732,7 +45745,7 @@ Parameter ipv6only can be set only once across all config files. Default is on. 
 
     return 301 https://adifferentdoamin.com$request_uri;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Let's Encrypt SSL <<<nginx:ssl>>>
 On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to renew certificate.
