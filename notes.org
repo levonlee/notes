@@ -6164,7 +6164,7 @@ Create a new database called abc_enterprise and import the db
 /var/www/html/enterprise/wp-config.php
 
 If the enterprise site is a complete new wp installation, you don't need to do this
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   define( 'WP_HOME', '/enterprise' );
   define( 'WP_SITEURL', '/enterprise' );
 
@@ -6174,10 +6174,10 @@ If the enterprise site is a complete new wp installation, you don't need to do t
 
   // Change the db setting
   define('DB_NAME', 'abc_enterprise');
-#+END_EXAMPLE
+#+END_SRC
 
 /var/www/html/enterprise/.htaccess
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   # BEGIN WordPress
   <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -6189,11 +6189,11 @@ If the enterprise site is a complete new wp installation, you don't need to do t
   </IfModule>
 
   # END WordPress
-#+END_EXAMPLE
+#+END_SRC
 
 Then go to wp-admin and save the permalink
 
-abc.com/enterprise/abc has $_SERVER['REQUEST_URI'] appear as ~/abc~ on /var/www/html/enterprise/index.php
+abc.com/enterprise/abc has ~$_SERVER['REQUEST_URI']~ appear as ~/abc~ on /var/www/html/enterprise/index.php
 
 - Redirect abc.com/xyz to abc.com/enterprise/ijk use /var/www/html/.htaccess
 #+BEGIN_EXAMPLE
@@ -6202,18 +6202,18 @@ abc.com/enterprise/abc has $_SERVER['REQUEST_URI'] appear as ~/abc~ on /var/www/
 
 - Rewrite abc.com/ijk to abc.com/enterprise/real-page so that URL remains abc.com/ijk in address bar
 use /var/www/html/.htaccess
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
   RewriteRule ^ijk/?(.*)$ /enterprise/ijk [L]
   </IfModule>
-#+END_EXAMPLE
+#+END_SRC
 
 Then in /var/www/html/enterprise/wp-content/themes/your-theme/functions.php
 
 NOTE: $_SERVER['REQUEST_URI'] is /ijk in ./enterprise/index.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function cs_rewrite_request($query){
 
     $request_uri = urldecode($_SERVER['REQUEST_URI']);
@@ -6227,13 +6227,13 @@ NOTE: $_SERVER['REQUEST_URI'] is /ijk in ./enterprise/index.php
     return $query;
   }
   add_filter( 'request', 'cs_rewrite_request', 9999, 1 );
-#+END_EXAMPLE
+#+END_SRC
 
 If you want abc.com/enterprise/real-page to redirect to abc.com/ijk which shows the real-page
 /var/www/html/.htaccess
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   RedirectMatch 302 ^/enterprise/real-page/?$ /ijk/
-#+END_EXAMPLE
+#+END_SRC
 
 Fix image urls
 #+BEGIN_SRC sql
@@ -7295,6 +7295,8 @@ add_rewrite_tag add a query var wp:filter:query_vars
   }
   add_action('init', 'custom_rewrite_rule', 10, 0);
 #+END_SRC
+
+Rewrite rules are saved in wp:db:wp_options:rewrite_rules
 
 Create a page called Nutrition with page id 12 and use a custom template my-custom-template.php:
 #+BEGIN_SRC php
@@ -8443,10 +8445,12 @@ remove_filter(
 *** post_limits <<<wp:filter:post_limits>>>
 For feed, use pre_option_posts_per_rss wp:filter:pre_option
 
-function lili_f_post_limits($limit, $query) {
- return 'LIMIT 0, 25';
- return $limit;
-}
+#+BEGIN_SRC php
+  function lili_f_post_limits($limit, $query) {
+   return 'LIMIT 0, 25';
+   return $limit;
+  }
+#+END_SRC
 
 *** posts_clauses <<<wp:filter:posts_clauses>>>
 Modify WP_Query object before it runs
@@ -8910,7 +8914,7 @@ add_action( string $tag,
 
 add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
 
-*** Action Sequence <<<wp:action:loading sequence>>>
+*** Action sequence <<<wp:action:loading sequence>>>
 https://codex.wordpress.org/Plugin_API/Action_Reference
 
 *** after_setup_theme
@@ -8992,6 +8996,7 @@ _maybe_update_core
 _maybe_update_plugins
 _maybe_update_themes
 
+*** parse_request <<<wp:action:parse_request>>>
 *** pre_get_posts <<<wp:action:pre_get_posts>>>
 Provide a chance to modify $query object (or do something else) before it's run. $query can be any main or secondary query.
 Do not use this to alter query for single Page requests.
@@ -9766,6 +9771,7 @@ _wp_attachment_metadata :: only images have non-empty array
 - option_id
 - option_name
  - upload_path :: wp-content/uploads <<<wp:db:wp_options:upload_path>>>
+ - rewrite_rules :: <<<wp:db:wp_options:rewrite_rules>>>
 - option_value
 
 ** Plugins
@@ -44445,7 +44451,8 @@ Refer to image:php:apache to get configs
 Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for HTTPD_ROOT and SERVER_CONFIG_FILE
 
 Show parsed vhost settings and run settings :: ~apache2ctl -S~
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC apache
   VirtualHost configuration:
   ,*:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
 
@@ -44463,7 +44470,7 @@ Show parsed vhost settings and run settings :: ~apache2ctl -S~
   Define: DUMP_RUN_CFG
   User: name="www-data" id=33
   Group: name="www-data" id=33
-#+END_EXAMPLE
+#+END_SRC
 
 *** Loaded Modules
 Show all loaded modules :: ~apache2ctl -M~
