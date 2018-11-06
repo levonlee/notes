@@ -10037,6 +10037,7 @@ Import-pro
 - imports images to Media Library and modify the image urls inside body content after posts are imported
 - Import settings > Enable StreamReader instead of using XMLReader
 - Db table ~wp_pmxi_images~ stores the original image urls and the corresponding attachment id
+- For large import, choose an existing import file to creat an import using schedule, run trigger url and run processing url every 2 mins. Each processing takes about 2 minutes.
 
 *** wordpress-importer
 *** wp-optimize
@@ -39330,13 +39331,19 @@ Disadvantages are only HTTP/HTTPS/FTP, Basic auth over HTTP proxy, no SOCKS supp
 
 wget [option]... [URL]...
 
+Run a wp cron:
+#+BEGIN_SRC bash
+  # /dev/null
+  wget -O /dev/stdout -o /dev/stdout "https://mysite.ca/wp-cron.php?import_key=123&import_id=8&action=processing"
+#+END_SRC
+
 #+BEGIN_EXAMPLE
   http://[username:password@]host[:port]/directory/file
   ftp://[username:password@]host[:port]/directory/file
 #+END_EXAMPLE
 
 Download all subfolders and files of an FTP folder
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   cd ~
   wget --user=hello --password='mypassword' -cr ftp://server/path/to/test
 
@@ -39393,26 +39400,7 @@ Download all subfolders and files of an FTP folder
   # -v :: default
   # -q :: complete quiet
   # -nv :: only error and basic info are printed
-#+END_EXAMPLE
-
-In summary, to download everything under ftp://server/path/to/test to ~/test
-
-#+BEGIN_EXAMPLE
-  cd ~ && wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=2 ftp://server/path/to/test
-
-  # copy to ~/bk/test
-  cd ~ && wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=2 -P bk/ ftp://server/path/to/test
-#+END_EXAMPLE
-
-Download and update a subfolder
-You have downloaded ftp://server/path/to/test/* to ~/test
-Now you want to only re-download ftp://server/path/to/test/1/* and update ~/test/1
-#+BEGIN_EXAMPLE
-  cd ~
-  wget --user=abc --password='pass' -cr -l inf -N -nH --cut-dirs=3 -P test/ ftp://server/path/to/test/1
-
-  # -P :: default is . (current folder) Prefix local directory
-#+END_EXAMPLE
+#+END_SRC
 
 [[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
 
@@ -39433,10 +39421,10 @@ To add entries to cron table ~crontab -e~
 	
 ~echo $PATH~ may have to be copied to either the script file or crontab because ~env~ in cron is different from ~env~ the shell that you run the script in.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Setup a Linux cron to run a Drupal Cron URL every 5 minutes
   ,*/5 * * * * /path/to/rundrupalcron.sh
-#+END_EXAMPLE
+#+END_SRC
 	
 There're 4 cron directories. Copy script files to one of them and run as root:
 /etc/cron.daily
