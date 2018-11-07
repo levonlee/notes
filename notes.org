@@ -155,15 +155,20 @@ Most of them are PHP_INI_ALL
 - session.cookie_secure :: bool <<<php.ini:session:cookie_secure>>>
 - session.cookie_httponly :: bool
 
-*** Enable extension <<<php.ini:extension>>>
-php.ini can also enable module. e.g. to enable module intl
-#+BEGIN_EXAMPLE
+**** extension_dir <<<php.ini:extension_dir>>>
+*** Enable extension <<<php.ini:extension_dir>>>
+php.ini can also enable module. e.g. to enable module intl. Use php.ini:extension_dir
+
+#+BEGIN_SRC conf
   ;   extension=modulename
   ; For example:
-  ;
-  ;   extension=mysqli
-  ;   extension=/path/to/extension/mysqli.so
-#+END_EXAMPLE
+
+  extension=mysqli
+  extension=/path/to/extension/mysqli.so
+
+  ; xdebug
+  zend_extension = /path/to/extension/xdebug.so
+#+END_SRC
 
 http://php.net/manual/en/extensions.alphabetical.php
 https://pecl.php.net/packages.php
@@ -178,7 +183,7 @@ error_log not set go to Apache error log
 *** Mail <<<php:ini:mail>>>
 http://php.net/manual/en/mail.configuration.php
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   [mail function]
   ; For Win32 only.
   ; http://php.net/smtp
@@ -210,7 +215,7 @@ http://php.net/manual/en/mail.configuration.php
 
   ; Log mail to syslog (Event Log on Windows).
   ;mail.log = syslog
-#+END_EXAMPLE
+#+END_SRC
 
 Enable mail.log, make sure /var/log/phpmaillog has www-data:www-data as the apache
 
@@ -42617,6 +42622,40 @@ Bash into appserver :: ~lando ssh --user=root~
   lando db-import a.sql
 #+END_SRC
 
+** XDebug <<<lando:xdebug>>>
+Just add ~xdebug: true~ to a recipe's ~config~ or add it under a php service
+#+BEGIN_SRC yaml
+  name: myapp
+  recipe: pantheon
+  config:
+    framework: wordpress
+    site: myapp
+    id: abc-xyz-1234
+    xdebug: true
+    conf:
+      # optional: load a custom config file with XDebug settings
+      php: .cs-devops/php.ini
+#+END_SRC
+
+- ~lando rebuild~ if ~.lando.yml~ is modified
+
+If xdebug is not triggering, try appending url parameter ~XDEBUG_START_SESSION=LANDO~
+
+If it's still not triggered, try:
+- ~lando restart~
+- Still not working, remove ~xdebug: true~ ~lando restart~ and set xdebug using custom ~php.ini~
+
+#+BEGIN_SRC conf
+  xdebug.max_nesting_level = 256
+  xdebug.show_exception_trace = 0
+  xdebug.collect_params = 0
+  xdebug.remote_enable = 1
+  xdebug.remote_autostart = 1
+  xdebug.remote_host = YOUR HOST IP ADDRESS
+#+END_SRC
+
+Run ~lando info --deep | grep IPAddress~ to help discover the host ip address
+
 ** TS: Same app name but different locations
 In one folder, ~lando destroy~ then completely remove that folder.
 
@@ -50484,6 +50523,36 @@ You should see Docker under the bottom bar, select and connect to it. Now you sh
 
 *** Vue.js
 JetBrains plugin repository
+
+*** XDebug <<<phpstorm:xdebug>>>
+https://www.drupaleasy.com/blogs/ultimike/2018/01/setting-xdebug-lando-and-phpstorm
+
+Since XDebug 2.0, protocol DBGp is used.
+
+Config on XDebug host, IDE is client
+- ~xdebug.remote_enable = 1~
+- Debugger should connect to client using ~remote_host~ (e.g. ~host.docker.internal~ ~localhost~) ~remote_port~ (e.g. 9000)
+- remote_mode
+  - req :: default debugger initiates a session as soon as script is started
+  - jit :: initiate when a session should only be initiated on an error 
+
+When one of these happens, XDebug debugger will activate:
+- ~XDEBUG_SESSION_START=session_name~ in URL, ~XDEBUG_SESSION_START~ as POST parameter, or a cookie named ~XDEBUG_SESSION~. Chrome extension just adds a cookie in order to enable XDebug
+- ~export XDEBUG_CONFIG="idekey=session_name remote_host=localhost profiler_enable=1"~ in XDebug host
+
+**** For lando:xdebug
+For per project to include third-party code (e.g. libraries) that is used for completion and reference resolution in functions/methods that use file paths as arguments, for example, ~require()~ or ~include()~
+
+Settings > Languages & Frameworks > PHP, choose the correct php version and then include:
+- ~C:\Users\li\.lando\services\config\pantheon~
+- Or other recipe ~C:\Users\li\.lando\services\config\drupal8~
+- The point is to load ~prepend.php~ which defines global vars related to environments
+
+- Enable PhpStorm to listen for XDebug connections, then load the local website, accept the Incoming Connection from XDebug
+- Settings > Languages & Frameworks > PHP > Servers will show the newly accepted connection as a server. Make sure the following is correct
+  - host: appserver, port: 80, debugger: XDebug
+  - project files: ~your-local-directory-of-the-project~, absolute path on server: ~/app~ (very important)
+  - include path: ~C:\Users\li\.lando\services\config\pantheon~, absolute path on server: ~/srv/includes~
 
 *** TS: Reset Index
 File | Invalidate Caches and restart IDE
