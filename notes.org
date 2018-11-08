@@ -6632,8 +6632,11 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
 #+END_SRC
 
 *** core
-wp core version
-wp core update
+#+BEGIN_SRC bash
+  wp core download
+  wp core version
+  wp core update
+#+END_SRC
 
 *** plugin
 [[https://wordpress.org/plugins][Wordpress Official Plugin Directory]]
@@ -10969,14 +10972,49 @@ Refer to wp:action:loading sequence
 https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
 http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
 
-Request /wp-admin/admin-ajax.php
-/wp-load.php wp:global:wpdb
-/wp-config.php
-/wp-settings.php (core files, active plugins and themes and the REST API)
+index.php
+- WP_USE_THEMES = true
+- wp-blog-header.php
+  - wp-load.php
+  - wp();
+  - wp-includes/template-loader.php
+
+wp-load.php wp:global:wpdb
+- wp-config.php
+- wp-settings.php
+
+wp-settings.php
 - wp-includes/load.php (all functions)
 - wp-includes/default-constants.php (all func.)
-- wp-includes/plugin.php 
+- wp-includes/plugin.php
+- wp-includes/compat.php (functions)
+- wp-includes/class-wp-list-util.php
+- wp-includes/functions.php (wp main API)
+  - wp-includes/option.php (Option API)
+- wp-includes/class-wp-matchesmapregex.php
+- wp-includes/class-wp.php (wp environment setup class)
+- wp-includes/class-wp-error.php (Error API)
+- wp-includes/pomo/mo.php (class for working with MO files)
+  - translations.php
+  - streams.php
+- require_wp_db()
+  - wp-db.php
+- wp-includes/formatting.php
+- wp-includes/capabilities.php (User capabilites API)
+- wp-includes/query.php (is_* functions)
+- wp-includes/general-template.php
+- Load mu-plugins
+- create initial taxonomies and post types
+- Load active plugins :: ~do_action( 'plugins_loaded')~
+- Initialize objects :: WP_Query WP_Rewrite
+- Load the active theme :: ~do_action( 'setup_theme' )~ ~do_action( 'after_setup_theme' )~
+- ~do_action( 'init'  )~
+- ~do_action( 'wp_loaded' )~
 
+Request /wp-admin/admin-ajax.php
+/wp-load.php 
+/wp-config.php
+/wp-settings.php (core files, active plugins and themes and the REST API)
 /wp-admin/admin.php
 /wp-admin/includes/ajax-actions.php
 (wp:action:admin_init)
