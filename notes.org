@@ -24049,13 +24049,13 @@ To wait for all promises to finish, use Promise.all
 #+END_EXAMPLE
 
 Get [[https://github.com/creationix/nvm/releases][nvm version number]] 0.33.1, Node Version Manager
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   cd ~
   curl -sL https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh -o install_nvm.sh
   # check the install script
   nano install_nvm.sh
   bash install_nvm.sh
-#+END_EXAMPLE
+#+END_SRC
 
 Directory ~/.nvm and ~/.profile file are created.
 
@@ -24063,7 +24063,7 @@ Log out and back again or source the file so that current session knows changes
 =source ~/.profile=
 
 List Node.js available versions ~nvm ls-remote~
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   nvm install 7.1.0
   nvm use 7.1.0
 
@@ -24078,7 +24078,7 @@ List Node.js available versions ~nvm ls-remote~
 
   # Use the default version
   nvm use default
-#+END_EXAMPLE
+#+END_SRC
 
 https://github.com/nodejs/LTS
 
@@ -24086,43 +24086,61 @@ https://github.com/nodejs/LTS
 Download the .msi and install with NPM. Installation path: =C:\Program Files\nodejs\=
 Download the latest .msi to upgrade. And upgrade any existing global packages.
 
+Upgrade npm on Windows
+https://www.npmjs.com/package/npm-windows-upgrade
+- PowerShell with admin ~Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force~
+- ~npm install --global --production npm-windows-upgrade~
+
 Refer to phpstorm:nodejs
 
 ** Basic
 Modules installed globally usually have an executable command for direct use. If installed locally, usually run ./node_modules/module_name/bin/exec_cmd
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   node -v
   npm -v
 
-  npm cache clean
+  # clear cache
+  npm cache clean --force
 
-  // Install npm package to ./node_modules
+  # or
+  npm cache verify
+
+  # Install npm package to ./node_modules
   npm install express
 
-  // Install package globally (available to other projects using the same Node.js version)
-  // ~/.nvm/node_version/lib/node_modules/package_name
+  # install without arguments will install dependencies including devDependencies.
+  npm install
+
+  # with flag or when NODE_ENV is set to production, it will not install devDependencies
+  npm install --production
+
+  # with --only={prod[uction]|dev[elopment]} to install only non-devDependencies or devDependencies
+  npm install --only=dev
+
+  # Install package globally (available to other projects using the same Node.js version)
+  # ~/.nvm/node_version/lib/node_modules/package_name
   npm install -g gulp
 
-  // What packages/modules are installed globally, just remove -g for locally
+  # What packages/modules are installed globally, just remove -g for locally
   npm ls -g
 
-  // Check which global packages are outdated
+  # Check which global packages are outdated
   npm outdated -g
 
-  // Update all global packages. Some global package update requires removing first
+  # Update all global packages. Some global package update requires removing first
   npm update -g
 
-  // Update one global package
+  # Update one global package
   npm install -g <packagename>
 
-  // Remove a package globally, just remove -g for locally
+  # Remove a package globally, just remove -g for locally
   npm remove async -g
-#+END_EXAMPLE
+#+END_SRC
 
 Link
-#+BEGIN_EXAMPLE
-  // run npm link alone in local repo is to create a symlink in global folder that links to the package where the command was executed
+#+BEGIN_SRC bash
+  # run npm link alone in local repo is to create a symlink in global folder that links to the package where the command was executed
   cd ~/projects/node-redis # Note local package name is not node-redis but redis as in ~/projects/node-redis/package.json
   npm link # create symlink in global folder so that redis can be globally referrenced/linked.
 
@@ -24130,7 +24148,7 @@ Link
   npm link redis # install redis package in ~/projects/node-bloggy/node_modules/node-redis, file changes in ~/projects/node-redis/ will be reflected.
 
   npm link express # a global package can be linked inside any local repo
-#+END_EXAMPLE
+#+END_SRC
 
 ** Global Object
 console.log is actually global.console.log
@@ -24236,10 +24254,14 @@ console.log(process.argv);
 
 ** Modules, Packages, Frameworks
 *** Get version
-~npm list~ for locally installed packages
-~npm list -g~ for globally installed packages
-~npm list -g --depth=0~ global installed packages at first level
-~npm list express~
+- ~npm list~ for locally installed packages
+- ~npm list -g~ for globally installed packages
+- ~npm list -g --depth=0~ global installed packages at first level
+- ~npm list express~
+- ~npm ls -depth 0~ :: including devDependencies
+- ~npm ls -dev~ :: devDependencies only
+- ~npm ls -dev -depth 0~ :: list first level devDependencies
+
 ~npm view PKG_NAME versions --json~ The latest available version of a package
 view aliaes: info, show, v
 
@@ -24251,16 +24273,16 @@ Distribution tags :: ~npm view mjml dist-tags~
 
 Backup and remove the node_modules and run ~npm install mjml@next~
 
-Update npm ~sudo npm i -g npm~
+- Update npm :: ~sudo npm i -g npm~
 
-~npm i -D~ :: ~npm install --save-dev gulp-imagemin~
+- ~npm i -D~ :: ~npm install --save-dev gulp-imagemin~
 
 Npm website for a package gulp-sourcemaps
 https://www.npmjs.com/package/gulp-sourcemaps
 
 *** Update Package
-~npm outdated -l~ Show if there're updates for locally installed packages based on package.json in --long format
-~npm outdated --global~ for globally installed packages
+- ~npm outdated -l~ :: Show if there're updates for locally installed packages based on package.json in ~--long~ format
+- ~npm outdated --global~ :: for globally installed packages
 
 - Current
 - Wanted :: it may be higher than Latest as it's next in dist-tags above
@@ -24268,14 +24290,14 @@ https://www.npmjs.com/package/gulp-sourcemaps
 
 A package is outdated when its Current is lower than Latest. It'll update to Latest. If Current is higher than Latest, then it'll be downgraded. package.json also limits what versions can be updated to so don't be surprised after ~npm update~ there're still records in ~npm outdated~
 
-- ~npm update~ :: updates all outdated "dependencies" in package.json and change package.json to save the new version as the minimum required dependency.
+- ~npm update~ :: update all outdated "dependencies" in package.json and change package.json to save the new version as the minimum required dependency.
 - ~npm update --dev~ :: updates all outdated "dependencies" and "devDependencies" in package.json
 - ~npm update sharp~ :: update a local package to the latest
 
 *** Global package and Scoped package
-npm install -g @angular/cli
-@ indicates angular/cli is a scoped package. 
-Without @, package is installed in ~node_modules/packagename~
+~npm install -g @angular/cli~
+~@~ indicates angular/cli is a scoped package. 
+Without ~@~, package is installed in ~node_modules/packagename~
 Scoped package is installed in ~node_modules/@angular/cli~
 Thus, scoped package can group packages under one namespace
 
@@ -24584,6 +24606,11 @@ Spawn for ongoing process
     cp.stdin.write("stop");
   }, 4000);
 #+END_EXAMPLE
+
+*** browser-sync
+Windows requires node-gyp
+It creates ~localhost:3000~ which serves content from ~proxy~ server with ~<script async>...</script>~ inserted right after ~<body>~ HTML.
+Refer to this [[https://github.com/webdevsuperfast/bootstrap-for-genesis][GitHub repo]]
 
 *** gulp <<<npm:gulp>>>
 https://github.com/gulpjs/gulp/blob/master/docs/README.md
@@ -26833,12 +26860,28 @@ Open PowerShell with admin right
 
 [[https://github.com/felixrieseberg/windows-build-tools][windows-build-tools]] downloads and installs VC++ Build Tools and Python 2.7, configuring maching and npm appropriately.
 
-The install is conflict-free meaning that they do not mess with existing installations of VS, C++ Build Tools or Python.
+The install is conflict-free meaning that they do not mess with existing installations of VS, C++ Build Tools (C++ runtime libraries) or Python.
 
 ** npm dependency ~ vs ^ <<<nodejs:semver>>>
 ^1.2.3 will match any 1.x.x latest release but will miss 2.0.0 (e.g. allow minor and patch but not major)
 ~1.2.3 will match any 1.2.x versions but will miss 1.3.0 (e.g. allow patch but not minor or major)
 ^, caret, is the default now
+
+** TS: pathspec
+#+BEGIN_EXAMPLE
+  Command failed: C:\Program Files\Git\mingw64\bin\git.EXE checkout 4.0
+  error: pathspec '4.0'
+#+END_EXAMPLE
+
+Change package.json from ~"gulp": "gulpjs/gulp#4.0"~ to ~"gulp": "4.0"~
+
+** TS: Unmet dependencies
+- ~rm -rf node_modules~ ~rm package-lock.json~ ~npm install~
+- ~npm cache verify~ or ~npm cache clean~ in older NPM version
+- The problem might be
+  - Fail to download the package, timed-out.
+  - Manully install top-level modules ~npm i eslink-config-wordpress~
+  - or adjust the order of packages in package.json
 
 * Angular
 ** Who use Angular?
