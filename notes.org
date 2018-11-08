@@ -156,6 +156,9 @@ Most of them are PHP_INI_ALL
 - session.cookie_httponly :: bool
 
 **** extension_dir <<<php.ini:extension_dir>>>
+**** max_execution_time <<<php.ini:max_execution_time>>>
+PHP_INI_ALL, default 30s
+
 *** Enable extension <<<php.ini:extension_dir>>>
 php.ini can also enable module. e.g. to enable module intl. Use php.ini:extension_dir
 
@@ -10970,6 +10973,10 @@ Request /wp-admin/admin-ajax.php
 /wp-load.php wp:global:wpdb
 /wp-config.php
 /wp-settings.php (core files, active plugins and themes and the REST API)
+- wp-includes/load.php (all functions)
+- wp-includes/default-constants.php (all func.)
+- wp-includes/plugin.php 
+
 /wp-admin/admin.php
 /wp-admin/includes/ajax-actions.php
 (wp:action:admin_init)
@@ -42581,6 +42588,14 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 - Or add a bash script wrapper wp-cli:allow-root
 
 - Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
+- ~$_ENV['PANTHEON_ENVIRONMENT']~ is defined
+
+*** Varnish <<<lando:pantheon:varnish>>>
+- See version ~varnishd -V~
+- Go to CLI ~varnishd~, then ~stop~ ~start~ ~quit~
+- Search log ~varnishlog -d -q "BerespStatus == 503"~
+
+Config files ~/etc/varnish/conf.d/*.vcl~
 
 ** Service: phpMyAdmin
 
@@ -45755,6 +45770,9 @@ Parameter ipv6only can be set only once across all config files. Default is on. 
   listen [::]:443 ssl ipv6only=on;
 #+END_EXAMPLE
 
+** fastcgi directives - Module ngx_http_fastcgi_module <<<nginx:d:fastcgi>>>
+- fastcgi_read_timeout :: default 60s, 3600s <<<nginx:d:fastcgi_read_timeout>>>
+
 ** Server name redirect <<<nginx:d:redirect>>>
 Use nginx:d:rewrite for regex redirect
 
@@ -47511,7 +47529,7 @@ If there's a HTTP header ~Cache-Control: no-cache, must-revalidate, post-check=0
 e.g. drupal_set_message sets ~no-cache~ in HTTP header.
 
 Set HTTP header for preventing certain pages from caching
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // wordpress
   if (preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
       add_action( 'send_headers', 'add_header_nocache', 15 );
@@ -47528,7 +47546,8 @@ Set HTTP header for preventing certain pages from caching
 
   // D8
   $build['#cache']['max-age'] = 0;
-#+END_EXAMPLE
+#+END_SRC
+
 See pantheon:cookie to prevent caching on certain pages by setting NO_CACHE cookie
 
 Pantheon Varnish will ignore the following GET parameters when caching:
@@ -47538,6 +47557,8 @@ Pantheon Varnish will ignore the following GET parameters when caching:
 PHP read values of these GET parameter as ~PANTHEON_STRIPPED~
 
 Varnish configuration file (.vcl) is not supposed to edit.
+
+See lando:pantheon:varnish
 
 ** Object Cache - Redis
 Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
@@ -50539,6 +50560,10 @@ Config on XDebug host, IDE is client
 When one of these happens, XDebug debugger will activate:
 - ~XDEBUG_SESSION_START=session_name~ in URL, ~XDEBUG_SESSION_START~ as POST parameter, or a cookie named ~XDEBUG_SESSION~. Chrome extension just adds a cookie in order to enable XDebug
 - ~export XDEBUG_CONFIG="idekey=session_name remote_host=localhost profiler_enable=1"~ in XDebug host
+
+Consider extend timeout
+- nginx:d:fastcgi_read_timeout
+- php.ini:max_execution_time
 
 **** For lando:xdebug
 For per project to include third-party code (e.g. libraries) that is used for completion and reference resolution in functions/methods that use file paths as arguments, for example, ~require()~ or ~include()~
