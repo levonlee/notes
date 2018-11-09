@@ -614,6 +614,9 @@ http://php.net/manual/en/array.sorting.php
 - All functions act directly on the input array
 - Maintain key association means the keys are not modified otherwise the keys are reset numerically (0,1,2)
 
+**** ksort <<<php:ksort>>>
+Sort (associative) array by its key
+
 **** usort uasort - value sort
 usort doesn't maintain key association but uasort does. If callback function returns negative integer, means the comparison is less than.
 
@@ -7121,12 +7124,12 @@ Complex context
 Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
 Settings > General > Site Lanuage to match fr_CA
 
-*** add_theme_support, remove_theme_support, current_theme_supports
-<<<wp:f:add_theme_support>>> <<<wp:f:current_theme_supports>>>
-<<<wp:f:add_theme_support:post-thumbnails>>>
-Features are usually added in wp:action:after_setup_theme
-
-[[https://codex.wordpress.org/Theme_Features][All theme support features]]
+*** add_theme_support, remove_theme_support, current_theme_supports <<<wp:f:add_theme_support>>>
+<<<wp:f:current_theme_supports>>> <<<wp:f:add_theme_support:post-thumbnails>>>
+- Either in theme's ~functions.php~ or added in wp:action:after_setup_theme because it has to be loaded early
+- [[https://codex.wordpress.org/Theme_Features][All theme support features]]
+- Some features e.g. ~html5~ use ~array_merge~
+- Other and custom features just take the latest call values as the feature
 
 #+BEGIN_SRC php
   add_theme_support( 'post-thumbnails' );
@@ -7195,17 +7198,16 @@ Features are usually added in wp:action:after_setup_theme
   // https://codex.wordpress.org/Custom_Backgrounds
 #+END_SRC
 
-*** add_image_size
-<<<wp:f:add_image_size>>>
+*** add_image_size <<<wp:f:add_image_size>>>
 Use wp:action:after_setup_theme
 Every newly uploaded image will have image files with all defined image sizes.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_theme_setup() {
    add_image_size('lili-w700', 700, 9999); // fixed width, unlimited height
    add_image_size('lili-w700h600', 700, 600, true); // crop in exact dimension 
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** add_management_page
 wp:action:admin_menu
@@ -9097,8 +9099,9 @@ If a parameter is passed, footer-[$name].php is also included and you can play a
 #+END_EXAMPLE
 
 Remove emoji javascript and style
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   remove_action('wp_head', 'print_emoji_detection_script', 7);
+
   remove_action('wp_print_styles', 'print_emoji_styles');
 
   remove_action('wp_head', 'wlwmanifest_link'); // Windows Live Writer support
@@ -9116,7 +9119,7 @@ Remove emoji javascript and style
   remove_action('wp_head', 'adjacent_posts_rel_link'); // remove PREV and NEXT links e.g. <link rel='prev' title='The Post Before This One' href='http://localhost/wp/?p=4' />
 
   remove_action( 'wp_head','rest_output_link_wp_head'); // wp-json
-#+END_EXAMPLE
+#+END_SRC
 
 *** add_meta_boxes, add_meta_boxes_{post_type}
 lili_add_meta_boxes($post_type, $post) takes 2 arguments, no return. 
@@ -9610,7 +9613,7 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
 - ~do_action( 'genesis_pre' );~
 - ~do_action( 'genesis_init' );~
   - load textdomain
-  - load theme support
+  - load theme support wp:genesis:theme support
   - load post type support
   - constants
   - load frameworks
@@ -9628,6 +9631,98 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
 - ~do_action( 'genesis_setup' );~
   - create initial layout
   - register default widget areas
+
+*** Actions and filters
+https://genesistutorials.com/visual-hook-guide/
+
+function genesis(){}
+- get_header(); wp:genesis:header.php
+- do_action( 'genesis_before_content_sidebar_wrap' );
+- do_action( 'genesis_before_content' );
+- do_action( 'genesis_before_loop' );
+  - genesis_do_breadcrumbs
+  - genesis_do_taxonomy_title_description
+  - genesis_do_author_title_description
+  - genesis_do_author_box_archive
+  - genesis_do_cpt_archive_title_description
+  - genesis_do_date_archive_title
+  - genesis_do_blog_template_heading
+  - genesis_do_posts_page_heading
+- do_action( 'genesis_loop' );
+  - genesis_do_loop
+- do_action( 'genesis_after_loop' );
+- do_action( 'genesis_after_content' );
+  - genesis_get_sidebar_alt
+  - genesis_get_sidebar
+- do_action( 'genesis_after_content_sidebar_wrap' );
+  - genesis_get_sidebar_alt
+- get_footer();
+  - genesis_before_footer
+  - genesis_footer
+  - genesis_after_footer
+  - genesis_after
+
+**** header.php <<<wp:genesis:header.php>>>
+- genesis_doctype
+- genesis_title
+- genesis_meta
+- wp_head();
+- genesis_before
+- genesis_before_header
+- genesis_header
+  - genesis_site_title
+  - genesis_site_description
+  - genesis_header_right
+  - genesis_site_description
+- genesis_after_header
+- genesis_structural_wrap( 'site-inner' )
+
+**** genesis_standard_loop(){}
+- do_action( 'genesis_before_while' );
+- do_action( 'genesis_before_entry' );
+- do_action( 'genesis_entry_header' );
+- do_action( 'genesis_before_entry_content' );
+- do_action( 'genesis_entry_content' );
+- do_action( 'genesis_after_entry_content' );
+- do_action( 'genesis_entry_footer' );
+- do_action( 'genesis_after_entry' );
+- do_action( 'genesis_after_endwhile' );
+
+**** genesis_markup()
+- $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // shortcutting
+- $open = apply_filters( "genesis_markup_{$args['context']}_open", $open, $args );
+- $content = apply_filters( "genesis_markup_{$args['context']}_content", $args['content'], $args );
+- $close = apply_filters( "genesis_markup_{$args['context']}_close", $args['close'], $args );
+
+*** Theme support <<<wp:genesis:theme support>>>
+https://sridharkatakam.com/comprehensive-guide-genesis-theme-supports/
+Refer to wp:f:add_theme_support
+
+- genesis-footer-widgets :: int
+- genesis-structural-wraps :: array
+#+BEGIN_SRC php
+  // to remove a named HTML element
+  add_theme_support( 'genesis-structural-wraps', array(
+      'header',
+      'menu-primary',
+      'menu-secondary',
+      // 'site-inner',
+      'footer-widgets',
+      'footer'
+  ) );
+#+END_SRC
+
+*** Child theme
+functions.php
+#+BEGIN_SRC php
+  add_action( 'genesis_setup', 'bfg_childtheme_setup', 15 );
+
+  function bfg_childtheme_setup() {
+	  // Load parent Genesis theme init.php
+	  include_once( get_template_directory() . '/lib/init.php' );
+	  // ...
+  }
+#+END_SRC
 
 ** Admin Screens
 *** Admin bar now is called Toolbar <<<wp:admin:toolbar>>>
