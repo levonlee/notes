@@ -24764,6 +24764,26 @@ Then install gulp locally ~npm install --save-dev gulp@next~
 
 - Gulp plugins :: https://gulpjs.com/plugins/ https://github.com/alferov/awesome-gulp
 
+#+BEGIN_SRC js
+  gulp.task(
+    'default',
+    gulp.parallel(
+      'styles',
+      'vendorsJS',
+      'customJS',
+      'images',
+      browsersync,
+      function watchFiles() {
+	gulp.watch( config.projectPHPWatchFiles, reload ); // Reload on PHP file changes.
+	gulp.watch( config.styleWatchFiles, gulp.parallel( 'styles' ) ); // Reload on SCSS file changes.
+	gulp.watch( config.vendorJSWatchFiles, gulp.series( 'vendorsJS', reload ) ); // Reload on vendorsJS file changes.
+	gulp.watch( config.customJSWatchFiles, gulp.series( 'customJS', reload ) ); // Reload on customJS file changes.
+	gulp.watch( config.imgSRC, gulp.series( 'images', reload ) ); // Reload on customJS file changes.
+      }
+    )
+  );
+#+END_SRC
+
 **** Example
 ~gulp~ runs the default task.
 ~gulp <task> <othertask>~
@@ -24944,6 +24964,9 @@ Use [[https://www.npmjs.com/package/gulp-plumber][gulp-plumber]]
 
 **** gulp-cache
 refer to gulp-remember
+
+**** gulp-sort
+Sort files in stream by path or any custom sort comparator
 
 **** gulp-concat
 Concat files using operating system's newLine
