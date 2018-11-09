@@ -24742,35 +24742,33 @@ Spawn for ongoing process
   }, 4000);
 #+END_EXAMPLE
 
-*** browser-sync
+*** browser-sync <<<npm:browser-sync>>>
 Windows requires node-gyp
 It creates ~localhost:3000~ which serves content from ~proxy~ server with ~<script async>...</script>~ inserted right after ~<body>~ HTML.
 Refer to this [[https://github.com/webdevsuperfast/bootstrap-for-genesis][GitHub repo]]
+
+- Reload CSS without refreshing the page :: ~.pipe( browserSync.stream() )~
 
 *** gulp <<<npm:gulp>>>
 https://github.com/gulpjs/gulp/blob/master/docs/README.md
 
 If gulp was previously globally installed, remove it before installing gulp-cli
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   npm rm --global gulp
   npm install --global gulp-cli
   gulp -v
+  # return 2.0.1
+#+END_SRC
 
-  // 2.0.1
-#+END_EXAMPLE
+Then install gulp locally ~npm install --save-dev gulp@next~
 
-Then install gulp locally
-#+BEGIN_EXAMPLE
-  npm install --save-dev gulp@next
-#+END_EXAMPLE
-
-Gulp plugins :: https://gulpjs.com/plugins/ https://github.com/alferov/awesome-gulp
+- Gulp plugins :: https://gulpjs.com/plugins/ https://github.com/alferov/awesome-gulp
 
 **** Example
 ~gulp~ runs the default task.
-gulp <task> <othertask>
+~gulp <task> <othertask>~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   npm install gulp-util --save-dev
   npm install gulp-coffee --save-dev
   npm install gulp-concat --save-dev
@@ -24778,8 +24776,10 @@ gulp <task> <othertask>
   npm install gulp-compass --save-dev
   npm install jquery --save-dev
   npm install mustache --save-dev
+#+END_SRC
 
-  // gulpfile.js
+gulpfile.js
+#+BEGIN_SRC js
   var gulp=require('gulp'),
       gutil = require('gulp-util'),
       coffee = require('gulp-coffee'),
@@ -24806,33 +24806,33 @@ gulp <task> <othertask>
 
   gulp.task('coffee', function() {
     gulp.src(coffeeSources)
-        .pipe(coffee({ bare: true })
-           .on('error', gutil.log))
-        .pipe(gulp.dest('components/scripts'));
+	.pipe(coffee({ bare: true })
+	   .on('error', gutil.log))
+	.pipe(gulp.dest('components/scripts'));
   });
 
   gulp.task('js', ['coffee'], function() {
     gulp.src(jsSources)
-        .pipe(concat('script.js'))
-        .pipe(gulp.dest('builds/development/js'));
+	.pipe(concat('script.js'))
+	.pipe(gulp.dest('builds/development/js'));
   });
 
   gulp.task('compass', function() {
     gulp.src(sassSources)
-        .pipe(compoass({
-              sass: 'components/sass',
-              image: 'builds/development/images',
-              style: 'expanded'
-           })
-           .on('error', gutil.log)
-        )
-        .pipe(gulp.dest('builds/development/css'));
+	.pipe(compoass({
+	      sass: 'components/sass',
+	      image: 'builds/development/images',
+	      style: 'expanded'
+	   })
+	   .on('error', gutil.log)
+	)
+	.pipe(gulp.dest('builds/development/css'));
   });
 
   gulp.task('watch', function() {
     gulp.watch(coffeeSources, ['coffee']);
   });
-#+END_EXAMPLE
+#+END_SRC
 
 **** gulp.src
 gulp.src(globs[, options])
@@ -24845,10 +24845,12 @@ globs :: string or array. [[https://github.com/isaacs/node-glob][node-glob]]
 
 options :: options to pass to node-glob.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
+  /*
   some/path/example/app/js/app.js
   some/path/example/vendor/js/vendor.js
   some/path/example/vendor/lib/js/lib.js
+  ,*/
 
   gulp.src('some/path/**/js/*.js')
     .pipe(gulp.dest('output'));
@@ -24856,19 +24858,23 @@ options :: options to pass to node-glob.
   // base is anything before the first ** which is some/path
   // result
 
+  /*
   output/example/app/js/app.js
   output/example/vendor/js/vendor.js
   output/example/vendor/lib/js/lib.js
+  ,*/
 
   // hard set base
   gulp.src('some/path/**/js/*.js', {base:'.'})
     .pipe(gulp.dest('output'));
 
   // result
+  /*
   output/some/path/example/app/js/app.js
   output/some/path/example/vendor/js/vendor.js
   output/some/path/example/vendor/lib/js/lib.js
-#+END_EXAMPLE
+  ,*/
+#+END_SRC
 
 Only one option:base is possible for an array of files
 #+BEGIN_EXAMPLE
@@ -24880,17 +24886,83 @@ Only one option:base is possible for an array of files
 #+END_EXAMPLE
 
 Instead, do this
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC javascript
   var merge = require('merge-stream');
 
   gulp.task('default', function() {
     merge(gulp.src('source1/examples/**/*.html', {base: 'source1/'}),
-          gulp.src('source2/examples/**/*.html', {base: 'source2/'}))
+	  gulp.src('source2/examples/**/*.html', {base: 'source2/'}))
      .pipe(gulp.dest('dist'));
   });
-#+END_EXAMPLE
+#+END_SRC
 
-option:cwd :: current working directory
+Options
+- option:cwd :: current working directory
+
+**** gulp-plumber
+By design, Node stream will stop accepting incoming data, if error event was raised. You can see it in stream.js:103 - ~cleanup~ function will deattach ~ondata~ handler from ~source~ (which in our case is gulp.src) and ~coffee~ plugin will stop receiving files although, the rest of the files can be compiled.
+#+BEGIN_SRC js
+  gulp.src('coffee/**/*.coffee')
+    .pipe(gulpPrefixer('// Copyright 2014 (C) Aswesome company'))
+    .on('error', gutil.log)
+    .pipe(coffee())
+    .on('error', gutil.log)
+    .pipe(gulp.dest('js/'));
+#+END_SRC
+
+Use [[https://www.npmjs.com/package/gulp-plumber][gulp-plumber]]
+#+BEGIN_SRC js
+  var plumber = require('gulp-plumber');
+  var coffee = require('gulp-coffee');
+ 
+  gulp.src('./src/*.ext')
+      .pipe(plumber())
+      .pipe(coffee())
+      .pipe(gulp.dest('./dist'));
+#+END_SRC
+**** gulp-remember
+#+BEGIN_SRC js
+  var gulp = require('gulp'),
+      header = require('gulp-header'),
+      footer = require('gulp-footer'),
+      concat = require('gulp-concat'),
+      cache = require('gulp-cached'),
+      remember = require('gulp-remember');
+ 
+  var scriptsGlob = 'src/**/*.js';
+ 
+  gulp.task('scripts', function () {
+    return gulp.src(scriptsGlob)
+	.pipe(cache('scripts')) // only pass through changed files, 'scripts' is any cache name of your choice
+	.pipe(header('(function () {')) // do special things to the changed files...
+	.pipe(footer('})();')) // for example, add a stupid-simple module wrap to each file
+	.pipe(remember('scripts')) // add back all files (initially in gulp.src) to the stream. 'scripts' is any cache name of your choice
+	.pipe(concat('app.js')) // do things that require all files
+	.pipe(gulp.dest('public/'))
+  });
+#+END_SRC
+
+**** gulp-cache
+refer to gulp-remember
+
+**** gulp-concat
+Concat files using operating system's newLine
+#+BEGIN_SRC javascript
+  var concat = require('gulp-concat');
+ 
+  gulp.task('scripts', function() {
+    return gulp.src('./lib/*.js')
+      .pipe(concat('all.js'))
+      .pipe(gulp.dest('./dist/'));
+  });
+
+  // in order
+  gulp.task('scripts', function() {
+    return gulp.src(['./lib/file3.js', './lib/file1.js', './lib/file2.js'])
+      .pipe(concat('all.js'))
+      .pipe(gulp.dest('./dist/'));
+  });
+#+END_SRC
 
 **** gulp-rename
 #+BEGIN_EXAMPLE
@@ -24947,27 +25019,96 @@ Any source *-gulp.css will have dest file *-gulp-build.css
 **** gulp-sourcemaps
 https://www.npmjs.com/package/gulp-sourcemaps
 
-#+BEGIN_EXAMPLE
+Another sourcemap file (endfile.css.map) is generated on top of the result file (endfile.css)
+
+#+BEGIN_SRC javascript
   var gulp = require('gulp');
   var plugin1 = require('gulp-plugin1');
   var plugin2 = require('gulp-plugin2');
   var sourcemaps = require('gulp-sourcemaps');
-   
+
   gulp.task('javascript', function() {
     gulp.src('src/**/*.js')
       .pipe(sourcemaps.init())
-        .pipe(plugin1())
-        .pipe(plugin2())
+	.pipe(plugin1())
+	.pipe(plugin2())
       .pipe(sourcemaps.write())
       .pipe(gulp.dest('dist'));
   });
-#+END_EXAMPLE
+#+END_SRC
+
+All plugins between sourcemaps.init() and sourcemaps.write() need to have support for gulp-sourcemaps.
+
+**** gulp-filter
+#+BEGIN_SRC js
+  const gulp = require('gulp');
+  const uglify = require('gulp-uglify');
+  const filter = require('gulp-filter');
+ 
+  gulp.task('default', () => {
+      // Create filter instance inside task function
+      const f = filter(['**', '!*src/vendor'], {restore: true});
+ 
+      return gulp.src('src/**/*.js')
+	  // Filter a subset of the files
+	  .pipe(f)
+	  // Run them through a plugin
+	  .pipe(uglify())
+	  // Bring back the previously filtered out files (optional)
+	  .pipe(f.restore)
+	  .pipe(gulp.dest('dist'));
+  });
+#+END_SRC
+
+**** gulp-sass <<<npm:gulp-sass>>>
+[[https://www.npmjs.com/package/gulp-sass][Doc]] Options are the same as [[https://github.com/sass/node-sass#options][node-sass]]
+
+#+BEGIN_SRC javascript
+  var scssStream = gulp.src( config.styleSRC )
+		  .pipe( sourcemaps.init() )
+		  .pipe(
+			  sass({
+				  errLogToConsole: config.errLogToConsole,
+				  outputStyle: config.outputStyle,
+				  precision: config.precision
+			  })
+		  )
+		  .on( 'error', sass.logError )
+		  .pipe(concat('app.scss'));
+#+END_SRC
+
+**** gulp-merge-media-queries
+#+BEGIN_SRC js
+  var mmq = require('gulp-merge-media-queries');
+ 
+  gulp.task('mmq', function () {
+    gulp.src('src/**/*.css')
+      .pipe(mmq({
+	log: true
+      }))
+      .pipe(gulp.dest('dist'));
+  });
+#+END_SRC
+
+**** gulp-line-ending-corrector
+It converts CRLF ~\r\n~ to LF ~\n~
+#+BEGIN_SRC js
+  var lec = require( 'gulp-line-ending-corrector' );
+
+  // .pipe(lec())
+  // .pipe(lec({verbose:true, eolc: 'LF', encoding:'utf8'}))
+#+END_SRC
+
+**** gulp-uglifycss
+Minify CSS using [[https://github.com/fmarcia/UglifyCSS][UglifyCSS]]
 
 **** gulp-postcss <<<npm:gulp-postcss>>> [[https://github.com/postcss/gulp-postcss][Doc]]
-npm i -D autoprefixer
-npm i -D gulp-postcss
+#+BEGIN_SRC bash
+  npm i -D autoprefixer
+  npm i -D gulp-postcss
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC javascript
   gulp.task('autoprefixer', function () {
     var postcss      = require('gulp-postcss');
     var sourcemaps   = require('gulp-sourcemaps');
@@ -24979,10 +25120,10 @@ npm i -D gulp-postcss
       .pipe(sourcemaps.write('.'))
       .pipe(gulp.dest('./dest'));
   });
-#+END_EXAMPLE
+#+END_SRC
 
 Load multiple PostCSS plugins, refer to npm:autoprefixer for options
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var postcss = require('gulp-postcss');
   var gulp = require('gulp');
   var autoprefixer = require('autoprefixer');
@@ -24990,16 +25131,38 @@ Load multiple PostCSS plugins, refer to npm:autoprefixer for options
 
   gulp.task('css', function () {
       var plugins = [
-          autoprefixer({browsers: ['last 1 version']}),
-          cssnano()
+	  autoprefixer({browsers: ['last 1 version']}),
+	  cssnano()
       ];
       return gulp.src('./src/*.css')
-          .pipe(postcss(plugins))
-          .pipe(gulp.dest('./dest'));
+	  .pipe(postcss(plugins))
+	  .pipe(gulp.dest('./dest'));
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ***** npm:postcss:options
+**** gulp-uglify
+It uses [[https://github.com/mishoo/UglifyJS2#minify-options][UglifyJS2]] to minify JavaScript files
+
+**** gulp-babel
+https://www.npmjs.com/package/gulp-babel
+https://babeljs.io/docs/en/options
+
+#+BEGIN_SRC js
+  .pipe(
+    babel({
+      presets: [
+	[
+	  'env', // Preset which compiles ES6 to ES5.
+	  {
+	    targets: { browsers: config.BROWSERS_LIST } // Target browser list to support.
+	  }
+	]
+      ]
+    })
+  )
+#+END_SRC
+
 **** gulp-responsive
 https://github.com/mahnunchik/gulp-responsive
 
@@ -25028,6 +25191,13 @@ https://github.com/jkphl/gulp-svg-sprite
 npm i -D gulp-svg-sprite
 
 There're 5 modes :: css, view, defs, symbol, stack
+
+**** gulp-notify
+[[https://www.npmjs.com/package/gulp-notify][It]] sends notification on operating system level.
+
+#+BEGIN_SRC js
+  .pipe( notify({ message: 'TASK: "styles" Completed!', onLast: true }) );
+#+END_SRC
 
 *** grunt
 Install grunt globally and locally
@@ -25455,12 +25625,12 @@ Required by npm:gulp-postcss
 
 It doesn't remove duplicate css rules and removes unwanted prefixes in source files.
 
-***** browserslist
+***** browserslist <<<npm:postcss:browerslist>>>
 package.json
 
 https://github.com/ai/browserslist#queries
 Default
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC json
   {
   ...,
     "browserslist": [
@@ -25471,7 +25641,7 @@ Default
     ],
   ...
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ***** Comment to turn off prefixing
 Autoprefixer is disabled for a specific rule ~b~
