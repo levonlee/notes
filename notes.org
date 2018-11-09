@@ -8914,22 +8914,40 @@ $size :: (string|array) Requested size. Image size or array of width and height 
 *** comments_open
 wp:plugin:disable-comments
 
-** add_action, do_action, do_action_ref_array
+** add_action, do_action, do_action_ref_array <<<wp:add_action>>>
 *** Basic
 Event based
-add_action( string $tag,
-  string $function_name,
-  int $priority = 10,
-  int $accepted_args = 1 // number of args the function accepts
-)
+#+BEGIN_SRC php
+  add_action( string $tag,
+    string $function_name,
+    int $priority = 10,
+    int $accepted_args = 1 // number of args the function accepts
+  );
 
-add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
+  // add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
+
+  // child theme
+  add_action( 'abc', 'xyz' );
+  // parent theme
+  add_action( 'abc', 'abc' );
+
+  // xyz and abc will run in order
+  do_action( 'abc' );
+
+  // child theme
+  remove_action( 'abc', 'ijk' );
+
+  // parent theme
+  add_action( 'abc', 'ijk');
+
+  // ijk is added and then removed, so ijk will not run
+  do_action( 'abc' );
+#+END_SRC
 
 *** Action sequence <<<wp:action:loading sequence>>>
 https://codex.wordpress.org/Plugin_API/Action_Reference
 
-*** after_setup_theme
-<<<wp:action:after_setup_theme>>>
+*** after_setup_theme <<<wp:action:after_setup_theme>>>
 Called each page load after the theme is initialized. 
 Do basic setup, registration and init actions for a theme
 
@@ -8938,8 +8956,7 @@ wp:f:add_theme_support
 wp:f:add_image_size
 wp:f:register_nav_menus
 
-*** init
-<<<wp:action:init>>>
+*** init <<<wp:action:init>>>
 Fires after Wordpress has finished loading but before any headers are sent.
 User is already authenticated.
 Useful for intercepting $_GET or $_POST
@@ -8951,49 +8968,48 @@ wp:f:add_rewrite_rule
 Refer to wp:filter:sidebars_widgets to modify registered sidebars and their widgets.
 Refer to wp:f:register_widget to create a widget
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_widgets_init() {
     $args = array(
-          'name'          => __( 'Sidebar name', 'theme_text_domain' ),
-          'id'            => 'unique-sidebar-id', // %1$s
-          'description'   => '',
-          'class'         => '', // %2$s, will have ~sidebar-~ prepended
-          'before_widget' => '<li id="%1$s" class="widget %2$s">',
-          'after_widget'  => '</li>',
-          'before_title'  => '<h2 class="widgettitle">',
-          'after_title'   => '</h2>' );
+	  'name'          => __( 'Sidebar name', 'theme_text_domain' ),
+	  'id'            => 'unique-sidebar-id', // %1$s
+	  'description'   => '',
+	  'class'         => '', // %2$s, will have ~sidebar-~ prepended
+	  'before_widget' => '<li id="%1$s" class="widget %2$s">',
+	  'after_widget'  => '</li>',
+	  'before_title'  => '<h2 class="widgettitle">',
+	  'after_title'   => '</h2>' );
     register_sidebar( $args );
 
     // register_sidebar( $args2 );
-    
+
     // Create multiple sidebars with the same config
     $args = array(
-          'name'          => __('Sidebar %d'),
-          'id'            => 'sidebar',          
-          'description'   => '',
-          'class'         => '',
-          'before_widget' => '<li id="%1$s" class="widget %2$s">',
-          'after_widget'  => '</li>',
-          'before_title'  => '<h2 class="widgettitle">',
-          'after_title'   => '</h2>' );
+	  'name'          => __('Sidebar %d'),
+	  'id'            => 'sidebar',          
+	  'description'   => '',
+	  'class'         => '',
+	  'before_widget' => '<li id="%1$s" class="widget %2$s">',
+	  'after_widget'  => '</li>',
+	  'before_title'  => '<h2 class="widgettitle">',
+	  'after_title'   => '</h2>' );
 
     // register_sidebars( 2, $args );
 
   }
   add_action('widgets_init', 'lili_widgets_init');
-#+END_EXAMPLE
+#+END_SRC
 
 Display
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php if ( is_active_sidebar( 'home_right_1' ) ) : ?>
     <div id="primary-sidebar" class="primary-sidebar widget-area" role="complementary">
       <?php dynamic_sidebar( 'home_right_1' ); ?>
     </div><!-- #primary-sidebar -->
   <?php endif; ?>
-#+END_EXAMPLE
+#+END_SRC
 
-*** admin_menu
-<<<wp:action:admin_menu>>>
+*** admin_menu <<<wp:action:admin_menu>>>
 
 *** admin_init <<<wp:action:admin_init>>>
 It's triggered before any other hook when a user accesses the admin area. This hook doesn't provide any parameters, so it can only be used to callback a specified function.
@@ -9598,6 +9614,17 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
   - load post type support
   - constants
   - load frameworks
+    - ~do_action( 'genesis_pre_framework' );~
+    - lib/framework.php
+      - ~function genesis(){}~
+    - lib/classes/*
+    - lib/functions/*
+    - lib/shortcodes/*
+    - lib/structure/*
+    - lib/admin/*
+    - lib/js/load-scripts.php
+    - lib/css/load-styles.php
+    - lib/widgets/*
 - ~do_action( 'genesis_setup' );~
   - create initial layout
   - register default widget areas
