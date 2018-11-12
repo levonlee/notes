@@ -7000,8 +7000,8 @@ Render an editor for field in a page in the typical fashion used in Posts and Pa
 May be used in wp:action:edit_page_form wp:action:edit_form_advanced
 Use wp:f:update_post_meta in wp:action:save_post for storing the new field
 
-*** wp_parse_args( $args, $defaults )
-<<<wp:f:wp_parse_args>>> Merge user defined arguments into defaults array.
+*** wp_parse_args( $args, $defaults ) <<<wp:f:wp_parse_args>>>
+Merge user defined arguments into defaults array.
 
 *** Translate
 Use tool:Poedit
@@ -7761,6 +7761,22 @@ Create a sidebar (widget area) where widget instances can be assigned to in wp a
 - Display sidebar 
   - wp:f:dynamic_sidebar 
   - wp:f:get_sidebar
+
+#+BEGIN_SRC php
+  add_action( 'widgets_init', 'theme_slug_widgets_init' );
+  function theme_slug_widgets_init() {
+      register_sidebar( array(
+	  'name' => __( 'Main Sidebar', 'theme-slug' ),
+	  'id' => 'sidebar-1',
+	  'description' => __( 'Widgets in this area will be shown on all posts and pages.', 'theme-slug' ),
+	  'class' => 'tal', // prepend so CSS result for WP Admin page becomes 'sidebar-tal', (default: empty)
+	  'before_widget' => '<li id="%1$s" class="widget %2$s">',
+	  'after_widget'  => '</li>',
+	  'before_title'  => '<h2 class="widgettitle">',
+	  'after_title'   => '</h2>',
+      ) );
+  }
+#+END_SRC
 
 *** register_widget <<<wp:f:register_widget>>> 
 Used in wp:action:widgets_init
@@ -9605,17 +9621,70 @@ Refer to wp:template tags and wp:t:general
 
 *** Functions <<<wp:genesis:functions>>>
 lib/functions/widgetize.php
-- ~genesis_register_widget_area (genesis_regiser_sidebar)~
+- ~genesis_register_widget_area( $args )~ or ~genesis_register_sidebar~
   - Use wp:f:register_sidebar
   - Defined in wp:genesis:action:genesis_setup
-  - filter ~genesis_register_sidebar_defaults~
-  - filter ~genesis_register_wdiget_area_defaults~
+  - Define ~$defaults~ :: before_widget, after_widget, before_title, after_title
+  - filter to change ~$defaults~ :: ~genesis_register_sidebar_defaults~ ~genesis_register_wdiget_area_defaults~
+  - Overide ~$defaults~ using ~$args~
 - ~genesis_widget_area( $id, $args = [])~ :: wp:f:dynamic_sidebar
   - return false if sidebar isn't found
   - filter ~genesis_widget_area_defaults, [ before, after, default, show_active, before_sidebar_hook, after_sidebar_hook]~
   - action ~genesis_before_$id_widget_area~ ~genesis_after_$id_widget_area~
 
-- genesis_markup( $args=[] )
+lib/functions/markup.php
+- ~genesis_markup( $args=[] )~
+  - ~$args~
+    - echo :: true
+    - html5 :: echo and run ~genesis_attr()~ if theme support ~html5~ is enabled otherwise xhtml is echoed
+    - xhtml ::
+    - context ::
+    - open ::
+    - close ::
+    - content :: 
+  - $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // short circuit
+  - $open
+    - filter ~genesis_markup_$context_open( $open, $args )~
+  - $content
+    - filter ~genesis_markup_$context_content( $args['content'], $args )~
+  - $close
+    - filter ~genesis_markup_$context_close( $args['close'], $args )~
+  - filter ~genesis_markup_open( $open, $arg )~
+  - filter ~genesis_markup_close( $close, $args )~
+
+- ~genesis_attr( $context, $attributes = array(), $args = array() )~
+  - ~genesis_parse_attr()~ calcuates key/value pairs of attribute and value
+    - ~$context~ becomes ~class~ attribute
+    - load filter ~genesis_attr_$context( $attributes, $context, $args )~
+  - load filter ~genesis_attr_$context_output( $output, $attributes, $context, $args)~
+
+- filter ~genesis_attr_$context()~
+  - e.g. genesis_attributes_body
+#+BEGIN_SRC php
+  add_filter( 'genesis_attr_body', 'genesis_attributes_body' );
+  /**
+   ,* Add attributes for body element.
+   ,*
+   ,* @since 2.0.0
+   ,*
+   ,* @param array $attributes Existing attributes for `body` element.
+   ,* @return array Amended attributes for `body` element.
+   ,*/
+  function genesis_attributes_body( $attributes ) {
+
+	  $attributes['class']     = implode( ' ', get_body_class() );
+	  $attributes['itemscope'] = true;
+	  $attributes['itemtype']  = 'https://schema.org/WebPage';
+
+	  // Search results pages.
+	  if ( is_search() ) {
+		  $attributes['itemtype'] = 'https://schema.org/SearchResultsPage';
+	  }
+
+	  return $attributes;
+
+  }
+#+END_SRC
 
 *** Life cycle
 Child theme loads its functions.php before parent genesis theme's functions.php is loaded which is the parent's ~init.php~
@@ -9704,10 +9773,6 @@ function genesis(){}
 - do_action( 'genesis_after_endwhile' );
 
 **** genesis_markup()
-- $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // shortcutting
-- $open = apply_filters( "genesis_markup_{$args['context']}_open", $open, $args );
-- $content = apply_filters( "genesis_markup_{$args['context']}_content", $args['content'], $args );
-- $close = apply_filters( "genesis_markup_{$args['context']}_close", $args['close'], $args );
 
 *** Theme support <<<wp:genesis:theme support>>>
 https://sridharkatakam.com/comprehensive-guide-genesis-theme-supports/
@@ -50898,8 +50963,12 @@ Context :: Everywhere
 Then select the text, Surround with
 
 **** Surround with Emmet phpstorm:emmet:wrap
-*** File and Code Templates
+*** File and Code Templates, Code Style
 Settings > Editor > Code Style > File and Code Templates
+
+Code Style
+- Use Project scheme and ~Set from~ WordPress
+- Change Tab size and Indent from 4 to 2
 
 *** Custom code folding regions
 Select the block of code you want to fold
