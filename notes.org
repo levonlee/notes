@@ -14123,6 +14123,158 @@ You can also place each svg one after another
   }
 #+END_SRC
 
+** Sass
+*** Functions
+~map-keys(("foo": 1, "bar": 2)) => "foo", "bar"~
+
+*** Mixin
+#+BEGIN_SRC scss
+  @mixin flex {
+      // write the css here
+      display: -webkit-flex;
+      display: flex;
+  }
+
+  .row {
+      @include flex;
+  }
+
+  @mixin grid($flex) {
+      @if $flex {
+	  @include flex;
+      } @else {
+	  display: block;
+      }
+  }
+  @include grid(true);
+
+  @mixin grid($flex, $full-width) {
+      // multiple variables
+  }
+
+  @mixin grid($max-width, $flex: true) {
+      // var with default have to be the end
+  }
+
+
+  @mixin padding($values...) {
+      // noticie 3 dots
+      @each $var in $values {
+	  padding: #{$var};
+      }
+  }
+  a {
+      @include padding(2px 4px 6px);
+  }
+
+  @mixin padding($values) {    
+      @each $var in $values {
+	  padding: #{$var};
+      }
+  }
+
+  // without 3 dots, it will result:
+  a {
+      padding: 2px;
+      padding: 4px;
+      padding: 6px;
+  }
+
+  $style1: 100%, 70px, #fo6d06;
+  $style2: (background: #bada55, width: 100%, height: 100px);
+  @mixin box($width, $height, $background) {
+      width: $width;
+      height: $height;
+      background-color: $background;
+  }
+  .fogdog {
+      @include box($style1...);
+  }
+  .badass {
+      @include box($style2...);
+  }
+
+  // result:
+  .fogdog {
+      width: 100%;
+      height: 70px;
+      background-color: #fo6d06;
+  }
+  .badass {
+      width: 100%;
+      height: 100px;
+      background-color: #bada55;
+  }
+
+  // use @content
+  @mixin small() {
+      @media only screen and (max-width: 320px) {
+	  @content;
+      }
+  }
+  @include small {
+      // css code for small screens go here
+      width:123px;
+  }
+
+  // result
+  @media only screen and (max-width: 320px) {
+      width:123px;
+  }
+#+END_SRC
+
+*** Bootstrap
+**** Variables
+#+BEGIN_SRC scss
+  $grid-breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px
+  ) !default;
+
+  $container-max-widths: (
+    sm: 540px,
+    md: 720px,
+    lg: 960px,
+    xl: 1140px
+  ) !default;
+#+END_SRC
+
+**** Functions
+#+BEGIN_SRC scss
+  // Returns a blank string if smallest breakpoint, otherwise returns the name with a dash in front.
+  // Useful for making responsive utilities.
+  //
+  //    >> breakpoint-infix(xs, (xs: 0, sm: 576px, md: 768px, lg: 992px, xl: 1200px))
+  //    ""  (Returns a blank string)
+  //    >> breakpoint-infix(sm, (xs: 0, sm: 576px, md: 768px, lg: 992px, xl: 1200px))
+  //    "-sm"
+  @function breakpoint-infix($name, $breakpoints: $grid-breakpoints) {
+    @return if(breakpoint-min($name, $breakpoints) == null, "", "-#{$name}");
+  }
+#+END_SRC
+
+**** Mixins
+- media-breakpoint-up
+#+BEGIN_SRC scss
+  @each $breakpoint in map-keys($grid-breakpoints) {
+    @include media-breakpoint-up($breakpoint) {
+      $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+      .flex#{$infix}-row            { flex-direction: row !important; }
+
+      .justify-content#{$infix}-start   { justify-content: flex-start !important; }
+
+    }
+  }
+
+  @include media-breakpoint-up(sm) {
+    // ...
+  }
+#+END_SRC
+
 ** Use Cases
 *** iOS Hover
 Other than <a> tag, :hover doesn't work on iOS. Try one of these workaround
