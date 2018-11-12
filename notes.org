@@ -8459,17 +8459,17 @@ remove_filter(
   10 // priority, must match the add_filter priority, default is 10
 )
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function remove_filter_the_title() {
-          remove_filter('the_title', 'before_post_title', 10);
+	  remove_filter('the_title', 'before_post_title', 10);
   }
   add_action( 'wp_head', 'remove_filter_the_title', 1 );
 
   function add_filter_the_title() {
-          add_filter('the_title', 'before_post_title', 10, 2);
+	  add_filter('the_title', 'before_post_title', 10, 2);
   }
   add_action( 'wp_head', 'add_filter_the_title', 3 );
-#+END_EXAMPLE
+#+END_SRC
 
 *** post_limits <<<wp:filter:post_limits>>>
 For feed, use pre_option_posts_per_rss wp:filter:pre_option
@@ -9636,7 +9636,7 @@ lib/functions/markup.php
 - ~genesis_markup( $args=[] )~
   - ~$args~
     - echo :: true
-    - html5 :: echo and run ~genesis_attr()~ if theme support ~html5~ is enabled otherwise xhtml is echoed
+    - html5 :: echo and run ~genesis_attr( $args['context'] )~ if theme support ~html5~ is enabled otherwise xhtml is echoed
     - xhtml ::
     - context ::
     - open ::
@@ -9644,6 +9644,7 @@ lib/functions/markup.php
     - content :: 
   - $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // short circuit
   - $open
+    - ~genesis_attr( $args['context'], array(), $args)~
     - filter ~genesis_markup_$context_open( $open, $args )~
   - $content
     - filter ~genesis_markup_$context_content( $args['content'], $args )~
@@ -9659,6 +9660,7 @@ lib/functions/markup.php
   - load filter ~genesis_attr_$context_output( $output, $attributes, $context, $args)~
 
 - filter ~genesis_attr_$context()~
+  - built in :: ~genesis_attr_site-header~
   - e.g. genesis_attributes_body
 #+BEGIN_SRC php
   add_filter( 'genesis_attr_body', 'genesis_attributes_body' );
@@ -35563,7 +35565,9 @@ https://developers.google.com/analytics/devguides/collection/analyticsjs/field-r
 https://support.google.com/analytics/answer/1034324?hl=en
 
 Use ~\~ to escape. Need to escape the following metacharacters
-. ? + * | ^ $ ( ) [ ] -
+#+BEGIN_EXAMPLE
+  . ? + * | ^ $ ( ) [ ] -
+#+END_EXAMPLE
 
 Metacharacters are no longer special inside of square brackets. Except - ^ and the \
 
@@ -35572,6 +35576,8 @@ Metacharacters are no longer special inside of square brackets. Except - ^ and t
 http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
 
 Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI
+
+- Use ~|~ to match multiple. e.g. match multiple IP's :: ~1\.2\.3\.4|2\.2\.3\.4~
 
 http://www.analyticsmarket.com/freetools/regex-tester
 http://www.lunametrics.com/regex-book/Regular-Expressions-Google-Analytics.pdf
