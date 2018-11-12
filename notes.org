@@ -7412,14 +7412,14 @@ These functions are load template files.
 System default load paths:
 wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
 
-#+BEGIN_EXAMPLE
-  header-{name}.php
-  footer-{name}.php
-  sidebar-{name}.php
-  {slug}-{name}.php
-  searchform.php
-  comment.php
+header-{name}.php
+footer-{name}.php
+sidebar-{name}.php
+{slug}-{name}.php
+searchform.php
+comment.php
 
+#+BEGIN_SRC php
   // 404.php sample
 
   <?php get_header( $name ); 
@@ -7431,14 +7431,14 @@ wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
   get_sidebar();
   get_footer( $name );
   ?>
-#+END_EXAMPLE
+#+END_SRC
 
 *** comment_form
 <<<wp:f:comment_form>>> outputs comment form
 
-*** dynamic_sidebar vs get_sidebar
-<<<wp:f:dynamic_sidebar>>> wp:f:get_sidebar
-get_sidebar looks for a template file which should have dynamic_sidebar('sidebar-slug')
+*** dynamic_sidebar vs get_sidebar <<<wp:f:dynamic_sidebar>>>
+wp:f:get_sidebar
+~get_sidebar~ looks for a template file which should have ~dynamic_sidebar('sidebar-slug')~
 
 *** get_template_part, get_theme_file_uri, get_theme_file_path <<<wp:f:get_template_part>>>
 ~get_template_part( string $slug, string $name = null )~
@@ -9603,8 +9603,17 @@ Refer to wp:template tags and wp:t:general
 
 - Shortcodes :: https://genesistutorials.com/genesis-shortcode-list/ search for add_shortcode
 
-- genesis_register_widget_area (genesis_regiser_sidebar) :: wp:f:register_sidebar
-- genesis_widget_area :: wp:f:dynamic_sidebar
+*** Functions <<<wp:genesis:functions>>>
+lib/functions/widgetize.php
+- ~genesis_register_widget_area (genesis_regiser_sidebar)~
+  - Use wp:f:register_sidebar
+  - Defined in wp:genesis:action:genesis_setup
+  - filter ~genesis_register_sidebar_defaults~
+  - filter ~genesis_register_wdiget_area_defaults~
+- ~genesis_widget_area( $id, $args = [])~ :: wp:f:dynamic_sidebar
+  - return false if sidebar isn't found
+  - filter ~genesis_widget_area_defaults, [ before, after, default, show_active, before_sidebar_hook, after_sidebar_hook]~
+  - action ~genesis_before_$id_widget_area~ ~genesis_after_$id_widget_area~
 
 - genesis_markup( $args=[] )
 
@@ -9621,16 +9630,21 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
     - lib/framework.php
       - ~function genesis(){}~
     - lib/classes/*
-    - lib/functions/*
+    - lib/functions/* wp:genesis:functions
     - lib/shortcodes/*
     - lib/structure/*
     - lib/admin/*
     - lib/js/load-scripts.php
     - lib/css/load-styles.php
     - lib/widgets/*
-- ~do_action( 'genesis_setup' );~
+- genesis_setup <<<wp:genesis:action:genesis_setup>>>
   - create initial layout
-  - register default widget areas
+  - register default widget areas :: ~genesis_register_default_widget_areas()~
+    - 3 sidebars are registered :: ~header-right~, ~sidebar~, ~sidebar-alt~
+    - wp:action:after_setup_theme
+      - register 3 default sidebars ~_genesis_register_default_widget_areas_cb()~
+      - register footer sidebar based on wp:genesis:theme support:genesis-footer-widgets (~footer-$id~) :: ~genesis_register_footer_widget_areas()~
+      - register ~after-entry~ sidebar based on wp:genesis:theme support:genesis-after-entry-widget-area :: ~genesis_register_after_entry_widget_area~
 
 *** Actions and filters
 https://genesistutorials.com/visual-hook-guide/
@@ -9666,8 +9680,9 @@ function genesis(){}
 - genesis_doctype
 - genesis_title
 - genesis_meta
-- wp_head();
+- wp_head(); ~</head> <body>~
 - genesis_before
+  - genesis_skip_links() priority 5
 - genesis_before_header
 - genesis_header
   - genesis_site_title
@@ -9698,7 +9713,8 @@ function genesis(){}
 https://sridharkatakam.com/comprehensive-guide-genesis-theme-supports/
 Refer to wp:f:add_theme_support
 
-- genesis-footer-widgets :: int
+- genesis-footer-widgets :: int <<<wp:genesis:theme support:genesis-footer-widgets>>>
+- genesis-after-entry-widget-area :: bool <<<wp:genesis:theme support:genesis-after-entry-widget-area>>>
 - genesis-structural-wraps :: array
 #+BEGIN_SRC php
   // to remove a named HTML element
@@ -11142,7 +11158,9 @@ wp-settings.php
 - create initial taxonomies and post types
 - Load active plugins :: ~do_action( 'plugins_loaded')~
 - Initialize objects :: WP_Query WP_Rewrite
-- Load the active theme :: ~do_action( 'setup_theme' )~ ~do_action( 'after_setup_theme' )~
+- Load the active theme
+  - ~do_action( 'setup_theme' )~
+  - wp:action:after_setup_theme
 - ~do_action( 'init'  )~
 - ~do_action( 'wp_loaded' )~
 
