@@ -7731,7 +7731,7 @@ Non-hierarchical taxonomy
 *** register_nav_menus, register_nav_menu, wp_nav_menu
 <<<wp:f:register_nav_menus>>> used in wp:action:init or wp:action:after_setup_theme
 [[https://codex.wordpress.org/Function_Reference/register_nav_menus][Register custom nav menus]]
-This is to create a theme location. Each theme location can have one menu created from wp-admin.
+This is to create a theme location or navigation menu. Each theme location can have one menu created from wp-admin.
 Menu created from wp-admin can associate with multiple theme locations.
 The following registers 3 theme locations.
 Other translation plugins like Polylang can create theme locations for each extra language based on the already defined theme locations.
@@ -7749,7 +7749,19 @@ Other translation plugins like Polylang can create theme locations for each extr
 #+END_SRC
 
 Display in template
-https://developer.wordpress.org/reference/functions/wp_nav_menu/
+- https://developer.wordpress.org/reference/functions/wp_nav_menu/
+- wp:filter:wp_nav_menu_args
+  - container :: 'div' use what to wrap the menu, bool can be used
+  - menu_class :: 'menu', css class, e.g. 'class-1 class-2'
+  - fallback_cb :: false call a cb function if menu doesn't exist e.g. 'WP_Bootstrap_Navwalker::fallback'
+  - walker :: object e.g. ~new WP_Bootstrap_Navwalker()~
+- wp:filter:pre_wp_nav_menu :: short-circuit
+- wp:filter:wp_nav_menu_container_allowedtags
+- wp:filter:wp_nav_menu_objects
+- wp:filter:wp_nav_menu_items
+- wp:filter:wp_nav_menu_$menu->slug_items
+- wp:filter:wp_nav_menu :: filter output
+
 #+BEGIN_SRC php
   // already echo
   wp_nav_menu( array( 'theme_location' => 'header-menu' ) );
@@ -8894,6 +8906,26 @@ In template
   <img src="<?php header_image(); ?>" height="<?php echo get_custom_header()->height; ?>" width="<?php echo get_custom_header()->width; ?>" alt="" />
 #+END_EXAMPLE
 
+*** wp_nav_menu_args <<<wp:filter:wp_nav_menu_args>>>
+
+#+BEGIN_SRC php
+  // $args = apply_filters( 'wp_nav_menu_args', $args );
+
+  add_filter( 'wp_nav_menu_args', 'bfg_nav_menu_args_filter' );
+  function bfg_nav_menu_args_filter( $args ) {
+
+      require_once( BFG_THEME_MODULES . 'class-wp-bootstrap-navwalker.php' );
+
+      if ( 'primary' === $args['theme_location'] ) {
+	  $args['container'] = false;
+	  $args['menu_class'] = 'navbar-nav mr-auto';
+	  $args['fallback_cb'] = 'WP_Bootstrap_Navwalker::fallback';
+	  $args['walker'] = new WP_Bootstrap_Navwalker();
+      }
+      return $args;
+  }
+#+END_SRC
+
 *** wp_get_attachment_image_attributes
 apply_filters( 'wp_get_attachment_image_attributes', array $attr, WP_Post $attachment, string|array $size )
 
@@ -9620,7 +9652,21 @@ Refer to wp:template tags and wp:t:general
 - Shortcodes :: https://genesistutorials.com/genesis-shortcode-list/ search for add_shortcode
 
 *** Functions <<<wp:genesis:functions>>>
-lib/functions/widgetize.php
+**** lib/functions/menu.php
+- ~genesis_nav_menu( $args )~ :: ~echo genesis_get_nav_menu( $args );~ <<<wp:genesis:functions:genesis_nav_menu>>>
+- ~echo genesis_get_nav_menu( $args )~
+  - add superfish
+  - ~$nav_markup_open  = genesis_structural_wrap( 'menu-' . $sanitized_location, 'open', 0 );~ wp:genesis:functions:genesis_structural_wrap
+
+**** lib/functions/layout.php
+- ~genesis_structural_wrap( $context = '', $output = 'open', $echo = true )~ <<<wp:genesis:functions:genesis_structural_wrap>>>
+  - echo or return a structural wrap div
+  - get wp:genesis:theme support:genesis-structural-wraps
+  - 
+**** lib/functions/general.php
+- ~genesis_a11y( $arg = 'screen-reader-text' )~ :: wp:genesis:theme support:genesis-accessibility
+
+**** lib/functions/widgetize.php
 - ~genesis_register_widget_area( $args )~ or ~genesis_register_sidebar~
   - Use wp:f:register_sidebar
   - Defined in wp:genesis:action:genesis_setup
@@ -9632,7 +9678,7 @@ lib/functions/widgetize.php
   - filter ~genesis_widget_area_defaults, [ before, after, default, show_active, before_sidebar_hook, after_sidebar_hook]~
   - action ~genesis_before_$id_widget_area~ ~genesis_after_$id_widget_area~
 
-lib/functions/markup.php
+**** lib/functions/markup.php
 - ~genesis_markup( $args=[] )~
   - ~$args~
     - echo :: true
@@ -9687,6 +9733,13 @@ lib/functions/markup.php
 
   }
 #+END_SRC
+
+*** Structure
+menu.php
+- ~genesis_do_nav()~ <<<wp:genesis:structure:genesis_do_nav>>>
+  - display primary nav menu. Use wp:genesis:functions:genesis_nav_menu
+- ~genesis_do_subnav()~ <<<wp:genesis:structure:genesis_do_subnav>>>
+  - 
 
 *** Life cycle
 Child theme loads its functions.php before parent genesis theme's functions.php is loaded which is the parent's ~init.php~
@@ -9761,6 +9814,8 @@ function genesis(){}
   - genesis_header_right
   - genesis_site_description
 - genesis_after_header
+  - wp:genesis:structure:genesis_do_nav
+  - wp:genesis:structure:genesis_do_subnav
 - genesis_structural_wrap( 'site-inner' )
 
 **** genesis_standard_loop(){}
@@ -9782,7 +9837,7 @@ Refer to wp:f:add_theme_support
 
 - genesis-footer-widgets :: int <<<wp:genesis:theme support:genesis-footer-widgets>>>
 - genesis-after-entry-widget-area :: bool <<<wp:genesis:theme support:genesis-after-entry-widget-area>>>
-- genesis-structural-wraps :: array
+- genesis-structural-wraps :: array <<<wp:genesis:theme support:genesis-structural-wraps>>>
 #+BEGIN_SRC php
   // to remove a named HTML element
   add_theme_support( 'genesis-structural-wraps', array(
@@ -9794,6 +9849,11 @@ Refer to wp:f:add_theme_support
       'footer'
   ) );
 #+END_SRC
+- genesis-accessibility :: array <<<wp:genesis:theme support:genesis-accessibility>>>
+  - headings :: bool whether to wrap content with ~<hn></hn>~
+  - skip-links
+  - drop-down-menu :: genesis_superfish_enabled to determine whether to use superfish
+  - screen-reader-text :: 
 
 *** Child theme
 functions.php
@@ -10793,6 +10853,12 @@ Add a "Visual Editor" widget like WYSIWYG TinyMCE switching between Visual and H
 Since WP Core 4.8, it has Visual text widget but it's minimal.
 
 *** menu-image
+*** megamenu megamenu-pro <<<wp:plugin:megamenu>>>
+https://wordpress.org/plugins/megamenu/
+https://www.megamenu.com/documentation/
+
+To enable Mega Menu for a menu, put this menu into a theme location.
+
 *** multiple-featured-images <<<wp:plugin:multiple-featured-images>>>
 #+BEGIN_EXAMPLE
     add_filter( 'kdmfi_featured_images', function( $featured_images ) {
