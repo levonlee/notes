@@ -9685,37 +9685,37 @@ Refer to wp:template tags and wp:t:general
   - action ~genesis_before_$id_widget_area~ ~genesis_after_$id_widget_area~
 
 **** lib/functions/markup.php
-- ~genesis_markup( $args=[] )~
-  - ~$args~
-    - echo :: true
-    - html5 :: echo and run ~genesis_attr( $args['context'] )~ if theme support ~html5~ is enabled otherwise xhtml is echoed
-    - xhtml ::
-    - context ::
-    - open ::
-    - close ::
-    - content :: 
-  - $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // short circuit
-  - $open
-    - ~genesis_attr( $args['context'], array(), $args)~
-    - filter ~genesis_markup_$context_open( $open, $args )~
-  - $content
-    - filter ~genesis_markup_$context_content( $args['content'], $args )~
-  - $close
-    - filter ~genesis_markup_$context_close( $args['close'], $args )~
-  - filter ~genesis_markup_open( $open, $arg )~
-  - filter ~genesis_markup_close( $close, $args )~
+***** ~genesis_markup( $args=[] )~
+ - ~$args~
+   - echo :: true
+   - html5 :: echo and run ~genesis_attr( $args['context'] )~ if theme support ~html5~ is enabled otherwise xhtml is echoed
+   - xhtml ::
+   - context ::
+   - open ::
+   - close ::
+   - content :: 
+ - $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // short circuit
+ - $open
+   - ~genesis_attr( $args['context'], array(), $args)~
+   - filter ~genesis_markup_$context_open( $open, $args )~
+ - $content
+   - filter ~genesis_markup_$context_content( $args['content'], $args )~
+ - $close
+   - filter ~genesis_markup_$context_close( $args['close'], $args )~
+ - filter ~genesis_markup_open( $open, $arg )~
+ - filter ~genesis_markup_close( $close, $args )~
 
-- ~genesis_attr( $context, $attributes = array(), $args = array() )~ <<<wp:genesis:functions:genesis_attr>>>
-  - ~genesis_parse_attr()~ calcuates key/value pairs of attribute and value
-    - ~$context~ becomes ~class~ attribute
-    - load filter ~genesis_attr_$context( $attributes, $context, $args )~
-  - load filter ~genesis_attr_$context_output( $output, $attributes, $context, $args)~
+***** ~genesis_attr( $context, $attributes = array(), $args = array() )~ <<<wp:genesis:functions:genesis_attr>>>
+- ~genesis_parse_attr()~ calcuates key/value pairs of attribute and value
+  - ~$context~ becomes ~class~ attribute
+  - load filter ~genesis_attr_$context( $attributes, $context, $args )~
+- load filter ~genesis_attr_$context_output( $output, $attributes, $context, $args)~
 
 - filter ~genesis_attr_$context()~
   - built in ::
     - ~genesis_attr_site-header~
-    - ~genesis_attr_structural-wrap~
-  - e.g. genesis_attributes_body
+    - ~genesis_attr_structural-wrap~ :: add wrap to HTML attribute class for wp:genesis:theme support:genesis-structural-wraps
+    - e.g. ~genesis_attributes_body~
 #+BEGIN_SRC php
   add_filter( 'genesis_attr_body', 'genesis_attributes_body' );
   /**
@@ -9819,9 +9819,11 @@ function genesis(){}
 - genesis_before_header
 - genesis_header
   - ~<header class="site-header">~
-  - genesis_structural_wrap( 'header' )
+  - ~genesis_structural_wrap( 'header' )~
     - ~genesis_attr( 'structural-wrap' )~
-    - filter genesis_structural_wrap-header
+      - filter ~genesis_attr_structural-wrap~
+      - filter ~genesis_attr_structural-wrap_output~
+    - filter ~genesis_structural_wrap-header~
   - genesis_site_title
   - genesis_site_description
   - genesis_header_right
@@ -43364,6 +43366,7 @@ Bash into appserver :: ~lando ssh --user=root~
 
 *** db-import
 #+BEGIN_SRC bash
+  lando db-export cs-devops/a.sql.gz
   lando db-import a.sql.gz
   lando db-import a.sql
 #+END_SRC
