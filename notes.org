@@ -8234,8 +8234,7 @@ When these functions are used, you need to run wp:f:wp_reset_postdata to reset g
 Notice :: ~new WP_Query()~ doesn't change wp:query:main
 
 *** Syntax
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php 
    $query = new WP_Query('cat=-3,-8'); 
    // Use query_posts($query_array | $string) instead of creating a new WP_Query then you don't have to prefix $query for methods
@@ -8256,7 +8255,7 @@ Notice :: ~new WP_Query()~ doesn't change wp:query:main
   <?php endif; ?>
 
   <?php $query->rewind_posts(); // in order to loop $query again ?>
-#+END_EXAMPLE
+#+END_SRC
 
 *** <<<WP_Query>>>
 Generator: https://generatewp.com/wp_query/
@@ -8268,7 +8267,7 @@ Use filters:
 - wp:filter:posts_clauses
 Use actions: wp:action:pre_get_posts
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $args = array(
    'post_type' => array('editorial', 'blog'), // blog or editorial
    'post_status' => array('publish'),
@@ -8280,7 +8279,7 @@ Use actions: wp:action:pre_get_posts
   );
 
   $query = new WP_Query($args);
-#+END_EXAMPLE
+#+END_SRC
 
 *** <<<WP_Meta_Query>>>
 **** Fields for WP_Query
@@ -9768,7 +9767,8 @@ Refer to wp:template tags and wp:t:general
   - 
 
 **** layout.php
-**** post.php
+**** post.php <<<wp:genesis:structure:post.php>>>
+
 **** loops.php <<<wp:genesis:loops>>>
 - ~genesis_do_loop()~
 - ~genesis_standard_loop()~
@@ -9780,11 +9780,22 @@ Refer to wp:template tags and wp:t:general
     - ~genesis_before_entry_content~
     - ~div~ ~genesis_attr( 'entry-content' )~
     - ~genesis_entry_content~
+      - ~genesis_do_post_image~ at p:8 wp:genesis:structure:post.php
+      - ~genesis_do_post_content~ wp:genesis:structure:post.php
+      - ~genesis_do_post_content_nav~ at p:12 wp:genesis:structure:post.php
+      - ~genesis_do_post_permalink~ at p:14 wp:genesis:structure:post.php
     - close ~div~
     - ~genesis_after_entry_content~
     - ~genesis_entry_footer~
+      - ~genesis_entry_footer_markup_open~ at p:5
+      - ~genesis_post_meta~
+      - ~genesis_entry_footer_markup_close~ at p:15
     - ~genesis_markup~ :: close ~arcitle~, context:entry
     - ~genesis_after_entry~
+      - ~genesis_do_author_box_single~ at p:8
+      - ~genesis_add_id_to_global_exclude~ at p:9
+      - ~genesis_after_entry_widget_area~
+      - ~genesis_adjacent_entry_nav~
   - ~genesis_after_endwhile~
   - ~genesis_loop_else~ :: if no post
 - ~genesis_custom_loop( $args = array() )~
@@ -9792,6 +9803,20 @@ Refer to wp:template tags and wp:t:general
   - ~$wp_query = new WP_Query( $args )~
   - ~genesis_standard_loop()~
   - ~wp_reset_query()~
+- ~genesis_grid_loop( $args = array() )~
+  - filter ~genesis_grid_loop_args~
+  - remove actions
+    - ~genesis_post_content~ ~genesis_do_post_format_image~
+    - ~genesis_post_content~ ~genesis_do_post_image~
+    - ~genesis_post_content~ ~genesis_do_post_content~
+    - ~genesis_post_content~ ~genesis_do_post_cotent_nav~
+    - ~genesis_entry_header~ ~genesis_do_post_format_image~
+    - ~genesis_entry_content~ ~genesis_do_post_image~
+    - ~genesis_entry_content~ ~genesis_do_post_content~
+    - ~genesis_entry_content~ ~genesis_do_post_content_nav~
+    - ~genesis_entry_content~ ~genesis_do_post_permalink~
+  - 
+
 **** comments.php
 **** sidebar.php
 **** archive.php
@@ -9848,11 +9873,12 @@ function genesis(){}
     - ~genesis_do_post_title()~
       - ~genesis_archive_title_description~
   - ~genesis_do_posts_page_heading()~
-  - ~genesis_do_taxonomy_title_description()~
-  - ~genesis_do_author_title_description()~
-  - ~genesis_do_author_box_archive()~
+  - ~genesis_do_taxonomy_title_description()~ at p:15
+  - ~genesis_do_author_title_description()~ at p:15
+  - ~genesis_do_author_box_archive()~ at p:15
 - ~genesis_loop~
   - ~genesis_do_loop~ :: wp:genesis:loops
+  - ~genesis_404~ :: in template 404.php 
 - ~genesis_after_loop~ :: nothing
 - ~genesis_markup~ :: close ~main~, context:main
 - ~genesis_after_content~
