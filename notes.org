@@ -9664,39 +9664,22 @@ Refer to wp:template tags and wp:t:general
 - Shortcodes :: https://genesistutorials.com/genesis-shortcode-list/ search for add_shortcode
 
 *** Functions <<<wp:genesis:functions>>>
-**** lib/functions/menu.php
-- ~genesis_nav_menu( $args )~ :: ~echo genesis_get_nav_menu( $args );~ <<<wp:genesis:functions:genesis_nav_menu>>>
-- ~echo genesis_get_nav_menu( $args )~
-  - add superfish
-  - ~$nav_markup_open  = genesis_structural_wrap( 'menu-' . $sanitized_location, 'open', 0 );~ wp:genesis:functions:genesis_structural_wrap
-  - ~$nav_markup_close = genesis_structural_wrap( 'menu-' . $sanitized_location, 'close', 0 )~
-  - wrap with ~<nav></nav>~ filter ~genesis_attr-nav-$theme_location~, content
-  - filter ~genesis_do_nav( $nav_output, $nav, $args )~ or ~genesis_do_subnav( $nav_output, $nav, $args )~
-
-**** lib/functions/layout.php
-- ~genesis_structural_wrap( $context = '', $output = 'open', $echo = true )~ <<<wp:genesis:functions:genesis_structural_wrap>>>
-  - echo or return a structural wrap div
-  - get wp:genesis:theme support:genesis-structural-wraps
-  - wrap with ~<div>~ or ~</div>~ with ~genesis_attr( 'structural-wrap' )~
-    - filter ~genesis_attr_structural-wrap~
-  - filter ~genesis_structural_wrap-$context( $output, $original_output )~
-
-**** lib/functions/general.php
+lib/functions/*.php
+**** upgrade.php
+**** compat.php
+**** general.php
 - ~genesis_a11y( $arg = 'screen-reader-text' )~ :: wp:genesis:theme support:genesis-accessibility
+**** options.php
+- content_archive :: full or excerpts
+- image_size :: thumbnail
 
-**** lib/functions/widgetize.php
-- ~genesis_register_widget_area( $args )~ or ~genesis_register_sidebar~
-  - Use wp:f:register_sidebar
-  - Defined in wp:genesis:action:genesis_setup
-  - Define ~$defaults~ :: before_widget, after_widget, before_title, after_title
-  - filter to change ~$defaults~ :: ~genesis_register_sidebar_defaults~ ~genesis_register_wdiget_area_defaults~
-  - Overide ~$defaults~ using ~$args~
-- ~genesis_widget_area( $id, $args = [])~ :: wp:f:dynamic_sidebar
-  - return false if sidebar isn't found
-  - filter ~genesis_widget_area_defaults, [ before, after, default, show_active, before_sidebar_hook, after_sidebar_hook]~
-  - action ~genesis_before_$id_widget_area~ ~genesis_after_$id_widget_area~
+***** ~genesis_get_option( $key, $setting = null, $use_cache = true )~
+- Known ~$key~ :: content_archive
+- filter ~genesis_pre_get_option_$key~ :: short circuit
+- filter ~genesis_options( get_option( $setting ) or $settings_cache[ $settings ], $setting )~ :: 
 
-**** lib/functions/markup.php
+**** image.php
+**** markup.php
 ***** ~genesis_markup( $args=[] )~
  - ~$args~
    - echo :: true
@@ -9728,7 +9711,11 @@ Refer to wp:template tags and wp:t:general
     - ~genesis_attr_site-header~
     - ~genesis_attr_structural-wrap~ :: add wrap to HTML attribute class for wp:genesis:theme support:genesis-structural-wraps
     - ~genesis_attr_blog-template-description~
+    - ~genesis_attr_entry-meta-before-content~
+    - ~genesis_attr_entry~
     - ~genesis_attr_entry-content~
+    - ~genesis_attr_entry-image~
+    - ~genesis_attr_entry-image-link~
     - e.g. ~genesis_attributes_body~
 #+BEGIN_SRC php
   add_filter( 'genesis_attr_body', 'genesis_attributes_body' );
@@ -9756,7 +9743,41 @@ Refer to wp:template tags and wp:t:general
   }
 #+END_SRC
 - filter ~genesis_attr_$context_output( $output, $attributes, $context, $args )~
+**** breadcrumb.php
+**** menu.php
+- ~genesis_nav_menu( $args )~ :: ~echo genesis_get_nav_menu( $args );~ <<<wp:genesis:functions:genesis_nav_menu>>>
+- ~echo genesis_get_nav_menu( $args )~
+  - add superfish
+  - ~$nav_markup_open  = genesis_structural_wrap( 'menu-' . $sanitized_location, 'open', 0 );~ wp:genesis:functions:genesis_structural_wrap
+  - ~$nav_markup_close = genesis_structural_wrap( 'menu-' . $sanitized_location, 'close', 0 )~
+  - wrap with ~<nav></nav>~ filter ~genesis_attr-nav-$theme_location~, content
+  - filter ~genesis_do_nav( $nav_output, $nav, $args )~ or ~genesis_do_subnav( $nav_output, $nav, $args )~
 
+**** layout.php
+- ~genesis_structural_wrap( $context = '', $output = 'open', $echo = true )~ <<<wp:genesis:functions:genesis_structural_wrap>>>
+  - echo or return a structural wrap div
+  - get wp:genesis:theme support:genesis-structural-wraps
+  - wrap with ~<div>~ or ~</div>~ with ~genesis_attr( 'structural-wrap' )~
+    - filter ~genesis_attr_structural-wrap~
+  - filter ~genesis_structural_wrap-$context( $output, $original_output )~
+
+**** formatting.php
+**** seo.php
+**** widgetize.php
+- ~genesis_register_widget_area( $args )~ or ~genesis_register_sidebar~
+  - Use wp:f:register_sidebar
+  - Defined in wp:genesis:action:genesis_setup
+  - Define ~$defaults~ :: before_widget, after_widget, before_title, after_title
+  - filter to change ~$defaults~ :: ~genesis_register_sidebar_defaults~ ~genesis_register_wdiget_area_defaults~
+  - Overide ~$defaults~ using ~$args~
+- ~genesis_widget_area( $id, $args = [])~ :: wp:f:dynamic_sidebar
+  - return false if sidebar isn't found
+  - filter ~genesis_widget_area_defaults, [ before, after, default, show_active, before_sidebar_hook, after_sidebar_hook]~
+  - action ~genesis_before_$id_widget_area~ ~genesis_after_$id_widget_area~
+
+**** feed.php
+**** toolbar.php
+**** head.php
 *** Structure
 **** header.php
 **** footer.php
@@ -9768,24 +9789,46 @@ Refer to wp:template tags and wp:t:general
 
 **** layout.php
 **** post.php <<<wp:genesis:structure:post.php>>>
+***** ~genesis_do_post_format_image()~
+Display post format icon
+
+***** ~genesis_post_info()~
+Display post info (byline)
+
+***** ~genesis_do_post_content()~
+- is_singular()
+  - ~the_content()~
+  - filter ~genesis_edit_post_link~
+- ~genesis_get_option( 'content_archive' )~
+  - ~the_excerpt()~
 
 **** loops.php <<<wp:genesis:loops>>>
 - ~genesis_do_loop()~
 - ~genesis_standard_loop()~
   - ~genesis_before_while~
   - Run while loop ~the_post();~
-    - ~genesis_before_entry~
+    - ~genesis_before_entry~ :: nothing
     - ~genesis_markup~ :: open ~article~, context:entry
-    - ~genesis_entry _header~
-    - ~genesis_before_entry_content~
+    - ~genesis_entry_header~
+      - ~genesis_do_post_format_image()~ at p:4
+      - ~genesis_entry_header_markup_open()~ at p:5
+      - ~genesis_do_post_title()~
+      - ~genesis_post_info()~ at p:12 :: byline
+	- filter ~$filtered = genesis_post_info( '[post_date]'.__( 'by', 'genesis'). '...' )~
+	  - ~do_shortcode()~
+	- ~genesis_markup~ :: open/close ~p~, content: ~genesis_strip_p_tags( $filtered )~ context:entry-meta-before-content
+      - ~genesis_entry_header_markup_close()~ at p:15
+    - ~genesis_before_entry_content~ :: nothing
     - ~div~ ~genesis_attr( 'entry-content' )~
     - ~genesis_entry_content~
       - ~genesis_do_post_image~ at p:8 wp:genesis:structure:post.php
-      - ~genesis_do_post_content~ wp:genesis:structure:post.php
+	- ~$img = genesis_get_image()~
+	- ~genesis_markup~ :: open/close ~a~, content: ~wp_make_content_images_responsive( $img )~, context:entry-image-link
+      - ~genesis_do_post_content()~ wp:genesis:structure:post.php
       - ~genesis_do_post_content_nav~ at p:12 wp:genesis:structure:post.php
       - ~genesis_do_post_permalink~ at p:14 wp:genesis:structure:post.php
     - close ~div~
-    - ~genesis_after_entry_content~
+    - ~genesis_after_entry_content~ :: nothing
     - ~genesis_entry_footer~
       - ~genesis_entry_footer_markup_open~ at p:5
       - ~genesis_post_meta~
@@ -9797,6 +9840,8 @@ Refer to wp:template tags and wp:t:general
       - ~genesis_after_entry_widget_area~
       - ~genesis_adjacent_entry_nav~
   - ~genesis_after_endwhile~
+    - ~genesis_posts_nav()~
+      - ~genesis_numeric_posts_nav()~ or ~genesis_prev_next_posts_nav()~
   - ~genesis_loop_else~ :: if no post
 - ~genesis_custom_loop( $args = array() )~
   - filter ~$args = genesis_custom_loop_args~
@@ -9806,7 +9851,7 @@ Refer to wp:template tags and wp:t:general
 - ~genesis_grid_loop( $args = array() )~
   - filter ~genesis_grid_loop_args~
   - remove actions
-    - ~genesis_post_content~ ~genesis_do_post_format_image~
+    - ~genesis_before_post_title~ ~genesis_do_post_format_image~
     - ~genesis_post_content~ ~genesis_do_post_image~
     - ~genesis_post_content~ ~genesis_do_post_content~
     - ~genesis_post_content~ ~genesis_do_post_cotent_nav~
@@ -9815,7 +9860,14 @@ Refer to wp:template tags and wp:t:general
     - ~genesis_entry_content~ ~genesis_do_post_content~
     - ~genesis_entry_content~ ~genesis_do_post_content_nav~
     - ~genesis_entry_content~ ~genesis_do_post_permalink~
-  - 
+  - add filter ~post_class~ ~genesis_grid_loop_post_class()~
+  - add action ~genesis_post_content~ ~genesis_grid_loop_content~
+  - add action ~genesis_entry_content~ ~genesis_grid_loop_content~
+  - ~genesis_standard_loop()~
+  - ~genesis_reset_loops()~
+  - remove filter ~post_class~ ~genesis_grid_loop_post_class()~
+  - remove action ~genesis_post_content~ ~genesis_grid_loop_content()~
+  - remove action ~genesis_entry_content~ ~genesis_grid_loop_content()~
 
 **** comments.php
 **** sidebar.php
