@@ -981,6 +981,17 @@ ob_get_length
   return $output;
 #+END_SRC
 
+#+BEGIN_SRC php
+  function mmm_wpml_shortcode_func(){
+      ob_start();
+      do_action('icl_language_selector');
+      $output_string = ob_get_contents();
+      ob_end_clean();
+
+      return $output_string;
+  }
+#+END_SRC
+
 ** Template System
 #+BEGIN_SRC php
   static public function renderHeader($data = array()) {
@@ -8442,34 +8453,36 @@ Functions to use in The Loop: /wp-includes/feed.php
 ** Default filters and actions 
 <<<wp:default filters>>> wp-includes/default-filters.php
 
-** add_filter
-*** Syntax, remove_filter
+** add_filter <<<wp:add_filter>>>
+*** Syntax, remove_filter 
 Modify internal data / function returned
 
 For example, WP_Query gets internal settings for building a query.
 You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
 so that you only change the internal setting for that query building without affecting other usage.  
 
-add_filter( 
- 'tagname', 
- 'lili_funct',
-  10, // int. Priority, lower number sooner
-  2, // int. Accepted args, default is 1! Be careful
-)
+#+BEGIN_SRC php
+  add_filter( 
+   'tagname', 
+   'lili_funct',
+    10, // int. Priority, lower number sooner
+    2, // int. Accepted args, default is 1! Be careful
+  )
 
-apply_filters( 'tagname', $result, $var1);
+  apply_filters( 'tagname', $result, $var1);
 
-// callback should take 2 variables
-function lili_funct($result, $var1) {
- $new = $result . 'abc';
- return $new;
-}
+  // callback should take 2 variables
+  function lili_funct($result, $var1) {
+   $new = $result . 'abc';
+   return $new;
+  }
 
-remove_filter(
-  'tagname',
-  'lili_funct',
-  10 // priority, must match the add_filter priority, default is 10
-)
+  remove_filter(
+    'tagname',
+    'lili_funct',
+    10 // priority, must match the add_filter priority, default is 10
+  )
+#+END_SRC
 
 #+BEGIN_SRC php
   function remove_filter_the_title() {
@@ -9658,14 +9671,14 @@ Refer to wp:template tags and wp:t:general
   - add superfish
   - ~$nav_markup_open  = genesis_structural_wrap( 'menu-' . $sanitized_location, 'open', 0 );~ wp:genesis:functions:genesis_structural_wrap
   - ~$nav_markup_close = genesis_structural_wrap( 'menu-' . $sanitized_location, 'close', 0 )~
-  - wrap with ~<nav></nav>~ filter ~genesis_attr-nav-$theme_location~, content 
+  - wrap with ~<nav></nav>~ filter ~genesis_attr-nav-$theme_location~, content
+  - filter ~genesis_do_nav( $nav_output, $nav, $args )~ or ~genesis_do_subnav( $nav_output, $nav, $args )~
 
 **** lib/functions/layout.php
 - ~genesis_structural_wrap( $context = '', $output = 'open', $echo = true )~ <<<wp:genesis:functions:genesis_structural_wrap>>>
   - echo or return a structural wrap div
   - get wp:genesis:theme support:genesis-structural-wraps
-  - 
-  - wrap with ~<div></div>~ with ~genesis_attr( 'structural-wrap' )~
+  - wrap with ~<div>~ or ~</div>~ with ~genesis_attr( 'structural-wrap' )~
     - filter ~genesis_attr_structural-wrap~
   - filter ~genesis_structural_wrap-$context( $output, $original_output )~
 
@@ -9715,6 +9728,8 @@ Refer to wp:template tags and wp:t:general
   - built in ::
     - ~genesis_attr_site-header~
     - ~genesis_attr_structural-wrap~ :: add wrap to HTML attribute class for wp:genesis:theme support:genesis-structural-wraps
+    - ~genesis_attr_blog-template-description~
+    - ~genesis_attr_entry-content~
     - e.g. ~genesis_attributes_body~
 #+BEGIN_SRC php
   add_filter( 'genesis_attr_body', 'genesis_attributes_body' );
@@ -9744,12 +9759,43 @@ Refer to wp:template tags and wp:t:general
 - filter ~genesis_attr_$context_output( $output, $attributes, $context, $args )~
 
 *** Structure
-menu.php
+**** header.php
+**** footer.php
+**** menu.php
 - ~genesis_do_nav()~ <<<wp:genesis:structure:genesis_do_nav>>>
   - display primary nav menu. Use wp:genesis:functions:genesis_nav_menu
 - ~genesis_do_subnav()~ <<<wp:genesis:structure:genesis_do_subnav>>>
   - 
 
+**** layout.php
+**** post.php
+**** loops.php <<<wp:genesis:loops>>>
+- ~genesis_do_loop()~
+- ~genesis_standard_loop()~
+  - ~genesis_before_while~
+  - Run while loop ~the_post();~
+    - ~genesis_before_entry~
+    - ~genesis_markup~ :: open ~article~, context:entry
+    - ~genesis_entry _header~
+    - ~genesis_before_entry_content~
+    - ~div~ ~genesis_attr( 'entry-content' )~
+    - ~genesis_entry_content~
+    - close ~div~
+    - ~genesis_after_entry_content~
+    - ~genesis_entry_footer~
+    - ~genesis_markup~ :: close ~arcitle~, context:entry
+    - ~genesis_after_entry~
+  - ~genesis_after_endwhile~
+  - ~genesis_loop_else~ :: if no post
+- ~genesis_custom_loop( $args = array() )~
+  - filter ~$args = genesis_custom_loop_args~
+  - ~$wp_query = new WP_Query( $args )~
+  - ~genesis_standard_loop()~
+  - ~wp_reset_query()~
+**** comments.php
+**** sidebar.php
+**** archive.php
+**** search.php
 *** Life cycle
 Child theme loads its functions.php before parent genesis theme's functions.php is loaded which is the parent's ~init.php~
 - ~do_action( 'genesis_pre' );~
@@ -9783,55 +9829,86 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
 https://genesistutorials.com/visual-hook-guide/
 
 function genesis(){}
-- get_header(); wp:genesis:header.php
-- do_action( 'genesis_before_content_sidebar_wrap' );
-- do_action( 'genesis_before_content' );
-- do_action( 'genesis_before_loop' );
-  - genesis_do_breadcrumbs
-  - genesis_do_taxonomy_title_description
-  - genesis_do_author_title_description
-  - genesis_do_author_box_archive
-  - genesis_do_cpt_archive_title_description
-  - genesis_do_date_archive_title
-  - genesis_do_blog_template_heading
-  - genesis_do_posts_page_heading
-- do_action( 'genesis_loop' );
-  - genesis_do_loop
-- do_action( 'genesis_after_loop' );
-- do_action( 'genesis_after_content' );
-  - genesis_get_sidebar_alt
-  - genesis_get_sidebar
-- do_action( 'genesis_after_content_sidebar_wrap' );
-  - genesis_get_sidebar_alt
-- get_footer();
-  - genesis_before_footer
-  - genesis_footer
-  - genesis_after_footer
-  - genesis_after
+- ~get_header()~ wp:genesis:header.php
+- ~genesis_before_content_sidebar_wrap~ :: nothing
+- ~genesis_markup~ :: open ~div~, context:content-sidebar-wrap
+- ~genesis_before_content~ :: nothing
+- ~genesis_markup~ :: open ~main~, context:content
+- ~genesis_before_loop~
+  - ~genesis_do_breadcrumbs()~
+    - ~genesis_attr( 'breadcrumb' )~
+    - choose one function to display. If not found, use ~genesis_breadcrumb()~
+  - ~genesis_do_cpt_archive_title_description()~
+    - filter ~genesis_cpt_archive_intro_text_output~
+    - ~genesis_archive_title_descriptions~
+  - ~genesis_do_date_archive_title()~
+    - ~genesis_archive_title_description~
+  - ~genesis_do_blog_template_heading()~
+    - ~genesis_attr( 'blog-template-description' )~
+    - ~genesis_do_post_title()~
+      - ~genesis_archive_title_description~
+  - ~genesis_do_posts_page_heading()~
+  - ~genesis_do_taxonomy_title_description()~
+  - ~genesis_do_author_title_description()~
+  - ~genesis_do_author_box_archive()~
+- ~genesis_loop~
+  - ~genesis_do_loop~ :: wp:genesis:loops
+- ~genesis_after_loop~ :: nothing
+- ~genesis_markup~ :: close ~main~, context:main
+- ~genesis_after_content~
+  - ~genesis_get_sidebar()~
+    - ~get_sidebar()~
+- ~genesis_markup~ :: close ~div~, context:content-sidebar-wrap
+- ~genesis_after_content_sidebar_wrap~
+  - ~genesis_get_sidebar_alt()~
+    - ~get_sidebar( 'alt' )~
+- ~get_footer()~ wp:genesis:footer.php
 
 **** header.php <<<wp:genesis:header.php>>>
-- genesis_doctype
-- genesis_title
-- genesis_meta
-- wp_head(); ~</head> <body>~
-- genesis_before
-  - genesis_skip_links() priority 5
-- genesis_before_header
-- genesis_header
-  - ~<header class="site-header">~
-  - ~genesis_structural_wrap( 'header' )~
-    - ~genesis_attr( 'structural-wrap' )~
+wp:f:get_header loads the parent theme's header.php unless child theme has header.php
+
+- ~genesis_doctype~
+- ~genesis_title~
+- ~genesis_meta~
+- ~wp_head();~ :: ~</head> <body>~
+- ~genesis_markup~ :: open ~body~, context:body
+- ~genesis_before~
+  - ~genesis_skip_links()~ priority 5
+- ~genesis_markup~ :: open ~div~, context:site-container
+- ~genesis_before_header~
+- ~genesis_header~
+  - ~genesis_header_markup_open()~ at ~p:5~ context site-header :: ~<header class="site-header">~
+    - ~genesis_structural_wrap( 'header' )~ context header
+      - ~genesis_attr( 'structural-wrap' )~
       - filter ~genesis_attr_structural-wrap~
       - filter ~genesis_attr_structural-wrap_output~
-    - filter ~genesis_structural_wrap-header~
+      - filter ~genesis_structural_wrap-header~
+  - ~genesis_do_header()~ at ~p:10~
+    - ~genesis_markup~ :: open, context:title-area
+    - ~genesis_site_title~ ::
+      - ~genesis_seo_site_title()~ :: 
+    - ~genesis_site_description~ ::
+      - ~genesis_seo_site_description()~ :: 
+    - ~genesis_markup~ :: close, context:title-area
+    - ~genesis_markup~~ :: open, context:header-widget-area
+    - ~genesis_header_right~ :: nothing
+    - add filter ~genesis_header_menu_args~ ::
+    - add filter ~genesis_header_menu_wrap~ ::
+    - ~dynamic_sidebar( 'header-right' )~ ::
+    - remove_filters
+    - ~genesis_markup~ :: close, context:header-widget-area 
+  - ~genesis_header_markup_close~ at ~p:15~
+    - ~genesis_structural_wrap( 'header', 'close' )~
+    - ~genesis_markup~ :: context:site-header ~</header>~
   - genesis_site_title
   - genesis_site_description
   - genesis_header_right
   - genesis_site_description
-- genesis_after_header
+- ~genesis_after_header~
   - wp:genesis:structure:genesis_do_nav
   - wp:genesis:structure:genesis_do_subnav
-- genesis_structural_wrap( 'site-inner' )
+- ~genesis_markup~ :: open ~div~, context:site-inner
+- ~genesis_structural_wrap( 'site-inner' )~
 
 **** genesis_standard_loop(){}
 - do_action( 'genesis_before_while' );
@@ -9844,7 +9921,18 @@ function genesis(){}
 - do_action( 'genesis_after_entry' );
 - do_action( 'genesis_after_endwhile' );
 
-**** genesis_markup()
+**** footer.php <<<wp:genesis:footer.php>>>
+wp:f:get_footer loads parent theme's footer.php unless child theme has footer.php
+
+- ~genesis_structural_wrap( 'site-inner', 'close')~
+- ~genesis_markup~ :: close ~div~, context:site-inner
+- ~genesis_before_footer~
+- ~genesis_footer~
+- ~genesis_after_footer~
+- ~genesis_markup~ :: close ~div~, context:site-container
+- ~genesis_after~
+- ~wp_footer()~
+- ~genesis_markup~ :: close ~body~, context:body
 
 *** Theme support <<<wp:genesis:theme support>>>
 https://sridharkatakam.com/comprehensive-guide-genesis-theme-supports/
