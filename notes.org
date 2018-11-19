@@ -7504,7 +7504,10 @@ Return an array to describe location of wp upload directory
 #+END_SRC
 
 *** get_the_excerpt, the_excerpt
-the_excerpt() echoes current post and it calls get_the_excerpt($post=null)
+Use 
+- wp:filter:excerpt_length 
+- wp:filter:excerpt_more
+~the_excerpt()~ echoes current post and it calls ~get_the_excerpt($post=null)~
 If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text.
 
 *** wp_remote_get, wp_remote_post, wp_remote_head, wp_remote_request
@@ -8826,24 +8829,27 @@ wp:f:show_admin_bar
   add_filter('show_admin_bar', '__return_false');
 #+END_EXAMPLE
 
-*** excerpt_more
-Default is  echo '[…]'
+*** excerpt_more <<<wp:filter:excerpt_more>>>
+Default is ~echo '[…]'~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function twentyseventeen_excerpt_more( $link ) {
-          if ( is_admin() ) {
-                  return $link;
-          }
+	  if ( is_admin() ) {
+		  return $link;
+	  }
 
-          $link = sprintf( '<p class="link-more"><a href="%1$s" class="more-link">%2$s</a></p>',
-                  esc_url( get_permalink( get_the_ID() ) ),
-                  /* translators: %s: Name of current post */
-                  sprintf( __( 'Continue reading<span class="screen-reader-text"> "%s"</span>', 'twentyseventeen' ), get_the_title( get_the_ID() ) )
-          );
-          return ' &hellip; ' . $link;
+	  $link = sprintf( '<p class="link-more"><a href="%1$s" class="more-link">%2$s</a></p>',
+		  esc_url( get_permalink( get_the_ID() ) ),
+		  /* translators: %s: Name of current post */
+		  sprintf( __( 'Continue reading<span class="screen-reader-text"> "%s"</span>', 'twentyseventeen' ), get_the_title( get_the_ID() ) )
+	  );
+	  return ' &hellip; ' . $link;
   }
   add_filter( 'excerpt_more', 'twentyseventeen_excerpt_more' );
-#+END_EXAMPLE
+#+END_SRC
+
+*** excerpt_length <<<wp:filter:excerpt_length>>>
+Number of words
 
 *** wp_calculate_image_sizes
 wp_calculate_image_sizes( array|string $size, string $image_src = null, array $image_meta = null, int $attachment_id )
@@ -9803,6 +9809,36 @@ Display post info (byline)
 - ~genesis_get_option( 'content_archive' )~
   - ~the_excerpt()~
 
+***** ~genesis_reset_loops()~
+- add actions
+  - genesis_entry_header genesis_do_post_format_image p:4
+  - genesis_entry_header genesis_entry_header_markup_open p:5
+  - genesis_entry_header genesis_entry_header_markup_close p:15
+  - genesis_entry_header genesis_do_post_title
+  - genesis_entry_header genesis_post_info p:12
+  - genesis_entry_content genesis_do_post_image p:8
+  - genesis_entry_content genesis_do_post_content
+  - genesis_entry_content genesis_do_post_content_nav p:12
+  - genesis_entry_content genesis_do_post_permalink p:14
+  - genesis_entry_footer genesis_entry_footer_markup_open p:5
+  - genesis_entry_footer genesis_entry_footer_markup_close p:15
+  - genesis_after_entry genesis_do_author_box_single p:8
+  - genesis_after_entry genesis_adjacent_entry_nav
+  - genesis_after_entry genesis_get_comments_template
+  - genesis_before_post_title genesis_do_post_format_image
+  - genesis_post_title genesis_do_post_title
+  - genesis_post_content genesis_do_post_title
+  - genesis_post_content genesis_do_post_image
+  - genesis_post_content genesis_do_post_content
+  - genesis_post_content genesis_do_post_permalink
+  - genesis_post_content genesis_do_post_content_nav
+  - genesis_before_post_content genesis_post_info
+  - genesis_after_post_content genesis_post_meta
+  - genesis_after_post genesis_do_author_box_single
+  - genesis_loop_else genesis_do_noposts
+  - genesis_after_endwhile genesis_posts_nav
+- do action ~genesis_reset_loops~
+
 **** loops.php <<<wp:genesis:loops>>>
 - ~genesis_do_loop()~
 - ~genesis_standard_loop()~
@@ -9876,8 +9912,8 @@ Display post info (byline)
 **** search.php
 *** Life cycle
 Child theme loads its functions.php before parent genesis theme's functions.php is loaded which is the parent's ~init.php~
-- ~do_action( 'genesis_pre' );~
-- ~do_action( 'genesis_init' );~
+- ~genesis_pre~
+- ~genesis_init~
   - load textdomain
   - load theme support wp:genesis:theme support
   - load post type support
@@ -9895,6 +9931,7 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
     - lib/css/load-styles.php
     - lib/widgets/*
 - genesis_setup <<<wp:genesis:action:genesis_setup>>>
+  - may ~add_image_size~ wp:f:add_image_size
   - create initial layout
   - register default widget areas :: ~genesis_register_default_widget_areas()~
     - 3 sidebars are registered :: ~header-right~, ~sidebar~, ~sidebar-alt~
@@ -14386,8 +14423,8 @@ You can also place each svg one after another
       display: -webkit-flex;
       display: flex;
   }
-
-  .row {
+ 
+ .row {
       @include flex;
   }
 
