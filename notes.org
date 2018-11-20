@@ -9759,13 +9759,32 @@ lib/functions/*.php
   - wrap with ~<nav></nav>~ filter ~genesis_attr-nav-$theme_location~, content
   - filter ~genesis_do_nav( $nav_output, $nav, $args )~ or ~genesis_do_subnav( $nav_output, $nav, $args )~
 
-**** layout.php
+**** layout.php <<<wp:genesis:functions:layout.php>>>
 - ~genesis_structural_wrap( $context = '', $output = 'open', $echo = true )~ <<<wp:genesis:functions:genesis_structural_wrap>>>
   - echo or return a structural wrap div
   - get wp:genesis:theme support:genesis-structural-wraps
   - wrap with ~<div>~ or ~</div>~ with ~genesis_attr( 'structural-wrap' )~
     - filter ~genesis_attr_structural-wrap~
   - filter ~genesis_structural_wrap-$context( $output, $original_output )~
+
+- ~genesis_create_initial_layouts()~
+  - content-sidebar (default)
+  - sidebar-content
+  - content-sidebar-sidebar
+  - sidebar-sidebar-content
+  - sidebar-content-sidebar
+  - full-width-content
+  - ~genesis_register_layout~
+
+- ~genesis_register_layout( $id = '', $args = array() )~
+
+- ~genesis_site_layout( $use_cache = true )~
+  - filter ~genesis_site_layout~ to short circuit
+  - get layout setting from post, term, ~genesis_get_cpt_option( 'layout' )~
+  - If not set above, get it from ~genesis_get_option( 'site_layout')~
+    - filter ~genesis_pre_get_option_site_layout~
+      - ~add_filter( 'genesis_pre_get_option_site_layout', '__genesis_return_content_sidebar' );~
+      - ~__genesis_return_full_width_content~
 
 **** formatting.php
 **** seo.php
@@ -9794,6 +9813,11 @@ lib/functions/*.php
   - 
 
 **** layout.php
+Depends on genesis_site_layout in wp:genesis:functions:layout.php
+- load primary sidebar
+- load sidebar-alt
+- add layout name as body_class
+
 **** post.php <<<wp:genesis:structure:post.php>>>
 ***** ~genesis_do_post_format_image()~
 Display post format icon
@@ -9931,7 +9955,7 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
     - lib/widgets/*
 - genesis_setup <<<wp:genesis:action:genesis_setup>>>
   - may ~add_image_size~ wp:f:add_image_size
-  - create initial layout
+  - create initial layout wp:genesis:functions:layout.php
   - register default widget areas :: ~genesis_register_default_widget_areas()~
     - 3 sidebars are registered :: ~header-right~, ~sidebar~, ~sidebar-alt~
     - wp:action:after_setup_theme
