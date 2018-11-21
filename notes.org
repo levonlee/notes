@@ -7415,7 +7415,7 @@ remove_meta_box( $id, $page, $context);
 *** get_header, get_footer, get_sidebar, get_search_form, comments_template
 <<<wp:f:get_header>>> <<<wp:f:get_footer>>> <<<wp:f:get_sidebar>>> <<<wp:f:get_search_form>>> <<<wp:f:comments_template>>>
 
-These functions are load template files.
+These functions are to load template files.
 
 System default load paths:
 wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
@@ -9724,6 +9724,7 @@ lib/functions/*.php
     - ~genesis_attr_entry-image~
     - ~genesis_attr_entry-image-link~
     - ~genesis_attr_body~
+    - ~genesis_attr-nav-$theme_location~
 - filter ~genesis_attr_$context_output( $output, $attributes, $context, $args )~
 
 ****** Sample genesis_attr_body: genesis_attributes_body 
@@ -9799,6 +9800,13 @@ lib/functions/*.php
   - Define ~$defaults~ :: before_widget, after_widget, before_title, after_title
   - filter to change ~$defaults~ :: ~genesis_register_sidebar_defaults~ ~genesis_register_wdiget_area_defaults~
   - Overide ~$defaults~ using ~$args~
+  - default registered widget areas
+    - header-right
+    - sidebar
+    - sidebar-alt
+    - after-entry
+    - If theme supports genesis-footer-widgets :: footer-1, footer-2, footer-3
+
 - ~genesis_widget_area( $id, $args = [])~ :: wp:f:dynamic_sidebar
   - return false if sidebar isn't found
   - filter ~genesis_widget_area_defaults, [ before, after, default, show_active, before_sidebar_hook, after_sidebar_hook]~
@@ -9951,13 +9959,13 @@ Child theme loads its functions.php before parent genesis theme's functions.php 
       - ~function genesis(){}~
     - lib/classes/*
     - lib/functions/* wp:genesis:functions
-    - lib/shortcodes/*
+    - lib/shortcodes/* wp:genesis:shortcodes
     - lib/structure/*
     - lib/admin/*
     - lib/js/load-scripts.php
     - lib/css/load-styles.php
     - lib/widgets/*
-- genesis_setup <<<wp:genesis:action:genesis_setup>>>
+- ~genesis_setup~ <<<wp:genesis:action:genesis_setup>>>
   - may ~add_image_size~ wp:f:add_image_size
   - create initial layout wp:genesis:functions:layout.php
   - register default widget areas :: ~genesis_register_default_widget_areas()~
@@ -10082,6 +10090,9 @@ wp:f:get_footer loads parent theme's footer.php unless child theme has footer.ph
     - ~genesis_markup~ :: open ~footer~, context:site-footer
     - ~genesis_structurual_wrap( 'footer', 'open' )~
   - ~genesis_do_footer~
+    - filter ~genesis_footer_backtotop_text~ :: nothing
+    - filter ~genesis_footer_creds_text~ :: ~$creds_text~ nothing
+    - filter ~genesis_footer_output~ :: ~do_shortcode()~
   - ~genesis_footer_markup_close~ p:15
     - ~genesis_structural_wrap( 'footer', 'close' )~
     - ~genesis_markup~ :: close ~footer~, context:site-footer
@@ -10115,7 +10126,25 @@ Refer to wp:f:add_theme_support
   - headings :: bool whether to wrap content with ~<hn></hn>~
   - skip-links
   - drop-down-menu :: genesis_superfish_enabled to determine whether to use superfish
-  - screen-reader-text :: 
+  - screen-reader-text ::
+- genesis-menus :: array
+  - ~[ 'primary' => 'Primary Nav. Menu', 'secondary' => 'Secondary Nav. Menu' ]~
+  - filter ~genesis_theme_support_menus~
+    - ~genesis_register_nav_menus()~
+      - ~register_nav_menus()~
+      - action ~genesis_register_nav_menus~
+
+*** Shortcodes <<<wp:genesis:shortcodes>>>
+All shortcodes have filters
+
+- ~[footer_home_link after=""]~
+- ~[footer_loginout after="" before="" redirect=""]~
+- ~[footer_backtotop before="" after="" href="#wrap" nofollow="true" text="return to top of page"]~
+  - If ~genesis_html5()~, then empty
+- ~[footer_copyright before="" after="" copyright="&#x000A9;"]~
+  - ~sprintf( '[footer_copyright before="%s "] &#x000B7; [footer_loginout]', __( 'Copyright', 'genesis' ) );~
+- ~[footer_home_link before="" after="" text="get_bloginfo( 'name' )"]~
+
 
 *** Child theme
 functions.php
