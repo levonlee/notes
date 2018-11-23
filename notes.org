@@ -6303,7 +6303,7 @@ https://www.webhostinghero.com/wordpress-authentication-integration-with-php/
 http://dovy.io/wordpress/authenticating-outside-of-wordpress-on-diff-domain/
 
 subfolder/index.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   define( 'WP_USE_THEMES', false ); // NOT load the theme at all or any of that content.
   define( 'COOKIE_DOMAIN', false ); // NOT verify the cookie domain. We just want to take the cookie as it is.
   define( 'DISABLE_WP_CRON', true ); // Optional
@@ -6318,7 +6318,7 @@ subfolder/index.php
   // clear cache and try again
 
   // see wp:user
-#+END_EXAMPLE
+#+END_SRC
 
 ** Global Variables
 https://codex.wordpress.org/Global_Variables
@@ -10204,14 +10204,20 @@ If you have sticky or position:fixed element .sticky-header
   }
 #+END_EXAMPLE
 
-** Transient API
+** Transients API - ~set_transient~ vs ~wp_cache_set~
 WordPress cache API in database.
 =DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
+
+WP object cache stores objects and primitives but not in a persistent manner by default. This means caching happens in memory and it only lives for the request's lifetime cycle (e.g. one pageload). Redis plugin can make it persistent.
+
+Transient API saves variables, arrays, objects tied with an expiration date on db and has persistent object caching. However when cached objects expire, they remain on db which needs to be pruned every once in a while.
+
+WP detects if persistent object cache, if so, bypass Transients API and route to WP object cache.
 
 ** Custom Cache
 Same page request custom cache
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_request_cache($field, $set = NULL) {
     static $custom_cache;
     if (!isset($custom_cache)) {
@@ -10222,14 +10228,14 @@ Same page request custom cache
       $custom_cache[$field] = $set;
     }
     elseif ($field !==  NULL && $set == NULL &&
-            ( !isset($custom_cache[$field]) || $custom_cache[$field] == NULL )
+	    ( !isset($custom_cache[$field]) || $custom_cache[$field] == NULL )
     ) {
       // Set default
       // $set_field_value = _f('field_name');
       switch ($field) {
-        case "trigger_posts_clauses":
-          $custom_cache[$field] = '';
-          break;
+	case "trigger_posts_clauses":
+	  $custom_cache[$field] = '';
+	  break;
       }
     }
 
@@ -10239,7 +10245,7 @@ Same page request custom cache
 
     return $custom_cache[$field];
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Custom page
 wp:filter:template_include
@@ -48705,7 +48711,7 @@ Varnish configuration file (.vcl) is not supposed to edit.
 
 See lando:pantheon:varnish
 
-** Object Cache - Redis
+** Object Cache - Redis <<<pantheon:redis>>>
 Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
 For Wordpress, no more is needed because the WP Redis plugin is loaded via drop-in file
 Install Redis module https://www.drupal.org/project/redis or run terminus to install
@@ -48714,7 +48720,7 @@ Install Redis module https://www.drupal.org/project/redis or run terminus to ins
 #+END_EXAMPLE
 
 Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // D7
   / All Pantheon Environments.
   if (defined('PANTHEON_ENVIRONMENT')) {
@@ -48759,11 +48765,11 @@ Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
     $settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
     $settings['cache']['bins']['config']    = 'cache.backend.chainedfast';
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Install Redis locally https://redis.io/download
 Use Redis Connection Info from Dashboard
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   redis> keys *
    1) "pantheon-rediscache_menu:links:management:tree-data:en:27cbcc1096e9daf2c319c2c"
    2) "pantheon-rediscache:features_module_info"
@@ -48797,7 +48803,28 @@ Use Redis Connection Info from Dashboard
   # Number of keys in cache
   redis> DBSIZE
   :0
-#+END_EXAMPLE
+#+END_SRC
+
+*** Install Redis on Ubuntu
+Install PECL https://github.com/phpredis/phpredis
+
+https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-redis-on-ubuntu-16-04
+
+#+BEGIN_SRC bash
+  sudo systemctl start redis
+  sudo systemctl status redis
+  sudo systemctl restart redis
+
+  # enable Redis to start at boot
+  # output :: Created symlink from /etc/systemd/system/multi-user.target.wants/redis.service to /etc/systemd/system/redis.service.
+  sudo systemctl enable redis
+
+  # connect to redis
+  redis-cli
+
+  # exit CLI
+  exit
+#+END_SRC
 
 ** Clear Cache
 Use ~terminus env:clear-cache~ to debug clear cache failure.
