@@ -1155,24 +1155,24 @@ https://www.drupal.org/coding-standards/docs
 https://www.drupal.org/node/1354
 The docblock has to be immediately above the code.
 
-#+BEGIN_EXAMPLE
-/**
- * One-line summary, ending in a period (.).
- *
- * Additional paragraph of explanation.
- * Additional paragraph of explanation.
- *
- * @since 3.1.0
- * @param string $mail
- *   The email address. The description can be longer if necessary, and if so,
- *   you can wrap it to another line. Indented by 2 spaces
- * @param string $from
- *   (optional) The email address to send the mail from, if different from
- *   the site-wide address.
- * @param string $bcc One line description.
- * @return int One line description.
- */
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  /**
+   ,* One-line summary, ending in a period (.).
+   ,*
+   ,* Additional paragraph of explanation.
+   ,* Additional paragraph of explanation.
+   ,*
+   ,* @since 3.1.0
+   ,* @param string $mail
+   ,*   The email address. The description can be longer if necessary, and if so,
+   ,*   you can wrap it to another line. Indented by 2 spaces
+   ,* @param string $from
+   ,*   (optional) The email address to send the mail from, if different from
+   ,*   the site-wide address.
+   ,* @param string $bcc One line description.
+   ,* @return int One line description.
+   ,*/
+#+END_SRC
 
 Order of sections
 - One-line summary ending in a period .
@@ -1188,23 +1188,23 @@ Order of sections
 - @Plugin
 
 Separate different-type sections by a blank line
-#+BEGIN_EXAMPLE
-// blank line
-@param first param
-@param second param
-// blank line
-@return
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  // blank line
+  @param first param
+  @param second param
+  // blank line
+  @return
+#+END_SRC
 
 *** Tag reference
 **** @code
-#+BEGIN_EXAMPLE
- * Example usage:
- * @code
- * mymodule_print('Hello World!');
- * @endcode
- * Text to immediately follow the code block.
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  ,* Example usage:
+  ,* @code
+  ,* mymodule_print('Hello World!');
+  ,* @endcode
+  ,* Text to immediately follow the code block.
+#+END_SRC
 
 *** datatype <<<PHPDoc:datatype>>>
 #+BEGIN_EXAMPLE
@@ -6924,6 +6924,8 @@ You can resize an image file on the fly using fly-dynamic-image-resizer
 - ~wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false )~ :: is just like the_post_thumbnail but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
 
 *** post-template.php <<<wp:t:post>>>
+- Display content :: ~the_content( $more_link_text = null, $strip_teaser = false)~ use wp:filter:the_content
+
 *** category-template.php <<<wp:t:category>>>
 - the_terms :: display taxonomy terms in a list
 
@@ -6957,6 +6959,9 @@ Core functions used in templates :: /wp-includes/general-template.php
 *** author-template.php
 *** bookmark_template.php
 *** comment-template.php
+- ~wp_list_comments( $args = array(), $comments = null)~ :: list comments in ~comments.php~ template. Use wp:filter:wp_list_comments_args
+- ~comment_form( $args = array(), $post_id = null)~ :: outputs comment form <<<wp:f:comment_form>>> 
+
 *** link-template.php
 *** media-template.php
 *** nav-menu-template.php
@@ -7046,7 +7051,6 @@ $text can't be a variable. And use single quotes instead of "".
   // _ex is the same as _x but echoes
 
   // return value for an HTML attribute 
-  esc_
   printf( esc_attr__( 'View all posts filed under %1$s', 'my-text-domain' ), get_cat_name( 32 ) );
 
   // echo value for an HTML attribute
@@ -7464,9 +7468,6 @@ comment.php
   get_footer( $name );
   ?>
 #+END_SRC
-
-*** comment_form
-<<<wp:f:comment_form>>> outputs comment form
 
 *** dynamic_sidebar vs get_sidebar <<<wp:f:dynamic_sidebar>>>
 wp:f:get_sidebar
@@ -9696,7 +9697,8 @@ lib/functions/*.php
 **** upgrade.php
 **** compat.php
 **** general.php
-- ~genesis_a11y( $arg = 'screen-reader-text' )~ :: wp:genesis:theme support:genesis-accessibility
+- ~genesis_a11y( $arg = 'screen-reader-text' )~ :: wp:genesis:theme support:genesis-accessibility, return bool
+
 **** options.php
 - content_archive :: full or excerpts
 - content_archive_thumbnail :: 0, not display thumbnail
@@ -9948,7 +9950,7 @@ Display post info (byline)
     - ~genesis_after_entry_content~ :: nothing
     - ~genesis_entry_footer~
       - ~genesis_entry_footer_markup_open~ at p:5
-      - ~genesis_post_meta~ :: ~Files under ...~
+      - ~genesis_post_meta~ :: ~Filed under ...~
       - ~genesis_entry_footer_markup_close~ at p:15
     - ~genesis_markup~ :: close ~arcitle~, context:entry
     - ~genesis_after_entry~
@@ -9956,6 +9958,9 @@ Display post info (byline)
       - ~genesis_add_id_to_global_exclude~ at p:9
       - ~genesis_after_entry_widget_area~
       - ~genesis_adjacent_entry_nav~
+      - ~genesis_get_comments_template()~
+	- wp:f:comments_template
+	- refer to wp:genesis:comments.php
   - ~genesis_after_endwhile~
     - ~genesis_posts_nav()~ :: ~div.archive-pagination~
       - ~genesis_numeric_posts_nav()~ or ~genesis_prev_next_posts_nav()~
@@ -10148,6 +10153,35 @@ wp:f:get_footer loads parent theme's footer.php unless child theme has footer.ph
 - ~genesis_after~ :: nothing
 - ~wp_footer()~
 - ~genesis_markup~ :: close ~body~, context:body
+
+**** comments.php <<<wp:genesis:comments.php>>>
+- ~genesis_before_comments~ :: nothing
+- ~genesis_comments~
+  - ~genesis_do_comments()~
+    - ~genesis_markup~ :: open ~div~, context:entry-comments
+    - filter ~genesis_title_comments~
+    - actiion ~genesis_list_comments~
+      - ~genesis_default_list_comments()~
+	- filter ~genesis_comment_list_args~
+	- ~wp_list_comments( $args )~
+    - prev link ~genesis_prev_comments_link_text~
+    - next link ~genesis_next_comments_link_text~
+    - ~genesis_markup~ :: open/close ~div~, content:$pagination, context:comments-pagination
+    - ~genesis_markup~ :: close ~div~, context:entry-comments 
+- ~genesis_after_comments~ :: none
+- ~genesis_before_pings~ :: none
+- ~genesis_pings~
+  - ~genesis_do_pings()~
+    - filter ~genesis_attr_entry-pings~
+    - ~genesis_markup~ :: open ~div~, context:entry-pings
+    - ~genesis_list_pings~
+    - ~genesis_markup~ :: close ~div~, context:entry-pings
+- ~genesis_after_pings~ :: none
+- ~genesis_before_comment_form~ :: none
+- ~genesis_comment_form~
+  - ~genesis_do_comment_form()~ ::
+    - wp:f:comment_form
+- ~genesis_after_comment_form~ :: none
 
 *** Theme support <<<wp:genesis:theme support>>>
 https://sridharkatakam.com/comprehensive-guide-genesis-theme-supports/
