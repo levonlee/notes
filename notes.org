@@ -804,6 +804,22 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
   }
 #+END_EXAMPLE
 
+*** sprintf and printf <<<php:sprintf>>>
+#+BEGIN_SRC php
+  $num = 5;
+  $location = 'tree';
+
+  $format = 'There are %d monkeys in the %s';
+  echo sprintf($format, $num, $location);
+
+  $format = 'The %2$s contains %1$d monkeys'; // The tree contains 5 monkeys
+
+  $format = 'The %2$s contains %1$04d monkeys'; // The tree contains 0005 monkeys
+
+  echo sprintf("%'.9d\n", 123); // ......123
+  echo sprintf("%'.09d\n", 123); // 000000123
+#+END_SRC
+
 *** Random bash64 string
 #+BEGIN_EXAMPLE
   $str = substr(base64_encode(sha1(mt_rand())), 0, 16);
@@ -918,25 +934,25 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 
 ** Heredoc, Nowdoc
 Heredoc result is a double-quoted string
-#+BEGIN_EXAMPLE
-$html = <<<HTML
-<span>{$obj->name[1]}</span>
-HTML;
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  $html = <<<HTML
+  <span>{$obj->name[1]}</span>
+  HTML;
+#+END_SRC
 
-#+BEGIN_EXAMPLE
-$string = <<< heredoc
-plain text and now a function: %s
-heredoc;
-$string = sprintf($string, testfunction());
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  $string = <<< heredoc
+  plain text and now a function: %s
+  heredoc;
+  $string = sprintf($string, testfunction());
+#+END_SRC
 
 Nowdoc can't expand variables and the result is single quoted string
-#+BEGIN_EXAMPLE
-echo <<<'EOT'
-<span>{$obj->name[1]}</span>
-EOT;
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  echo <<<'EOT'
+  <span>{$obj->name[1]}</span>
+  EOT;
+#+END_SRC
 
 ** Buffer <<<php:buffer>>>
 http://php.net/manual/en/book.outcontrol.php
@@ -9836,6 +9852,7 @@ lib/functions/*.php
 - ~echo genesis_get_nav_menu( $args )~
   - add superfish
   - ~$nav_markup_open  = genesis_structural_wrap( 'menu-' . $sanitized_location, 'open', 0 );~ wp:genesis:functions:genesis_structural_wrap
+  - ~$nav = wp_nav_menu( $args )~
   - ~$nav_markup_close = genesis_structural_wrap( 'menu-' . $sanitized_location, 'close', 0 )~
   - wrap with ~<nav></nav>~ filter ~genesis_attr-nav-$theme_location~, content
   - filter ~genesis_do_nav( $nav_output, $nav, $args )~ or ~genesis_do_subnav( $nav_output, $nav, $args )~
@@ -10130,6 +10147,7 @@ wp:f:get_header loads the parent theme's header.php unless child theme has heade
   - ~genesis_skip_links()~ priority 5
 - ~genesis_markup~ :: open ~div~, context:site-container
 - ~genesis_before_header~
+  - ~genesis_skip_links()~ p:5
 - ~genesis_header~
   - ~genesis_header_markup_open()~ at ~p:5~ context site-header :: ~<header class="site-header">~
     - ~genesis_structural_wrap( 'header' )~ context header
@@ -11309,6 +11327,39 @@ To enable Mega Menu for a menu, put this menu into a theme location.
 Create a menu with custom link, go to Mega Menu > Replacements > Type Search box
 - Icon color
 - Don't need to modify Styling, everything is under Replacements
+
+**** CSS
+***** Mobile menu
+#+BEGIN_SRC scss
+  /** Push menu onto new line **/ 
+  #{$wrap} { 
+      clear: both;
+
+      /* Evenly distributed on the first column */
+      .mega-toggle-blocks-left {
+	  .mega-toggle-block {
+	      width:25%;
+	      text-align:center;
+	      margin-left:0!important;
+	      a.mega-icon {
+		  &:before {
+		      display:block;
+		  }
+		  &:hover, &:focus {
+		      &:before {
+			  color:#cd1713;
+		      }
+		  }
+	      }
+	  }
+      }
+
+      /* Hide middle column */
+      .mega-toggle-blocks-center {
+	  display:none!important;
+      }
+  }
+#+END_SRC
 
 *** multiple-featured-images <<<wp:plugin:multiple-featured-images>>>
 #+BEGIN_EXAMPLE
