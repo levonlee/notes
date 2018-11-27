@@ -7160,6 +7160,31 @@ Complex context
 Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
 Settings > General > Site Lanuage to match fr_CA
 
+*** antispambot <<<wp:f:antispambot>>>
+Encode email address to hex
+
+#+BEGIN_SRC php
+  function hide_email_addresses_sc($atts, $content = null) {
+      $emailaddress_fields = shortcode_atts(array(
+	  'id' => '',
+	  'email' => ''
+      ),$atts);
+      $userid = $emailaddress_fields['id'];
+      $e_mail = $emailaddress_fields['email'];
+      if ($userid !=='' && $e_mail =='') {
+	  $emailaddress = get_the_author_meta('user_email',$userid);
+	  return '<a href="mailto:'.antispambot($emailaddress).'">'.antispambot($emailaddress).'</a>';
+      }
+      if ($userid =='' && $e_mail !=='') {
+	  return '<a href="mailto:'.antispambot($e_mail).'">'.antispambot($e_mail).'</a>';
+      }
+      else {
+	  return '';
+      }
+  }
+  add_shortcode('hide-email','hide_email_addresses_sc');
+#+END_SRC
+
 *** add_theme_support, remove_theme_support, current_theme_supports <<<wp:f:add_theme_support>>>
 <<<wp:f:current_theme_supports>>> <<<wp:f:add_theme_support:post-thumbnails>>>
 - Either in theme's ~functions.php~ or added in wp:action:after_setup_theme because it has to be loaded early
@@ -8822,14 +8847,14 @@ Add mime type so that wp can handle its content-type header to browser for uploa
 *** widget_text <<<wp:filter:widget_text>>>
 Display wp:f:add_shortcode in widget. Filter content output
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function exam_plug_text_replace($content) {
     $new_content = '';
     $new_content.= $content . ':)';
     return $new_content;
   }
   add_filter('widget_text', 'exam_plug_text_replace');
-#+END_EXAMPLE
+#+END_SRC
 
 *** sidebars_widgets <<<wp:filter:sidebars_widgets>>>
 Filters the list of sidebars and their widgets. Changing this will change the widget registeration on db.
@@ -9258,7 +9283,7 @@ wp:f:update_post_meta
 
 ** add_shortcode <<<wp:f:add_shortcode>>>
 #+BEGIN_SRC php
-  // [bartag foo="foo-value"]
+  // [bar-tag foo="foo-value"]
 
   // Use underscore instead of hyphen e.g. bar_tag
   function bartag_func( $atts, $content, $tag ) {
@@ -9291,7 +9316,7 @@ wp:f:update_post_meta
   ,*/
 
   }
-  add_shortcode( 'bartag', 'bartag_func' );
+  add_shortcode( 'bar-tag', 'bartag_func' );
 
   // In order to run shortcode in Widgets, add this
   add_filter('widget_text','do_shortcode');
