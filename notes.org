@@ -8098,9 +8098,9 @@ $media :: (string) (Optional) The media for which this stylesheet has been defin
 
 Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // Load the main stylesheet
-          wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
+	  wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
 
   /**
    ,* Load our IE-only stylesheet for all versions of IE:
@@ -8133,24 +8133,26 @@ Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
    ,*/
   wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-ie.css", array( 'my-theme' ) );
   wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
-#+END_EXAMPLE
+#+END_SRC
 
 *** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
 Used in wp:action:wp_enqueue_scripts
 Use wp:filter:style_loader_src
-wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
+~wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
   wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
-#+END_EXAMPLE
+#+END_SRC
 
 When a script is added with dependency on jQuery, jQuery is auto loaded by wp. Change jQuery
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   wp_deregister_script('jquery');
   wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js', array(), null, true);
   wp_enqueue_script('my-custom-script', get_template_directory_uri() .'/js/my-custom-script.js', array('jquery'), null, true);
-#+END_EXAMPLE
+#+END_SRC
+
+If there's script depends on jquery and it's loaded in header, even though jquery is set to load in footer, jquery will be loaded in header.
 
 *** wp_localize_script
 This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
@@ -9725,6 +9727,8 @@ lib/functions/*.php
 - ~genesis_a11y( $arg = 'screen-reader-text' )~ :: wp:genesis:theme support:genesis-accessibility, return bool
 
 **** options.php
+- ~header_scripts~ :: string
+- ~footer_scripts~ :: string
 - content_archive :: full or excerpts
 - content_archive_thumbnail :: 0, not display thumbnail
 - image_size :: thumbnail
@@ -10105,6 +10109,22 @@ wp:f:get_header loads the parent theme's header.php unless child theme has heade
 - ~genesis_title~
 - ~genesis_meta~
 - ~wp_head();~ :: ~</head> <body>~
+  - ~genesis_canonical~ :: p:5
+  - ~genesis_load_favicon~
+  - ~genesis_do_meta_pingback~
+  - ~genesis_paged_rel~
+  - ~genesis_meta_name~
+  - ~genesis_meta_url~
+  - ~genesis_header_scripts~
+    - filter ~genesis_header_scripts( genesis_get_option( 'header_scripts'))~
+  - ~genesis_custom_header_style~ 
+  - remove actions
+    - wp_generator
+    - adjacent_posts_rel_link_wp_head
+    - wlwmanifest_link
+    - wp_shortlink_wp_head
+    - feed_links_extra
+    - rel_canonical
 - ~genesis_markup~ :: open ~body~, context:body
 - ~genesis_before~
   - ~genesis_skip_links()~ priority 5
@@ -50261,7 +50281,7 @@ Run this .sql file:
   sqlcmd -S sqlservername -i C:\sqlFileName.sql
 #+END_EXAMPLE
 
-* DFP
+* Google Ad Manager - DFP <<<google:dfp>>> <<<google:gam>>>
 ** Why async is required
 Video companion requires async
 pubService.refresh requires async
@@ -51190,9 +51210,8 @@ When console shows FriendlyFrame, it shows the container is not SafeFrame.
 #+END_SRC
 
 ** Google Publisher Console
-To open, append to URL ?googfc=1 (display console after page is loaded)
-or ?google_console (keyboard to toggle console display)
-C-F10
+To open, append to URL ~?googfc=1~ (display console after page is loaded)
+or ~?google_console~ (keyboard to toggle console display) ~C-F10~
 
 Or make a bookmark ~javascript: googletag.openConsole();~
 
@@ -51676,23 +51695,29 @@ https://docs.emmet.io/
 **** Surround with, wrap each line with a tag <<<phpstorm:emmet:wrap>>>
 Refer to phpstorm:surround with
 
-#+BEGIN_EXAMPLE
-  //* Unordered item 1
-  //* Unordered item 2
-  //* Unordered item 3
+#+BEGIN_SRC html
+  <!--
+      ,* Unordered item 1
+      ,* Unordered item 2
+      ,* Unordered item 3
 
-  // Select 3 lines and type (abbreviation)
-  // ul>li*
+      Select 3 lines and type (abbreviation)
+      ul>li*
+    -->
 
   <ul>
-      <li>* Unordered item 1</li>
-      <li>* Unordered item 2</li>
-      <li>* Unordered item 3</li>
+    <li>* Unordered item 1</li>
+    <li>* Unordered item 2</li>
+    <li>* Unordered item 3</li>
   </ul>
 
-  // Use filter t (trim) to remove list markers
-  // ul.nav>li.nav-item$*>a|t
-#+END_EXAMPLE
+  <!-- 
+       Use filter t (trim) to remove list markers
+
+       - ul>li*|t
+       - ul.nav>li.nav-item$*>a|t
+    -->
+#+END_SRC
 
 **** Number $
 **** Repeat input * as $#
