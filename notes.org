@@ -1,4 +1,4 @@
- #+TITLE: My Notes
+#+TITLE: My Notes
 #+OPTIONS: H:4
 #+SETUPFILE: theme-readtheorg.setup
 #+STARTUP: overview
@@ -6148,10 +6148,8 @@ See if wp-config.php .htaccess files are modified
 3.8.6 > 4.5.10 > (db) 4.9.1 > 4.9.4
 
 *** TS: update-core.php blank
-Add this to disable WP to check FTP
-#+BEGIN_EXAMPLE
-  define('FS_METHOD', 'direct');
-#+END_EXAMPLE
+Add this to disable WP to check FTP :: ~define('FS_METHOD', 'direct');~
+
 Refer to wp:ftp https://stackoverflow.com/questions/28598547/wordpress-core-update-fail-4-1-to-4-1-1
 
 ** Migrate database
@@ -9085,6 +9083,10 @@ Event based
 
 *** Action sequence <<<wp:action:loading sequence>>>
 https://codex.wordpress.org/Plugin_API/Action_Reference
+http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
+
+- ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
+  - ~WP_Customize_Widgets->customize_register~
 
 *** after_setup_theme <<<wp:action:after_setup_theme>>>
 Called each page load after the theme is initialized. 
@@ -10554,6 +10556,16 @@ Requires String Translation addon. Change domain to Widgets.
   - Go to the bottom of String Translation and click Translate texts in admin screens
   - https://wpml.org/documentation/getting-started-guide/translating-widgets/
 
+**** Template
+- Get languages :: https://wpml.org/wpml-hook/wpml_active_languages/
+  - call after wp:action:wp
+
+#+BEGIN_SRC php
+  $languages = apply_filters( 'wpml_active_languages', NULL, 'orderby=id&order=desc' );
+#+END_SRC
+
+- Homepage URL :: ~<a href="<?php echo apply_filters( 'wpml_home_url', get_option( 'home' ) ); ?>">Home</a>~
+
 **** Manual update plugin
 - Deactivate it and other addons
 - Copy folder
@@ -11362,6 +11374,8 @@ Create a menu with custom link, go to Mega Menu > Replacements > Type Search box
   /** Push menu onto new line **/ 
   #{$wrap} { 
       clear: both;
+
+      /* .mega-toggle-* mobile menu */
 
       /* Evenly distributed on the first column */
       .mega-toggle-blocks-left {
@@ -23113,17 +23127,17 @@ You can use all CSS Selectors
 
 http://api.jquery.com/category/selectors/
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   $('li').each(function(i) {
    // i = 0, 1, etc.
    $(this).addClass("foo");
   });
-#+END_EXAMPLE
 
-First matched element
-#+BEGIN_EXAMPLE
-  var iframeId = $("#div-iframe").find('iframe').get(0).id;
-#+END_EXAMPLE
+  // multiple attributes
+  var langEn = $('head link[rel=alternate][hreflang=en]').attr('href');
+#+END_SRC
+
+First matched element :: ~var iframeId = $("#div-iframe").find('iframe').get(0).id;~
 
 ** iFrame refer to parent
 #+BEGIN_EXAMPLE
@@ -37745,7 +37759,7 @@ To indicate a different language version of a URL (e.g. PDF)
 - Sitemap
 
 *** Inside ~<head>~
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   // General
   <link rel="alternate" hreflang="en-gb" href="http://en-gb.example.com/page.html" />
   <link rel="alternate" hreflang="en-us" href="http://en-us.example.com/page.html" />
@@ -37756,11 +37770,11 @@ To indicate a different language version of a URL (e.g. PDF)
 
   // wp
   <?php global $wp;
-        $current_url = home_url(add_query_arg(array(), $wp->request)); 
-        // echo esc_url($current_url);
+	$current_url = home_url(add_query_arg(array(), $wp->request)); 
+	// echo esc_url($current_url);
   ?>
   <link rel="alternate" hreflang="<?php echo get_bloginfo('language'); ?>" href="http://es.example.com/" />
-#+END_EXAMPLE
+#+END_SRC
 
 ** Market Research
 https://www.comscore.com/
