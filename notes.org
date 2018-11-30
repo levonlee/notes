@@ -41349,21 +41349,21 @@ linux:timezone :: setup timezone and sync time
 Refer to linux:dns
 
 ** DNS records: A AAAA ANAME CNAME TXT ALIAS URL
-A hostname :: a sub domain. e.g. www
+- Hostname :: a sub domain. e.g. ~www~ ~@~
 
-A records :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
+- ~A~ records :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
 
-AAAA records :: same as A records but they are IPv6. Nowadays, both AAAA and A are needed
+- ~AAAA~ records :: same as A records but they are IPv6. Nowadays, both AAAA and A are needed
 
-ANAME :: It's like CNAME. Name (from source domain) could be @. The value has to be another (target) apex domain. DNS resolves the target fully qualified domain name (FQDN) to an IP or multiple and also synthesize A records of the domain that points to the IP(s) of the FQDN. Since the target FQDN's IP is returned on the first lookup, it's faster than ALIAS record.
+- ~ANAME~ :: It's like ~CNAME~. Name (from source domain) could be @. The value has to be another (target) apex domain. DNS resolves the target fully qualified domain name (FQDN) to an IP or multiple and also synthesize A records of the domain that points to the IP(s) of the FQDN. Since the target FQDN's IP is returned on the first lookup, it's faster than ALIAS record.
 
-CNAME records :: point another subdomain (hostname) to an A record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in CNAME on the left hand side.
+- ~CNAME~ records :: point another subdomain (hostname) to an A record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in CNAME on the left hand side.
 
-ALIAS records :: same as CNAME but it can coexist with other records on that name. It resolves the target domain to one or more A records. ALIAS's name can be (from source domain) anything, the value can be (target) any other external domain.
+- ~ALIAS~ records :: same as CNAME but it can coexist with other records on that name. It resolves the target domain to one or more A records. ALIAS's name can be (from source domain) anything, the value can be (target) any other external domain.
 
-URL records :: redirect the name to the target name using HTTP 301 status code.
+- ~URL~ records :: redirect the name to the target name using HTTP 301 status code.
 
-TXT record :: Google Search Console may add TXT @ google-site-verification=[code] TTL 1 Hour to verify site ownership.
+- ~TXT~ record :: Google Search Console may add TXT @ google-site-verification=[code] TTL 1 Hour to verify site ownership.
 
 The ~A~, ~CNAME~, ~ALIAS~ records causes a name to resolve to an IP. Vice-versa, the ~URL~ record redirects the name to a destination. The ~URL~ record is simple and effective way to apply a redirect for a name to another name, e.g. to redirect www.example.com to example.com
 
@@ -43967,6 +43967,19 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 
 - Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
 - ~$_ENV['PANTHEON_ENVIRONMENT']~ is defined
+
+**** Push a new website to Live
+- On local Lando
+  - ~wp search-replace '//myweb.com' '//dev-myweb.pantheonsite.io' --dry-run~
+  - ~wp search-replace '//www.myweb.com' '//dev-myweb.pantheonsite.io' --dry-run~
+  - ~wp search-replace '//myweb.lndo.site' '//dev-myweb.pantheonsite.io --dry-run'~
+- Minimize files in wp-content/uploads
+- Lando push code, db and files
+- FileZilla to push missing file to Pantheon Dev
+- On Pantheon, click Initialize Test Environment
+- click Initialize Live Environment
+- Connect to Live db and check domains. Only ~//live-myweb.pantheonsite.io~ should exist
+- Change domain DNS setting and Setup redirect pantheon:domain
 
 *** Varnish <<<lando:pantheon:varnish>>>
 - See version ~varnishd -V~
@@ -48591,8 +48604,7 @@ git branch -vv
     localbranch2 hexcode [origin/localbranch2] last commit msg
 #+END_EXAMPLE
 
-* Pantheon
-<<<hosting:pantheon>>>
+* Pantheon <<<hosting:pantheon>>>
 ** Terminus
 https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
 
@@ -48777,12 +48789,42 @@ Default cookie lifetime is 2,000,000 seconds and session lifetime is 200,000 sec
 
 Any logged in pages will not be cached. If different content is shown based on a user's location, either use frontend or use STYXKEY cookie as described above so that caching is possible.
 
-** Domain
+** Domain <<<pantheon:domain>>>
 Connect Domain: www.example.com and example.com
 In your DNS:
 A @ ip_from_pantheon
 AAAA @ value_from_pantheon
 CNAME www live-example.pantheonsite.io (Pantheon live URL)
+
+- Setup redirects :: https://pantheon.io/docs/redirects/
+WP, insert this before ~/* That's all, stop editing! Happy blogging. */~
+#+BEGIN_SRC php
+  if (isset($_ENV['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
+    // Redirect to https://$primary_domain in the Live environment
+    if ($_ENV['PANTHEON_ENVIRONMENT'] === 'live') {
+      /** Replace www.example.com with your registered domain name */
+      $primary_domain = 'www.example.com';
+    }
+    else {
+      // Redirect to HTTPS on every Pantheon environment.
+      $primary_domain = $_SERVER['HTTP_HOST'];
+    }
+
+    if ($_SERVER['HTTP_HOST'] != $primary_domain
+	|| !isset($_SERVER['HTTP_USER_AGENT_HTTPS'])
+	|| $_SERVER['HTTP_USER_AGENT_HTTPS'] != 'ON' ) {
+
+      # Name transaction "redirect" in New Relic for improved reporting (optional)
+      if (extension_loaded('newrelic')) {
+	newrelic_name_transaction("redirect");
+      }
+
+      header('HTTP/1.0 301 Moved Permanently');
+      header('Location: https://'. $primary_domain . $_SERVER['REQUEST_URI']);
+      exit();
+    }
+  }
+#+END_SRC
 
 ** Global CDN
 Fastly's edge cloud platform. 36 global points of presence (PoPs). Cache entire pages at the edge not just static assets.
@@ -54154,7 +54196,10 @@ https://www.thinkwithgoogle.com/tools/
 
 *** Tools for Web Developers
 **** Lighthouse in DevTools <<<chrome:lighthouse>>>
-It only measures mobile device
+DevTools > Audits tab (among Elements, Console, etc.)
+
+- View and compare json report files :: https://googlechrome.github.io/lighthouse/viewer/
+  - Save as Gist :: save report to a secret Gist under your GitHub account. The viewer link with Gist is publicly available 
 
 **** [[https://search.google.com/test/mobile-friendly][Mobile-Friendly Test]] [[https://testmysite.thinkwithgoogle.com/][WebPageTest.org provided by Google]]
 **** [[https://developers.google.com/speed/][PageSpeed]] <<<google:pagespeed>>>
