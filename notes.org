@@ -47266,7 +47266,8 @@ After everything, certificate is downloaded, Nginx config is updated and reloade
 
 Modified :: /etc/nginx/sites-enabled/yoursite.com
 <<<nginx:ssl:server block>>>
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC nginx
   server {
       listen 80;
       listen [::]:80;
@@ -47292,14 +47293,14 @@ Modified :: /etc/nginx/sites-enabled/yoursite.com
   # certbot will insert this block, but it's better to use the one atop.
   server {
     if ($host = yoursite.com) {
-          return 301 https://$host$request_uri;
+	  return 301 https://$host$request_uri;
       } # managed by Certbot
 
     listen 80;
     server_name yoursite.com;
       return 404; # managed by Certbot
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
 Certbot config and account credential :: /etc/letsencrypt
@@ -47622,7 +47623,7 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
 #+END_EXAMPLE
 
 **** [[https://michael.lustfield.net/nginx/getting-a-perfect-ssl-labs-score][Strengthen Nginx SSL Setup]]
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   # Protocol support
   ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
 
@@ -47654,7 +47655,37 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
   # SSL Stapling (not implemented by Let's Encrypt)
   ssl_stapling on;
   ssl_stapling_verify on;
-#+END_EXAMPLE
+#+END_SRC
+
+** nginxconfig.io
+https://nginxconfig.io
+
+https://nginxconfig.io/?domain=myweb.ca&ssl_profile=intermediate&hsts=false&email=ssl@myweb.ca&non_www=false&wordpress
+
+#+BEGIN_SRC sh
+  nano /etc/nginx/nginx.conf
+  nano  /etc/nginx/sites-available/myweb.ca.conf
+  nano /etc/nginx/nginxconfig.io/letsencrypt.conf
+  nano /etc/nginx/nginxconfig.io/php_fastcgi.conf
+  nano  /etc/nginx/nginxconfig.io/wordpress.conf
+  nano  /etc/nginx/nginxconfig.io/general.conf
+  ln -s /etc/nginx/sites-available/myweb.ca.conf /etc/nginx/sites-enabled/myweb.ca.conf
+
+  openssl dhparam -dsaparam -out /etc/nginx/dhparam.pem 2048
+  # create dir
+  sudo -u www-data sh -c "mkdir -p /var/www/_letsencrypt"~
+
+  chown www-data:www-data /var/www/_letsencrypt
+
+  # comment out all ssl_* directives
+  sed -i -r 's/(listen .*443)/\1;#/g; s/(ssl_(certificate|certificate_key|trusted_certificate) )/#;#\1/g' /etc/nginx/sites-available/myweb.ca.conf
+
+  # create cert only
+  certbot certonly --webroot -d myweb.ca -d www.myweb.ca --email ssl@myweb.ca -w /var/www/_letsencrypt -n --agree-tos --force-renewal
+
+  # add back ssl_* directives
+  sed -i -r 's/#?;#//g' /etc/nginx/sites-available/myweb.ca.conf
+#+END_SRC
 
 * Web Application Firewall (WAF)
 ** ModSecurity <<<waf:modsecurity>>>
@@ -53591,25 +53622,26 @@ Detect if request header ~accept~ literally contains image/webp. Browsers have t
 #+END_EXAMPLE
 
 Some CDN support content negotiation in action means if the accept doesn't have image/webp then deliver .png or .jpg. How to deliver different cache based on the same URL? Nginx example
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   server {
      listen 80;
      server_name ei8gd7lwnymbl2d.cdnconnect.netdna-cdn.com jdorfman.cdnconnect.com;
      set $webp "";
      if ($http_accept ~* image/webp) {
-             set $webp "webp";
+	     set $webp "webp";
      }
      location ~ /purge(/.*) {
-             allow 192.168.0.1/24;
-             deny all;
-             proxy_cache_purge my_diskcached ei8gd7lwnymbl2d.cdnconnect10$myae$webp$1$is_args$args;
+	     allow 192.168.0.1/24;
+	     deny all;
+	     proxy_cache_purge my_diskcached ei8gd7lwnymbl2d.cdnconnect10$myae$webp$1$is_args$args;
      }
      location / {
        [clipped]
-             proxy_cache_key ei8gd7lwnymbl2d.cdnconnect10$myae$webp$uri$is_args$args;
+	     proxy_cache_key ei8gd7lwnymbl2d.cdnconnect10$myae$webp$uri$is_args$args;
      }
   }
-#+END_EXAMPLE
+#+END_SRC
+
 Notice how the “$webp” variable gives us different cache keys for the various versions.
 
 More on WebP and Nginx :: https://www.igvita.com/2013/05/01/deploying-webp-via-accept-content-negotiation/
