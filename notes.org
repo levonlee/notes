@@ -53256,6 +53256,42 @@ Open cmd run as admin and run: =msiexec /i "the path"=
 - Check disk: right click on C drive > Properties > Tools > Check
 - Win + S, cmd, run as admin, ~sfc /scannow~
 
+** Ubuntu
+*** Setting
+- Keyboard repeat rate
+Settings > Universal Access > Typing > Repeat Keys > On, lower speed faster rate
+
+- xrdp
+#+BEGIN_SRC bash
+  sudo apt install xrdp
+  sudo systemctl enable xrdp
+  # logout or reboot
+#+END_SRC
+
+On Windows, use Xorg session
+
+*** Dual Boot with Win 10
+- Turn off fast start up :: Control Panel > Hardware and Sound > Power Options > Choose what the power buttons do > uncheck Turn on fast startup
+- May need to disable Secure Boot :: enable means BIOS will prevent un-authorized OS be loaded.
+  - Win + S to search ~advanced startup options~ and click ~Restart Now~
+  - select TroubleShoot > Advanced Options > UEFI Firmware Option Settings > Restart
+  - BIOS settings will open, disable Secure Boot. You may need to Turn Legacy Support On/Off
+- Determine if it's BIOS or EFI mode
+  - Run ~msinfo32~ and see if BIOS Mode is UEFI
+    - BIOS mode :: boosts by reading the first sector on hard disk and executing it; this boot sector in turn locates and runs additioinal code. It uses the Master Boot Record (MBR) partition table which is very limiting because of space (no more than 2TB in size per partition) and partitions(more than 4 primary partitions) constraints.
+    - EFI mode :: boots by loading EFI program files (with .efi extension) from a partition on the hard disk uses the GUID partition table (GPT) offering 64-bit entries in its table which dramatically extends the support for size possibilites.
+  - Ubuntu has to be installed using the same mode. If you see black screen with options when you boot using Ubuntu's bootable USB, then it shows Ubuntu is booted from EFI. 
+- Create free space on Windows for Ubuntu :: Win + S to search ~Create and Format Hard Disk Partitions~ > Shrink Partition, so that you will have ~Unallocated~ space in partitions. You will need 2 unallocated spaces. One for root and one for /home in Ubuntu
+- [[https://tutorials.ubuntu.com/tutorial/tutorial-create-a-usb-stick-on-windows#0][Create a bootable USB stick on Windows]]
+- Boot from USB :: Win + S to search ~Advanced Startup Options~ > Restart Now > Boot from USB
+- Try Ubuntu without installing > open gparted, right click on unallocated to create partition
+  - Create as: Primary Partition, File system: ext4, Label: ROOT and HOME, partition name: root and home,  
+- Open Install on the desktop
+- Normal installation and Install third-party software for graphics and Wi-Fi hardware, MP3 and other media
+- Installation type :: Something else
+  - change on a device name :: Use as: Ext4 journaling file system, Mount point: / and /home, Format the partition.
+  - Device for boot loader installation :: If boot mode is BIOS, select the whole device name e.g. ~/dev/sda~. If it's UEFI mode, choose the partition. Go to ~gparted~ and see which partition has value ~boot~ in column 'Flags'. e.g. ~/dev/sdap1~ 
+
 ** Exchange, Office
 *** Exchange Online, Office 365
 **** Shared Mailbox
