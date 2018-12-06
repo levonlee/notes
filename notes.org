@@ -504,18 +504,18 @@ reset($target_array);
 
 *** Search Value and Return Key
 Case insensitive search
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $a= array(
-  'k1'=> 'one',
-  'k2' => 'one1',
-  'k3' => 'three',
+      'k1'=> 'one',
+      'k2' => 'one1',
+      'k3' => 'three',
   );
 
   print_r( preg_grep( "/ONe$/i" , $a ) );
   // return all matches
   // Array ( [k1] => one, ... )
   // empty array if no match
-#+END_EXAMPLE
+#+END_SRC
 
 Use ~in_array('string', $a)~ for case sensitive search
 
@@ -52105,6 +52105,41 @@ C:/c/notes/run.bat
 Performance
 - Show init time :: =M-x emacs-init-time=
 
+Install for Ubuntu 18.04
+- ~sudo apt update && apt upgrade -y~ and reboot
+- ~sudo apt install build-essential libncurses-dev~
+- Go to [[https://www.gnu.org/software/emacs/download.html][Emacs Download page]] to get the link. e.g. ~wget http://mirrors.syringanetworks.net/gnu/emacs/emacs-26.1.tar.gz~
+- ~tar -xzvf emacs-26.1.tar.gz~
+- ~cd emacs-26.1/~ ~./configure --without-x --with-gnutls=no~
+- ~make~ and ~sudo make install~
+- Run emacs ~emacs~
+- Change config ~emacs ~/.emacs~
+- Copy https://melpa.org/#/getting-started and change the line from ~(proto (if no-ssl "http" "https")))~ to ~(proto (if no-ssl "http" "http")))~
+#+BEGIN_EXAMPLE
+  (require 'package)
+  (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+		      (not (gnutls-available-p))))
+	 (proto (if no-ssl "http" "http")))
+    (when no-ssl
+      (warn "\
+  Your version of Emacs does not support SSL connections,
+  which is unsafe because it allows man-in-the-middle attacks.
+  There are two things you can do about this warning:
+  1. Install an Emacs version that does support SSL and be safe.
+  2. Remove this warning from your init file so you won't see it again."))
+    ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
+    (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+    ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+    (when (< emacs-major-version 24)
+      ;; For important compatibility libraries like cl-lib
+      (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
+  (package-initialize)
+#+END_EXAMPLE
+
+- ~emacs notes.org~ and
+  - ~[M-x] package-refresh [RET]~
+  - ~[M-x] package-list-packages [RET]~
+
 *** MELPA packages
 Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
 Add http://melpa.org/packages/
@@ -52285,6 +52320,9 @@ Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mo
 When in *-mode edit buffer:
 - emacs:m-x:delete-trailing-whitespace
 - emacs:m-x:indent-region
+
+*** Export to HTML
+~C-c C-e h h~
 
 *** Symbol and Escape <<<emacs:escape>>>
 #+BEGIN_EXAMPLE
