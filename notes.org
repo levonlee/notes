@@ -39437,10 +39437,7 @@ A package ~pstree~ can be installed and used
 ~pstree -s -p 2072~ outputs ~init(1)───pulseaudio(2061)───gconf-helper(2072)~
 
 *** Run executable in background for all sessions
-This should be enough. If not, use bash:screen
-#+BEGIN_EXAMPLE
-  nohup ./bin/newcomgo &
-#+END_EXAMPLE
+This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
 
 *** jobs
 #+BEGIN_EXAMPLE
@@ -41325,7 +41322,13 @@ By default, nano covert tab to 4 spaces. Turn off ~Shift + Alt + Q~
 
 Show line number when open ~nano -c filename~
 
-** Ubuntu Unity
+** Ubuntu <<<linux:ubuntu>>>
+- Logout :: ~gnome-session-quit~
+
+Chrome Remote Desktop
+- May need to logout local login session otherwise terminal does not open
+
+*** Ubuntu Unity
 
 | C-M t   | open Terminal          |
 | M-<F2>  | run command/open app   |
@@ -41725,7 +41728,10 @@ Users in user group ~docker~ can run docker commands without sudo.
 
 *** Install on Digital Ocean
 https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC sh
+  sudo apt update
+
   # Add GPG key
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 
@@ -41739,7 +41745,40 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-o
 
   # check if Docker is running
   sudo systemctl status docker
-#+END_EXAMPLE
+#+END_SRC
+
+https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04
+#+BEGIN_SRC sh
+  sudo apt update
+
+  # install prerequisite packages which let apt use packages over HTTPS
+  sudo apt install apt-transport-https ca-certificates curl software-properties-common
+
+  # add GPG key
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+  # add Docker repository to APT sources:
+  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+
+  # make sure to install Docker from the Docker repo instead of the default Ubuntu repo:
+  apt-cache policy docker-ce
+
+  sudo apt install docker-ce
+
+  # check status
+  sudo systemctl status docker
+
+  # add your username to docker group to avoid typing sudo
+  sudo usermod -aG docker ${USER}
+
+  # logout or type the following to apply the new group membership
+  su - ${USER}
+
+  # confirm your username is now added to the docker group
+  id -nG
+#+END_SRC
+
+Install docker:docker compose:ubuntu
 
 ** Command Help ~docker docker-subcommand --help~
 ** Images
@@ -42110,7 +42149,7 @@ NO_PROXY
 no_proxy
 
 ** Docker Compose
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   docker-compose --version
   docker-compose up -d
 
@@ -42137,27 +42176,29 @@ no_proxy
 
   docker-compose ps
   # shows containers info started by docker compose in current folder
-#+END_EXAMPLE
+#+END_SRC
 
-*** Ubuntu 16.04 Installation
+*** Docker Compose Ubuntu Installation <<<docker:docker compose:ubuntu>>>
+Same for 16.04 and 18.04
 [[https://github.com/docker/compose/releases][Grab latest docker-compose version]] say it's 1.16.1
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo curl -o /usr/local/bin/docker-compose -L "https://github.com/docker/compose/releases/download/1.16.1/docker-compose-$(uname -s)-$(uname -m)"
-  ;; # add execute permission
+
+  # add execute permission
   sudo chmod +x /usr/local/bin/docker-compose
   docker-compose -v
 
-  ;; # Test
+  # Test
   nano docker-compose.yml
   my-test:
     image: hello-world
 
-  ;; # run
+  # run
   docker-compose up
   docker rm <container-id>
   docker rmi hello-world
-#+END_EXAMPLE
+#+END_SRC
 
 *** YML
 It has to be this name ~docker-compose.yml~ and don't include this file in sub directories.
