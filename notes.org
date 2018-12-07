@@ -38102,6 +38102,23 @@ Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoe
 ** SSH, scp, sshpass <<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>>
 Refer to aws:scp linux:package:openssh-client
 
+*** Install SSH Server
+Ubuntu
+#+BEGIN_SRC sh
+  sudo apt install ssh
+
+  # should be started
+  service ssh status
+
+  sudo service ssh stop
+  sudo service ssh start
+
+  # disable ssh service
+  sudo systemctl disable ssh
+
+  sudo systemctl enable ssh
+#+END_SRC
+
 *** Transfer Client Key to Host
 Generate a private key on your local machine ~ssh-keygen -t rsa~
 Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
@@ -39928,8 +39945,7 @@ How to read dpkg output
 - Error flags
   - <empty> = (none), R = Reinst-required
 
-If a package is installed: =dpkg -l wget=
-Search if a package is installed: =dpkg -l | grep wget= or ~dpkg -l 'wget*'~
+If a package is installed: =dpkg -l wget= or ~dpkg -l | grep ^ii | grep -i wget~
 
 More info of an installed package :: ~dpkg -s openssh-client~
 
@@ -44076,6 +44092,20 @@ Bash into appserver :: ~lando ssh --user=root~
   lando db-import a.sql.gz
   lando db-import a.sql
 #+END_SRC
+
+** SSL
+As of Lando 3.0.0 RC:
+#+BEGIN_SRC sh
+  # Add the Lando CA
+  sudo cp -r ~/.lando/certs/lndo.site.pem /usr/local/share/ca-certificates/lndo.site.pem
+  sudo update-ca-certificates
+
+  # Remove Lando CA
+  sudo rm -f /usr/local/share/ca-certificates/lndo.site.pem
+  sudo update-ca-certificates --fresh
+#+END_SRC
+
+- Add ~lndo.site.pem~ to Chrome :: Settings > Manage Certificates > Authorities > Import, select and check all options
 
 ** XDebug <<<lando:xdebug>>>
 Just add ~xdebug: true~ to a recipe's ~config~ or add it under a php service
@@ -53368,6 +53398,11 @@ Settings > Universal Access > Typing > Repeat Keys > On, lower speed faster rate
 #+END_SRC
 
 On Windows, use Xorg session
+
+- Install Pinyin
+  - ~sudo apt install ibus-pinyin~
+  - Settings > Languages and Region > Manage installed Languages, reboot or select IBus as Keyboard input method system, add Chinese Simplified then reboot
+  - Settings > Languages and Region > add Chinese (Intelligent Pinyin) as a new Input Sources
 
 *** Dual Boot with Win 10
 - Turn off fast start up :: Control Panel > Hardware and Sound > Power Options > Choose what the power buttons do > uncheck Turn on fast startup
