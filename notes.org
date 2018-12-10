@@ -25142,15 +25142,15 @@ Get [[https://github.com/creationix/nvm/releases][nvm version number]] 0.33.1, N
   bash install_nvm.sh
 #+END_SRC
 
-Directory ~/.nvm and ~/.profile file are created.
+Directory =~/.nvm= and =~/.profile= file are created.
 
 Log out and back again or source the file so that current session knows changes
 =source ~/.profile=
 
-List Node.js available versions ~nvm ls-remote~
+List Node.js available versions ~nvm ls-remote~ and look for version with Latest LTS
 #+BEGIN_SRC bash
-  nvm install 7.1.0
-  nvm use 7.1.0
+  nvm install 10.14.1
+  nvm use 10.14.1
 
   # What versions are installed
   nvm ls
@@ -25163,7 +25163,17 @@ List Node.js available versions ~nvm ls-remote~
 
   # Use the default version
   nvm use default
+
+  # to uninstall, first make sure the target version is not the current active version
+  nvm current
+  nvm uninstall node_version
+
+  # if the target version is the current active version, first deactivate
+  nvm deactivate
+  nvm uninstall node_version
 #+END_SRC
+
+Global packages installed using ~npm install -g express~ are in ~~/.nvm/versions/node/node_version/lib/node_modules/express~
 
 https://github.com/nodejs/LTS
 
@@ -39081,19 +39091,19 @@ To enable wildcard for rm, use glob
 - -n :: restrain from attempting auto-login upon initial connection
 
 *** cp <<<bash:cp>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # Copy a sub folder abc/ in the current directory to a new directory ~/xyz with everything preserved
   cp -a abc/ ~/xyz
 
   # Duplicate subfolder abc and name it xyz
   cp -a abc xyz
-#+END_EXAMPLE
+#+END_SRC
 
--a :: -dR --preserve=all
--d :: --no-dereference --preserve=links
--P, --no-dereference :: never follow symbolic links in SOURCE
--R, -r, --recursive
--f, --force :: if an existing destination file cannot be opened, remove it and try again.
+- -a :: -dR --preserve=all
+- -d :: --no-dereference --preserve=links
+- -P, --no-dereference :: never follow symbolic links in SOURCE
+- -R, -r, --recursive
+- -f, --force :: if an existing destination file cannot be opened, remove it and try again.
 
 To copy and exclude some directories use rsync
 #+BEGIN_EXAMPLE
@@ -41628,28 +41638,29 @@ Generate CSR (Certificate Signing Request) which gives a private key (myserver.k
 Submit CSR to SSL authority to get .crt and use .key generated above and make them root user only.
 
 [[https://medium.freecodecamp.org/how-to-get-https-working-on-your-local-development-environment-in-5-minutes-7af615770eec][Generate self-signed certificate]]
+Create a Root SSL Certificate
+- ~-new~ :: create a new private key and also certificate request (CR)
+- ~-x509~ :: create a self signed certificate rather than a cerficiate request (CR)
+- ~-nodes~ :: create private key without providing passphrase which is at least 4 letters long
+- Enter random values for the prompt
+
+~openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 1024 -out rootCA.pem~
+
+Optionaly, you can create a certificate with an existing key
+- ~-new~ with ~-key~ creates a CR with an existing key
+- ~openssl req -new -nodes -key rootCA.key -x509 -days 1024 -out rootCA.pem~
+
+Combine private key and certificate into a .p12 (pkcs12, pfx format) file.
+- ~openssl pkcs12 -inkey rootCA.key -in rootCA.pem -export -out rootCA.p12~
+- Validate ~openssl pkcs12 -in rootCA.p12 -noout -info~
+
+You can add ~rootCA.p12~ if Chrome supports it. In Ubuntu, Chrome only supports pkcs7 (.p7b file). Windows can import .p12 file
+- On Chrome, Settings > Manage certificates > Import under Trusted Root Certification Authorities
+- After that, select the certificate with name Internet Widigits Pty Ltd. click Advanced and select all Certificate purposes
+- Or you can just add rootCA.pem to Chrome as Authority
+- Without doing the above step, ~https://localhost~ only works in InCognito mode.
+
 #+BEGIN_EXAMPLE
-  # Create a Root SSL Certificate
-  # -new :: create a new private key and also certificate request (CR)
-  # and -x509 is to create a self signed certificate rather than a cerficiate request (CR)
-  # -nodes is to create private key without providing passphrase which is at least 4 letters long
-  openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 1024 -out rootCA.pem
-
-  # enter random values for the prompt
-
-  # You can create a certificate with an existing key
-  # -new with -key creates a CR with an existing key
-  # openssl req -new -nodes -key rootCA.key -x509 -days 1024 -out rootCA.pem
-
-  # combine private key and certificate
-  # openssl pkcs12 -inkey rootCA.key -in rootCA.pem -export -out rootCA.p12
-  # validate p12 file
-  # openssl pkcs12 -in rootCA.p12 -noout -info
-
-  # add rootCA.p12 to trusted certificate. On Chrome, Settings > Manage certificates > Import under Trusted Root Certification Authorities
-  # After that, select the certificate with name Internet Widigits Pty Ltd. click Advanced and select all Certificate purposes
-  # Without doing the above step, https://localhost only works in InCognito mode.
-
   # In docker-compose.yml
   #     ports:
   #      - "32012:80"
@@ -44030,7 +44041,7 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 - Or add a bash script wrapper wp-cli:allow-root
 
 - Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
-- ~$_ENV['PANTHEON_ENVIRONMENT']~ is defined
+- ~$_ENV['PANTHEON_ENVIRONMENT']~ is ~lando~
 
 **** Push a new website to Live
 - On local Lando
@@ -52142,7 +52153,7 @@ Consider extend timeout
 For per project to include third-party code (e.g. libraries) that is used for completion and reference resolution in functions/methods that use file paths as arguments, for example, ~require()~ or ~include()~
 
 Settings > Languages & Frameworks > PHP, choose the correct php version and then include:
-- ~C:\Users\li\.lando\services\config\pantheon~
+- =~/.lando/services/config/pantheon= or Windows ~C:\Users\li\.lando\services\config\pantheon~
 - Or other recipe ~C:\Users\li\.lando\services\config\drupal8~
 - The point is to load ~prepend.php~ which defines global vars related to environments
 
