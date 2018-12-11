@@ -6600,11 +6600,13 @@ WP CLI Pantheon
 https://github.com/wp-cli/wp-cli/releases
 
 *** WP CLI Install, Upgrade
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # Assuming you are at ~ folder
   curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+
   # Check phar
   php wp-cli.phar --info
+
   chmod +x wp-cli.phar
 
   # GoDaddy Shared Hosting doesn't allow sudo. Ignore this for GoDaddy
@@ -6612,7 +6614,7 @@ https://github.com/wp-cli/wp-cli/releases
   alias wp='~/wp-cli.phar'
   echo "alias wp='~/wp-cli.phar'" >> .bashrc
   source .bashrc
-#+END_EXAMPLE
+#+END_SRC
 
 Set Global parameters in wp-cli.yml under WordPress root folder http://wp-cli.org/config/
 - wp-cli.local.yml or wp-cli.yml in WordPress website folder
@@ -6620,18 +6622,18 @@ Set Global parameters in wp-cli.yml under WordPress root folder http://wp-cli.or
 
 Use -- in front for wp command
 #+BEGIN_EXAMPLE
-  # Very important. To avoid error: $_SERVER['HTTP_HOST'] 
+  # Very important. To avoid error: $_SERVER['HTTP_HOST']
   url: http://www.yourwebsite.com
 #+END_EXAMPLE
 
-Use --skip-plugins to avoid errors while loading plugins that cause this kind of error
-Fatal error: Uncaught Error: Call to a member function xxx on null
+Use ~--skip-plugins~ ~--skip-themes~ to avoid errors while loading plugins/themes that cause this kind of error
+~Fatal error: Uncaught Error: Call to a member function xxx on null~
 
 Check wp-cli installation
 ~wp --info~, ~wp plugin list --debug~ or ~wp plugin list --skip-plugins --debug~
 
 If you see this error, time to upgrade WP CLI
-Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-includes/post.php on line 1031
+~Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-includes/post.php on line 1031~
 
 ~sudo wp cli update~
 
@@ -6645,7 +6647,7 @@ Fatal error: Class 'WP_Post_Type' not found in /Applications/MAMP/htdocs/wp-incl
 https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command db.
 
 *** user
-#+BEGIN_SRC shell
+#+BEGIN_SRC sh
   # List users
   terminus wp 'user list' --site=<site> --env=<env>
   terminus wp mysite.live -- user list
@@ -6657,6 +6659,9 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
 
   # Update password
   wp user update lili --user_pass='lettersandnumbers'
+
+  # reset password (change to a random one and no email will be sent)
+  wp user reset-password adminname editorname
 
   # Give role
   wp user add-role lili administrator
@@ -11737,7 +11742,7 @@ Then change the language in each User Profile.
 All files should be chmod:644 and all folders chmod:755
 wp-config.php should be chmod:660 or chmod:664
 
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   # set permission 644 on files
   find . -type f -exec chmod 644 {} +
   # set permissions 755 for directories
@@ -38251,7 +38256,7 @@ linux:ssh:restart
 *** Login without setting public keys <<<bash:sshpass>>>
 https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   apt-get install sshpass
 
   sshpass -p 't@uyM59bQ' ssh -o StrictHostKeyChecking=no username@server.example.com
@@ -38280,7 +38285,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
   gpg -c .sshpassword
   rm .sshpassword
   gpg -d -q .sshpassword.gpg > fifo; sshpass -f fifo ssh vivek@server1.cyberciti.biz
-#+END_EXAMPLE
+#+END_SRC
 
 *** Random password
 #+BEGIN_SRC sh
@@ -39231,24 +39236,24 @@ By default, rsync finds files that need to be transferred using a "quick check" 
 
 --delete: To delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side.
 
--r: recursive
--l: symlink
--z: compress
--v: verbose
--i: Very useful! Display change-summary for all updates, also use with --stats
--P: --progress --partial, show progress and to resume interrupted transfers 
--n: dry run
+- -r :: recursive
+- -l :: symlink
+- -z :: compress
+- -v :: verbose
+- -i :: Very useful! Display change-summary for all updates, also use with --stats
+- -P :: --progress --partial, show progress and to resume interrupted transfers 
+- -n :: dry run
 
 -t: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless --size-only is used, missing -t or -a will cause the next transfer to behave as if it used -I, causing all files to be updated.
 	
 This command will not sync files with different permissions, ownership and modification time.
 Review the results and remove dry run `-n` before running again.
 
--a: -rlptgoD recursive, symlink, same permissions, mod time, group/owner, device/special files
--p: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
--g: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
--o: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
--D: is equivalent to ~--devices --specials~
+- -a :: -rlptgoD recursive, symlink, same permissions, mod time, group/owner, device/special files
+- -p :: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
+- -g :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
+- -o :: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
+- -D :: is equivalent to ~--devices --specials~
 
 --devices: To transfer character and block device files to the remote system to recreate these devices.
 --specials: To transfer special files such as named sockets and fifos.
@@ -39389,10 +39394,9 @@ Transfer everything from remote to local
 - show individual file log
 - show progress and re-sync possible
 - compress
+- files/directories are created on local using local file permission mask
 
-#+BEGIN_EXAMPLE
-  rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/uploads/
-#+END_EXAMPLE
+~rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/uploads/~
 
 ** head, tail <<<bash:head>>> <<<linux:tail>>>
 Last 5 lines
@@ -44005,6 +44009,40 @@ Lando creates database container with:
 - password: wordpress
 - database: wordpress
 
+#+BEGIN_SRC yaml
+  name: scef
+  recipe: wordpress
+  config:
+    webroot: .
+    php: '7.0' # default '7.2'
+    via: nginx # default apache
+
+  # add redis
+  services:
+    cache:
+      type: redis:2.8 # may just be redis
+      persist: true 
+#+END_SRC
+
+For Redis, add the following in wp-config.php according to ~lando info~ for plugin [[https://wordpress.org/plugins/wp-redis/#installation][wp-redis]]
+#+BEGIN_SRC php
+  $redis_server = array(
+      'host'     => 'cache',
+      'port'     => 6379,
+      //'auth'     => '12345',
+      'database' => 0, // Optionally use a specific numeric Redis database. Default is 0.
+  );
+#+END_SRC
+
+#+BEGIN_SRC sh
+  # drop into a MySQL Shell
+  lando mysql
+  lando db-import <file>
+
+  # run php commands
+  lando php
+#+END_SRC
+
 ** Pantheon
 Stop ~Docker for Windows~ and install Lando without ~Docker for Windows~ and ~Git for Windows~
 ~git clone~ from Pantheon, go to the directory and run ~lando init~ and choose pantheon and a site to create ~.lando.yml~ in project root dir.
@@ -47900,7 +47938,7 @@ HEAD is not at tip of branch. It's at that commit. Not changing anything. git ch
 ~git checkout c1 .~ or ~git checkout -f c1 -- .~ sets branch to commit c1 but about to make a commit c4 (Changes to be committed) that is after c3.
 c4 contains all the necessary changes for going back to c1.
 
-~git reset c1~ :: sets branch to commit 1.
+~git reset c1~ :: sets branch to commit 1. set branch to last commit ~git reset --hard HEAD^~
 Reset rewrites history. Only use it for local changes that are never pushed to remote.
 
 ~git revert c1 --no-edit~ undoes commit 1 and creates a commit. --no-edit means to skip the commit message.
@@ -53404,6 +53442,8 @@ Open cmd run as admin and run: =msiexec /i "the path"=
 - All system shortcuts :: Settings > Devices > Keyboard
 
 - Terminal :: ~C-M-t~
+- Copy from Terminal (GNOME) :: ~C-S-c~
+
 - Show All Applications :: ~Super-a~
 - Show Notification tray :: ~Super-m~
 - Run commands :: ~M-F2~
