@@ -48887,17 +48887,57 @@ If the site is not accessed for at least 2 hours, Pantheon suspends all associat
   }
 #+END_SRC
 
-** Disable Newrelic
+** New Relic <<<pantheon:new relic>>>
 https://pantheon.io/docs/new-relic
 
-Newrelic may inject javascript in pages.. Disable it
+*** Ping monitor
+Pantheon.io > Live Environment > Go to New Relic > Synthetics > Create a new monitor > Ping (free)
+- Every 5 mins
 
-Drupal (sites/default/settings.php)
-#+BEGIN_EXAMPLE
+Other domains and URLs can be set up.
+
+*** Disable
+New Relic injects javascript to pages. Disable it
+
+Drupal (sites/default/settings.php) disable New Relic for anonymous traffic
+#+BEGIN_SRC php
+  // Disable New Relic for anonymous users.
   if (function_exists('newrelic_ignore_transaction')) {
-   newrelic_ignore_transaction();
+    $skip_new_relic = TRUE;
+    // Capture all transactions for users with a PHP session.
+    // (SSESS is the session cookie prefix when PHP session.cookie_secure is on.)
+    foreach (array_keys($_COOKIE) as $cookie) {
+      if (substr($cookie, 0, 4) == 'SESS' || substr($cookie, 0, 5) == 'SSESS') {
+	$skip_new_relic = FALSE;
+      }
+    }
+    // Capture all POST requests so we include anonymous form submissions.
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'POST') {
+      $skip_new_relic = FALSE;
+    }
+    if ($skip_new_relic) {
+      newrelic_ignore_transaction();
+    }
   }
-#+END_EXAMPLE
+#+END_SRC
+
+WordPress ~templates/<your_template>/functions.php~
+#+BEGIN_SRC php
+  // Disable New Relic for anonymous users.
+  if (function_exists('newrelic_ignore_transaction')) {
+      $skip_new_relic = !is_user_logged_in();
+
+      // Capture all POST requests so we include anonymous form submissions.
+      if (isset($_SERVER['REQUEST_METHOD']) &&
+	  $_SERVER['REQUEST_METHOD'] == 'POST') {
+	  $skip_new_relic = FALSE;
+      }
+
+      if ($skip_new_relic) {
+	  newrelic_ignore_transaction();
+      }
+  }
+#+END_SRC
 
 ** Cookie <<<pantheon:cookie>>>
 https://pantheon.io/docs/cookies
