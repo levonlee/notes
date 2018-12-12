@@ -49,7 +49,7 @@ There are two things you can do about this warning:
  '(org-export-with-sub-superscripts (quote {}))
  '(package-selected-packages
    (quote
-    (nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
+    (dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

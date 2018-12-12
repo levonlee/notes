@@ -1,6 +1,9 @@
 # notes
 My notes
 
+## Installed MELPA packages
+php-mode htmlize apache-mode dockerfile-mode nginx-mode json-mode yaml-mode
+
 ## run.bat
 
 Windows
