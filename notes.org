@@ -40407,7 +40407,7 @@ Up to 9 open file descriptors can be used at a time.
 #+END_SRC
 
 **** Associative array
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   declare -A mymap
   mymap[foo]=bar
   echo ${mymap[foo]}
@@ -40416,74 +40416,79 @@ Up to 9 open file descriptors can be used at a time.
 
   k=baz
   mymap[$k]=quux
-  ${mymap[$k]} is the same as ${mymap[baz]}
+  ${mymap[$k]} # is the same as ${mymap[baz]}
 
   Key with spaces can be double and single quoted but they are the same as not quoting them
   mymap[foo a]="bar b"
   mymap["foo a"]="bar b"
   mymap['foo a']="bar b"
 
-  Testing whether a value is missing from an associative array
-  $ if [ ${MYMAP[foo]+_} ]; then echo "Found"; else echo "Not found"; fi
-  Found
+  # Testing whether a value is missing from an associative array
+  if [ ${MYMAP[foo]+_} ]; then echo "Found"; else echo "Not found"; fi
+  # Found
 
-  $ if [ ${MYMAP[missing]+_} ]; then echo "Found"; else echo "Not found"; fi
-  Not found
+  if [ ${MYMAP[missing]+_} ]; then echo "Found"; else echo "Not found"; fi
+  # Not found
 
-  $ declare -A MYMAP=( [foo a]=bar [baz b]=quux )
-  $ echo "${!MYMAP[@]}"  # Print all keys - quoted, but quotes removed by echo
-  foo a baz b
+  declare -A MYMAP=( [foo a]=bar [baz b]=quux )
+  echo "${!MYMAP[@]}"  # Print all keys - quoted, but quotes removed by echo
+  # foo a baz b
 
-  $ # Loop through all keys in an associative array
-  $ for K in "${!MYMAP[@]}"; do echo $K; done
-  foo a
-  baz b
+  # Loop through all keys in an associative array
+  for K in "${!MYMAP[@]}"; do echo $K; done
+  # foo a
+  # baz b
 
-  $ # Looping through keys and values in an associative array
-  $ for K in "${!MYMAP[@]}"; do echo $K --- ${MYMAP[$K]}; done
-  foo a --- bar
-  baz b --- quux
+  # Loop through keys and values in an associative array
+  for K in "${!MYMAP[@]}"; do echo $K --- ${MYMAP[$K]}; done
+  # foo a --- bar
+  #baz b --- quux
 
-  Redeclare, clear the whole array
-  $ declare -A MYMAP
-  $ MYMAP[foo]=bar
-  $ echo ${MYMAP[foo]}
-  bar
-  $ declare -A MYMAP    # Re-declaring DOES NOT clear an associative array
-  $ echo ${MYMAP[foo]}
-  bar
-  $ unset MYMAP         # You need to unset and re-declare to get a cleared associative array
-  $ declare -A MYMAP
-  $ echo ${MYMAP[foo]}
+  # Redeclare, clear the whole array
+  declare -A MYMAP
+  MYMAP[foo]=bar
+  echo ${MYMAP[foo]}
+  # bar
 
-  Unset a key
-  $ MYMAP[foo]=bar
-  $ echo ${MYMAP[foo]}
-  bar
-  $ unset ${MYMAP[foo]} # WRONG
-  $ echo ${MYMAP[foo]}
-  bar
-  $ unset MYMAP[foo]    # To delete from an associative array, use "unset" with similar syntax to assigning
-  $                     # BUT see next section if key contains spaces
-  $ echo ${MYMAP[foo]}
+  declare -A MYMAP    # Re-declaring DOES NOT clear an associative array
+  echo ${MYMAP[foo]}
+  # bar
 
-  $ MYMAP[baz]=quux
-  $ echo ${MYMAP[baz]}
-  quux
-  $ K=baz
-  $ unset MYMAP[$K]       # Can unset using a variable for the key too
-  $                       # BUT see next section if variable may contain spaces - always better to quote
-  $ echo ${MYMAP[baz]}
+  unset MYMAP         # You need to unset and re-declare to get a cleared associative array
+  declare -A MYMAP
+  echo ${MYMAP[foo]}
 
-  Unset a key that has spaces
-  $ unset MYMAP[foo Z]     # WRONG
-  $ unset MYMAP["foo Z"]    # You must quote keys containing spaces when you unset in an associative array
-  $ echo ${MYMAP[foo Z]}
+  # Unset a key
+  MYMAP[foo]=bar
+  echo ${MYMAP[foo]}
+  # bar
 
-  Length, same as indexed array
-  $ declare -A MYMAP=( [foo a]=bar [baz b]=quux )
-  $ echo ${#MYMAP[@]}  # Number of keys in an associative array
-#+END_EXAMPLE
+  unset ${MYMAP[foo]} # WRONG
+  echo ${MYMAP[foo]}
+  # bar
+
+  unset MYMAP[foo]    # To delete from an associative array, use "unset" with similar syntax to assigning
+		      # BUT see next section if key contains spaces
+  echo ${MYMAP[foo]}
+
+  MYMAP[baz]=quux
+  echo ${MYMAP[baz]}
+  # quux
+
+  K=baz
+  unset MYMAP[$K]       # Can unset using a variable for the key too
+			# BUT see next section if variable may contain spaces - always better to quote
+  echo ${MYMAP[baz]}
+
+  # Unset a key that has spaces
+  unset MYMAP[foo Z]     # WRONG
+  unset MYMAP["foo Z"]    # You must quote keys containing spaces when you unset in an associative array
+  echo ${MYMAP[foo Z]}
+
+  # Length, same as indexed array
+  declare -A MYMAP=( [foo a]=bar [baz b]=quux )
+  echo ${#MYMAP[@]}  # Number of keys in an associative array
+#+END_SRC
 
 *** echo and print
 #+BEGIN_SRC bash
