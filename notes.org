@@ -41002,6 +41002,14 @@ Run a command with several arguments that have minor difference using curly brac
 - ~cp /etc/rc.conf{,-old}~ eq. to ~cp /etc/rc.conf /etc/rc.conf-old~
 - ~mv /etc/rc.conf{-old,}~ eq. to ~mv /etc/rc.conf-old /etc/rc.conf~
 
+*** xclip <<<bash:xclip>>>
+#+BEGIN_SRC sh
+  sudo apt install xclip
+
+  # select/copy
+  xclip -sel clip < ~/.ssh/id_rsa.pub
+#+END_SRC
+
 *** screen <<<bash:screen>>>
 Simply run ~screen~ creates a screen session.
 
@@ -48631,26 +48639,43 @@ You may encounter 403 Forbidden and HTTP request failed errors. Try to use SSH o
 #+END_EXAMPLE
 
 ** Add a remote, remove a remote and its branches, change upstream
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git remote add origin https://...
   git remote -v
+
+  # remove a remote
   git remote rm origin
-  // rename a remtoe
+
+  # rename a remtoe
   git remote rename origin li
+
+  # change upstream to origin/master for local branch master
   git branch master --set-upstream-to origin/master
-#+END_EXAMPLE
+#+END_SRC
+
+Change remote from https to ssh. You need to add public key to GitHub first
+#+BEGIN_SRC sh
+  git remote -v
+
+  # origin  https://github.com/USERNAME/REPOSITORY.git (fetch)
+  # origin  https://github.com/USERNAME/REPOSITORY.git (push)
+
+  git remote set-url origin git@github.com:USERNAME/REPOSITORY.git
+#+END_SRC
 
 ** Push to 2 remotes
 An existing remote: origin
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git remote add origin ssh_or_github_https_link_with_.git_at_the_end
+
   # check remotes
   git remote -v
-  # cat .git/config
-  [remote "origin"]
-    url=ssh://.../repo.git
-    fetch= +refs/heads/*:refs/remotes/origin/*
-#+END_EXAMPLE
+
+  cat .git/config
+  # [remote "origin"]
+  #   url=ssh://.../repo.git
+  #   fetch= +refs/heads/*:refs/remotes/origin/*
+#+END_SRC
 
 Method 1: Configure Origin as a Multi-Remote Destination
 Add another push URL for origin within ~.git/config~
@@ -48663,12 +48688,12 @@ Commits will be pushed to both remote destinations automatically on ~git push or
 #+END_EXAMPLE
 
 Method 2: Add another remote github
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git remote add github git@github.com:username/reponame.git
   # or a https directly from github
   # Push and track the current local branch master
   git push -u github master
-#+END_EXAMPLE
+#+END_SRC
 
 ** Tag
 #+BEGIN_EXAMPLE
