@@ -38174,6 +38174,13 @@ Or specify a public key file :: ~ssh-copy-id -i ~/.ssh/mykey remoteusername@123.
 
 **** Remove passphrase for private key id_rsa
 #+BEGIN_SRC bash
+  cd ~/.ssh
+  ssh-keygen -p -f id_rsa
+  # enter old passphrase and new
+#+END_SRC
+
+The following no longer works
+#+BEGIN_SRC bash
   # Make a backup
   cp ~/.ssh/id_rsa ~/.ssh/id_rsa.backup
   rm ~/.ssh/id_rsa
@@ -40281,9 +40288,12 @@ File descriptors. First 3 are reserved.
 
 <<<bash:tee>>>
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Redirect stdout of a commannd to a file and display stdout
   date | tee testfile
+
+  # tee can be used to bypass pagination (press q to quit)
+  man ls | tee
 
   # Redirect stdout to a file and pass stdout to another command as stdin
   date | tee testfile | less
@@ -40313,10 +40323,10 @@ File descriptors. First 3 are reserved.
   exec 1>stdOutFile
   echo "This doesn't display as STDOUT is redirected to a file"
   echo "This is an error and in errorLogFile" >&2
-#+END_EXAMPLE
+#+END_SRC
 
 Up to 9 open file descriptors can be used at a time.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Open a custom file descriptor to a file
   exec 3>customLog
   echo "This goes to file descriptor 3" >&3
@@ -40330,7 +40340,7 @@ Up to 9 open file descriptors can be used at a time.
 
   # Backup STDIN is a little different
   exec 7<&0
-#+END_EXAMPLE
+#+END_SRC
 
 *** Array <<<bash:array>>>
 #+BEGIN_SRC bash
@@ -40476,12 +40486,12 @@ Up to 9 open file descriptors can be used at a time.
 #+END_EXAMPLE
 
 *** echo and print
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   echo -e "Hello\nWorld"; 
   # echo newline -e to use \n etc
   # always wrap variable in double quotes to preserve newline character
   echo "$output"
-#+END_EXAMPLE
+#+END_SRC
 
 *** printf
 Print multilines
@@ -40540,18 +40550,24 @@ date +%FT%H%M%S :: 2017-10-13T16-39-02 use this as it is filename safe
 
 *** Passing arguments to command
 Variable can be passed to a command as argument value which is preceded by the argument name
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   ua='User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'
   curl https://a.ca/ -L \
     -H "$ua"
-#+END_EXAMPLE
+#+END_SRC
  
 Argument name and value cannot be passed in the above way. Use bash:array
-#+BEGIN_EXAMPLE
-  // create a non-associative array
+#+BEGIN_SRC bash
+  # create a non-associative array
   declare -a curlArgs=('-H' "keyheader: value" '-H' "2ndkeyheader: 2ndvalue")
   curl "${curlArgs[@]}"
-#+END_EXAMPLE
+
+  # args inside args
+
+  declare -a historyDirs=(":(icase)wp-content/themes" ":(icase)wp-content/plugins")
+  declare -a gitlogArgs=("--author=$j" '--since=last 1 month' '--pretty=tformat:' '--numstat' '--' "${historyDirs[@]}")
+  git log "${gitlogArgs}"
+#+END_SRC
 
 *** String Operators
 #+BEGIN_EXAMPLE
@@ -41174,13 +41190,19 @@ Ubuntu
   # S-Q to quit
 #+END_EXAMPLE
 
-*** set, <<bash:set>>>
-#+BEGIN_EXAMPLE
+*** set, <<<bash:set>>>
+#+BEGIN_SRC bash
+  # shell
   set -ex; command1; command2; ...
-#+END_EXAMPLE
 
--x :: enable a mode of the shell where all executed commands are printed to the terminal.
--e :: under common situation, exit when there's an error
+  # bash script
+  set -ex
+  command1
+  command2
+#+END_SRC
+
+- -x :: enable a mode of the shell where all executed commands are printed to the terminal.
+- -e :: under common situation, exit when there's an error
 
 ** Cheat
 #+BEGIN_EXAMPLE
@@ -42677,7 +42699,7 @@ make importlivedb
 #+END_SRC
 
 *** Check container status and restart services
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   #!/bin/bash
   container=mycontainer
   containerstatus=$(docker inspect -f {{.State.Running}} $container)
@@ -42700,10 +42722,11 @@ make importlivedb
       echo "Restarting mysql in container.."
       docker exec $container service mysql restart
       docker exec $container service mysql status
+      # command exit status, command exit code, 0 is successful
       if [ $? = "0" ]; then
-        echo "mysql is restarted"
+	echo "mysql is restarted"
       else
-        echo "mysql could not be restarted."
+	echo "mysql could not be restarted."
       fi
     fi
 
@@ -42723,7 +42746,7 @@ make importlivedb
     fi
 
   fi
-#+END_EXAMPLE
+#+END_SRC
 
 *** Replace string in .sql
 https://github.com/tazotodua/useful-php-scripts/blob/master/database-modifier-when-migrating-wordpress
@@ -48050,6 +48073,15 @@ git checkout feature
 git reset --hard common1
 git push -f
 
+*** Pull from remote/master to master branch which is not the current branch
+You're at local branch ~dev~ and you want to pull remote/master to your local master branch
+
+~git fetch origin master:master~
+
+This does not work if current branch is local master
+
+Don't use ~git pull origin master~ as it pulls from origin/master to local and current ~dev~ branch
+
 *** Orphan Branch with no parent
 github:gh-pages
 
@@ -48243,8 +48275,10 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
 =git log -3= Last 3 commits
 =git log --grep=<pattern>= Search commit message
 
-%s :: subject (commit message)
-#+BEGIN_EXAMPLE
+- ~%s~ :: subject (commit message)
+
+Show commits for multiple repos between start/end dates:
+#+BEGIN_SRC bash
   #!/bin/bash
 
   TMPLOG=/mnt/e/project-logs.csv
@@ -48254,15 +48288,41 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
 
   for i in "${gitrepos[@]}"; do
      if [ -d $i ] && [ -d $i/.git ]; then
-        cd $i
-        git log --since='last 2 months' --pretty=format:"$i,%ai,%s" >> $TMPLOG
-        # After and including May 1, 2018
-        # git log --after='2018-5-1'
-        echo "" >> $TMPLOG
-        cd ..
+	cd $i
+	git log --since='last 2 months' --pretty=format:"$i,%ai,%s" >> $TMPLOG
+	# After and including May 1, 2018
+	# git log --after='2018-5-1'
+	echo "" >> $TMPLOG
+	cd ..
      fi;
   done
-#+END_EXAMPLE
+#+END_SRC
+
+- Show an author's commits (email can also be used) :: ~git log --author="Li Li" --before="2018-12-01" --after="2018-11-01"~
+- Show an auhtor's commits by number of files changed, insertion and deletion :: ~git log --author="Li Li" --oneline --shortstat~
+- Show an author's commits by lines added/deleted for each file :: ~git log --author="Li Li" --pretty=tformat: --numstat~
+- Exclude sub folders and files or include
+#+BEGIN_SRC bash
+  # -- <path> :: limit commit history by path
+  git log -- . ":(exclude)subfolder"
+
+  # case-insensitive
+  git log -- . ":(exclude,icase)wp-content/plugins"
+
+  # exclude multiple
+  git log -- . ":(exclude,icase)wp-content/plugins" ":(exclude,icase).idea"
+
+  # include only
+  git log -- ":(icase)wp-content/themes" ":(icase)wp-content/plugins"
+
+  # include and exclude
+  git log -- ":(icase)wp-content/themes" ":(exclude,icase)wp-content/themes/abc"
+#+END_SRC
+
+- Show an author's commits by total lines added/deleted
+#+BEGIN_SRC sh
+  git log --author="Li Li" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
+#+END_SRC
 
 ** Head Detached Mode, checkout previous commit
 At the current branch master, find hash of the old commit that you want to revert back to and checkout
