@@ -11751,10 +11751,10 @@ wp-config.php should be chmod:660 or chmod:664
 #+END_SRC
 
 Run this to check which files are not 644 and which directories are not 755 <<<wp:check file permissions>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   find . -type d -not -perm 755 -o -type f -not -perm 644
   find . -type d -not -perm 755 -not -path "./.git/*" -o -type f -not -perm 644 -not -path "./.git/*"
-#+END_EXAMPLE
+#+END_SRC
 
 Multiple users upload as www-data linux:permission:users
 
@@ -12307,6 +12307,21 @@ Create a url path /abc which points to index.html (can't have php files)
     
   }
 #+END_EXAMPLE
+
+** TS: Download failed. Destination directory for file streaming does not exist or is not writable
+When updating plugins from wp-admin. wp requires the temp folder to be chmod:777
+#+BEGIN_SRC sh
+  # create a temp folder with 777 permission outside of the webroot
+  cd ..
+  mkdir temp
+  chmod 777 temp
+  chown www-data:www-data
+#+END_SRC
+
+Add this line to wp-config.php
+#+BEGIN_SRC php
+  define('WP_TEMP_DIR', ABSPATH . '/../temp/');
+#+END_SRC
 
 ** TS: Hacked <<<wp:ts:hacked>>>
 https://codex.wordpress.org/FAQ_My_site_was_hacked
@@ -47351,7 +47366,8 @@ proxy headers in PHP are HTTP_X_REAL_IP
 
 *** Sample: Redirect a path to a different proxy <<<nginx:redirect path to proxy>>>
 wp:redirect path to wp
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC nginx
   server {
     listen 80;
     server_name abc.com www.abc.com;
@@ -47362,14 +47378,14 @@ wp:redirect path to wp
       proxy_set_header Host $http_host;
       proxy_pass http://127.0.0.1:8787/;
     }
-    
+
     location / {
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header Host $http_host;
       proxy_pass http://127.0.0.1:9977;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Rewrite directive <<<nginx:d:rewrite>>>
 http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#rewrite
@@ -47401,6 +47417,19 @@ Parameter ipv6only can be set only once across all config files. Default is on. 
 
 ** fastcgi directives - Module ngx_http_fastcgi_module <<<nginx:d:fastcgi>>>
 - fastcgi_read_timeout :: default 60s, 3600s <<<nginx:d:fastcgi_read_timeout>>>
+
+** add_header <<<nginx:d:add_header>>>
+Context: http, server, location, if in location
+Syntax: add_header name value [always]
+
+Add to a response header. The value can contain variables.
+- always :: By default the directive only adds header if the response code is in a certain range. ~always~ adds it regardless of the response code
+
+#+BEGIN_SRC nginx
+  add_header Content-Security-Policy "default-src * data: 'unsafe-eval' 'unsafe-inline'" always
+  add_header X-Frame-Options "SAMEORIGIN" always;
+  add_header X-XSS-Protection "1; mode=block" always;
+#+END_SRC
 
 ** Server name redirect <<<nginx:d:redirect>>>
 Use nginx:d:rewrite for regex redirect
