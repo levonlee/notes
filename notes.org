@@ -1960,6 +1960,70 @@ if (!class_exists('MyClass')) {
 }
 #+END_EXAMPLE
 
+** Global
+Define superglobal
+#+BEGIN_SRC php
+  $GLOBALS['a'] = 'localhost';
+
+  function body(){
+	  echo $GLOBALS['a'];
+  }
+#+END_SRC
+
+Pay attention to global scope
+#+BEGIN_SRC php
+  <?php
+
+  // $a is not defined as a superglobal variable
+  $a = 'root a';
+  $b = 'root b';
+
+  function f1() {
+	  // $a is not defined as global inside a function
+	  // this causes sub level functions cannot access $a
+
+	  $a = 'a defined in f1';
+	  $b = 'b defined in f1';
+
+	  echo 'f1 a: ' . $a . PHP_EOL;
+
+	  function f2() {
+		  global $a, $b;
+
+		  echo 'f2 a: ' . $a . PHP_EOL;
+
+		  global $b;
+		  $b = 'b defined in f2';
+		  echo 'f2 b: ' . $b . PHP_EOL;
+
+		  function f3() {
+			  global $a, $b;
+			  echo 'f3 a: ' . $a . PHP_EOL;
+			  echo 'f3 b: ' . $b . PHP_EOL;
+		  }
+
+			  echo 'running f3' . PHP_EOL;
+		  f3();
+
+	  }
+
+		  echo 'running f2' . PHP_EOL;
+	  f2();
+  }
+
+  f1();
+
+  /*
+	  f1 a: a defined in f1
+	  running f2
+	  f2 a: root a
+	  f2 b: b defined in f2
+	  running f3
+	  f3 a: root a
+	  f3 b: b defined in f2
+  ,*/
+#+END_SRC
+
 ** Http Request - cURL, file_get_contents
 *** cURL-less <<<php:file_get_contents>>>
 Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
