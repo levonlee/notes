@@ -40267,7 +40267,7 @@ File descriptors. First 3 are reserved.
 | 1 | STDOUT | Standard output (echo) |
 | 2 | STDERR | Standard error         |
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Redirect stdout, creates if not exist or overwrites a file
   ls -al goodfile > stdoutlogfile
   # same as 2>, 3> etc.
@@ -40284,7 +40284,10 @@ File descriptors. First 3 are reserved.
 
   # Redirect stdout and stderr to the same file
   ls -al goodfile badfile &> errorAndOutput
-#+END_EXAMPLE
+
+  # suppress stdout and stderr
+  ls -al goodfile badfile &> /dev/null
+#+END_SRC
 
 <<<bash:tee>>>
 
@@ -40307,7 +40310,7 @@ File descriptors. First 3 are reserved.
   # Redirect stdout of a command to one or multiple files and save stdout to a variable
   # a file must be behind a tee command
   # By default tee overwrites the file. Use -a to append to the end
-  $output = $(date | tee testfile1 testfile2)
+  $output = $(date | tee -a testfile1 testfile2)
 
   # Redirect stdout to a variable and display to terminal in real time (not to stdout!)
   # Works on Ubuntu and RedHat
@@ -40666,6 +40669,37 @@ Not floating-point values
 - -w FILE :: FILE exists and the write permission is granted.
 - -x FILE :: FILE exists and the execute permission is granted.
 
+*** Function <<<bash:function>>>
+#+BEGIN_SRC bash
+  function_name () {
+  }
+
+  # or
+
+  function function_name {
+  }
+
+  # Pass arguments
+
+  print_something () {
+    local var1='local var1'
+    echo Hello $1
+    echo $var1
+    # local var1
+    # global var1 is not changed
+    echo $var2
+    # global var2
+    return $1
+  }
+
+  var1='global var1'
+  var2='global var2'
+  print_something Mars
+
+  output=$( print_something "Mars" )
+  output=$( print_something "$1" )
+#+END_SRC
+
 *** Special Parameters
 man bash
 $@ => "$1" "$2" "$3" ...
@@ -40881,11 +40915,11 @@ Each user can have his own cron table. Use ~crontab~ to manage a user's cron job
 
 List current user's cron table (called crontab) ~crontab -l~
 List a user's cron table :: ~crontab -u username -l~
-User crontabs are in /var/spool/cron/*
+User crontabs are in ~/var/spool/cron/crontabs/yourusername~ or general ~/var/spool/cron/*~ 
 
 List system-wide crontab. You shouldn't need to modify it. ~cat /etc/crontab~
 
-Packages usually saved under /etc/cron.d/* use the same syntax as /etc/crontab/
+Packages usually saved under ~/etc/cron.d/*~ use the same syntax as ~/etc/crontab/~
 
 Backup your crontab before edit ~crontab -l > ~/cron.back~
 To add entries to cron table ~crontab -e~
@@ -40907,7 +40941,7 @@ Packages put crontab file to folder /etc/cron.d/*
 
 *** User crontab syntax and system-wide syntax
 User Crontab Syntax ~min hour dayofmonth month dayofweek command~
-- /var/spool/cron/*
+- ~/var/spool/cron/crontabs/yourusername~ or ~/var/spool/cron/*~
 
 System Crontab Syntax ~min hour dayofmonth month dayofweek user command~
 - /etc/crontab
