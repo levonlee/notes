@@ -1,3 +1,4 @@
+
 #+TITLE: My Notes
 #+OPTIONS: H:4
 #+SETUPFILE: theme-readtheorg.setup
@@ -14158,7 +14159,7 @@ Just remember to set the width or height for the container.
 Combine with Bootstrap div.container and div.row, you can set a specific row to take the rest of the container height.
 You don't have to get height of any other rows.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .container.flex-column {
     display:flex;
     flex-direction:column;
@@ -14169,7 +14170,7 @@ You don't have to get height of any other rows.
   .row.cover-row {
     flex-grow:1;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Examples
 #+BEGIN_EXAMPLE
@@ -38061,18 +38062,18 @@ Ubuntu 12.04, 14.04 and 16.04 uses Grub 2
 *** Shutdown Ubuntu
 shutdown -h now
 
-** Environment and Shell Variables
+** Environment and Shell Variables <<<linux:env>>>
 Child processes inherit the environmental variables of the parent process.
 
-List all env. variables :: ~printenv~ or ~env~
-Get an env. variable :: ~printenv HOME~ or ~echo $HOME~
+- List all env. variables :: ~printenv~ or ~env~
+- Get an env. variable :: ~printenv HOME~ or ~echo $HOME~
 
-Set an env. variable for the current shell and all processes started from current shell :: ~export TERM=xterm-256color~
-Set an env. variable using a shell variable :: ~export TEST_VAR~
+- Set an env. variable for the current shell and all of its child processes :: ~export TERM=xterm-256color~
+- See a list of env. variables that are manually set :: ~export -p~
+- Set an env. variable using a shell variable :: ~export TEST_VAR~
+- Set variable only for current shell :: VARNAME="value"
 
-Set variable only for current shell :: VARNAME="value"
-
-Set permanently for all future bash sessions, add such line to .bashrc file in $HOME
+Set permanently for all future bash sessions, add such line to ~.bashrc~ file under ~$HOME~
 
 You may need to load ~/.bashrc inside ~/.bash_profile
 #+BEGIN_SRC bash
@@ -38175,7 +38176,7 @@ Which group a user belongs to ~groups username~
 *** Change a user's password
 Login as root and run ~passwd~, ~sudo passwd ausername~
 
-*** List all users =cut -d: -f1 /etc/passwd= or =cat /etc/passwd=
+*** List all users =cut -d: -f1 /etc/passwd= or =cat /etc/passwd= <<<linux:/etc/passwd>>>
 - Login username
 - Password (always x)
 - UID (<500 are system accounts, > 500 are users)
@@ -38183,6 +38184,9 @@ Login as root and run ~passwd~, ~sudo passwd ausername~
 - Comment field
 - Location of HOME directory
 - Default shell for the user
+
+Refer to bash:awk
+~awk -F':' 'BEGIN{OFS="\t"; print "Login Username","Password","UID", "Group ID (GID)", "Comment", "Home Dir", "Default shell"} {print $1,$2,$3,$4,$5,$6,$7}' /etc/passwd | column -t -s $'\t'~
 
 *** Switch to superuser 
 - Debian =sudo su=
@@ -39098,6 +39102,89 @@ Sort by modified date newest first <<<linux:find:newest>>>
 - -A NUM :: number of trailing lines of text
 - -B NUM :: number of leading lines of text
 - --exclude-dir=node_modules
+
+<<<linux:env:GREP_OPTIONS>>>
+Set default options using linux:env
+~export GREP_OPTIONS='--color=auto --binary-files=without-match'~ then you don't have to provide ~-I~ and ~--color~ in command lines. Escape single quotes and backslash using backslash and separate options by space.
+
+*** column <<<bash:column>>>
+Default delimiter is space
+- Use colon :: ~cat /etc/passwd | column -t -s ':'~
+- Use tab :: ~cat atabdelimited.csv | column -t -s $'\t'~ or ~column -t -s '\t'~ Refer to linux:/etc/passwd
+
+*** awk <<<bash:awk>>>
+https://www.tutorialspoint.com/awk/index.htm
+
+- Space delimited by default.
+- ~BEGIN~ > read a line from input > execute AWK commands using the line (~/pattern/~ to filter the line) > repeat > ~END~
+- Syntax :: ~awk 'BEGIN{command1; command2;} /pattern/ {command3; command4;} END {command5; command6;}'~
+
+#+BEGIN_SRC bash
+  awk 'BEGIN{printf "Col1\tCol2\tCol3\n"} {print}' marks.txt
+
+  # use a command file
+  awk -f command.awk marks.txt
+
+  # command.awk content
+  # BEGIN{printf "Col1\tCol2\tCol3\n"} {print}
+
+  # define variables inside awk
+  awk -v name=Jerry 'BEGIN{printf "Name = %s\n", name}'
+
+  # print columns
+  awk '{print $3 "\t" $4}' marks.txt
+
+  # Using pattern to filter lines to run body commands
+  awk '/a/ {print $3 "\t" $4}' marks.txt
+
+  # line count
+  awk '/a/ {print $3 "\t" $4; ++cnt } END {print "Count = ", cnt}' marks.txt
+
+  # $0 is the line, length($0)
+  awk 'length($0) > 18 {print length($0)}' marks.txt
+#+END_SRC
+
+Options
+- ~-F~ :: change delimiter. Default is space
+  - tab :: ~-F $'\t'~ or ~-F "\t"~
+  - colon or comma :: ~-F ":"~ ~-F ','~
+  - Separator can be a single character or a regex.
+  - Default space, multiple spaces are treated as one column
+  - Other single character :: e.g. for comma, multiple commas are treated as multiple columns
+  - To enable multiple commas as one comma/column, use ~-F ',*'~
+
+AWK Variables
+- Print all variables to ~awkvars.out~
+  - ~awk --dump-variables ''~ with no commands
+  - Print one var ~awk 'BEGIN {print "Arguments =", ARGC}' f1.txt f2.txt~
+- May change variables using ~-v FS='\t'~ or ~BEGIN {FS= ","}~
+- ~ARGC~ and ~ARGIND~
+  - multiple files as input
+    - ~awk 'BEGIN {print "Arguments =", ARGC}' f1.txt f2.txt~ number of arguments 3 which are ~awk~, ~f1.txt~ and ~f2.txt~
+    - ~cat f1.txt | awk 'BEGIN {print "Arguments =", ARGC}'~ :: only 1 argument ~awk~
+  - ~ARGIND~ is the index ~print "Filename = ", ARGV[ARGIND]~
+  - Loop arguments :: multiline commands do not require ~\~
+#+BEGIN_SRC sh
+  awk 'BEGIN { 
+     for (i = 0; i < ARGC - 1; ++i) { 
+	printf "ARGV[%d] = %s\n", i, ARGV[i] 
+     } 
+  }' f1.txt f2.txt
+#+END_SRC
+- FILENAME
+- FS :: input field separator. Default space
+- FIELDSWIDTHS :: instead of using FS, a space-delimited list of field widths variable can be set to define fields
+- OFS :: output field separator. Default space
+  - ~awk -F':' 'BEGIN{OFS="\t";} {print $3, $4}' /etc/passwd~ Refer to linux:/etc/passwd
+- RS :: record separator. Default newline ~\n~
+- NF :: number of fields/columns in current line
+- NR :: the number of the current line
+- FNR :: similar to NR but relative to the current file
+- IGNORECASE :: when it's set, pattern becomes case-insensitive
+  - ~awk 'BEGIN{IGNORECASE = 1} /amit/' marks.txt~
+
+Variables that are functions related
+- RSTART :: the first position in the string matched by match function ~awk 'BEGIN { if (match("One Two Three", "Thre")) { print RSTART } }'~
 
 *** Folder structure <<<linux:tree>>>
 #+BEGIN_SRC sh
@@ -40377,6 +40464,49 @@ Run ~sudo apt-get update~ and maybe ~sudo apt-get upgrade~ after.
 https://askubuntu.com/a/430944/481813
 
 ** Bash File, Input and Output
+*** Version ~echo $BASH_VERSION~
+*** Last directory =~-=
+#+BEGIN_SRC sh
+  cd ~/abc
+  cd xyz
+  echo ~-
+#+END_SRC
+
+*** Range <<<bash:range>>>
+#+BEGIN_SRC sh
+  echo {1..100}
+  # 100 numbers from 1 to 100
+
+  touch file_{1..100}
+
+  # add padding (one zero in front is enough)
+  echo {01..100}
+  # 01 02 ... 100
+
+  # range with increment other than 1
+  echo {1..10..2}
+  # 1 3 5 7 9
+
+  echo {1..10..3}
+  # 1 4 7 10
+
+  echo {A..Z}
+  # A to Z
+
+  echo {A..z}
+  # A to z
+
+  echo {a..Z}
+  # not a to Z!
+  # a ` _ ^ ] [ Z
+
+  echo {w..d..2}
+  # w u s q o m k i g e
+
+  # customize range
+  touch {apple,banna,cherry,durian}_{01..100}{w..d}
+#+END_SRC
+
 *** File Descriptors
 File descriptors. First 3 are reserved.
 | 0 | STDIN  | Standard input         |
@@ -40750,7 +40880,7 @@ Not floating-point values
   # if var3 is not provided, then default is string _
 #+END_EXAMPLE
 
-*** <<<Bash if>>> <<<bash:if>>>
+*** if <<<bash:if>>>
 
 #+BEGIN_SRC bash
   if [ conditions ]; then
@@ -41326,9 +41456,9 @@ echo 'end line' | cat input.txt - > output.txt
 Add '# ' in front of every line
 jail.conf is the source file, and jail.local is the destination file.
 After it's run, jail.conf is not affected.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   awk '{ printf "# "; print; }' /etc/fail2ban/jail.conf | sudo tee /etc/fail2ban/jail.local
-#+END_EXAMPLE
+#+END_SRC
 
 *** sudo
 Install sudo =apt-get update && apt-get install -y sudo less=
