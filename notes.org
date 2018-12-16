@@ -38068,11 +38068,10 @@ Child processes inherit the environmental variables of the parent process.
 
 - List all env. variables :: ~printenv~ or ~env~
 - Get an env. variable :: ~printenv HOME~ or ~echo $HOME~
-
 - Set an env. variable for the current shell and all of its child processes :: ~export TERM=xterm-256color~
 - See a list of env. variables that are manually set :: ~export -p~
 - Set an env. variable using a shell variable :: ~export TEST_VAR~
-- Set variable only for current shell :: VARNAME="value"
+- Set variable only for current shell :: ~VARNAME="value"~
 
 Set permanently for all future bash sessions, add such line to ~.bashrc~ file under ~$HOME~
 
@@ -38105,25 +38104,28 @@ Use ~env~ to modify the environment that programs run in
   env VAR1="blahblah" command_to_run command_options
 #+END_EXAMPLE
 
-List all variables - shell, environmental, local and shell functions :: ~set~
-List only shell and environmental variables only :: ~(set -o posix; set)~
+- List all variables - shell, environmental, local and shell functions :: ~set~
+- List only shell and environmental variables only :: ~(set -o posix; set)~
+- Shell and env. variables should in uppercase while local variables should be in lowercase
+- Set a shell variable :: ~TEST_VAR='Hello World!'~
+- Confirm a variable is not an env. variable :: ~printenv | grep TEST_VAR~
+- Search a variable :: ~set | grep TEST_VAR~
 
-Shell and env. variables should in uppercase while local variables should be in lowercase
+- Demote an env. variable to shell variable :: ~export -n TEST_VAR~
+- Unset a shell or env. variable :: ~unset TEST_VAR~
 
-Set a shell variable :: ~TEST_VAR='Hello World!'~
-Confirm a variable is not an env. variable :: ~printenv | grep TEST_VAR~
-Search a variable :: ~set | grep TEST_VAR~
+http://en.tldp.org/LDP/abs/html/internalvariables.html
 
-Demote an env. variable to shell variable :: ~export -n TEST_VAR~
-Unset a shell or env. variable :: ~unset TEST_VAR~
-
-
-| PWD    | Current directory                           |
-| OLDPWD | Previous directory. ~cd -~                  |
-| _      | The most recent previously executed command |
-|        |                                             |
-|        | Shell Variables                             |
-|        |                                             |
+- ~MACHTYPE~ :: machine type. Used to distinguish OS platforms e.g. apple or linux?
+- ~HOSTNAME~ :: system/computer name
+- ~BASH_VERSION~
+- ~SECONDS~ ::  number of seconds the Bash session has run. Good for bash script running time
+- ~$0~ :: the script file name in which ~$0~ is called
+- ~PWD~ :: current directory
+- ~OLDPWD~ =~-= :: previous dir ~cd -~ =echo ~!=
+- ~_~ :: last argument of previous command executed. ~echo $_~
+  - ~ls -al >/dev/null && echo $_~ :: last argument is ~-al~
+  - ~du >/dev/null~ :: last argument is ~du~
 
 ** User Management, Superuser, sudo
 *** Create and delete a user, Add user to sudo group <<<linux:user>>>
@@ -40788,7 +40790,7 @@ https://askubuntu.com/a/430944/481813
   echo ~-
 #+END_SRC
 
-*** Range <<<bash:range>>>
+*** range <<<bash:range>>>
 #+BEGIN_SRC sh
   echo {1..100}
   # 100 numbers from 1 to 100
@@ -40905,6 +40907,20 @@ Up to 9 open file descriptors can be used at a time.
 
   # Backup STDIN is a little different
   exec 7<&0
+#+END_SRC
+
+*** declare <<<bash:declare>>>
+#+BEGIN_SRC sh
+  # integer
+  declare -i d=123
+
+  # read only, var can't be changed
+  declare -r e=456
+
+  o=hello
+
+  # uppercase -u, lowercase -l
+  declare -u upper=$o
 #+END_SRC
 
 *** Array <<<bash:array>>>
@@ -41057,17 +41073,23 @@ Up to 9 open file descriptors can be used at a time.
 
 *** echo and print
 #+BEGIN_SRC bash
+  # without quotes, need to escape special characters
+  echo $o, world \(planet\)!
+
+  # single quotes will not intepret variables
+  echo '$o, world (planet)!' # $o, world (planet)!
+
+  # enable backslash escape
   echo -e "Hello\nWorld"; 
   # echo newline -e to use \n etc
   # always wrap variable in double quotes to preserve newline character
-  echo "$output"
 #+END_SRC
 
-*** printf
-Print multilines
-#+BEGIN_EXAMPLE
+*** printf <<<bash:printf>>>
+#+BEGIN_SRC sh
+  # e.g. Print multilines
   printf '%s\n%s\n' "$line1" "$line2"
-#+END_EXAMPLE
+#+END_SRC
 
 *** Read command output line by line
 #+BEGIN_SRC bash
