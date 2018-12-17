@@ -42492,33 +42492,24 @@ Install docker:docker compose:ubuntu
 
 ** Command Help ~docker docker-subcommand --help~
 ** Images
-List all images :: ~docker images~
-List all dangling images which can be removed :: ~docker images -f "dangling=true"~
-
-Remove all dangling images (-q is to return IDs only)
-#+BEGIN_EXAMPLE
-  docker rmi $(docker images -f "dangling=true" -q --no-trunc)
-#+END_EXAMPLE
-
-Remove all none images
-~docker rmi $(docker images | grep "none" | awk '/ / { print $3 }')~
-
-Download an image :: ~docker pull phusion/baseimage~ or with a tag ~docker pull phusion/baseimage:0.9.18~
-Remove an image :: ~docker rmi imageName~
-Save an image to tar file :: ~docker save -o /path/docker-image-file.tar docker-image-name~
-Import a tar to image :: ~docker load -i /path/docker-image-file.tar~
-
-Search image in Docker repository :: ~docker search ubuntu~
-
-~docker image inspect php:7.0-fpm~ to see image setting
+- List all images :: ~docker images~
+- List all dangling images which can be removed :: ~docker images -f "dangling=true"~
+- Remove all dangling images (-q is to return IDs only) :: ~docker rmi $(docker images -f "dangling=true" -q --no-trunc)~
+- Remove all none images :: ~docker rmi $(docker images | grep "none" | awk '/ / { print $3 }')~
+- Download an image :: ~docker pull phusion/baseimage~ or with a tag ~docker pull phusion/baseimage:0.9.18~
+- Remove an image :: ~docker rmi imageName~
+- Save an image to tar file :: ~docker save -o /path/docker-image-file.tar docker-image-name~
+- Import a tar to image :: ~docker load -i /path/docker-image-file.tar~
+- Search image in Docker repository :: ~docker search ubuntu~
+- Setting for an image :: ~docker image inspect php:7.0-fpm~
 
 Extract Dockerfile from an image. Use one or more of below
 - Use image:dockerfile-from-image
-- docker image inspect <image-name>
-- docker history --no-trunc <image-name>
-- sudo ./test.sh <image-name>
+- ~docker image inspect <image-name>~
+- ~docker history --no-trunc <image-name>~
+- ~sudo ./test.sh <image-name>~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   #!/bin/bash
   docker history --no-trunc "$1" | \
   sed -n -e 's,.*/bin/sh -c #(nop) \(MAINTAINER .*[^ ]\) *0 B,\1,p' | \
@@ -42534,7 +42525,7 @@ Extract Dockerfile from an image. Use one or more of below
   {{with .Config.Entrypoint}}ENTRYPOINT {{json .}}{{end}}
   {{with .Config.Cmd}}CMD {{json .}}{{end}}
   {{with .Config.OnBuild}}ONBUILD {{json .}}{{end}}' "$1"
-#+END_EXAMPLE
+#+END_SRC
 
 *** docker build, docker tag
 With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
@@ -44576,18 +44567,24 @@ dockerfile-from-image.rb (same as GitHub)
 #+END_EXAMPLE
 
 ** image:ubuntu
-~docker run -it --rm --privileged ubuntu:xenial /bin/bash~
+#+BEGIN_SRC sh
+  # as the time of writing, these lines are equivalent
+  docker pull ubuntu:latest
+  docker pull ubuntu:18.04
+  docker pull ubuntu:bionic
+  docker pull ubuntu:bionic-20181112
 
-trusty: 14.04
-xenial (latest): 16.04
+  # run and bash in
+  docker run -it --rm --privileged ubuntu:xenial /bin/bash
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   services:
     nodejs:
       image: ubuntu:latest
-      
+
   tty: true
-#+END_EXAMPLE
+#+END_SRC
 
 ** image:node
 node:boron
@@ -52978,12 +52975,18 @@ Consider extend timeout
 - php.ini:max_execution_time
 
 **** For lando:xdebug
+https://www.youtube.com/watch?v=sHNJxx0L9r0
 For per project to include third-party code (e.g. libraries) that is used for completion and reference resolution in functions/methods that use file paths as arguments, for example, ~require()~ or ~include()~
 
-Settings > Languages & Frameworks > PHP, choose the correct php version and then include:
-- =~/.lando/services/config/pantheon= or Windows ~C:\Users\li\.lando\services\config\pantheon~
-- Or other recipe ~C:\Users\li\.lando\services\config\drupal8~
-- The point is to load ~prepend.php~ which defines global vars related to environments
+Settings > Languages & Frameworks > PHP 
+- choose the correct php version
+- Add CLI interpretor > remote is Docker, for Server, if Docker is not available, hit New > Unix socket
+  - Image name :: choose the image with the corresponding PHP version e.g. ~devwithland/php:7.0-fpm~ for Pantheon project
+  - The following fields are by default :: PHP executable: php. Hit Apply
+- and then include:
+  - =~/.lando/services/config/pantheon= or Windows ~C:\Users\li\.lando\services\config\pantheon~
+  - Or other recipe ~C:\Users\li\.lando\services\config\drupal8~
+  - The point is to load ~prepend.php~ which defines global vars related to environments
 
 - Enable PhpStorm to listen for XDebug connections, then load the local website, accept the Incoming Connection from XDebug
 - Settings > Languages & Frameworks > PHP > Servers will show the newly accepted connection as a server. Make sure the following is correct
