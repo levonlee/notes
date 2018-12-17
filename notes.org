@@ -2101,6 +2101,19 @@ Make sure php.ini:allow_url_fopen is enabled.
    // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
   );
 
+  // post json
+  $post = array( '...' );
+  $payload = json_encode($post);
+
+  $options = array(
+	  CURLOPT_URL => $url,
+	  CURLOPT_POST => 1, // post request with content-type: application/x-www-form-urlencoded header
+	  CURLOPT_RETURNTRANSFER => 1, // return string rather than output
+	  CURLOPT_TIMEOUT => 5, // max. number of seconds
+	  CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
+	  CURLOPT_POSTFIELDS => $payload
+  );
+
   curl_setopt_array($ch, $options);
 
   $response = curl_exec( $ch );
@@ -25843,6 +25856,8 @@ Spawn for ongoing process
 #+END_EXAMPLE
 
 *** lighthouse <<<npm:lighthouse>>>
+https://github.com/GoogleChrome/lighthouse
+
 #+BEGIN_SRC bash
   # install chromium browser
   sudo apt install chromium-browser
@@ -25851,8 +25866,24 @@ Spawn for ongoing process
 
   # chrome-flags
   # --no-sandbox is required when user is root
-  # 
+  # Refer to chrome:cli 
   lighthouse --chrome-flags="--headless --disable-gpu" https://github.com
+
+  # examples without --chrome-flags to quickly demo options
+
+  # output format and file name. html is default. json and csv.
+  lighthouse --output json
+  lighthouse --output html --output-path ./report.html
+
+  # extension is ignored. Result 2 files myfile.report.json and myfile.report.html
+  lighthouse --output json --output html --output-path ./myfile.json
+
+  lighthouse --output json --output html
+  # saves `./<HOST>_<DATE>.report.json` and `./<HOST>_<DATE>.report.html`
+
+  lighthouse --output-path=~/mydir/foo.out --save-assets
+  # saves `~/mydir/foo.report.html`
+  # saves `~/mydir/foo-0.trace.json` and `~/mydir/foo-0.devtoolslog.json`
 #+END_SRC
 
 *** browser-sync <<<npm:browser-sync>>>
@@ -41371,6 +41402,7 @@ Works for ftp and Http
 
   # json
   curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http://..
+  curl -X POST -H 'Content-Type: application/json' -d '{"test":"that"}' http://..
 
   # with a data file
   curl -X POST -d "@data.json" http://..
@@ -50089,6 +50121,71 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-re
 ** Clear Cache
 Use ~terminus env:clear-cache~ to debug clear cache failure.
 
+** Quicksilver Platform Hooks
+
+[[https://github.com/pantheon-systems/quicksilver-examples/tree/master/slack_notification][Slack example]]
+- slack:incoming webhooks
+- ~echo '{"slack_url": "https://hooks.slack.com/services/MYSECRETURL"}' > secrets.json~
+- On Pantheon SFTP, make dir =~/files/private= and put the json there
+- Modify pantheon.yml
+- [[https://github.com/pantheon-systems/quicksilver-examples/blob/master/slack_notification/slack_notification.php][Place webphp script]] =~/code/private/scripts/slack_notification.php= or =~/code/web/private/=
+
+#+BEGIN_SRC yaml
+  # Put overrides to your pantheon.upstream.yml file here.
+  # For more information, see: https://pantheon.io/docs/pantheon-yml/
+  api_version: 1
+  php_version: 7.0
+
+  # add workflows
+  workflows:
+
+    # Clone database between environments
+    # webphp location: the target environment
+    # clone_database
+
+    # create site
+    # webphp script location: Dev
+    # after stage valid, before stage invalid
+    deploy_product:
+      after:
+	- type: webphp
+	  description: Post to Slack after site creation
+	  script: private/scripts/slack_notification.php
+
+    # Create Multidev environment
+    # webphp location: Multidev
+    # after stage valid, before stage invalid
+    create_cloud_development_environment:
+      after:
+	- type: webphp
+	  description: Post to Slack after Multidev creation
+	  script: private/scripts/slack_notification.php
+
+    # Deploy code to Test or Live
+    # webphp location: the target environment
+    deploy:
+      after:
+	- type: webphp
+	  description: Post to Slack after deploy
+	  script: private/scripts/slack_notification.php
+
+    # Push code via Git or commit OSD/SFTP changes via Pantheon Dashboard
+    # webphp location: Dev or Multidev
+    sync_code:
+      after:
+	- type: webphp
+	  description: Post to Slack after code commit
+	  script: private/scripts/slack_notification.php
+
+    # Clear CMS and Edge Cache
+    # webphp location: any source environment
+    clear_cache:
+      after:
+	- type: webphp
+	  description: Someone is clearing the cache again
+	  script: private/scripts/slack_notification.php
+#+END_SRC
+
 * AWS
 ** SSH <<<aws:ssh>>>
 Each instance has a Key Pair, shown as Key Name in Instance.
@@ -53694,20 +53791,13 @@ For more edge cases like above and in case of the local network DNS caches which
 Properites > Security, give Full Control for Everyone in this folder
 C:\Users\you\AppData\Local\Google\Chrome\User Data\PepperFlash\some.version.number
 
-*** Allow XMLHttpRequest for local files
-#+BEGIN_EXAMPLE
-  chrome.exe --allow-file-access-from-files
-#+END_EXAMPLE
-
-*** Allow CORS locally
-<<<chrome:cors>>>
+*** Allow XMLHttpRequest for local files chrome:cli:allow-file-access-from-files
+*** Allow CORS locally <<<chrome:cors>>>
 May need to close all Chrome instances. Mine opens the Chromium version not the regular Chrome.
 Errors such as
 - Access to Font at 'yourwebsite.com' from origin 'e.g. localhost' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. Origin 'e.g. localhost' is therefore not allowed access.
 
-#+BEGIN_EXAMPLE
-  chrome.exe --disable-web-security --user-data-dir
-#+END_EXAMPLE
+~chrome.exe --disable-web-security --user-data-dir~
 
 *** Remote Debug Android Devices
 On Android, Settings > System > About phone > tap Build number 7 times, then Sytem > Developer options is enabled, enable USB debugging.
@@ -53721,6 +53811,23 @@ When the phone is connected to a computer, on the phone say transfer photos and 
 On the phone, you may need to enable Always prompt when connecting to USB in Developer Options in order for prompting Use USB for Transfer Photos.
 
 Don't let the phone screen turn off while debugging.
+
+*** Command line <<<chrome:cli>>>
+https://peter.sh/experiments/chromium-command-line-switches/
+
+#+BEGIN_SRC sh
+  chrome.exe [option]...
+  chromium-browser [option]...
+#+END_SRC
+
+For headless
+- --headless
+- --no-sandbox :: need to have it when CLI is running by a root user
+
+- --allow-file-access-from-files :: By default, ~file://~ URIs cannot read other ~file://~ URIs e.g. XMLHttpRequest for local files <<<chrome:cli:allow-file-access-from-files>>>
+- --disable-web-security
+  - Don't enforce the same-origin policy
+  - refer to chrome:cors
 
 ** Firefox
 *** Make all new windows open in Private Mode
@@ -54670,6 +54777,19 @@ Reports: Control Chart, Cumulative Flow Diagram
 Settings > Custom Fields Settings > Fields List > State
 See which values are considered as Resolved, others are Unresolved.
 Use this as a query keyword #resolved or #unresolved
+
+** Slack
+https://api.slack.com/apps
+
+*** Incoming Webhooks <<<slack:incoming webhooks>>>
+- Create New App for one Workspace
+- Activate Incoming Webhooks under Features on the left nav
+- Add New Webhook to Workspace and select a channel
+- ~https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX~ which is user, channel specific
+- Test ~curl -X POST -H 'Content-Type: application/json' -d '{"text": "hello world"}' http://..~
+
+- Format the display of message :: https://api.slack.com/incoming-webhooks#advanced_message_formatting
+  - attachment style :: https://api.slack.com/docs/message-attachments
 
 ** Image
 *** Sample Image
