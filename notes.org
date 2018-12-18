@@ -1,4 +1,3 @@
-
 #+TITLE: My Notes
 #+OPTIONS: H:4
 #+SETUPFILE: theme-readtheorg.setup
@@ -42795,24 +42794,39 @@ Personal dev project
           ipv4_address: 172.20.0.2
 #+END_EXAMPLE
 
-** Volume
-#+BEGIN_EXAMPLE
-  ;; # List all volumes
+** Volume <<<docker:volume>>>
+#+BEGIN_SRC sh
+  # List all volumes
   docker volume ls
 
-  ;; # Info about a volume
+  # Info about a volume
   docker volume inspect the_vol_id
 
-  ;; # Remove volumes
+  # Remove volumes
   docker volume rm $(docker volume ls -qf dangling=true)
-#+END_EXAMPLE
 
-On Windows, you may be forced to have named volume because file permissions cannot be set. In this case, you can access the named volume by starting another container.
-Say yourContainerName has named volume pointed to /var/www/html
-#+BEGIN_EXAMPLE
+  # a volume can be created when using `docker run -v some_volume:/path/to/container`
+#+END_SRC
+
+On Windows, you may be forced to have named volume because file permissions cannot be set. In this case, you can start a new container to access the volume
+
+*** Access the named volume by starting another container
+Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/html~
+
+#+BEGIN_SRC sh
+  # check what files are in the volume
   docker run -ti --volumes-from yourContainerName ubuntu
   ll /var/www/html
-#+END_EXAMPLE
+
+  # backup volume `dbdata` to host backup/backup.bar
+  docker run --rm --volumes-from yourContainerName -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /dbdata
+
+  # restore volume for a container
+  # create a container `bkcontainer` with  `dbdata` and bash in
+  docker run -v /dbdata --name bkcontainer ubuntu /bin/bash
+
+  docker run --rm --volumes-from bkcontainer -v $(pwd):/backup ubuntu bash -c "cd /dbdata && tar xvf /backup/backup.tar --strip 1"
+#+END_SRC
 
 ** Dockerfile
 *** CMD, RUN, ENTRYPOINT
@@ -44629,6 +44643,38 @@ dockerfile-from-image.rb (same as GitHub)
 
   puts commands.reverse
 #+END_EXAMPLE
+
+** image:jenkins/jenkins
+Parent images: openjdk:8-jdk
+[[https://github.com/jenkinsci/docker][GitHub]]
+
+#+BEGIN_SRC sh
+  # latest LTS
+  docker pull jenkins/jenkins:lts
+  # Volume jenkins_home is created and holds Jenkins data directory includes plugins and configuration for upgrade
+  # Refer to docker:volume
+
+  docker run --name myjenkins -d -v jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
+
+  # Pass JVM parameters
+  docker run --env JAVA_OPTS=-Dhudson.footerURL=http://mycompany.com # other options...
+
+  # config logging
+  mkdir data
+  cat > data/log.properties <<EOF
+  handlers=java.util.logging.ConsoleHandler
+  jenkins.level=FINEST
+  java.util.logging.ConsoleHandler.level=FINEST
+  EOF
+  docker run --env JAVA_OPTS="-Djava.util.logging.config.file=/var/jenkins_home/log.properties" # other options...
+
+  # JENKINS_OPTS
+  # run Jenkins behind Nginx
+  # mysite.com/jenkins
+  docker run --env JENKINS_OPTS="--prefix=/jenkins"
+
+  # https://wiki.jenkins.io/display/JENKINS/Jenkins+behind+an+NGinX+reverse+proxy
+#+END_SRC
 
 ** image:ubuntu
 #+BEGIN_SRC sh
