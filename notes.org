@@ -6777,21 +6777,21 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
 *** plugin
 [[https://wordpress.org/plugins][Wordpress Official Plugin Directory]]
 
-wp plugin install fly-dynamic-image-resizer
-
-Options
-- --activate :: activate after installation
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # List installed plugins
   wp plugin list
+
+  # install without activate
+  wp plugin install fly-dynamic-image-resizer
+
+  # install and activate
+  wp plugin install custom-post-type-ui --activate
 
   wp plugin status
   wp plugin update akismet
   wp plugin activate plugin_name
   wp plugin uninstall Plugin_name
-
-#+END_EXAMPLE
+#+END_SRC
 
 *** package
 [[http://wp-cli.org/package-index/][All packages]]
@@ -7404,10 +7404,9 @@ add_management_page(
  'callbackFunct', // string or array($this, 'options_page')
 );
 
-*** add_post_type_support
-<<<wp:f:add_post_type_support>>>
+*** add_post_type_support <<<wp:f:add_post_type_support>>>
 
-add_post_type_support($post_type, $supports);
+~add_post_type_support($post_type, $supports);~
 
 - $post_type :: string
 - $supports :: string/array
@@ -7423,42 +7422,44 @@ add_post_type_support($post_type, $supports);
   - page-attributes :: menu order, hierarchical must be true
   - post-formats :: add post formats
 
-add_action('init', 'lili_custom_post_type');
-function lili_custom_post_type() {
-  $labels = [
-    // array, wp:register_post_type:labels
-  ];
+#+BEGIN_SRC php
+  add_action('init', 'lili_custom_post_type');
+  function lili_custom_post_type() {
+    $labels = [
+      // array, wp:register_post_type:labels
+    ];
 
-  $args = [
-    'label' => 'Plural Name', // string. required.
-    'labels' => $labels,
-    'description' => '', // string, optional
-    'public' => false,
-    /* Default. bool.
-     *       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
-     * true:               false,               true,              true, true
-     * false:               true,              false,             false, false
-     */
-    'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
-    'publicly_queryable' => true, // optional. take 'public' value.
-    /* ?post_type={post_type_key},
-     * ?{post_type_key}={single_post_slug},
-     * ?{post_type_query_var}={single_post_slug}
-     */
-    'show_ui' => true, // optional. bool. default take 'public' value.
-    'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
-    'show_in_menu' => true, // optional, bool or string. default inherits show_ui
-    // false :: do not display in admin menu
-    // true :: display as a top level menu
-    // 'some string' :: display as a submenu of a menu 'some string'
-    'show_in_admin_bar' => true, // optional, bool, default inherits show_in_
-    'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
+    $args = [
+      'label' => 'Plural Name', // string. required.
+      'labels' => $labels,
+      'description' => '', // string, optional
+      'public' => false,
+      /* Default. bool.
+       ,*       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
+       ,* true:               false,               true,              true, true
+       ,* false:               true,              false,             false, false
+       ,*/
+      'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+      'publicly_queryable' => true, // optional. take 'public' value.
+      /* ?post_type={post_type_key},
+       ,* ?{post_type_key}={single_post_slug},
+       ,* ?{post_type_query_var}={single_post_slug}
+       ,*/
+      'show_ui' => true, // optional. bool. default take 'public' value.
+      'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
+      'show_in_menu' => true, // optional, bool or string. default inherits show_ui
+      // false :: do not display in admin menu
+      // true :: display as a top level menu
+      // 'some string' :: display as a submenu of a menu 'some string'
+      'show_in_admin_bar' => true, // optional, bool, default inherits show_in_
+      'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
 
-  ];
+    ];
 
-  register_post_type('movies', $args );
+    register_post_type('movies', $args );
 
-}
+  }
+#+END_SRC
 
 Use wp:action:pre_get_posts to enable query for this new post type
 
@@ -7719,8 +7720,11 @@ Default options
   ); 
 #+END_EXAMPLE
 
-*** register_post_type <<<wp:f:register_post_type>>>
-wp:action:init wp:action:pre_get_posts wp:plugin:acf
+*** register_post_type <<<wp:f:register_post_type>>> <<<wp:add cpt>>>
+- wp:plugin:custom-post-type-ui
+- wp:action:init
+- wp:action:pre_get_posts
+- wp:plugin:acf
 
 Remember to refresh Permalink from UI.
 https://codex.wordpress.org/Function_Reference/register_post_type
@@ -10847,16 +10851,17 @@ $image :: array(
 
 fly_add_image_size('lili-w600', 600, 9999, true);
 $image = fly_get_attachment_image($post->id, 'lili-w600'); // HTML
-*** advanced-custom-fields - ACF <<<wp:plugin:acf>>>
-https://wordpress.org/plugins/advanced-custom-fields/
+*** ACF <<<wp:plugin:advanced-custom-fields>>> <<<wp:plugin:acf>>>
+[[https://wordpress.org/plugins/advanced-custom-fields/][WP.org]]
 
-Add a field group and then add custom fields under the group.
-Use Location to define rules to assign the field group to a custom post type.
-You can hide the default post fields (Content editor, comments, categories, etc.)
-Make custom fields required
+- Add a field group and then add custom fields under the group.
+- Use ~Location~ to define rules to assign the field group to a custom post type
+- Hide the default post fields (Content editor, comments, categories, etc.)
+- Make custom fields required
 
-In wp:The_Loop, to display a custom field :: the_field('field_name')
-To get the value :: get_field('field_name'); 
+- In wp:The_Loop, to display a custom field :: ~the_field('field_name')~
+- Get the value :: ~get_field('field_name');~
+
 *** types :: Toolset Types <<<wp:plugin:types>>>
 WP Types is different! Use <<<types_render_field>>>
 
@@ -10974,6 +10979,21 @@ Remove line from wp-config.php define('WP_CACHE', true)
 
 **** Releases
 0.9.5.1 > 0.9.6 > 0.9.7
+
+*** CPT <<<wp:plugin:custom-post-type-ui>>>
+Refer to wp:add cpt
+
+- Remember to refresh permalinks
+
+Premium Custom Post Type UI Extended can show posts of any CPT inside a post using shortcode
+
+- Extra CPT ~support~ for Genesis and other plugins :: https://docs.pluginize.com/article/28-third-party-support-upon-registration
+
+**** Clear all CPT created by this plugin
+CPT UI > Post Types or Taxonomies > under Import Post Types, add ~{""}~ and hit Import
+
+*** Post Expirator <<<wp:plugin:post-expirator>>>
+Expire posts. WP-Cron is used.
 
 *** Yoast SEO wordpress-seo <<<wp:plugin:wordpress-seo>>>
 How to SEO? https://yoast.com/wordpress-seo/
@@ -21732,8 +21752,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
   }
 #+END_SRC
 
-** Object only, no Class
-<<<js:Object>>>
+** Object only, no Class <<<js:Object>>>
 *** new, Object.create
 Every thing in Javascript is an object. No class.
 
@@ -21836,7 +21855,7 @@ But values of its properties can be modified or created
 
 Create a new method in Array class which removes a member after checking if the method is already defined
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   Array.prototype.remove = Array.prototype.remove || function(member) {
    var i = this.indexOf(member);
    if (i > -1) {
@@ -21845,24 +21864,23 @@ Create a new method in Array class which removes a member after checking if the 
    return this;
   }
 
-  // If a method (remove) is created in native class, but later it was assigned as a property
-  // error will show 
-#+END_EXAMPLE
+  // If a method (remove) is created in native class, but later it was assigned as a property error will show
+#+END_SRC
 
 Newly added remove method is enumerable in js:for...in js:prototype.propertyIsEnumerable
 Inherited properties are not enumerable
 To filter out method in js:for...in
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var props = [];
   for (var prop in results) {
    results.hasOwnProperty(prop) && props.push(prop);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 <<<Add "method" in Function class>>>
 Then "method" exists in any function.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   Function.prototype.method = function(name, func) {
    this.prototype[name] = func;
    return this;
@@ -21873,10 +21891,10 @@ Then "method" exists in any function.
    this.value = value;
    return this;
   });
-#+END_EXAMPLE
+#+END_SRC
 
 <<<Add "inherits" in Function class>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   Function.method('inherits', function(parent) {
    // parent is a class that is already defined
    // make a new instance
@@ -21909,7 +21927,7 @@ Then "method" exists in any function.
    });
    return this;
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ** Classical Inheritance, Parasitic Inheritance
 <<<js:inheritance>>>
