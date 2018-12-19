@@ -48770,7 +48770,7 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
 ~git branch -m new-branch-name~
 
 *** Commit difference between 2 branches 
-=git log master..li=
+- What commits ~li~ has but ~master~ doesn't :: =git log master..li=
 
 For a specific file ~git log master..li path/to/file~
 
@@ -48867,7 +48867,7 @@ github:gh-pages
 *** Abort merge
 git merge --abort
 
-** Rebase
+** Rebase <<<git:rebase>>>
 feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
 #+BEGIN_SRC sh
   git checkout master
@@ -48904,7 +48904,7 @@ Combine c2, c3 and c4 to c5 and assign a different commit message
   // ESC and :wq to save. Done!
 #+END_EXAMPLE
 
-** Show merge commit
+** Show child commits for merge commit
 After merge or rebase happened, a merge commit is created. 
 git status gives :: C0 > C1 > merge commit abc
 
@@ -49682,8 +49682,7 @@ drush @pantheon.SITE.ENV cc drush
   terminus wp 'option get home' --site=<site> --env=dev
 #+END_EXAMPLE
 
-** Drupal Core Update
-<<<pantheon:drupal:core>>>
+** Drupal Core Update <<<pantheon:drupal:core>>>
 *** UI
 Create a multidev of the current Live, then hit the upgrade button.
 Check everything. If it's ok, do this on Dev, then pull code from Dev to Test, and then Live
@@ -49696,7 +49695,7 @@ Check Status from Pantheon.
 Check on Pantheon UI to find out the Upstream : Settings > About site
 e.g. https://github.com/pantheon-systems/drops-7
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # add a remote
   git remote add pantheon-drops-7 git://github.com/pantheon-systems/drops-7.git
   git fetch pantheon-drops-7
@@ -49705,11 +49704,11 @@ e.g. https://github.com/pantheon-systems/drops-7
   git add .
   git rebase --continue
   git push origin branchname(e.g. master)
-#+END_EXAMPLE
+#+END_SRC
 
 I found that the UI pull from upstream can resolve the following error while in manual pull
 So use UI pull whenever possible.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   First, rewinding head to replay your work on top of it...
   Applying: Adding project shell
   fatal: mode change for modules/pantheon/pantheon_api/pantheon_api.install, which is not in current HEAD
@@ -49720,7 +49719,7 @@ So use UI pull whenever possible.
   When you have resolved this problem, run "git rebase --continue".
   If you prefer to skip this patch, run "git rebase --skip" instead.
   To check out the original branch and stop rebasing, run "git rebase --abort".
-#+END_EXAMPLE
+#+END_SRC
 
 ** Drupal Cron
 Pantheon runs cron within 5 to 10 minutes of half past each hour: 4:30pm, 5:30pm, 6:30pm, etc.
@@ -49999,6 +49998,27 @@ Wordpress: install LH HSTS plugin
   # Once installed and configured, the following header will be sent in responses:
   strict-transport-security: max-age=31536000
 #+END_EXAMPLE
+
+** Git <<<pantheon:git>>>
+Using Pantheon GUI to merge Multidev commits to Dev creates a merge commit on Dev. When you go back to Multidev, UI says the merge commit can be merged from master
+In this case, you can:
+#+BEGIN_SRC sh
+  git checkout master
+  # make sure master is sync'd with origin/master
+  git pull
+
+  git checkout li-dev
+  # make sure li-dev is sync'd with origin/li-dev
+  git pull
+
+  git rebase master
+  # resolve conflicts. Refer to git:rebase
+
+  # push li-dev to origin/li-dev
+  git push
+
+  # now li-dev should be the same as origin/master
+#+END_SRC
 
 ** Logs
 https://pantheon.io/docs/logs/
