@@ -6751,6 +6751,7 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
   # List users
   terminus wp 'user list' --site=<site> --env=<env>
   terminus wp mysite.live -- user list
+  lando terminus wp mysite.live user list
 
   wp user list
 
@@ -35712,7 +35713,7 @@ Insights
 
 API : https://developers.google.com/my-business/
 
-** Google Analytics
+** Google Analytics <<<google:ga>>>
 *** Limits and Versions
 GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoys.example.com have 2 different cookies. Javascript document.domain
 
@@ -44864,7 +44865,7 @@ If terminus login fail, ~lando ssh --user=root~ and run terminus auth:login
 
 Usually ~lando stop && lando destroy && lando start~ is enough. Can also use ~lando rebuild~
 
-~lando wp mysite.live user list~
+- Run wp cli on other Pantheon sites :: ~lando terminus wp mysite.live user list~
 
 - Push only code :: ~lando push -m "a message" --database=none --files=none~
 
@@ -48630,6 +48631,77 @@ https://nginxconfig.io/?domain=myweb.ca&ssl_profile=intermediate&hsts=false&emai
 
   # add back ssl_* directives
   sed -i -r 's/#?;#//g' /etc/nginx/sites-available/myweb.ca.conf
+#+END_SRC
+
+** Redirect a website to another website
+Redirect mywebsite.com to mywebsite2.ca that is not hosted on this Nginx server.
+
+/etc/nginx/sites-available/mywebsite.com.conf
+#+BEGIN_SRC nginx
+  server {
+	  listen 443 ssl http2;
+	  listen [::]:443 ssl http2;
+
+	  server_name mywebsite.com www.mywebsite.com;
+	  set $base /var/www/mywebsite.com;
+	  root $base/public;
+
+	  # SSL
+	  ssl_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+	  ssl_certificate_key /etc/letsencrypt/live/mywebsite.com/privkey.pem;
+	  ssl_trusted_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+
+	  # index.php fallback
+	  location / {
+		  return 302 https://www.mywebsite2.ca;
+	  }
+
+  }
+
+  # non-www, subdomains redirect
+  server {
+	  listen 443 ssl http2;
+	  listen [::]:443 ssl http2;
+
+	  server_name .mywebsite.com;
+
+	  # SSL
+	  ssl_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+	  ssl_certificate_key /etc/letsencrypt/live/mywebsite.com/privkey.pem;
+	  ssl_trusted_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+
+	  return 302 https://www.mywebsite2.ca;
+  }
+
+  # HTTP redirect
+  server {
+	  listen 80;
+	  listen [::]:80;
+
+	  server_name .mywebsite.com;
+
+	  include nginxconfig.io/letsencrypt.conf;
+
+	  location / {
+		  return 302 https://www.mywebsite2.ca;
+	  }
+  }
+#+END_SRC
+
+#+BEGIN_SRC sh
+  ln -s /etc/nginx/sites-available/mywebsite.com.conf /etc/nginx/sites-enabled/mywebsite.com.conf
+
+  sed -i -r 's/(listen .*443)/\1;#/g; s/(ssl_(certificate|certificate_key|trusted_certificate) )/#;#\1/g' /etc/nginx/sites-available/mywebsite.com.conf
+
+  systemctl reload nginx
+
+  # wait until A/AAAA DNS records are propagated
+
+  certbot certonly --webroot -d mywebsite.com -d www.mywebsite.com --email ssl@gmail.com -w /var/www/_letsencrypt -n --agree-tos --force-renewal
+
+  sed -i -r 's/#?;#//g' /etc/nginx/sites-available/mywebsite.com.conf
+
+  systemctl reload nginx
 #+END_SRC
 
 * Web Application Firewall (WAF)
