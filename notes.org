@@ -11138,6 +11138,165 @@ Create a blank page and associate it with Events > Settings > Viewing Events to 
 
 May create JavaScript script to embed on external websites
 
+*** Gravity Forms
+- Require PHP 5.6+, MySQL 5.5+
+- Need license key to use the plugin
+
+**** Form setting
+- Allow field to be populated dynamically :: so that populating this form field with a value using query string or hook.
+- Deleting a field will also delete all entry data associated with that form field
+- Input Mask
+  - Use a ‘9’ to indicate a numerical character
+  - Use a lower case ‘a’ to indicate an alphabetical character
+  - Use an asterick ‘*’ to indicate any alphanumeric character
+  - Use a question mark ‘?’ to indicate optional characters. Note: All characters after the question mark will be optional
+  - All other characters are literal values and will be displayed automatically
+  - Examples
+    - Date :: ~99/99/9999~
+    - Course code :: ~aaa 999~
+    - License Key :: ~***-***-***~ 
+- Post fields enable you to create WP Post
+
+**** Shortcodes & Merge Tags
+***** ~[gravityform id="1"]~
+#+BEGIN_SRC html
+  [gravityform id="1" title="false" description="false"]
+  [gravityform id=1 field_values='parameter_name1=value1&parameter_name2=value2']
+#+END_SRC
+
+- ajax :: true/false
+- tabindex :: int
+- field_values :: populate values
+
+***** ~[gravityforms action="conditional"]~
+Insert message content to Admin and User Notification emails as well as the Confirmation Message that is displayed when a form is submitted
+#+BEGIN_SRC html
+  <!-- Only one condition is allowed -->
+  [gravityforms action="conditional" merge_tag="{Number:1}" condition="greater_than" value="10"]
+  This content would be displayed if the value of field id 1 is greater than 10.
+  [/gravityforms]
+
+  [gravityforms action="conditional" merge_tag="{Country:5}" condition="is" value="United States"]
+  This content would be displayed if the value of field id 5 is United States.
+  [/gravityforms]
+
+  [gravityforms action="conditional" merge_tag="{Country:5}" condition="isnot" value=""]
+  This content would be displayed if no value exists for field id 5.
+  [/gravityforms]
+#+END_SRC
+
+***** Actions ~[gravityform action="*"]~
+Display details from user meta fields
+#+BEGIN_SRC html
+  <!-- Display details from user meta fields. Requires User Registration Add-On  -->
+  [gravityform action="user" key="ID" output="raw" /]
+
+
+  <!-- Displays the login form. Requires User Registration Add-On -->
+  [gravityform action="login" description="false" logged_in_message="Yay! You are logged in!" registration_link_text="Register for my super awesome site" forgot_password_text="Stop forgetting your password" /]
+#+END_SRC
+
+***** Merge Tags
+Populate submitted field values in notification emails, post content templates and more.
+https://docs.gravityforms.com/merge-tags/
+
+**** Functions
+***** ~gravity_form~ :: Display a form in template files
+#+BEGIN_SRC php
+  gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
+#+END_SRC
+
+***** ~gravity_form_enqueue_scripts~
+- Placement :: before ~wp_head()~ is called
+ 
+#+BEGIN_SRC php
+  gravity_form_enqueue_scripts( $form_id, $is_ajax = false);
+#+END_SRC
+
+**** Hooks and actions
+https://docs.gravityforms.com/category/extending-gravity-forms/hooks/actions/
+
+***** ~gform_field_value_$parameter_name~
+Populate any field with parameter ~your_parameter~ with the result of the function ~my_custom_population_function~
+#+BEGIN_SRC php
+  add_filter( 'gform_field_value_your_parameter', 'my_custom_population_function' );
+  function my_custom_population_function( $value, $field, $name ) {
+	  return 'boom!';
+	  // populate from a cookie
+	  return $_COOKIE['utm_campaign'];
+	  // populate a list field
+	  // new way
+	  $list_array = array(
+		  array(
+			  'Column 1' => 'row1col1',
+			  'Column 2' => 'row1col2',
+			  'Column 3' => 'row1col3',
+		  ),
+		  array(
+			  'Column 1' => 'row2col1',
+			  'Column 2' => 'row2col2',
+			  'Column 3' => 'row2col3'
+		  ),
+    );
+	  return $list_array;
+
+	  // old way
+	  return array( 'row 1 - col1', 'row 1 - col2', 'row 1 - col3',
+		  'row 2 - col1', 'row 2 - col2', 'row 2 - col3',
+		  'row 3 - col1', 'row 3 - col2', 'row 3 - col3' );
+  }
+
+  // Populate multiple fields using one function
+  add_filter( 'gform_field_value', 'populate_fields', 10, 3 );
+  function populate_fields( $value, $field, $name ) {
+
+      $values = array(
+	  'field_one'   => 'value one',
+	  'field_two'   => 'value two',
+	  'field_three' => 'value three',
+      );
+
+      return isset( $values[ $name ] ) ? $values[ $name ] : $value;
+  }
+
+  // Populate a time field
+  add_filter( 'gform_field_value_time', 'populate_time' );
+  function populate_time( $value ) {
+      $local_timestamp = GFCommon::get_local_timestamp( time() );
+
+      return date_i18n( 'h:i A', $local_timestamp, true );
+
+		  // Populate a fixed date
+		  return '10/10/2010';
+  }
+
+  // Populate author email
+  add_filter( 'gform_field_value_author_email', 'populate_post_author_email' );
+  function populate_post_author_email( $value ) {
+      global $post;
+ 
+      $author_email = get_the_author_meta( 'email', $post->post_author );
+ 
+      return $author_email;
+  }
+#+END_SRC
+
+**** Query String
+Populate form fields ~http://siteurl.com/form-url/?your_parameter=value~
+
+**** Events
+https://docs.gravityforms.com/gravity-forms-notification-events/
+
+**** CSS Styling
+https://docs.gravityforms.com/basic-structure/
+https://docs.gravityforms.com/css-targeting-examples/
+https://docs.gravityforms.com/css-visual-guide/
+https://docs.gravityforms.com/css-ready-classes/
+
+**** Add-Ons
+***** User Registration
+A feed is used to pass form submission info over to the add-on. In Form Setting > User Registration > Add New Feed
+
 *** contact-form-7
 **** Shortcode
 Add html id
