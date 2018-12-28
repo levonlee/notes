@@ -6651,47 +6651,47 @@ Redirect by changing request based on the $_SERVER['REQUEST_URI']
 
 Change permalink
 For posts and pages
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function rudr_post_permalink( $url, $post ){
-          if( !is_object( $post ) )
-                  $post = get_post( $post_id );
-   
-          $replace = $post->post_name;
-   
-          /* We should use a post ID to make a replacement. It is required if you use urf-8 characters in your URLs */
-   
-          if( $post->ID == 1 ) 
-                  $replace = 'hello-planet';
-          if( $post->ID == 12 ) 
-                  $replace = 'Contacts';
-   
-          $url = str_replace($post->post_name, $replace, $url );
-          return $url;
+	  if( !is_object( $post ) )
+		  $post = get_post( $post_id );
+
+	  $replace = $post->post_name;
+
+	  /* We should use a post ID to make a replacement. It is required if you use urf-8 characters in your URLs */
+
+	  if( $post->ID == 1 ) 
+		  $replace = 'hello-planet';
+	  if( $post->ID == 12 ) 
+		  $replace = 'Contacts';
+
+	  $url = str_replace($post->post_name, $replace, $url );
+	  return $url;
   }
-   
+
   add_filter( 'post_link', 'rudr_post_permalink', 'edit_files', 2 );
   add_filter( 'page_link', 'rudr_post_permalink', 'edit_files', 2 );
   add_filter( 'post_type_link', 'rudr_post_permalink', 'edit_files', 2 );
-#+END_EXAMPLE
+#+END_SRC
 
 For categories and tags
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function rudr_term_permalink( $url, $term, $taxonomy ){
-          $replace = $term->slug;
-   
-          /* by ID as well */
-          if( $term->term_id == 5 ) 
-                  $replace = 'Uncategorized';
-          if( $term->term_id == 55 ) 
-                  $replace = 'WordPress';
-   
-          $url = str_replace($term->slug, $replace, $url );
-   
-          return $url;
+	  $replace = $term->slug;
+
+	  /* by ID as well */
+	  if( $term->term_id == 5 ) 
+		  $replace = 'Uncategorized';
+	  if( $term->term_id == 55 ) 
+		  $replace = 'WordPress';
+
+	  $url = str_replace($term->slug, $replace, $url );
+
+	  return $url;
   }
-   
+
   add_filter( 'term_link', 'rudr_term_permalink', 10, 3 );
-#+END_EXAMPLE
+#+END_SRC
 
 ** WP-CLI <<<wp-cli>>>
 [[https://wp-cli.org/commands][Wordpress CLI Commands]]
@@ -7148,7 +7148,7 @@ Use wp:f:update_post_meta in wp:action:save_post for storing the new field
 *** wp_parse_args( $args, $defaults ) <<<wp:f:wp_parse_args>>>
 Merge user defined arguments into defaults array.
 
-*** Translate
+*** Translate <<<wp:translate>>>
 Use tool:Poedit
 
 **** Translate Functions
@@ -8321,7 +8321,8 @@ If you just want to define pass PHP variables and don't want to create empty js 
 ** Current URL, and slug <<<wp:current url>>>
 Current URL on your website
 <<<php:parse_url>>>
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC php
   global $wp;
   $current_url = home_url(add_query_arg(array(), $wp->request)); 
   // echo esc_url($current_url);
@@ -8331,21 +8332,24 @@ Current URL on your website
   // keys are scheme, host, port, user, pass, path, query (after ?), fragment (after #)
 
   if ($_url_array !== false && !is_null($_url_array['host']) {}
-#+END_EXAMPLE
 
-Slug
-#+BEGIN_EXAMPLE
+  // Slug
+
   $_post = get_post();
   if (!empty($_post) && $_post->post_name == 'your-slug') {
     // do something
   }
-#+END_EXAMPLE
 
-Site url
-#+BEGIN_EXAMPLE
+  // Site URL
+
   // http://google.com without trailing slash
   get_site_url();
-#+END_EXAMPLE
+
+  // Custom Link
+  echo '<a href="'.esc_url( 'somelink' ).'" target="_blank">'.__('some text', 'textdomain').'</a>';
+
+  // ~function[\s+].*get_.*_link\(~
+#+END_SRC
 
 ** WP_Post Post Object <<<wp:post>>>
 https://developer.wordpress.org/reference/classes/wp_post/
@@ -10102,6 +10106,7 @@ Display post info (byline)
     - ~genesis_entry_header~
       - ~genesis_do_post_format_image()~ at p:4
       - ~genesis_entry_header_markup_open()~ at p:5
+	- ~<header %s>~ ~genesis_attr~ context:entry-header
       - ~genesis_do_post_title()~
 	- filter ~genesis_post_title_text( get_the_title() )~
 	- filter ~genesis_link_post_title( true )~
@@ -10110,10 +10115,10 @@ Display post info (byline)
 	- ~genesis_markup~ :: open/close ~$wrap~, content:~$title~ context:entry-title
 	- ~genesis_post_title_output( $output, $wrap, $title)~
       - ~genesis_post_info()~ at p:12 :: byline
-	- filter ~$filtered = genesis_post_info( '[post_date]'.__( 'by', 'genesis'). '...' )~
+	- filter ~genesis_post_info~ ~$filtered = genesis_post_info( '[post_date]'.__( 'by', 'genesis'). '...' )~
 	  - ~do_shortcode()~ p:20
 	- ~genesis_markup~ :: open/close ~p~, content: ~genesis_strip_p_tags( $filtered )~ context:entry-meta-before-content
-      - ~genesis_entry_header_markup_close()~ at p:15
+      - ~genesis_entry_header_markup_close()~ at p:15 :: close ~</header>~
     - ~genesis_before_entry_content~ :: nothing
     - ~div~ ~genesis_attr( 'entry-content' )~
     - ~genesis_entry_content~
@@ -13300,13 +13305,13 @@ local :: bg image will scroll with the element's contents
 
 *** Add dark layer on a background image
 15% darker
-#+BEGIN_EXAMPLE
-  // Before
+#+BEGIN_SRC css
+  /* Before */
   background: url(/slide-03.jpg) no-repeat center center;
 
-  // After
+  /* After */
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.15) 100%), url('/slide-03.jpg') no-repeat center center;
-#+END_EXAMPLE
+#+END_SRC
 
 *** Mobile background-attachment:fixed background-size:cover
 Instead of
@@ -13346,21 +13351,23 @@ Can't control the image size.
 ** Color
 *** <<<CSS inherit color>>>
 You can grab the parent `color` css property and use it in any color properties in child element
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="parent">
-   <div class="child">
-   </div>
+    <div class="child">
+    </div>
   </div>
 
-  .parent {
-   color: red;
-   background-color: blue;
-  }
-  .child {
-   background-color: currentColor; /* take the parent color: red */
-   color: currentColor; /* Take the parent color: red */
-  }
-#+END_EXAMPLE
+  <style>
+    .parent {
+    color: red;
+    background-color: blue;
+    }
+    .child {
+    background-color: currentColor; /* take the parent color: red */
+    color: currentColor; /* Take the parent color: red */
+    }  
+  </style>
+#+END_SRC
 
 *** rgb(), rgba() <<<CSS rgba>>>
 #+BEGIN_SRC css
@@ -13384,6 +13391,9 @@ Lightness :: 100% is white, 0% is black, 50% is normal
 #+BEGIN_EXAMPLE
   hsla(240, 100%, 50%, 0.05) // 5% opaque blue
 #+END_EXAMPLE
+
+*** Darker or lighter color
+http://www.0to255.com/cd1713
 
 ** Gradient <<<CSS gradient>>>
 Both CSS gradient and CSS repeat gradient can be stacked in background-image
@@ -28536,6 +28546,11 @@ Change package.json from ~"gulp": "gulpjs/gulp#4.0"~ to ~"gulp": "4.0"~
   - Fail to download the package, timed-out.
   - Manully install top-level modules ~npm i eslink-config-wordpress~
   - or adjust the order of packages in package.json
+
+** TS: ENOSPC: System limit for number of file watchers reached
+[[https://stackoverflow.com/questions/22475849/node-js-what-is-enospc-error-and-how-to-solve][Increase the inotify max_user_watches limit]]
+For Debian
+~echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p~
 
 * Angular
 ** Who use Angular?
@@ -53357,8 +53372,9 @@ Settings > Languages & Frameworks > JavaScript > JavaScript language version to 
 For Scratch, right click on the file in Edit window and change language to ES6
 
 *** Regex Find
-Find function name that contains =_node_=
-~function[\s+].*_node~
+Find function name that contains ~_node_~
+- ~function[\s+].*_node~
+- End with ~_node_~ :: ~function[\s+].*_node\(~
 
 *** XPath
 You need to make the xml file part of a project to use Evaluate XPath... (right click) 
@@ -53571,6 +53587,9 @@ Settings > Languages & Frameworks > PHP
 
 *** TS: Reset Index
 File | Invalidate Caches and restart IDE
+
+*** TS: Page '...js.map' requested without authorization
+Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 
 ** Emacs
 *** Install & Configuration
