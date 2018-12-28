@@ -40202,13 +40202,10 @@ ps options
 - e :: all processes. same as -A
 - p :: PID. same as p and --pid
 - o :: specify format e.g. -o pid,ppid,pgid,sid
-
-- ax :: list all processes from all users that are not started by a terminal (e.g. started by a daemon)
-
+- ax :: list all processes from all users that are not started by a terminal (e.g. started by a daemon, background process that is removed from ~jobs~)
 - u :: Displays user-oriented output. This includes the USER, PID, %CPU, %MEM, SZ, RSS, TTY, STAT, STIME, TIME, and COMMAND fields.
 - l :: Displays a long listing having the F, S, UID, PID, PPID, C, PRI, NI, ADDR, SZ, PSS, WCHAN, TTY, TIME, and CMD fields.
   Note ::  -l doesn't include fields from -u
-
 - w :: use with -f to show in unlimited width so that PPID and others are shown
 
 *** pgrep, pkill
@@ -40244,13 +40241,17 @@ A package ~pstree~ can be installed and used
 *** Run executable in background for all sessions
 This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
 
-*** jobs
-#+BEGIN_EXAMPLE
+*** jobs <<<bash:jobs>>>
+<<<linux:background process>>>
+#+BEGIN_SRC sh
   # Add ~&~ to put process list into background
   (tar -cf 1.tar /home/1; tar -cf 2.tar /home/2)&
 
   # run a script file in background
   ./test5.sh &
+
+  # a job number and process number are returned
+  # [1]+ 4867
 
   # If terminal session is ended (SIGHUP), background processes will be stopped, too
   # Use nohup to block SIGHUP signals being sent to the process
@@ -40261,11 +40262,74 @@ This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
 
   # To prevent background processes from seding error to terminal
   ./test5.sh 2> /dev/null &
-#+END_EXAMPLE
 
-Run ~jobs~ to show what processes are running in background
-Use ~jobs -l~ to list the PID
-~kill PID~ or ~kill -KILL PID~
+  # List processes that are running in background
+  jobs
+
+  # List PIDs
+  jobs -l
+
+  # Kill a process
+  kill 1234
+  # or
+  kill -KILL 1234
+
+  # Stop a process
+  kill -STOP 1234
+
+  # Resume or continue a stopped process
+  kill -CONT 1234
+
+  # job number can be used
+  kill -STOP %2
+  kill -CONT %2
+
+  # remove or prevent a background process from being managed using `jobs` (using job number) and keep it running
+  disown %2
+
+  # still can see the process
+  ps -x | grep yourscriptname
+#+END_SRC
+
+**** Long running process
+#+BEGIN_SRC sh
+  # Stop a long running process with C-z. A job number is returned
+  # [1]+ Stopped        bash message.sh
+
+  # resume the stopped process in background so that new commands can be typed and executed but the process can still STDOUT
+  bg %1
+
+  # bring the process to foreground
+  fg %1
+
+  # another example
+  # send process to background
+  scp bigfile user:remote:/root &
+  # bring the process to foreground so that you can login
+  fg %1
+  # after login, pause the process using C-z
+  # resume the paused process to background
+  bg %1
+
+  # check status by bringing the process to foreground
+  fg %1
+#+END_SRC
+
+**** Most recent, previously and multiple jobs
+#+BEGIN_SRC sh
+  # multiple jobs
+  fg %1 %2
+  bg %1 %2
+
+  # `jobs` shows + and - beside the most recent and previously bg jobs
+  # target most recent `+`
+  bg
+  fg
+
+  # target previously `-`
+  bg -
+  fg -
+#+END_SRC
 
 *** top <<<linux:top>>>
 First line: current time, system up time, number of users logged in, load average (1, 5, 15 minutes; >2 is busy). 
@@ -40761,7 +40825,7 @@ Find which package owns a file =dpkg -S /etc/crontab=
 **** =apt-get= =apt-cache= Ubuntu
 Since Ubuntu 16.04, apt is introduced and it's a subset of apt-get and apt-cache
 
-Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
+- Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
 
 It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network.
 Add a line ~nameserver 8.8.8.8~ to /etc/resolv.conf
@@ -40771,14 +40835,11 @@ This way the /etc/resolv.conf is not persisted. You can also config DNS in Docke
       your-other-commands
 #+END_EXAMPLE
 
-Install or upgrade a package :: ~apt-get install openssh-client~
+- Install or upgrade a package :: ~apt-get install openssh-client~
 
-To simulate what would happen if you upgrade/install a package (press ~n~ to cancel)
-~apt-get -s install openssh-client~
-
-To upgrade all installed packages :: ~apt-get upgrade~
-
-To simulate what would happen if upgrade all (press ~n~ to cancel) :: ~apt-get -V -s upgrade~
+- Simulate what would happen if you upgrade/install a package (press ~n~ to cancel) :: ~apt-get -s install openssh-client~
+- Upgrade all installed packages :: ~apt-get upgrade~
+- Simulate what would happen if upgrade all (press ~n~ to cancel) :: ~apt-get -V -s upgrade~
 
 Remove previously downloaded packages (/var/cache/apt/archives)
 ~apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*~ 
@@ -40786,7 +40847,7 @@ Remove previously downloaded packages (/var/cache/apt/archives)
 For Ubuntu lower than 14.04, use ~dpkg -l~ to list all installed packages on Ubuntu
 Otherwise, use ~apt list --installed~
 
-To see if a package is installed :: ~apt list -a --installed openssh-client~
+- To see if a package is installed :: ~apt list -a --installed openssh-client~
 
 Search package by regex name (return name and description only): =apt-cache search php=
 Search packages with name starting php (return names only) :: =apt-cache pkgnames php5=
@@ -40798,6 +40859,8 @@ Find out dependencies of a package: =apt-cache showpkg php5-xmlrpc=
 - Different versions of this package you can install (under Provides)
 
 To compare installed version of a package with remote version :: ~apt-cache policy openssh-client~
+
+- Use website to see a package info e.g. tmux :: https://packages.ubuntu.com/bionic/tmux
 
 **** =aptitude= Highest Level Debian
 It's not installed by default on Ubuntu
@@ -40812,7 +40875,7 @@ See if a package is installed :: ~aptitude search package_name~
 - no trace at all or ~v~, it's not installed :: ~p~
 - There might be a second character which indicates the action to be performed on the package.
 
-*** Ubuntu Packages
+*** Packages
 **** openssh-client <<<linux:package:openssh-client>>>
 Includes ssh, scp
 #+BEGIN_EXAMPLE
@@ -40938,6 +41001,62 @@ C-k :: stop and close an active download
 C-r :: hash check a torrent before upload/download begins
 Left or right arrow :: redirect to previous or next screen
 Up or down arrow :: to select a torrent file. Selected one will have * in front.
+
+**** Tmux <<<bash:tmux>>>
+[[http://man.openbsd.org/OpenBSD-current/man1/tmux.1][Man page]]
+#+BEGIN_SRC sh
+  sudo apt install tmux
+
+  # version (2.6)
+  tmux -V
+
+  # start tmux to create a new session
+  tmux
+#+END_SRC
+
+- 0 is session number, 1 is window number :: =[0] 1:yourname@your-machine-name:~*=
+- review keyboard shortcuts, press q to exit :: ~C-b ?~
+- default bind-key is ~C-b~
+- Create a new window :: ~C-b c~
+- If you create 3 windows, the bottom looks like :: ~[0] 0:bash 1:bash- 2:bash*~
+- Rename current window :: ~C-b ,~
+- Switch to another window :: ~C-b WindowNumber~
+- Switch to next window :: ~C-b n~
+- Switch to prev window :: ~C-b p~
+- Switch to last window :: ~C-b l~
+- Close current window :: ~C-b &~
+- Show a list of all windows :: ~C-b w~
+- ~*~ shows which window is active and ~-~ shows previous active
+- Split current window horizontally into panes :: ~C-b "~
+- Split current window vertically into panes :: ~C-b %~
+- Switch to another pane :: ~C-b o~ or ~C-b ArrowKey~ or ~C-b ;~
+- Move content in another pane to the current pane :: ~C-b C-o~
+- Resize current pane by increments :: ~C-b C-ArrowKey~
+- Promote a pane to a new window :: ~C-b !~
+- Put a clock into current pane :: ~C-b t~ and press any key to remove the clock
+- Close current pane :: ~C-b x~
+- Detach the tmux session and go back to original shell :: ~C-b d~
+- List tmux session :: ~tmux ls~
+- Reattach a tmux session :: ~tmux attach~ or ~tmux attach 1~
+- Set tmux session name :: ~C-b $~
+- Swtich to another tmux session :: ~C-b s~ 
+- Close a session :: either close all windows of that session or ~tmux kill-session -t0~
+
+Command line
+- Enter command line :: ~C-b :~
+- Quit command line mode ::
+- Set option globally :: ~:set-option -g monitor-activity on~
+
+Customize =~/.tmux.conf=
+#+BEGIN_SRC conf
+  # don't allow tmux to automatically rename my already named windows
+  set-option -g allow-rename off
+  # Change status bar color
+  # set -g status-bg cyan
+  # set bind-key to C-a
+  set-option -g prefix C-a
+  unbind C-b
+#+END_SRC
 
 *** Ubuntu troubleshooting
 **** Unmet dependencies
@@ -41916,39 +42035,33 @@ Run a command with several arguments that have minor difference using curly brac
 #+END_SRC
 
 *** screen <<<bash:screen>>>
-Simply run ~screen~ creates a screen session.
+It creates a screen session
+- In a screen session, multiple shell windows can be open from a single SSH session.
+- See if it's installed ~which screen~ in the SSH remote server not your local
+- For help :: ~C-a ?~ 
+- Create a window :: ~C-a c~
+- Switch between windows :: ~C-a n~ or ~p~ for previous window
+- Detach a window from the screen session and can be reattached later ::  ~C-a d~
+- If network connection fails in one screen session, screen will automatically detach the session.
+- Reattach (when connection drops or you have detached from a screen) :: ~screen -r~ or a specific screen ~screen -r 12345.pts-0.xxxx~ or simply ~screen -r 12345~
 
-In a screen session, multiple shell windows can be open from a single SSH session.
+Get alert
+- To get an alert when there's output registered on a specific screen, on that screen run ~Ctrl-a M~ and then switch to other screen
+- Or get an alert when there's no output ~C-a _~
 
-See if it's installed ~which screen~.
-
-For help :: ~C-a ?~ 
-Create a window :: ~C-a c~
-Switch between windows: ~C-a n~ or ~p~ for previous window
-Detach a window from the screen session and can be reattached later ::  ~C-a d~
-If network connection fails in one screen session, screen will automatically detach the session.
-Reattach (when connection drops or you have detached froma a screen) :: ~screen -r~ or a specific screen
-~screen -r 12345.pts-0.xxxx~ or simply ~screen -r 12345~
-
-To get an alert when there's output registered on a specific screen, on that screen run ~Ctrl-a M~ and then switch to other screen
-Or get an alert when there's no output ~C-a _~
-
-Lock a screen session when you need to go away ~C-a x~
-
-Stop the screen session :: ~C-a k~ or ~exit~ for each screen window.
-
-List all screen sessions and status :: ~screen -ls~
-
-See window list ~C-a "~ it's double quote ~S-'~
-Rename current window :: ~C-a A~
+- Lock a screen session when you need to go away :: ~C-a x~
+- Stop the screen session :: ~C-a k~ or ~exit~ for each screen window.
+- List all screen sessions and status :: ~screen -ls~
+- See window list :: ~C-a "~ it's double quote ~S-'~
+- Rename current window :: ~C-a A~
 
 Run a background process after SSH signout
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   screen
   nohup ./main &
-  C-a d
+  # C-a d
   exit
-#+END_EXAMPLE
+#+END_SRC
 
 *** Run Sequentially
 =lspci; lsusb=
@@ -41962,8 +42075,9 @@ Options
 - in detail :: l
 
 *** man <<<bash:man>>>
-=man -k processes= Search `processes` in command names and description
-=man -f ls= Search in command names and title
+- Search ~processes~ in command names and description :: ~man -k processes~
+- Search in command names and title :: ~man -f ls~
+- Save manual to a txt file :: ~man ls > ls.txt~
 
 *** =cd -= Navigate to previous directory (back)
 *** =wc=
