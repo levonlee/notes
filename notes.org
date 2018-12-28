@@ -26085,6 +26085,39 @@ Refer to this [[https://github.com/webdevsuperfast/bootstrap-for-genesis][GitHub
 
 - Reload CSS without refreshing the page :: ~.pipe( browserSync.stream() )~
 
+https
+#+BEGIN_SRC js
+  function browsersync() {
+      browserSync.init({
+
+	  // For more options
+	  // @link http://www.browsersync.io/docs/options/
+
+	  // Project URL.
+	  proxy: config.projectURL,
+
+	  // `true` Automatically open the browser with BrowserSync live server.
+	  // `false` Stop the browser from automatically opening.
+	  open: config.browserAutoOpen,
+
+
+
+	  https: {
+	      // both absolute and relative paths can be used
+	      key: '../../../cs-devops/lndo.site.key',
+	      cert: '../../../cs-devops/lndo.site.pem'
+	  },
+
+	  // Inject CSS changes.
+	  // Comment it to reload browser for every CSS change.
+	  injectChanges: config.injectChanges
+      });
+
+      // Use a specific port (instead of the one auto-detected by Browsersync).
+      // port: 7000,
+  }
+#+END_SRC
+
 *** gulp <<<npm:gulp>>>
 https://github.com/gulpjs/gulp/blob/master/docs/README.md
 
@@ -42716,7 +42749,7 @@ Create a Root SSL Certificate
 - ~-nodes~ :: create private key without providing passphrase which is at least 4 letters long
 - Enter random values for the prompt
 
-~openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 1024 -out rootCA.pem~
+~openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 5000 -out rootCA.pem~
 
 Optionaly, you can create a certificate with an existing key
 - ~-new~ with ~-key~ creates a CR with an existing key
@@ -42729,23 +42762,27 @@ Combine private key and certificate into a .p12 (pkcs12, pfx format) file.
 You can add ~rootCA.p12~ if Chrome supports it. In Ubuntu, Chrome only supports pkcs7 (.p7b file). Windows can import .p12 file
 - On Chrome, Settings > Manage certificates > Import under Trusted Root Certification Authorities
 - After that, select the certificate with name Internet Widigits Pty Ltd. click Advanced and select all Certificate purposes
-- Or you can just add rootCA.pem to Chrome as Authority
+- In Ubuntu, just add ~rootCA.pem~ to Chrome as Authorities
 - Without doing the above step, ~https://localhost~ only works in InCognito mode.
 
-#+BEGIN_EXAMPLE
-  # In docker-compose.yml
-  #     ports:
-  #      - "32012:80"
-  #      - "443:443"
+docker-compose.yml
+#+BEGIN_SRC yaml
+    ports:
+      - "32012:80"
+      - "443:443"
+#+END_SRC
 
-  # Inside the PHP + Apache container, copy the <VirtualHost: *:80> and make it *:443 and add 3 lines of SSL config as described in apache:ssl
-  # a2enmod ssl
-  # apache2ctl configtest
-  # apache2ctl graceful
+Inside the PHP + Apache container, copy the ~<VirtualHost: *:80>~ and make it ~*:443~ and add 3 lines of SSL config as described in apache:ssl
+#+BEGIN_SRC apache
+  a2enmod ssl
+  apache2ctl configtest
+  apache2ctl graceful
+#+END_SRC
 
-  # Now create domain certificate using the root SSL certificate
+Now create domain certificate using the root SSL certificate
 
-  # create server.csr.cnf so you don't have to type
+Create server.csr.cnf so you don't have to type
+#+BEGIN_SRC conf
   [req]
   default_bits = 4096
   prompt = no
@@ -42760,8 +42797,10 @@ You can add ~rootCA.p12~ if Chrome supports it. In Ubuntu, Chrome only supports 
   OU=RandomOrganizationUnit
   emailAddress=hello@example.com
   CN = localhost
+#+END_SRC
 
-  # create v3.ext for creating X509 v3 certificate
+Create v3.ext for creating X509 v3 certificate
+#+BEGIN_SRC conf
   authorityKeyIdentifier=keyid,issuer
   basicConstraints=CA:FALSE
   keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
@@ -42769,13 +42808,13 @@ You can add ~rootCA.p12~ if Chrome supports it. In Ubuntu, Chrome only supports 
 
   [alt_names]
   DNS.1 = localhost
+#+END_SRC
 
-  # Now create a certificate key for localhost using server.csr.cnf. The key is server.key. Also create a certificate signing request (CSR) server.csr
-  openssl req -new -nodes -out server.csr -newkey rsa:4096 -keyout server.key -config <( cat server.csr.cnf )
+Now create a certificate key for localhost using ~server.csr.cnf~. The key is ~server.key~. Also create a certificate signing request (CSR) ~server.csr~
+~openssl req -new -nodes -out server.csr -newkey rsa:4096 -keyout server.key -config <( cat server.csr.cnf )~
 
-  # Genereate the domain certificate file server.crt using v3.ext that is created earlier
-  openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 500 -extfile v3.ext
-#+END_EXAMPLE
+Genereate the domain certificate file server.crt using v3.ext that is created earlier
+~openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 5000 -extfile v3.ext~
 
 #+BEGIN_SRC sh
   # Read and verify a certificate
@@ -42791,7 +42830,9 @@ You can add ~rootCA.p12~ if Chrome supports it. In Ubuntu, Chrome only supports 
   openssl pkcs12 -info -in rootCA.p12 -noout
 #+END_SRC
 
-Combine certificates and install nginx:ssl:config nginx:ssl:example
+Combine certificates and install:
+- nginx:ssl:config 
+- nginx:ssl:example
 
 apache:ssl
 
