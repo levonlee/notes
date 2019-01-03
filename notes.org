@@ -6768,6 +6768,7 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
   wp user add-role lili administrator
 
   # in case of `--` cannot be used
+  # a random password is assigned
   wp user create lili li@a.ca
   wp user add-role lili administrator
   # then reset password from front end
@@ -37853,8 +37854,95 @@ LinkedIn Insight Tag
 - A tag can be on multiple websites and domains have to be verified on LinkedIn Campaign Manager
 - A tag can provide conversion tracking, learn audience and collect audience for remarketing
 
-** Google Tag Manager
+** Google Tag Manager - <<<google:gtm>>>
 https://support.google.com/tagmanager/
+https://tagmanager.google.com
+
+[[https://www.lynda.com/Google-Tag-Manager-tutorials/Google-Tag-Manager/693108-2.html][Lynda]]
+
+Refer to chrome:wasp
+
+- Container :: a website
+- Inside a container :: Tags, Triggers, Variables, Folders
+- Account :: a group of containers
+- Permissions :: Edit, Approve (approve the edits), Publish (highest permission)
+
+*** Code
+Container > Admin > Install Google Ad Manager
+#+BEGIN_SRC html
+  <!-- as high in the <head> as possible -->
+    <!-- If JS libraries are used for GTM, then put this after the libraries are loaded -->
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-CONTAINER-ID');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- immediately after the opening <body> -->
+      <!-- Google Tag Manager (noscript) -->
+      <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-CONTAINER-ID"
+			height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+      <!-- End Google Tag Manager (noscript) -->
+#+END_SRC
+
+After that, click SUBMIT to publish the change
+
+*** Tag
+Custom HTML you can paste custom JavaScript
+- Enable ~Support document.write~ if it doesn't have external sources
+
+#+BEGIN_SRC html
+  <script>
+    console.log('local hour: {{Local Browser Time-hour}}');
+  </script>
+#+END_SRC
+
+*** Variables
+Variables can be referred to in Tag and Trigger as value using double curly brackets e.g. ~{{Page URL}}~
+
+Built-in variables without any tags. These are not all built-in variables.
+- Event
+- Page Hostname
+- Page Path
+- Page URL
+- Click URL :: after a link is clicked
+
+Variables come with a certain tag type
+- TransactionTotal = {insert cart checkout total here}
+- GA Custom dimensions
+
+User-defined variables
+- Constant Variable
+- JavaScript Variable :: some global JavaScript variables
+- Custom JavaScript
+#+BEGIN_SRC js
+  function() {
+      return new Date().getHours();
+  }
+#+END_SRC
+
+*** Trigger
+Trigger controls under which condition a Tag is used/inserted.
+
+- Use variable name = value
+- Use events
+  - The following example fire an event to track outbound clicked link
+  - Create a Tag
+    - Universal Analytics
+    - Type: Event
+    - Category: link clicks
+    - Action: outbound
+    - Label: ~{{Click URL}}~
+    - Tracking ID :: UA-XXX
+  - Create a trigger inside the Tag
+    - Click URL does not contain yourwebsitedomain.com
+    - This trigger fires on All Link Clicks
+
+*** Preview
+Click Preview on GTM and normally refresh the webpage and you will get a preview pane just on your browser.
 
 ** Keywords on websites
 Page title 65 characters. A list of keywords (<=3) with separators can be used. Order matters.
@@ -54274,6 +54362,20 @@ Find function that attaches events to a selected element. Element > jQuery Audit
 Expand the Events and RC on handler to Reveal function in source.
 
 **** [[https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb?hl%3Den][Web Server for Chrome]]
+**** [[https://chrome.google.com/webstore/detail/waspinspector-analytics-s/niaoghengfohplclhbjnjheodgkejpih][Wasp]] <<<chrome:wasp>>>
+Web Analytics Solution Profiler
+
+- DevTools > beside Audits tab, there's WASP
+- WASP tracks across page opening history
+
+Scripts
+- googletagmanager.com
+- googletagservices.com
+
+Tags
+- Tags added by GTM are here
+- googleadservices.com (AdWords)
+
 **** Hosts file
 [[https://chrome.google.com/webstore/detail/host-switch-plus/bopepoejgapmihklfepohbilpkcdoaeo][Host Switch Plus]]
 [[https://chrome.google.com/webstore/detail/virtual-hosts/aiehidpclglccialeifedhajckcpedom][Virtual Hosts]]
