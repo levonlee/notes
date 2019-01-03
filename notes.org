@@ -38530,9 +38530,20 @@ You may need to load ~/.bashrc inside ~/.bash_profile
 
 https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
-When bash is invoked as in interactive login shell or as a non-interactive shell with ~--login~ option, it first execustes ~/etc/profile~. After that, it looks for =~/.bash_profile=, =~/.bash_login= and =~/.profile= in that order and execute the first found.
+- Login shell :: When bash is invoked as in interactive login shell or as a non-interactive shell with ~--login~ option, it first execustes ~/etc/profile~. After that, it looks for =~/.bash_profile=, =~/.bash_login= and =~/.profile= in that order and execute the first found
+  - ~/etc/profile~ > =~/.bash_profile= or =~/.bash_login= or =~/.profile=
+  - ~/etc/profile~ (Ubuntu)
+    - If ~$BASH~ is not ~/bin/sh~ then load ~/etc/bash.bashrc~ (interactive bash shells)
+    - Load files in ~/etc/profile.d~
+  - =~/.bash_profile= (Ubuntu doesn't have this file)
+  - =~/.bash_login= (Ubuntu doesn't have this file)
+  - =~/.profile= (Ubuntu)
+    - If running bash, include =~/.bashrc=
+    - Add user's private bin to ~$PATH~ :: =~/bin= =~/.local/bin=
+  - =~/.bashrc= (Ubuntu, interactive non-login shells)
+    - =~/.bash_aliases=
+- On Linux, a login shell is loaded when X11 or virtual terminal is loaded 
 - ~--noprofile~ option may be used when the shell is started to inhibit this behavior
-- Ubuntu ~/etc/profile~ sources ~/etc/bash.bashrc~
 
 When an interactive shell that is not a login shell is started, ~/etc/bash.bashrc~ and =~/.bashrc= are run.
 - ~--norc~ option may be used to inhibit
@@ -38572,6 +38583,39 @@ http://en.tldp.org/LDP/abs/html/internalvariables.html
 - ~_~ :: last argument of previous command executed. ~echo $_~
   - ~ls -al >/dev/null && echo $_~ :: last argument is ~-al~
   - ~du >/dev/null~ :: last argument is ~du~
+
+** Bash <<<linux:bash>>>
+https://www.gnu.org/software/bash/manual/bashref.html
+
+https://www.digitalocean.com/community/tutorials/an-introduction-to-useful-bash-aliases-and-functions
+
+https://github.com/Bash-it/bash-it/tree/master/aliases/available
+
+*** Prompt <<<bash:prompt>>>
+Variables
+- ~\$~ :: shows ~$~ if current user is normal or ~#~ for root user
+- ~\u~ :: username
+- ~\w~ :: current working dir with tilde
+
+Color
+- ~\[\033[COLOR]m\]~ e.g. ~PS1="\[\033[31m\]\u@\h:\w$ "~
+- 31,red 32,green 30,black 37,white 33,yellow 35,purple
+- ~00m~ means to reset both text style and color
+- [[https://vitux.com/how-to-customize-ubuntu-bash-prompt/][More colors]]
+
+Text Style
+- ~\[\033[ATTRIBUTE; COLORm\]~ e.g. ~PS1="\[\033[4;31m\]\u@\h:\w$ "~
+- Bold and underline :: ~PS1="\[\033[01;04;31m\]\u@\h:\w$ "~
+- 0 :: normal
+- 1 :: bold for Ubuntu
+- 2 :: dim text
+- 4 :: underline
+- 5 :: blinking
+- 7 :: reverses text and background colors
+- 8 :: hide text
+
+Run Command
+- ~PS1="\u@\h on `id -gn` \w\$ "~ where ~id -gn~ is a command
 
 ** User Management, Superuser, sudo
 *** Create and delete a user, Add user to sudo group <<<linux:user>>>
