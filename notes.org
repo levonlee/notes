@@ -11298,6 +11298,16 @@ Populate any field with parameter ~your_parameter~ with the result of the functi
   }
 #+END_SRC
 
+***** ~gform_field_container~ <<<gravityforms:gform_field_container>>>
+#+BEGIN_SRC php
+  add_filter( 'gform_field_container', 'add_bootstrap_container_class', 10, 6 );
+  function add_bootstrap_container_class( $field_container, $field, $form, $css_class, $style, $field_content ) {
+      $id = $field->id;
+      $field_id = is_admin() || empty( $form ) ? "field_{$id}" : 'field_' . $form['id'] . "_$id";
+      return '<li id="' . $field_id . '" class="' . $css_class . ' form-group">{FIELD_CONTENT}</li>';
+  }
+#+END_SRC
+
 **** Query String
 Populate form fields ~http://siteurl.com/form-url/?your_parameter=value~
 
@@ -11310,9 +11320,39 @@ https://docs.gravityforms.com/css-targeting-examples/
 https://docs.gravityforms.com/css-visual-guide/
 https://docs.gravityforms.com/css-ready-classes/
 
+#+BEGIN_SRC html
+  <div class="gform_body">
+      <ul id="gform_fileds_1" class="gform-fields top_label form_sublabel_below field_description_below">
+	  <!-- field #1 -->
+	  <li id="field_1_7" class="gfield field_sublabel_below field_description_below gfield_visibility_visible">
+	      <label for="input_1_7" class="gfield_label">Label 1</label>
+	      <div class="ginput_container ginput_container_text">
+		  <input type="text" name="input_7" id="input_1_7" value class="medium" tabindex="1" aria-invalid="false">
+	      </div>
+	  </li>
+
+	  <!-- field #2 -->
+      </ul>
+  </div>
+#+END_SRC
+
+- Use gravityforms:gform_field_container to modify field container ~<li>~
+- Use SASS to assign Bootstrap classes. Refer to sass:@extend
+  - https://github.com/lekkerduidelijk/form-gf-bootstrap
+
 **** Add-Ons
 ***** User Registration
 A feed is used to pass form submission info over to the add-on. In Form Setting > User Registration > Add New Feed
+
+**** TS: ~jQuery is not found~
+Gravity Forms by default will write an inline JavaScript call to jQuery on every form you add to a page.  This will throw an error if you’re loading jQuery in the footer of your site (which you should be doing).
+
+#+BEGIN_SRC php
+  add_filter("gform_init_scripts_footer", "init_scripts");
+  function init_scripts() {
+	  return true;
+  }
+#+END_SRC
 
 *** contact-form-7
 **** Shortcode
@@ -11835,6 +11875,16 @@ After installing and activating the plugin, to get breadcrumb trails to display 
 5.0.1
 6.0.4
 *** sendgrid-email-delivery-simplified
+- Create API key with ~Mail Send: Full~ permission only
+- Create Sender Authentication: Domain and Link Branding
+- On WP, use ~Send Mail with API~
+- Specify category ~yourwebsite.com~
+- Hard set API key in code otherwise the setting page keeps refreshing as browser form auto-fill kicks in.
+wp-config.php
+#+BEGIN_SRC php
+  define('SENDGRID_API_KEY', 'your.api.key');
+#+END_SRC
+
 *** woocommerce
 **** Basics
 https://docs.woocommerce.com/documentation/plugins/woocommerce/getting-started/
@@ -15133,7 +15183,7 @@ You can also place each svg one after another
   }
 #+END_SRC
 
-*** ~@extend~ ~%~
+*** ~@extend~ ~%~ <<<sass:@extend>>>
 #+BEGIN_SRC scss
   %message-shared {
     border: 1px solid #ccc;
@@ -45246,7 +45296,7 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 - Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
 - ~$_ENV['PANTHEON_ENVIRONMENT']~ is ~lando~
 
-**** Push a new website to Live
+*** Push a new website to Live <<<lando:pantheon:live>>>
 - On local Lando
   - ~wp search-replace '//myweb.com' '//dev-myweb.pantheonsite.io' --dry-run~
   - ~wp search-replace '//www.myweb.com' '//dev-myweb.pantheonsite.io' --dry-run~
@@ -50636,6 +50686,7 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-re
 ** Clear Cache
 Use ~terminus env:clear-cache~ to debug clear cache failure.
 
+** Lando push to Live lando:pantheon:live
 ** Quicksilver Platform Hooks
 
 [[https://github.com/pantheon-systems/quicksilver-examples/tree/master/slack_notification][Slack example]]
@@ -56141,7 +56192,7 @@ This subdomain has to be different from the Domain whitelable subdomain.
 SendGrid will show you 2 CNAMES per subdomain setup.
 
 **** PHPMailer
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   date_default_timezone_set('America/Toronto');
   require_once(__DIR__.'/../../../wp-includes/class-phpmailer.php');
 
@@ -56151,10 +56202,10 @@ SendGrid will show you 2 CNAMES per subdomain setup.
   $html = <<<HTML
       <html>
       <head>
-        <title>{$subject}</title>
+	<title>{$subject}</title>
       </head>
       <body>
-        {$body}
+	{$body}
       </body>
       </html>
   HTML;
@@ -56186,7 +56237,7 @@ SendGrid will show you 2 CNAMES per subdomain setup.
   else {
     return 'success';
   }
-#+END_EXAMPLE
+#+END_SRC
      
 *** DMARC, SPF, DKIM
 Domain-based Message Authentication, Reporting, and Conformance.
