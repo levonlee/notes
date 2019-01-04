@@ -6797,6 +6797,7 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
   wp plugin status
   wp plugin update akismet
   wp plugin activate plugin_name
+  wp plugin deactivate plugin_name
   wp plugin uninstall Plugin_name
 
   lando terminus wp mysite.dev plugin install post-expirator
@@ -11007,7 +11008,7 @@ Remove line from wp-config.php define('WP_CACHE', true)
 **** Releases
 0.9.5.1 > 0.9.6 > 0.9.7
 
-*** CPT <<<wp:plugin:custom-post-type-ui>>>
+*** CPT UI <<<wp:plugin:custom-post-type-ui>>>
 Refer to wp:add cpt
 
 - Remember to refresh permalinks
@@ -11159,9 +11160,9 @@ Create a blank page and associate it with Events > Settings > Viewing Events to 
 
 May create JavaScript script to embed on external websites
 
-*** Gravity Forms
+*** Gravity Forms <<<wp:plugin:gravity forms>>>
 - Require PHP 5.6+, MySQL 5.5+
-- Need license key to use the plugin
+- Can bypass license key to use the plugin
 
 **** Form setting
 - Allow field to be populated dynamically :: so that populating this form field with a value using query string or hook.
@@ -11347,6 +11348,12 @@ https://docs.gravityforms.com/css-ready-classes/
 **** Add-Ons
 ***** User Registration
 A feed is used to pass form submission info over to the add-on. In Form Setting > User Registration > Add New Feed
+
+**** WP Config
+https://docs.gravityforms.com/wp-config-options/
+#+BEGIN_SRC php
+  define( 'GF_LICENSE_KEY', 'YOUR-LICENSE-KEY-HERE' );
+#+END_SRC
 
 **** TS: ~jQuery is not found~
 Gravity Forms by default will write an inline JavaScript call to jQuery on every form you add to a page.  This will throw an error if you’re loading jQuery in the footer of your site (which you should be doing).
@@ -11888,6 +11895,11 @@ wp-config.php
 #+BEGIN_SRC php
   define('SENDGRID_API_KEY', 'your.api.key');
 #+END_SRC
+
+*** OneSignal <<<wp:plugin:onesignal-free-web-push-notifications>>>
+Free for up to 30k subscribers and no limit on number of push notifications you can send.
+
+- Custom Code can be selected on OneSignal.com. It doesn't have to be ~WordPress Plugin or Website Builder~
 
 *** woocommerce
 **** Basics
@@ -41067,7 +41079,7 @@ List files owned by a package =dpkg -L cron=
 
 Find which package owns a file =dpkg -S /etc/crontab=
 
-**** =apt-get= =apt-cache= Ubuntu
+**** ~apt-get~ ~apt-cache~ Ubuntu
 Since Ubuntu 16.04, apt is introduced and it's a subset of apt-get and apt-cache
 
 - Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
@@ -41093,17 +41105,17 @@ For Ubuntu lower than 14.04, use ~dpkg -l~ to list all installed packages on Ubu
 Otherwise, use ~apt list --installed~
 
 - To see if a package is installed :: ~apt list -a --installed openssh-client~
-
-Search package by regex name (return name and description only): =apt-cache search php=
+- Return info of a package before it's installed :: ~apt-cache show shutter~
+- Search package by regex name (return name and description only) :: ~apt-cache search php~
 Search packages with name starting php (return names only) :: =apt-cache pkgnames php5=
 All packages' names (return names only) :: =apt-cache pkgnames=
 
-Find out dependencies of a package: =apt-cache showpkg php5-xmlrpc=
-- Other packages must be installed before php5-xmlrpc (under Dependencies)
-- Other packages depend on php5-xmlrpc (under Reverse Depends)
-- Different versions of this package you can install (under Provides)
+- Find out dependencies of a package :: ~apt-cache showpkg php5-xmlrpc=
+  - Other packages must be installed before php5-xmlrpc (under Dependencies)
+  - Other packages depend on php5-xmlrpc (under Reverse Depends)
+  - Different versions of this package you can install (under Provides)
 
-To compare installed version of a package with remote version :: ~apt-cache policy openssh-client~
+- To compare installed version of a package with remote version :: ~apt-cache policy openssh-client~
 
 - Use website to see a package info e.g. tmux :: https://packages.ubuntu.com/bionic/tmux
 
@@ -42663,29 +42675,162 @@ By default, nano covert tab to 4 spaces. Turn off ~Shift + Alt + Q~
 Show line number when open ~nano -c filename~
 
 ** Ubuntu <<<linux:ubuntu>>>
-- Logout :: ~gnome-session-quit~
+*** Gnome
+- Logout ::~gnome-session-quit~
 
-Chrome Remote Desktop
-- May need to logout local login session otherwise terminal does not open
+*** Shortcuts
+- All system shortcuts :: Settings > Devices > Keyboard
 
-*** Ubuntu Unity
+- Terminal :: ~C-M-t~
+- Copy from Terminal (GNOME) :: ~C-S-c~
 
-| C-M t   | open Terminal          |
-| M-<F2>  | run command/open app   |
-| Super-T | Open Trash             |
-| Super-F | Open Files             |
-| Alt-`   | Switch between windows |
-|         | of the current app     |
-|         |                        |
+- Open favorite app 1 :: ~Super-1~
+
+- Show All Applications :: ~Super-a~
+- Show Notification tray :: ~Super-m~
+- Run commands :: ~M-<F2>~
+
+- Switch workspaces ~C-M-Up~ or ~C-M-Down~
+- Switch apps (open App Switcher) ~M-Tab~
+- Switch instances/windows for the current app ~M-`~
+- Quit app in App Switcher :: ~M-q~
+
+- Close application window :: ~C-q~ or ~M-F4~
+
+- Drag and drop with ~C-S~ to create symlinks
+
+*** Setting
+https://linuxconfig.org/things-to-do-after-installing-ubuntu-18-04-bionic-beaver-linux
+
+- Keyboard repeat rate
+Settings > Universal Access > Typing > Repeat Keys > On, lower speed faster rate
+
+- Remote Desktop from Windows RDP
+http://c-nergy.be/products.html
+
+#+BEGIN_SRC sh
+  chmod +x  ~/Downloads/Std-Xrdp-Install-0.5.1.sh
+  ./Std-Xrdp-Install-0.5.1.sh -s yes -g yes
+
+  sudo reboot
+
+  # try remote from Windows
+#+END_SRC
+
+- Install Pinyin
+  - ~sudo apt install ibus-pinyin~
+  - Settings > Languages and Region > Manage installed Languages, reboot or select IBus as Keyboard input method system, add Chinese Simplified then reboot
+  - Settings > Languages and Region > add Chinese (Intelligent Pinyin) as a new Input Sources
+
+- Ubuntu repository mirror :: Software & Updates > Ubuntu Software > Download from > Other > Select Best Server
+
+- ~gnome-tweak-tool~
+  - ~sudo add-apt-repository universe~ ~sudo apt install gnome-tweak-tool~
+  - Open ~Tweaks~ app
+
+- ~sudo apt install gnome-shell-extensions~ :: prepare to install extensions that come with the package repo
+  - Log back in and go to Tweak Tool > Extensions
+
+- GDebi
+  - By default, Ubuntu Software Center does not install dependencies when app .deb is installed
+  - ~sudo apt install gdebi~
+  - e.g. download deb from Chrome and in Files app, right click > Properties > Open with GDebi Package Installer, close
+  - ~sudo gdebi google-chrome-stable_current_amd64.deb~
+  - To remove a package installed from gdebi, ~apt~ and ~dpkg~ commands using ~purge~ option as shown: ~sudo apt purge google-chrome-stable~ ~sudo apt-get purge teamviewer~ ~sudo dpkg -purge teamviewer~
+
+- Snap
+  - Snap is built-in in Ubuntu 18.04
+  - Apps installed by Snap are almost independent. Different versions of the same app can co-exist
+  - Before developers have to come up packages for each distro and each version of distro. Now, one snap one distro.
+  - Snap Daemon can be used in distros other than Ubuntu
+  - Snaps are automatically updated (4 times a day)
+  - Snap is installed globally for all users once and each user stores separate userdata
+  - https://snapcraft.io/store
+  - ~sudo apt install snapd~
+  - Find Snap package ~snap find vlc~
+  - ~sudo snap install vlc~
+  - List installed Snap packages :: ~snap list~
+  - Install, remove history of Snaps :: ~snap changes~
+  - Upgrade ~sudo snap refresh vlc~
+  - See which Snaps have updates ready to be installed :: ~sudo snap refresh --list~
+  - Rever a recent update ~sudo snap revert vlc~
+  - Remove a Snap package :: ~sudo snap remove vlc~
+  - Channel name :: stable, candidate, beta, edge
+    - ~sudo snap refresh vlc --channel=edge~
+  - Download and install it offline later
+    - ~snap download vlc~ :: download .assert and .snap file
+    - ~snap ack vlc.assert~
+    - ~snap install vlc.snap~
+
+- Install codes  and extras :: ~sudo apt install ubuntu-restricted-extras~
+
+- Intel graphic card screen tearing under X11
+[[https://learnubuntumate.weebly.com/screen-tearing-on-intel-graphics.html][Reference]]
+#+BEGIN_SRC sh
+  sudo mkdir -p /etc/X11/xorg.conf.d/
+  sudo nano /etc/X11/xorg.conf.d/20-intel.conf
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  Section "Device"
+     Identifier  "Intel Graphics"
+     Driver      "intel"
+     Option      "TearFree"    "true"
+  EndSection
+#+END_EXAMPLE
+
+Reboot
+
+- Shutter <<<linux:shutter>>>
+  - ~sudo apt install shutter~
+  - https://launchpad.net/ubuntu/+archive/primary/+files/libgoocanvas-common_1.0.0-1_all.deb
+  - https://launchpad.net/ubuntu/+archive/primary/+files/libgoocanvas3_1.0.0-1_amd64.deb
+  - https://launchpad.net/ubuntu/+archive/primary/+files/libgoo-canvas-perl_0.06-2ubuntu3_amd64.deb
+  - ~sudo apt install libappindicator-dev~
+  - ~sudo cpan -i Gtk2::AppIndicator~
+  - ~sudo killall shutter~
+  - Start Shutter again
+  - Pixelize, Delay & Selection
+
+- Check for updates
+  - ~ubuntu-support-status~
+
+*** Dual Boot with Win 10
+- Turn off fast start up :: Control Panel > Hardware and Sound > Power Options > Choose what the power buttons do > uncheck Turn on fast startup
+- May need to disable Secure Boot :: enable means BIOS will prevent un-authorized OS be loaded.
+  - Win + S to search ~advanced startup options~ and click ~Restart Now~
+  - select TroubleShoot > Advanced Options > UEFI Firmware Option Settings > Restart
+  - BIOS settings will open, disable Secure Boot. You may need to Turn Legacy Support On/Off
+- Determine if it's BIOS or EFI mode
+  - Run ~msinfo32~ and see if BIOS Mode is UEFI
+    - BIOS mode :: boosts by reading the first sector on hard disk and executing it; this boot sector in turn locates and runs additioinal code. It uses the Master Boot Record (MBR) partition table which is very limiting because of space (no more than 2TB in size per partition) and partitions(more than 4 primary partitions) constraints.
+    - EFI mode :: boots by loading EFI program files (with .efi extension) from a partition on the hard disk uses the GUID partition table (GPT) offering 64-bit entries in its table which dramatically extends the support for size possibilites.
+  - Ubuntu has to be installed using the same mode. If you see black screen with options when you boot using Ubuntu's bootable USB, then it shows Ubuntu is booted from EFI. 
+- Create free space on Windows for Ubuntu :: Win + S to search ~Create and Format Hard Disk Partitions~ > Shrink Partition, so that you will have ~Unallocated~ space in partitions. You will need 2 unallocated spaces. One for root and one for /home in Ubuntu
+- [[https://tutorials.ubuntu.com/tutorial/tutorial-create-a-usb-stick-on-windows#0][Create a bootable USB stick on Windows]]
+- Boot from USB :: Win + S to search ~Advanced Startup Options~ > Restart Now > Boot from USB
+- Try Ubuntu without installing > open gparted, right click on unallocated to create partition
+  - Create as: Primary Partition, File system: ext4, Label: ROOT and HOME, partition name: root and home,  
+- Open Install on the desktop
+- Normal installation and Install third-party software for graphics and Wi-Fi hardware, MP3 and other media
+- Installation type :: Something else
+  - change on a device name :: Use as: Ext4 journaling file system, Mount point: / and /home, Format the partition.
+  - Device for boot loader installation :: If boot mode is BIOS, select the whole device name e.g. ~/dev/sda~. If it's UEFI mode, choose the partition. Go to ~gparted~ and see which partition has value ~boot~ in column 'Flags'. e.g. ~/dev/sdap1~ 
+
+*** Maintenance
+- ~sudo apt autoremove --dry-run~ :: delete any unused dependencies
+- ~sudo du -sh /var/cache/apt~ :: APT keeps previously downloaded and installed packages even after they've been uninstalled
+  - Remove only the outdated packages ~sudo apt autoclean --dry-run~
+  - Clean it entirely ~sudo apt clean --dry-run~
 
 ** Ubuntu Personal Package Archive PPA
 Add a LibreOffice package from PPA to Software Sources
-=sudo add-apt-repository ppa:libreoffice/ppa=, then =sudo apt-get update=
+~sudo add-apt-repository ppa:libreoffice/ppa~, then ~sudo apt-get update~
 Remove the package source
-=sudo add-apt-repository --remove ppa:libreoffice/ppa=, =apt-get update=
+~sudo add-apt-repository --remove ppa:libreoffice/ppa~, ~apt-get update~
 
 Remove it and downgrade back to previous version before using PPA
-=sudo apt-get install ppa-purge=, =sudo ppa-purge ppa:libreoffice/ppa=
+~sudo apt-get install ppa-purge~, ~sudo ppa-purge ppa:libreoffice/ppa~
 
 ** Production Server Setup
 linux:user :: Add a normal user, add the user to sudo group
@@ -55095,139 +55240,6 @@ Open cmd run as admin and run: =msiexec /i "the path"=
 - Win + R and mdsched.exe to do a memory check
 - Check disk: right click on C drive > Properties > Tools > Check
 - Win + S, cmd, run as admin, ~sfc /scannow~
-
-** Ubuntu
-*** Shortcuts
-- All system shortcuts :: Settings > Devices > Keyboard
-
-- Terminal :: ~C-M-t~
-- Copy from Terminal (GNOME) :: ~C-S-c~
-
-- Show All Applications :: ~Super-a~
-- Show Notification tray :: ~Super-m~
-- Run commands :: ~M-F2~
-
-- Switch workspaces ~C-M-Up~ or ~C-M-Down~
-- Switch apps (open App Switcher) ~M-Tab~
-- Switch instances/windows for the current app ~M-`~
-- Quit app in App Switcher :: ~M-q~
-
-- Close application window :: ~C-q~ or ~M-F4~
-
-- Drag and drop with ~C-S~ to create symlinks
-
-*** Setting
-https://linuxconfig.org/things-to-do-after-installing-ubuntu-18-04-bionic-beaver-linux
-
-- Keyboard repeat rate
-Settings > Universal Access > Typing > Repeat Keys > On, lower speed faster rate
-
-- Remote Desktop from Windows RDP
-http://c-nergy.be/products.html
-
-#+BEGIN_SRC sh
-  chmod +x  ~/Downloads/Std-Xrdp-Install-0.5.1.sh
-  ./Std-Xrdp-Install-0.5.1.sh -s yes -g yes
-
-  sudo reboot
-
-  # try remote from Windows
-#+END_SRC
-
-- Install Pinyin
-  - ~sudo apt install ibus-pinyin~
-  - Settings > Languages and Region > Manage installed Languages, reboot or select IBus as Keyboard input method system, add Chinese Simplified then reboot
-  - Settings > Languages and Region > add Chinese (Intelligent Pinyin) as a new Input Sources
-
-- Ubuntu repository mirror :: Software & Updates > Ubuntu Software > Download from > Other > Select Best Server
-
-- ~gnome-tweak-tool~
-  - ~sudo add-apt-repository universe~ ~sudo apt install gnome-tweak-tool~
-  - Open ~Tweaks~ app
-
-- ~sudo apt install gnome-shell-extensions~ :: prepare to install extensions that come with the package repo
-  - Log back in and go to Tweak Tool > Extensions
-
-- GDebi
-  - By default, Ubuntu Software Center does not install dependencies when app .deb is installed
-  - ~sudo apt install gdebi~
-  - e.g. download deb from Chrome and in Files app, right click > Properties > Open with GDebi Package Installer, close
-  - ~sudo gdebi google-chrome-stable_current_amd64.deb~
-  - To remove a package installed from gdebi, ~apt~ and ~dpkg~ commands using ~purge~ option as shown: ~sudo apt purge google-chrome-stable~ ~sudo apt-get purge teamviewer~ ~sudo dpkg -purge teamviewer~
-
-- Snap
-  - Snap is built-in in Ubuntu 18.04
-  - Apps installed by Snap are almost independent. Different versions of the same app can co-exist
-  - Before developers have to come up packages for each distro and each version of distro. Now, one snap one distro.
-  - Snap Daemon can be used in distros other than Ubuntu
-  - Snaps are automatically updated (4 times a day)
-  - Snap is installed globally for all users once and each user stores separate userdata
-  - https://snapcraft.io/store
-  - ~sudo apt install snapd~
-  - Find Snap package ~snap find vlc~
-  - ~sudo snap install vlc~
-  - List installed Snap packages :: ~snap list~
-  - Install, remove history of Snaps :: ~snap changes~
-  - Upgrade ~sudo snap refresh vlc~
-  - See which Snaps have updates ready to be installed :: ~sudo snap refresh --list~
-  - Rever a recent update ~sudo snap revert vlc~
-  - Remove a Snap package :: ~sudo snap remove vlc~
-  - Channel name :: stable, candidate, beta, edge
-    - ~sudo snap refresh vlc --channel=edge~
-  - Download and install it offline later
-    - ~snap download vlc~ :: download .assert and .snap file
-    - ~snap ack vlc.assert~
-    - ~snap install vlc.snap~
-
-- Install codes  and extras :: ~sudo apt install ubuntu-restricted-extras~
-
-- Intel graphic card screen tearing under X11
-[[https://learnubuntumate.weebly.com/screen-tearing-on-intel-graphics.html][Reference]]
-#+BEGIN_SRC sh
-  sudo mkdir -p /etc/X11/xorg.conf.d/
-  sudo nano /etc/X11/xorg.conf.d/20-intel.conf
-#+END_SRC
-
-#+BEGIN_EXAMPLE
-  Section "Device"
-     Identifier  "Intel Graphics"
-     Driver      "intel"
-     Option      "TearFree"    "true"
-  EndSection
-#+END_EXAMPLE
-
-Reboot
-
-- Check for updates
-  - ~ubuntu-support-status~
-
-*** Dual Boot with Win 10
-- Turn off fast start up :: Control Panel > Hardware and Sound > Power Options > Choose what the power buttons do > uncheck Turn on fast startup
-- May need to disable Secure Boot :: enable means BIOS will prevent un-authorized OS be loaded.
-  - Win + S to search ~advanced startup options~ and click ~Restart Now~
-  - select TroubleShoot > Advanced Options > UEFI Firmware Option Settings > Restart
-  - BIOS settings will open, disable Secure Boot. You may need to Turn Legacy Support On/Off
-- Determine if it's BIOS or EFI mode
-  - Run ~msinfo32~ and see if BIOS Mode is UEFI
-    - BIOS mode :: boosts by reading the first sector on hard disk and executing it; this boot sector in turn locates and runs additioinal code. It uses the Master Boot Record (MBR) partition table which is very limiting because of space (no more than 2TB in size per partition) and partitions(more than 4 primary partitions) constraints.
-    - EFI mode :: boots by loading EFI program files (with .efi extension) from a partition on the hard disk uses the GUID partition table (GPT) offering 64-bit entries in its table which dramatically extends the support for size possibilites.
-  - Ubuntu has to be installed using the same mode. If you see black screen with options when you boot using Ubuntu's bootable USB, then it shows Ubuntu is booted from EFI. 
-- Create free space on Windows for Ubuntu :: Win + S to search ~Create and Format Hard Disk Partitions~ > Shrink Partition, so that you will have ~Unallocated~ space in partitions. You will need 2 unallocated spaces. One for root and one for /home in Ubuntu
-- [[https://tutorials.ubuntu.com/tutorial/tutorial-create-a-usb-stick-on-windows#0][Create a bootable USB stick on Windows]]
-- Boot from USB :: Win + S to search ~Advanced Startup Options~ > Restart Now > Boot from USB
-- Try Ubuntu without installing > open gparted, right click on unallocated to create partition
-  - Create as: Primary Partition, File system: ext4, Label: ROOT and HOME, partition name: root and home,  
-- Open Install on the desktop
-- Normal installation and Install third-party software for graphics and Wi-Fi hardware, MP3 and other media
-- Installation type :: Something else
-  - change on a device name :: Use as: Ext4 journaling file system, Mount point: / and /home, Format the partition.
-  - Device for boot loader installation :: If boot mode is BIOS, select the whole device name e.g. ~/dev/sda~. If it's UEFI mode, choose the partition. Go to ~gparted~ and see which partition has value ~boot~ in column 'Flags'. e.g. ~/dev/sdap1~ 
-
-*** Maintenance
-- ~sudo apt autoremove --dry-run~ :: delete any unused dependencies
-- ~sudo du -sh /var/cache/apt~ :: APT keeps previously downloaded and installed packages even after they've been uninstalled
-  - Remove only the outdated packages ~sudo apt autoclean --dry-run~
-  - Clean it entirely ~sudo apt clean --dry-run~
 
 ** Exchange, Office
 *** Exchange Online, Office 365
