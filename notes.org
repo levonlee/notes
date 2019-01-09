@@ -6767,6 +6767,9 @@ https://github.com/wp-cli and go to ~db-command/src/DB_Command.php~ for command 
   # Give role
   wp user add-role lili administrator
 
+  # remove role
+  wp user remove-role lili subscriber
+
   # in case of `--` cannot be used
   # a random password is assigned
   wp user create lili li@a.ca
@@ -12115,28 +12118,34 @@ Config
 ** Debug, WP_Error
 https://codex.wordpress.org/Function_Reference/WP_Error
 Function may return WP_Error object. Catch error
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $post = wp_insert_post([]);
   if ( is_wp_error($post) ) {
-   echo $post->get_error_message();
+	  echo $post->get_error_message();
   }
-#+END_EXAMPLE
+#+END_SRC
 
 <<<wp:show error>>>
 In wp-config.php insert this before /* That's all, stop editing! Happy blogging */
 https://codex.wordpress.org/Debugging_in_WordPress
 #+BEGIN_SRC php
-  define( 'WP_DEBUG', false );
-  //define('WP_DEBUG', true);
-  if ( WP_DEBUG ) {
-    @error_reporting( E_ALL ); @ini_set( 'log_errors', true );
-    @ini_set( 'log_errors_max_len', '0' );
-    // define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
-    define('WP_DEBUG_DISPLAY', true); // set to false to not display error on HTML pages
-    define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
-    // set to false that JavaScript files are loaded separately for Admin area.
-    define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
-    ini_set('display_errors', 1); // 'stderr' can be set
+  if ( ! defined( 'WP_DEBUG' ) ) {
+	  if ( 1==1 ) {
+		  define( 'WP_DEBUG', false );
+	  }
+	  else {
+		  define('WP_DEBUG', true);
+		  @error_reporting( E_ALL );
+		  @ini_set( 'log_errors', true );
+		  @ini_set( 'log_errors_max_len', '0' );
+		  @ini_set('display_errors', 1); // 'stderr' can be set
+
+		  define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
+		  define('WP_DEBUG_DISPLAY', true); // set to false to not display error on HTML pages
+		  define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
+		  // set to false that JavaScript files are loaded separately for Admin area.
+		  define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
+	  }
   }
 #+END_SRC
 
@@ -12794,6 +12803,11 @@ Use something like this
       });
   }
 #+END_EXAMPLE
+
+** TS: Image editor not working, Edit Media, PHP open tag
+Ensure all php files in plugins, mu-plugins, theme's functions.php and its included PHP files:
+- No space before ~<?php~ if the file starts with it
+- Files do not end with ~?>~
 
 ** TS: Check list
 - check PHP and MySQL version
