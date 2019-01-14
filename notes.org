@@ -9007,14 +9007,53 @@ https://www.tinymce.com/docs/configure/
 #+END_SRC
 
 *** the_content <<<wp:filter:the_content>>>
-Refer to wp:f:shortcode_unautop wp:f:wpautop wp:filter:tiny_mce_before_init
+Refer to 
+- wp:f:shortcode_unautop 
+- wp:f:wpautop
+- wp:filter:tiny_mce_before_init
 Change the content of the post after retrieved from db and before it's printed to the screen.
 [[https://codex.wordpress.org/Plugin_API/Filter_Reference/the_content][Doc]]
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   add_filter( 'the_content', 'wpautop');
   // remove_filter( 'the_content', 'wpautop');
   add_filter( 'the_content', 'shortcode_unautop'  );
-#+END_EXAMPLE
+#+END_SRC
+
+#+BEGIN_SRC php
+  //Insert ads after second paragraph of single post content.
+ 
+  add_filter( 'the_content', 'prefix_insert_post_ads' );
+ 
+  function prefix_insert_post_ads( $content ) {
+     
+      $ad_code = '<div>Ads code goes here</div>';
+ 
+      if ( is_single() && ! is_admin() ) {
+	  return prefix_insert_after_paragraph( $ad_code, 2, $content );
+      }
+     
+      return $content;
+  }
+  
+  // Parent Function that makes the magic happen
+  
+  function prefix_insert_after_paragraph( $insertion, $paragraph_id, $content ) {
+      $closing_p = '</p>';
+      $paragraphs = explode( $closing_p, $content );
+      foreach ($paragraphs as $index => $paragraph) {
+ 
+	  if ( trim( $paragraph ) ) {
+	      $paragraphs[$index] .= $closing_p;
+	  }
+ 
+	  if ( $paragraph_id == $index + 1 ) {
+	      $paragraphs[$index] .= $insertion;
+	  }
+      }
+     
+      return implode( '', $paragraphs );
+  }
+#+END_SRC
 
 *** upload_mimes <<<wp:filter:upload_mimes>>>
 Add mime type so that wp can handle its content-type header to browser for upload and sending.
