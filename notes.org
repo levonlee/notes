@@ -53227,7 +53227,7 @@ media-w1200-w992.css
 ** Interstitial Ad
 Load third party code into 1x1 floating ad unit. Insert DFP macro as a third party code first. Refer to dfp:third party code
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // Outside of the div
   var dfpSlots = {}; // non single request mode
 
@@ -53245,42 +53245,44 @@ Load third party code into 1x1 floating ad unit. Insert DFP macro as a third par
    });
 
   });
+#+END_SRC
 
-  <div id='interstitial'>
-    <script type='text/javascript'>
-      googletag.cmd.push(function() { googletag.display('interstitial'); });
+#+BEGIN_SRC html
+  <div id="interstitial">
+    <script type="text/javascript">
+      googletag.cmd.push(function() { googletag.display("interstitial"); });
     </script>
   </div>
-#+END_EXAMPLE
+#+END_SRC
 
-On DFP, Custom Code :: postMessage to website to create jQuery UI dialog and later receives a message to create content inside the iframe
-#+BEGIN_EXAMPLE
+- On DFP, Custom Code :: postMessage to website to create jQuery UI dialog and later receives a message to create content inside the iframe
+#+BEGIN_SRC html
   <script type="text/javascript">
     (function() {
       'use strict';
       var temp = '%%VIEW_URL_UNESC%%'; // Custom Code requires VIEW_URL_UNESC or VIEW_URL_ESC macro..
       window.onload = function() {
-        function receiveMessage(e) {
-          if (e.data == 'load_interstitial_ad') {
-            var html = '<div style="width:640px;height:480px;">' +
-                '<script src="insert third party code"'+'>'+'</'+'script>'+
-                '<noscript>' +
-                '<a href="insert_third_party_code" target="_blank"><img src="insert_third_party_code" border=0 width=640 height=480></a>'+
-                '</noscript>'+ 
-              '</div>';
-            document.write(html);
-          }
-        }
-        window.addEventListener('message', receiveMessage);
-        var sendData = {action:"dfp_load_interstitial_ad", width:"640", height:"480"};
-        parent.postMessage(sendData,'*');
+	function receiveMessage(e) {
+	  if (e.data == 'load_interstitial_ad') {
+	    var html = '<div style="width:640px;height:480px;">' +
+		'<script src="insert third party code"'+'>'+'</'+'script>'+
+		'<noscript>' +
+		'<a href="insert_third_party_code" target="_blank"><img src="insert_third_party_code" border="0" width="640" height="480"></a>'+
+		'</noscript>'+ 
+	      '</div>';
+	    document.write(html);
+	  }
+	}
+	window.addEventListener('message', receiveMessage);
+	var sendData = {action:"dfp_load_interstitial_ad", width:"640", height:"480"};
+	parent.postMessage(sendData,'*');
       }
     })();
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
-On website :: once received message from iframe, load internal script and only load it once
-#+BEGIN_EXAMPLE
+- On website :: once received message from iframe, load internal script and only load it once
+#+BEGIN_SRC js
   var dfpInterstitial = {};
   dfpInterstitial.loadCount=0;
 
@@ -53294,31 +53296,31 @@ On website :: once received message from iframe, load internal script and only l
 
       ['//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-darkness/jquery-ui.css',
        '/wp-content/themes/xxx/css/interstitial.css'].forEach(function (src) {
-        var _css = document.createElement("link");
-        _css.rel = 'stylesheet';
-        _css.type = 'text/css';
-        _css.href = src;
-        document.head.appendChild(_css);
+	var _css = document.createElement("link");
+	_css.rel = 'stylesheet';
+	_css.type = 'text/css';
+	_css.href = src;
+	document.head.appendChild(_css);
       });
 
       [ 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js','/sites/all/themes/abc/js/interstitial.js'
       ].forEach(function(src) {
-        var script = document.createElement('script');
-        script.src = src;
-        script.async = false;
-        document.head.appendChild(script);
+	var script = document.createElement('script');
+	script.src = src;
+	script.async = false;
+	document.head.appendChild(script);
       });
       // var jsLink = jQuery("<script type='text/javascript' src='http://yourwebsite.io/interstitial.js'>");
       // jQuery('head').append(jsLink);
     }
   }
   window.addEventListener('message', newcomReceiveMessage, false);
-#+END_EXAMPLE
+#+END_SRC
 
 On website, interstitial.js :: make ad unit div as a dialog using jQuery UI. jqueryui:dialog
 jQuery UI Dialog runs script inside the container twice. The script is setup in DFP which only posts or receives message.
 Even though the same message is posted twice but the dfpInterstitialCount ensures this javascript only runs once.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   jQuery(function(){
     var targetDialog = '#interstitial'; // TODO
     var iframeId = jQuery(targetDialog).find('iframe').get(0).id;
@@ -53333,34 +53335,34 @@ Even though the same message is posted twice but the dfpInterstitialCount ensure
       closeOnEscape: true,
       modal: true,
       create: function (event, ui) {
-        jQuery("#ui-dialog-title-dialog").hide();
-        jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
-        jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
-        jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
+	jQuery("#ui-dialog-title-dialog").hide();
+	jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
+	jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
+	jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
 
-        // In Single Request Mode, every time .display() is called, the div will refilled with new ad
-        // In Non-Single-request mode, you need to do .refresh(). 
-        if (typeof dfpSlots !== "undefined" && typeof dfpSlots.floating !== "undefined") {
-          googletag.cmd.push(function() {
-            googletag.pubads().refresh([dfpSlots.floating]);
-          });
-        }
-        jQuery(targetDialog).find('iframe').width(adWidth);
-        jQuery(targetDialog).find('iframe').height(adHeight);
+	// In Single Request Mode (initial load), every time .display() is called, the div will refilled with new ad
+	// In Non-Single-request mode (after initial load), you need to do .refresh(). 
+	if (typeof dfpSlots !== "undefined" && typeof dfpSlots.floating !== "undefined") {
+	  googletag.cmd.push(function() {
+	    googletag.pubads().refresh([dfpSlots.floating]);
+	  });
+	}
+	jQuery(targetDialog).find('iframe').width(adWidth);
+	jQuery(targetDialog).find('iframe').height(adHeight);
       },
       open: function() {
-        jQuery('.ui-widget-overlay').addClass('custom-overlay');
-        jQuery(this).closest(".ui-dialog")
-          .find(".ui-dialog-titlebar-close")
-          .removeClass("ui-dialog-titlebar-close")
-          .html("<span class='ui-button-icon-primary ui-icon ui-icon-closethick'></span>");
-        jQuery(".ui-dialog-titlebar button").css({"border":"none"});
-        jQuery('.ui-widget-overlay').bind('click',function(){
-          jQuery(targetDialog).dialog('close');
-        })
+	jQuery('.ui-widget-overlay').addClass('custom-overlay');
+	jQuery(this).closest(".ui-dialog")
+	  .find(".ui-dialog-titlebar-close")
+	  .removeClass("ui-dialog-titlebar-close")
+	  .html("<span class='ui-button-icon-primary ui-icon ui-icon-closethick'></span>");
+	jQuery(".ui-dialog-titlebar button").css({"border":"none"});
+	jQuery('.ui-widget-overlay').bind('click',function(){
+	  jQuery(targetDialog).dialog('close');
+	})
       },
       close: function() {
-        jQuery('.ui-widget-overlay').removeClass('custom-overlay');
+	jQuery('.ui-widget-overlay').removeClass('custom-overlay');
       }
     });
 
@@ -53371,16 +53373,16 @@ Even though the same message is posted twice but the dfpInterstitialCount ensure
     }, 3000);
 
   });
-#+END_EXAMPLE
+#+END_SRC
 
 /wp-content/themes/xxx/css/interstitial.css
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .ui-widget-overlay.custom-overlay {
     background-color: black;
     background-image: none;
     opacity: 0.7;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Interstitial as JW Player is a bit complicated. [[https://gist.github.com/levonlee/1e162c34af377d04364295d027a33c96][Gist]]
 
@@ -53512,7 +53514,7 @@ Notes
 Wordpress Gist
 https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 
-** Anti Adblocke
+** Anti AdBlocker
 https://gist.github.com/levonlee/da658dd8d6c91f093fc90aeca4653ae7
 
 ** Benchmarks
