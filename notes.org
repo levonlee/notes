@@ -8204,24 +8204,21 @@ After ~global $post~ is modified by wp:query:secondary, reset it to the original
 #+END_SRC
 
 *** wp_reset_query <<<wp:f:wp_reset_query>>>
-Restore the $wp_query and global post data to the original main query.
-Should be called after query_posts().
+Restore the ~$wp_query~ and global post data to the original main query.
+Should be called after ~query_posts()~.
 
-Avoid to use it. To alter main query parameters before it's made, use wp:filter:pre_get_posts
-
-#+BEGIN_EXAMPLE
-  <?php
-
+Avoid to use it. To alter main query parameters before it's made, use wp:action:pre_get_posts
+#+BEGIN_SRC php
   $args = array ( 'post_parent' => 5 );
   query_posts( $args );
 
   if ( have_posts() ):
       while ( have_posts() ) :
-          the_post();
+	  the_post();
 
-          // Do stuff with the post content.
-          the_title();
-          the_permalink(); // Etc.
+	  // Do stuff with the post content.
+	  the_title();
+	  the_permalink(); // Etc.
 
       endwhile;
   else:
@@ -8229,9 +8226,7 @@ Avoid to use it. To alter main query parameters before it's made, use wp:filter:
   endif;
 
   wp_reset_query();
-
-  ?>
-#+END_EXAMPLE
+#+END_SRC
 
 *** update_post_meta
 <<<wp:f:update_post_meta>>>
@@ -8453,16 +8448,14 @@ Only the wp:conditional tags use the main query/loop
 
 <<<wp:query:secondary>>>
 
-The secondary query/loop is ~new WP_Query~ in theme template or plugin files. It's also caled The Loop.
+The secondary query/loop is ~new WP_Query~ in theme template or plugin files. It's also called The Loop.
 wp:template tags use the secondary query/loop.
 
-By default, The Loop uses the main query's current post to set global $post.
+By default, The Loop uses the main query's current post to set ~global $post~.
 
-~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence global $post is modified. 
-
-When these functions are used, you need to run wp:f:wp_reset_postdata to reset global $post to the original.
-
-Notice :: ~new WP_Query()~ doesn't change wp:query:main
+- ~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence ~global $post~ is modified. 
+- After these ~new WP_Query()~ and ~the_post~ (Loop functions) are used, run wp:f:wp_reset_postdata to reset global $post to the original.
+- Notice :: ~new WP_Query()~ doesn't change wp:query:main
 
 *** Syntax
 #+BEGIN_SRC php
@@ -8491,12 +8484,13 @@ Notice :: ~new WP_Query()~ doesn't change wp:query:main
 *** <<<WP_Query>>>
 Generator: https://generatewp.com/wp_query/
 
-Use: WP_Meta_Query, WP Tax Query, WP Order and Orderby
-Use filters: 
-- wp:filter:post_limits
-- pre_option_posts_per_rss wp:filter:pre_option
-- wp:filter:posts_clauses
-Use actions: wp:action:pre_get_posts
+- Use objects :: WP_Meta_Query, WP Tax Query, WP Order and Orderby
+- Use filters
+  - wp:filter:post_limits
+  - pre_option_posts_per_rss :: wp:filter:pre_option_*
+  - wp:filter:posts_clauses
+  - wp:filter:found_posts
+- Use actions :: wp:action:pre_get_posts
 
 - ~$query->is_*()~ :: wp-includes/class-wp-query.php 
 
@@ -8649,13 +8643,13 @@ wp:f:get_template_part includes any template in child theme
 Default template /wp-includes/feed-rss2.php
 Functions to use in The Loop: /wp-includes/feed.php
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php
   $args = array(
-          'post_type' => array('blog'), // e.g. any
-          'tag' => 'editors-choice',
-          'orderby' => 'date', // Default. e.g. title
-          'order' => 'DESC', // Default. e.g. ASC
+	  'post_type' => array('blog'), // e.g. any
+	  'tag' => 'editors-choice',
+	  'orderby' => 'date', // Default. e.g. title
+	  'order' => 'DESC', // Default. e.g. ASC
   );
   ?>
   query_posts($args);
@@ -8672,15 +8666,15 @@ Functions to use in The Loop: /wp-includes/feed.php
     <feature_image><?php echo $image[0]; ?></feature_image>
     <?php endif; ?>
     <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000',
-                                  get_post_time('Y-m-d H:i:s', true),
-                                  false); ?></pubDate>
+				  get_post_time('Y-m-d H:i:s', true),
+				  false); ?></pubDate>
     <?php // Text Version ?>
     <excerpt><![CDATA[<<?php echo get_the_exerpt(); ?>]]></excerpt>
     <excerpt_html><![CDATA[<<?php echo the_exerpt_rss(); ?>]]></excerpt_html>
     <?php echo the_category_rss('rss2'); // categories and tags ?>
   </item>  
   <?php endwhile; ?>
-#+END_EXAMPLE
+#+END_SRC
 
 ** Default filters and actions 
 <<<wp:default filters>>> wp-includes/default-filters.php
@@ -8885,9 +8879,29 @@ When URL has url parameter p or other special parameters, it will directly retur
   add_filter( 'url_to_postid', 'lili_url_to_postid', 10, 1);
 #+END_EXAMPLE
 
-*** pre_option_(option_name)
-<<<wp:filter:pre_option>>>
+*** pre_option_(option_name) <<<wp:filter:pre_option_*>>>
 Temporarily alter an option without changing in database.
+
+*** found_posts <<<wp:filter:found_posts>>>
+Modify number of found posts
+- Related to wp:theme:pagination
+- When ~offset~ is specified in WP_Query, by default ~found_posts~ will not take it into account.
+
+#+BEGIN_SRC php
+  add_filter( 'found_posts', 'myprefix_adjust_offset_pagination', 1, 2 );
+  function myprefix_adjust_offset_pagination($found_posts, $query) {
+
+      //Define our offset again...
+      $offset = 10;
+
+      //Ensure we're modifying the right query object...
+      if ( $query->is_home() ) {
+	  //Reduce WordPress's found_posts count by the offset... 
+	  return $found_posts - $offset;
+      }
+      return $found_posts;
+  }
+#+END_SRC
 
 *** template_include <<<wp:filter:template_include>>>
 #+BEGIN_SRC php
@@ -9366,10 +9380,10 @@ _maybe_update_themes
 
 *** parse_request <<<wp:action:parse_request>>>
 *** pre_get_posts <<<wp:action:pre_get_posts>>>
-Provide a chance to modify $query object (or do something else) before it's run. $query can be any main or secondary query.
+Provide a chance to modify ~$query~ object (or do something else) before it's run. ~$query~ can be any main (often) or secondary query.
 - Do not use this to alter query for single Page requests.
 - Add action in functions.php. Query is already made when template is loaded.
-
+- Use it instead of ~query_posts~
 - Refer to WP_Query
 
 #+BEGIN_SRC php
@@ -9765,14 +9779,14 @@ functions.php
 #+END_EXAMPLE
 
 ** Theme
+
 *** child theme
 https://codex.wordpress.org/Child_Themes
 wp-content/themes/parent-theme-name-child
 wp-content/themes/parent-theme-name-child/style.css
 
 For new theme, index.php is required
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   /*
    Theme Name:   Twenty Fifteen Child
    Theme URI:    http://example.com/twenty-fifteen-child/
@@ -9786,12 +9800,12 @@ For new theme, index.php is required
    Tags:         light, dark, two-columns, right-sidebar, responsive-layout, accessibility-ready
    Text Domain:  twenty-fifteen-child
   ,*/
-#+END_EXAMPLE
+#+END_SRC
 
 Only Theme Name and Template (the name of the parent theme directory) are required
 
 functions.php in child loads first then the parent's
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   add_action( 'wp_enqueue_scripts', 'my_theme_enqueue_styles' );
   function my_theme_enqueue_styles() {
     $parent_style = 'parent-style'; // This is 'twentyfifteen-style' for the Twenty Fifteen theme.
@@ -9800,21 +9814,21 @@ functions.php in child loads first then the parent's
 
     // child theme style.css is loaded after parent's style.css
     wp_enqueue_style( 'child-style',
-          get_stylesheet_directory_uri() . '/style.css',
-          array( $parent_style ),
-          wp_get_theme()->get('Version')
+	  get_stylesheet_directory_uri() . '/style.css',
+	  array( $parent_style ),
+	  wp_get_theme()->get('Version')
     );
   }
-#+END_EXAMPLE
+#+END_SRC
 
 That requires parent functions.php to have
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   if ( ! function_exists( 'theme_special_nav' ) ) {
       function theme_special_nav() {
-          //  Do something.
+	  //  Do something.
       }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** functions.php <<<wp:theme:functions>>>
 *** Template Files
@@ -9855,7 +9869,7 @@ Make a copy of page.php to start
 #+END_SRC
 
 **** archive.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php
   /**
    ,* The template for displaying archive pages
@@ -9872,52 +9886,136 @@ Make a copy of page.php to start
 
   <div class="wrap">
 
-          <?php if ( have_posts() ) : ?>
-                  <header class="page-header">
-                          <?php
-                                  the_archive_title( '<h1 class="page-title">', '</h1>' );
-                                  the_archive_description( '<div class="taxonomy-description">', '</div>' );
-                          ?>
-                  </header><!-- .page-header -->
-          <?php endif; ?>
+	  <?php if ( have_posts() ) : ?>
+		  <header class="page-header">
+			  <?php
+				  the_archive_title( '<h1 class="page-title">', '</h1>' );
+				  the_archive_description( '<div class="taxonomy-description">', '</div>' );
+			  ?>
+		  </header><!-- .page-header -->
+	  <?php endif; ?>
 
-          <div id="primary" class="content-area">
-                  <main id="main" class="site-main" role="main">
+	  <div id="primary" class="content-area">
+		  <main id="main" class="site-main" role="main">
 
-                  <?php
-                  if ( have_posts() ) : ?>
-                          <?php
-                          /* Start the Loop */
-                          while ( have_posts() ) : the_post();
+		  <?php
+		  if ( have_posts() ) : ?>
+			  <?php
+			  /* Start the Loop */
+			  while ( have_posts() ) : the_post();
 
-                                  /*
-                                   ,* Include the Post-Format-specific template for the content.
-                                   ,* If you want to override this in a child theme, then include a file
-                                   ,* called content-___.php (where ___ is the Post Format name) and that will be used instead.
-                                   ,*/
-                                  get_template_part( 'template-parts/post/content', get_post_format() );
+				  /*
+				   ,* Include the Post-Format-specific template for the content.
+				   ,* If you want to override this in a child theme, then include a file
+				   ,* called content-___.php (where ___ is the Post Format name) and that will be used instead.
+				   ,*/
+				  get_template_part( 'template-parts/post/content', get_post_format() );
 
-                          endwhile;
+			  endwhile;
 
-                          the_posts_pagination( array(
-                                  'prev_text' => twentyseventeen_get_svg( array( 'icon' => 'arrow-left' ) ) . '<span class="screen-reader-text">' . __( 'Previous page', 'twentyseventeen' ) . '</span>',
-                                  'next_text' => '<span class="screen-reader-text">' . __( 'Next page', 'twentyseventeen' ) . '</span>' . twentyseventeen_get_svg( array( 'icon' => 'arrow-right' ) ),
-                                  'before_page_number' => '<span class="meta-nav screen-reader-text">' . __( 'Page', 'twentyseventeen' ) . ' </span>',
-                          ) );
+			  the_posts_pagination( array(
+				  'prev_text' => twentyseventeen_get_svg( array( 'icon' => 'arrow-left' ) ) . '<span class="screen-reader-text">' . __( 'Previous page', 'twentyseventeen' ) . '</span>',
+				  'next_text' => '<span class="screen-reader-text">' . __( 'Next page', 'twentyseventeen' ) . '</span>' . twentyseventeen_get_svg( array( 'icon' => 'arrow-right' ) ),
+				  'before_page_number' => '<span class="meta-nav screen-reader-text">' . __( 'Page', 'twentyseventeen' ) . ' </span>',
+			  ) );
 
-                  else :
+		  else :
 
-                          get_template_part( 'template-parts/post/content', 'none' );
+			  get_template_part( 'template-parts/post/content', 'none' );
 
-                  endif; ?>
+		  endif; ?>
 
-                  </main><!-- #main -->
-          </div><!-- #primary -->
-          <?php get_sidebar(); ?>
+		  </main><!-- #main -->
+	  </div><!-- #primary -->
+	  <?php get_sidebar(); ?>
   </div><!-- .wrap -->
 
   <?php get_footer();
-#+END_EXAMPLE
+#+END_SRC
+
+*** Pagination <<<wp:theme:pagination>>>
+https://developer.wordpress.org/themes/functionality/pagination/
+
+- the_post_pagination( $args = array() ) :: ~echo get_the_posts_pagination( $args )~
+- paginate_links( string|array $args = '' ) :: old version of ~the_post_pagination~
+- get_the_posts_pagination() :: wp:f:get_the_posts_pagination. Calls ~paginate_links~
+- posts_nav_link() :: 
+- next_posts_link() :: ~echo get_next_posts_link()~
+- previous_posts_link() :: ~echo get_previous_posts_link()~
+
+#+BEGIN_SRC php
+  <?php if ( have_posts() ) : ?>
+ 
+      <!-- Add the pagination functions here. -->
+ 
+      <!-- Start of the main loop. -->
+      <?php while ( have_posts() ) : the_post(); ?>
+ 
+      <!-- the rest of your theme's main loop -->
+ 
+      <?php endwhile; ?>
+      <!-- End of the main loop -->
+ 
+      <!-- Add the pagination functions here. -->
+ 
+ 
+  <div class="nav-previous alignleft"><?php next_posts_link( 'Older posts' ); ?></div>
+ 
+ 
+ 
+  <div class="nav-next alignright"><?php previous_posts_link( 'Newer posts' ); ?></div>
+ 
+ 
+  <?php else : ?>
+ 
+  <?php _e('Sorry, no posts matched your criteria.'); ?>
+ 
+  <?php endif; ?>
+#+END_SRC
+
+Custom Query
+#+BEGIN_SRC php
+  function pagination( $paged = '', $max_page = '' )
+      {
+	  $big = 999999999; // need an unlikely integer
+	  if( ! $paged )
+	      $paged = get_query_var('paged');
+	  if( ! $max_page )
+	      $max_page = $wp_query->max_num_pages;
+
+	  echo paginate_links( array(
+	      'base'       => str_replace($big, '%#%', esc_url(get_pagenum_link( $big ))),
+	      'format'     => '?paged=%#%',
+	      'current'    => max( 1, $paged ),
+	      'total'      => $max_page,
+	      'mid_size'   => 1,
+	      'prev_text'  => __('«'),
+	      'next_text'  => __('»'),
+	      'type'       => 'list'
+	  ) );
+      }
+
+  $paged = ( get_query_var('paged') ) ? get_query_var('paged') : 1; 
+  $args = array(
+      'paged'           => $paged, 
+      'orderby'         => 'meta_value_num', 
+      'meta_key'        => 'post_views_count', 
+      'posts_per_page'  => 36 
+  );
+  $loop = new WP_Query( $args );
+
+  if ( $loop->have_posts() ) :
+      while ( $loop->have_posts() ) : $loop->the_post();
+	  get_template_part( 'content', get_post_format() );
+      endwhile;
+      pagination( $paged, $loop->max_num_pages); // Pagination Function
+  endif;
+  wp_reset_postdata();
+#+END_SRC
+
+**** get_the_posts_pagination <<<wp:f:get_the_posts_pagination>>>
+~get_the_posts_pagination( array $args = array() )~
+- ~$args~ :: https://developer.wordpress.org/reference/functions/paginate_links/
 
 *** Setup
 wp:f:add_theme_support
@@ -12369,7 +12467,7 @@ Your PHP installation appears to be missing the MySQL extension which is require
 ** UC: Simple HTML page with form submit
 Create a url path /abc which points to index.html (can't have php files)
 *** /abc/index.html
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <script src='https://www.google.com/recaptcha/api.js'></script>
 
   <div id="form-frame" class="form">
@@ -12383,26 +12481,26 @@ Create a url path /abc which points to index.html (can't have php files)
     <div class="form-input news-input">
       <label for="li-sub-promo">How did you hear about this promotion?</label>
       <select name="li-sub-promo" id="li-sub-promo">
-        <option value="Website">Website</option>
-        <option value="Radio">Radio</option>
-        <option value="TV">TV</option>
-        <option value="Referral">Referral</option>
-        <option value="Brochure">Brochure</option>
-        <option value="Email">Email</option>
-        <option value="Newsletter">Newsletter</option>
-        <option value="Online Ads">Online Ads</option>
-        <option value="Social Media">Social Media</option>
+	<option value="Website">Website</option>
+	<option value="Radio">Radio</option>
+	<option value="TV">TV</option>
+	<option value="Referral">Referral</option>
+	<option value="Brochure">Brochure</option>
+	<option value="Email">Email</option>
+	<option value="Newsletter">Newsletter</option>
+	<option value="Online Ads">Online Ads</option>
+	<option value="Social Media">Social Media</option>
       </select>
     </div>
     <div class="form-input news-input">
       <label for="small-business-lighting">Programs of Interest
-        <br>(Check all that apply)</label>
+	<br>(Check all that apply)</label>
       <div class="li-newsbox">
-        <input type="checkbox" name="li-newsbox" id="small-business-lighting">Small
-        Business Lighting<br>
-        <input type="checkbox" name="li-newsbox"
-               id="business-registration-incentives">Business Refrigeration
-        Incentives
+	<input type="checkbox" name="li-newsbox" id="small-business-lighting">Small
+	Business Lighting<br>
+	<input type="checkbox" name="li-newsbox"
+	       id="business-registration-incentives">Business Refrigeration
+	Incentives
       </div>
     </div>
     <div class="form-input">
@@ -12418,13 +12516,13 @@ Create a url path /abc which points to index.html (can't have php files)
 
   </div>
   <script type="text/javascript"
-          src="/abc/lb/js/app.js"></script>
+	  src="/abc/lb/js/app.js"></script>
   <script type="text/javascript"
-          src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-#+END_EXAMPLE
+	  src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+#+END_SRC
 
 *** /abc/lb/js/app.js
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function submit_form(){
 
     var send_msg = document.getElementById('form-submit');
@@ -12488,22 +12586,22 @@ Create a url path /abc which points to index.html (can't have php files)
       success: function(data)
       {
 
-        console.log(data);
+	console.log(data);
 
-        if(data=='true'){
-          document.getElementById('form-validated').style.display = 'block';
-          ga('send', 'event', {
-            eventCategory: 'Form Submit Success',
-            eventAction: 'click',
-            eventLabel: event.target.href
-          });
+	if(data=='true'){
+	  document.getElementById('form-validated').style.display = 'block';
+	  ga('send', 'event', {
+	    eventCategory: 'Form Submit Success',
+	    eventAction: 'click',
+	    eventLabel: event.target.href
+	  });
 
-          console.log('submit');
-        }else {
-          message.style.display = 'block';
-          send_msg.innerHTML = pre_send;
-          message.innerHTML = 'Please correct the following errors: <ul>'+data+'</ul>';
-        }
+	  console.log('submit');
+	}else {
+	  message.style.display = 'block';
+	  send_msg.innerHTML = pre_send;
+	  message.innerHTML = 'Please correct the following errors: <ul>'+data+'</ul>';
+	}
 
       }
     });
@@ -12587,7 +12685,7 @@ Create a url path /abc which points to index.html (can't have php files)
 
     if(bus_lighting!== 'Checked'){
       if(bus_reg_incentives!=='Checked'){
-        check += '<li>Please select a program of interest.</li>';
+	check += '<li>Please select a program of interest.</li>';
       }else {
 
       }
@@ -12610,10 +12708,10 @@ Create a url path /abc which points to index.html (can't have php files)
   function close_form(){
     document.getElementById('form-validated').style.display = 'none';
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** /wp-content/themes/li-cdm-lp/lb/api-localbusiness/cf-form-post.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php
   /* --- CLASS INCLUSION --- */
   include('form-clean.php');
@@ -12685,33 +12783,33 @@ Create a url path /abc which points to index.html (can't have php files)
       $EMAIL_FROM = 'donotreply@abc.com';
 
       $MESSAGE = ('
-                                          <html>
-                                                  <head>
-                                                          <title>[ Li ] - Small Business Lighting Signup</title>
-                                                  </head>
-                                                  <body>
+					  <html>
+						  <head>
+							  <title>[ Li ] - Small Business Lighting Signup</title>
+						  </head>
+						  <body>
 
-                                                   <h1>[ Li ] - Small Business Lighting Signup</h1>
+						   <h1>[ Li ] - Small Business Lighting Signup</h1>
 
-                                                   <b>Name:</b> '.$C_NAME.'<br />
-                                                   <b>Email:</b> '.$C_EMAIL.'<br />
-                                                   <b>Phone:</b> '.$C_PHONE.'<br /><br />
+						   <b>Name:</b> '.$C_NAME.'<br />
+						   <b>Email:</b> '.$C_EMAIL.'<br />
+						   <b>Phone:</b> '.$C_PHONE.'<br /><br />
 
-                                                  <b>How Did You Hear About Us?</b> '.$C_PROMO.'<br /><br />
+						  <b>How Did You Hear About Us?</b> '.$C_PROMO.'<br /><br />
 
-                                                   <b>Business Name:</b> '.$C_COMPANY.'<br />
-                                                   <b>Business Address:</b> '.$C_ADDRESS.'<br /><br />
+						   <b>Business Name:</b> '.$C_COMPANY.'<br />
+						   <b>Business Address:</b> '.$C_ADDRESS.'<br /><br />
 
-                                                   The following email: '.$C_EMAIL.' has shown interest in Small Business Lighting.
+						   The following email: '.$C_EMAIL.' has shown interest in Small Business Lighting.
 
-                                                  <br />
-                                                  ---
-                                                  <br />
-                                                  Source Code: '.$SOURCE_CODE.$_debug.'
+						  <br />
+						  ---
+						  <br />
+						  Source Code: '.$SOURCE_CODE.$_debug.'
 
-                                                  </body>
-                                          </html>
-                                          ');
+						  </body>
+					  </html>
+					  ');
 
       $HEADERS  = 'MIME-Version: 1.0' . "\r\n";
       $HEADERS .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
@@ -12730,10 +12828,10 @@ Create a url path /abc which points to index.html (can't have php files)
   else {
     echo $VALIDATE;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** /wp-content/themes/li-cdm-lp/lb/api-localbusiness/form-clean.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <?php
 
   class FORM_CLEAN{
@@ -12756,13 +12854,13 @@ Create a url path /abc which points to index.html (can't have php files)
       $error=0;
 
       if($input==''){
-        $error++;
+	$error++;
       }
 
       if($error!=0){
-        return '<li> '.$name.' field is empty or invalid.';
+	return '<li> '.$name.' field is empty or invalid.';
       }else {
-        return $error;
+	return $error;
       }
 
     }
@@ -12770,17 +12868,17 @@ Create a url path /abc which points to index.html (can't have php files)
     public function check_convert($str){
 
       if($str=='true'){
-        $str='YES';
+	$str='YES';
       }else {
-        $str='NO';
+	$str='NO';
       }
 
       return $str;
 
     }
-    
+
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** TS: Download failed. Destination directory for file streaming does not exist or is not writable
 When updating plugins from wp-admin. wp requires the temp folder to be chmod:777
@@ -38840,7 +38938,9 @@ Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoe
 #+END_EXAMPLE
 
 ** SSH, scp, sshpass <<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>>
-Refer to aws:scp linux:package:openssh-client
+Refer to 
+- aws:scp 
+- linux:package:openssh-client
 
 *** Install SSH Server
 Ubuntu
