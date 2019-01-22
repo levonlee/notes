@@ -26722,7 +26722,7 @@ All plugins between sourcemaps.init() and sourcemaps.write() need to have suppor
 **** gulp-sass <<<npm:gulp-sass>>>
 [[https://www.npmjs.com/package/gulp-sass][Doc]] Options are the same as [[https://github.com/sass/node-sass#options][node-sass]]
 
-#+BEGIN_SRC javascript
+#+BEGIN_SRC js
   var scssStream = gulp.src( config.styleSRC )
 		  .pipe( sourcemaps.init() )
 		  .pipe(
@@ -26734,6 +26734,27 @@ All plugins between sourcemaps.init() and sourcemaps.write() need to have suppor
 		  )
 		  .on( 'error', sass.logError )
 		  .pipe(concat('app.scss'));
+#+END_SRC
+
+***** Add extra path for ~@import~
+- ~includePaths~ is related to ~gulpfile.js~ or the file where ~sass~ is run. Default is empty array ~[]~
+- Say ~assets/scss/main.scss~ has ~@import subfolder/a.scss~
+  - If file exists ~assets/scss/subfolder/a.scss~, use it. If not, go to next step
+  - If file exists ~assets/scss/supporting/fallback/subfolder/a.scss~, use it
+
+#+BEGIN_SRC js
+  var scssStream = gulp.src( config.styleSRC )
+      .pipe( sourcemaps.init() )
+      .pipe(
+	  sass({
+	      errLogToConsole: config.errLogToConsole,
+	      outputStyle: config.outputStyle,
+	      precision: config.precision,
+	      includePaths: ['assets/scss/supporting/fallback/']
+	  })
+      )
+      .on( 'error', sass.logError )
+      .pipe(concat('app.scss'));
 #+END_SRC
 
 **** gulp-merge-media-queries
