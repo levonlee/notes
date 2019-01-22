@@ -26389,7 +26389,7 @@ https
 https://github.com/gulpjs/gulp/blob/master/docs/README.md
 
 If gulp was previously globally installed, remove it before installing gulp-cli
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   npm rm --global gulp
   npm install --global gulp-cli
   gulp -v
@@ -26488,6 +26488,42 @@ gulpfile.js
   gulp.task('watch', function() {
     gulp.watch(coffeeSources, ['coffee']);
   });
+#+END_SRC
+
+**** Pass parameters from CLI to Gulp
+#+BEGIN_SRC js
+  //region Load CLI Parameters to Gulp
+  // e.g. `gulp task1 --a 123 --b "my string" --c`
+  // arg = { "a": "123", "b": "my string", "c": true }
+  const arg = (argList => {
+
+	  let arg = {}, a, opt, thisOpt, curOpt;
+	  for (a = 0; a < argList.length; a++) {
+
+		  thisOpt = argList[a].trim();
+		  opt = thisOpt.replace(/^\-+/, '');
+
+		  if (opt === thisOpt) {
+
+			  // argument value
+			  if (curOpt) arg[curOpt] = opt;
+			  curOpt = null;
+
+		  }
+		  else {
+
+			  // argument name
+			  curOpt = opt;
+			  arg[curOpt] = true;
+
+		  }
+
+	  }
+
+	  return arg;
+
+  })(process.argv);
+  //endregion
 #+END_SRC
 
 **** gulp.src
@@ -54200,9 +54236,10 @@ Alt and click to create a cursor. Esc to reduce to only one cursor
 
 - Alt + Shift + Up / Down :: Increase / Decrease selection, e.g. select current element and content and increase to select parent element for HTML 
 
-*** Next Highlighted Error
+*** Next Error
 - Navigate > Next / Previous Highlighted Error : : ~S-F1~
 
+*** Join lines ~C-S-j~
 *** Exclude a directory
 Settings > Directories > Select and Exclude
 
