@@ -6871,7 +6871,10 @@ Options
   wp media regenerate --image_size=large
 #+END_SRC
 
-*** post
+*** post <<<wp-cli:post>>>
+- Documentaion :: https://github.com/wp-cli/entity-command
+- Code :: https://github.com/wp-cli/entity-command/blob/master/src/Post_Command.php
+
 --post_type and other args in WP_Query can be passed :: https://developer.wordpress.org/reference/classes/wp_query/
 
 #+BEGIN_SRC bash
@@ -6900,6 +6903,11 @@ Options
 
   # delete revisions
   wp post delete $(wp post list --post_type='revision' --format=ids)
+
+  # meta query
+  wp post list --post_type=post --meta_key=mycustomfield '--meta_compare=NOT EXISTS'
+  wp post list --post_type=post --meta_key=wpcf-abc --meta_value='abc xyz'
+  wp post list --post_type=post --meta_key=wpcf-abc --meta_value='abc xyz' '--meta_compare=!='
 #+END_SRC
 
 *** db check
@@ -8533,10 +8541,30 @@ By default, The Loop uses the main query's current post to set ~global $post~.
 #+END_SRC
 
 *** <<<WP_Meta_Query>>>
-**** Fields for WP_Query
-Use these fields directly in WP_Query
+https://codex.wordpress.org/Class_Reference/WP_Meta_Query
+https://rudrastyh.com/wordpress/meta_query.html
 
-**** Nesting
+- Refer to wp-cli:post
+
+If there is one condition, use these fields
+- meta_key :: string
+- meta_value :: string|array
+- meta_type :: string
+- meta_compare :: string
+
+#+BEGIN_SRC php
+  $rd_args = array(
+	  'meta_key' => 'show_on_homepage',
+	  'meta_value' => 'on',
+	  'meta_compare' => '!='
+  );
+ 
+  $rd_query = new WP_Query( $rd_args );
+#+END_SRC
+
+Or use meta_query for nesting multiple conditions
+
+**** meta_query Nesting
 Nested: key1=value1 OR (key2=value2 AND key3=value3)
 
 #+BEGIN_SRC php
@@ -8567,7 +8595,7 @@ Nested: key1=value1 OR (key2=value2 AND key3=value3)
   $meta_query = new WP_Meta_Query($meta_args); // parse args array
 #+END_SRC
 
-**** Operators
+**** Operators: compare and type
 compare
 - =, !=
 - >, >=, <, <=
@@ -8598,7 +8626,7 @@ The following 2 strings will appear in the serialized json string as value in WP
 #+END_EXAMPLE 
 
 Select the posts that have checkbox enligne checked.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $meta_query = array(
    array(
     'key' => 'wpcf-newsletters',
@@ -8606,7 +8634,7 @@ Select the posts that have checkbox enligne checked.
     'compare' => 'LIKE',
    ),
   );
-#+END_EXAMPLE
+#+END_SRC
 
 *** <<<WP Tax Query>>>
 https://codex.wordpress.org/Class_Reference/WP_Query#Taxonomy_Parameters
