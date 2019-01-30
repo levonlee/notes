@@ -11075,23 +11075,24 @@ Even the domain is different, the permalinks of the 2 pages in 2 different langu
 originaldomain.com/sitemap.xml
 fr.originaldomain.com/sitemap.xml
 
-*** Resize image on the fly
-<<<fly-dynamic-image-resizer>>>
+*** Resize image on the fly <<<fly-dynamic-image-resizer>>>
+#+BEGIN_SRC php
+  $image = fly_get_attachment_image_src(
+   get_post_thumbnail_id(),
+   array(160, 9999),
+   false // true to crop to exact dimension
+  );
 
-$image = fly_get_attachment_image_src(
- get_post_thumbnail_id(),
- array(160, 9999),
- false // true to crop to exact dimension
-);
+  $image :: array(
+   'src',
+   'width',
+   'height'
+  );
 
-$image :: array(
- 'src',
- 'width',
- 'height'
-);
+  fly_add_image_size('lili-w600', 600, 9999, true);
+  $image = fly_get_attachment_image($post->id, 'lili-w600'); // HTML
+#+END_SRC
 
-fly_add_image_size('lili-w600', 600, 9999, true);
-$image = fly_get_attachment_image($post->id, 'lili-w600'); // HTML
 *** ACF <<<wp:plugin:advanced-custom-fields>>> <<<wp:plugin:acf>>>
 [[https://wordpress.org/plugins/advanced-custom-fields/][WP.org]]
 
@@ -26474,6 +26475,10 @@ https
   }
 #+END_SRC
 
+*** concurrent-transform <<<npm:concurrent-transform>>>
+~npm i -D concurrent-transform~
+Refer to npm:gulp-image-resize
+
 *** gulp <<<npm:gulp>>>
 https://github.com/gulpjs/gulp/blob/master/docs/README.md
 
@@ -27042,7 +27047,7 @@ https://github.com/mahnunchik/gulp-responsive
   // https://github.com/lovell/sharp/issues/615
 #+END_EXAMPLE
 
-**** gulp-image-resize
+**** gulp-image-resize <<<npm:gulp-image-resize>>>
 #+BEGIN_SRC sh
   # make sure imagemagick is installed
   apt list -a --installed imagemagick
@@ -27070,6 +27075,21 @@ https://github.com/mahnunchik/gulp-responsive
 	  }))
 	  .pipe(imgs.restore)
 	  .pipe(gulp.dest('dist'));
+  });
+#+END_SRC
+
+Use npm:concurrent-transform
+#+BEGIN_SRC js
+  var parallel = require("concurrent-transform");
+  var os = require("os");
+ 
+  gulp.task("parallel", function () {
+    gulp.src("src/**/*.{jpg,png}")
+      .pipe(parallel(
+	imageResize({ width : 100 }),
+	os.cpus().length
+      ))
+      .pipe(gulp.dest("dist"));
   });
 #+END_SRC
 
@@ -40552,7 +40572,7 @@ Array loop
   tree -d -L 1
 #+END_SRC
 
-*** Compare files in 2 directories
+*** Compare files in 2 directories <<<linux:diff>>>
 #+BEGIN_SRC sh
   diff --brief -Nr dir1/ dir2/
   # -N shows difference of file existance
