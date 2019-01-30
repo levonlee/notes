@@ -26972,7 +26972,16 @@ https://babeljs.io/docs/en/options
 https://github.com/mahnunchik/gulp-responsive
 
 ***** Installation
-Requires global node-gyp and dev dependency is sharp
+- Requires global node-gyp and dev dependency is sharp
+- For JPEG, PNG, WebP and TIFF
+
+#+BEGIN_SRC sh
+  npm install --save-dev gulp-responsive
+
+  # you may need to run this if there is still error, but I didn't need it
+  # npm -g install npm@latest
+  # https://github.com/lovell/sharp/issues/615
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   npm install --save-dev gulp-responsive
@@ -26981,6 +26990,37 @@ Requires global node-gyp and dev dependency is sharp
   // npm -g install npm@latest
   // https://github.com/lovell/sharp/issues/615
 #+END_EXAMPLE
+
+**** gulp-image-resize
+#+BEGIN_SRC sh
+  # make sure imagemagick is installed
+  apt list -a --installed imagemagick
+
+  # graphicsmagick is said to be faster than imagemagick
+  apt install graphicsmagick
+
+  npm install --save-dev gulp-image-resize
+#+END_SRC
+
+#+BEGIN_SRC js
+  gulp.task('img-resize-max-width', function () {
+
+      const imgs = gFilter('**/*.{jpg,JPG,jpeg,JPEG,png,PNG}', {restore: true});
+
+      var maxw=1440;
+
+      return gulp.src('src/**/*')
+	  .pipe(imgs)
+	  .pipe(gImageResize({
+	      width: maxw,
+	      height: 0,
+	      imageMagick:true, // default uses graphicmagick
+	      interlace: true
+	  }))
+	  .pipe(imgs.restore)
+	  .pipe(gulp.dest('dist'));
+  });
+#+END_SRC
 
 **** gulp-imagemin
 https://www.npmjs.com/package/gulp-imagemin
