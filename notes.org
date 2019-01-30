@@ -26681,6 +26681,8 @@ Options
 - option:cwd :: current working directory
 
 **** gulp-plumber
+~npm install --save-dev gulp-plumber~
+
 By design, Node stream will stop accepting incoming data, if error event was raised. You can see it in stream.js:103 - ~cleanup~ function will deattach ~ondata~ handler from ~source~ (which in our case is gulp.src) and ~coffee~ plugin will stop receiving files although, the rest of the files can be compiled.
 #+BEGIN_SRC js
   gulp.src('coffee/**/*.coffee')
@@ -26701,6 +26703,7 @@ Use [[https://www.npmjs.com/package/gulp-plumber][gulp-plumber]]
       .pipe(coffee())
       .pipe(gulp.dest('./dist'));
 #+END_SRC
+
 **** gulp-remember
 #+BEGIN_SRC js
   var gulp = require('gulp'),
@@ -26728,6 +26731,54 @@ refer to gulp-remember
 
 **** gulp-sort
 Sort files in stream by path or any custom sort comparator
+
+~npm install gulp-sort --save-dev~
+
+#+BEGIN_SRC js
+  var sort = require('gulp-sort');
+ 
+  // default sort
+  gulp.src('./src/js/**/*.js')
+      .pipe(sort())
+      .pipe(gulp.dest('./build/js'));
+ 
+  // pass in a custom comparator function
+  gulp.src('./src/js/**/*.js')
+      .pipe(sort(customComparator))
+      .pipe(gulp.dest('./build/js'));
+ 
+  // sort descending
+  gulp.src('./src/js/**/*.js')
+      .pipe(sort({
+	   asc: false
+      }))
+      .pipe(gulp.dest('./build/js'));
+ 
+  // sort with a custom comparator
+  gulp.src('./src/js/**/*.js')
+      .pipe(sort({
+	  comparator: function(file1, file2) {
+	      if (file1.path.indexOf('build') > -1) {
+		  return 1;
+	      }
+	      if (file2.path.indexOf('build') > -1) {
+		  return -1;
+	      }
+	      return 0;
+	  }
+      }))
+      .pipe(gulp.dest('./build/js'));
+ 
+  // sort with a custom sort function
+  var stable = require('stable');
+  gulp.src('./src/js/**/*.js')
+      .pipe(sort({
+	  customSortFn: function(files, comparator) {
+	      return stable(files, comparator);
+	  }
+      }))
+      .pipe(gulp.dest('./build/js'));
+#+END_SRC
 
 **** gulp-concat
 Concat files using operating system's newLine
@@ -40664,7 +40715,7 @@ Dry run :: use - for tar file name and pipe with wc
 #+END_EXAMPLE
 
 **** Uncompress
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # Read the tar file first
   tar -tf backup.tar.gz
 
@@ -40675,6 +40726,9 @@ Dry run :: use - for tar file name and pipe with wc
   # Copy .tar.gz to /anotherfolder
   cd /anotherfolder
   tar -xvzf backup.tar.gz
+
+  # extract only some files, only one `--wildcards` at a time
+  tar -xvzf bk.tar.gz --wildcards '*.png' --ignore-case
 
   # If you don't want to copy .tar.gz to /anotherfolder, 
   tar -xvzf /any/path/to/backup.tar.gz -C /path/to/anotherfolder/
@@ -40698,7 +40752,7 @@ Dry run :: use - for tar file name and pipe with wc
   gzip -d file.gz 
 
   # The gz file will disappear
-#+END_EXAMPLE
+#+END_SRC
 
 Options
 - -x :: extract
