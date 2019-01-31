@@ -11970,6 +11970,27 @@ https://support.cloudflare.com/hc/en-us/articles/201897700
 - Need to install mod_cloudflare Apache module in order for web server to see visitor IP
 - On CloudFlare, whitelist IPs of the services that access the website (APIs, crawlers, payment providers, etc.) :: Firewall > IP Firewall > Access Rules
 
+**** Turn off Cloudflare for a domain
+Sometimes, you want to bypass Cloudflare for a domain e.g. ~abc.ca~ and ~www.abc.ca~.
+- e.g. for the first time to use Let's Encrypt (certbot) with Nginx to setup redirect https://abc.ca to https://xyz.ca and both of those websites are not hosted on Nginx
+- DNS > Turn off for those domains
+- Crypto > SSL set to Off
+
+**** TS: Restart Nginx Cause Error 525: SSL Handshake Failed
+The SSL certificate on Cloudflare needs to renew
+- Cloudflare dashboard for the website > Crypto > at the very bottom Disable Universal SSL
+- Wait 5 minutes and turn it back on
+- Still on Crypto page, under SSL > Universal SSL Status, wait until it says Active Certificate (usually it takes about 10 minutes)
+
+Or maybe the target Nginx server's SSL certificate has expired e.g. Nginx is used to redirect this website to another website. Both websites are not hosted on Nginx
+
+**** TS: ERR_TOO_MANY_REDIRECTS
+When Crypto > SSL is set to Flexible, Cloudflare sends all requests between Cloudflare and the origin web server over HTTP non-encrypted.
+Your Nginx receives HTTP request and might have redirect rules to redirect to https and thus causes redirect loop.
+
+**** TS: err_ssl_version_or_cipher_mismatch
+This is due to the SSL given by Cloudflare is not active yet. Wait for 10 minutes.
+
 *** tinymce-advanced
 Add, remove and arrange buttons shown on the Visual Editor toolbar.
 Enable or disable 15 plugins for TinyMCE.
@@ -49789,6 +49810,32 @@ Subcommand:
 - certonly      ::   Obtain or renew a certificate, but do not install it
 
 /etc/letsencrypt/archive and /etc/letsencrypt/keys contain all previous keys and certificates, while /etc/letsencrypt/live symlinks to the latest versions.
+
+#+BEGIN_SRC sh
+  # check status for all certificates
+  certbot certificates
+  certbot certonly --cert-name example.com
+
+  # Update an existing certificate with a new certificate that contains all old domains and new domains
+  # Use -d to specify all existing and new domains.
+  certbot --expand -d existing.com,example.com,newdomain.com
+
+  # remove some domains from an exisiting certificate. before it contains example.com and www.example.com
+  certbot certonly --cert-name example.com -d example.com
+
+  # overwrites all domains for an existing certificate
+  certbot certonly --cert-name example.com -d example.org,www.example.org
+
+  # revoke
+  certbot revoke --cert-path /etc/letsencrypt/live/CERTNAME/cert.pem
+
+  # renew any existing certificates that expire in less than 30 days.
+  # --pre-hook and --post-hook hooks run before and after every renewal attempt.
+  certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+
+  # If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
+  certbot renew --deploy-hook /path/to/deploy-hook-script
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   certbot certificates
