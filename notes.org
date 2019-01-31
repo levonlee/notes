@@ -49245,8 +49245,12 @@ https://github.com/h5bp/server-configs
   }
 #+END_SRC
 
-** location block
-location blocks are usually under server blocks
+** location block <<<nginx:b:location>>>
+- location blocks are usually under server blocks
+- Location Tester :: https://nginx.viraptor.info/
+- Don't need to escape ~/~
+- Don't use paranthesis :: ~(~ and ~)~
+
 #+BEGIN_SRC nginx
   # location syntax
   # location optional_modifier location_match {...}
@@ -49254,46 +49258,68 @@ location blocks are usually under server blocks
 
   # modifier =
   location = /page1 {
-    # exact match
-    # if there is a match, return this immediately
+      # exact match
+      # if there is a match, return this immediately
   }
 
   # modifier ^~, non regex match
   location ^~ /site {
-    # This is a prefix match: /site/*
-    # If this match (with ^~) is the longest prefix match, return immediately
+      # This is a prefix match: /site/*
+      # If this match (with ^~) is the longest prefix match, return immediately
   }
 
   # no modifier, the location_match part is a prefix
   location /site {
-    # This is also a prefix match: handles /site, /site/*, /site/page1/index.html
-    # If this match (without ^~) is the longest prefix match, 
-    # save for the moment and move on to regex matches
+      # This is also a prefix match: handles /site, /site/*, /site/page1/index.html
+      # If this match (without ^~) is the longest prefix match, 
+      # save for the moment and move on to regex matches
   }
 
   # modifier ~ or ~*, regex match
   location ~ \.(jpe?g|png|gif|ico)$ {
-    # ~ case-sensitive, ~* is case-insensitve
-    # By now, if there is a prefix match (also longest prefix match), it's already stored in memory
-    # These regex matches are checked by the listed order
-    # Stop searching for the first matching regex, and return immediately
-    # If no regex match, then return the previous found longest prefix match
+      # ~ case-sensitive, ~* is case-insensitve
+      # By now, if there is a prefix match (also longest prefix match), it's already stored in memory
+      # These regex matches are checked by the listed order
+      # Stop searching for the first matching regex, and return immediately
+      # If no regex match, then return the previous found longest prefix match
 
-    # So if there's a regex match, then the regex match will be used
+      # So if there's a regex match, then the regex match will be used
 
-    # Also notice, if there're any regex matches that are within the longest prefix match, 
-    # those will be evaluated, in listed order, before any of the other regex matches.
+      # Also notice, if there're any regex matches that are within the longest prefix match, 
+      # those will be evaluated, in listed order, before any of the other regex matches.
+  }
+
+  location ~ ^/(digital-archive|digital-edition)/?$ {
+      # $ can be used to mark the end
+      return 302 http://www.target.ca/pub/abc/;
+  }
+
+  location ~ ^/(subscribe|contacts|advertise|privacy-policy)/?$ {
+      # matched: /subscribe /subscribe/
+      # not matched: /subscribe/abc
+      rewrite (?i)^/([^/]+)$ https://www.target.ca/$1 last;
+  }
+
+  location ~ ^/(segment|keyword|category|tag)/[^/]+ {
+      # matched: /tag/abc
+      # not matched: /tag/ /tag 
+      rewrite (?i)/(.*)$ https://www.target.ca/$1 last;
+  }
+
+  location ~ ^/[^/]+/?$ {
+      # matches https://source.ca/abc and /abc/
+      # but not https://source.ca/abc/xyz
   }
 
   # one location can "jump" to another location
   root /var/www/main;
   location / {
-    rewrite ^/rewriteme/(.*)$ /$1 last;
-    try_files $uri $uri.html $uri/ /fallback/index.html;
+      rewrite ^/rewriteme/(.*)$ /$1 last;
+      try_files $uri $uri.html $uri/ /fallback/index.html;
   }
 
   location /fallback {
-    root /var/www/another;
+      root /var/www/another;
   }
 
   # /rewriteme/hello > /hello > /hello, /hello.html, /hello/, /fallback/index.html
@@ -49301,11 +49327,11 @@ location blocks are usually under server blocks
   # one location can "jump" to another location :: custom 404
   root /var/www/main;
   location / {
-    error_page 404 /another/whoops.html;
+      error_page 404 /another/whoops.html;
   }
 
   location /another {
-    root /var/www;
+      root /var/www;
   }
 #+END_SRC
 
@@ -49435,6 +49461,12 @@ Syntax:	~rewrite regex replacement [flag];~
 Default:	—
 Context:	server, location, if
 
+- Don't need to escape forward slash ~/~
+- Regex Tester :: https://regex101.com/r/xEWBb8/1/
+  - Regex type :: PCRE (PHP)
+  - Delimiter :: backtick `
+  - flags :: g i m (global, insensitive, multiline)
+
 Case insensitve match. Source folder is CMS, and any case variants of CMS can be redirected
 #+BEGIN_SRC nginx
   rewrite (?i)^/cms/?$ /CMS/index.cfm last;
@@ -49516,13 +49548,13 @@ Authenticator (-a) and installer (-i) plugins can be combined
   certbot run -a webroot -i apache -w /var/www/html -d example.com
 #+END_EXAMPLE
 
-renewal config files for each domain /etc/letsencrypt/renewal/mydomain.com.conf
+renewal config files for each domain ~/etc/letsencrypt/renewal/mydomain.com.conf~
 
-Global config /etc/letsencrypt/cli.ini (usually empty)
+Global config ~/etc/letsencrypt/cli.ini~ (usually empty)
 
 Log /var/log/letsencrypt
 
-/etc/cron.d/certbot is just running ~certbot -q renew~ so renewal config file is very important for each domain
+~/etc/cron.d/certbot~ is just running ~certbot -q renew~ so renewal config file is very important for each domain
 
 *** Challenges
 - http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
@@ -49980,7 +50012,8 @@ https://nginxconfig.io/?domain=myweb.ca&ssl_profile=intermediate&hsts=false&emai
 #+END_SRC
 
 ** Redirect a website to another website
-Redirect mywebsite.com to mywebsite2.ca that is not hosted on this Nginx server.
+*** HTTPS to HTTPS redirect
+Redirect https://mywebsite.com to https://mywebsite2.ca. Both websites are not hosted on this Nginx server.
 
 /etc/nginx/sites-available/mywebsite.com.conf
 #+BEGIN_SRC nginx
@@ -50048,6 +50081,32 @@ Redirect mywebsite.com to mywebsite2.ca that is not hosted on this Nginx server.
   sed -i -r 's/#?;#//g' /etc/nginx/sites-available/mywebsite.com.conf
 
   systemctl reload nginx
+#+END_SRC
+
+*** HTTP to HTTPS redirect
+#+BEGIN_SRC nginx
+  server {
+  # we want to listen on port 80 on all IPs on our system - both IPv4 and IPv6
+      listen 80;
+      listen [::]:80;
+  # our primary server name is the first, aliases simply come after it. you can also include wildcards like *.example.com
+      server_name source.com www.source.com source.ca www.source.ca;
+
+      location = /special-page {
+	  return 302 http://www.target.ca;
+      }
+
+      location ~ ^/(news|magazine-archives) {
+	  rewrite (?i)\/([^\/]+)-(\d+)\/?$ https://www.target.ca/source/$1 last;
+      }
+      location / {
+	  return 302 https://www.target.com/citb;
+      }
+
+      # define our access and error logs for this vhost
+      # access_log /var/log/nginx/access-sourceweb.log;
+      # error_log /var/log/nginx/error-sourceweb.log;
+  }
 #+END_SRC
 
 * Web Application Firewall (WAF)
