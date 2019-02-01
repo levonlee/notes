@@ -50325,8 +50325,8 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
 
 For a specific file ~git log master..li path/to/file~
 
-*** File difference between 2 branches 
-=git diff --name-status master..origin/master= or 
+*** File difference between 2 branches <<<git:branch:file difference>>>
+~git diff --name-status master..origin/master~ or 
 =git diff --stat --color master..origin/master=
 | Missing file or line in remote branch | D or - |
 | New file or line in remote branch     | A or + |
@@ -50419,22 +50419,45 @@ By default without any options, merge will not create merge commits when fast-fo
 
 ** Rebase <<<git:rebase>>>
 feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
+
 #+BEGIN_SRC sh
   git checkout master
   git pull --rebase
+  # or just git pull if you're sure local master can be fast forwarded
   git checkout feature
+  # make sure local feature is up-to-date with remote feature
+  git pull
   # make some changes and git commit
+
+  # find files that are different between local feature and local master
+  # refer to git:branch:file difference
+  git diff --name-status feature..master
+
   git rebase master
   # git status to review conflicts if exist. After resolving,
   git add .
   git rebase --continue
-  # now your commits in feature are applied on top of the tip 
+
+  # there may be several rounds of continue
+  # if you see working tree is clean after `git status` and continue can't continue:
+  git rebase --skip
+  git status
+  # review and resolve conflicts as above
+  git rebase --continue
+
+  # now your commits in feature are applied on top of the master tip
+
+  # check file difference between local feature and master to see if that's the change you want it
+  # you may need to manually make a commit on local feature to fix the rebase
+  # git add . && git commit -m "fix rebasing"
+
   # you can merge commits into one commit on feature branch to further clean up your feature branch commits
   git checkout master
   git merge feature
 #+END_SRC
 
 The result is feature and master are exactly the same: C2 -> C3 -> C4
+
 *** Merge commits into one commit on local branch
 Branch feature has 4 commits ahead of branch master
 
