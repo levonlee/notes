@@ -7448,7 +7448,6 @@ add_management_page(
 );
 
 *** add_post_type_support <<<wp:f:add_post_type_support>>>
-
 ~add_post_type_support( string $post_type, string|array $supports);~
 - ~remove_post_type_support( string $post_type, string $supports )~
 - Detect if a post type supports :: ~post_type_supports( string $post_type, string $feature )~
@@ -12517,6 +12516,133 @@ Inspired by plugin [[https://wordpress.org/plugins/ssl-insecure-content-fixer/][
 
 ** REST API
 https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
+
+*** Global parameters
+https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/
+
+**** _jsonp
+#+BEGIN_SRC html
+  <script>
+  function receiveData( data ) {
+    // Do something with the data here.
+    // For demonstration purposes, we'll simply log it.
+    console.log( data );
+  }
+  </script>
+  <script src="https://demo.wp-api.org/wp-json/?_jsonp=receiveData"></script>
+#+END_SRC
+
+**** _method
+This is for server that couldn't fire a DELETE HTTP request
+A POST to /wp-json/wp/v2/posts/42?_method=DELETE would be translated to a DELETE to the wp/v2/posts/42 route.
+
+Similarly, the following POST request would become a DELETE:
+
+POST /wp-json/wp/v2/posts/42 HTTP/1.1
+Host: example.com
+X-HTTP-Method-Override: DELETE
+
+**** _envelope
+Some servers, clients, and proxies do not support accessing the full response data. The API supports passing an _envelope parameter, which sends all response data in the body, including headers and status code.
+
+GET to wp/v2/users/me:
+#+BEGIN_EXAMPLE
+  HTTP/1.1 302 Found
+  Location: http://example.com/wp-json/wp/v2/users/42
+ 
+  {
+    "id": 42,
+    ...
+  }
+#+END_EXAMPLE
+
+GET to wp/v2/users/me?_envelope:
+#+BEGIN_EXAMPLE
+  HTTP/1.1 200 OK
+ 
+  {
+    "status": 302,
+    "headers": {
+      "Location": "http://example.com/wp-json/wp/v2/users/42"
+    },
+    "body": {
+      "id": 42
+    }
+  }
+#+END_EXAMPLE
+
+*** Pagination and Ordering
+- ~?page=~
+- ~?per_page=~ :: default 10
+- ~?offset=~
+
+Response Header fields
+- ~X-WP-TOTAL~ :: total number of records
+- ~X-WP-TotalPages~
+
+- ~?order=~ :: asc desc
+- ~?orderby=~ :: e.g. date, relevance, id, include
+
+*** Endpoints
+**** rest-filter
+Use https://github.com/wp-api/rest-filter to build more complex queries
+
+Term slug of taxonomy news-category
+~wp-json/wp/v2/news?per_page=5&filter[news-category]=news-abc~
+
+**** Custom Post Types and Taxonomies
+Make sure both post type and taxonomy has `show_in_rest=true`
+By post type ~news~ and have term id 1234 in taxonomy ~news-category~
+~wp-json/wp/v2/news?per_page=5&news-category=1234~
+
+Multiple terms
+~wp-json/wp/v2/news?per_page=5&news-category=1234,4567~
+
+Multiple terms in multiple taxonomies
+~wp-json/wp/v2/news?per_page=5&news-category=1234,4567&abc-category=789,123~
+
+Core cannot query term slug
+
+**** posts & response
+https://developer.wordpress.org/rest-api/reference/posts/
+
+*** Authentication
+Require auth for all requests
+#+BEGIN_SRC php
+  add_filter( 'rest_authentication_errors', function( $result ) {
+      if ( ! empty( $result ) ) {
+	  return $result;
+      }
+      if ( ! is_user_logged_in() ) {
+	  return new WP_Error( 'rest_not_logged_in', 'You are not currently logged in.', array( 'status' => 401 ) );
+      }
+      return $result;
+  });
+#+END_SRC
+
+*** Make internal request
+#+BEGIN_SRC php
+  $request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+  // Set one or more request query parameters
+  $request->set_param( 'per_page', 20 );
+  $response = rest_do_request( $request );
+#+END_SRC
+
+*** External request and read response
+#+BEGIN_SRC php
+  $request = wp_remote_get( 'https://a.ca/wp-json/wp/v2/news?per_page=5' );
+  if ( is_wp_error( $request ) ) {
+	  return false; // Bail early
+  }
+
+  $body = wp_remote_retrieve_body( $request );
+
+  $data = json_decode( $body );
+
+  if ( ! empty( $data ) ) {
+	  echo $data[0]->title->rendered;
+  }
+#+END_SRC
 
 ** Life Cycle
 Refer to wp:action:loading sequence
