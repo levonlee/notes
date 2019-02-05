@@ -10690,15 +10690,26 @@ If you have sticky or position:fixed element .sticky-header
   }
 #+END_SRC
 
-** Transients API - ~set_transient~ vs ~wp_cache_set~
+** Transients API - ~set_transient~ vs ~wp_cache_set~ <<<wp:cache>>>
 WordPress cache API in database.
 =DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
 
 WP object cache stores objects and primitives but not in a persistent manner by default. This means caching happens in memory and it only lives for the request's lifetime cycle (e.g. one pageload). Redis plugin can make it persistent.
 
+https://codex.wordpress.org/Class_Reference/WP_Object_Cache
+
 Transient API saves variables, arrays, objects tied with an expiration date on db and has persistent object caching. However when cached objects expire, they remain on db which needs to be pruned every once in a while.
 
 WP detects if persistent object cache, if so, bypass Transients API and route to WP object cache.
+
+#+BEGIN_SRC php
+  $result = wp_cache_get( 'my_result' );
+  if ( false === $result ) {
+	  $result = $wpdb->get_results( $query );
+	  wp_cache_set( 'my_result', $result );
+  } 
+  // Do something with $result;
+#+END_SRC
 
 ** Custom Cache
 Same page request custom cache
@@ -11890,6 +11901,153 @@ Make opt-in checkbox required and fix opt-in checkbox label
 
 *** constant-contact-forms-by-mailmunch
 It takes way too much work to customize the form..
+
+*** wp-advanced-search <<<wp:plugin:wpas>>>
+https://github.com/raideus/wp-advanced-search
+http://wpadvancedsearch.com/docs/setup/
+
+- Copy code to wp-content/mu-plugins/wp-advanced-search
+- wp-content/mu-plugins/load-wpas.php
+#+BEGIN_SRC php
+  define( 'WPAS_URI', WPMU_PLUGIN_URL . '/wp-advanced-search' );
+  require_once( 'wp-advanced-search/wpas.php' );
+
+  // define your forms
+  function my_search_form() {
+      $args = array();
+      $args['wp_query'] = array('post_type' => 'post',
+				'posts_per_page' => 5);
+      $args['fields'][] = array('type' => 'search',
+				'title' => 'Search',
+				'placeholder' => 'Enter search terms...');
+      $args['fields'][] = array('type' => 'taxonomy',
+				'taxonomy' => 'category',
+				'format' => 'select');
+      register_wpas_form('my-form', $args);    
+  }
+  add_action('init', 'my_search_form');
+#+END_SRC
+
+**** Customize appearance: fields and form
+http://wpadvancedsearch.com/docs/template-setup/appearance/
+
+- Works well with js:lib:select2
+
+#+BEGIN_SRC php
+  // pre_html and post_html
+  $args['fields'][] = array(
+	  'type' => 'search',
+
+	  'placeholder' => 'Enter search terms...',
+	  'pre_html'    => '<div class="row">',
+	  'post_html'   => '</div>'
+  );
+
+  // class
+  $args['fields'][] = array(
+	  'type'        => 'search',
+	  'placeholder' => 'Enter search terms...',
+	  'class'       => array( 'myclass', 'anotherclass' )
+  );
+
+  // use an html-type field to display messages
+  $args['fields'][] = array(
+	  'type'  => 'html',
+	  'value' => '<div class="my-element"><h3>Some custom HTML content here</h3></div>'
+  );
+
+  // disable wrapper for the whole form
+  $args['form'] = array( 'disable_wrappers' => true );
+
+
+  // works well with js:lib:select2
+  $args['fields'][] = array(
+	  'type'  => 'html',
+	  'value' => '<div class="form-row">',
+  );
+
+  $args['fields'][] = array(
+	  'type'        => 'meta_key',
+	  'meta_key'    => 'wpcf-listing-city',
+	  'placeholder' => 'City...',
+	  'format'      => 'text',
+	  'class'       => array( 'col-auto', 'form-control form-control-lg' ),
+	  'pre_html'    => '<div class="form-group d-none d-md-block col-md-4">',
+	  'post_html'   => '</div>',
+	  'allow_null'  => 'ALL',
+	  'operator'    => 'AND',
+	  'data_type'   => 'CHAR',
+	  'compare'     => 'LIKE',
+  );
+
+  $args['fields'][] = array(
+	  'type'       => 'taxonomy',
+	  'taxonomy'   => 'listing_category',
+	  'format'     => 'multi-select',
+	  'class'      => array( 'col-auto', 'select2 form-control form-control-lg' ),
+	  'pre_html'   => '<div class="form-group d-none d-md-block col-md-9">',
+	  'post_html'  => '</div>',
+	  'allow_null' => 'ALL',
+	  'nasted'     => true,
+	  'operator'   => 'IN'
+  );
+  $args['fields'][] = array(
+	  'type'  => 'html',
+	  'value' => '</div>',
+  );
+#+END_SRC
+
+**** Form configuration
+http://wpadvancedsearch.com/docs/config/form-config/
+#+BEGIN_SRC php
+  $args['form'] = array( 
+    // arguments here
+  );
+#+END_SRC
+
+AJAX form
+http://wpadvancedsearch.com/docs/config/form-config/ajax/
+
+#+BEGIN_SRC php
+  $args['form']['ajax'] = array(
+  // arguments here
+  );
+#+END_SRC
+
+**** Display forms
+#+BEGIN_SRC php
+  $my_search = new WP_Advanced_Search('my-form');
+
+  // display form
+  $my_search->the_form();
+
+  // display search result
+  $query = $my_search->query();
+  if ( $query->have_posts() ): 
+	  while ( $query->have_posts() ): $query->the_post();
+  the_title();
+  endwhile;
+  endif;
+
+  // pagination :: use the same arguments wp core pageinate_links()
+  // https://codex.wordpress.org/Function_Reference/paginate_links
+  // Refer to wp:theme:pagination 
+
+  $my_search->pagination(array('prev_text' => '«','next_text' => '»'));
+
+  // result count
+
+  $args = array(); 
+  echo 'Displaying results ' . $my_search->results_range($args) . ' of ' . $wp_query->found_posts;
+
+  //pre – Content to display before the output
+  //marker – Content to use as the range marker (ie passing a hyphen “-” would show the range as “1-5″)
+  //post – Content to display after the output
+  $args = array('pre' => '',
+		'marker' => '-',
+		'post' => ''); 
+
+#+END_SRC
 
 *** custom-search-plugin
 Custom Search plugin adds custom post types and taxonomies to WordPress website search results. A quick and easy way to search everything within custom post types and taxonomies.
@@ -24633,7 +24791,7 @@ Sample
   }
 #+END_EXAMPLE
 
-** Select2
+** Select2 <<<js:lib:select2>>>
 https://select2.org/ depends on jQuery
 
 *** Basic
