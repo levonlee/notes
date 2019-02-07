@@ -8691,7 +8691,7 @@ Nested: key1=value1 OR (key2=value2 AND key3=value3)
 
 #+BEGIN_SRC php
   $meta_args = array(
-   'relation' => 'OR', // Optional.
+   'relation' => 'OR', // Optional. Default is 'AND'
    array(
      'key' => 'key1',
      'value' => 'value1',
@@ -8715,6 +8715,45 @@ Nested: key1=value1 OR (key2=value2 AND key3=value3)
   );
 
   $meta_query = new WP_Meta_Query($meta_args); // parse args array
+#+END_SRC
+
+**** Named sub-meta queries and multiple orderby arguments
+#+BEGIN_SRC php
+  $q = new WP_Query( array(
+	  'meta_query' => array(
+		  'relation' => 'AND',
+		  'state_clause' => array(
+			  'key' => 'state',
+			  'value' => 'Wisconsin',
+		  ),
+		  'city_clause' => array(
+			  'key' => 'city',
+			  'compare' => 'EXISTS',
+		  ), 
+	  ),
+	  'orderby' => array( 
+		  'city_clause' => 'ASC', // 'key' is used to order
+		  'state_clause' => 'DESC',
+	  ),
+  ) );
+#+END_SRC
+
+**** Review full query
+#+BEGIN_SRC php
+  $q_args = array(...);
+  $meta_query = new WP_Meta_Query();
+  $meta_query->parse_query_vars( $q_args );
+  $mq_sql = $meta_query->get_sql(
+	  'post',  // post, comment, user
+	  $wpdb->posts, // the table to look for rows
+	  'ID', // for posts, it's ID, for comments it's comment_ID, for users is ID
+	  null // $context (obj) optional
+  );
+
+  // return
+  array (size=2)
+    'join' => string ' INNER JOIN wp_postmeta ON (wp_posts.ID = wp_postmeta.post_id)' (length=62)
+    'where' => string ' AND (wp_postmeta.meta_key = 'some_key' )' (length=40)
 #+END_SRC
 
 **** Operators: compare and type
