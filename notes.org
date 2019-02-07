@@ -6467,6 +6467,20 @@ WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Q
   }
 #+END_EXAMPLE
 
+*** $GLOBALS['wp_query'] <<<wp:global:wp_query>>>
+Refer to WP_Query
+
+#+BEGIN_SRC php
+  $p = $GLOBALS['wp_query'];
+  // first post $p->posts[0]
+
+  // total number of posts found by query
+  echo $p->found_posts;
+
+  // number of posts being displayed
+  echo $p->post_count;
+#+END_SRC
+
 *** $post <<<wp:global:post>>>
 https://codex.wordpress.org/Class_Reference/WP_Post
 
@@ -7143,7 +7157,7 @@ version :: '4.9.4'
 
 *** get_the_ID() the_ID() - ID of current item or false
 *** get_post <<<wp:f:get_post>>>
-get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )
+~get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )~
 
 Default is global $post
 Return wp:post object
@@ -7169,6 +7183,22 @@ Return post thumbnail alt text
   // return a post metadata
   $meta = get_post_meta(get_the_ID());
   echo $meta['header-title'][0];
+#+END_SRC
+
+*** get_posts <<<wp:f:get_posts>>>
+#+BEGIN_SRC php
+  // Syntax :: get_posts( $args = null )
+  // new WP_Query(); is created
+  $args = array(
+	  'post_type'      => 'speaker',
+	  'posts_per_page' => -1,
+  );
+  $r = get_posts($args);
+
+  // run loop
+
+  // reset global $post
+  wp_reset_postdata();
 #+END_SRC
 
 *** wp_get_post_terms($post_id, $tax, $args)
@@ -7568,8 +7598,25 @@ Since version 3.4 the TinyMCE body has .rtl CSS class. It is a better option to 
   add_editor_style( array( 'assets/css/editor-style.css', twentyseventeen_fonts_url() ) );
 #+END_EXAMPLE
 
+*** has_term <<<wp:f:has_term>>>
+#+BEGIN_SRC php
+  // has_term( $term = '', $taxonomy = '', $post = null )
+  // $term :: name/term_id/slug or array of them
+#+END_SRC
+
 *** has_post_format <<<wp:f:has_post_format>>>
 In template
+#+BEGIN_SRC php
+  if ( has_post_format( 'aside' )) {
+    // code to display the aside format post here
+  } else if (has_post_format('gallery')) {
+	  // stuff to display the gallery format post here
+  } else if (has_post_format('link')) {
+	  // stuff to display the link format post here
+  }else {
+	  // code to display the normal format post here
+  }
+#+END_SRC
 #+BEGIN_EXAMPLE
   if ( has_post_format( 'aside' )) {
     // code to display the aside format post here
@@ -8206,7 +8253,8 @@ Returns WP_Error or [[https://developer.wordpress.org/reference/classes/wp_image
 #+END_EXAMPLE
 
 *** wp_reset_postdata <<<wp:f:wp_reset_postdata>>>
-After ~global $post~ is modified by wp:query:secondary, reset it to the original that was set by wp:query:main
+- Use it when custom query ~new WP_Query()~ is defined and used
+- After ~global $post~ is modified by wp:query:secondary, reset it to the original that was set by wp:query:main
 
 #+BEGIN_SRC php
   <?php
@@ -8236,8 +8284,8 @@ After ~global $post~ is modified by wp:query:secondary, reset it to the original
 #+END_SRC
 
 *** wp_reset_query <<<wp:f:wp_reset_query>>>
-Restore the ~$wp_query~ and global post data to the original main query.
-Should be called after ~query_posts()~.
+- Should be called after ~query_posts()~
+- Restore ~$GLOBALS['wp_query']~ and global post data to the original main query.
 
 Avoid to use it. To alter main query parameters before it's made, use wp:action:pre_get_posts
 #+BEGIN_SRC php
@@ -8493,6 +8541,7 @@ By default, The Loop uses the main query's current post to set ~global $post~.
 - ~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence ~global $post~ is modified. 
 - After these ~new WP_Query()~ and ~the_post~ (Loop functions) are used, run wp:f:wp_reset_postdata to reset global $post to the original.
 - Notice :: ~new WP_Query()~ doesn't change wp:query:main
+- Refer to wp:global:wp_query
 
 *** Syntax
 #+BEGIN_SRC php
@@ -8544,9 +8593,75 @@ By default, The Loop uses the main query's current post to set ~global $post~.
   $query = new WP_Query($args);
 #+END_SRC
 
-**** ~$query->is_*~ methods
+**** Loop the main loop
+#+BEGIN_SRC php
+  <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+
+	  <div <?php post_class(); ?> id="post-<?php the_ID(); ?>">
+		  <h1><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h1>
+		  <?php the_content(); ?>
+	  </div>
+
+  <?php endwhile; ?>
+
+	  <div class="navigation">
+		  <div class="next-posts"><?php next_posts_link(); ?></div>
+		  <div class="prev-posts"><?php previous_posts_link(); ?></div>
+	  </div>
+
+  <?php else : ?>
+
+	  <div <?php post_class(); ?> id="post-<?php the_ID(); ?>">
+		  <h1>Not Found</h1>
+	  </div>
+
+  <?php endif; ?>
+#+END_SRC
+
+**** Loop with ~query_posts()~ <<<wp:f:query_posts>>>
+Try to avoid using it. Use ~new WP_Query()~ instead 
+
+#+BEGIN_SRC php
+  <?php global $query_string; // required
+  $posts = query_posts($query_string.'&cat=-9'); // exclude category 9
+  // $posts = query_posts($query_string.'&posts_per_page=3&cat=-6,-9&order=ASC');
+  ?>
+
+  <?php // DEFAULT LOOP GOES HERE ?>
+
+  <?php wp_reset_query(); // reset the query ?>
+#+END_SRC
+
+**** Loop with ~new WP_Query()~
+#+BEGIN_SRC php
+  <?php $custom_query = new WP_Query('cat=-9'); // exclude category 9
+  while($custom_query->have_posts()) : $custom_query->the_post(); ?>
+
+	  <div <?php post_class(); ?> id="post-<?php the_ID(); ?>">
+		  <h1><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h1>
+		  <?php the_content(); ?>
+	  </div>
+
+  <?php endwhile; ?>
+  <?php wp_reset_postdata(); // reset the query ?>
+#+END_SRC
+
+**** Loop with ~get_posts()~
+#+BEGIN_SRC php
+  global $post; // required
+  $args = array('category' => -9); // exclude category 9
+  $custom_posts = get_posts($args);
+  foreach($custom_posts as $post) : setup_postdata($post);
+     echo get_the_title();
+  endforeach;
+  wp_reset_postdata(); // important
+#+END_SRC
+
+**** ~$q->is_*~ methods
 - ~is_post_type_archive()~ ~is_post_type_archive('yourposttype')~
 
+**** ~$q->found_posts~
+**** ~$q->post_count~
 *** <<<WP_Meta_Query>>>
 https://codex.wordpress.org/Class_Reference/WP_Meta_Query
 https://rudrastyh.com/wordpress/meta_query.html
@@ -10223,7 +10338,7 @@ lib/functions/*.php
   - content-sidebar-sidebar
   - sidebar-sidebar-content
   - sidebar-content-sidebar
-  - full-width-content
+  - full-width-content :: ~genesis_get_sidebar()~ will not load the sidebar
   - ~genesis_register_layout~
 
 - ~genesis_register_layout( $id = '', $args = array() )~
