@@ -6492,10 +6492,110 @@ https://codex.wordpress.org/Class_Reference/WP_Post
 #+END_EXAMPLE
 
 *** $wpdb <<<wp:global:wpdb>>>
+https://codex.wordpress.org/Class_Reference/wpdb
+- ~$wpdb~ provides an interface which WP_Query uses to query
+- Use ~$wpdb~ to create raw query
+
 If wp-content/db.php exists and creates an instance of global $wpdb, $wpdb will be defined as in this custom file.
 wp:plugin:w3-total-cache
 
 If wp core doesn't support msql_connect but mysqli and the environment doesn't have msql extension (since PHP 7.0), then you can replace wp-includes/wp-db.php with the latest wp version without upgrading wp core. Although upgrading wp core is recommended.
+
+https://code.tutsplus.com/tutorials/writing-custom-queries-in-wordpress--wp-25510
+
+#+BEGIN_SRC php
+  global $wpdb;
+  $query = "
+      SELECT *
+      FROM wp_terms wt
+      INNER JOIN wp_term_taxonomy wtt ON wt.term_id = wtt.term_id
+      WHERE wtt.taxonomy = 'post_tag' AND wtt.count = 0";
+
+  $wpdb->query($query); // int number of rows affected/selected and false when there is an error
+
+  // array.
+  $wpdb->get_results($query, ARRAY_A);
+
+  // get one variable. Useful when query result has only one column
+  $wpdb->get_var($query);
+
+  // e.g.
+  $user_count = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->users" );
+  echo "<p>User count is {$user_count}</p>";
+
+  // return one row. result_type can be OBJECT, ARRAY_A or ARRAY_N (object, associative array or numbered array). Offset is an integer with a default of 0
+  $wpdb->get_row($query, ARRAY_A, 3);
+
+  // get a column. Output will be a dimensional array. Empty array if no result. The second parameter is the column offset
+  $wpdb->get_col($query, 3);
+
+  // to prevent SQL injection, use prepare
+  $wpdb->query( $wpdb->prepare(
+      "INSERT INTO test_table (post_id, animal, food) VALUES ( %d, %s, %s )",
+      array(
+	  10,
+	  'monkey',
+	  'apple'
+      )
+  ));
+
+  $wpdb->show_errors();
+  $wpdb->hide_errors();
+
+  $wpdb->flush();
+
+  $wpdb->insert(
+      'foods',
+      array(
+	  'fruit' => 'apple',
+	  'year' => 2012
+      ),
+      array(
+	  '%s',
+	  '%d'
+      )
+  );
+
+  $wpdb->update(
+      'foods',
+      array(
+	  'fruit' => 'apple',  // string
+	  'year' =>  'value2'  // integer (number)
+      ),
+      array( 'ID' => 1 ),
+      array(
+	  '%s',   // value1
+	  '%d'    // value2
+      ),
+      array( '%d' )
+  );
+
+  // column info
+  $wpdb->get_col_info('type', offset);
+  // Type: the information you want to retrieve, some examples are here
+  // name – column name (this is the default)
+  // table – name of the table the column belongs to
+  // max_length – maximum length of the column
+  // not_null – 1 if the column cannot be NULL
+  // more can be found in the WordPress Codex WPDB reference
+  // Offset: specify the column from which to retrieve information (0 is the first column)
+
+  // reference WordPress tables
+  $wpdb->posts;
+  $wpdb->postmeta;
+  $wpdb->comments;
+  $wpdb->commentmeta;
+  $wpdb->terms;
+  $wpdb->term_taxonomy;
+  $wpdb->term_relationships;
+  $wpdb->users;
+  $wpdb->usermeta;
+  $wpdb->links;
+  $wpdb->options;
+
+  // e.g.
+  $user_count = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->users" );
+#+END_SRC
 
 *** $wp_filter, $wp_current_filter <<<wp:global:wp_filter>>> <<<wp:global:wp_current_filter>>>
 Use ~current_action()~ or ~current_filter()~ to return the current filter
@@ -10917,7 +11017,7 @@ Same page request custom cache
 ** Custom page
 wp:filter:template_include
 
-** Database
+** Database <<<wp:db>>>
 [[https://codex.wordpress.org/Database_Description][Database Description]]
 
 *** wp_posts
@@ -10975,8 +11075,17 @@ wp:filter:template_include
 *** wp_postmeta <<<wp:db:wp_postmeta>>>
 - meta_id
 - post_id
-- meta_key
+- meta_key :: if custom field has prefix `_`. It means the field will not display on Post Edit page on wp-admin
 - meta_value :: string or php serialized string
+
+#+BEGIN_SRC sql
+  SELECT CAST(pm.meta_value AS Date)
+  FROM wp_posts p
+	 INNER JOIN wp_postmeta pm ON pm.post_id = p.id
+  WHERE p.post_type = 'agenda'
+    AND p.post_status = 'publish'
+    AND pm.meta_key = 'agenda_date'
+#+END_SRC
 
 **** meta_key Media files
 - _wp_attached_file :: ~2009/11/a.jpg~ ~2014/02/a.pdf~ combine with wp_options:option_name's upload_path
@@ -12072,7 +12181,7 @@ Make opt-in checkbox required and fix opt-in checkbox label
 *** constant-contact-forms-by-mailmunch
 It takes way too much work to customize the form..
 
-*** wp-advanced-search <<<wp:plugin:wpas>>>
+*** WP Advanced Search <<<wp:plugin:wpas>>>
 https://github.com/raideus/wp-advanced-search
 http://wpadvancedsearch.com/docs/setup/
 
@@ -12098,50 +12207,7 @@ http://wpadvancedsearch.com/docs/setup/
   add_action('init', 'my_search_form');
 #+END_SRC
 
-In template
-#+BEGIN_SRC php
-  $my_search = new WP_Advanced_Search('my-form');
-
-  // display the form
-  // ob_start();
-  $my_search->the_form();
-  // $form_output = ob_get_clean();
-  // $form_output = sprintf( '<div class="row"><div class="col p-4">%s</div></div>', $form_output);
-  // echo $form_output
-
-
-  // display results
-  $query = $my_search->query();
-
-  // you can also modify the global $wp_query
-  // global $wp_query;
-  // $temp = $wp_query;
-  // $wp_query = $search->query();
-  // run main loop e.g. if (have_posts()) { ... }
-  // wp_reset_query();
-  // $wp_query = $temp; // this might not be necessary
-
-  if ( $query->have_posts() ):
-	  while ( $query->have_posts() ): $query->the_post();
-		  the_title();
-	  endwhile;
-  endif;
-
-  // pagination
-  $my_search->pagination(array('prev_text' => '«','next_text' => '»'));
-
-  // display result count
-  // default arguments for results_range()
-  $args = array(
-	  'pre' => '', // content to display before the output
-	  'marker' => '-', // content to use as the range marker
-	  'post' => '' // content to display after the output
-  );
-  echo 'Displaying results ' . $my_search->results_range() . ' of ' . $wp_query->found_posts;
-  // Displaying results 1-4 of 21
-#+END_SRC
-
-**** Customize appearance: fields and form
+**** Fields
 http://wpadvancedsearch.com/docs/template-setup/appearance/
 
 - Works well with js:lib:select2
@@ -12150,7 +12216,6 @@ http://wpadvancedsearch.com/docs/template-setup/appearance/
   // pre_html and post_html
   $args['fields'][] = array(
 	  'type' => 'search',
-
 	  'placeholder' => 'Enter search terms...',
 	  'pre_html'    => '<div class="row">',
 	  'post_html'   => '</div>'
@@ -12172,7 +12237,6 @@ http://wpadvancedsearch.com/docs/template-setup/appearance/
   // disable wrapper for the whole form
   $args['form'] = array( 'disable_wrappers' => true );
 
-
   // works well with js:lib:select2
   $args['fields'][] = array(
 	  'type'  => 'html',
@@ -12193,6 +12257,36 @@ http://wpadvancedsearch.com/docs/template-setup/appearance/
 	  'compare'     => 'LIKE',
   );
 
+  // meta_key with select dropdown
+  $query = "
+      SELECT DISTINCT CAST(pm.meta_value AS DATE)
+      FROM wp_posts p
+	 INNER JOIN wp_postmeta pm ON pm.post_id = p.id
+      WHERE p.post_type = 'agenda'
+	AND p.post_status = 'publish'
+	AND pm.meta_key = 'agenda_date'
+    ORDER BY CAST(pm.meta_value AS DATE)
+  ";
+  global $wpdb;
+  $agenda_date = $wpdb->get_col($query);
+
+  $agenda_date_form = array();
+  foreach($agenda_date as $d) {
+	  $agenda_date_form[$d] =$d;
+  }
+
+  $args['fields'][] = array(
+	  'type'      => 'meta_key',
+	  'meta_key'  => 'agenda_date',
+	  'format'    => 'select',
+	  'data_type' => 'DATE',
+	  'values'    => $agenda_date_form,
+	  'allow_null' => 'Select a date', // treat the first key/value pair in values as null
+	  'class'     => array( 'col-auto', 'form-control form-control-lg' ),
+	  'pre_html'  => '<div class="form-group col-md-6">',
+	  'post_html' => '</div>',
+  );
+
   $args['fields'][] = array(
 	  'type'       => 'taxonomy',
 	  'taxonomy'   => 'listing_category',
@@ -12210,7 +12304,11 @@ http://wpadvancedsearch.com/docs/template-setup/appearance/
   );
 #+END_SRC
 
-**** Form configuration
+**** ~$args['wp_query']~
+**** Other configuration
+http://wpadvancedsearch.com/docs/config/
+
+**** Form configuration ~$args['form']~
 http://wpadvancedsearch.com/docs/config/form-config/
 #+BEGIN_SRC php
   $args['form'] = array( 
@@ -12232,10 +12330,24 @@ http://wpadvancedsearch.com/docs/config/form-config/ajax/
   $my_search = new WP_Advanced_Search('my-form');
 
   // display form
+
+  // ob_start();
   $my_search->the_form();
+  // $form_output = ob_get_clean();
+  // $form_output = sprintf( '<div class="row"><div class="col p-4">%s</div></div>', $form_output);
+  // echo $form_output
 
   // display search result
   $query = $my_search->query();
+
+  // you can also modify the global $wp_query
+  // global $wp_query;
+  // $temp = $wp_query;
+  // $wp_query = $search->query();
+  // run main loop e.g. if (have_posts()) { ... }
+  // wp_reset_query();
+  // $wp_query = $temp; // this might not be necessary
+
   if ( $query->have_posts() ): 
 	  while ( $query->have_posts() ): $query->the_post();
   the_title();
@@ -12257,9 +12369,55 @@ http://wpadvancedsearch.com/docs/config/form-config/ajax/
   //marker – Content to use as the range marker (ie passing a hyphen “-” would show the range as “1-5″)
   //post – Content to display after the output
   $args = array('pre' => '',
-		'marker' => '-',
-		'post' => ''); 
+							  'marker' => '-',
+							  'post' => '');
+#+END_SRC
 
+**** Alter query with pre_get_post
+- Use wp:action:pre_get_posts
+- orderby/order provided by this plugin is not strong. Need to alter it
+
+#+BEGIN_SRC php
+  add_action( 'pre_get_posts', 'lili_pre_get_posts' );
+  function lili_pre_get_posts( $query ) {
+	  if (! is_admin()) {
+		  if ( $query->is_main_query() ) {
+			  // WPAS is not a main query
+		  }
+		  else {
+			  // not main query
+			  // Agenda Archive display with WPAS
+			  if ( in_array( $query->get( 'post_type' ), array( 'agenda' ) ) ) {
+				  // $query->set( 'posts_per_page', '-1' ); // this was set in WPAS $args['wp_query']['posts_per_page'] = -1
+
+				  // need to add clauses in order to sort custom fields
+				  $meta_query = array(
+					  'date_clause'  => array(
+						  'key'     => 'agenda_date',
+						  'compare' => 'EXISTS',
+					  ),
+					  'start_clause' => array(
+						  'key'     => 'agenda_start_time',
+						  'compare' => 'EXISTS',
+					  ),
+				  );
+
+				  // merge WPAS meta query
+				  $old_meta_query = $query->get('meta_query');
+				  $old_meta_query = (empty($old_meta_query)) ? array() : $old_meta_query;
+				  $meta_query = array_merge($meta_query, $old_meta_query);
+
+				  $query->set( 'meta_query', $meta_query );
+				  $query->set( 'orderby', array(
+					  'date_clause'  => 'ASC',
+					  'start_clause' => 'ASC',
+					  'date'         => 'ASC',
+				  ) );
+			  }
+		  }
+	  }
+	  return $query;
+  }
 #+END_SRC
 
 *** custom-search-plugin
@@ -52795,17 +52953,15 @@ post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)
 
 Date comparison
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   CAST(post_date AS DATE) > '2014-01-01'
   FROM_UNIXTIME(intTime) > '2014-01-01'
   FROM_UNIXTIME(intTime) BETWEEN '2014-01-01 00:00:00' AND '2014-12-31 23:59:00'
-#+END_EXAMPLE
 
-Unix Time
-#+BEGIN_EXAMPLE
+  -- UNIX Time
   DATE_FORMAT(FROM_UNIXTIME(intTime),'%Y-%m-%d %H:%i:%s') :: default date format
   UNIX_TIMESTAMP(NOW())
-#+END_EXAMPLE
+#+END_SRC
 
 **** <<<MySQL String>>>
 https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
