@@ -12098,6 +12098,49 @@ http://wpadvancedsearch.com/docs/setup/
   add_action('init', 'my_search_form');
 #+END_SRC
 
+In template
+#+BEGIN_SRC php
+  $my_search = new WP_Advanced_Search('my-form');
+
+  // display the form
+  // ob_start();
+  $my_search->the_form();
+  // $form_output = ob_get_clean();
+  // $form_output = sprintf( '<div class="row"><div class="col p-4">%s</div></div>', $form_output);
+  // echo $form_output
+
+
+  // display results
+  $query = $my_search->query();
+
+  // you can also modify the global $wp_query
+  // global $wp_query;
+  // $temp = $wp_query;
+  // $wp_query = $search->query();
+  // run main loop e.g. if (have_posts()) { ... }
+  // wp_reset_query();
+  // $wp_query = $temp; // this might not be necessary
+
+  if ( $query->have_posts() ):
+	  while ( $query->have_posts() ): $query->the_post();
+		  the_title();
+	  endwhile;
+  endif;
+
+  // pagination
+  $my_search->pagination(array('prev_text' => '«','next_text' => '»'));
+
+  // display result count
+  // default arguments for results_range()
+  $args = array(
+	  'pre' => '', // content to display before the output
+	  'marker' => '-', // content to use as the range marker
+	  'post' => '' // content to display after the output
+  );
+  echo 'Displaying results ' . $my_search->results_range() . ' of ' . $wp_query->found_posts;
+  // Displaying results 1-4 of 21
+#+END_SRC
+
 **** Customize appearance: fields and form
 http://wpadvancedsearch.com/docs/template-setup/appearance/
 
