@@ -4567,29 +4567,34 @@ https://api.drupal.org/api/drupal/developer%21topics%21forms_api_reference.html/
 
 *** Form alter hooks
 Called in order, from general to specific
-=hook_form_alter= 
-=hook_form_BASE_FORM_ID_alter=, Refer BASE_FORM_ID to =$form_state['build_info']['base_form_id']=
-=hook_form_FORM_ID_alter=. Refer FORM_ID to =$form['#id']=
+- ~hook_form_alter~ :: for all forms
+- ~hook_form_BASE_FORM_ID_alter~ :: Refer BASE_FORM_ID to ~$form_state['build_info']['base_form_id']~
+- ~hook_form_FORM_ID_alter~ :: Refer FORM_ID to ~$form['#id']~
 
 Set default value and hide a form from display or filling
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // Entity reference form field
   $form['field_dealer'][LANGUAGE_NONE][0]['target_id']['#default_value'] = 123;
   $form['field_dealer'][LANGUAGE_NONE][0]['#printed'] = TRUE;
-#+END_EXAMPLE
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   hook_form_FORM_ID_alter(&$form, &$form_state, $form_id)
 #+END_EXAMPLE
 
 *** Form IDs of system forms
-=node= :: node new/edit
-=user_profile= :: page/user/<uid>
+Form
+- ~node~ :: node new/edit
+#+BEGIN_SRC php
+  $form['']
+  $form['actions']['submit']['#submit'] = array('node_form_submit')
+#+END_SRC
 
-lili_node_form_alter
+- ~user_profile~ :: page/user/<uid>
 
-node type (content type) ad_listing, that node's new/edit form is
-lili_form_ad_listing_node_form_alter using hook_form_FORM_ID_alter hook
+Alter
+- ~lili_node_form_alter~ :: ~hook_node_form_alter~
+- node type (content type) ~ad_listing~ and alter its node new/edit form :: ~lili_form_ad_listing_node_form_alter~ using ~hook_form_FORM_ID_alter hook~ where FORM_ID is ~ad_listing_node_form~
 
 Some modules alter the form before your custom alters. Such as field dependency module d7:module:conditional fields
 
@@ -21201,6 +21206,7 @@ Use it to align icons with links. Notice the img has fixed width. mj-table has f
 
 #+BEGIN_SRC html
   <mj-table width="165px">
+    <!-- the style in tr is very important for Outlook to have the correct column height-->
     <tr style="list-style: none;line-height:1">
       <td>
 	<a href="https://twitter.com/RecastAI">
