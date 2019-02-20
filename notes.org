@@ -12529,6 +12529,11 @@ Sometimes, you want to bypass Cloudflare for a domain e.g. ~abc.ca~ and ~www.abc
 - DNS > Turn off for those domains
 - Crypto > SSL set to Off
 
+**** letsencrypt:certbot
+CloudFlarec.com > Crypto
+- SSL set to Full or Full (strict)
+- Disable ~Always Use HTTPS~
+
 **** TS: Restart Nginx Cause Error 525: SSL Handshake Failed
 The SSL certificate on Cloudflare needs to renew
 - Cloudflare dashboard for the website > Crypto > at the very bottom Disable Universal SSL
@@ -50287,7 +50292,7 @@ Use nginx:d:rewrite for regex redirect
   }
 #+END_SRC
 
-** Let's Encrypt SSL <<<nginx:ssl>>>
+** Let's Encrypt SSL <<<nginx:ssl>>> <<<letsencrypt:certbot>>>
 On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to renew certificate.
 
 ~certbot~ is ~letsencrypt~ in older version or ~certbot-auto~ in an alternate installation method.
@@ -50302,13 +50307,12 @@ Authenticator (-a) and installer (-i) plugins can be combined
   certbot run -a webroot -i apache -w /var/www/html -d example.com
 #+END_EXAMPLE
 
-renewal config files for each domain ~/etc/letsencrypt/renewal/mydomain.com.conf~
-
-Global config ~/etc/letsencrypt/cli.ini~ (usually empty)
-
-Log /var/log/letsencrypt
-
-~/etc/cron.d/certbot~ is just running ~certbot -q renew~ so renewal config file is very important for each domain
+- renewal config files for each domain :: ~/etc/letsencrypt/renewal/mydomain.com.conf~
+- Global config :: ~/etc/letsencrypt/cli.ini~ (usually empty)
+- Log :: /var/log/letsencrypt
+- Cron file ~/etc/cron.d/certbot~ :: it runs ~certbot -q renew~ so renewal config file is very important for each domain
+- Check all certificates status :: ~certbot certificates~
+- Dry run to renew all certificates :: ~certbot renew --dry-run~
 
 *** Challenges
 - http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
@@ -50657,11 +50661,11 @@ Sample /etc/letsencrypt/renewal/mydomain.com.conf
 #+END_EXAMPLE
 
 *** A certificate <<<nginx:ssl:example>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   server {
     # your original setting
     server_name .yoursite.com
-    
+
     listen [::]:443 ssl ipv6only=on; # You might need to remove ipv6only=on; if it was set. managed by Certbot
     listen 443 ssl; # managed by Certbot
     ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
@@ -50671,7 +50675,7 @@ Sample /etc/letsencrypt/renewal/mydomain.com.conf
 
     # set proxy
   }
-#+END_EXAMPLE
+#+END_SRC
 
 certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
 global config :: /etc/letsencrypt/cli.ini
