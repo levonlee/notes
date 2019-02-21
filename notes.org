@@ -13145,7 +13145,6 @@ https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
 
 *** Global parameters
 https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/
-
 **** _jsonp
 #+BEGIN_SRC html
   <script>
@@ -13201,23 +13200,24 @@ GET to wp/v2/users/me?_envelope:
 - ~?page=~
 - ~?per_page=~ :: default 10
 - ~?offset=~
+- ~?order=~ :: asc desc
+- ~?orderby=~ :: date author relevance id include modified parent relevance slug include_slugs title
+  - By default, there's no rand! (random order)
+  - Refer to wp:rest:hook:rest_*_collection_params for adding rand
 
 Response Header fields
 - ~X-WP-TOTAL~ :: total number of records
 - ~X-WP-TotalPages~
 
-- ~?order=~ :: asc desc
-- ~?orderby=~ :: e.g. date, relevance, id, include
-
 *** Endpoints
-**** rest-filter
+**** Plugin rest-filter
 Use https://github.com/wp-api/rest-filter to build more complex queries
 
 Term slug of taxonomy news-category
 ~wp-json/wp/v2/news?per_page=5&filter[news-category]=news-abc~
 
 **** Custom Post Types and Taxonomies
-Make sure both post type and taxonomy has `show_in_rest=true`
+Make sure both post type and taxonomy has ~show_in_rest=true~
 By post type ~news~ and have term id 1234 in taxonomy ~news-category~
 ~wp-json/wp/v2/news?per_page=5&news-category=1234~
 
@@ -13229,8 +13229,96 @@ Multiple terms in multiple taxonomies
 
 Core cannot query term slug
 
-**** posts & response
+**** posts
 https://developer.wordpress.org/rest-api/reference/posts/
+
+**** Custom endpoint
+https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-endpoints/
+
+***** Simple way
+#+BEGIN_SRC php
+  // http://example.com/wp-json/myplugin/v1/author/(?P<id>\d+)
+  add_action( 'rest_api_init', function () {
+	  // version 1
+	  register_rest_route( 'myplugin/v1', '/author/(?P<id>\d+)', array(
+		  'methods'  => 'GET',
+		  'callback' => 'my_awesome_func',
+		  /*' optional
+		  permission_callback' => function () {
+			  return current_user_can( 'edit_others_posts' );
+		  },*/
+		  'args'     => array(
+			  'id' => array(
+				  // 'default' => 'some default value',
+				  // 'sanitize_callback' => function() {},
+				  // 'sanitize_callback' => 'absint',
+				  'validate_callback' => function ( $param, $request, $key ) {
+					  return is_numeric( $param );
+				  }
+			  ),
+		  ),
+	  ) );
+  } );
+
+  /**
+   ,* Grab latest post title by an author!
+   ,*
+   ,* @param array $data Options for the function.
+   ,*
+   ,* @return string|null Post title for the latest,
+   ,* or null if none.
+   ,*/
+  function my_awesome_func( WP_REST_Request $data ) {
+
+	  $posts = get_posts( array(
+		  'author' => $data['id'],
+	  ) );
+
+	  if ( empty( $posts ) ) {
+		  return new WP_Error( 'awesome_no_author', 'Invalid author', array( 'status' => 404 ) );
+	  }
+
+	  $data = $posts[0]->post_title;
+	  // $data = array( 'some', 'response', 'data' );
+
+	  // Direct return response
+	  // turn data into a WP_REST_Response object
+	  // return rest_ensure_response($data);
+
+	  // Or return a WP_REST_Response object
+
+	  // Create the response object
+	  $response = new WP_REST_Response( $data );
+
+	  // Add a custom status code
+	  $response->set_status( 201 );
+
+	  // Add a custom header
+	  //$response->header( 'Location', 'http://example.com/' );
+
+	  return $response;
+  }
+#+END_SRC
+
+***** Using controller
+- https://github.com/elevati/wp-api-multiple-posttype
+- ~/wp-json/wp/v2/multiple-post-type?&type[]=post&type[]=page~
+- global search on ~WP_REST_Controller~ to see example e.g. ~WP_REST_Posts_Controller~
+- Controller can do CRUD
+
+#+BEGIN_SRC php
+  add_action( 'rest_api_init', 'init_wp_rest_multiple_posttype_endpoint' );
+
+  function init_wp_rest_multiple_posttype_endpoint() {
+	  if ( ! class_exists( 'WP_REST_Multiple_PostType_Controller' ) ) {
+		  require_once dirname( __FILE__ ) . '/lib/endpoints/class-wp-rest-multiple-posttype-controller.php';
+	  }
+	  $controller = new WP_REST_Multiple_PostType_Controller();
+	  $controller->register_routes();
+  }
+#+END_SRC
+
+theme_path/lib/endpoints/class-wp-rest-multiple-posttype-controller.php
 
 *** Authentication
 Require auth for all requests
@@ -13272,6 +13360,21 @@ Require auth for all requests
 
 *** Cache
 I think REST response is object cache. When using with Pantheon Advanced Page Cache and WP Redis plugins, REST response is cached and it's refreshed when necessary after post CRUD.
+
+*** Hooks
+**** ~rest_{$this->post_type}_collection_params~ <<<wp:rest:hook:rest_*_collection_params>>>
+- Register custom collection parameters ~$_GET['yourparam']~
+- Add options to existing parameter e.g. add ~rand~ to ~orderby~
+- For ~post~, use ~rest_post_collection_params~ 
+
+#+BEGIN_SRC php
+  // add rand to orderby for post type news
+  add_filter( 'rest_news_collection_params', 'my_prefix_add_rest_orderby_params', 10, 1 );
+  function my_prefix_add_rest_orderby_params( $params ) {
+	  $params['orderby']['enum'][] = 'rand';
+	  return $params;
+  }
+#+END_SRC
 
 ** Life Cycle
 Refer to wp:action:loading sequence
