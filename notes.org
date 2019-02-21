@@ -433,6 +433,7 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // strtotime ( string $time [, int $now = time() ] ) : int
 
   $_u_time = strtotime('2016-11-01');
+  // 20190228 format also works
 
   // ISO date string. Refer to js:time:iso
   $_u_time = strtotime('2011-10-05T14:48:00.000Z');
@@ -461,10 +462,14 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 
 **** Datetime Object - Unix timestamp (int) and DateInterval
 #+BEGIN_SRC php
-  $_u_time = strtotime('2016-11-01');
+  $_u_time = strtotime('2016-11-01'); // 20190228 also works
 
   $a = new DateTime();
   $a->setTimestamp($_u_time);
+
+  // to convert a more complex string format to date
+  // http://php.net/manual/en/datetime.createfromformat.php
+  $date = DateTime::createFromFormat( 'j-M-Y', '15-Feb-2009');
 
   $now = new DateTime();
 
@@ -474,6 +479,12 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   $yesterday = new DateTime(); // now
   $yesterday->sub(new DateInterval('P1D')); // subtract one day
   echo $yesterday->format('Ymd');
+#+END_SRC
+
+*** Unix to Format String
+#+BEGIN_SRC php
+  $a = strtotime('20190228');
+  echo gmdate("Y-m-d", $a);
 #+END_SRC
 
 *** Date in Other Languages (Locale)
@@ -8997,19 +9008,20 @@ wp:f:get_template_part includes any template in child theme
 
 #+BEGIN_SRC php
   function lili_RSS() {
-   add_feed('lili-editorial', 'lili_editorial_RSS');
+	  add_feed('lili-editorial', 'lili_editorial_RSS');
   }
-  add_action('init', 'lili_editorial_RSS');
-  function lili_editorial_RSS() {
-   get_template_part('rss','feedname');
-   // rss is slug and feedname is an extra name
-   // Search in order
-   // /themes/child/rss-feedname.php
-   // /themes/parent/rss-feedname.php
-   // /themes/child/rss.php
-   // /themes/parent/rss.php
+  add_action('init', 'lili_RSS');
 
-   // the feed url is http://you.com/feed/lili-editorial which is the feed name defined in add_feed
+  function lili_editorial_RSS() {
+	  get_template_part('rss','feedname');
+	  // rss is slug and feedname is an extra name
+	  // Search in order
+	  // /themes/child/rss-feedname.php
+	  // /themes/parent/rss-feedname.php
+	  // /themes/child/rss.php
+	  // /themes/parent/rss.php
+
+	  // the feed url is http://you.com/feed/lili-editorial which is the feed name defined in add_feed
   }
 #+END_SRC
 
@@ -16229,11 +16241,17 @@ You can also place each svg one after another
   }
 #+END_SRC
 
-** Sass
+** Sass <<<css:scss>>>
 *** Variables
 #+BEGIN_SRC scss
   $childMargin: 20px;
-  $numItems: 4;
+  $numItems: 4 !default;
+
+  $enable-rounded: true !default;
+
+  $border-radius: .25rem !default;
+  $badge-border-radius: $border-radius !default;
+
   .featured-media {
       display:block;
       float:left;
