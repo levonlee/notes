@@ -410,53 +410,87 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 [[https://www.w3.org/WAI/ER/IG/ert/iso639.htm][ISO 639 3-letter codes]]
 
 ** Date
-*** Create a custom date
-**** mktime return Unix timestamp
-$_u_time = mktime(11,0,0,11,22,2016); // hour, min, sec, month, day, year, $is_dst(daylight saving, 0 or 1)
+*** Date function <<<php:f:date>>>
+~date ( string $format [, int $timestamp = time() ] ) : string~
 
-**** String to Time
-#+BEGIN_EXAMPLE
+- [[http://php.net/manual/en/function.date.php][Date formats]]
+#+BEGIN_SRC php
+  // Y => 1999
+  // m => 01 for January
+  // d => 01 to 31
+  echo date('Ymd'); // 20190131 for Jan 31, 2019
+#+END_SRC
+
+*** Create a custom date
+**** mktime return Unix timestamp <<<php:f:mktime>>>
+#+BEGIN_SRC php
+  // hour, min, sec, month, day, year, $is_dst(daylight saving, 0 or 1)
+  $_u_time = mktime(11,0,0,11,22,2016);
+#+END_SRC
+
+**** String to Time - return Unix timestamp <<<php:f:strtotime>>>
+#+BEGIN_SRC php
+  // strtotime ( string $time [, int $now = time() ] ) : int
+
   $_u_time = strtotime('2016-11-01');
 
   // ISO date string. Refer to js:time:iso
-  $_u_time = strtotime('2011-10-05T14:48:00.000Z')
+  $_u_time = strtotime('2011-10-05T14:48:00.000Z');
 
-  Compare if($start > $end) {}
+  //Compare
+  if($start > $end) {}
 
   // difference in seconds
-  $end - $start
+  echo	$end - $start;
 
   // Format differences
   $interval = date_diff($end, $start);
   echo $interval->format('%R%a days');
 
-#+END_EXAMPLE
+  // yesterday
+  $hour = 12;
 
-**** Unix timestamp (int) to datetime object
-$_u_time = strtotime('2016-11-01');
+  $today              = strtotime($hour . ':00:00');
+  $yesterday          = strtotime('-1 day', $today);
+  $dayBeforeYesterday = strtotime('-1 day', $yesterday);
 
-$a = new DateTime();
-$a->setTimestamp($_u_time);
+  echo date('Ymd', $today).PHP_EOL;
+  echo date('Ymd', $yesterday).PHP_EOL;
+  echo date('Ymd', $dayBeforeYesterday).PHP_EOL;
+#+END_SRC
 
-$now = new DateTime();
+**** Datetime Object - Unix timestamp (int) and DateInterval
+#+BEGIN_SRC php
+  $_u_time = strtotime('2016-11-01');
 
-**** Format difference between 2 Datetime objects
-$interval = $now->diff($a);
-echo $interval->format('%R%a days');
+  $a = new DateTime();
+  $a->setTimestamp($_u_time);
+
+  $now = new DateTime();
+
+  $interval = $now->diff($a);
+  echo $interval->format('%R%a days');
+
+  $yesterday = new DateTime(); // now
+  $yesterday->sub(new DateInterval('P1D')); // subtract one day
+  echo $yesterday->format('Ymd');
+#+END_SRC
 
 *** Date in Other Languages (Locale)
-$_u_time = mktime (11, 0, 0, 11, 22, 2016);
-setlocale(LC_TIME, 'fr_FR.utf8','fra'); // try fr_FR.utf8 first, if fail, try fra
-$_fr_time = array();
-$_fr_time[] = strftime('%A', $_u_time); // format a date/time according to locale settings
-$_fr_time[] = trim(strftime('%e', $_u_time)); // day of month, single digit with leading space if it's single digit..
-$_fr_time[] = strftime('%B', $_u_time);
-$_fr_time[] = strftime('%Y', $_u_time);
-$_fr_time = ucwords(implode(' ', $_fr_time));
-echo $_fr_time;
+#+BEGIN_SRC php
+  $_u_time = mktime (11, 0, 0, 11, 22, 2016);
+  setlocale(LC_TIME, 'fr_FR.utf8','fra'); // try fr_FR.utf8 first, if fail, try fra
+  $_fr_time = array();
+  $_fr_time[] = strftime('%A', $_u_time); // format a date/time according to locale settings
+  $_fr_time[] = trim(strftime('%e', $_u_time)); // day of month, single digit with leading space if it's single digit..
+  $_fr_time[] = strftime('%B', $_u_time);
+  $_fr_time[] = strftime('%Y', $_u_time);
+  $_fr_time = ucwords(implode(' ', $_fr_time));
+  echo $_fr_time;
+#+END_SRC
 
 *** Change timezone
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $timezone = date_default_timezone_get(); // UTC
   var_dump($timezone); // UTC
 
@@ -467,7 +501,7 @@ echo $_fr_time;
   var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm +4 = 11pm
   date_default_timezone_set($timezone); // UTC
   var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
-#+END_EXAMPLE
+#+END_SRC
 
 ** Multibyte
 *** Remove 4 byte characters <<<php:4byte>>>
@@ -11423,6 +11457,30 @@ fr.originaldomain.com/sitemap.xml
 - URL
 - ID
 https://www.advancedcustomfields.com/resources/image/
+
+**** Query
+#+BEGIN_SRC php
+  if ( in_array( $query->get( 'post_type' ), array( 'event' ) ) ) {
+
+	  $query->set( 'orderby', 'meta_value' );
+	  $query->set( 'meta_key', 'event_start' );
+	  $query->set( 'order', 'ASC' );
+	  $query->set( 'posts_per_page', '-1' );
+
+	  $now        = strtotime( '12:00:00' );
+	  $meta_query = array(
+		  'relation' => 'AND',
+		  array(
+			  'key'     => 'event_end',
+			  'value'   => date( 'Ymd'),
+			  // value in db is '20190131' for Jan 31, 2019. So the format should Ymd
+			  //'value'   => date( 'Ymd', strtotime( '-12 day', $now ) ),
+			  'compare' => '>=',
+		  )
+	  );
+	  $query->set( 'meta_query', $meta_query );
+  }
+#+END_SRC
 
 **** Add a field group
 https://www.advancedcustomfields.com/resources/register-fields-via-php/
