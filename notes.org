@@ -8734,6 +8734,7 @@ By default, The Loop uses the main query's current post to set ~global $post~.
   - wp:filter:found_posts
 - Use actions :: wp:action:pre_get_posts
 - Class methods and properties :: wp-includes/class-wp-query.php 
+- Debug :: wp:debug:wp_query
 
 #+BEGIN_SRC php
   $args = array(
@@ -8748,8 +8749,9 @@ By default, The Loop uses the main query's current post to set ~global $post~.
 
   $query = new WP_Query($args);
 
-  // debug
-  var_dump($query->request);
+  // or
+  // $q = new WP_Query;
+  // $q->query($args);
 #+END_SRC
 
 **** Loop the main loop
@@ -13006,7 +13008,7 @@ Function may return WP_Error object. Catch error
   }
 #+END_SRC
 
-<<<wp:show error>>>
+*** Show error <<<wp:show error>>>
 In wp-config.php insert this before /* That's all, stop editing! Happy blogging */
 https://codex.wordpress.org/Debugging_in_WordPress
 #+BEGIN_SRC php
@@ -13036,6 +13038,7 @@ Or anywhere
   ini_set('display_errors', 1);
 #+END_SRC
 
+*** Debug WP_Query <<<wp:debug:wp_query>>>
 About ~SAVEQUERIES~
 #+BEGIN_SRC php
   if ( current_user_can( 'administrator' ) ) {
@@ -13046,8 +13049,26 @@ About ~SAVEQUERIES~
   }
 #+END_SRC
 
-All Image Sizes <<<wp:debug:image sizes>>>
+#+BEGIN_SRC php
+  $query = new WP_Query($args);
 
+  // debug: actual SQL raw query that is run
+  var_dump($query->request);
+
+  $args = array(
+    'post_type' => array('news'),
+	  // 'tax_query' => array(...),
+	  // ...
+	  'lili' => 'lili'
+  );
+
+  // inside class-wp-query.php function get_posts()
+  if (isset($q['lili'])) {
+	  //var_dump($where);
+  }
+#+END_SRC
+
+*** All Image Sizes <<<wp:debug:image sizes>>>
 #+BEGIN_SRC php
   add_action( 'wp_footer', 'debug_all_image_sizes' );
   function debug_all_image_sizes() {
@@ -13063,6 +13084,108 @@ All Image Sizes <<<wp:debug:image sizes>>>
 	  global $template;
 	  print_r( $template );
 	  print '</pre>'; 
+  }
+#+END_SRC
+
+*** Filters <<<wp:debug:filters>>>
+#+BEGIN_SRC php
+  if ( WP_DEBUG && array_intersect( array( 'administrator' ), wp_get_current_user()->roles ) ) {
+	  add_action( 'wp_footer', 'debug_genesis_attr_filters' );
+  }
+
+  function debug_genesis_attr_filters() {
+	  global $wp_filter; // current_filter() might be a better way to do this
+	  $genesis_attr_filters = array();
+
+	  $h1  = '<h1>Current Page Genesis Attribute Filters</h1>';
+	  $out = '';
+	  $ul  = '<ul>';
+
+	  foreach ( $wp_filter as $key => $val ) {
+		  if ( false !== strpos( $key, 'genesis_attr' ) ) {
+			  $genesis_attr_filters[ $key ][] = var_export( $val, true );
+		  }
+	  }
+	  foreach ( $genesis_attr_filters as $name => $attr_vals ) {
+		  $out .= "<h2 id=$name>$name</h2><pre>" . implode( "\n\n", $attr_vals ) . '</pre>';
+		  $ul  .= "<li><a href='#$name'>$name</a></li>";
+	  }
+	  print "$h1$ul</ul>$out";
+  }
+
+#+END_SRC
+
+#+BEGIN_SRC php
+  global $wp_filter;
+  print '<pre>';
+  // all filters
+  // print_r($wp_filter);
+
+  // a specific filter
+  // print_r($wp_filter['posts_where']);
+
+  // More advanced: find file name and line number of the callback function
+  // array(
+  //   filter 1
+  //   array( id, priority, function, accepted_args, file, line )
+  // )
+  print_r(list_hooks('posts_where'));
+  print '</pre>';
+
+  // https://stackoverflow.com/a/26680808/2196360
+  function list_hooks( $hook = '' ) {
+	  global $wp_filter;
+
+	  if ( isset( $wp_filter[ $hook ]->callbacks ) ) {
+		  array_walk( $wp_filter[ $hook ]->callbacks, function ( $callbacks, $priority ) use ( &$hooks ) {
+			  foreach ( $callbacks as $id => $callback ) {
+				  $hooks[] = array_merge( [ 'id' => $id, 'priority' => $priority ], $callback );
+			  }
+		  } );
+	  } else {
+		  return [];
+	  }
+
+	  foreach ( $hooks as &$item ) {
+		  // skip if callback does not exist
+		  if ( ! is_callable( $item['function'] ) ) {
+			  continue;
+		  }
+
+		  // function name as string or static class method eg. 'Foo::Bar'
+		  if ( is_string( $item['function'] ) ) {
+			  $ref          = strpos( $item['function'], '::' ) ? new ReflectionClass( strstr( $item['function'], '::', true ) ) : new ReflectionFunction( $item['function'] );
+			  $item['file'] = $ref->getFileName();
+			  $item['line'] = get_class( $ref ) == 'ReflectionFunction'
+				  ? $ref->getStartLine()
+				  : $ref->getMethod( substr( $item['function'], strpos( $item['function'], '::' ) + 2 ) )->getStartLine();
+
+			  // array( object, method ), array( string object, method ), array( string object, string 'parent::method' )
+		  } elseif ( is_array( $item['function'] ) ) {
+
+			  $ref = new ReflectionClass( $item['function'][0] );
+
+			  // $item['function'][0] is a reference to existing object
+			  $item['function'] = array(
+				  is_object( $item['function'][0] ) ? get_class( $item['function'][0] ) : $item['function'][0],
+				  $item['function'][1]
+			  );
+			  $item['file']     = $ref->getFileName();
+			  $item['line']     = strpos( $item['function'][1], '::' )
+				  ? $ref->getParentClass()->getMethod( substr( $item['function'][1], strpos( $item['function'][1], '::' ) + 2 ) )->getStartLine()
+				  : $ref->getMethod( $item['function'][1] )->getStartLine();
+
+			  // closures
+		  } elseif ( is_callable( $item['function'] ) ) {
+			  $ref              = new ReflectionFunction( $item['function'] );
+			  $item['function'] = get_class( $item['function'] );
+			  $item['file']     = $ref->getFileName();
+			  $item['line']     = $ref->getStartLine();
+
+		  }
+	  }
+
+	  return $hooks;
   }
 #+END_SRC
 
