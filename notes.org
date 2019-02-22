@@ -8732,19 +8732,47 @@ By default, The Loop uses the main query's current post to set ~global $post~.
   - pre_option_posts_per_rss :: wp:filter:pre_option_*
   - wp:filter:posts_clauses
   - wp:filter:found_posts
+  - wp:filter:posts_search
+  - wp:filter:posts_search_orderby
+  - wp:filter:posts_where
+  - wp:filter:posts_where_paged
+  - wp:filter:posts_groupby
+  - wp:filter:posts_join_paged
+  - wp:filter:posts_orderby
+  - wp:filter:posts_distinct
+  - wp:filter:posts_limits
+  - wp:filter:posts_fields
+  - wp:filter:posts_clauses
+  - wp:filter:comment_feed_join
+  - wp:filter:comment_feed_where
+  - wp:filter:comment_feed_groupby
+  - wp:filter:comment_feed_orderby
+  - wp:filter:comment_feed_limits
+  - wp:filter:posts_where_request
+  - wp:filter:posts_groupby_request
+  - wp:filter:posts_join_request
+  - wp:filter:posts_orderby_request
+  - wp:filter:posts_distinct_request
+  - wp:filter:posts_fields_request
+  - wp:filter:post_limits_request
+  - wp:filter:posts_clauses_request
+  - wp:filter:posts_request
+  - wp:filter:posts_pre_query
+  - wp:filter:posts_results
 - Use actions :: wp:action:pre_get_posts
 - Class methods and properties :: wp-includes/class-wp-query.php 
 - Debug :: wp:debug:wp_query
 
 #+BEGIN_SRC php
   $args = array(
-   'post_type' => array('editorial', 'blog'), // blog or editorial
-   'post_status' => array('publish'),
-   'posts_per_page' => -1, // int. -1 shows all posts. Doesn't work in feed (Default 10). Use wp:filter:post_limits
-   'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
-   'tax_query' => $tax_query, // refer to WP Tax Query
-   'order' => 'DESC', // default, 'ASC'
-   'orderby' => 'date', // default, which is post_date. Others are publish_date
+	  'post_type' => array('editorial', 'blog'), // blog or editorial
+	  'post_status' => array('publish'),
+	  'posts_per_page' => -1, // int. -1 shows all posts. Doesn't work in feed (Default 10). Use wp:filter:post_limits
+	  'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
+	  'tax_query' => $tax_query, // refer to WP Tax Query
+	  'order' => 'DESC', // default, 'ASC'
+	  'orderby' => 'date', // default, which is post_date. Others are publish_date
+	  'suppress_filters' => false, // default. When true, filters will not run
   );
 
   $query = new WP_Query($args);
@@ -8808,6 +8836,11 @@ Try to avoid using it. Use ~new WP_Query()~ instead
 #+END_SRC
 
 **** Loop with ~get_posts()~
+- Use ~new WP_Query()~, the same ~$args~
+- Default ~'suppress_filters' => true~ :: most filters are not fun
+- It's good when ~new WP_Query($args)~ does not work because of other plugins/theme have extra filters that mess up WP_Query
+- Very safe to use
+
 #+BEGIN_SRC php
   global $post; // required
   $args = array('category' => -9); // exclude category 9
@@ -9124,7 +9157,7 @@ For feed, use pre_option_posts_per_rss wp:filter:pre_option
 
 *** posts_clauses <<<wp:filter:posts_clauses>>>
 Modify WP_Query object before it runs
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_posts_clauses($clauses, $query) {
     /*
     $clauses => [
@@ -9174,7 +9207,7 @@ Modify WP_Query object before it runs
 
     return $clauses;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** query_vars <<<wp:filter:query_vars>>>
 https://codex.wordpress.org/WordPress_Query_Vars
