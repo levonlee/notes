@@ -13320,6 +13320,183 @@ https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-en
 
 theme_path/lib/endpoints/class-wp-rest-multiple-posttype-controller.php
 
+**** Batch
+https://developer.wordpress.org/rest-api/requests/
+
+- Batch run multiple REST API GET requets
+- One HTTP GET request but return multiple responses as different key in JSON response
+
+#+BEGIN_SRC php
+  // example.com/wp-json/my-namespace/v1/batch?requests[0][method]=GET&requests[0][route]=/wp/v2/news&requests[0][params][per_page]=6&requests[0][params][orderby]=rand&requests[0][params][filter][center]=game-changer
+
+  // /wp-json/wp/v2/news?per_page=6&filter[centre]=game-changer&orderby=rand
+
+  // response
+  // { 'GET /wp/v2/news': [ response for that REST API v2 request ]}
+
+  // Register our mock batch endpoint.
+  function prefix_register_batch_route() {
+	  register_rest_route( 'my-namespace/v1', '/batch', array(
+		  // Supported methods for this endpoint. WP_REST_Server::READABLE translates to GET.
+		  'methods' => WP_REST_Server::READABLE,
+		  // Register the callback for the endpoint.
+		  'callback' => 'prefix_do_batch_request',
+		  // Register args for the batch endpoint.
+		  'args' => prefix_batch_request_parameters(),
+	  ) );
+  }
+
+  add_action( 'rest_api_init', 'prefix_register_batch_route' );
+
+  /**
+   ,* Our registered endpoint callback. Notice how we are passing in $request as an argument.
+   ,* By default, the WP_REST_Server will pass in the matched request object to our callback.
+   ,*
+   ,* @param WP_REST_Request $request The current matched request object.
+   ,*/
+  function prefix_do_batch_request( $request ) {
+	  // Here we initialize the array that will hold our response data.
+	  $data = array();
+	  $data = prefix_handle_batch_requests( $request['requests'] );
+	  return $data;
+  }
+
+  /**
+   ,* This handles the building of the response for the batch requests we make.
+   ,*
+   ,* @param array $requests An array of data to build WP_REST_Request objects from.
+   ,* @return WP_REST_Response A collection of response data for batch endpoints.
+   ,*/
+  function prefix_handle_batch_requests( $requests ) {
+	  $data = array();
+
+	  // Foreach request specified in the requests param run the endpoint.
+	  foreach ( $requests as $request_params ) {
+		  $response = prefix_handle_request( $request_params );
+		  $key = $request_params['method'] . ' ' . $request_params['route'];
+		  $data[ $key ] = prefix_prepare_for_collection( $response );
+	  }
+
+	  return rest_ensure_response( $data );
+  }
+
+  /**
+   ,* This handles the building of the response for the batch requests we make.
+   ,*
+   ,* @param array $request_params Data to build a WP_REST_Request object from.
+   ,* @return WP_REST_Response Response data for the request.
+   ,*/
+  function prefix_handle_request( $request_params ) {
+	  $request = new WP_REST_Request( $request_params['method'], $request_params['route'] );
+
+	  // Add specified request parameters into the request.
+	  if ( isset( $request_params['params'] ) ) {
+		  foreach ( $request_params['params'] as $param_name => $param_value ) {
+			  $request->set_param( $param_name, $param_value );
+		  }
+	  }
+	  $response = rest_do_request( $request );
+	  return $response;
+  }
+
+  /**
+   ,* Prepare a response for inserting into a collection of responses.
+   ,*
+   ,* This is lifted from WP_REST_Controller class in the WP REST API v2 plugin.
+   ,*
+   ,* @param WP_REST_Response $response Response object.
+   ,* @return array Response data, ready for insertion into collection data.
+   ,*/
+  function prefix_prepare_for_collection( $response ) {
+	  if ( ! ( $response instanceof WP_REST_Response ) ) {
+		  return $response;
+	  }
+
+	  $data = (array) $response->get_data();
+	  $server = rest_get_server();
+
+	  if ( method_exists( $server, 'get_compact_response_links' ) ) {
+		  $links = call_user_func( array( $server, 'get_compact_response_links' ), $response );
+	  } else {
+		  $links = call_user_func( array( $server, 'get_response_links' ), $response );
+	  }
+
+	  if ( ! empty( $links ) ) {
+		  $data['_links'] = $links;
+	  }
+
+	  return $data;
+  }
+
+  /**
+   ,* Returns the JSON schema data for our registered parameters.
+   ,*
+   ,* @return array $params A PHP representation of JSON Schema data.
+   ,*/
+  function prefix_batch_request_parameters() {
+	  $params = array();
+
+	  $params['requests'] = array(
+		  'description'        => esc_html__( 'An array of request objects arguments that can be built into WP_REST_Request instances.', 'my-text-domain' ),
+		  'type'               => 'array',
+		  'required'           => true,
+		  'validate_callback'  => 'prefix_validate_requests',
+		  'items'              => array(
+			  array(
+				  'type' => 'object',
+				  'properties' => array(
+					  'method' => array(
+						  'description' => esc_html__( 'HTTP Method of the desired request.', 'my-text-domain' ),
+						  'type'        => 'string',
+						  'required'    => true,
+						  'enum'        => array(
+							  'GET',
+							  'POST',
+							  'PUT',
+							  'DELETE',
+							  'OPTIONS',
+						  ),
+					  ),
+					  'route' => array(
+						  'description' => esc_html__( 'Desired route for the request.', 'my-text-domain' ),
+						  'required'    => true,
+						  'type'        => 'string',
+						  'format'      => 'uri',
+					  ),
+					  'params' => array(
+						  'description' => esc_html__( 'Key value pairs of desired request parameters.', 'my-text-domain' ),
+						  'type' => 'object',
+					  ),
+				  ),
+			  ),
+		  ),
+	  );
+
+	  return $params;
+  }
+
+  function prefix_validate_requests( $requests, $request, $param_key ) {
+	  // If requests isn't an array of requests then we don't process the batch.
+	  if ( ! is_array( $requests ) ) {
+		  return new WP_Error( 'rest_invald_param', esc_html__( 'The requests parameter must be an array of requests.' ), array( 'status' => 400 ) );
+	  }
+
+	  foreach ( $requests as $request ) {
+		  // If the method or route is not set then we do not run the requests.
+		  if ( ! isset( $request['method'] ) || ! isset( $request['route'] ) ) {
+			  return new WP_Error( 'rest_invald_param', esc_html__( 'You must specify the method and route for each request.' ), array( 'status' => 400 ) );
+		  }
+
+		  if ( isset( $request['params'] ) && ! is_array( $request['params'] ) ) {
+			  return new WP_Error( 'rest_invald_param', esc_html__( 'You must specify the params for each request as an array of named key value pairs.' ), array( 'status' => 400 ) );
+		  }
+	  }
+
+	  // This is a black listing approach to data validation.
+	  return true;
+  }
+#+END_SRC
+
 *** Authentication
 Require auth for all requests
 #+BEGIN_SRC php
@@ -13334,7 +13511,7 @@ Require auth for all requests
   });
 #+END_SRC
 
-*** Make internal request
+*** Internal request
 #+BEGIN_SRC php
   $request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
   // Set one or more request query parameters
