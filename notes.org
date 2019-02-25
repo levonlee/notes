@@ -11522,6 +11522,99 @@ fr.originaldomain.com/sitemap.xml
 - ID
 https://www.advancedcustomfields.com/resources/image/
 
+**** Post object field
+#+BEGIN_SRC php
+  echo '<pre>';
+      print_r( get_field('my_post_objects')  );
+  echo '</pre>';
+
+  // single post object
+  $post_object = get_field('my_post_object');
+  global $post;
+  if( $post_object ): 
+	  // override $post
+	  $post = $post_object;
+	  setup_postdata( $post ); 
+	  ?>
+      <div>
+	  <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+	  <span>Post Object Custom Field: <?php the_field('field_name'); ?></span>
+      </div>
+      <?php wp_reset_postdata(); // IMPORTANT - reset the $post object so the rest of the page works correctly ?>
+  <?php endif; ?>
+
+  // multiple post objects
+  $post_objects = get_field('my_post_objects');
+
+  if( $post_objects ): ?>
+      <ul>
+      <?php foreach( $post_objects as $post_object): ?>
+	  <li>
+	      <a href="<?php echo get_permalink($post_object->ID); ?>"><?php echo get_the_title($post_object->ID); ?></a>
+	      <span>Post Object Custom Field: <?php the_field('field_name', $post_object->ID); ?></span>
+	  </li>
+      <?php endforeach; ?>
+      </ul>
+  <?php endif;
+#+END_SRC
+
+**** Repeater field
+#+BEGIN_SRC php
+  <?php if ( have_rows( 'repeater_field_name' ) ): ?>
+
+      <ul class="slides">
+
+		  <?php while ( have_rows( 'repeater_field_name' ) ): the_row();
+
+			  // vars
+			  $image    = get_sub_field( 'image' );
+			  $content  = get_sub_field( 'content' );
+			  $link     = get_sub_field( 'link' );
+			  $post_obj = get_sub_field( 'my_post_object' );
+			  ?>
+
+	      <li class="slide">
+
+				  <?php if ( $link ): ?>
+		  <a href="<?php echo $link; ?>">
+					  <?php endif; ?>
+
+		      <img src="<?php echo $image['url']; ?>" alt="<?php echo $image['alt'] ?>"/>
+
+					  <?php if ( $link ): ?>
+		  </a>
+			  <?php endif; ?>
+
+				  <?php echo $content; ?>
+		  <?php echo get_the_title($post_obj->ID); ?>
+
+	      </li>
+
+		  <?php endwhile; ?>
+
+      </ul>
+
+  <?php endif; ?>
+#+END_SRC
+
+Get first row or random row
+#+BEGIN_SRC php
+  $rows = get_field('repeater_field_name' ); // get all the rows
+  $first_row = $rows[0]; // first row
+  $rand_row = $rows[ array_rand( $rows ) ]; // get a random row
+  $rand_row_image = $rand_row['sub_field_name' ]; // get the sub field value 
+
+  // Note
+  // $first_row_image = 123 (image ID)
+
+  $image = wp_get_attachment_image_src( $rand_row_image, 'full' );
+  // url = $image[0];
+  // width = $image[1];
+  // height = $image[2];
+  ?>
+  <img src="<?php echo $image[0]; ?>" />
+#+END_SRC
+
 **** Query
 #+BEGIN_SRC php
   if ( in_array( $query->get( 'post_type' ), array( 'event' ) ) ) {
