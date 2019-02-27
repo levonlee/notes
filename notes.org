@@ -4848,7 +4848,7 @@ Core fieldtype:
 - image
 - file
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $info = field_info_field($field_name);
   $function = $info['module'] . '_field_is_empty';
 
@@ -4856,7 +4856,7 @@ Core fieldtype:
     $value = field_get_items('node', $node, $field_name);
     $is_empty = $function($value, $info);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Field Formatter <<<d7:api:field:formatter>>>
 Content Type > Manage Display > Format for a field
@@ -4993,22 +4993,30 @@ $items = field_get_items($entity_type, $entity, $field_name, $langcode = NULL)
 
 If there is no field associated with $entity or the field is not a field belongs to $entity, it will return false.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
+  // field_get_items($entity_type, $entity, $field_name, $langcode = NULL)
+  // field_get_items('node', $node, 'field_my_field_name' )
+
+  if (!empty(field_get_items('node', $node, 'field_my_field_name'))) {
+	  // field has at least one value
+  }
+
+  // or use this to determine how many values a field has
   function hasValues($field_name,$entity, $entity_type='node', $langcode = NULL) {
       $r     = [
-        'has'   => FALSE,
-        'count' => 0
+	'has'   => FALSE,
+	'count' => 0
       ];
       $value = field_get_items($entity_type, $entity, $field_name, $langcode);
       if (is_array($value)) {
-        $r = [
-          'has' => true,
-          'count' => count($value)
-        ];
+	$r = [
+	  'has' => true,
+	  'count' => count($value)
+	];
       }
       return $r;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 To check if a field value is empty d7:api:field:hook_field_is_empty
 
@@ -5180,7 +5188,7 @@ Use db_query or db_select to get all nids, load all nodes at once and then manip
 
 db_query is meant for simple select query. [[https://www.drupal.org/node/310075][db_select]] is dynamic query
 *** db_select
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $q = db_select( 'node', 'n' );
   $q->join( 'field_data_body', 'b', 'n.nid=b.entity_id AND b.delta=0' );
   $q->innerJoin( 'field_data_field_category', 'nc'
@@ -5197,8 +5205,8 @@ db_query is meant for simple select query. [[https://www.drupal.org/node/310075]
     ->condition( 'n.type', 'article' )// article not page.
     ->condition(
       db_or()
-        ->condition( 'nc.field_category_tid', $articleCats, 'IN' )
-        ->condition( 'tH.parent', $articleCats, 'IN' )
+	->condition( 'nc.field_category_tid', $articleCats, 'IN' )
+	->condition( 'tH.parent', $articleCats, 'IN' )
     )
     ->range( $i_start, $i_length )
     ->groupBy( 'n.nid' )
@@ -5253,7 +5261,7 @@ db_query is meant for simple select query. [[https://www.drupal.org/node/310075]
 
     return $s;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** db_query
 https://www.drupal.org/docs/7/api/database-api/static-queries
