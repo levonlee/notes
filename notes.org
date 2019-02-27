@@ -3154,7 +3154,12 @@ Once a language is added (default language is chosen), node created will have $n
 
 *** S3 File System - s3fs <<<d7:m:s3fs>>>
 - https://pantheon.io/docs/drupal-s3/
-- Requires module libraries, library =AWS SDK for PHP 2.x=, PHP 5.3.3+ with ~allow_url_fopen = On~ in =php.ini=
+- Requires module libraries, library ~AWS SDK for PHP 2.x~, PHP 5.3.3+ with ~allow_url_fopen = On~ in ~php.ini~
+- It replaces ~public://~ or ~private://~ with ~s3://~
+- After this is enabled, files that are in Drupal but not in S3 will become unavailable! Drupal files need to be uploaded to S3 first!
+- Without replacing ~public://~ with ~s3://~, only new files will be uploaded to S3. If a node has files in ~public://~ and they are not uploaded to ~s3://~ and ~without replacing public://~ is set, saving the node will not change the files from ~public://~ to ~s3://~. In short, it's safe to not enable ~replace public:// with s3://~
+- To upload existing files in ~public://~ to S3 :: ~drush s3fs-copy-local~. Refer to module README.txt for more info
+- In order to sync files from S3 to Drupal, Refresh file metadata cache is needed ~/admin/config/media/s3fs/actions~. Best to run drush in case of timeout ~drush s3fs-refresh-cache~
 
 #+BEGIN_SRC sh
   drush dl s3fs
@@ -3169,11 +3174,10 @@ Once a language is added (default language is chosen), node created will have $n
   drush make --no-core sites/all/modules/s3fs/s3fs.make
 #+END_SRC
 
-Check if library is downloaded =sites/all/libraries/awssdk2/aws-autoloader.php=
-
-Drupal setting :: /admin/config/media/s3fs/settings or in settings.php
-Set Cache-Control header to be ~public, max-age=604800~
-Refer to header:cache-control
+- Check if library is downloaded ~sites/all/libraries/awssdk2/aws-autoloader.php~
+- Drupal setting :: /admin/config/media/s3fs/settings or in settings.php
+- Set ~Cache-Control~ header to be ~public, max-age=604800~
+- Refer to header:cache-control
 
 settings.php
 #+BEGIN_EXAMPLE
@@ -3187,6 +3191,24 @@ settings.php
 - Set ~Default download method~ to ~Amazon Simple Storage Service~ :: Go to ~admin/config/media/file-system~
 - Set ~Upload destination~ for a file field for a content type :: Strucutre > Content Types > choose one > choose the file field 
 - Refer to aws:s3 about how to setup user with correct permission policy
+
+**** IMCE & S3FS, TinyMCE
+
+If S3fs is < 7.x-2.5 then get the latest s3fs dev version. 
+
+Any field of type File, Image, etc. can set the "Upload destination" to S3 in the Field Settings. 
+
+To insert javascript inside Wysiwyg with TinyMCE (v3.5.8), first in admin allow user to turn off TinyMCE by default. 
+
+/admin/config/content/wysiwyg/profile/full_html/edit, Basic Setup, Allow users to choose default 
+
+Login to the user profile, and turn off Text formats enabled for rich-text editing > Full HTML 
+
+That user can still enable rich-text but the default is plain text without stripping script tags. 
+
+However, toggle rich-text on and off still strips off script tags. 
+
+In short, it's hacky to enable users to insert javascript. You may need the shortcode module.
 
 *** Password Policy - password_policy
 Change password required length, etc.
