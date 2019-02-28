@@ -6678,7 +6678,13 @@ https://code.tutsplus.com/tutorials/writing-custom-queries-in-wordpress--wp-2551
 *** $wp_filter, $wp_current_filter <<<wp:global:wp_filter>>> <<<wp:global:wp_current_filter>>>
 Use ~current_action()~ or ~current_filter()~ to return the current filter
 
-*** $template
+*** $template <<<wp:global:template>>>
+Which php file is used for template
+#+BEGIN_SRC php
+  global $template;
+  print_r( $template );
+#+END_SRC
+
 *** Image Sizes $_wp_additional_image_sizes
 Refer to wp:debug:image sizes
 
@@ -7283,7 +7289,7 @@ in HTML to achieve the purpose.
 
 You can resize an image file on the fly using fly-dynamic-image-resizer
 
-- ~the_post_thumbnail($size, $attr='')~ :: echo html
+- ~the_post_thumbnail($size, $attr='')~ :: echo html ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
 - ~the_post_thumbnail_url($size)~ :: echo url
 - ~the_post_thumbnail_caption($post = null)~ :: echo thumbnail caption
 - ~wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false )~ :: is just like the_post_thumbnail but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
@@ -8890,7 +8896,8 @@ Try to avoid using it. Use ~new WP_Query()~ instead
 #+END_SRC
 
 **** ~$q->is_*~ methods
-- ~is_post_type_archive()~ ~is_post_type_archive('yourposttype')~
+- ~is_post_type_archive()~ :: ~is_post_type_archive('yourposttype')~
+- If a custom tax archive page (taxonomy and/or a term) is being displayed :: ~is_tax( $taxonomy= '' , $term = '')~ e.g. ~is_tax( 'my_tax' )~ ~is_tax( 'my_tax', 'my_term' )~
 
 **** ~$q->found_posts~
 **** ~$q->post_count~
@@ -9697,18 +9704,18 @@ $attachment :: (WP_Post) Image attachment post.
 
 $size :: (string|array) Requested size. Image size or array of width and height values (in that order). Default 'thumbnail'.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function twentyseventeen_post_thumbnail_sizes_attr( $attr, $attachment, $size ) {
-          if ( is_archive() || is_search() || is_home() ) {
-                  $attr['sizes'] = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
-          } else {
-                  $attr['sizes'] = '100vw';
-          }
+	  if ( is_archive() || is_search() || is_home() ) {
+		  $attr['sizes'] = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
+	  } else {
+		  $attr['sizes'] = '100vw';
+	  }
 
-          return $attr;
+	  return $attr;
   }
   add_filter( 'wp_get_attachment_image_attributes', 'twentyseventeen_post_thumbnail_sizes_attr', 10, 3 );
-#+END_EXAMPLE
+#+END_SRC
 
 *** widget_tag_cloud_args
 #+BEGIN_EXAMPLE
@@ -13238,6 +13245,7 @@ About ~SAVEQUERIES~
   }
 #+END_SRC
 
+*** Which template? wp:global:template
 *** All Image Sizes <<<wp:debug:image sizes>>>
 #+BEGIN_SRC php
   add_action( 'wp_footer', 'debug_all_image_sizes' );
