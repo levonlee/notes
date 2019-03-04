@@ -418,6 +418,7 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // Y => 1999
   // m => 01 for January
   // d => 01 to 31
+  // w => 0 to 6, 0 for Sunday and 6 for Saturday
   echo date('Ymd'); // 20190131 for Jan 31, 2019
 #+END_SRC
 
@@ -5840,10 +5841,24 @@ A node or an entity has a taxonomy term means the node has a category. Categorie
 #+END_EXAMPLE
 
 *** Get term by name, taxonomy_get_term_by_name
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
+  // taxonomy_get_term_by_name($name, $vocabulary = NULL)
+
   $_limit_to_vocab = 'vocab_name'; // Default NULL.
   $term_is_parent = taxonomy_get_term_by_name('video', $_limit_to_vocab);
-#+END_EXAMPLE
+
+  // load the term's field values
+  $term_is_parent_id = (!empty($term_is_parent)) ? key($term_is_parent) : 0;
+  $field_my_field = ($term_is_parent_id) ? field_get_items( 'taxonomy_term', $term_is_parent[$term_is_parent_id], 'field_my_field');
+
+  // refer to d7:field_get_items
+
+  if (!empty($field_my_field)) {
+	  foreach ($field_my_field as $k => $v) {
+		  echo $v['value'];
+	  }
+  } 
+#+END_SRC
 
 *** Get all children of a term, taxonomy_get_children
 Get a term that is parent
