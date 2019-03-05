@@ -8912,6 +8912,52 @@ Try to avoid using it. Use ~new WP_Query()~ instead
   <?php wp_reset_postdata(); // reset the query ?>
 #+END_SRC
 
+Array merge 2 query results
+#+BEGIN_SRC php
+  <?php
+  $args = array(
+	  'post_type'      => 'speaker',
+	  'posts_per_page' => - 1,
+	  'orderby'        => 'meta_value',
+	  'meta_key'       => 'speaker_last_name',
+	  'order'          => 'ASC'
+  );
+
+  $tax_query_keynote = array(
+	  array(
+		  'taxonomy' => 'speaker_type',
+		  'field'    => 'slug',
+		  'terms'    => 'keynote-speakers',
+	  )
+  );
+
+  $tax_query_not_keynote = array(
+	  array(
+		  'taxonomy' => 'speaker_type',
+		  'field'    => 'slug',
+		  'terms'    => 'keynote-speakers',
+		  'operator' => 'NOT IN'
+	  )
+  );
+
+  $args_not_keynote = $args;
+  $args['tax_query'] =  $tax_query_keynote;
+  $args_not_keynote['tax_query'] = $tax_query_not_keynote;
+
+  $speakers_keynote = new WP_Query($args);
+  $speakers_not_keynote = new WP_Query($args);
+  $speakers = new WP_Query;
+  $speakers->posts = array_merge($speakers_keynote->posts, $speakers_not_keynote->posts);
+  $speakers->post_count = $speakers_keynote->post_count + $speakers_not_keynote->post_count;
+
+  if ($speakers->have_posts()) {
+	  while ($speakers->have_posts()) {
+		  $speakers->the_post();
+		  echo get_the_title();
+	  }
+  }
+#+END_SRC
+
 **** Loop with ~get_posts()~
 - Use ~new WP_Query()~, the same ~$args~
 - Default ~'suppress_filters' => true~ :: most filters are not fun
