@@ -10016,14 +10016,33 @@ Called when a post or page is created or updated, which could be from an import,
 
 wp:f:update_post_meta
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   add_action( 'save_post', 'save_post', 10, 2 );
   function save_post( $post_id, $post ) {
-    if ( !current_user_can( 'edit_post', $post_id ) )
-      return $post_id;
-      update_post_meta( $post_id, 'volunteer-hours', stripslashes( wpautop($_POST['volunteer-hours']) ) );
+	  if ( !current_user_can( 'edit_post', $post_id ) ) {
+		  return $post_id; // end the action. Not necessary to return.
+	  }
+
+	  // update a custom field
+	  update_post_meta( $post_id, 'volunteer-hours', stripslashes( wpautop($_POST['volunteer-hours']) ) );
+
+	  // auto select parent term if child term is selected for a post type
+	  if ($post->post_type == 'product') {
+		  $tax = 'product_category';
+		  $terms = wp_get_post_terms($post_id, $tax);
+		  foreach ($terms as $term) {
+			  while ($term->parent != 0 && !has_term( $term->parent, $tax, $post )) {
+				  // move upward until we get to 0 level terms
+				  // if parent is already selected, don't add
+				  wp_set_post_terms($post_id, array($term->parent), $tax, true);
+				  $term = get_term($term->parent, $tax);
+			  }
+		  }
+	  }
+	  // auto select parent term.
+
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** add_shortcode <<<wp:f:add_shortcode>>>
 #+BEGIN_SRC php
