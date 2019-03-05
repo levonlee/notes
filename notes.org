@@ -13897,6 +13897,45 @@ Require auth for all requests
 I think REST response is object cache. When using with Pantheon Advanced Page Cache and WP Redis plugins, REST response is cached and it's refreshed when necessary after post CRUD.
 
 *** Hooks
+**** ~rest_api_init~
+Add an extra field in response
+#+BEGIN_SRC php
+  add_action( 'rest_api_init', 'll_rest_api_add_fields' );
+  function ll_rest_api_add_fields() {
+      //Add featured image
+	  register_rest_field(
+		  array('product'), // Where to add the field (Here, blog posts. Could be an array)
+		  'featured_image_src', // Name of new field (You can call this anything)
+		  array(
+			  'get_callback'    => function( $object, $field_name, $request ) {
+				  $feat_img_array = wp_get_attachment_image_src(
+					  $object['featured_media'], // Image attachment ID
+					  'thumbnail',  // Size.  Ex. "thumbnail", "large", "full", etc..
+					  true // Whether the image should be treated as an icon.
+				  );
+				  return $feat_img_array[0];
+	      },
+			  'update_callback' => null,
+			  'schema'          => null,
+		  )
+	  );
+
+	  // add some custom fields
+	  register_rest_field( 'product', 'post_meta_fields', array(
+		  'get_callback' => function( $post ) {
+			  $fields = [
+				  'image'              => get_field( 'product_image' )['url'],
+				  'product_categories' => (array) wp_get_post_terms( $post['id'], 'product_category' ),
+				  'company'            => (string) get_field( 'company_name', $post['id'] ),
+				  'booth'              => (string) get_field( 'booth_number', $post['id'] ),
+			  ];
+
+			  return $fields;
+		  },
+	  ) );
+  }
+#+END_SRC
+
 **** ~rest_{$this->post_type}_collection_params~ <<<wp:rest:hook:rest_*_collection_params>>>
 - Register custom collection parameters ~$_GET['yourparam']~
 - Add options to existing parameter e.g. add ~rand~ to ~orderby~
