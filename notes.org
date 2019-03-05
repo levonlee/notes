@@ -7991,11 +7991,12 @@ Return an array to describe location of wp upload directory
 #+END_SRC
 
 *** get_the_excerpt, the_excerpt
-Use 
+Use
 - wp:filter:excerpt_length 
 - wp:filter:excerpt_more
-~the_excerpt()~ echoes current post and it calls ~get_the_excerpt($post=null)~
-If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text.
+- ~the_excerpt()~ echoes current post and it calls ~get_the_excerpt($post=null)~
+- If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text
+- When used outside a loop, refer to wp:loop:outside
 
 *** wp_remote_get, wp_remote_post, wp_remote_head, wp_remote_request
 #+BEGIN_EXAMPLE
@@ -8925,6 +8926,35 @@ Try to avoid using it. Use ~new WP_Query()~ instead
      echo get_the_title();
   endforeach;
   wp_reset_postdata(); // important
+#+END_SRC
+
+**** Loop outside a WordPress Loop <<<wp:loop:outside>>>
+
+#+BEGIN_SRC php
+  if ( have_posts() ) {
+	  $items = [];
+
+	  while ( have_posts() ) {
+		  the_post();
+		  $items[] = new Agenda(
+			  get_the_ID(),
+			  get_field( 'agenda_date' ),
+			  get_field( 'agenda_start_time' ),
+			  get_field( 'agenda_end_time' ),
+			  get_permalink()
+		  );
+	  }
+
+	  // loop not using ->the_post
+	  foreach ($items as $item) {
+		  // some template functions you can use as it is
+		  echo get_the_title( $item->id );
+
+		  // for excerpt, use this
+		  $excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));
+	  }
+
+  }
 #+END_SRC
 
 **** ~$q->is_*~ methods
