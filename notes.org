@@ -8529,19 +8529,23 @@ Avoid to use it. To alter main query parameters before it's made, use wp:action:
 <<<wp:f:update_post_meta>>>
 
 *** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
-Used in wp:action:wp_enqueue_scripts.
-Use wp:filter:script_loader_src
+- Used in wp:action:wp_enqueue_scripts
+- Use wp:filter:script_loader_src
+-  Syntax :: *~wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )~*
+- $deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on
+  - Default value: array()
+- $ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added
+  - Default value: false
+- $media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'
+  - Default value: 'all'
 
-wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )
-
-$deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on.
-         Default value: array()
-
-$ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added.
-        Default value: false
-
-$media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'.
-          Default value: 'all'
+#+BEGIN_SRC php
+  function wpb_add_google_fonts() {
+	  wp_enqueue_style( 'wpb-google-fonts', 'http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,700,300', false ); 
+  }
+ 
+  add_action( 'wp_enqueue_scripts', 'wpb_add_google_fonts' );
+#+END_SRC
 
 Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
 
@@ -9983,12 +9987,12 @@ Provide a chance to modify ~$query~ object (or do something else) before it's ru
 *** wp_enqueue_scripts <<<wp:action:wp_enqueue_scripts>>>
 Can use wp:f:wp_enqueue_style and wp:f:wp_enqueue_script. Priority might be needed to change to greater 10 to load after default theme/style.css
 Use wp:filter:script_loader_src and wp:filter:style_loader_src to change the source of scripts and styles
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_scripts() {
     wp_enqueue_style('lili-custom-styles', get_stylesheet_directory_uri().'/css/style.css');
   }
   add_action( 'wp_enqueue_scripts', 'lili_scripts', 20);
-#+END_EXAMPLE
+#+END_SRC
 
 *** admin_head
 <<<wp:action:admin_head>>>
@@ -11043,7 +11047,7 @@ wp:f:get_header loads the parent theme's header.php unless child theme has heade
 - ~genesis_before_header~
   - ~genesis_skip_links()~ p:5
 - do action ~genesis_header~
-  - ~genesis_header_markup_open()~ at ~p:5~ context site-header :: ~<header class="site-header">~
+  - ~genesis_header_markup_open()~ at ~p:5~ context site-header :: *~<header class="site-header">~*
     - ~genesis_structural_wrap( 'header' )~ context header
       - ~genesis_attr( 'structural-wrap' )~
       - filter ~genesis_attr_structural-wrap~
@@ -11063,7 +11067,7 @@ wp:f:get_header loads the parent theme's header.php unless child theme has heade
     - ~dynamic_sidebar( 'header-right' )~ ::
     - remove_filters
     - ~genesis_markup~ :: close, context:header-widget-area 
-  - ~genesis_header_markup_close~ at ~p:15~
+  - ~genesis_header_markup_close~ at ~p:15~ :: close *~</header>~*
     - ~genesis_structural_wrap( 'header', 'close' )~
     - ~genesis_markup~ :: context:site-header ~</header>~
   - genesis_site_title
@@ -16170,13 +16174,13 @@ Javascript animation event listners
 #+END_EXAMPLE
 
 ** @import
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   /* @import usage should be avoided and should appear before any css styles defined in a css file */
   @import "mystyle.css";
   @import url("mystyle.css");
   @import "mystyle.css" print;
   /* only media types not media features */
-#+END_EXAMPLE
+#+END_SRC
 
 ** @viewport
 WD. Only Edge. Same as meta viewport.
