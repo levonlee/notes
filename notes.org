@@ -7303,15 +7303,13 @@ wp-includes/xxx-template.php
 https://codex.wordpress.org/Template_Tags
 
 *** post-thumbnail-template.php <<<wp:t:thumbnail>>>
-- ~get_post_thumbnail_id($post = null);~
+- ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~
 - ~the_post_thumbnail_*~ :: has to be current post, calls ~get_the_post_thumbnail_*~
 - ~get_the_post_thumbnail_*~ :: can specify which post, calls ~wp_get_attachment_image_src~
 
 You can wp:f:add_image_size
 Image size :: $size
-NOTICE: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will 
-get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes
-in HTML to achieve the purpose.
+- NOTICE :: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes in HTML to achieve the purpose.
 - 'post-thumbnail' :: default
 - array(100, 100) :: Grab the biggest size in width and height image file possible.
 - array(100, 9999) :: Grab the biggest size in width and height image file possible.
@@ -9012,6 +9010,8 @@ Array join 2 query results
 #+END_SRC
 
 **** ~$q->is_*~ methods
+- ~is_home()~ :: 
+- ~is_front_page()~ :: Site Front Page. I use this one
 - ~is_single( $post = '' )~
 - ~is_singular( $post_types = '' )~ :: string|array
 - ~is_post_type_archive()~ :: ~is_post_type_archive('yourposttype')~
@@ -10639,19 +10639,19 @@ lib/functions/*.php
 **** general.php
 - ~genesis_a11y( $arg = 'screen-reader-text' )~ :: wp:genesis:theme support:genesis-accessibility, return bool
 
-**** options.php
+**** options.php <<<wp:genesis:options>>>
 - ~header_scripts~ :: string
 - ~footer_scripts~ :: string
-- content_archive :: full or excerpts
-- content_archive_thumbnail :: 0, not display thumbnail
-- image_size :: thumbnail
+- ~content_archive~ :: full or excerpts
+- ~content_archive_thumbnail~ :: 0, not display thumbnail
+- ~image_size~ :: 'thumbnail', default thumbnail size
  
-- breadcrumb_home :: 0 or 1
-- breadcrumb_single
-- breadcrumb_archive :: 
-- breadcrumb_page
-- breadcrumb_attachment :: 
-- breadcrumb_404 
+- ~breadcrumb_home~ :: 0 or 1
+- ~breadcrumb_single~ ::
+- ~breadcrumb_archive~ :: 
+- ~breadcrumb_page~ ::
+- ~breadcrumb_attachment~ :: 
+- ~breadcrumb_404~
 
 ***** ~genesis_get_option( $key, $setting = null, $use_cache = true )~
 - Known ~$key~ :: content_archive
@@ -10681,7 +10681,7 @@ lib/functions/*.php
  - filter ~genesis_markup_close( $close, $args )~
 
 ***** ~genesis_attr( $context, $attributes = array(), $args = array() )~ <<<wp:genesis:functions:genesis_attr>>>
-- ~genesis_parse_attr()~ calcuates key/value pairs of attribute and value
+- ~genesis_parse_attr()~ calculates key/value pairs of attribute and value
   - ~$context~ becomes ~class~ attribute
   - load filter ~genesis_attr_$context( $attributes, $context, $args )~
 - load filter ~genesis_attr_$context_output( $output, $attributes, $context, $args)~
@@ -10701,6 +10701,19 @@ lib/functions/*.php
     - ~genesis_attr_body~
     - ~genesis_attr-nav-$theme_location~
     - ~genesis_attr-breadcrumb~
+
+#+BEGIN_SRC php
+  // built in example for site-header
+  function genesis_attributes_header( $attributes ) {
+
+	  $attributes['itemscope'] = true;
+	  $attributes['itemtype']  = 'https://schema.org/WPHeader';
+
+	  return $attributes;
+
+  }
+#+END_SRC
+
 - filter ~genesis_attr_$context_output( $output, $attributes, $context, $args )~
 
 ****** Sample genesis_attr_body: genesis_attributes_body 
@@ -10758,9 +10771,22 @@ lib/functions/*.php
 - ~genesis_structural_wrap( $context = '', $output = 'open', $echo = true )~ <<<wp:genesis:functions:genesis_structural_wrap>>>
   - echo or return a structural wrap div
   - get wp:genesis:theme support:genesis-structural-wraps
-  - wrap with ~<div>~ or ~</div>~ with ~genesis_attr( 'structural-wrap' )~
-    - filter ~genesis_attr_structural-wrap~
-  - filter ~genesis_structural_wrap-$context( $output, $original_output )~
+  - echo or return ~<div class="structural-wrap">~ or ~</div>~ :: modify attr using ~genesis_attr( 'structural-wrap' )~
+    - filter ~genesis_attr_structural-wrap~ wp:genesis:functions:genesis_attr
+  - filter output ~genesis_structural_wrap-$context( $output, $original_output )~
+#+BEGIN_SRC php
+  // no built in example for filter genesis_structural_wrap-$context
+
+  // custom code
+  add_filter( 'genesis_structural_wrap-archive-col1', function($output, $original_output) {
+	  if ( 'open' == $original_output )  {
+		  $output = '<div class="wrap archive-wrapper archive-col1">';
+	  }
+
+	  return $output;
+	
+  }, 10, 2 );
+#+END_SRC
 
 - ~genesis_create_initial_layouts()~
   - content-sidebar (default)
@@ -10888,15 +10914,19 @@ Display post info (byline)
 	- ~genesis_markup~ :: if post type supports genesis-entry-meta-before-content, open/close *~<p class="entry-meta-before-content">~*, content: ~genesis_strip_p_tags( $filtered )~ context:entry-meta-before-content
       - ~genesis_entry_header_markup_close()~ at p:15 :: close *~</header>~*
     - ~genesis_before_entry_content~ :: nothing
-    - *~<div class="entry-content">~* ~genesis_attr( 'entry-content' )~
+    - *~<div class="entry-content">~*
+      - ~genesis_markup~ :: context:entry-content
     - ~genesis_entry_content~
-      - ~genesis_do_post_image~ at p:8 wp:genesis:structure:post.php
+      - ~genesis_do_post_image()~ at p:8 wp:genesis:structure:post.php
+	- If singular and wp:genesis:options has ~content_archive_thumbnail~, display the image
 	- ~$img = genesis_get_image()~
-	- ~genesis_markup~ :: open/close *~<a class="entry-image-link"></a>~*, content: ~wp_make_content_images_responsive( $img )~, context:entry-image-link
+	- ~genesis_markup~ :: open/close *~<a class="entry-image-link"></a>~*
+	  - content: ~wp_make_content_images_responsive( $img )~
+	  - context:entry-image-link
       - ~genesis_do_post_content()~ wp:genesis:structure:post.php
       - ~genesis_do_post_content_nav~ at p:12 wp:genesis:structure:post.php
       - ~genesis_do_post_permalink~ at p:14 wp:genesis:structure:post.php
-    - close *~</div>~*
+    - close *~</div>~ entry-content*
     - ~genesis_after_entry_content~ :: nothing
     - ~genesis_entry_footer~
       - *~<footer class="entry-footer">~* ~genesis_entry_footer_markup_open~ at p:5
@@ -11047,8 +11077,8 @@ wp:f:get_header loads the parent theme's header.php unless child theme has heade
 - ~genesis_before_header~
   - ~genesis_skip_links()~ p:5
 - do action ~genesis_header~
-  - ~genesis_header_markup_open()~ at ~p:5~ context site-header :: *~<header class="site-header">~*
-    - ~genesis_structural_wrap( 'header' )~ context header
+  - ~genesis_header_markup_open()~ at ~p:5~ context:site-header :: *~<header class="site-header">~*
+    - ~genesis_structural_wrap( 'header' )~ context:header
       - ~genesis_attr( 'structural-wrap' )~
       - filter ~genesis_attr_structural-wrap~
       - filter ~genesis_attr_structural-wrap_output~
@@ -11159,7 +11189,7 @@ Refer to wp:f:add_theme_support
 - genesis-after-entry-widget-area :: bool <<<wp:genesis:theme support:genesis-after-entry-widget-area>>>
 - genesis-structural-wraps :: array <<<wp:genesis:theme support:genesis-structural-wraps>>>
   - filter ~genesis_theme_support_structural_wraps~
-  - header 
+  - wp:genesis:functions:genesis_structural_wrap
 #+BEGIN_SRC php
   // to remove a named HTML element
   add_theme_support( 'genesis-structural-wraps', array(
