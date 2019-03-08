@@ -7328,6 +7328,10 @@ You can resize an image file on the fly using fly-dynamic-image-resizer
 - Display excerpt :: ~the_excerpt( )~
   - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
 
+- HTML classes for a post :: ~get_post_class()~
+  - e.g. ~post-123 myposttype type-myposttype status-publish has-post-thumbnail~
+  - filter ~post_class($classes, $class, $post->ID)~
+
 *** category-template.php <<<wp:t:category>>>
 - Refer to wp:post
 - the_terms :: display taxonomy terms in a list
@@ -10788,7 +10792,7 @@ lib/functions/*.php
     - ~genesis_attr_structural-wrap~ :: add wrap to HTML attribute class for wp:genesis:theme support:genesis-structural-wraps
     - ~genesis_attr_blog-template-description~
     - ~genesis_attr_entry-meta-before-content~
-    - ~genesis_attr_entry~
+    - ~genesis_attr_entry~ :: ~genesis_attributes_entry()~
     - ~genesis_attr_entry-content~
     - ~genesis_attr_entry-image~
     - ~genesis_attr_entry-image-link~
@@ -10990,8 +10994,9 @@ Display post info (byline)
   - ~genesis_before_while~ :: nothing
   - Run while loop ~the_post();~
     - ~genesis_before_entry~ :: nothing
-    - ~genesis_markup~ :: open *~<article>~*, context:entry
-    - ~genesis_entry_header~
+    - ~genesis_markup~ :: open *~<article class="entry">~*, context:entry
+    - do action ~genesis_entry_header~
+      - ~bootstrap-for-genesis~ theme moves gensis_do_post_image from ~genesis_entry_content~ to here at p:0
       - ~genesis_do_post_format_image()~ at p:4
       - ~genesis_entry_header_markup_open()~ at p:5
 	- *~<header class="entry-header">~* ~genesis_attr~ context:entry-header
@@ -11012,7 +11017,8 @@ Display post info (byline)
       - ~genesis_markup~ :: context:entry-content
     - ~genesis_entry_content~
       - ~genesis_do_post_image()~ at p:8 wp:genesis:structure:post.php
-	- If singular and wp:genesis:options has ~content_archive_thumbnail~, display the image
+	- ~bootstrap-for-genesis~ theme moves this to ~genesis_entry_header~
+	- If not singular and wp:genesis:options has ~content_archive_thumbnail~, display the image
 	- ~$img = genesis_get_image()~
 	- ~genesis_markup~ :: open/close *~<a class="entry-image-link"></a>~*
 	  - content: ~wp_make_content_images_responsive( $img )~
@@ -11126,7 +11132,8 @@ function genesis(){}
       - ~genesis_do_archive_headings_close~ at p:15
 	- close *~</div>~* :: context:cpt-archive-description
   - ~genesis_do_date_archive_title()~
-    - ~genesis_archive_title_description~
+    - If is date archive ~is_date()~ then run
+    - do action ~genesis_archive_title_description( $heading, '', 'date-archive-description')~
   - ~genesis_do_blog_template_heading()~
     - ~genesis_attr( 'blog-template-description' )~
     - ~genesis_do_post_title()~
