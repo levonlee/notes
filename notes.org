@@ -1653,64 +1653,64 @@ MyCloneable Object
 #+END_EXAMPLE
 
 *** Clone, copy and reference
-$obj1 == $obj2 :: do 2 objects have the same property names and values
-$obj1 === $obj2 :: do 2 objects have the same properties and also are those 2 instances of the same class
-get_class($obj1) ::
-$obj1 instanceof AddressBusiness ::
+- ~$obj1 == $obj2~ :: do 2 objects have the same property names and values
+- ~$obj1 === $obj2~ :: do 2 objects have the same properties and also are those 2 instances of the same class
+- ~get_class($obj1)~ ::
+- ~$obj1 instanceof AddressBusiness~ ::
 
-Clone, rather than just $obj1=$obj2, __clone magic method can be used.
+Clone, rather than just ~$obj1=$obj2~, __clone magic method can be used.
 Reference is faster than clone and direct copy. But when ~===~ is used to compare the two, they are different.
 
-#+BEGIN_EXAMPLE
-$address_business = new AddressBusiness(array(
-  'street_address_1' => '123 Phony Ave',
-  'city_name' => 'Villageland',
-  'subdivision_name' => 'Region',
-  'country_name' => 'Canada',
-));
+#+BEGIN_SRC php
+  $address_business = new AddressBusiness(array(
+    'street_address_1' => '123 Phony Ave',
+    'city_name' => 'Villageland',
+    'subdivision_name' => 'Region',
+    'country_name' => 'Canada',
+  ));
 
-$address_park = new AddressPark(array(
-  'street_address_1' => '789 Missing Circle',
-  'street_address_2' => 'Suite 0',
-  'city_name' => 'Hamlet',
-  'subdivision_name' => 'Territory',
-  'country_name' => 'Australia',
-));
-echo $address_park;
+  $address_park = new AddressPark(array(
+    'street_address_1' => '789 Missing Circle',
+    'street_address_2' => 'Suite 0',
+    'city_name' => 'Hamlet',
+    'subdivision_name' => 'Territory',
+    'country_name' => 'Australia',
+  ));
+  echo $address_park;
 
-echo '<h2>Cloning AddressPark</h2>';
+  echo '<h2>Cloning AddressPark</h2>';
 
-$address_park_clone = clone $address_park;
+  $address_park_clone = clone $address_park;
 
-echo '$address_park_clone is ' . ($address_park == $address_park_clone ?
-  '' : 'not ') . ' a copy of $address_park.';
-// $address_park_clone is a copy of $address_park
+  echo '$address_park_clone is ' . ($address_park == $address_park_clone ?
+    '' : 'not ') . ' a copy of $address_park.';
+  // $address_park_clone is a copy of $address_park
 
-echo '<h2>Copying AddressBusiness reference</h2>';
+  echo '<h2>Copying AddressBusiness reference</h2>';
 
-$address_business_copy = &$address_business;
+  $address_business_copy = &$address_business;
 
-echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
-  '' : 'not ') . ' a copy of $address_business.';
-// $address_business_copy is a copy of $address_business
+  echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
+    '' : 'not ') . ' a copy of $address_business.';
+  // $address_business_copy is a copy of $address_business
 
-echo '<h2>Setting address_business_copy as a new AddressPark</h2>';
-$address_business = new AddressPark();
+  echo '<h2>Setting address_business_copy as a new AddressPark</h2>';
+  $address_business = new AddressPark();
 
-echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
-  '' : 'not ') . ' a copy of $address_business.';
+  echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
+    '' : 'not ') . ' a copy of $address_business.';
 
-// $address_business_copy is not a copy of $address_business
+  // $address_business_copy is not a copy of $address_business
 
-echo '<br/>$address_business is class ' . get_class($address_business) . '.';
+  echo '<br/>$address_business is class ' . get_class($address_business) . '.';
 
-// $address_business is class AddressPark.
+  // $address_business is class AddressPark.
 
-echo '<br/>$address_business_copy is ' . ($address_business_copy instanceof
-AddressBusiness ? '' : 'not ') . ' an AddressBusiness.';
+  echo '<br/>$address_business_copy is ' . ($address_business_copy instanceof
+  AddressBusiness ? '' : 'not ') . ' an AddressBusiness.';
 
-// $address_business_copy is an AddressPark
-#+END_EXAMPLE
+  // $address_business_copy is an AddressPark
+#+END_SRC
 
 *** Autoload Classes
 #+BEGIN_EXAMPLE
@@ -7322,7 +7322,11 @@ You can resize an image file on the fly using fly-dynamic-image-resizer
 - ~wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false )~ :: is just like the_post_thumbnail but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
 
 *** post-template.php <<<wp:t:post>>>
+- Only ~get_the_*( $post )~ can pass a different post or post id to return values
+- ~the_*()~ always uses the ~global $post~ to echo
 - Display content :: ~the_content( $more_link_text = null, $strip_teaser = false)~ use wp:filter:the_content
+- Display excerpt :: ~the_excerpt( )~
+  - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
 
 *** category-template.php <<<wp:t:category>>>
 - Refer to wp:post
@@ -8904,7 +8908,8 @@ Try to avoid using it. Use ~new WP_Query()~ instead
 **** Loop with ~new WP_Query()~
 #+BEGIN_SRC php
   <?php $custom_query = new WP_Query('cat=-9'); // exclude category 9
-  while($custom_query->have_posts()) : $custom_query->the_post(); ?>
+  while($custom_query->have_posts()) :
+	  $custom_query->the_post(); // global $post is modified ?>
 
 	  <div <?php post_class(); ?> id="post-<?php the_ID(); ?>">
 		  <h1><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h1>
@@ -8975,14 +8980,22 @@ Array join 2 query results
   global $post; // required
   $args = array('category' => -9); // exclude category 9
   $custom_posts = get_posts($args);
-  foreach($custom_posts as $post) : setup_postdata($post);
-     echo get_the_title();
-  endforeach;
+
+  // have to use $post in foreach
+  foreach($custom_posts as $post) {
+	  setup_postdata($post); // global $post is set and modified
+    echo get_the_title();
+  }
   wp_reset_postdata(); // important
+
+  // loop without modifying global $post
+  foreach ($custom_posts as $p) {
+	  the_title( $speaker->ID );
+  }
+  // don't need to reset postdata
 #+END_SRC
 
 **** Loop outside a WordPress Loop <<<wp:loop:outside>>>
-
 #+BEGIN_SRC php
   if ( have_posts() ) {
 	  $items = [];
@@ -9007,6 +9020,86 @@ Array join 2 query results
 		  $excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));
 	  }
 
+  }
+#+END_SRC
+
+**** Loop inside loop, Loop Stack <<<wp:loop:stack>>>
+#+BEGIN_SRC php
+  if ( have_posts() ) {
+	  // main loop for single speaker content type
+	  while ( have_posts() ) {
+		  the_post(); // global $post is set and modified;
+
+		  global $post;
+		  $bk_speaker_post = clone $post; // clone the single speaker post
+
+		  the_title(); // the main speaker title. `the_*()` always uses the global $post
+
+		  // ACF field contains agenda
+		  $sessions = get_field( 'speaker_agenda', false, false );
+
+		  // loop the main speaker's agendas
+		  if ( $sessions ) {
+			  $sessions_sorted = new WP_Query( [
+				  'post_type'      => 'agenda',
+				  'posts_per_page' => - 1,
+				  'posts__in'      => $sessions
+			  ] );
+
+			  // loop agenda's speakers
+			  if ( $sessions_sorted ) {
+				  while ( $sessions_sorted->have_posts() ) {
+					  $sessions_sorted->the_post(); // global $post is set and modified
+
+					  global $post;
+					  $bk_agenda_post = clone $post;
+
+					  the_title(); // agenda title
+					  echo get_the_title(); // agenda title
+					  echo get_the_title( $bk_speaker_post->ID ); // speaker title!
+
+					  // reverse query agenda to list speakers of this agenda
+					  $agenda_speakers = get_posts( [
+						  'post_type'  => 'speaker',
+						  'meta_query' => [
+							  [
+								  'key'     => 'speaker_agenda',
+								  'value'   => '"' . get_the_ID() . '"',
+								  // matches exactly "123", not just 123. This prevents a match for "1234"
+								  'compare' => 'LIKE'
+							  ]
+						  ]
+					  ] );
+					  foreach ( $agenda_speakers as $speaker ) {
+						  // global $post is not modified and it's the agenda
+						  $speakers_output[] = sprintf( '<a href="%s">%s</a>', get_permalink( $speaker->ID ), get_the_title( $speaker->ID ) );
+					  }
+
+					  // since global $post is not changed, it is still the agenda post
+
+					  the_title(); // agenda title! not speaker title
+					  echo get_the_title(); // agenda title
+					  echo get_the_title( $bk_speaker_post->ID ); // the main speaker title!
+
+					  // let's create another loop but now we change the global $post
+					  // $post is global $post
+					  foreach ( $agenda_speakers as $post ) {
+						  setup_postdata( $post ); // $post is global $post
+						  $speakers_output[] = sprintf( '<a href="%s">%s</a>', get_permalink(), get_the_title() );
+					  }
+
+					  the_title(); // the last speaker title of the current agenda! not agenda title as before
+					  echo get_the_title(); // the last speaker title of the current agenda!
+					  echo get_the_title( $bk_speaker_post->ID ); // the main speaker title!
+					  echo get_the_title( $bk_agenda_post->ID ); // the current agenda title
+
+				  }
+			  }
+			  // loop agenda's speakers.
+		  }
+		  // loop the main speaker's agendas.
+	  }
+	  // loop the main speaker
   }
 #+END_SRC
 
@@ -11823,19 +11916,65 @@ Get first row or random row
 
 **** Relationship field
 #+BEGIN_SRC php
-  $posts = get_field('relationship_field_name');
+  <?php
 
-  if( $posts ): ?>
-	  <ul>
+  // speaker post type has a relationship field speaker_agenda to relate to post type agenda
+  // the following example's main query is single-speaker
+  $posts = get_field( 'relationship_field_name' ); // returns an array of WP_Post obj
+
+  if ( $posts ): ?>
+      <ul>
 		  <?php
-		  global $post; // Required and IMPORTANT!
-		  foreach( $posts as $p ): // variable must NOT be called $post (IMPORTANT) ?>
-			  <li>
-				  <a href="<?php echo get_permalink( $p->ID ); ?>"><?php echo get_the_title( $p->ID ); ?></a>
-				  <span>Custom field from $post: <?php the_field('author', $p->ID); ?></span>
-			  </li>
+		  // global $post; // Required if foreach uses $post as item
+		  foreach ( $posts as $p ): // variable must NOT be called $post (IMPORTANT)
+			  ?>
+	      <li>
+		  <a href="<?php echo get_permalink( $p->ID ); ?>"><?php echo get_the_title( $p->ID ); ?></a>
+		  <span>Custom field from $post: <?php the_field( 'author', $p->ID ); ?></span>
+	      </li>
 		  <?php endforeach; ?>
-	  </ul>
+      </ul>
+  <?php endif;
+
+  // return an array of post ids
+  $session_ids = get_field( 'speaker_agenda', false, false ); // first false is to use the global $post, 2nd false is not to format the value as a post obj
+
+  // further sort
+  $query = new WP_Query( array(
+	  'post_type'      => 'agenda',
+	  'posts_per_page' => - 1,
+	  'post__in'       => $session_ids,
+	  'post_status'    => 'publish',
+	  'orderby'        => 'post__in',
+  ) );
+
+  // reverse query. The following's main query is single agenda
+  $speakers = get_posts( array(
+	  'post_type'  => 'speaker',
+	  'meta_query' => array(
+		  array(
+			  'key'     => 'relationship_field_name',
+			  // name of custom relationship field
+			  'value'   => '"' . get_the_ID() . '"',
+			  // matches exactly "123", not just 123. This prevents a match for "1234"
+			  'compare' => 'LIKE'
+		  )
+	  )
+  ) );
+  if ( $speakers ): ?>
+      <ul>
+		  <?php foreach ( $speakers as $speaker ): ?>
+			  <?php
+			  $photo = get_field( 'photo', $speaker->ID );
+			  ?>
+	      <li>
+		  <a href="<?php echo get_permalink( $speaker->ID ); ?>">
+		      <img src="<?php echo $photo['url']; ?>" alt="<?php echo $photo['alt']; ?>" width="30"/>
+					  <?php echo get_the_title( $speaker->ID ); ?>
+		  </a>
+	      </li>
+		  <?php endforeach; ?>
+      </ul>
   <?php endif; ?>
 #+END_SRC
 
@@ -17151,7 +17290,8 @@ You can also place each svg one after another
 #+END_SRC
 
 *** Functions
-~map-keys(("foo": 1, "bar": 2)) => "foo", "bar"~
+- ~map-keys(("foo": 1, "bar": 2)) => "foo", "bar"~
+- ~map-get(("foo": 1, "bar": 2), "foo") => 1~
 
 *** Mixin ~@mixin~ ~@include~
 #+BEGIN_SRC scss
@@ -17286,10 +17426,34 @@ You can also place each svg one after another
   @function breakpoint-infix($name, $breakpoints: $grid-breakpoints) {
     @return if(breakpoint-min($name, $breakpoints) == null, "", "-#{$name}");
   }
+
+
+  // Minimum breakpoint width. Null for the smallest (first) breakpoint.
+  //
+  //    >> breakpoint-min(sm, (xs: 0, sm: 576px, md: 768px, lg: 992px, xl: 1200px))
+  //    576px
+  // sample usage $min: breakpoint-min(sm, $breakpoints)
+  @function breakpoint-min($name, $breakpoints: $grid-breakpoints) {
+    $min: map-get($breakpoints, $name);
+    @return if($min != 0, $min, null);
+  }
 #+END_SRC
 
 **** Mixins
 - media-breakpoint-up
+#+BEGIN_SRC scss
+  @mixin media-breakpoint-up($name, $breakpoints: $grid-breakpoints) {
+    $min: breakpoint-min($name, $breakpoints);
+    @if $min {
+      @media (min-width: $min) {
+	@content;
+      }
+    } @else {
+      @content;
+    }
+  }
+#+END_SRC
+
 #+BEGIN_SRC scss
   @each $breakpoint in map-keys($grid-breakpoints) {
     @include media-breakpoint-up($breakpoint) {
