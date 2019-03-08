@@ -7702,7 +7702,7 @@ add_management_page(
 );
 
 *** add_post_type_support <<<wp:f:add_post_type_support>>>
-~add_post_type_support( string $post_type, string|array $supports);~
+- ~add_post_type_support( string $post_type, string|array $supports);~
 - ~remove_post_type_support( string $post_type, string $supports )~
 - Detect if a post type supports :: ~post_type_supports( string $post_type, string $feature )~
 
@@ -11107,15 +11107,24 @@ function genesis(){}
 - ~genesis_before_content_sidebar_wrap~ :: nothing
 - ~genesis_markup~ :: open ~div~, context:content-sidebar-wrap
 - ~genesis_before_content~ :: nothing
-- ~genesis_markup~ :: open ~main~, context:content
+- ~genesis_markup~ :: open *~<main class="content">~*, context:content
 - ~genesis_before_loop~
   - ~genesis_do_breadcrumbs()~
     - ~genesis_attr( 'breadcrumb' )~
     - choose one function to display. If not found, use ~genesis_breadcrumb()~
       - filter ~genesis_breadcrumb_args~
-  - ~genesis_do_cpt_archive_title_description()~
-    - filter ~genesis_cpt_archive_intro_text_output~
-    - ~genesis_archive_title_descriptions~
+  - ~genesis_do_cpt_archive_title_description()~ <<<wp:genesis:do_cpt_archive_title_description>>>
+    - If it's archive page and post type supports archive, then display title for archive page
+    - If post type supports ~genesis-cpt-archives-settings~ from wp:genesis:post type supports
+    - filter ~genesis_cpt_archive_intro_text_output( $intro_text )~
+    - do action ~genesis_archive_title_descriptions( $heading, $intro_text, 'cpt-archive-description' )~
+      - ~genesis_do_archive_headings_open()~ at p:5
+	- If $heading or $intro_text, open *~<div class="cpt-archive-description">~* context:cpt-archive-description
+      - ~genesis_do_archive_headings_headline()~ at p:10
+	- *~<h1 class="archive-title"> wp_strip_all_tags($heading) </h1>~* :: ~genesis_attr( 'archive-title' )~
+      - ~genesis_do_archive_headings_intro_text~ at p:12 :: echo $intro_text
+      - ~genesis_do_archive_headings_close~ at p:15
+	- close *~</div>~* :: context:cpt-archive-description
   - ~genesis_do_date_archive_title()~
     - ~genesis_archive_title_description~
   - ~genesis_do_blog_template_heading()~
@@ -11131,7 +11140,7 @@ function genesis(){}
   - ~genesis_do_loop~ :: wp:genesis:loops
   - ~genesis_404~ :: in template 404.php 
 - ~genesis_after_loop~ :: nothing
-- ~genesis_markup~ :: close ~main~, context:main
+- ~genesis_markup~ :: close *~</main>~* context:main
 - ~genesis_after_content~
   - ~genesis_get_sidebar()~
     - ~get_sidebar()~
@@ -11312,7 +11321,11 @@ Refer to wp:f:add_post_type_support
 - genesis-seo :: enable seo fields on wp-admin
 - genesis-scripts :: add a field for per-post script on wp-admin
 - genesis-layouts :: default layout for a CPT
-- genesis-cpt-archives-settings :: enable archive settings
+- ~genesis-cpt-archives-settings~ :: enable archive settings
+  - After enabled, ~Archive Settings~ appears on wp-admin for that post type
+  - Headline :: if empty, return post type's label name
+  - Intro ::
+  - Refer to wp:genesis:do_cpt_archive_title_description
 - genesis-entry-meta-before-content :: disable ~genesis_post_info~ (byline)
 - genesis-entry-meta-after-content :: disable ~<footer></footer>~ and ~genesis_post_meta()~
 - genesis-after-entry-widget-area :: disable ~<div class="after-entry widget-area"></div>~
