@@ -8966,7 +8966,8 @@ Array join 2 query results
 
 **** Loop with ~get_posts()~
 - Use ~new WP_Query()~, the same ~$args~
-- Default ~'suppress_filters' => true~ :: most filters are not fun
+- Return an array of WP_Post object wp:post
+- Default ~'suppress_filters' => true~ :: most filters are not run
 - It's good when ~new WP_Query($args)~ does not work because of other plugins/theme have extra filters that mess up WP_Query
 - Very safe to use
 
@@ -11818,6 +11819,24 @@ Get first row or random row
   // height = $image[2];
   ?>
   <img src="<?php echo $image[0]; ?>" />
+#+END_SRC
+
+**** Relationship field
+#+BEGIN_SRC php
+  $posts = get_field('relationship_field_name');
+
+  if( $posts ): ?>
+	  <ul>
+		  <?php
+		  global $post; // Required and IMPORTANT!
+		  foreach( $posts as $p ): // variable must NOT be called $post (IMPORTANT) ?>
+			  <li>
+				  <a href="<?php echo get_permalink( $p->ID ); ?>"><?php echo get_the_title( $p->ID ); ?></a>
+				  <span>Custom field from $post: <?php the_field('author', $p->ID); ?></span>
+			  </li>
+		  <?php endforeach; ?>
+	  </ul>
+  <?php endif; ?>
 #+END_SRC
 
 **** Query
@@ -44976,7 +44995,11 @@ Show line number when open ~nano -c filename~
 - Logout ::~gnome-session-quit~
 
 *** Shortcuts
-- All system shortcuts :: Settings > Devices > Keyboard
+- Most of system shortcuts :: Settings > Devices > Keyboard
+- Search a shortcut containing ~s~ :: ~gsettings list-recursively | grep -i \>s\'~
+- e.g. it returns this ~org.gnome.shell.extensions.screenshot-window-sizer cycle-screenshot-sizes ['<Alt><Control>s']~
+- ~sudo apt install dconf-editor && dconf-editor~ and go to that folder
+- Turn off ~Use default value~ and in Custom value change it from ~['<Alt><Control>s']~ to ~[]~
 
 - Terminal :: ~C-M-t~
 - Copy from Terminal (GNOME) :: ~C-S-c~
