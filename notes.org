@@ -11150,7 +11150,9 @@ Display post info (byline)
       - ~genesis_post_info()~ at p:12 :: byline
 	- filter ~genesis_post_info~ ~$filtered = genesis_post_info( '[post_date]'.__( 'by', 'genesis'). '...' )~
 	  - ~do_shortcode()~ p:20
-	- ~genesis_markup~ :: if post type supports genesis-entry-meta-before-content, open/close *~<p class="entry-meta-before-content">~*, content: ~genesis_strip_p_tags( $filtered )~ context:entry-meta-before-content
+	- ~genesis_markup~ :: if post type supports genesis-entry-meta-before-content, open/close *~<p class="entry-meta">~* content: ~genesis_strip_p_tags( $filtered )~ *context:entry-meta-before-content*
+	  - apply filter ~genesis_attr_entry-meta-before-content~
+	    - ~genesis_attributes_entry_meta()~ :: change class to ~entry-meta~
       - ~genesis_entry_header_markup_close()~ at p:15 :: close *~</header>~*
     - ~genesis_before_entry_content~ :: nothing
     - *~<div class="entry-content">~*
@@ -51281,16 +51283,18 @@ https://github.com/h5bp/server-configs
 
   # modifier ~ or ~*, regex match
   location ~ \.(jpe?g|png|gif|ico)$ {
-      # ~ case-sensitive, ~* is case-insensitve
+      # ~  :: case-sensitive,
+      # ~* :: is case-insensitve
       # By now, if there is a prefix match (also longest prefix match), it's already stored in memory
       # These regex matches are checked by the listed order
-      # Stop searching for the first matching regex, and return immediately
+      # Regex match searching terminates on the first match, and return immediately
       # If no regex match, then return the previous found longest prefix match
 
       # So if there's a regex match, then the regex match will be used
 
       # Also notice, if there're any regex matches that are within the longest prefix match, 
       # those will be evaluated, in listed order, before any of the other regex matches.
+      # Regex match inside prefix match > Stand alone regex match even though there's prefix match
   }
 
   location ~ ^/(digital-archive|digital-edition)/?$ {
