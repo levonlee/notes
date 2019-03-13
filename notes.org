@@ -20303,19 +20303,20 @@ transitionend
 
 *** <picture>, <img srcset sizes>
 **** <<<html:img:srcset>>> <<<html:img:sizes>>>
-IE 11 doesn't support srcset and sizes
-The srcset attribute (without sizes) is used to serve larger—but otherwise identical—image sources to high resolution displays only. 
-
-When x is used in ~srcset~, ~sizes~ cannot be set.
-<img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">
-
-- ~w~ in ~srcset~ is the actual image's width.
-- ~sizes~ attribute is the width of slot the image will fill when the media condition is true
-  - If the image should take a third of the viewport, then sizes="33.3vw"
+- IE 11 doesn't support ~srcset~ nor ~sizes~
+- ~srcset~ with ~x~ but without ~sizes~ :: it's used to serve larger—but otherwise identical—image sources to high resolution displays only
+  - When ~x~ is used in ~srcset~, ~sizes~ cannot be set
+    - ~<img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">~
+- ~w~ in ~srcset~ is usually the actual image's width
+- ~srcset~ with ~w~ and ~sizes~ :: refer to wp:img:srcset:sizes
+- ~sizes~ attribute is the width that the image needs to have under matched the media condition
+  - If ~sizes~ has media condition, *only the first matched media condition* from the left is chosen 
+  - If the image needs to take a third of the viewport, then ~sizes="33.3vw"~
+  - Other than ~px~, ~vw, em, rem~ can also be used in ~sizes~. But not percentage
   - The ~srcset~ which has the closest ~w~ that matches the chosen ~sizes~ will serve:
-    - First choose ~srcset~ that has ~w~ which is larger than ~sizes~
-    - If not ~srcset~ has ~w~ that is larger than ~sizes~, choose the closest one
-    - e.g. ~srcset~ 100w, 200w, 300w and the chosen ~sizes~ is 150w, then 200w is chosen. If ~sizes~ is 400w, then ~300w~ is chosen
+    - First choose ~srcset~ that have ~w~ which is larger than ~sizes~, among those choose the smallest ~srcset~
+    - If no ~srcset~ has ~w~ that is larger than ~sizes~, choose the closest one (biggest ~srcset~)
+    - e.g. 3 ~srcset~: 100w, 200w, 300w and the chosen ~sizes~ is 150px, then 200w is chosen. If ~sizes~ is 400px, then ~300w~ is chosen
 
 In order to test img with srcset and sizes, you need to open InCognito and resize the window size not choosing a simulated device.
 
@@ -20392,7 +20393,7 @@ Extra media query can be added
 Which means if media query matches, use 100vw. If not match, use 300px
 
 Responsive image which takes 100% width. Define the largest width image first
-This is the wordpress way.
+This is the WordPress way. <<<wp:img:srcset:sizes>>>
 #+BEGIN_SRC html
   <img src="medium.jpg" width="1000" height="200" 
        srcset="large.jpg 2000w, small.jpg 500w"
