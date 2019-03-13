@@ -20309,27 +20309,33 @@ The srcset attribute (without sizes) is used to serve larger—but otherwise ide
 When x is used in ~srcset~, ~sizes~ cannot be set.
 <img srcset="examples/images/image-384.jpg 1x, examples/images/image-768.jpg 2x" alt="…">
 
-~w~ in ~srcset~ is the actual image's width.
-
-~sizes~ attribute is the width of slot the image will fill when the media condition is true. If the image should take a third of the viewport, then sizes="33.3vw". The ~srcset~ which has the closest ~w~ that matches the chosen ~sizes~ will serve.
+- ~w~ in ~srcset~ is the actual image's width.
+- ~sizes~ attribute is the width of slot the image will fill when the media condition is true
+  - If the image should take a third of the viewport, then sizes="33.3vw"
+  - The ~srcset~ which has the closest ~w~ that matches the chosen ~sizes~ will serve:
+    - First choose ~srcset~ that has ~w~ which is larger than ~sizes~
+    - If not ~srcset~ has ~w~ that is larger than ~sizes~, choose the closest one
+    - e.g. ~srcset~ 100w, 200w, 300w and the chosen ~sizes~ is 150w, then 200w is chosen. If ~sizes~ is 400w, then ~300w~ is chosen
 
 In order to test img with srcset and sizes, you need to open InCognito and resize the window size not choosing a simulated device.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <img
-  src="examples/images/fallback.jpg"
-  sizes="(min-width: 40em) 80vw, 100vw"
-  srcset="examples/images/medium.jpg 375w,
-	  examples/images/large.jpg 480w,
-	  examples/images/extralarge.jpg 768w"
-  alt="…">
+    src="examples/images/fallback.jpg"
+    sizes="(min-width: 40em) 80vw, 100vw"
+    srcset="examples/images/medium.jpg 375w,
+	    examples/images/large.jpg 480w,
+	    examples/images/extralarge.jpg 768w"
+    alt="…">
 
-  // make sure img tag is responsive
-  img {
+  <style>  
+    /* make sure img tag is responsive */
+    img {
     max-width:100%;
     height:auto;
-  }
-#+END_EXAMPLE
+    }
+  </style>
+#+END_SRC
 
 **** <<<html:picture>>>
 Used when you need explicit control over which source is shown at set viewport sizes. Except IE 11 and below
