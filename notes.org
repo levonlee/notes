@@ -41613,7 +41613,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
   gpg -d -q .sshpassword.gpg > fifo; sshpass -f fifo ssh vivek@server1.cyberciti.biz
 #+END_SRC
 
-*** Random password
+*** Random password <<<linux:ssh:random password>>>
 #+BEGIN_SRC sh
   # base64 will likely to have = at the end, remove that to have length 16
   openssl rand -base64 17
@@ -43662,7 +43662,7 @@ Allow OpenSSH app/profile first ~sudo ufw allow OpenSSH~ then ~sudo ufw enable~ 
 Review setting ~sudo vi /etc/default/ufw~
 
 Make sure ~IPV6=yes~ in setting.
-Make sure DEFAULT_FORWARD_POLICY="ACCEPT" if docker is installed
+Make sure ~DEFAULT_FORWARD_POLICY="ACCEPT"~ if docker is installed
 
 Allow a service ~sudo ufw allow ssh~
 Allow a port ~sudo ufw allow 22/tcp~
@@ -46150,7 +46150,7 @@ Inside the container, the container is called --hostname=value
 ~docker run --hostname=value~ OR ~docker run -h value~
 Combine --name and --hostname as much as you can
 
-*** --privileged <<<docker:run:priviledged>>>
+*** --privileged <<<docker:run:privileged>>>
 e.g. allow docker container to run docker daemon, allow docker container to access all devices such as file systems.
 
 ** Containers cp logs stats start stop restart rm inspect
@@ -47210,18 +47210,16 @@ Installed PHP extensions
 ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
 
 ** image:mysql:5.7.9 <<<image:mysql>>>
-Parent :: image:debian:jessie
-user:group :: mysql:mysql
-Executable :: mysqld
-
-EXPOSE 3306
-
-mysql-data:/var/lib/mysql
-mysql-log:/var/log/mysql
-mysql-conf:/etc/mysql/conf.d
+- Parent :: image:debian:jessie
+- user:group :: mysql:mysql
+- Executable :: mysqld
+- Exposed port :: ~EXPOSE 3306~
+- Data folder :: ~mysql-data:/var/lib/mysql~
+- Log folder :: ~mysql-log:/var/log/mysql~
+- Conf folder :: ~mysql-conf:/etc/mysql/conf.d~
 
 *** Load configs
-Startup config :: /etc/mysql/my.cnf and any .cnf files under /etc/mysql/conf.d 
+- Startup config :: ~/etc/mysql/my.cnf~ and any ~.cnf~ files under ~/etc/mysql/conf.d~ 
 Mount host directory to /etc/mysql/conf.d in container using ~-v~ in docker run
 
 Instead of loading custom conf.d directory, tags (--tag-name) can be used adjust the configs
@@ -48177,7 +48175,7 @@ Parent images: openjdk:8-jdk
   docker pull ubuntu:bionic
   docker pull ubuntu:bionic-20181112
 
-  # run and bash in. Refer to docker:run:priviledged
+  # run and bash in. Refer to docker:run:privileged
   docker run -it --rm --privileged ubuntu:xenial /bin/bash
 #+END_SRC
 
@@ -54167,16 +54165,21 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 ~service mysql restart~ or ~service mysqld restart~
 
 In console
-#+BEGIN_EXAMPLE
-  # all settings / global variables
+#+BEGIN_SRC sql
+  -- all settings / global variables
   SHOW VARIABLES;
 
-  # one setting
+  -- one setting
   SHOW VARIABLES LIKE "%version%";
 
-  # check if it's MariaDB
+  SHOW VARIALBES LIKE "%port%";
+
+  -- check if it's MariaDB
   SELECT VERSION();
-#+END_EXAMPLE
+
+  -- Database table mysql
+  SELECT User, Host, Password FROM mysql.user;
+#+END_SRC
 
 **** Minimum
 http://www.tocker.ca/2014/03/10/configuring-mysql-to-use-minimal-memory.html
@@ -54252,21 +54255,21 @@ innodb-buffer-pool-size = innodb-buffer-pool-chunk-size * innodb-buffer-pool-ins
 max-allowed-packet :: 16M # total BLOB data size for a single row
 
 **** Last Update time for a table in a database
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SELECT UPDATE_TIME, TABLE_SCHEMA, TABLE_NAME
   FROM   INFORMATION_SCHEMA.TABLES
   WHERE TABLE_SCHEMA NOT LIKE '%information_schema%'
   AND TABLE_SCHEMA LIKE '%your_db_name%'
   AND TABLE_NAME LIKE '%your_db_table_name%'
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SELECT MAX(UPDATE_TIME), TABLE_SCHEMA
   FROM   INFORMATION_SCHEMA.TABLES
   WHERE TABLE_SCHEMA NOT LIKE '%information_schema%'
   GROUP BY TABLE_SCHEMA
   ORDER BY MAX(UPDATE_TIME)
-#+END_EXAMPLE
+#+END_SRC
 
 **** Query Log
 MySQL >= 5.1.12
@@ -54290,7 +54293,7 @@ MySQL >= 5.1.12
 #+END_EXAMPLE
 
 *** Install
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # Ubuntu
   apt-get update; apt-get install mysql-server
   service mysql start
@@ -54302,7 +54305,55 @@ MySQL >= 5.1.12
 
   # both
   mysql_secure_installation
-#+END_EXAMPLE
+
+  # status
+  systemctl status mysql.service
+#+END_SRC
+
+**** Manage users
+- plugin :: auth_socket usually works in Linux where auth is done through Linux localhost users auth
+  - In Ubuntu, user root by default uses ~auth_socket~ instead of ~mysql_native_password~. Later is required for external db connection using user root
+    - ~ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'my-strong-password';~
+    - ~FLUSH PRIVILEGES;~
+
+#+BEGIN_SRC sql
+  -- see a list of all users
+  SELECT user, host, password, authentication_string, plugin FROM mysql.user;
+
+  CREATE USER 'sammy'@'localhost' IDENTIFIED BY 'password';
+
+  -- create a user that can connect to this server from any external IP address
+  CREATE USER 'sammy'@'%' IDENTIFIED BY 'password';
+
+  -- CREATE USER 'sammy'@'192.168.100.%%' IDENTIFIED BY 'password';
+
+  -- grant all privileges to one database
+  GRANT ALL PRIVILEGES ON mydatabase.* TO 'sammy'@'localhost';
+
+  -- same as above but the new user can also grant privileges to others
+  GRANT ALL PRIVILEGES ON mydatabase.* TO 'sammy'@'localhost' WITH GRANT OPTION;
+
+  -- grant all privileges to all tables/databases
+  GRANT ALL PRIVILEGES ON *.* TO 'sammy'@'localhost' WITH GRANT OPTION;
+
+  -- except for granting privileges for a brand new user, after INSERT, UPDATE, DELETE, flush is required
+  FLUSH PRIVILEGES;
+
+  -- show granted privileges
+  SHOW GRANTS FOR 'sammy'@'localhost';
+  SHOW GRANTS FOR CURRENT_USER();
+  SHOW GRANTS;
+
+  -- remove a user
+  DELETE FROM mysql.user WHERE user = 'sammy';
+#+END_SRC
+
+**** Create database
+#+BEGIN_SRC sql
+  CREATE DATABASE `dbname_in_lowercase`;
+  USE `dbname_in_lowercase`;
+  SHOW TABLES;
+#+END_SRC
 
 **** MySQL does not start after installation, Ubuntu
 ~No directory, logging in with HOME=/~ and ~service mysql status~ shows it is inactive.
@@ -54314,7 +54365,7 @@ This is new.. Change the owner:group for relevant folders
 **** Reset root password, Ubuntu
 ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # stop
   sudo /etc/init.d/mysql stop
 
@@ -54349,7 +54400,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 
   sudo /etc/init.d/mysql stop
   sudo /etc/init.d/mysql start
-#+END_EXAMPLE
+#+END_SRC
 
 *** Transpose query results
 #+BEGIN_SRC sh
@@ -54602,10 +54653,10 @@ Concatenate multiple fields
 #+END_EXAMPLE
 
 *** User Variable
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SET @s3 = 'http://s3.amazon.com/abc/';
-  SELECT @s3
-#+END_EXAMPLE
+  SELECT @s3;
+#+END_SRC
 
 *** Routines
 Procedure and User Defined Functions are stored under the schema as routines
@@ -54950,11 +55001,86 @@ Data :: INSERT
   CREATE TABLE `wp_ABC` ...
 #+END_SRC
 
-*** Troubleshoot
-**** TS: Unknown collation: utf8mb4_unicode_520_ci <<<mysql:unknown collation>>>
+*** TS: Unknown collation: utf8mb4_unicode_520_ci <<<mysql:unknown collation>>>
 Error encountered when importing .sql in phpMyAdmin ~#1273 - Unknown collation: 'utf8mb4_unicode_520_ci'~
 
 Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf8mb4_unicode_ci/g' file.sql~
+
+** MariaDB
+*** Install
+#+BEGIN_SRC sh
+  sudo apt install mariadb-server
+  # service will start automatically, check status
+  sudo systemctl status mariadb
+
+  # MariaDB version
+  mysql -V
+
+  # improve security: prompt for root user password, remove anonymous user, restrict root user access to local machine and remove the test database
+  # Y to all
+  sudo mysql_secure_installation
+#+END_SRC
+
+*** Config
+- /etc/my.cnf :: not exist in Ubuntu install
+- /etc/mysql/my.cnf :: loads other files. symlink to ~/etc/alternatives/my.cnf~ symlink to ~/etc/mysql/mariadb.cnf~ 
+  - ~/etc/mysql/mariadb.cnf~ :: global defaults. This file 
+  - ~/etc/mysql/conf.d/*.cnf~ :: global options
+  - ~/etc/mysql/mariadb.conf.d/*.cnf~ ::  MariaDB-only options
+    - 50-server.cnf :: ~[mysqld]~ ~bind-address~
+    - 50-client.cnf ::
+    - 50-mysqld_safe.cnf ::
+    - 50-mysql-clients.cnf :: 
+- ~/.my.cnf :: by default not created. User-specific options
+
+#+BEGIN_SRC sh
+  # Default options are read from the following files in the given order:
+  mysqld --help --verbose | less
+
+  # Usually
+  /etc/my.cnf /etc/mysql/my.cnf ~/.my.cnf 
+
+  # see which defaults (after changes) mysqld is using
+  mysqld --print-defaults
+#+END_SRC
+
+This does not work with Ubuntu. Change 50-server.cnf instead.
+#+BEGIN_SRC conf
+  [mysqld]
+
+  #skip-networking
+  # default is no skip-networking directive
+  # if it's there, MariaDB will not work with any connection with TCP/IP
+
+  bind-address = 127.0.0.1
+  # default. 127.0.0.1 is also localhost. No one can connect to server from other hosts or from the same host over TCP/IP on a different interface than the loopback (127.0.0.1).
+  # Which means only local connection and the host should be referred to 127.0.0.1 or localhost.
+
+  # remove bind-address the directive by commenting out so that it binds to any IP `0.0.0.0` or `::`
+  # it becomes with commeting out!
+
+  #skip-networking
+  #bind-address = 127.0.0.1
+
+  # or in the last conf file ~/.my.cnf or last in /etc/my.cnf
+  [mysqld]
+  skip-networking=0
+  skip-bind-address
+#+END_SRC
+
+*** Restart
+#+BEGIN_SRC sh
+  systemctl enable mariadb
+  systemctl status mariadb
+  systemctl start mariadb
+  systemctl stop mariadb
+#+END_SRC
+
+*** Manage users
+#+BEGIN_SRC sql
+  -- see any users that can connect remotely
+  SELECT User, Host FROM mysql.user WHERE Host <> 'localhost';
+#+END_SRC
 
 ** MSSQL
 *** Modify column values if exist (CASE WHEN)
