@@ -19,6 +19,7 @@ There are two things you can do about this warning:
 
 (autoload 'apache-mode "apache-mode" nil t)
 (require 'php-mode)
+(require 'web-mode)
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -30,7 +31,8 @@ There are two things you can do about this warning:
       sh-basic-offset 2
       sh-indentation 2
       smie-indent-basic 2
-      org-src-fontify-natively t)
+      org-src-fontify-natively t
+      org-src-tab-acts-natively t)
 (add-hook 'text-mode-hook 'turn-on-visual-line-mode)
 (add-hook 'php-mode-hook '(lambda ()
                             (setq c-basic-offset 2
@@ -49,7 +51,13 @@ There are two things you can do about this warning:
  '(org-export-with-sub-superscripts (quote {}))
  '(package-selected-packages
    (quote
-    (dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
+    (web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
+
+(define-derived-mode web-php-mode web-mode "WebPhp"
+  "Major mode for editing web php templates."
+  (web-mode)
+  (web-mode-set-engine "php"))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
