@@ -82,7 +82,8 @@ Empty string
 #+END_EXAMPLE
 
 Sample production
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC conf
   [PHP]
   ; copy from https://github.com/php/php-src/blob/master/php.ini-production
 
@@ -114,7 +115,7 @@ Sample production
   ; to the sendmail binary. These parameters will always replace the value of
   ; the 5th parameter to mail().
   ;mail.force_extra_parameters =
-#+END_EXAMPLE
+#+END_SRC
 
 *** [PHP] <<<php.ini:directives>>>
 http://php.net/manual/en/ini.list.php
@@ -285,7 +286,7 @@ Attackers might trigger a lot of requests and cause your website that is cached 
 Solution
 Never display $_SERVER['HTTP_HOST'] or $_SERVER['SERVER_NAME']
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $config['site_url'] = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
   $config['cp_url']   = 'http://' . $_SERVER['HTTP_HOST'] . '/system/index.php';
 
@@ -295,12 +296,12 @@ Never display $_SERVER['HTTP_HOST'] or $_SERVER['SERVER_NAME']
 
   $domains = array('domain.com', 'dev.domain.com', 'staging.domain.com', 'localhost');
   if (in_array($_SERVER['HTTP_HOST'], $domains)) {
-      $domain = $_SERVER['HTTP_HOST'];
+	  $domain = $_SERVER['HTTP_HOST'];
   }
   else {
-      $domain = 'localhost';
+	  $domain = 'localhost';
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** $_FILES POST method uploads
 http://www.php.net/manual/en/features.file-upload.post-method.php
@@ -325,7 +326,7 @@ $_FILES['userfile']['error']
 The error code associated with this file upload.
 
 POST as array
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <form action="" method="post" enctype="multipart/form-data">
   <p>Pictures:
   <input type="file" name="pictures[]" />
@@ -335,16 +336,17 @@ POST as array
   </p>
   </form>
 
+  <?php
   foreach ($_FILES["pictures"]["error"] as $key => $error) {
       if ($error == UPLOAD_ERR_OK) {
-          $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
-          // basename() may prevent filesystem traversal attacks;
-          // further validation/sanitation of the filename may be appropriate
-          $name = basename($_FILES["pictures"]["name"][$key]);
-          move_uploaded_file($tmp_name, "data/$name");
+	  $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
+	  // basename() may prevent filesystem traversal attacks;
+	  // further validation/sanitation of the filename may be appropriate
+	  $name = basename($_FILES["pictures"]["name"][$key]);
+	  move_uploaded_file($tmp_name, "data/$name");
       }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Filesystem
 http://php.net/manual/en/ref.filesystem.php
@@ -21734,8 +21736,9 @@ Final version with fixes for OWA and WebKit Prefixes
 #+END_EXAMPLE
 
 *** Inbox Preview
-Litmus :: covers the most email clients and used by MailChimp and Campaign Monitor. Plus plan has Live Edit and Live Preivew
-Email on Acid :: Basic plan covers unlimited tests. Fewer Android devices are supported compared with Litmus.
+- Litmus :: covers the most email clients and used by MailChimp and Campaign Monitor. Plus plan has Live Edit and Live Preivew
+- Email on Acid :: Basic plan covers unlimited tests. Fewer Android devices are supported compared with Litmus
+- [[https://testi.at/][Testi@]] :: less email clients but much cheaper. Has Chrome Extension
 
 *** Gmail Image Caching
 Images are downloaded at proxy server and serve those images from that proxy instead. One download only. Affects stats of opens and geolocation.
@@ -43509,7 +43512,7 @@ Internal network Class B :: 172.16.0.1 - 172.16.255.254 (172.16.0.0/16, total ho
 Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total hosts: 254)
 
 *** Port <<<network:port>>>
-If a port is in use =telnet localhost 9000=, if it's connected, it's in use.
+If a port is in use ~telnet localhost 9000~, if it's connected, it's in use.
 List all ports in use: =netstat -lp= or =netstat -nlp= to list in numeric form.
 Search a port =netstat -nlp | grep 8000=
 
@@ -43535,22 +43538,22 @@ Full format
 It's better to use telnet IP_address port_number in an external computer to connect to a port to check
 if it's in use.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # this can also list PID's that use the port
   fuser 443/tcp -v
 
   # and kill
   fuser -k 443/tcp
-#+END_EXAMPLE
+#+END_SRC
 
 If process keeps coming back, consider find the parent process and kill it.
 
 In Windows, to see if a port is being used in a local computer
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   netstat -an | find "8080"
 
-  // From outside, just telnet host port (or telnet host:port on Unix systems) to see if the connection is refused, accepted, or timeouts
-#+END_EXAMPLE
+  # From outside, just telnet host port (or telnet host:port on Unix systems) to see if the connection is refused, accepted, or timeouts
+#+END_SRC
 
 Use open ports that are in the range of 1024-49151.
 0-1023 are well known ports
@@ -43638,11 +43641,11 @@ Choose any one or the root one to telnet
 #+END_EXAMPLE
 
 ** Firewall <<<linux:firewall>>> <<<linux:ufw>>>
-Should be installed by default. ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
-~sudo ufw status verbose~ to check if status is active.
-~sudo ufw disable~ and ~sudo ufw enable~ to restart firewall
-Or just reload ~sudo ufw reload~
-~sudo ufw reset~
+- Should be installed by default :: ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
+- Check if it's enabled :: ~sudo ufw status verbose~
+- Restart :: ~sudo ufw disable~ and ~sudo ufw enable~ or just reload ~sudo ufw reload~
+- ~sudo ufw reset~
+- Refer to network:port to test
 
 ufw comes with some profiles each of them is a setting for a service/app. Get all profiles ~sudo ufw app list~
 #+BEGIN_EXAMPLE
@@ -45588,6 +45591,17 @@ Reboot
 - Installation type :: Something else
   - change on a device name :: Use as: Ext4 journaling file system, Mount point: / and /home, Format the partition.
   - Device for boot loader installation :: If boot mode is BIOS, select the whole device name e.g. ~/dev/sda~. If it's UEFI mode, choose the partition. Go to ~gparted~ and see which partition has value ~boot~ in column 'Flags'. e.g. ~/dev/sdap1~ 
+
+*** Citrix
+- Better to install Workspace app for Linux (Full Package 64bit) instead of Citrix Receiver for Linux
+
+TS: Cannot connect to "Your Connection Name" No such file or directory. Verify your connection settings and try again.
+#+BEGIN_SRC sh
+  cd /opt/Citrix/ICAClient/keystore/
+  sudo cp -ar cacerts cacerts-bk
+  sudo rm -rf cacerts
+  sudo ln -s /etc/ssl/certs cacerts
+#+END_SRC
 
 *** Maintenance
 - ~sudo apt autoremove --dry-run~ :: delete any unused dependencies
