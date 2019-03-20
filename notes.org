@@ -7376,6 +7376,50 @@ Core functions used in templates :: /wp-includes/general-template.php
 *** media-template.php
 *** nav-menu-template.php
 ** Functions
+*** wp-admin/includes/template.php
+**** add_meta_box <<<wp:f:add_meta_box>>>
+Used in
+- wp:action:add_meta_boxes
+- context
+  - advanced :: default
+  - side ::
+  - normal ::
+- Priority
+  - default :: default
+  - high :: right after title
+  - low
+
+#+BEGIN_SRC php
+  /*
+   ,* @param string                 $id            Meta box ID (used in the 'id' attribute for the meta box).
+   ,* @param string                 $title         Title of the meta box.
+   ,* @param callable               $callback      Function that fills the box with the desired content.
+   ,*                                              The function should echo its output.
+   ,* @param string|array|WP_Screen $screen        Optional. The screen or screens on which to show the box
+   ,*                                              (such as a post type, 'link', or 'comment'). Accepts a single
+   ,*                                              screen ID, WP_Screen object, or array of screen IDs. Default
+   ,*                                              is the current screen.  If you have used add_menu_page() or
+   ,*                                              add_submenu_page() to create a new screen (and hence screen_id),
+   ,*                                              make sure your menu slug conforms to the limits of sanitize_key()
+   ,*                                              otherwise the 'screen' menu may not correctly render on your page.
+   ,* @param string                 $context       Optional. The context within the screen where the boxes
+   ,*                                              should display. Available contexts vary from screen to
+   ,*                                              screen. Post edit screen contexts include 'normal', 'side',
+   ,*                                              and 'advanced'. Comments screen contexts include 'normal'
+   ,*                                              and 'side'. Menus meta boxes (accordion sections) all use
+   ,*                                              the 'side' context. Global default is 'advanced'.
+   ,* @param string                 $priority      Optional. The priority within the context where the boxes
+   ,*                                              should show ('high', 'low'). Default 'default'.
+   ,* @param array                  $callback_args Optional. Data that should be set as the $args property
+   ,*                                              of the box array (which is the second parameter passed
+   ,*  
+   ,*                                              to your callback). Default null.
+   ,*/
+  function add_meta_box( $id, $title, $callback, $screen = null, $context = 'advanced', $priority = 'default', $callback_args = null ) {
+
+  }
+#+END_SRC
+
 *** get_bloginfo, bloginfo, Site tagline, Sitetitle
 retrieves info about the current site
 https://developer.wordpress.org/reference/functions/get_bloginfo/
@@ -8630,9 +8674,7 @@ Avoid to use it. To alter main query parameters before it's made, use wp:action:
   wp_reset_query();
 #+END_SRC
 
-*** update_post_meta
-<<<wp:f:update_post_meta>>>
-
+*** update_post_meta <<<wp:f:update_post_meta>>>
 *** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
 - Used in wp:action:wp_enqueue_scripts
 - Use wp:filter:script_loader_src
@@ -10402,13 +10444,16 @@ Remove emoji javascript and style
   remove_action( 'wp_head','rest_output_link_wp_head'); // wp-json
 #+END_SRC
 
-*** add_meta_boxes, add_meta_boxes_{post_type}
+*** add_meta_boxes, add_meta_boxes_{post_type} <<<wp:action:add_meta_boxes>>>
 lili_add_meta_boxes($post_type, $post) takes 2 arguments, no return. 
 lili_add_meta_boxes_{post_type}($post) takes 1 argument, no return.
 
-Use wp:f:add_meta_box, wp:f:remove_meta_box or modify global $wp_meta_boxes;
+Use
+- wp:f:add_meta_box
+- wp:f:remove_meta_box 
+- or modify ~global $wp_meta_boxes~
 
-$wp_meta_boxes['post-type']['normal']['core']['postexcerpt']['title'] = 'Your title';
+~$wp_meta_boxes['post-type']['normal']['core']['postexcerpt']['title'] = 'Your title';~
 
 You can change the title, callback (complete change to another function) and different context. 
 The callback most likely outputs a label, form field and some description.
@@ -10435,9 +10480,10 @@ wp:f:wp_editor
 Same as wp:action:edit_page_form but for all post types other than 'page'
 
 *** save_post <<<wp:action:save_post>>>
-Called when a post or page is created or updated, which could be from an import, post/page edit form, xmlrpc, or post by email. The data for the post is stored in $_POST, $_GET or the global $post_data, depending on how the post was edited. For example, quick edits use $_POST.
-
-wp:f:update_post_meta
+- Called when a post or page is created or updated, which could be from an import, post/page edit form, xmlrpc, or post by email
+- The data for the post is stored in ~$_POST~, ~$_GET~ or ~global $post_data~, depending on how the post was edited. e.g. quick edits use ~$_POST~
+- Use
+  - wp:f:update_post_meta
 
 #+BEGIN_SRC php
   add_action( 'save_post', 'save_post', 10, 2 );
@@ -57304,7 +57350,8 @@ File
 *** Search
 - C-s :: search by pure text, next search result. If search string contains no uppercase, then it's a case-insensitive search
 - C-r :: previous search
-- M-C-s :: regex search
+- M-C-s :: [[https://www.gnu.org/software/findutils/manual/html_node/find_html/emacs-regular-expression-syntax.html][regex search]]
+  - ~manage_.+_columns~ :: search ~manage_*_columns~ 
 - M-C-r :: regex reverse search 
 - M-s o :: list-matching-lines regex and show matching lines
 - C-s C-s or C-r C-r :: search again
