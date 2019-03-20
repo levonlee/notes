@@ -51,7 +51,7 @@ There are two things you can do about this warning:
  '(org-export-with-sub-superscripts (quote {}))
  '(package-selected-packages
    (quote
-    (web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
+    (gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
 
 (define-derived-mode web-php-mode web-mode "WebPhp"
   "Major mode for editing web php templates."
