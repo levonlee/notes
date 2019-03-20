@@ -6601,7 +6601,7 @@ https://codex.wordpress.org/Class_Reference/WP_Post
 #+END_EXAMPLE
 
 *** $wpdb <<<wp:global:wpdb>>>
-https://codex.wordpress.org/Class_Reference/wpdb
+- https://codex.wordpress.org/Class_Reference/wpdb
 - ~$wpdb~ provides an interface which WP_Query uses to query
 - Use ~$wpdb~ to create raw query
 
@@ -7114,6 +7114,7 @@ Options
 
 --post_type and other args in WP_Query can be passed :: https://developer.wordpress.org/reference/classes/wp_query/
 
+**** ~post list~, ~post delete~
 #+BEGIN_SRC bash
   wp post list --post_type=post --fields=post_title,post_name,post_date,post_status --posts_per_page=5
   wp post list --post_type=post --format=count
@@ -7145,6 +7146,32 @@ Options
   wp post list --post_type=post --meta_key=mycustomfield '--meta_compare=NOT EXISTS'
   wp post list --post_type=post --meta_key=wpcf-abc --meta_value='abc xyz'
   wp post list --post_type=post --meta_key=wpcf-abc --meta_value='abc xyz' '--meta_compare=!='
+#+END_SRC
+
+**** ~post meta~ <<<wp-cli:post meta>>>
+- Have to find out and set the private field value ~_custom_order~ which refers to the wp:plugin:acf field setting in table ~wp_posts~ with ~post_name=field_RANDOM~
+
+#+BEGIN_SRC sh
+  # wp post meta update <id> <key> <value>
+  wp post meta update 4045 custom_order 0 _custom_order field_59038b5c9457b
+
+  for id in $(wp post list --category_name=arizona-business --fields=ID --format=ids); do wp post meta update $id custom_order 0; done
+  for id in $(wp post list --category_name=arizona-business --fields=ID --format=ids); do wp post meta update $id _custom_order field_59038b5c9457b; done
+
+  # sometimes `wp post list` returns PHP error.. copy those ids and run
+  for id in 1234 1232 1231; do wp post meta update $id custom_order 0; done
+
+  for id in 1234 1232 1231; do lando wp post meta update $id custom_order 0; done
+
+
+  lando ssh --user=root
+  # get a post with _custom_order field reference
+  terminus wp mysite.li-dev -- post meta get 12345 _custom_order
+  # get a list of posts to update custom fields
+  terminus wp mysite.li-dev -- post list --post_type=speaker --fields=ID --format=ids --allow-root
+
+  for id in 1234 1232 1231; do terminus wp mysite.li-dev -- post meta update $id custom_order 0; done
+  for id in 1234 1232 1231; do terminus wp mysite.li-dev -- post meta update $id _custom_order field_CHANGERANDOM; done
 #+END_SRC
 
 *** db check
@@ -7433,7 +7460,7 @@ version :: '4.9.4'
 *** get_post <<<wp:f:get_post>>>
 ~get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )~
 
-Default is global $post
+Default is ~global $post~
 Return wp:post object
 
 *** get_post_meta, get_metadata <<<wp:f:get_post_meta>>> <<<wp:f:get_metadata>>>
@@ -8860,16 +8887,16 @@ last_name (string) - last name of the user.
 Public Methods
 has_cap :: has role name or capability
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   if ( is_user_logged_in() ) {
     $user = wp_get_current_user();
     // $user->ID public properties
-    
+
     if ($user->has_cap('administrator')) {
       // user is admin
     }
   } 
-#+END_EXAMPLE
+#+END_SRC
 
 ** Roles & Capabilities WP_Roles <<<wp:roles>>>
 - https://codex.wordpress.org/Roles_and_Capabilities
@@ -8947,7 +8974,9 @@ Use wp:plugin:acf
 		  case 'publisher' :
 			  echo get_post_meta( $post_id, 'publisher', true );
 			  // custom post meta
-			  // get_post_meta( $post_id, '_custom_post_order', true)
+			  // echo get_post_meta( $post_id, '_custom_post_order', true)
+			  // ACF plugin
+			  // echo get_field('custom_order', $post_id);
 			  break;
 
 	  }
@@ -9002,7 +9031,7 @@ Use wp:plugin:acf
 *** Add a sortable column to taxonomy edit page
 - Taxonomy :: sponsor_type
 - Refer to wp:api:plugin for adding a column to custom post type
-- Filter ~manage_${taxonomy}_custom_column~
+- Filter ~manage_${taxonomy}_custom_column~ :: wp:api:plugin:filter:manage_{taxonomy}_custom_column
 
 #+BEGIN_SRC php
   <?php
@@ -9105,7 +9134,10 @@ By default, The Loop uses the main query's current post to set ~global $post~.
 **** Basics
 - Generator :: https://generatewp.com/wp_query/
 - Class Reference :: https://codex.wordpress.org/Class_Reference/WP_Query
-- Use objects :: WP_Meta_Query, WP Tax Query, WP Order and Orderby
+- Use objects in order
+  - WP Tax Query
+  - WP_Meta_Query
+  - WP Order and Orderby
 - Use filters
   - wp:filter:post_limits
   - pre_option_posts_per_rss :: wp:filter:pre_option_*
@@ -9414,8 +9446,9 @@ https://codex.wordpress.org/Class_Reference/WP_Meta_Query
 https://rudrastyh.com/wordpress/meta_query.html
 
 - Refer to wp-cli:post
+- wp:filter:get_meta_sql
 
-If there is one condition, use these fields
+If only one condition is needed, use these fields
 - meta_key :: string
 - meta_value :: string|array
 - meta_type :: string
@@ -9431,7 +9464,7 @@ If there is one condition, use these fields
   $rd_query = new WP_Query( $rd_args );
 #+END_SRC
 
-Or use meta_query for nesting multiple conditions
+Or use ~meta_query~ for nesting multiple conditions
 
 **** meta_query Nesting
 Nested: key1=value1 OR (key2=value2 AND key3=value3)
@@ -9478,6 +9511,11 @@ To get posts that have featured images
 #+END_SRC
 
 **** Named sub-meta queries and multiple orderby arguments
+- The following requires all sort columns have values
+- The best to solve sort column might not have values is to make sure all posts have values for that sort column
+  - Refer to wp-cli:post meta
+  - Refer to wp:filter:get_meta_sql to sort columns which might not have values or exist
+
 #+BEGIN_SRC php
   $q = new WP_Query( array(
 	  'meta_query' => array(
@@ -9662,6 +9700,40 @@ List goes on...
   }
 #+END_SRC
 
+*** Review Raw Query
+#+BEGIN_SRC php
+  $args=[];
+  $q = new WP_Query($args);
+  echo "<pre>";
+  print_r($q->request);
+  echo "</pre>";
+#+END_SRC
+
+#+BEGIN_SRC sql
+  SELECT wp_posts.*
+  FROM wp_posts
+    -- tax_query uses LEFT JOIN
+    LEFT JOIN wp_term_relationships ON (wp_posts.ID = wp_term_relationships.object_id)
+    -- meta_query by default uses INNER JOIN
+    INNER JOIN wp_postmeta ON ( wp_posts.ID = wp_postmeta.post_id )
+    INNER JOIN wp_postmeta AS mt1 ON ( wp_posts.ID = mt1.post_id )
+    -- meta_query when there's `NOT EXISTS` then all INNER JOIN are changed to LEFT JOIN
+    --LEFT JOIN wp_postmeta AS mt1 ON ( wp_posts.ID = mt1.post_id AND mt1.meta_key= 'custom_rder')
+
+  WHERE 1=1  AND (
+      wp_term_relationships.term_taxonomy_id IN (16896)
+    )
+    AND (
+	wp_postmeta.meta_key = 'speaker_last_name'
+      AND
+	mt1.meta_key = 'custom_order'
+    )
+    AND wp_posts.post_type = 'speaker'
+    AND (wp_posts.post_status = 'publish' OR wp_posts.post_status = 'acf-disabled')
+  GROUP BY wp_posts.ID
+  ORDER BY CAST(mt1.meta_value AS CHAR) ASC, CAST(wp_postmeta.meta_value AS CHAR) ASC
+#+END_SRC
+
 ** RSS <<<wp:rss>>> <<<wp:feed>>>
 wp:f:get_template_part includes any template in child theme
 
@@ -9776,8 +9848,81 @@ For feed, use pre_option_posts_per_rss wp:filter:pre_option
   }
 #+END_SRC
 
+*** get_meta_sql <<<wp:filter:get_meta_sql>>>
+- Modify meta query sql
+- This filter is applied also for WP Tax Query with no ~$context~. WP_Query constructs WP Tax Query first and then WP_Meta_Query
+
+#+BEGIN_SRC php
+  add_filter( 'get_meta_sql', function($clause, $queries, $type, $primary_table, $primary_id_column, $context) {
+
+	  if (lili_request_cache('trigger_get_meta_sql')  === 'meta-query-archive-speaker-page') {
+		  // if the query is the query needed to be modified
+		  // echo "<pre>"; print_r($clause); echo "</pre>";
+		  // echo "<pre>"; print_r($context); echo "</pre>";
+		  $clause['where'] = '';
+
+	  }
+
+	  return $clause;
+  } );
+
+
+  // In template
+
+  // sort on custom fields which might not have values or exist
+  $args = array(
+	  'post_type'      => 'speaker',
+	  'posts_per_page' => - 1,
+	  'meta_query' => [
+		  'speaker_last_name_clause'     => [
+			  'key'     => 'speaker_last_name',
+			  'compare' => 'NOT EXISTS',
+		  ],
+		  'custom_order_clause'     => [
+			  'key'     => 'custom_order',
+			  'type'    => 'NUMERIC',
+			  'compare' => 'NOT EXISTS',
+		  ],
+	  ],
+	  'orderby'        => [
+		  'custom_order_clause'      => 'DESC',
+		  'speaker_last_name_clause' => 'ASC',
+	  ],
+  );
+
+  // use the trigger
+  lili_request_cache('trigger_get_meta_sql', 'meta-query-archive-speaker-page');
+
+  $speakers = new WP_Query($args);
+
+  // remove the trigger
+  lili_request_cache('trigger_get_meta_sql', '');
+#+END_SRC
+
+Sample
+#+BEGIN_SRC php
+  [
+	  'join' => "LEFT JOIN wp_postmeta ON ( wp_posts.ID = wp_postmeta.post_id )  LEFT JOIN wp_postmeta AS mt1 ON (wp_posts.ID = mt1.post_id AND mt1.meta_key = 'speaker_last_name' )  LEFT JOIN wp_postmeta AS mt2 ON ( wp_posts.ID = mt2.post_id )  LEFT JOIN wp_postmeta AS mt3 ON (wp_posts.ID = mt3.post_id AND mt3.meta_key = 'custom_order' )",
+
+	  'where' => " AND ( 
+    ( 
+      wp_postmeta.meta_key = 'speaker_last_name' 
+      OR
+      mt1.post_id IS NULL
+    )
+    AND
+    (
+      mt2.meta_key= 'custom_order'
+      OR
+      mt3.post_id IS NULL
+    )
+  )"
+  ]
+#+END_SRC
+
 *** posts_clauses <<<wp:filter:posts_clauses>>>
-Modify WP_Query object before it runs
+- Modify WP_Query object before it runs
+
 #+BEGIN_SRC php
   function lili_posts_clauses($clauses, $query) {
     /*
@@ -11870,7 +12015,8 @@ wp:filter:template_include
 *** wp_postmeta <<<wp:db:wp_postmeta>>>
 - meta_id
 - post_id
-- meta_key :: if custom field has prefix `_`. It means the field will not display on Post Edit page on wp-admin
+- meta_key :: if custom field has prefix `_`. It means the field is private and does not display on Post Edit page on wp-admin
+  - wp:plugin:acf key ~custom_order~ with value from wp-admin and ~_custom_order~ with value ~field_ALPHANUMERICRANDOM~ which refers table ~wp_posts~ with ~post_name = 'field_ALPHANUMERICRANDOM'~ 
 - meta_value :: string or php serialized string
 
 #+BEGIN_SRC sql
@@ -13966,7 +14112,9 @@ About ~SAVEQUERIES~
   $query = new WP_Query($args);
 
   // debug: actual SQL raw query that is run
-  var_dump($query->request);
+  echo "<pre>";
+  print_r($query->request);
+  echo "</pre>";
 
   $args = array(
     'post_type' => array('news'),
@@ -48535,6 +48683,13 @@ Config files ~/etc/varnish/conf.d/*.vcl~
      type: phpmyadmin
      hosts:
        - database
+#+END_SRC
+
+** Service: MariaDB
+Pantheon recipe uses MariaDB
+#+BEGIN_SRC sh
+  docker exec -it projname_database_1 bash
+  mysql
 #+END_SRC
 
 ** Command line
