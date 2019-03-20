@@ -7376,8 +7376,7 @@ Core functions used in templates :: /wp-includes/general-template.php
 *** media-template.php
 *** nav-menu-template.php
 ** Functions
-*** wp-admin/includes/template.php
-**** add_meta_box <<<wp:f:add_meta_box>>>
+*** add_meta_box <<<wp:f:add_meta_box>>>
 Used in
 - wp:action:add_meta_boxes
 - context
@@ -8914,7 +8913,83 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
 
-** Taxonomy API <<<wp:taxonomy>>>
+** Plugin API <<<wp:api:plugin>>>
+- https://codex.wordpress.org/Plugin_API
+
+*** Action ~manage_${post_type}_posts_custom_column~ <<<wp:api:plugin:action:manage_posts_{post_type}_custom_column>>>
+- ~do_action( "manage_{$post->post_type}_posts_custom_column", $column_name, $post->ID );~
+- echo column values
+- For native post types
+  - manage_posts_custom_column
+  - manage_pages_custom_column
+  - *No!!!* manage_users_custom_column is a filter not an action!
+  - manage_comments_custom_column
+  - manage_media_custom_column
+  - manage_plugins_custom_column
+  - manage_themes_custom_column
+  - manage_link_custom_column
+  - manage_sites_custom_column
+- Populate or modify column values
+
+#+BEGIN_SRC php
+  add_action( 'manage_book_posts_custom_column', function ( $column, $post_id ) {
+	  switch ( $column ) {
+
+		  case 'book_author' :
+			  $terms = get_the_term_list( $post_id, 'book_author', '', ',', '' );
+			  if ( is_string( $terms ) ) {
+				  echo $terms;
+			  } else {
+				  _e( 'Unable to get author(s)', 'your_text_domain' );
+			  }
+			  break;
+
+		  case 'publisher' :
+			  echo get_post_meta( $post_id, 'publisher', true );
+			  // custom post meta
+			  // get_post_meta( $post_id, '_custom_post_order', true)
+			  break;
+
+	  }
+  }, 10, 2 );
+#+END_SRC
+
+*** Filter ~manage_${taxonomy}_custom_column~ and ~manage_users_custom_column~
+<<<wp:api:plugin:filter:manage_{taxonomy}_custom_column>>>
+- Filter column values
+- Refer to wp:api:taxonomy
+
+*** Filter ~manage_${post_type}_posts_columns~ <<<wp:api:plugin:filter:manage_{post_type}_posts_columns>>>
+- Add/remove columns
+- Almost the same as wp:api:plugin:filter:manage_{screen_id}_columns, but this one runs after
+
+#+BEGIN_SRC php
+  add_filter( 'manage_book_posts_columns', function ( $columns ) {
+	  // var_dump('CPT book manage columns filter'); var_dump($columns);
+	  // unset( $columns['author'] ); //  don't show a column
+
+	  $columns['book_author'] = __( 'Author', 'your_text_domain' ); // add a column
+	  $columns['publisher']   = __( 'Publisher', 'your_text_domain' ); // add another column
+
+	  return $columns;
+  } );
+#+END_SRC
+
+*** Filter ~manage_{screen_id}_columns~ <<<wp:api:plugin:filter:manage_{screen_id}_columns>>>
+- e.g. ~apply_filters( 'manage_posts_columns', $posts_columns, $post_type );~
+- Almost the same as wp:api:plugin:filter:manage_{post_type}_posts_columns
+- screen_id
+  - ~edit-my_tax_name~
+  - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
+
+*** Filter ~manage_{screen_id}_sortable_columns~ <<<wp:api:plugin:filter:manage_{screen_id}_sortable_columns>>>
+- ~apply_filters( "manage_{$this->screen->id}_sortable_columns", $sortable_columns );~
+- Refer to wp:api:taxonomy
+- screen_id
+  - ~edit-my_tax_name~
+  - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
+
+** Taxonomy API <<<wp:api:taxonomy>>>
 - ~wp-includes/taxonomy.php~
 
 *** ~get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' )~
@@ -8926,6 +9001,8 @@ Use wp:plugin:acf
 
 *** Add a sortable column to taxonomy edit page
 - Taxonomy :: sponsor_type
+- Refer to wp:api:plugin for adding a column to custom post type
+- Filter ~manage_${taxonomy}_custom_column~
 
 #+BEGIN_SRC php
   <?php
@@ -9519,7 +9596,7 @@ List goes on...
 
 *** WP_Term_Query <<<wp:WP_Term_Query>>>
 - https://developer.wordpress.org/reference/classes/wp_term_query/
-- May also use wp:taxonomy API
+- May also use wp:api:taxonomy
 
 #+BEGIN_SRC php
   // get parent term by slug
