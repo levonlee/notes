@@ -54843,7 +54843,11 @@ MySQL 8.0 adds a few functions
   INSERT INTO t VALUES(UUID_TO_BIN(UUID(), true));
 #+END_SRC
 
-MySQL 5.7
+MySQL 5.6
+- Use mariadb:uuid instead of the following
+- Treat the following as the last resort
+- The following is not performance optimized
+
 #+BEGIN_SRC sql
   CREATE TABLE users(id_bin binary(16), name varchar(200));
   INSERT INTO users VALUES (UNHEX(REPLACE(UUID(),'-','')), 'Andromeda');
@@ -55397,6 +55401,8 @@ Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf
 
 ** MariaDB
 *** Install
+- https://mariadb.com/kb/en/library/mariadb-vs-mysql-compatibility/
+
 #+BEGIN_SRC sh
   sudo apt install mariadb-server
   # service will start automatically, check status
@@ -55404,6 +55410,10 @@ Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf
 
   # MariaDB version
   mysql -V
+
+  # mysql  Ver 15.1 Distrib 10.1.38-MariaDB, for debian-linux-gnu (x86_64) using readline 5.2
+  # 15.1 is the command line client version. 10.1.38-MariaDB is the mysql server version the client was built with
+  # In order to get the mysql server version, have to do it in console: mysql:config
 
   # improve security: prompt for root user password, remove anonymous user, restrict root user access to local machine and remove the test database
   # Y to all
@@ -55469,6 +55479,56 @@ This does not work with Ubuntu. Change 50-server.cnf instead.
 #+BEGIN_SRC sql
   -- see any users that can connect remotely
   SELECT User, Host FROM mysql.user WHERE Host <> 'localhost';
+#+END_SRC
+
+*** UUID <<<mariadb:uuid>>>
+Run this in console
+#+BEGIN_SRC sql
+  DELIMITER //
+
+  CREATE FUNCTION UuidToBin(_uuid BINARY(36))
+    RETURNS BINARY(16)
+    LANGUAGE SQL  DETERMINISTIC  CONTAINS SQL  SQL SECURITY INVOKER
+  RETURN
+    UNHEX(CONCAT(
+	SUBSTR(_uuid, 15, 4),
+	SUBSTR(_uuid, 10, 4),
+	SUBSTR(_uuid,  1, 8),
+	SUBSTR(_uuid, 20, 4),
+	SUBSTR(_uuid, 25) ));
+
+  CREATE FUNCTION UuidFromBin(_bin BINARY(16))
+    RETURNS BINARY(36)
+    LANGUAGE SQL  DETERMINISTIC  CONTAINS SQL  SQL SECURITY INVOKER
+  RETURN
+    LCASE(CONCAT_WS('-',
+		    HEX(SUBSTR(_bin,  5, 4)),
+		    HEX(SUBSTR(_bin,  3, 2)),
+		    HEX(SUBSTR(_bin,  1, 2)),
+		    HEX(SUBSTR(_bin,  9, 2)),
+		    HEX(SUBSTR(_bin, 11))
+      ));
+
+  //
+  DELIMITER ;
+#+END_SRC
+
+Then you can
+#+BEGIN_SRC sql
+  -- Letting MySQL create the UUID:
+  INSERT INTO t (uuid, ...) VALUES (UuidToBin(UUID()), ...);
+
+  -- Creating the UUID elsewhere:
+  INSERT INTO t (uuid, ...) VALUES (UuidToBin(?), ...);
+
+  -- Retrieving (point query using uuid):
+  SELECT ... FROM t WHERE uuid = UuidToBin(?);
+
+  -- Use the stored function on the righ hand side in WHERE clause. Don't do this
+  -- WHERE UuidFromBin(uuid) = '1026-baba-6ccd780c-9564-0040f4311e29'
+
+  -- Retrieving (other):
+  SELECT UuidFromBin(uuid), ... FROM t ...;
 #+END_SRC
 
 ** MSSQL
