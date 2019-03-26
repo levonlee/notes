@@ -54823,6 +54823,54 @@ See mysql:string:list:temp table for more
 IFNULL(column_name, 0)
 WHERE column_name IS NOT NULL
 
+**** UUID and GUID <<<mysql:uuid>>>
+- https://mysqlserverteam.com/storing-uuid-values-in-mysql-tables/ https://mysqlserverteam.com/mysql-8-0-uuid-support/
+- GUID is UUID. GUID is one implementation (Microsoft's) of UUID
+- 36 numeric digits in 5 groups separated by ~-~ 8+4+4+4+12+4(hypens)=36. e.g. ~12345678-1234-1234-1234-123456789012~
+- In MySQL, it's ~binary(16)~, In MSSQL (T-SQL), it's ~uniqueidentifier~
+
+MySQL 8.0 adds a few functions
+#+BEGIN_SRC sql
+  CREATE TABLE t (id binary(16) PRIMARY KEY);
+
+  INSERT INTO t VALUES(UUID_TO_BIN(UUID()));
+
+  SELECT BIN_TO_UUID(id) FROM T;
+
+  -- the records are inserted in random locations in the index tree which impacts performance
+  -- To insert records in order, better to do it like this
+
+  INSERT INTO t VALUES(UUID_TO_BIN(UUID(), true));
+#+END_SRC
+
+MySQL 5.7
+#+BEGIN_SRC sql
+  CREATE TABLE users(id_bin binary(16), name varchar(200));
+  INSERT INTO users VALUES (UNHEX(REPLACE(UUID(),'-','')), 'Andromeda');
+
+  -- id_text is a virtual column and doesn't occupy disk
+
+  CREATE TABLE users(
+  id_bin binary(16),
+  id_text varchar(36) GENERATED always as
+   (insert(
+      insert(
+	insert(
+	  insert(hex(id_bin),9,0,'-'),
+	  14,0,'-'),
+	19,0,'-'),
+      24,0,'-')
+   ) virtual,
+  name varchar(200));
+ 
+  INSERT INTO users (id_bin,name)
+    VALUES(UNHEX(REPLACE(UUID(),'-','')), 'Andromeda');
+
+  -- If id_text is not an index, don't use WHERE ~WHERE id_text=text_form_of_XYZ~
+  -- If id_text is made to an index column, then it occupies space
+  ALTER TABLE users ADD UNIQUE(id_text);
+#+END_SRC
+
 *** REGEXP <<<MySQL REGEX>>>
 Unless the field is binary, REGEXP is case-insensitive.
 #+BEGIN_SRC sql
