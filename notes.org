@@ -55086,7 +55086,7 @@ Without specifying DETERMINISTIC and with the default setting, this error throws
 
 The parameter list enclosed within parentheses must always be present. If there are no parameters, an empty parameter list of () should be used. Parameter names are not case sensitive.
 
-*** Procedure
+*** Stored Procedure
 **** Syntax
 #+BEGIN_EXAMPLE
   CREATE
@@ -55102,6 +55102,8 @@ The parameter list enclosed within parentheses must always be present. If there 
 
 - IN :: Default. It passes a value into a procedure. The procedure might modify the value, but the modification is not visible to the caller when the procedure returns. 
 - OUT :: passes a value from the procedure back to the caller. Its initial value is NULL within the procedure, and its value is visible to the caller when the procedure returns. An INOUT parameter is initialized by the caller, can be modified by the procedure, and any change made by the procedure is visible to the caller when the procedure returns.
+- Use ~()~ if there is no parameter
+- In body, stored function can be used
 
 For each OUT or INOUT parameter, pass a user-defined variable in the CALL statement that invokes the procedure so that you can obtain its value when the procedure returns. If you are calling the procedure from within another stored procedure or function, you can also pass a routine parameter or local routine variable as an IN or INOUT parameter.
 
@@ -55114,7 +55116,7 @@ Each SELECT statement that does not insert into a table or a variable will produ
   mysql> CREATE PROCEDURE simpleproc (OUT param1 INT)
       -> BEGIN
       ->   SELECT COUNT(*) INTO param1 FROM t;
-      -> END//
+      -> END; //
   Query OK, 0 rows affected (0.00 sec)
 
   mysql> delimiter ;
@@ -55134,7 +55136,8 @@ Each SELECT statement that does not insert into a table or a variable will produ
 **** Prepare Statement, Convert delimited string into temp table
 A prepare statement is unique to a session. If it's not deallocated, it will be deallocated automatically when the session ends.
 <<<mysql:string:list:temp table>>>
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC sql
   DROP PROCEDURE IF EXISTS `getArticlesByCats`;
   CREATE PROCEDURE getArticlesByCats(IN pDelim VARCHAR(32), IN pStr TEXT )
   DETERMINISTIC
@@ -55150,21 +55153,28 @@ A prepare statement is unique to a session. If it's not deallocated, it will be 
       SELECT *
       FROM node n
       WHERE EXISTS(
-        SELECT * 
-        FROM cats c
-        WHERE c.cid IN (
-          SELECT CAST(word AS UNSIGNED)
-          FROM li_temp_explode
-        )
+	SELECT * 
+	FROM cats c
+	WHERE c.cid IN (
+	  SELECT CAST(word AS UNSIGNED)
+	  FROM li_temp_explode
+	)
       )
     END;
-#+END_EXAMPLE
+#+END_SRC
+
 word column is string
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   CALL `getArticlesByCats`(',', '1,31,5,6,7,8,9,10');
   SELECT * FROM li_temp_explode;
-#+END_EXAMPLE
+#+END_SRC
+
+- List all stored procedures of all dbs that the user has access to :: ~SHOW PROCEDURE STATUS;~
+- List stored procedures of a db :: ~SHOW PROCEDURE STATUS WHERE db = 'mydbname'~
+- List stored procedures by name :: ~SHOW PROCEDURE STATUS WHERE name LIKE '%product%'~
+- Show the code of a stored procedure :: ~SHOW PROCEDURE my_stored_procedure_name~
+- Drop a stored procedure :: ~DROP PROCEDURE IF EXISTS my_sp_name~
 
 *** User Defined Function <<<mysql:udf>>>
 A UDF always returns a value.
@@ -55186,7 +55196,7 @@ Syntax
   mysql:routine:characteristics
 #+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   SET @lis3 = 'http://s3.amazonaws.com/abc/';
   SET @lifs = 'http://abc.com/sites/default/files/';
   SET @litt = 'http://abc.com/';
@@ -55228,12 +55238,12 @@ Syntax
     BEGIN
   -- Use this with CONCAT('aString', liFixNull(aColumn)) is useful because CONCAT returns NULL if any is null
       RETURN CASE text
-             WHEN 'NULL' THEN NULL
-             WHEN '' THEN NULL
-             ELSE text
-             END;
+	     WHEN 'NULL' THEN NULL
+	     WHEN '' THEN NULL
+	     ELSE text
+	     END;
     END;
-#+END_EXAMPLE
+#+END_SRC
 
 *** SQL Fiddle <<<mysqlfiddle>>>
 http://sqlfiddle.com/ http://dbfiddle.uk/
@@ -55479,6 +55489,35 @@ This does not work with Ubuntu. Change 50-server.cnf instead.
 #+BEGIN_SRC sql
   -- see any users that can connect remotely
   SELECT User, Host FROM mysql.user WHERE Host <> 'localhost';
+#+END_SRC
+
+*** ~CREATE OR REPLACE [PROCEDURE|FUNCTION|TRIGGER]~
+*** Trigger
+- List triggers in all dbs :: ~SHOW TRIGGERS;~
+- List triggers for a db :: ~SHOW TRIGGERS FROM mydbname;~
+- List triggers for a table :: ~SHOW TRIGGERS FROM mydbname WHERE table = 'mytblname';~
+- Drop a trigger :: ~DROP TRIGGER mytblname.mytriggername;~
+
+#+BEGIN_SRC sql
+  DELIMITER //
+  CREATE OR REPLACE TRIGGER trigger_newguid
+    BEFORE UPDATE
+    ON sp
+    FOR EACH ROW
+  BEGIN
+    IF NEW.modifiedon <> OLD.modifiedon THEN
+    -- Don't use `UPDATE trigger_newguid SET` because we are in a row
+    -- `BEFORE UPDATE` is required otherwise the record/row is locked
+      SET NEW.newguid = UuidToBin(uuid());
+    end if;
+  END;
+  //
+
+  DELIMITER ;
+
+  -- Update field modifiedon to trigger trigger_newguid
+  -- newguid field will be updated before the modifiedon field is updated
+  UPDATE sp SET modifiedon = NOW();
 #+END_SRC
 
 *** UUID <<<mariadb:uuid>>>
