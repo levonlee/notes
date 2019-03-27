@@ -55520,6 +55520,10 @@ This does not work with Ubuntu. Change 50-server.cnf instead.
   UPDATE sp SET modifiedon = NOW();
 #+END_SRC
 
+*** Stored function <<<mariadb:stored function>>>
+- Refer to mariadb:uuid
+- It can't be run in ~CREATE TABLE~ ~ALTER TABLE~
+
 *** UUID <<<mariadb:uuid>>>
 - https://mariadb.com/kb/en/library/guiduuid-performance/
 - MariaDB 10.4 and above may support MySQL 8.0 where extra UUID functions are defined
@@ -55557,8 +55561,20 @@ This does not work with Ubuntu. Change 50-server.cnf instead.
 
 Then you can
 #+BEGIN_SRC sql
-  CREATE TABLE t (id binary(16) PRIMARY KEY);
-  
+  CREATE TABLE t
+  (
+    id      binary(16) PRIMARY KEY,
+    id_text varchar(36) GENERATED ALWAYS AS (
+	      LCASE(CONCAT_WS('-',
+			      HEX(SUBSTR(id, 5, 4)),
+			      HEX(SUBSTR(id, 3, 2)),
+			      HEX(SUBSTR(id, 1, 2)),
+			      HEX(SUBSTR(id, 9, 2)),
+			      HEX(SUBSTR(id, 11))
+		))
+	      ) virtual
+  );
+
   -- Letting MySQL create the UUID:
   INSERT INTO t (uuid, ...) VALUES (UuidToBin(UUID()), ...);
 
