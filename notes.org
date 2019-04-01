@@ -14257,8 +14257,8 @@ Upload thme to wp-content/languages
 Then change the language in each User Profile.
 
 ** File Permissions <<<wp:file permissions>>>
-All files should be chmod:644 and all folders chmod:755
-wp-config.php should be chmod:660 or chmod:664
+- All files should be chmod:644 and all folders chmod:755
+- ~wp-config.php~ should be chmod:660 or chmod:664
 
 #+BEGIN_SRC sh
   # set permission 644 on files
@@ -42119,10 +42119,11 @@ Search a word `warthog` in .gz files
 - Permanently mount during bootime
 
 *** bindfs <<<linux:bindfs>>>
-Tested on Ubuntu Xenial
-Create a user devone and mount /home/devone/websites/application1 to /var/www/application1 which is owned by www-data
-devone can create/edit files while the destination folder maintain the same owner www-data and permissions.
-#+BEGIN_EXAMPLE
+- Tested on Ubuntu Xenial
+- Create a user ~devone~ and mount ~/home/devone/websites/application1~ to ~/var/www/application1~ which is owned by ~www-data~
+- ~devone~ can create/edit files while the destination folder maintain the same owner ~www-data~ and permissions
+
+#+BEGIN_SRC sh
   apt-get update
   apt-get -y install bindfs
 
@@ -42135,39 +42136,39 @@ devone can create/edit files while the destination folder maintain the same owne
   bindfs#/var/www/application1 /home/devone/websites/application1 fuse force-user=devone,force-group=devone,create-for-user=www-data,create-for-group=www-data,create-with-perms=0644,chgrp-ignore,chown-ignore,chmod-ignore 0 0  
 
   mount /home/devone/websites/application1
-  // if your system yells about force-user or force-group not being defined:
-  // replace force-user by owner
-  // replace force-group by group
+  # if your system yells about force-user or force-group not being defined:
+  # replace force-user by owner
+  # replace force-group by group
 
-  // Test
+  # Test
   su - devone
   cd ~/websites/application1
   touch hello.txt
   ls -al hello.txt
-  -rwxrwx--- 1 devone devone 0 sept. 10 17:15 hello.txt
+  # -rwxrwx--- 1 devone devone 0 sept. 10 17:15 hello.txt
 
   exit
   cd /var/www/application1
   ls -al hello.txt
-  -rwxrwx--- 1 www-data www-data 0 sept. 10 17:15 helloworld.txt
-#+END_EXAMPLE
+  # -rwxrwx--- 1 www-data www-data 0 sept. 10 17:15 helloworld.txt
+#+END_SRC
 
-Make sure www-data user owns /var/www can prevent devone directly access the folder
-#+BEGIN_EXAMPLE
+Make sure ~www-data~ user owns ~/var/www~ can prevent devone directly access the folder
+#+BEGIN_SRC sh
   chown www-data:www-data /var/www
   chmod 770 /var/www
-#+END_EXAMPLE
+#+END_SRC
 
-If /etc/fstab is modified and you want to remount to reflect the changes. Unmount the existing first
-#+BEGIN_EXAMPLE
+If ~/etc/fstab~ is modified and you want to remount to reflect the changes. Unmount the existing first
+#+BEGIN_SRC sh
   umount /home/devone/websites/application1
-  // if that fails, try to navigate out of the /home/devone/websites/application1 for all users
-  // or use -l for lazy and -f for force
-  // umount -l /home/devone/websites/application1
+  # if that fails, try to navigate out of the /home/devone/websites/application1 for all users
+  # or use -l for lazy and -f for force
+  # umount -l /home/devone/websites/application1
   mount /home/devone/websites/application1
 
-  // or mount -a to mount all entries in /etc/fstabs
-#+END_EXAMPLE
+  # or mount -a to mount all entries in /etc/fstabs
+#+END_SRC
 
 http://blog.netgusto.com/solving-web-file-permissions-problem-once-and-for-all/
 
@@ -42391,7 +42392,7 @@ file2 will have the exact same owners and permissions as file1
 **** Create several users for SFTP and final file permissions are www-data <<<linux:permission:users>>>
 If more than one users are needed, try linux:bindfs
 
-Otherwise, add user to group www-data and change default wp:file permissions from chmod:644 files chmod:755 directories to chmod:664 for files and chmod:775 for directories
+Otherwise, add user to group ~www-data~ and change default wp:file permissions from chmod:644 files chmod:755 directories to chmod:664 for files and chmod:775 for directories
 This way new file will be the user not www-data but editing/uploading exising files will remain www-data:www-data
 wp:check file permissions
 
@@ -43030,58 +43031,53 @@ Array loop
 
 *** ftp <<<bash:ftp>>>
 **** Basics
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   ftp domain.com
   ftp 192.168.0.1
   ftp user@ftpdomain.com
 
-  // you get a prompt
-  ftp>
+  # you get a prompt
+  # ftp>
 
-  // Commands
+  # Commands
   ls
   cd afolder
 
-  // set local directory where downloaded files will be stored on your local environment (not the ftp server)
+  # set local directory where downloaded files will be stored on your local environment (not the ftp server)
   lcd /home/user/yourname
 
-  // download a file
+  # download a file
   get path/on/ftp/to/file
 
-  // download multiple files
+  # download multiple files
   mget *.xls
 
-  // for download, better use bash:wget
+  # for download, better use bash:wget
 
-  // upload a file that is in local folder
+  # upload a file that is in local folder
   put filename
 
-  // upload a file that is in any folder on your local environment
+  # upload a file that is in any folder on your local environment
   put /home/user/your/path/to/a/file
 
-  // upload multiple files
+  # upload multiple files
   mput *.xls
 
-  // close ftp connection
+  # close ftp connection
   bye
   exit
   quit
 
-  // for help
+  # for help
   help
-#+END_EXAMPLE
-
+#+END_SRC
 
 **** lftp
-http://lftp.yar.ru/lftp-man.html
-
-#+BEGIN_EXAMPLE
-  sudo apt-get install lftp
-#+END_EXAMPLE
+- http://lftp.yar.ru/lftp-man.html
+- ~sudo apt-get install lftp~
 
 To enable wildcard for rm, use glob
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   #!/bin/bash
   ftpsite="ftp://yourftp.com"
   ftpuser="b"
@@ -43103,7 +43099,7 @@ To enable wildcard for rm, use glob
   EOMYF
 
   exit 0
-#+END_EXAMPLE
+#+END_SRC
 
 **** Options for ftp command
 - -i :: turn off interactive prompting during multiple file transfers
