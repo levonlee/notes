@@ -60105,30 +60105,61 @@ SendGrid will show you 2 CNAMES per subdomain setup.
 #+END_SRC
      
 *** DMARC, SPF, DKIM
-Domain-based Message Authentication, Reporting, and Conformance.
-
-It serves as a method of authentication for your brand, alongside Sender Policy Framework (SPF) and DomainKeys Identified Mail (DKIM).
-
-What sets DMARC apart from the other two authentication methods is its reporting capability.
-
-DMARC is an email authentication technology that protects a domain from being used in phishing and spoofing attempts by using a signing policy to define how receiving inbox providers should handle messages that fail an authentication check. DMARC also allows for a reporting mechanism in which inbox providers can send reports on email that appears to be sent from a certain domain back to the domain owner.
-
-Inbox providers that support DMARC will attempt to validate both DKIM and SPF, and depending on the outcome of those checks, will look to the sending domain's DMARC policy on how to handle emails that fail authentication.
-
-If the inbox provider is able to successfully validate either DKIM or SPF, the email will continue on its normal path. If the message fails both DKIM and SPF authentication checks, however, the inbox provider will enforce the sender’s DMARC policy, which specifies how the email should be handled if it fails authentication and where to send any reports.
-
-DMARC has three levels of policy:
-
-None: If the policy is set to none, the receiving inbox provider monitors and reports on metrics.
-Quarantine: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder.
-Reject: If the policy is set to reject, the inbox provider will block any message that fails authentication.
+- DMARC :: Domain-based Message Authentication, Reporting, and Conformance.
+- DMARC serves as a method of authentication for your brand, alongside Sender Policy Framework (SPF) and DomainKeys Identified Mail (DKIM).
+- What sets DMARC apart from the other two authentication methods is its reporting capability.
+- DMARC is an email authentication technology that protects a domain from being used in phishing and spoofing attempts by using a signing policy to define how receiving inbox providers should handle messages that fail an authentication check. DMARC also allows for a reporting mechanism in which inbox providers can send reports on email that appears to be sent from a certain domain back to the domain owner
+- Inbox providers that support DMARC will attempt to validate both DKIM and SPF, and depending on the outcome of those checks, will look to the sending domain's DMARC policy on how to handle emails that fail authentication
+- If the inbox provider is able to successfully validate either DKIM or SPF, the email will continue on its normal path. If the message fails both DKIM and SPF authentication checks, however, the inbox provider will enforce the sender’s DMARC policy, which specifies how the email should be handled if it fails authentication and where to send any reports
+- DMARC has three levels of policy:
+  - None :: If the policy is set to none, the receiving inbox provider monitors and reports on metrics
+  - Quarantine :: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder
+  - Reject :: If the policy is set to reject, the inbox provider will block any message that fails authentication.
 
 https://sendgrid.com/blog/dmarc-domain-based-message-authentication-reporting-conformance/
+
+*** Exchange anti-spam message headers
+- https://docs.microsoft.com/en-us/office365/securitycompliance/anti-spam-message-headers
+- X-Forefront-Antispam-Report :: Exchange Online Protection (EOP) inserts to each email
+  - ~CIP:[IP Address]~ :: The connection IP.
+  - ~IPV:NLI~ :: IP was not listed on any IP reputation list
+  - ~SFV:SFE~ :: Filtering was skipped and the message was let through because it was sent from an address on an individual's safe sender list
+  - ~SFV:SPM~ :: Indicates that the message was marked as spam because of the EOP spam filters
+  - ~SFV:BLK~ :: Indicates that the message was marked as spam because the sending address is on the recipient's Blocked Senders List
+  - ~SFV:SKS~ :: Indicates that the message was marked as spam prior to the content filter. This could include a mail flow rule (also known as a transport rule) marking the message as spam. Run a message trace to see if a mail flow rule triggered which may have set a high spam confidence level (SCL)
+  - ~SFV:SKB~ :: Indicates that the message was marked as spam because it matched a block list in the spam filter policy
+  - ~SFV:BULK~ :: Indicates that the Bulk Complaint Level (BCL) value located in the x-microsoft-antispam header is above the Bulk threshold that has been set for the content filter. Bulk email is email which users may have signed up for, but may still be undesirable. In the message header find the BCL (Bulk Confidence Level) property in the X-Microsoft-Antispam header. If the BCL value is less than the threshold set in the Spam Filter, you may want to adjust the threshold to instead mark these types of bulk messages as spam. Different users have different tolerances and preferences for how bulk email is handled. You can create different policies or rules for different user preferences
+  - ~SCL:[value]~ :: [[https://docs.microsoft.com/en-us/office365/securitycompliance/spam-confidence-levels][Spam Confidence Level]]
+    - -1 :: non-spam coming from a safe sender, safe recipient or safe listed IP address (trusted partner). Deliver to inbox folder
+    - 0, 1 :: non-spam because the message was scanned and determined to be clean. Deliver to inbox folder
+    - 5, 6 :: Spam. Deliver to Junk Email folder
+    - 7, 8, 9 :: High confidence spam. Deliver to Junk Email folder
+- X-Microsoft-Antispam :: provides addtional info about bulk mail and phishing
+  - ~BCL~ :: Bulk Complaint Level
+    - 0 :: message isn't from a bulk sender
+    - 1, 2, 3 :: message is from a bulk sender that generates few complaints
+    - 4, 5, 6, 7 :: message is from a bulk sender that generates a mixed number of complaints
+    - 8, 9 :: message is from a bulk sender that generates a high number of complaints
+  - ~PCL~ :: Phishing Confidence Level
+    - 0-3 :: message content isn't likely to be phishing
+    - 4-8 :: message content is likely to be phishing
+    - -9990 :: message content is likely to be phishing. Exchange Online Protection only
+- Authentication-results :: EOP inserts email authentication results
+
+You can use
+- Exchange Admin Centre > Protection > Spam filter to create a block or allow list based on sender email address or sender domain
+- Exchange Admin Centre > Protection > Connection filter to create a block or allow list based on IP
+- Mail flow rule :: only use it when filter criteria is complex e.g checking message headers or the names of attachments or add complex actions e.g. adding a disclaimer to the message or applying a time period where the rule is active
+
+*** Google verify domain
+- https://postmaster.google.com
+  - https://support.google.com/mail/answer/6227174
+- [[https://support.google.com/mail/answer/81126][Bulk Senders Guidelines]]
 
 *** Preview text
 Preview text is the hidden text that is the first element in the body and it should be at least 90 characters long. Img alt attribute values.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
     Insert preview text here.
   </div>
@@ -60137,7 +60168,7 @@ Preview text is the hidden text that is the first element in the body and it sho
   <div style="display: none; max-height: 0px; overflow: hidden;">
   &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
   </div>
-#+END_EXAMPLE
+#+END_SRC
 
 *** Send test HTML email for free
 https://htmlmail.pro/ use your Gmail to send HTML emails.
