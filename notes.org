@@ -5053,7 +5053,7 @@ title=> ""
 width => "727"
 height => "426"
 
-** Database
+** Database <<<d7:database>>>
 *** Close Comment for Existing Nodes
 0 = No, 1 = Closed (read only), 2 = Open (Read/Write)
 #+BEGIN_EXAMPLE
@@ -5073,20 +5073,66 @@ created ::
 sticky :: int, 0. 1 means to show on top of query result
 promote :: int, 0. 1 means to show on homepage
 
-**** field_data_body
-entity_type* :: string, e.g. node
-deleted* :: int, 0 not deleted
-entity_id* :: int, e.g. node id
-language* :: string
-delta* :: int, multiple values, start as 0
-bundle :: string, e.g. node type article
-revision_id :: int
+**** field_config
+- id *PK* :: int 11
+- field_name :: vchar 32 e.g. field_mileage_units
+- type :: vchar 128
+  - text
+  - datetime
+  - link_field
+  - phone
+  - list_text
+  - list_boolean
+  - file
+  - taxonomy_term_reference
+  - entityreference
+- module :: vchar 128
+  - text
+  - date
+  - link
+  - phone
+  - list
+  - file
+  - taxonomy
+  - entityreference
+- active :: tinyint 4. bool NOT NULL
+- storage_type :: vchar 128 e.g. field_sql_storage
+- storage_module :: vchar 128 e.g. field_sql_storage
+- locked :: tinyint 4 don't know..
+- data :: longblob NOT NULL serialized data containing the field properties
+- cardinality :: tinyint 4 default 0 don't know..
+- translatable :: tinyint 4 default 0 don't know..
+- deleted :: tinyint 4 default 0 don't know..
 
-body_value :: longtext
-body_summary :: longtext
+**** field_data_body
+- entity_type* :: string, e.g. node
+- deleted* :: int, 0 not deleted
+- entity_id* :: int, e.g. node id
+- language* :: string
+- delta* :: int, multiple values, start as 0
+- bundle :: string, e.g. node type article
+- revision_id :: int
+
+- body_value :: longtext
+- body_summary :: longtext
 
 **** field_data_field_custom_term_reference
-field_custom_term_referecen_tid :: int
+- field_custom_term_referecen_tid :: int
+
+**** field_data_field_mileage_units (list_text)
+- entity_type *PK* :: vchar 128 default '' The entity type this data is attached to
+  - node
+- bundle :: vchar 128 default '' The field instance bundle to which this row belongs, used when deleting a field instance
+  - my_node_type
+- deleted *PK* :: tinyint 4 default 0
+- entity_id *PK* :: int 10 the entity id this data is attached to.
+- revision_id :: int 10 or NULL if the entity type is not versioned
+- language *PK* :: vchar 32 default '' The language for this data item
+- delta *PK* :: int 10 the sequence number for this data item, used for multi-value fields
+- field_mileage_units_value :: vchar 255
+
+**** field_data_field_contributor (entity reference)
+- field_contributor_target_id :: int
 
 **** taxonomy_term_data
 tid* :: int
@@ -5098,9 +5144,6 @@ weight :: int
 vid* ::
 name ::
 machine_name
-
-**** field_data_field_contributor (entity reference)
-field_contributor_target_id :: int
 
 **** url_alias
 pid* :: int, path id
@@ -9574,7 +9617,7 @@ In MySQL, it means CAST(the field, to a type)
 - DATETIME
 - DECIMAL
 - SIGNED, UNSIGNED :: MySQL Integer
-- TIME :: MySQL Date and Time
+- TIME :: mysql:datatype:datetime
 
 <<<WP Types Custom Field Checkbox and WP Meta Query>>>
 Say the wpcf-newsletters custom field created by WP Types has 2 checkboxes are selected: enligne and pw.
@@ -12013,11 +12056,11 @@ wp:filter:template_include
 - count :: bigint(20)
 
 *** wp_postmeta <<<wp:db:wp_postmeta>>>
-- meta_id
-- post_id
-- meta_key :: if custom field has prefix `_`. It means the field is private and does not display on Post Edit page on wp-admin
+- meta_id *PK* :: bigint 20
+- post_id :: bigint 20
+- meta_key :: vchar 255 if custom field has prefix `_`. It means the field is private and does not display on Post Edit page on wp-admin
   - wp:plugin:acf key ~custom_order~ with value from wp-admin and ~_custom_order~ with value ~field_ALPHANUMERICRANDOM~ which refers table ~wp_posts~ with ~post_name = 'field_ALPHANUMERICRANDOM'~ 
-- meta_value :: string or php serialized string
+- meta_value :: longtext string or php serialized string
 
 #+BEGIN_SRC sql
   SELECT p.post_type, p.ID, CAST(pm.meta_value AS Date)
@@ -54762,16 +54805,16 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 #+END_SRC
 
 *** Data Types
-**** <<<MySQL Integer>>>
-SIGNED :: contains negative, 0 and positive
-UNSIGNED :: contains 0 and positive
+**** Integer <<<mysql:datatype:int>>>
+- SIGNED :: contains negative, 0 and positive
+- UNSIGNED :: contains 0 and positive
 - TINYINT
 - SMALLINT
 - MEDIUMINT
 - INT :: ~INT(10)~ 10 is display-width. INT(1) and INT(10) UNSIGNED max is the same: 4,294,967,295
 - BIGINT
 
-**** <<<MySQL Date and Time>>>
+**** Datetime <<<mysql:datatype:datetime>>>
 - TIME :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
 
 1 Year ago
@@ -54793,7 +54836,7 @@ Date comparison
   UNIX_TIMESTAMP(NOW())
 #+END_SRC
 
-**** <<<MySQL String>>>
+**** String <<<mysql:datatype:string>>>
 https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
 
 Concatenate user variable
@@ -54836,17 +54879,33 @@ String delimited list
 
 See mysql:string:list:temp table for more
 
-***** ~TEXT~ Type
+***** ~TEXT~ Type <<<mysql:datatype:text>>>
 - ~TEXT~ data is not stored in the database server’s memory. Quering ~TEXT~ data requires reading from disk, much slower than ~CHAR~ and ~VARCHAR~
+- It holds data that is nonbinary strings
 - It doesn't count towards the maximum row size for each record
+- No padding on insert and no bytes are stripped on select
+  - If it is indexed, index entry comparisons are space-padded at the end
+- Insert with exceeding max length will be truncated
+- Cannot have DEFAULT value
 - ~TINYTEXT~ :: 255 characters, 255 Byte
 - ~TEXT~ :: 65,535 characters, 64kb
 - ~MEDIUMTEXT~ :: 16,777,215, 16mb
 - ~LONGTEXT~ :: 4,294,967,295 characters, 4GB
 
-**** <<<MySQL Null>>>
-IFNULL(column_name, 0)
-WHERE column_name IS NOT NULL
+**** Blob <<<mysql:datatype:blob>>> 
+- Binary large object for variable amount of data
+- Holds binary strings or so called byte strings
+- Data is stored on hard disk rather than in memory
+- TINYBLOB
+- BLOB
+- MEDIUMBLOB
+- LONGBLOB
+
+**** Null <<<mysql:datatype:null>>>
+#+BEGIN_SRC sql
+  IFNULL(column_name, 0)
+  WHERE column_name IS NOT NULL
+#+END_SRC
 
 **** UUID and GUID <<<mysql:uuid>>>
 - https://mysqlserverteam.com/storing-uuid-values-in-mysql-tables/ https://mysqlserverteam.com/mysql-8-0-uuid-support/
