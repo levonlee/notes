@@ -3299,17 +3299,16 @@ For assigning permissions to roles, e.g. enable anonymous for Devel, you have to
 If setting is an array, you have to override the whole array. Can't override a key value.
 
 *** <<<d7:mysql:charset>>>
-Since Drupal 7.50, Drupal now supports 4 byte UTF-8 with MySQL.
-You will first need to run a custom drush command provided by a [[https://www.drupal.org/project/utf8mb4_convert][utf8mb4_convert module]] to convert
-all Drupal database, tables and fields to charset utf8mb4 and collation utf8mb4_general_ci
-Then change the database connection settings in settings.php
+Since Drupal 7.50, Drupal now supports 4 byte UTF-8 with MySQL. You will first need to run a custom drush command provided by a [[https://www.drupal.org/project/utf8mb4_convert][utf8mb4_convert module]] to convert all Drupal database, tables and fields to charset ~utf8mb4~ and collation ~utf8mb4_general_ci~. Then change the database connection settings in settings.php
 [[https://www.drupal.org/node/2754539][Drupal Doc]]
 
 The utf8mb4_convert module requires inno_large_prefix=true when MySQL server is bootup.
 Otherwise a test (->utf8mb4IsSupported) can't pass before any actions.
 To bypass the test, re-create any string index columns varchar(255) to varchar(191)
 For example:
-ALTER TABLE cache_block CHANGE cid cid VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#+BEGIN_SRC sql
+  ALTER TABLE cache_block CHANGE cid cid VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#+END_SRC
 
 Do this for any problematic column the module returns.
 
@@ -5120,16 +5119,16 @@ promote :: int, 0. 1 means to show on homepage
 - field_custom_term_referecen_tid :: int
 
 **** field_data_field_mileage_units (list_text)
-- entity_type *PK* :: vchar 128 default '' The entity type this data is attached to
+- entity_type *PK* *I-A* :: vchar 128 default '' The entity type this data is attached to
   - node
-- bundle :: vchar 128 default '' The field instance bundle to which this row belongs, used when deleting a field instance
+- bundle *I-A*:: vchar 128 default '' The field instance bundle to which this row belongs, used when deleting a field instance
   - my_node_type
-- deleted *PK* :: tinyint 4 default 0
-- entity_id *PK* :: int 10 the entity id this data is attached to.
-- revision_id :: int 10 or NULL if the entity type is not versioned
-- language *PK* :: vchar 32 default '' The language for this data item
+- deleted *PK* *I-A* :: tinyint 4 default 0
+- entity_id *PK* *I-A* :: int 10 the entity id this data is attached to.
+- revision_id *I-A* :: int 10 or NULL if the entity type is not versioned
+- language *PK* *I-A* :: vchar 32 default '' The language for this data item
 - delta *PK* :: int 10 the sequence number for this data item, used for multi-value fields
-- field_mileage_units_value :: vchar 255
+- field_mileage_units_value *I-A* :: vchar 255
 
 **** field_data_field_contributor (entity reference)
 - field_contributor_target_id :: int
@@ -54570,6 +54569,22 @@ In console
 
   SHOW VARIALBES LIKE "%port%";
 
+  -- default character set for database 
+  -- MariaDB uses utf8mb4 as default charset
+  SHOW VARIABLES LIKE 'char%';
+
+  -- default collation `collation_database`
+  -- MriaDB default is utf8mb4_general_ci
+  SHOW VARIABLES LIKE 'collation%';
+
+  -- Or just use one line get 2 variables
+  SELECT @@character_set_database, @@collation_database;
+
+  -- default collation for a charset
+  -- utf8mb4_general_ci
+  -- refer to mysql:charset
+  SHOW CHARACTER SET WHERE CHARSET = 'utf8mb4';
+
   -- check if it's MariaDB
   SELECT VERSION();
 
@@ -54611,35 +54626,41 @@ https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
 #+END_EXAMPLE
 
 **** charset, collation <<<mysql:charset>>> <<<mysql:collation>>>
-Default charset is utf8, collation is utf8_general_ci
-which is 3 bytes. utf8mb4 is 4 bytes
-MySQL server default charset and collation
+- Default charset is ~utf8~ and its default collation is ~utf8_general_ci~
+- MariaDB default charset is ~utf8mb4~ and its default collation is ~utf8mb4_general_ci~
+- Charset ~utf8~ is 3 bytes while ~utf8mb4~ is 4 bytes per character
+- PHP's UTF8 can support 4 bytes and hence a column should have the charset ~utf8mb4~
 
-SELECT @@character_set_database, @@collation_database;
-ALTER DATABASE db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#+BEGIN_SRC sql
+  -- See MySQL server default charset and collation
+  SELECT @@character_set_database, @@collation_database;
+  ALTER DATABASE db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#+END_SRC
 
 In order to enable utf8mb4, you need to change my.cnf setting and restart MySQL
 mysqld (client) is used on Pantheon instead of libmysqlclient
 The following settings becomes available on mysqld (MySQL) server version > 5.5.14 and default since 5.7.7
-As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26 
-#+BEGIN_EXAMPLE
+As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26
+#+BEGIN_SRC conf
   [mysqld]
   innodb_large_prefix=true
   innodb_file_format=barracuda
   innodb_file_per_table=true
-#+END_EXAMPLE
+#+END_SRC
 
 mysqld (client) > 5.0.9, libmysqlclient > v. 5.5.3, has to support utf8mb4 charset
 
 The major problem here is that for an indexed string column (primary key column) MySQL has 767 bytes limit.
-In utf8, it's 767/3=255 characters varchar(255). In utf8mb4, it's 767/4=191 characters varchar(191).
+In ~utf8~, it's 767/3=255 characters ~varchar(255)~ or 3*255=765 < 767. In ~utf8mb4~, it's ~767/4=191~ characters ~varchar(191)~.
 If MySQL server doesn't have the above setting, the indexed column should contain less than 191 characters.
-But those columns already have varchar(255) defined, you will need to re-create the indexes
-ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+But those columns already have ~varchar(255)~ defined, you will need to re-create the indexes:
+#+BEGIN_SRC sql
+  ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#+END_SRC
 
-That's actually what Wordpress does: resize the indexed columns for some tables and make every table and field utf8mb4.
+That's actually what Wordpress does: resize the indexed columns for some tables and make every table and field/columns to charset ~utf8mb4~
 
 Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as Wordpress.
 
@@ -54958,6 +54979,23 @@ MySQL 5.6
   -- If id_text is made to an index column, then it occupies space
   ALTER TABLE users ADD UNIQUE(id_text);
 #+END_SRC
+
+*** Table Status
+#+BEGIN_SRC sql
+  SHOW TABLE STATUS FROM mydatabase;
+#+END_SRC
+
+- Engine :: MyISAM or InnoDB
+- Version :: e.g. 10
+- Rows :: number of records. MyISAM shows exact while InnoDB shows approximation may vary by as much as 40% to 50%
+- Collation :: utf8mb4_general_ci
+
+*** Index a column?
+- A column with <= 767 bytes can be indexed
+- Index hints can be used in ~SELECT~ queries to specify whether or not to use the index column
+  - https://dev.mysql.com/doc/refman/8.0/en/index-hints.html
+  - With no index hint, MySQL will smartly decided whether to force using index
+  - In fact, the less the number of query matched records are, the faster the speed is. Because for each selected record, MySQL has to bind the indexed column to the result
 
 *** REGEXP <<<MySQL REGEX>>>
 Unless the field is binary, REGEXP is case-insensitive.
