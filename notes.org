@@ -6877,56 +6877,54 @@ https://rudrastyh.com/wordpress/change-specific-urls.html
 Use functions.php to achieve
 
 Redirect, same can be achieved using .htaccess
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function rudr_url_redirects() {
-          /* in this array: old URLs=>new URLs  */
-          $redirect_rules = array(
-                  array('old'=>'/category/uncategorized/','new'=>'/category/Uncategorized/'), // category
-                  array('old'=>'/contacts/','new'=>'/Contacts/'), // page
-                  array('old'=>'/hello-world/','new'=>'/hello-planet/'), // post
-                  array('old'=>'/tag/wordpress/','new'=>'/tag/WordPress/') // post tag
-          );
-          foreach( $redirect_rules as $rule ) :
-                  // if URL of request matches with the one from the array, then redirect
-                  if( urldecode($_SERVER['REQUEST_URI']) == $rule['old'] ) :
-                          wp_redirect( site_url( $rule['new'] ), 301 );
-                          exit();
-                  endif;
-          endforeach;
+	  /* in this array: old URLs=>new URLs  */
+	  $redirect_rules = array(
+		  array('old'=>'/category/uncategorized/','new'=>'/category/Uncategorized/'), // category
+		  array('old'=>'/contacts/','new'=>'/Contacts/'), // page
+		  array('old'=>'/hello-world/','new'=>'/hello-planet/'), // post
+		  array('old'=>'/tag/wordpress/','new'=>'/tag/WordPress/') // post tag
+	  );
+	  foreach( $redirect_rules as $rule ) :
+		  // if URL of request matches with the one from the array, then redirect
+		  if( urldecode($_SERVER['REQUEST_URI']) == $rule['old'] ) :
+			  wp_redirect( site_url( $rule['new'] ), 301 );
+			  exit();
+		  endif;
+	  endforeach;
   }
-   
   add_action('template_redirect', 'rudr_url_redirects');
-#+END_EXAMPLE
+#+END_SRC
 
 Redirect by changing request based on the $_SERVER['REQUEST_URI']
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function rudr_rewrite_request($query){
-   
-          $request_uri = urldecode($_SERVER['REQUEST_URI']);
-   
-          /* for categories */
-          if ( $request_uri == '/category/Uncategorized/' )
-                  $query['category_name'] = 'uncategorized';
-   
-          /* for pages */
-          if ( $request_uri == '/Contacts/' ){
-                  $query['pagename'] = urlencode('contacts');
-                  unset($query['name']);
-          }
-   
-          /* for posts */
-          if ( $request_uri == '/hello-planet/' )
-                  $query['name'] = 'hello-world';
-   
-          /* for tags */
-          if( $request_uri == '/tag/WordPress/' )
-                  $query['tag'] = 'wordpress';
-   
-          return $query;
+
+	  $request_uri = urldecode($_SERVER['REQUEST_URI']);
+
+	  /* for categories */
+	  if ( $request_uri == '/category/Uncategorized/' )
+		  $query['category_name'] = 'uncategorized';
+
+	  /* for pages */
+	  if ( $request_uri == '/Contacts/' ){
+		  $query['pagename'] = urlencode('contacts');
+		  unset($query['name']);
+	  }
+
+	  /* for posts */
+	  if ( $request_uri == '/hello-planet/' )
+		  $query['name'] = 'hello-world';
+
+	  /* for tags */
+	  if( $request_uri == '/tag/WordPress/' )
+		  $query['tag'] = 'wordpress';
+
+	  return $query;
   }
-   
   add_filter( 'request', 'rudr_rewrite_request', 9999, 1 );
-#+END_EXAMPLE
+#+END_SRC
 
 Change permalink
 For posts and pages
@@ -13602,7 +13600,7 @@ Custom Search plugin adds custom post types and taxonomies to WordPress website 
 Change URL to any structure for individual post, page, tag or category.
 Need to resave Permalinks setting
 
-*** redirection
+*** redirection <<<wp:plugin:redirection>>>
 https://wordpress.org/plugins/redirection/
 
 Redirect without .htaccess
@@ -40008,6 +40006,9 @@ https://support.google.com/analytics/topic/3455490
 https://support.google.com/analytics/answer/6370521
 
 - Have ~Manage Users~ and ~Edit~ permissions on both the source and destination accounts
+
+*** Track 404 pages
+Behavior > Site Content > All Pages > add Page Title as secondary dimension, add filter Page Title containing Page Not Found
 
 *** Checklist
 - Audience > Audiences > enable Demographics and Interest Reports
