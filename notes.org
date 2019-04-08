@@ -38924,7 +38924,7 @@ Query Parameters
 - url :: ~https%3A%2F%2Fexample.com%2F~
 - hashtags :: ~nature,sunset~
 
-*** View a topic
+*** View a hashtag topic
 https://twitter.com/hashtag/hastagname?src=hash
 
 *** Recent Tweets
@@ -38932,6 +38932,10 @@ https://publish.twitter.com/
 - [[https://developer.twitter.com/en/docs/twitter-for-websites/timelines/guides/parameter-reference.html][Options]]
 
 Widget shows png image converted to jpg with 85% qualityblack background color. Maybe add a transparent pixel and save the png to truecolor to avoid the conversion.
+
+*** Twitter card validator
+- https://cards-dev.twitter.com/validator
+- Content is cached by Twitter for 7 days after a link to your page with card markdup has been published in a tweet
 
 ** Facebook
 https://developers.facebook.com/
@@ -45993,12 +45997,12 @@ The general rule is:
 
 On bare/apex domain, usually A, ALIAS or ANAME record can be used. Only DNS Made Easy supports ANAME and DNSimple and others support ALIAS. ANAME and ALIAS are not industry standards.
 
-** MX records and SPF record <<<dns:mx>>>
+** MX record <<<dns:mx>>>
 - HOSTNAME :: e.g. use @ for barebone
-- Mail Providers Mail Server (or Value) :: always end with "." e.g. alt4.aspmx.l.google.com.
+- Mail Providers Mail Server (or Value) :: always end with "." e.g. ~alt4.aspmx.l.google.com.~
 - Priority :: the smaller the more important
 
-Google G Suite requires TTL to be 1 hour (3600). Priority might be different  by aspmx.l.google.com. must be the highest
+Google G Suite requires TTL to be 1 hour (3600). Priority might be different but ~aspmx.l.google.com.~ must be the highest
 Priority	Mail Server
 1	ASPMX.L.GOOGLE.COM.
 5	ALT1.ASPMX.L.GOOGLE.COM.
@@ -46008,6 +46012,7 @@ Priority	Mail Server
 
 [[https://toolbox.googleapps.com/apps/checkmx/][Google G Suite Toolbox Check MX]]
 
+** SPF record <<<dns:spf>>>
 [[http://www.openspf.org/SPF_Record_Syntax][SPF record is a TXT record which has 0 or more ordered mechanisms]]
 ~all | ip4 | ip6 | a | mx | ptr | exists | include~
 
@@ -46029,11 +46034,22 @@ Mechanism can be prefixed with 1 of 4 qualifiers. A qualifier means if the macha
   v=spf1 +a +mx include:_spf.google.com ip4:1.2.3.4 ip4:1.2.3.5 ip4:1.2.3.6 ~all
 #+END_EXAMPLE
 
-Mechanism ~all~ matches all senders' IP's, and it's usually at the end. =-all= fail for all. =~all= soft fail for all. =+all= allows all senders.
+- Mechanism ~all~ matches all senders' IP's, and it's usually at the end:
+  - ~-all~ fail for all
+  - =~all= soft fail for all
+  - ~+all~ allows all senders
+- Mechanism ~mx~ adds domain's MX details to the match list.
+- Mechanism ~a~ adds domain's A records to the match list
 
-Mechanism ~mx~ adds domain's MX details to the match list.
-
-Mechanism ~a~ adds domain's A records to the match list.
+** DKIM record <<<dns:dkim>>>
+- One domain can have multiple DKIM records
+- Mail server signs the email with the private key and the receiving mail server uses the public key in the domain's DNS info to verify the signature
+- It could be CNAME record e.g. SendGrid ~Name: s1._domainkey Value: s1.domainkey.xxx.xx.sendgrid.net~
+- It could be a TXT record e.g. ~Name: customer._domainkey Value: k=rsa; p=xxxx~
+- When the email is sent from an SMTP mail server e.g. SendGrid, the receiver will have *Sender Domain* (the From: email address), *Envelope Domain* (e.g. Zoho Campaign mail server is zcsend.net) and *DKIM Domain*. The Envelope Domain is the domain used to receive bounce error messages (e.g. bounce rate) from recipient systems
+- *DKIM Domain* is specified as a header in the sent email using *DKIM-Signature*
+- If Sender Domain and Envelope Domain do not match, then SPF is not aligned. If Envelope Domain is a subdomain of Sender Domain, they are aligned
+- If dns:dmarc has ~aspf=r~ will reject if SPF is not aligned. But it's common to have SPF not aligned. Next is to check if DKIM Domain is aligned
 
 ** SOA record
 The SOA record stores information about:
@@ -60146,7 +60162,7 @@ Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplifie
 **** Whitelabel
 2 types of whitelabel: domain and email link.
 - Domain whitelabel 
-adds a SPF (Sender Policy Framework) record to your domain and DKIM (DomainKeys Indentified Mail) entries,
+adds a SPF (Sender Policy Framework) record (dns:spf) to your domain and DKIM (DomainKeys Indentified Mail) entries,
 which authorizes and authenticates SendGrid sending on behalf of your domain. It basically removes "sent on behalf of SendGrid" or "via"
 message that some email providers dispaly.
 
@@ -60217,7 +60233,7 @@ SendGrid will show you 2 CNAMES per subdomain setup.
   }
 #+END_SRC
      
-*** DMARC, SPF, DKIM
+*** DMARC, SPF, DKIM <<<dns:dmarc>>>
 - DMARC :: Domain-based Message Authentication, Reporting, and Conformance
 - DMARC serves as a method of authentication for your brand, alongside Sender Policy Framework (SPF) and DomainKeys Identified Mail (DKIM)
 - What sets DMARC apart from the other two authentication methods is its reporting capability
@@ -60228,11 +60244,11 @@ SendGrid will show you 2 CNAMES per subdomain setup.
   - None :: If the policy is set to none, the receiving inbox provider monitors and reports on metrics
   - Quarantine :: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder
   - Reject :: If the policy is set to reject, the inbox provider will block any message that fails authentication.
-
 - https://sendgrid.com/blog/dmarc-domain-based-message-authentication-reporting-conformance/
 - DMARC Specifications on DNS Tags and Values
   - https://dmarc.org/resources/specification/
   - Sample :: ~v=DMARC1; p=none; rua=mailto:dmarc@myweb.ca; ruf=mailto:dmarc@myweb.ca; fo=1; adkim=r; aspf=r;~
+  - Refer to dns:dkim and dns:spf
 
 *** Exchange anti-spam message headers
 - https://docs.microsoft.com/en-us/office365/securitycompliance/anti-spam-message-headers
