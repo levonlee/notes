@@ -46046,12 +46046,24 @@ Mechanism can be prefixed with 1 of 4 qualifiers. A qualifier means if the macha
 ** DKIM record <<<dns:dkim>>>
 - One domain can have multiple DKIM records
 - Mail server signs the email with the private key and the receiving mail server uses the public key in the domain's DNS info to verify the signature
-- It could be CNAME record e.g. SendGrid ~Name: s1._domainkey Value: s1.domainkey.xxx.xx.sendgrid.net~
-- It could be a TXT record e.g. ~Name: customer._domainkey Value: k=rsa; p=xxxx~
-- When the email is sent from an SMTP mail server e.g. SendGrid, the receiver will have *Sender Domain* (the From: email address), *Envelope Domain* (e.g. Zoho Campaign mail server is zcsend.net) and *DKIM Domain*. The Envelope Domain is the domain used to receive bounce error messages (e.g. bounce rate) from recipient systems
+- It could be CNAME record e.g. SendGrid :: ~Name: s1._domainkey Value: s1.domainkey.xxx.xx.sendgrid.net~
+- It could be a TXT record e.g. :: ~Name: customer._domainkey Value: k=rsa; p=xxxx~ for a root domain
+- When the email is sent from an SMTP mail server e.g. SendGrid, the receiver will have *Sender Domain* (the From: email address), *Envelope Domain* (e.g. Zoho Campaign mail server is zcsend.net) and *DKIM Domain*
+- *Envelope Domain* is the domain used to receive bounce error messages (e.g. bounce rate) from recipient systems and I think it's specified in the sent email as a header ~Return-Path~
 - *DKIM Domain* is specified as a header in the sent email using *DKIM-Signature*
-- If Sender Domain and Envelope Domain do not match, then SPF is not aligned. If Envelope Domain is a subdomain of Sender Domain, they are aligned
-- If dns:dmarc has ~aspf=r~ will reject if SPF is not aligned. But it's common to have SPF not aligned. Next is to check if DKIM Domain is aligned
+  - ~v=1; a=rsa-sha256;d=trucknews.com;s=customer;c=relaxed/relaxed;q=dns/txt;t=1554220118;h=x-fbl:mime-version:date:message-id:content-type:list-unsubscribe:from:to:subject;	bh=XXXHAHSED; b=XXXHAHSED~
+  - a :: the sign algorithm
+  - d :: the signing domain which is also the *DKIM Domain*
+  - s :: the selector used to find DKIM public key info. To match the domain's DKIM record e.g. as in ~customer._domainkey~
+  - c :: the canonical algorithm(s) for header and body
+  - q :: the default query method
+  - t :: signature timestamp
+  - h :: the list of signed header fields, repeated for fields that occur multiple times. Basically saying this signature verifies these fields are true
+  - bh :: body hash
+  - b :: the actual digital signature of the contents (headers and body) of the mail message
+- If *Sender Domain* and *Envelope Domain* do not match, then SPF is not aligned. If *Envelope Domain* is a subdomain of *Sender Domain*, they are aligned
+- If dns:dmarc has ~aspf=r~ will reject if SPF is not aligned. But it's common to have SPF not aligned
+- Next is to check if *DKIM Domain* is aligned with *Sender Domain*. If they don't match, DMARC will definitely fail. So you will have to have a different DKIM record setup for each *Sender Domain*
 
 ** SOA record
 The SOA record stores information about:
@@ -60249,8 +60261,13 @@ SendGrid will show you 2 CNAMES per subdomain setup.
 - https://sendgrid.com/blog/dmarc-domain-based-message-authentication-reporting-conformance/
 - DMARC Specifications on DNS Tags and Values
   - https://dmarc.org/resources/specification/
-  - Sample :: ~v=DMARC1; p=none; rua=mailto:dmarc@myweb.ca; ruf=mailto:dmarc@myweb.ca; fo=1; adkim=r; aspf=r;~
+  - Sample :: TXT record with name ~_dmarc~ and value ~v=DMARC1; p=none; rua=mailto:dmarc@myweb.ca; ruf=mailto:dmarc@myweb.ca; fo=1; adkim=r; aspf=r;~
   - Refer to dns:dkim and dns:spf
+
+For adding another subdomain as in From: e.mydomain.com
+- Add a SPF record that refers to the root domain's SPF record :: ~TXT e v=spf1 include:mydomain.com -all~
+- Add a DKIM record by duplication the root domain's DKIM record :: ~TXT customer._domainkey.e k=rsa; p=xxx~
+- Ensure email has header *DKIM-Signature* that uses ~d=e.mydomain.com~
 
 *** Exchange anti-spam message headers
 - https://docs.microsoft.com/en-us/office365/securitycompliance/anti-spam-message-headers
