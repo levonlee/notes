@@ -7355,16 +7355,32 @@ Create a bash script wrapper for already started processes
 ** Conditional Tags <<<wp:conditional tags>>>
 [[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
 
-is_page() :: any page
-is_page(42)
-is_page('slug')
-is_page( array(42, 'about-me', 'Page title')) :: either one of those id, slug or title
-is_page( array(42, 54, 6) )
+*** is_page()
+#+BEGIN_SRC php
+  is_page(); // any page
+  is_page(42);
+  is_page( 'mypageslug' );
+  is_page( array(42, 'about-me', 'Page title' ) ); // either one of those id, slug or title
+  is_page( array(42, 54, 6) );
+#+END_SRC
 
-is_page_template() :: any page template
-is_page_template( 'about.php' ) :: 'page-templates/about.php'
+*** is_page_template()
+#+BEGIN_SRC php
+  is_page_template(); // any page template
+  is_page_template( 'about.php' ); // a template 'page-templates/about.php'
+#+END_SRC
 
-is_admin_bar_showing() :: wp:admin:toolbar
+*** ~is_singular( string|array $post_types = '' )~
+- $post_types :: Whether the query is for an existing single post of any post type. Or if $post_types is specified, additionally check if the query is for one of the Post Types specified
+
+#+BEGIN_SRC php
+  is_singular();
+  is_singular( 'article' );
+  is_singular( array( 'newspaper', 'book' ) );
+#+END_SRC
+
+*** is_admin_bar_showing()
+- wp:admin:toolbar
 
 ** Template Tags <<<wp:template tags>>>
 wp-includes/xxx-template.php
@@ -41286,12 +41302,17 @@ This is to permanently remove a url from Google Search
 - Make the URL return 404 or 410 status
 - Don't block access to that URL using robots.txt
 - Return meta tag ~<meta name="robots" content="noindex, nofollow">~
-- Return `X-Robots-Tag` HTTP header
-#+BEGIN_EXAMPLE
+- Return ~X-Robots-Tag~ HTTP header
+- Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL 
+- To check if the URL is removed: Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed.
+
+#+BEGIN_SRC apache
   <Files ~ "\.pdf$">
     Header set X-Robots-Tag "noindex, nofollow"
   </Files>
+#+END_SRC
 
+#+BEGIN_SRC php
   $apacheURL = (strlen($_SERVER['REQUEST_URI'])) ?
     substr($_SERVER['REQUEST_URI'],1) : $_SERVER['REQUEST_URI'];
   $noIndexNoFollow = array(
@@ -41305,14 +41326,11 @@ This is to permanently remove a url from Google Search
     foreach ($noIndexNoFollow as $key => $value) {
       $matches = array();
       if (preg_match($value, $apacheURL, $matches)) {
-        header("X-Robots-Tag: noindex, nofollow", true);
+	header("X-Robots-Tag: noindex, nofollow", true);
       }
     }
   }
-#+END_EXAMPLE
-
-Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL 
-To check if the URL is removed: Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed.
+#+END_SRC
 
 ** robots.txt
 Default
