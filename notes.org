@@ -7405,9 +7405,12 @@ Image size :: $size
 You can resize an image file on the fly using fly-dynamic-image-resizer
 
 - ~the_post_thumbnail($size, $attr='')~ :: echo html ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
-- ~the_post_thumbnail_url($size)~ :: echo url
-- ~the_post_thumbnail_caption($post = null)~ :: echo thumbnail caption
-- ~wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false )~ :: is just like the_post_thumbnail but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
+- ~the_post_thumbnail_url( $size )~ :: echo url
+- ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
+- ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: is just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
+- ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
+- ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
+- ~wp_get_attachment_caption( $post_id = 0 )~ :: $post_id default is global $post. Usually it's the attachment ID
 
 *** post-template.php <<<wp:t:post>>>
 - Only ~get_the_*( $post )~ can pass a different post or post id to return values
@@ -9245,6 +9248,11 @@ By default, The Loop uses the main query's current post to set ~global $post~.
 	  'post_type' => array('editorial', 'blog'), // blog or editorial
 	  'post_status' => array('publish'),
 	  'posts_per_page' => -1, // int. -1 shows all posts. Doesn't work in feed (Default 10). Use wp:filter:post_limits
+	  'post_mime_type' => 'image', // default:not set. string|array. e.g. `image/jpeg` | `image` (for all images)
+	  // $all_mimes = get_allowed_mime_types();
+	  // $unsupported_mimes = ['image/jpeg', 'image/gif', 'image/png', 'image/bmp', 'image/tiff', 'image/x-icon' ];
+	  // $accepted_mimes = array_diff( $all_mimes, $unsupported_mimes);
+	  // 'post_mime_type' => $accepted_mimes
 	  'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
 	  'tax_query' => $tax_query, // refer to WP Tax Query
 	  'order' => 'DESC', // default, 'ASC'
@@ -9257,6 +9265,31 @@ By default, The Loop uses the main query's current post to set ~global $post~.
   // or
   // $q = new WP_Query;
   // $q->query($args);
+#+END_SRC
+
+**** Get child posts
+#+BEGIN_SRC php
+  $args = [
+	  'post_type' => 'articles',
+	  'post_parent' => get_the_ID(),
+	  'posts_per_page' => -1,
+	  'orderby' => 'menu_order'
+  ];
+  $children = new WP_Query($args);
+#+END_SRC
+
+**** Get attached images
+#+BEGIN_SRC php
+  $images = get_attached_media( 'image' );
+  // get_attached_media( string $type, int|WP_Post $post = 0 )
+  // $type :: mime type
+  // $post :: default is global $post
+  // return array
+
+  foreach ($images as $image) { ?>
+	  <img src="<?php echo wp_get_attachment_image_src($image->ID,'full'); ?>" />
+  <?php
+  }
 #+END_SRC
 
 **** Loop the main loop
@@ -12056,8 +12089,8 @@ wp:filter:template_include
 - post_parent :: bigint(20)
 - guid :: varchar(255)
 - menu_order :: int(11)
-- post_type :: varchar(20) post page attachment nav_menu_item revision
-- post_mime_type :: varhcar(100)
+- post_type :: varchar(20) post | page | attachment | nav_menu_item | revision
+- post_mime_type :: vchar 100 blank for non media posts. e.g. image/jpeg
 - comment_count :: bigint(20)
 
 *** wp_terms, wp_term_relationships
