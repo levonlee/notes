@@ -9309,8 +9309,9 @@ Try to avoid using it. Use ~new WP_Query()~ instead
 		  <?php the_content(); ?>
 	  </div>
 
-  <?php endwhile; ?>
-  <?php wp_reset_postdata(); // reset the query ?>
+  <?php
+  endwhile;
+  wp_reset_postdata(); // reset the query
 #+END_SRC
 
 Array join 2 query results
@@ -21258,8 +21259,9 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Secur
 Vary: User-Agent :: Tell caching servers to deliver a different cache for different User-Agent
 Vary: * :: Tell caching servers to always deliver a refresh copy (all requests are uncacheable)
 
-*** Link html:link
-Each link defined in HTML is separated by comma and values inside a link with attributes are delimited by ;
+*** Link <<<header:link>>>
+- Each link defined in HTML is separated by comma and values inside a link with attributes are delimited by ~;~
+- Refer to html:link
 
 **** html:hreflang
 *** Accept-CH - response <<<header:accept-ch>>>
@@ -23184,6 +23186,8 @@ mj-image has padding:10px 25px by default
 // javascript
 window.open('tel:+11231231234');
 ** link <<<html:link>>>
+- Also can be set in HTML response header as Link. Refer to header:link
+
 *** rel="preload" <<<html:link:rel:preload>>>
 Not supported in IE11-, Edge, Safari 11-, iOS Safari 11.2-
 
@@ -23311,27 +23315,32 @@ Downloads the same css 2 times
     - CSS :: mismatch
     - <link rel="prefetch">
 
-*** rel="canonical"
-#+BEGIN_EXAMPLE
-  // desktop page: http://www.example.com/page-1
+*** ~rel="canonical"~ and ~rel="alternate"~ <<<html:link:rel:canonical>>> <<<html:link:rel:alternate>>>
+- A canonical URL is the URL of the page that Google thinks is most representative from a set of duplicate pages
+- Different language versions of a single page are considered duplicates only if the main content is in the same language (that is, if only the header, footer, and other non-critical text is translated, but the body remains the same, then the pages are considered to be duplicates). In general, a translated page is not a duplicate
+- Use absolute paths
+- 301 redirect is the best way to ensure other duplicate pages are removed and directed to the canonical URL
+
+#+BEGIN_SRC html
+  <!-- desktop page: http://www.example.com/page-1 -->
   <link rel="alternate" media="only screen and (max-width: 640px)" href="http://m.example.com/page-1">
 
-  // mobile page: http://m.example.com/page-1
+  <!-- mobile page: http://m.example.com/page-1 -->
   <link rel="canonical" href="http://www.example.com/page-1">
 
-  // sitemap
+  <!-- sitemap -->
   <?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-          xmlns:xhtml="http://www.w3.org/1999/xhtml">
+	  xmlns:xhtml="http://www.w3.org/1999/xhtml">
       <url>
-          <loc>http://www.example.com/page-1/</loc>
-          <xhtml:link
-                  rel="alternate"
-                  media="only screen and (max-width: 640px)"
-                  href="http://m.example.com/page-1" />
+	  <loc>http://www.example.com/page-1/</loc>
+	  <xhtml:link
+		  rel="alternate"
+		  media="only screen and (max-width: 640px)"
+		  href="http://m.example.com/page-1" />
       </url>
   </urlset>
-#+END_EXAMPLE
+#+END_SRC
 
 *** rel="dns-prefetch"
 #+BEGIN_EXAMPLE
@@ -23722,16 +23731,10 @@ https://www.ampproject.org/learn/about-how/
 - Many AMP features require HTTPS
 
 *** Search Engine Discovery
-Add the following to the non-AMP page:
-<link rel="amphtml" href="https://www.example.com/url/to/amp/document.html">
-
-And this to the AMP page:
-<link rel="canonical" href="https://www.example.com/url/to/full/document.html">
-
-If there's only one page and the page is AMP
-<link rel="canonical" href="https://www.example.com/url/to/amp/document.html">
-
-https://www.ampproject.org/docs/fundamentals/spec
+- https://www.ampproject.org/docs/fundamentals/spec
+- Add the following to the non-AMP page :: ~<link rel="amphtml" href="https://www.example.com/url/to/amp/document.html">~
+- And this to the AMP page :: ~<link rel="canonical" href="https://www.example.com/url/to/full/document.html">~
+  - If there's only one page and the page is AMP :: ~<link rel="canonical" href="https://www.example.com/url/to/amp/document.html">~
 
 * JavaScript
 ** Loading Sequence <<<js:defer>>> <<<js:async>>>
@@ -41344,7 +41347,9 @@ This is to permanently remove a url from Google Search
 #+END_SRC
 
 ** robots.txt
-Default
+- Sitemap is require only if you are not the owner and can't submit sitemaps on Google Search Console
+- Default
+
 #+BEGIN_EXAMPLE
   User-agent: *
   Disallow: /wp-admin/
