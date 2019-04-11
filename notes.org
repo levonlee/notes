@@ -7353,7 +7353,7 @@ Create a bash script wrapper for already started processes
 #+END_SRC
 
 ** Conditional Tags <<<wp:conditional tags>>>
-[[https://codex.wordpress.org/Conditional_Tags][These]] are related the wp:query:main only.
+- [[https://codex.wordpress.org/Conditional_Tags][These]] use the wp:query:main only
 
 *** is_page()
 #+BEGIN_SRC php
@@ -7370,6 +7370,9 @@ Create a bash script wrapper for already started processes
   is_page_template( 'about.php' ); // a template 'page-templates/about.php'
 #+END_SRC
 
+*** ~is_single( int|string|array $post = '' )~
+- $post :: Post ID, title, slug or array of such (one of the specified) 
+
 *** ~is_singular( string|array $post_types = '' )~
 - $post_types :: Whether the query is for an existing single post of any post type. Or if $post_types is specified, additionally check if the query is for one of the Post Types specified
 
@@ -7383,9 +7386,8 @@ Create a bash script wrapper for already started processes
 - wp:admin:toolbar
 
 ** Template Tags <<<wp:template tags>>>
-wp-includes/xxx-template.php
-
-https://codex.wordpress.org/Template_Tags
+- wp-includes/xxx-template.php
+- https://codex.wordpress.org/Template_Tags
 
 *** post-thumbnail-template.php <<<wp:t:thumbnail>>>
 - ~has_post_thumbnail( $post = null)~ :: return bool
@@ -7413,10 +7415,16 @@ You can resize an image file on the fly using fly-dynamic-image-resizer
 - Display content :: ~the_content( $more_link_text = null, $strip_teaser = false)~ use wp:filter:the_content
 - Display excerpt :: ~the_excerpt( )~
   - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
-
 - HTML classes for a post :: ~get_post_class()~
   - e.g. ~post-123 myposttype type-myposttype status-publish has-post-thumbnail~
   - filter ~post_class($classes, $class, $post->ID)~
+- List child pages/posts :: ~wp_list_pages( $args = '' )~
+  - $args
+    - post_type :: For a CPT, default is ~page~ only. ~wp_list_pages( array('post_type' => 'articles' ) )~
+    - echo :: default 1, to echo. Set 0 to return html string
+    - title_li :: default ~__( 'Pages' )~. Add a ~<li>~ as title before any child post elements
+    - child_of :: default 0 (return child posts of any parent posts). specify the parent post ID
+    - sort_column :: default ~'menu_order, post_title'~
 
 *** category-template.php <<<wp:t:category>>>
 - Refer to wp:post
@@ -8641,20 +8649,22 @@ System widgets ~wp-includes/widgets/class-wp-widget-*.php~ and they're registere
 #+END_SRC
 
 *** wpautop <<<wp:f:wpautop>>> 
-Used in wp:filter:the_content wp:filter:the_excerpt
-Change double line-breaks in text into <p>...</p>
+- Used in
+  - wp:filter:the_content
+  - wp:filter:the_excerpt
+- Change double line-breaks in text into ~<p>...</p>~
 
 Turn off wpautop for specific pages
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function remove_p_on_pages() {
       if ( is_page() ) {
-          remove_filter( 'the_content', 'wpautop' );
-          remove_filter( 'the_excerpt', 'wpautop' );
-          
+	  remove_filter( 'the_content', 'wpautop' );
+	  remove_filter( 'the_excerpt', 'wpautop' );
+
       }
   }
   add_action( 'wp_head', 'remove_p_on_pages' );
-#+END_EXAMPLE
+#+END_SRC
 
 *** shortcode_unautop <<<wp:f:shortcode_unautop>>>
 Used in wp:filter:the_content
@@ -9151,9 +9161,9 @@ The main query/loop is based on the URL request and is processed before template
 Only the wp:conditional tags use the main query/loop
 
 <<<wp:query:secondary>>>
-
-The secondary query/loop is ~new WP_Query~ in theme template or plugin files. It's also called The Loop.
-wp:template tags use the secondary query/loop.
+- The secondary query/loop is ~new WP_Query~ in theme template or plugin files
+- It's also called The Loop.
+- wp:template tags use the secondary query/loop.
 
 By default, The Loop uses the main query's current post to set ~global $post~.
 
@@ -9852,7 +9862,7 @@ wp:f:get_template_part includes any template in child theme
 <<<wp:default filters>>> wp-includes/default-filters.php
 
 ** add_filter <<<wp:add_filter>>>
-*** Syntax, remove_filter 
+*** Syntax, remove_filter
 Modify internal data / function returned
 
 For example, WP_Query gets internal settings for building a query.
@@ -10270,8 +10280,9 @@ Refer to
 - wp:f:shortcode_unautop 
 - wp:f:wpautop
 - wp:filter:tiny_mce_before_init
-Change the content of the post after retrieved from db and before it's printed to the screen.
-[[https://codex.wordpress.org/Plugin_API/Filter_Reference/the_content][Doc]]
+- Change the content of the post after retrieved from db and before it's printed to the screen
+- [[https://codex.wordpress.org/Plugin_API/Filter_Reference/the_content][Doc]]
+
 #+BEGIN_SRC php
   add_filter( 'the_content', 'wpautop');
   // remove_filter( 'the_content', 'wpautop');
