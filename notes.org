@@ -7423,7 +7423,7 @@ You can resize an image file on the fly using fly-dynamic-image-resizer
   - filter ~post_class($classes, $class, $post->ID)~
 - List child pages/posts :: ~wp_list_pages( $args = '' )~
   - $args
-    - post_type :: For a CPT, default is ~page~ only. ~wp_list_pages( array('post_type' => 'articles' ) )~
+    - post_type :: default ~page~. For CPT, ~wp_list_pages( array('post_type' => 'articles' ) )~
     - echo :: default 1, to echo. Set 0 to return html string
     - title_li :: default ~__( 'Pages' )~. Add a ~<li>~ as title before any child post elements
     - child_of :: default 0 (return child posts of any parent posts). specify the parent post ID
@@ -7431,7 +7431,10 @@ You can resize an image file on the fly using fly-dynamic-image-resizer
 
 *** category-template.php <<<wp:t:category>>>
 - Refer to wp:post
-- the_terms :: display taxonomy terms in a list
+- ~the_terms~ :: display taxonomy terms in a list
+- List child terms :: ~wp_list_categories( $args = '')~
+  - taxonomy :: default 'category'. For custom taxonomy, ~wp_list_categories( [ 'taxonomy' => 'mycats' ] )~
+  - child_of :: default 0. Specify the parent term id
 
 *** general-template <<<wp:t:general>>>
 Core functions used in templates :: /wp-includes/general-template.php
@@ -13676,9 +13679,10 @@ Change URL to any structure for individual post, page, tag or category.
 Need to resave Permalinks setting
 
 *** redirection <<<wp:plugin:redirection>>>
-https://wordpress.org/plugins/redirection/
-
-Redirect without .htaccess
+- https://wordpress.org/plugins/redirection/
+- Redirect without .htaccess
+- Support regex, ignore slash (simple text source url), ignore case
+- Monitor posts including CPT permalink changes and create redirect
 
 *** hc-custom-wp-admin-url
 
@@ -40138,11 +40142,12 @@ e.g.
 - [[https://developers.google.com/analytics/devguides/collection/ios/v3/campaigns#ios-url-builder][iOS Campaign Tracking URL Builder]] for advertising an iOS app
 
 ** Google Search Console <<<google:search console>>>
-Add a new property for https if the website is upgraded from http. Stats are separated.
-
-Google recommends creating 2 properties per root domain per schema (http/https). domainroot.com and www.domainroot.com
-
-https://support.google.com/webmasters/
+- Add a new property for https if the website is upgraded from http. Stats are separated
+- Google recommends creating 2 properties per root domain per schema (http/https). domainroot.com and www.domainroot.com
+- Domain Property is introduced so you should create a domain property on top of all URL properties (http|https, non-www|www) for a website
+- A URL Property will be automatically created if a GA account is given access. You still need to manually link Search Console from GA
+- Review all previous messages :: https://www.google.com/webmasters/tools/message-list
+- https://support.google.com/webmasters/
 
 *** Search Traffic Report
 <<<google:search console:search traffic report>>>
@@ -41345,13 +41350,21 @@ https://schema.org/CreativeWork
 More specific types e.g. Article,  Blog, Book, Comment, Game, Map, Movie, Website etc.
 
 ** Remove URL from Google Index
-This is to permanently remove a url from Google Search
+- This is to permanently remove a url from Google Search
+- If a page is recently deleted, returning 404 and doing the following is the right way to do
+  - Yoast adds meta tag to 404 pages
+  - Google Search Console will stop showing the 404 after about a month
+  - But you should pay attention if the url is in sitemap but returns 404 (shown as 404 error on Search Console)
 - Make the URL return 404 or 410 status
 - Don't block access to that URL using robots.txt
 - Return meta tag ~<meta name="robots" content="noindex, nofollow">~
 - Return ~X-Robots-Tag~ HTTP header
-- Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL 
-- To check if the URL is removed: Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed.
+- Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL
+- Submit a removal request
+  - For sites you own on Google Search Console :: https://www.google.com/webmasters/tools/url-removal
+  - For sites that you don't own :: https://www.google.com/webmasters/tools/removals
+- To check if the URL is removed
+  - Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed
 
 #+BEGIN_SRC apache
   <Files ~ "\.pdf$">
@@ -41380,7 +41393,17 @@ This is to permanently remove a url from Google Search
 #+END_SRC
 
 ** robots.txt
-- Sitemap is require only if you are not the owner and can't submit sitemaps on Google Search Console
+- https://developers.google.com/search/reference/robots_txt
+- On Pantheon, a custom robots.txt can be specified but it only works for Live with custom domain. For Pantheon domains, Pantheon always serves its own version
+- Valie domains
+  - Not valid for other subdomains, protocols or port numbers
+  - Valid for all files in all subdirectories on the same host, protocol and port number
+  - It has to be in the root folder
+  - http://example.com/robots.txt :: valid for http://example.com/ and ~http://example.com/*~. Not valid for ~https://example.com~, ~http://example.com:8181/~
+- Sitemap
+  - It's require only if you are not the owner and can't submit sitemaps on Google Search Console
+  - Can specify only one sitemap
+  - Use full URL with http|https
 - Default
 
 #+BEGIN_EXAMPLE
@@ -41390,11 +41413,23 @@ This is to permanently remove a url from Google Search
   Disallow: /readme.html
   Disallow: /refer/
 
-  Sitemap: http://www.codeinwp.com/post-sitemap.xml
-
   # Allow a useragent
   # User-agent: PowerMapper
   # Allow: /
+
+  # start-of-group
+  # group-member
+  # non-group
+
+  # All group-member records after a start-of-group record up to the next start-of-group record are treated as a group of records
+  # Only user-agent can start a group
+  # Multiple consecutive start-of-group lines will follow the group-member records following the final start-of-group line
+  # Any group-member records without a preceding start-of-group record are ignored
+  # Only disallow and allow can be a group-member record
+  # sitemap is a non-group record and should be placed at the end
+  # All non-group records are valid independently of all groups
+
+  Sitemap: http://www.codeinwp.com/post-sitemap.xml
 #+END_EXAMPLE
 
 ** Design & User Experience
