@@ -20333,21 +20333,34 @@ https://mdbootstrap.com/
 *** Document Object
 [[https://developer.mozilla.org/en/docs/Web/API/Document][Document properties and methods]]
 
-| document.methodName() or     | Notes                                                    | Use in       |
-| document.propertyName        |                                                          | Element Obj? |
-|------------------------------+----------------------------------------------------------+--------------|
-| createElement("p")           | appendChild                                              | no           |
-| createTextNode("text node"); | appendChild                                              | no           |
-| createAttribute('data-id')   | appendChild                                              | no           |
-|                              |                                                          |              |
-| getElementById("id")         | null or element object                                   | no           |
-| getElementsByClassName       | NodeList                                                 | yes          |
-| getElementsByTagName("p")    | NodeList                                                 | yes          |
-| querySelector('#id')         | 1st matched element. null or exception or element object | yes          |
-| querySelectorAll('#id')      | Static NodeList or exception                             | yes          |
-|                              |                                                          |              |
-| normalize()                  | remove empty text nodes and join adjacent text nodes     | yes          |
-|                              |                                                          |              |
+| document.methodName() or       | Notes                                                      | Use in          |
+| document.propertyName          |                                                            | Element Object? |
+|--------------------------------+------------------------------------------------------------+-----------------|
+| createElement("p")             | appendChild                                                | no              |
+|                                |                                                            |                 |
+| createTextNode("text node");   | appendChild                                                | no              |
+|                                |                                                            |                 |
+| createAttribute('data-id')     | appendChild                                                | no              |
+|                                |                                                            |                 |
+| getElementById("id")           | null or element object                                     | no              |
+|                                |                                                            |                 |
+| getElementsByClassName         | NodeList                                                   | yes             |
+|                                |                                                            |                 |
+| getElementsByTagName("p")      | NodeList                                                   | yes             |
+|                                |                                                            |                 |
+| querySelector('#id')           | 1st matched element. null or exception or element object   | yes             |
+|                                |                                                            |                 |
+| querySelectorAll('#id')        | Static NodeList or exception                               | yes             |
+|                                |                                                            |                 |
+| normalize()                    | remove empty text nodes and join adjacent text nodes       | yes             |
+|                                |                                                            |                 |
+| readyState                     | - loading :: the document is still loading                 | no              |
+| <<<html:document:readyState>>> | - interactive :: document has finished loading and         |                 |
+|                                | the document has been parsed but sub-resources e.g.        |                 |
+|                                | images, stylesheets and frames are still loading           |                 |
+|                                | - complete :: document and all sub-resources have finished |                 |
+|                                | loading. The state indicates that the html:event:load      |                 |
+|                                | is about to fire                                           |                 |
 
 *** NodeList Object <<<NodeList>>>
 NodeList Object appears like an array (loop like an array) but cannot use Array Methods such as valueOf(), join(), forEach().
@@ -20455,13 +20468,19 @@ Another way to loop NodeList
 |                                |                                                 |          |
 
 *** Event Object
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <input id="elem" type="button" value="Click me">
   // event is the first argument
   <script>
+    var elem = document.getElementById("elem");
     elem.onclick = function(e) {
       alert('Thank you');
     };
+
+    elem.addEventListener('click', function () {
+     // ...
+    });
+  
   </script>
 
   // Pass event for inlince onclick
@@ -20472,8 +20491,7 @@ Another way to loop NodeList
   }
 
   <pre onclick="event.stopPropagation();doSth();">
-#+END_EXAMPLE
-
+#+END_SRC
 
 Property
 | type             | event name. e.g. mousedown                                 |
@@ -20543,35 +20561,52 @@ elapsedTime :: number of seconds the transition has been running
 
 **** HTML DOM Event
 ***** DOMContentLoaded <<<html:event:DOMContentLoaded>>>
-It's fired when the initial HTML has been completely loaded and parsed, without waiting for stylesheets, images and subframes to finish loading. html:event:load is fully-loaded.
-
-Synchronous JavaScript can issue a doc.write at any point; hence the DOM tree construction is blocked anytime a synchronous script is encountered
-JavaScript can query for a computed style of any object, which means it can also block on CSS
-
-DOM construction can’t proceed until JavaScript is executed, and JavaScript can’t proceed until CSSOM is available.
-
-Mark JavaScript files as js:defer to unblock construction of DOM and execute them before domContentLoadedEventStart but JavaScript files still need to wait for CSSOM to be finished.
-
-Mark JavaScript files as js:async is similar to js:defer but DCL does not have to wait for execution of async scripts.
-
-By default, JavaScript will block DOM construction, which may block on CSSOM. Sync scripts are bad, but you already knew that. Marking scripts with “defer” and “async” makes an implicit promise to the document parser that you will not use doc.write, which in turn allows it to unblock DOM construction.
-
-If at any point we must wait for JavaScript execution, then we will have to first wait for the CSSOM construction to finish. In other words, there is a hard dependency edge between JavaScript and CSS… Stylesheets at the top, scripts at the bottom? Now you know why.
-
-https://calendar.perfplanet.com/2012/deciphering-the-critical-rendering-path/
+- Target can be ~document~ and ~window~ :: ~document.addEventListener('DOMContentLoaded', (e) => { ... });~
+- It's fired when the initial HTML has been completely loaded and parsed, without waiting for stylesheets, images and subframes to finish loading. html:event:load is fully-loaded
+- Synchronous JavaScript can issue a ~doc.write~ at any point; hence the DOM tree construction is blocked anytime a synchronous script is encountered
+- JavaScript can query for a computed style of any object, which means it can also block on CSS
+- DOM construction can't proceed until JavaScript is executed, and JavaScript can’t proceed until CSSOM is available
+- Mark JavaScript files as js:defer to unblock construction of DOM and execute them before ~domContentLoadedEventStart~ but JavaScript files still need to wait for CSSOM to be finished
+- Mark JavaScript files as js:async is similar to js:defer but DCL does not have to wait for execution of async scripts
+- By default, JavaScript will block DOM construction, which may block on CSSOM. Sync scripts are bad, but you already knew that. Marking scripts with “defer” and “async” makes an implicit promise to the document parser that you will not use ~doc.write~, which in turn allows it to unblock DOM construction
+- If at any point we must wait for JavaScript execution, then we will have to first wait for the CSSOM construction to finish. In other words, there is a hard dependency edge between JavaScript and CSS… Stylesheets at the top, scripts at the bottom? Now you know why
+- https://calendar.perfplanet.com/2012/deciphering-the-critical-rendering-path/
 
 ***** load <<<html:event:load>>>
-Refer to html:event:DOMContentLoaded
+- Target is ~window~ :: ~window.addEventListener('load', (e) => {})~
+- Refer to html:event:DOMContentLoaded
 
-domLoading :: browser is about to start parsing the first received bytes of the HTML document
-domInteractive :: browser has finished parsing all HTML and DOM construction
-domContentLoaded :: Both DOM is ready and there're no stylesheets that are blocking JavaScript execution (CSSOM is parsed and ready). Ready to construct the render tree.
- - domContentLoadedEventStart
- - domContentLoadedEventEnd
-domComplete :: all processing is complete and all resources e.g. images have finished downloading. The loading spinner has stopped spinning.
-load :: page is fully loaded
- - loadEventStart
- - loadEventEnd
+Detailed events using ~PerformanceNavigationTiming~
+- domLoading :: browser is about to start parsing the first received bytes of the HTML document
+- domInteractive :: browser has finished parsing all HTML and DOM construction
+- domContentLoaded :: Both DOM is ready and there're no stylesheets that are blocking JavaScript execution (CSSOM is parsed and ready). Ready to construct the render tree.
+  - domContentLoadedEventStart
+  - domContentLoadedEventEnd
+- domComplete :: all processing is complete and all resources e.g. images have finished downloading. The loading spinner has stopped spinning.
+- load :: page is fully loaded
+  - loadEventStart
+  - loadEventEnd
+
+**** readystatechange <<<html:event:readystatechange>>>
+- Refer to html:document:readyState
+
+#+BEGIN_SRC js
+  // Alternative to load event
+  document.onreadystatechange = function () {
+    if (document.readyState === 'complete') {
+      initApplication();
+    }
+  }
+
+  document.addEventListener('readystatechange', event => {
+    if (event.target.readyState === 'interactive') {
+      initLoader();
+    }
+    else if (event.target.readyState === 'complete') {
+      initApp();
+    }
+  });
+#+END_SRC
 
 *** <<<DOMTokenList>>> Object
 A collection of space-separated tokens.
