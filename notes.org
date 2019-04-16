@@ -2508,13 +2508,13 @@ Non-thread safe :: php_sqlsrv_54_nts.dll php_pdo_sqlsrv_54_nts.dll
 Put those into ext folder. Check extension_dir in php.ini.
 
 Change these lines in php.ini
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   ;extension=php_pdo_sqlsrv.dll
   ;extension=php_sqlsrv.dll
 
   extension=php_pdo_sqlsrv_54_nts.dll
   extension=php_sqlsrv_54_nts.dll
-#+END_EXAMPLE
+#+END_SRC
 
 Run ~iisreset~ to restart IIS.
 
@@ -6361,19 +6361,15 @@ And include when it's needed using module_load_include('inc', 'modename', 'lib/r
 
 * WordPress
 ** Core Update
-https://codex.wordpress.org/WordPress_Versions
-
-https://codex.wordpress.org/Configuring_Automatic_Background_Updates
-
+- https://codex.wordpress.org/WordPress_Versions
+- https://codex.wordpress.org/Configuring_Automatic_Background_Updates
 - Look version in files :: ~wp-includes/version.php~ or ~readme.html~
-
-~wp-includes/version.php~ also has
-- wp db version
-- required php version
-- required mysql version
-- local package (language)
-- tinymce version
-
+  - ~wp-includes/version.php~ also has
+    - wp db version
+    - required php version
+    - required mysql version
+    - local package (language)
+    - tinymce version
 - Enable auto core update in wp-config.php :: ~define( 'WP_AUTO_UPDATE_CORE', true );~
   - Value of true – Development, minor, and major updates are all enabled
   - Value of false – Development, minor, and major updates are all disabled
@@ -6387,8 +6383,8 @@ Fine tune
 #+END_SRC
 
 *** Manual Update Core
-https://codex.wordpress.org/Upgrading_WordPress
-https://codex.wordpress.org/Upgrading_WordPress_Extended
+- https://codex.wordpress.org/Upgrading_WordPress
+- https://codex.wordpress.org/Upgrading_WordPress_Extended
 - Backup
 - Disable all plugins
 - Delete old wp-includes and wp-admin and replace with new ones
@@ -6405,9 +6401,8 @@ See if wp-config.php .htaccess files are modified
 3.8.6 > 4.5.10 > (db) 4.9.1 > 4.9.4
 
 *** TS: update-core.php blank
-Add this to disable WP to check FTP :: ~define('FS_METHOD', 'direct');~
-
-Refer to wp:ftp https://stackoverflow.com/questions/28598547/wordpress-core-update-fail-4-1-to-4-1-1
+- Add this to disable WP to check FTP :: ~define('FS_METHOD', 'direct');~
+- Refer to wp:ftp https://stackoverflow.com/questions/28598547/wordpress-core-update-fail-4-1-to-4-1-1
 
 ** Migrate database
 At your previous host, access phpMyAdmin.
@@ -10589,11 +10584,28 @@ Event based
 #+END_SRC
 
 *** Action sequence <<<wp:action:loading sequence>>>
-https://codex.wordpress.org/Plugin_API/Action_Reference
-http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
-
+- https://codex.wordpress.org/Plugin_API/Action_Reference
+- http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
 - ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
   - ~WP_Customize_Widgets->customize_register~
+
+*** activated_plugin <<<wp:action:activated_plugin>>>
+- Change plugins loading order. By default is alpha based on plugin's path + plugin's php file
+- It reads and updates wp:db:wp_options:active_plugins
+- Use the following code at the beginning of a plugin to change the order
+
+#+BEGIN_SRC php
+  function this_plugin_last() {
+	  $wp_path_to_this_file = preg_replace('/(.*)plugins\/(.*)$/', WP_PLUGIN_DIR."/$2", __FILE__);
+	  $this_plugin = plugin_basename(trim($wp_path_to_this_file));
+	  $active_plugins = get_option('active_plugins');
+	  $this_plugin_key = array_search($this_plugin, $active_plugins);
+	  array_splice($active_plugins, $this_plugin_key, 1);
+	  array_push($active_plugins, $this_plugin);
+	  update_option('active_plugins', $active_plugins);
+  }
+  add_action("activated_plugin", "this_plugin_last");
+#+END_SRC
 
 *** after_setup_theme <<<wp:action:after_setup_theme>>>
 Called each page load after the theme is initialized. 
@@ -12201,23 +12213,21 @@ _wp_attachment_metadata :: only images have non-empty array. Refer to wp:f:add_i
 *** wp_options <<<wp:db:wp_options>>>
 - option_id
 - option_name
- - upload_path :: wp-content/uploads <<<wp:db:wp_options:upload_path>>>
- - rewrite_rules :: <<<wp:db:wp_options:rewrite_rules>>>
+  - upload_path :: wp-content/uploads <<<wp:db:wp_options:upload_path>>>
+  - rewrite_rules :: <<<wp:db:wp_options:rewrite_rules>>>
+  - active_plugins :: array of plugins' php files loaded in order <<<wp:db:wp_options:active_plugins>>>
 - option_value
 
 ** Plugins
 *** Custom Plugin
-https://codex.wordpress.org/Plugin_Resources
-https://codex.wordpress.org/Writing_a_Plugin
-https://developer.wordpress.org/plugins/the-basics/#getting-started
-
-https://github.com/DevinVinson/WordPress-Plugin-Boilerplate
-
-https://github.com/levonlee/gridli-vue
-
-Use hyphen for plugin name and folder `wp_content/plugins/li-custom/li-custom.php`
-
-[[https://developer.wordpress.org/plugins/wordpress-org/how-your-readme-txt-works/][readme.txt]]
+- https://codex.wordpress.org/Plugin_Resources
+- https://codex.wordpress.org/Writing_a_Plugin
+- https://developer.wordpress.org/plugins/the-basics/#getting-started
+- https://github.com/DevinVinson/WordPress-Plugin-Boilerplate
+- https://github.com/levonlee/gridli-vue
+- Use hyphen for plugin name and folder ~wp_content/plugins/li-custom/li-custom.php~
+- [[https://developer.wordpress.org/plugins/wordpress-org/how-your-readme-txt-works/][readme.txt]]
+- Use wp:action:activated_plugin to change plugin loading order
 
 *** Classic Editor <<<wp:plugin:classic-editor>>>
 *** WPML <<<wp:plugin:sitepress-multilingual-cms>>>
@@ -41913,7 +41923,7 @@ Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoe
 
 ** SSH, scp, sshpass <<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>>
 Refer to 
-- aws:scp 
+- aws:scp
 - linux:package:openssh-client
 
 *** Install SSH Server
@@ -42033,10 +42043,10 @@ Refer to aws:ssh
 - Ubuntu :: ~sudo systemctl reload sshd~ (16.04) or ~sudo systemctl restart sshd~ (16.04) or ~sudo restart ssh~ (14.04)
 
 *** Backup sshd_config file
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.factory-defaults
   sudo chmod a-w /etc/ssh/sshd_config.factory-defaults
-#+END_EXAMPLE
+#+END_SRC
 
 *** Disallow SSH as root user, SSH Daemon Config <<<linux:ssh:disallow_root>>>
 Login as root then
@@ -42103,19 +42113,38 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 #+END_SRC
 
 *** Run command
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
+  # string does not need to be escaped
+  dbpw='$@$$$'
+  filedate=$(date +%FT%H%M%S)
   ssh user1@server1 command1
   ssh user1@server1 'command2'
   ssh user1@server1 'command1 | command2'
 
   ssh usehostinssh-config 'long command'
 
-  // escape single quote inside command
-  // wrong
+  # escape single quote inside command
+  # wrong
   ssh host1 'mysqldump -u user --password='$(dbpw)' dbname > ~/db.sql'
-  // correct
+  # correct:
   ssh host1 'mysqldump -u user --password='"'"'$(dbpw)'"'"' dbname > ~/db.sql'
-#+END_EXAMPLE
+
+  # '"'"' ::
+  # ' end the first quotation
+  # " start second quotation
+  # ' quoted character
+  # " end second quotation using double-quotes
+  # ' start third quotation
+
+  # result
+  # mysqldump -u user --password='abc' dbname > ~/db.sql
+
+  # You might not want to force to use single quote
+  ssh host1 "mysqldump -u user --password='$dbpw' dbname > ~/db-$filedate.sql"
+
+  # Save dump to local
+  ssh host1 "mysqldump -u user --password='$dbpw' dbname" > ~/db-live-"$filedate".sql
+#+END_SRC
 
 *** SSH tunneling
 Port forwarding is also called tunneling.
@@ -42784,7 +42813,7 @@ Move or copy certain file extension
 
 - --color :: hightlight
 - -H :: return only the file names
-- -R :: recursive
+- -R, -r, --resursive :: recursive
 - -i :: ignore case
 - -I :: process binary files as if they don't contain matching data
 - -n :: line number
@@ -45025,15 +45054,14 @@ Store as a variable
 #+END_EXAMPLE
 
 *** Date format <<<bash:date>>>
-date +%F :: YYYY-MM-DD
-date +%H :: 00..23
-date +%M :: minute 00..59
-date +%S :: second 00..60
-date +%T :: HH:MM:SS
-date +%Z :: time zone e.g. EDT
-
-date +%FT%T%Z :: 2017-10-13T16:39:02UTC
-date +%FT%H%M%S :: 2017-10-13T16-39-02 use this as it is filename safe
+- ~date +%F~ :: YYYY-MM-DD
+- ~date +%H~ :: 00..23
+- ~date +%M~ :: minute 00..59
+- ~date +%S~ :: second 00..60
+- ~date +%T~ :: HH:MM:SS
+- ~date +%Z~ :: time zone e.g. EDT
+- ~date +%FT%T%Z~ :: 2017-10-13T16:39:02UTC
+- ~date +%FT%H%M%S~ :: 2017-10-13T16-39-02 use this as it is filename safe
 
 *** Last executed command
 #+BEGIN_SRC bash
@@ -54568,7 +54596,7 @@ If it's not right, it will prompt you to use the correct one. For Amazon Linux A
 Port is 22, type is SSH. Under Putty > Category > Connection > SSH > Auth, select the new .ppk file.
 
 Copy from remote to local <<<aws:scp>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # copy a file
   scp user@remotehost.comorip:/path/to/foo.md /path/to/local/
 
@@ -54580,7 +54608,7 @@ Copy from remote to local <<<aws:scp>>>
 
   # copy all files/folders of a folder to the current folder without creating ./foo
   scp -r user@remotehostcom:/path/to/foo/. .
-#+END_EXAMPLE
+#+END_SRC
 
 If port is not 22, it has to be specified ~-P 2222~.
 If the default private key doesn't work, use =-i ~/.ssh/your_private_key_file=
