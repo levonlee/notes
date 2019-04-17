@@ -12874,7 +12874,17 @@ https://www.bybe.net/yoast-seo-guide-disable-schema-json-ld-wordpress/
 **** Turn off canonical
 add_filter( 'wpseo_canonical', '__return_false' );
 
-**** Setting: 
+**** Setting: add exclude post from sitemap
+Theme functions.php
+#+BEGIN_SRC php
+  add_filter( 'wpseo_exclude_from_sitemap_by_post_ids', function ($post_ids) {
+	  if (function_exists('wc_get_page_id')) {
+		  $post_ids[] = wc_get_page_id( 'checkout' );
+	  }
+	  return $post_ids;
+  } );
+#+END_SRC
+
 **** Setting: turn off Author Archives
 SEO > Search Appearance > Archives > disable Author archive
 Otherwise /author-sitemap.xml will show the admin name
@@ -14001,39 +14011,27 @@ Free for up to 30k subscribers and no limit on number of push notifications you 
 
 *** woocommerce
 **** Basics
-https://docs.woocommerce.com/documentation/plugins/woocommerce/getting-started/
-
-In order to remove data in db when removing the plugin, add this first then deactive and delete the plugin:
-#+BEGIN_SRC php
-  define( 'WC_REMOVE_ALL_DATA', true);
-  /* That's all, stop editing! Happy blogging. */
-#+END_SRC
-
+- https://docs.woocommerce.com/documentation/plugins/woocommerce/getting-started/
+- https://github.com/woocommerce/woocommerce
+- https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/
 - To update extension/payment gateways, connect to WooCommerce.com :: WooCommerce > Extensions > WooCommerce.com Subscriptions
-
 - Db structure :: https://github.com/woocommerce/woocommerce/wiki/Database-Description
-Please note, each table name will be prefixed with your WP Database Table Prefix e.g. wp_
-The database scheme is defined in woocommerce/includes/class-wc-install.php
-
+  - Please note, each table name will be prefixed with your WP Database Table Prefix e.g. ~wp_~
+  - The database scheme is defined in ~woocommerce/includes/class-wc-install.php~
 - It creates some custom post types and taxonomies :: https://docs.woocommerce.com/document/installed-taxonomies-post-types/
-
 - It creates some pages
-- To check whether they are installed or to install them :: WooCommerce > System Status > Tools
-- To custom page for Cart and Checkout :: WooCommerce > Settings > Checkout
-- For My Account :: WooCommerce > Settings > Accounts
-- For Shop page (archive page for all products)  ::  WooCommerce > Settings > Products
-
-Endpoints
-Starting v2.1 shortcodes are replaced with endpoints
-- My Account page endpoints :: WooCommerce > Settings > Accounts
-  - e.g. yoursite.com/my-account/edit-account
-- Checkout page endpoints :: WooCommerce > Settings > Checkout
-  - retrieve URL using ~$order~
-    - ~$order->get_checkout_payment_url( $on_checkout = false );~
-    - ~$order->get_checkout_order_received_url();~
-
-https://github.com/woocommerce/woocommerce
-https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/
+  - To custom page for Cart and Checkout :: WooCommerce > Settings > Checkout
+  - To check whether they are installed or to install them :: WooCommerce > System Status > Tools
+  - For My Account :: WooCommerce > Settings > Accounts
+  - For Shop page (archive page for all products)  ::  WooCommerce > Settings > Products
+- Public functions can be used outside of the plugin :: ~function wc_*~
+- Endpoints :: Starting v2.1 shortcodes are replaced with endpoints
+  - My Account page endpoints :: WooCommerce > Settings > Accounts
+    - e.g. yoursite.com/my-account/edit-account
+  - Checkout page endpoints :: WooCommerce > Settings > Checkout
+    - retrieve URL using ~$order~
+      - ~$order->get_checkout_payment_url( $on_checkout = false );~
+      - ~$order->get_checkout_order_received_url();~
 
 **** Payment Gateways
 https://woocommerce.com/posts/woocommerce-payments-affordably/
@@ -14127,6 +14125,13 @@ https://docs.woocommerce.com/document/template-structure/
 **** Test Credit Cards
 Turn on test mode for each Payment Gateway.
 For payment:moneris, WooCommerce > Settings > Payments > Moneris - Credit Card > Manage > Environment > Sandbox
+
+**** Uninstall and remove data
+In order to remove data in db when removing the plugin, add this first then deactivate and delete the plugin:
+#+BEGIN_SRC php
+  define( 'WC_REMOVE_ALL_DATA', true);
+  /* That's all, stop editing! Happy blogging. */
+#+END_SRC
 
 **** extension: Subscription
 Make recurring payment and subscription products possible.
@@ -20662,14 +20667,18 @@ Can be applied to any element
 |                 |                                   |
 
 Drag-and-Drop
-
-#+BEGIN_EXAMPLE
-  // ondropover allows this tag to receive dropped elements.
-  // ondrop defines what to do with the traferred data
+#+BEGIN_SRC html
+  <!--
+   ondropover allows this tag to receive dropped elements.
+   ondrop defines what to do with the traferred data
+  -->
   <div id="div1" ondrop="drop(e)" ondragover="allowDrop(e)"></div>
-  // Make a tag draggable: draggable="true"
-  // <a> and <img> are by default draggable
-  // ondragstart defines what data to pass to ondrop
+
+  <!--
+   Make a tag draggable: draggable="true"
+   <a> and <img> are by default draggable
+   ondragstart defines what data to pass to ondrop
+  -->
   <img id="drag1" src="http://placehold.it/300x250" draggable="true" ondragstart="drag(e)">
 
   <script>
@@ -20688,7 +20697,7 @@ Drag-and-Drop
     e.target.appendChild(document.getElementById(data));
   }
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 ** Event Attributes
 Capturing phrase: DOM heirarchy up
@@ -20890,7 +20899,7 @@ In order to test img with srcset and sizes, you need to open InCognito and resiz
 
 **** <<<html:picture>>>
 Used when you need explicit control over which source is shown at set viewport sizes. Except IE 11 and below
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <picture>
    <source srcset="a.jpg" media="(min-width: 600px)">
    <source srcset="b.jpg" media="(min-width: 500px)"> 
@@ -20898,20 +20907,20 @@ Used when you need explicit control over which source is shown at set viewport s
    <img src="fallback.jpg" alt="one alt">
   </picture>
 
-  // This is called art direction
+  <!-- This is called art direction -->
   <picture>
     <source media="(min-width: 800px)"
-        sizes="100vw"
-        srcset="cropped-for-wide-screens--large.jpg 1600w,
-                cropped-for-wide-screens--small.jpg 800w" />
+	sizes="100vw"
+	srcset="cropped-for-wide-screens--large.jpg 1600w,
+		cropped-for-wide-screens--small.jpg 800w" />
     <source media="(min-width: 600px)"
-        sizes="100vw"
-        srcset="full-image-for-standard-screens--large.jpg 1200w,
-                full-image-for-standard-screens--small.jpg  600w" />
+	sizes="100vw"
+	srcset="full-image-for-standard-screens--large.jpg 1200w,
+		full-image-for-standard-screens--small.jpg  600w" />
     <img
       src="zoomed-in-for-small-screens--small.jpg"
       srcset="zoomed-in-for-small-screens--large.jpg 800w,
-              zoomed-in-for-small-screens--small.jpg 400w" alt="" />
+	      zoomed-in-for-small-screens--small.jpg 400w" alt="" />
   </picture>
 
   <picture>
@@ -20920,7 +20929,7 @@ Used when you need explicit control over which source is shown at set viewport s
       <source srcset='paul_irish.webp' type='image/webp'>
       <img src='paul_irish.jpg' alt='paul'>
   </picture>
-#+END_EXAMPLE
+#+END_SRC
 
 **** srcset and sizes calculation
 small is 500x100, medium is 1000x200, and large is 2000x400
@@ -21008,14 +21017,14 @@ CSS fallback
 #+END_SRC
 
 *** Term/name in a list
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <dl>
     <dt>Term #1</dt>
     <dd>Description of Term #1</dd>
     <dt>Term #2</dt>
     <dd>Description of Term #2</dd>
   </dl>
-#+END_EXAMPLE
+#+END_SRC
 
 *** video <<<html:video>>>
 MP4 is the most compatible video format. Uses H.264 video codec and AAC audio codec.
@@ -21023,11 +21032,11 @@ WebM is Google for HTML5. Uses VP8 video codec and Vorbis audio codec. Doesn't s
 FLV is Flash only. Uses H.263 video codec and MP3 audio codec.
 
 autoplay is turned off on iOS mobile < v10
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <video autoplay muted loop id="myVideo">
     <source src="rain.mp4" type="video/mp4">
   </video>
-#+END_EXAMPLE
+#+END_SRC
 
 **** Attribute preload
 - metadata :: dimensions, track list, duration
@@ -21041,7 +21050,7 @@ Use html:link:rel:preload
 <<<html:preload video>>>
 
 Preload full small media files < 5mb
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <link rel="preload" as="video" href="https://cdn.com/small-file.mp4">
 
   <video id="video" controls></video>
@@ -21054,7 +21063,7 @@ Preload full small media files < 5mb
       // If preloaded video URL was already cached, playback started immediately.
     });
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 Preload the first segment use [[https://developers.google.com/web/fundamentals/media/mse/basics][Media Source Extensions JavaScript API]]
 #+BEGIN_SRC html
@@ -21090,10 +21099,10 @@ Preload the first segment use [[https://developers.google.com/web/fundamentals/m
 
 ** Meta
 *** Meta Refresh (redirect)
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <meta http-equiv="refresh" content="0;URL='http://abc.com'" />
-  // "0" means zero second.
-#+END_EXAMPLE
+  <!-- "0" means zero second -->
+#+END_SRC
 
 *** Open Graph Protocol <<<html:og>>>
 http://ogp.me/
@@ -24022,13 +24031,13 @@ The outer scope can be global or any place where the closure is in.
 - When you want to run the function later by providing initial state
 - When you want to do regression, don't want to affect outer scope and need more debugging
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   (function() {
     // Codes here runs immediately
   })();
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   (function($) {
     // Use jQuery with the shortcut
     console.log($.browser);
@@ -24042,7 +24051,7 @@ The outer scope can be global or any place where the closure is in.
   jQuery(document).ready(function($) {
     // Use $ now
   });
-#+END_EXAMPLE
+#+END_SRC
 
 *** Singleton <<<Javascript Singleton>>>
 
@@ -24097,7 +24106,7 @@ The outer scope can be global or any place where the closure is in.
 *** Regression
 This provides you more debugging info
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var charsInBody = (function counter(elm) {
     // Notice :: this is not an anonymous function as we see before in a closure!
     if (elm.nodeType == 3) {
@@ -24109,7 +24118,7 @@ This provides you more debugging info
     }
     return count;
   })(document.body);
-#+END_EXAMPLE
+#+END_SRC
 
 ** Types, typeof, constructor
 *** All types, typeof, constructor
@@ -24125,26 +24134,28 @@ This provides you more debugging info
 | null      | a special type of object                      |
 
 *** Number <<<js:Number>>>
-Used: js:Math
+- Used :: js:Math
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var foo = "55";
   var myNumber = Number(foo);
   if (!isNaN(myNumber)) {
     console.log("It is a number");
     // foo is a number
   } 
-#+END_EXAMPLE
+#+END_SRC
 
 *** String <<<js:String>>>
-s.length
-s.charAt(s.length-1)
-s.charCodeAt(s.length-1) :: UTF-16 code unit value
-var myString = String.fromCharCode(65,66,67); // 'ABC'
-s.indexOf("Paul"); // Case sensitive. Starts from the beginning. -1 not found
-s.lastIndexOf("Paul"); // Case sensitive. Starts from the end
-s.substr(0,4); // From start to 4th index
-s.substring(0,4); // From start and take 4 characters. If stop is omitted, take the rest
+#+BEGIN_SRC js
+  s.length;
+  s.charAt(s.length-1);
+  s.charCodeAt(s.length-1); // UTF-16 code unit value
+  var myString = String.fromCharCode(65,66,67); // 'ABC'
+  s.indexOf("Paul"); // Case sensitive. Starts from the beginning. -1 not found
+  s.lastIndexOf("Paul"); // Case sensitive. Starts from the end
+  s.substr(0,4); // From start to 4th index
+  s.substring(0,4); // From start and take 4 characters. If stop is omitted, take the rest
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   s.slice(0,4); // Same as substring but start and stop can be both or either negative
@@ -24177,59 +24188,69 @@ a[a.length-1] // last element
 a[a.length]= "Z"; // append to last
 
 **** If variable is array
-#+BEGIN_EXAMPLE
-console.log(Array.isArray(fruits)); // true or false
-console.log(fruits instanceof Array) // true or false
-#+END_EXAMPLE
+#+BEGIN_SRC js
+  console.log(Array.isArray(fruits)); // true or false
+  console.log(fruits instanceof Array) // true or false
+#+END_SRC
 
 **** array.pop(), array.shift(), array.push(), array.unshift()
-a.pop(); // remove last element
-a.shift(); // remove fist element
-a.push("Z"); // add to the end of array. return new length
-a[a.length]="Z"; // also append to last
+#+BEGIN_SRC js
+  a.pop(); // remove last element
+  a.shift(); // remove fist element
+  a.push("Z"); // add to the end of array. return new length
+  a[a.length]="Z"; // also append to last
 
-a.unshift("Z"); // add to the beginning of array. return new length
+  a.unshift("Z"); // add to the beginning of array. return new length
+#+END_SRC
 
 **** array.concat()
-var a = new Array("P", "C", "S");
-var b = new Array(31,29,34);
-a = a.concat(b); // Join arrays P, C, S, 31, 29, 34
+#+BEGIN_SRC js
+  var a = new Array("P", "C", "S");
+  var b = new Array(31,29,34);
+  a = a.concat(b); // Join arrays P, C, S, 31, 29, 34
+#+END_SRC
 
 **** array.slice()
-var slice = a.slice(1,2); // C, S
+~var slice = a.slice(1,2); // C, S~
 
 **** array.splice(), remove a value from array if exists
-var removed = a.splice(0,1,"Z","B"); // ["P"]
-// First delete 1 element at index 0 and then add element Z and B 
-// return the ones that are removed
+#+BEGIN_SRC js
+  var removed = a.splice(0,1,"Z","B"); // ["P"]
+  // First delete 1 element at index 0 and then add element Z and B 
+  // return the ones that are removed
 
-Remove a value from array if it exists
-var index = myArray.indexOf(item);
-if (index !== -1) {
- myArray.splice(index, 1);
-}
+  Remove a value from array if it exists
+  var index = myArray.indexOf(item);
+  if (index !== -1) {
+   myArray.splice(index, 1);
+  }
+#+END_SRC
 
 **** array.join(), array.toString(), array.valueOf()
-var join = a.join(","); // "P,C,S"
-a.toString() // also "P,C,S"
-a.valueOf(); // also "P,C,S". Convert to primitive
+#+BEGIN_SRC js
+  var join = a.join(","); // "P,C,S"
+  a.toString() // also "P,C,S"
+  a.valueOf(); // also "P,C,S". Convert to primitive
+#+END_SRC
 
 **** array.sort(), array.reverse()
-var sort = a.sort(); // sort as strings. case sensitive: C, P, S
-function numericSort(anArray) {
- anArray.sort(function(a,b) {
-  return a - b; // ascending order
-  // return a.year - b.year; if it's an obj
-});
- return anArray;
-}
+#+BEGIN_SRC js
+  var sort = a.sort(); // sort as strings. case sensitive: C, P, S
+  function numericSort(anArray) {
+   anArray.sort(function(a,b) {
+    return a - b; // ascending order
+    // return a.year - b.year; if it's an obj
+  });
+   return anArray;
+  }
 
-function randomSort(anArray) {
- anArray.sort(function(a, b) {return 0.5 - Math.random();});
- return anArray;
-}
+  function randomSort(anArray) {
+   anArray.sort(function(a, b) {return 0.5 - Math.random();});
+   return anArray;
+  }
 
-var reverse = a.reverse(); // S, C, P
+  var reverse = a.reverse(); // S, C, P
+#+END_SRC
 
 **** array loop: for, array.forEach() 
 for (var i = 0; i < fruits.length; i++) {
@@ -25536,7 +25557,7 @@ Specify the received data is blob
 https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
 
 ** Apply XSLT on XML
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function loadXMLDoc(filename) {
    var xhttp = new XMLHttpRequest();
    xhttp.open("GET", filename, false);
@@ -25555,8 +25576,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_appli
   xsltProcesser.importStylesheet(xsl);
   resultDocument = xsltProcesser.transformToFragment(xml, document);
   document.getElementById("example").appendChild(resultDocument);
-
-#+END_EXAMPLE
+#+END_SRC
 
 ** Apply XPath
 #+BEGIN_EXAMPLE
@@ -25722,7 +25742,7 @@ Workers are in external files which don't have access to DOM (objects like windo
 
 Use a Web Worker for heavy computation on the client. Use a Service Worker for offline capabilities like intercepting network requests, as well as other fun stuff like push notifications and synchronization of content in the background.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var w;
   if (typeof(Worker) !== "undefined") {
     if (typeof(w) == "undefined") {
@@ -25744,7 +25764,7 @@ Use a Web Worker for heavy computation on the client. Use a Service Worker for o
     setTimeout("timedCount()", 500);
   }
   timedCount();
-#+END_EXAMPLE
+#+END_SRC
 
 *** Service Worker
 **** Basics
@@ -25941,7 +25961,7 @@ https://codelabs.developers.google.com/codelabs/your-first-pwapp/#0
 https://jakearchibald.com/2014/offline-cookbook/
 
 Cache when an action is triggered. Caches API is available from regular pages not only sw.js
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   document.querySelector('.cache-article')
   .addEventListener('click', function(event) {
     event.preventDefault();
@@ -25949,37 +25969,37 @@ Cache when an action is triggered. Caches API is available from regular pages no
     var id = this.dataset.articleId;
     caches.open('mysite-article-' + id).then(function(cache) {
       fetch('/get-article-urls?id=' + id).then(function(response) {
-        // /get-article-urls returns a JSON-encoded array of
-        // resource URLs that a given article depends on
-        return response.json();
+	// /get-article-urls returns a JSON-encoded array of
+	// resource URLs that a given article depends on
+	return response.json();
       }).then(function(urls) {
-        cache.addAll(urls);
+	cache.addAll(urls);
       });
     });
   });
-#+END_EXAMPLE
+#+END_SRC
 
 Serve a offline page if both cache and network are not available
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   self.addEventListener('fetch', function(event) {
     event.respondWith(
       // Try the cache
       caches.match(event.request).then(function(response) {
-        // Fall back to network
-        return response || fetch(event.request);
+	// Fall back to network
+	return response || fetch(event.request);
       }).catch(function() {
-        // If both fail, show a generic fallback:
-        return caches.match('/offline.html');
-        // However, in reality you'd have many different
-        // fallbacks, depending on URL & headers.
-        // Eg, a fallback silhouette image for avatars.
+	// If both fail, show a generic fallback:
+	return caches.match('/offline.html');
+	// However, in reality you'd have many different
+	// fallbacks, depending on URL & headers.
+	// Eg, a fallback silhouette image for avatars.
       })
     );
   });
-#+END_EXAMPLE
+#+END_SRC
 
 Sample
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   self.addEventListener('fetch', function(event) {
     // Parse the URL:
     var requestURL = new URL(event.request.url);
@@ -25993,53 +26013,53 @@ Sample
     if (requestURL.origin == location.origin) {
       // Handle article URLs
       if (/^\/article\//.test(requestURL.pathname)) {
-        event.respondWith(/* some other combination of patterns */);
-        return;
+	event.respondWith(/* some other combination of patterns */);
+	return;
       }
       if (/\.webp$/.test(requestURL.pathname)) {
-        event.respondWith(/* some other combination of patterns */);
-        return;
+	event.respondWith(/* some other combination of patterns */);
+	return;
       }
       if (request.method == 'POST') {
-        event.respondWith(/* some other combination of patterns */);
-        return;
+	event.respondWith(/* some other combination of patterns */);
+	return;
       }
       if (/cheese/.test(requestURL.pathname)) {
-        event.respondWith(
-          new Response("Flagrant cheese error", {
-            status: 512
-          })
-        );
-        return;
+	event.respondWith(
+	  new Response("Flagrant cheese error", {
+	    status: 512
+	  })
+	);
+	return;
       }
     }
 
     // A sensible default pattern
     event.respondWith(
       caches.match(event.request).then(function(response) {
-        return response || fetch(event.request);
+	return response || fetch(event.request);
       })
     );
   });
-#+END_EXAMPLE
+#+END_SRC
 
 **** Push (not yet available on Chrome)
 Update cache before showing a notification
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   self.addEventListener('push', function(event) {
     if (event.data.text() == 'new-email') {
       event.waitUntil(
-        caches.open('mysite-dynamic').then(function(cache) {
-          return fetch('/inbox.json').then(function(response) {
-            cache.put('/inbox.json', response.clone());
-            return response.json();
-          });
-        }).then(function(emails) {
-          registration.showNotification("New email", {
-            body: "From " + emails[0].from.name
-            tag: "new-email"
-          });
-        })
+	caches.open('mysite-dynamic').then(function(cache) {
+	  return fetch('/inbox.json').then(function(response) {
+	    cache.put('/inbox.json', response.clone());
+	    return response.json();
+	  });
+	}).then(function(emails) {
+	  registration.showNotification("New email", {
+	    body: "From " + emails[0].from.name
+	    tag: "new-email"
+	  });
+	})
       );
     }
   });
@@ -26052,20 +26072,20 @@ Update cache before showing a notification
       new WindowClient('/inbox/');
     }
   });
-#+END_EXAMPLE
+#+END_SRC
 
 **** Background sync (not yet available on Chrome)
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   self.addEventListener('sync', function(event) {
     if (event.id == 'update-leaderboard') {
       event.waitUntil(
-        caches.open('mygame-dynamic').then(function(cache) {
-          return cache.add('/leaderboard.json');
-        })
+	caches.open('mygame-dynamic').then(function(cache) {
+	  return cache.add('/leaderboard.json');
+	})
       );
     }
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ** iFrame
 *** Communication Between Children Window and Parent Window
@@ -26122,19 +26142,19 @@ This code requires the iframe domain is same origin.
 Refer to bootstrap:responsive helpers
 
 ** setTimeout recall
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function runTimeout() {
     setTimeout(function() {
       if (window.googletag && googletag.apiReady) {
-        // do something
+	// do something
       }
       else {
-        //console.log('googletag is not ready');
-        runTimeout();
+	//console.log('googletag is not ready');
+	runTimeout();
       }
     }, 5000);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** CSS Media Viewport Size <<<js:viewport size>>>
 window.innerWidth is width including scrollbars
