@@ -6868,8 +6868,8 @@ Without bootstrap wp, assuming test.php file is at root
 #+END_EXAMPLE
 
 ** PHP redirect <<<wp:php:redirect>>>
-https://rudrastyh.com/wordpress/change-specific-urls.html
-Use functions.php to achieve
+- https://rudrastyh.com/wordpress/change-specific-urls.html
+- Use functions.php to achieve
 
 Redirect, same can be achieved using .htaccess
 #+BEGIN_SRC php
@@ -10611,10 +10611,10 @@ Event based
 Called each page load after the theme is initialized. 
 Do basic setup, registration and init actions for a theme
 
-These may be used
-wp:f:add_theme_support
-wp:f:add_image_size
-wp:f:register_nav_menus
+May run these in this action
+- wp:f:add_theme_support
+- wp:f:add_image_size
+- wp:f:register_nav_menus
 
 *** init <<<wp:action:init>>>
 Fires after Wordpress has finished loading but before any headers are sent.
@@ -11873,7 +11873,7 @@ wp:f:get_footer loads parent theme's footer.php unless child theme has footer.ph
     - filter ~genesis_footer_widget_areas~ :: ~( $output, $footer_widgets )~
 - ~genesis_footer~
   - ~genesis_footer_markup_open~ p:5
-    - ~genesis_markup~ :: open ~footer~, context:site-footer
+    - ~genesis_markup~ :: open *~<footer class="site-footer">~*, context:site-footer
     - ~genesis_structurual_wrap( 'footer', 'open' )~
   - ~genesis_do_footer~
     - filter ~genesis_footer_backtotop_text~ :: nothing
@@ -11882,7 +11882,7 @@ wp:f:get_footer loads parent theme's footer.php unless child theme has footer.ph
       - :: ~do_shortcode()~ p:20
   - ~genesis_footer_markup_close~ p:15
     - ~genesis_structural_wrap( 'footer', 'close' )~
-    - ~genesis_markup~ :: close ~footer~, context:site-footer
+    - ~genesis_markup~ :: close *~</footer>~*, context:site-footer
 - ~genesis_after_footer~ :: nothing
 - ~genesis_markup~ :: close ~div~, context:site-container
 - ~genesis_after~ :: nothing
@@ -13800,6 +13800,7 @@ Always update as wp core updates
 Add a "Visual Editor" widget like WYSIWYG TinyMCE switching between Visual and HTML mode.
 Since WP Core 4.8, it has Visual text widget but it's minimal.
 
+*** Simple Social Icons <<<wp:plugin:simple-social-icons>>>
 *** menu-image
 *** megamenu megamenu-pro <<<wp:plugin:megamenu>>>
 - Install free version first :: https://wordpress.org/plugins/megamenu/ then install megamenu-pro
@@ -14919,43 +14920,42 @@ http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-s
 index.php
 - WP_USE_THEMES = true
 - wp-blog-header.php
-  - wp-load.php
-  - wp();
+  - wp-load.php wp:global:wpdb
+    - wp-config.php
+    - wp-settings.php
+      - wp-includes/load.php (all functions)
+      - wp-includes/default-constants.php (all func.)
+      - wp-includes/plugin.php
+      - wp-includes/compat.php (functions)
+      - wp-includes/class-wp-list-util.php
+      - wp-includes/functions.php (wp main API)
+	- wp-includes/option.php (Option API)
+      - wp-includes/class-wp-matchesmapregex.php
+      - wp-includes/class-wp.php (wp environment setup class)
+      - wp-includes/class-wp-error.php (Error API)
+      - wp-includes/pomo/mo.php (class for working with MO files)
+	- translations.php
+	- streams.php
+      - require_wp_db()
+	- wp-db.php
+      - wp-includes/formatting.php
+      - wp-includes/capabilities.php (User capabilites API)
+      - wp-includes/query.php (is_* functions)
+      - wp-includes/general-template.php
+      - Load mu-plugins
+      - create initial taxonomies and post types
+      - Load active plugins :: ~do_action( 'plugins_loaded')~
+      - Initialize objects :: WP_Query WP_Rewrite
+      - Load the active theme
+	- ~do_action( 'setup_theme' )~
+	- wp:action:after_setup_theme
+      - ~do_action( 'init'  )~
+      - ~do_action( 'wp_loaded' )~
+  - ~wp();~
   - wp-includes/template-loader.php
-
-wp-load.php wp:global:wpdb
-- wp-config.php
-- wp-settings.php
-
-wp-settings.php
-- wp-includes/load.php (all functions)
-- wp-includes/default-constants.php (all func.)
-- wp-includes/plugin.php
-- wp-includes/compat.php (functions)
-- wp-includes/class-wp-list-util.php
-- wp-includes/functions.php (wp main API)
-  - wp-includes/option.php (Option API)
-- wp-includes/class-wp-matchesmapregex.php
-- wp-includes/class-wp.php (wp environment setup class)
-- wp-includes/class-wp-error.php (Error API)
-- wp-includes/pomo/mo.php (class for working with MO files)
-  - translations.php
-  - streams.php
-- require_wp_db()
-  - wp-db.php
-- wp-includes/formatting.php
-- wp-includes/capabilities.php (User capabilites API)
-- wp-includes/query.php (is_* functions)
-- wp-includes/general-template.php
-- Load mu-plugins
-- create initial taxonomies and post types
-- Load active plugins :: ~do_action( 'plugins_loaded')~
-- Initialize objects :: WP_Query WP_Rewrite
-- Load the active theme
-  - ~do_action( 'setup_theme' )~
-  - wp:action:after_setup_theme
-- ~do_action( 'init'  )~
-- ~do_action( 'wp_loaded' )~
+    - wp:action:template_redirect
+    - wp:action:do_robots
+    - wp:filter:template_include
 
 Request /wp-admin/admin-ajax.php
 /wp-load.php 
@@ -14966,11 +14966,11 @@ Request /wp-admin/admin-ajax.php
 (wp:action:admin_init)
 
 Request REST API
-/index.php
-/wp-blog-header.php (Environment and Template)
-/wp-load.php
-/wp-config.php
-/wp-settings.php (which loads most core files, all active plugins and themes, and the REST API)
+- index.php
+  - wp-blog-header.php (Environment and Template)
+    - wp-load.php
+      - wp-config.php
+      - wp-settings.php (which loads most core files, all active plugins and themes, and the REST API)
 (doesn't load admin_init, /wp-admin/*.*)
 
 ** PHP 7
@@ -17656,36 +17656,34 @@ IE 11 doesn't support url('a.svg') in background CSS. Use nodejs:svgo to convert
 #+END_EXAMPLE
 
 *** SVG as background image IE 11 <<<svg:ie11>>>
-AI export .svg by default is responsive and no width and height attributes are in <svg>
+AI export .svg by default is responsive and no width and height attributes are in ~<svg>~
 You may add width and height to <svg> based on viewBox
-#+BEGIN_EXAMPLE
-  // before
+#+BEGIN_SRC html
+  <!-- before -->
   <svg viewBox="0 0 22.77 28.96">
 
-  // after
+  <!-- after -->
   <svg viewBox="0 0 22.77 28.96" width="22.77" height="28.96">
-#+END_EXAMPLE
+#+END_SRC
 
-If it still doesn't work, move <styles> to attributes
+If it still doesn't work, move ~<styles>~ to attributes
 
-You need to export .svg in Adobe Illustrator using one of these mode for the Styling
-- Presentation Attributes :: fill="none" stroke="#cfdf00" stroke-width="0.44"
-- Inline Style :: style="fill:none;stroke:#cfdf00;stroke-width:0.4399999976158142px"
-
-But not Internal Style.
-
-If AI already exports the .svg, use nodejs:svgo:move styles
+- You need to export .svg in Adobe Illustrator using one of these mode for the Styling
+  - Presentation Attributes :: ~fill="none" stroke="#cfdf00" stroke-width="0.44"~
+  - Inline Style :: ~style="fill:none;stroke:#cfdf00;stroke-width:0.4399999976158142px"~
+  - *But not Internal Style!*
+- If AI already exports the .svg, use nodejs:svgo:move styles
 
 *** SVG as background image dynamic size
 You can only control size in this method
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .logo {
    background: url(logo.svg) no-repeat top left;
    background-size: contain;
    width: 100px;
    height: 82px;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** <<<CSS in SVG>>>
 Inline CSS
@@ -17771,15 +17769,105 @@ You need to move down and right 50px
 <min-x> = -(target move right amount )/(svg height)*(h*(shrink factor))
 
 *** SVG Sprite
-Old Way using ~<defs>~, ~viewBox~ has to be defined in ~<svg>~
-#+BEGIN_EXAMPLE
+- Use ~<symbol>~, and they don't display until you ~<use>~ them
+#+BEGIN_SRC html
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+
+    <symbol id="beaker" viewBox="214.7 0 182.6 792">
+      <!-- add more accessibility -->
+      <title>original-file's-title</title> 
+      <desc>original-file's-desc</desc>
+
+      <!-- <path>s and whatever other shapes in here -->  
+    </symbol>
+
+    <symbol id="shape-icon-2" viewBox="0 26 100 48">
+      <!-- <path>s and whatever other shapes in here -->  
+    </symbol>
+
+  </svg>
+
+  <!-- We ain't even need viewBox round here. --> 
+  <!-- xlink:href="https://mysite.ca/a.svg#shape-icon-1"-->
+  <!-- xlink:href="a.svg#shape-icon-1"-->
+  <!-- Or the <svg><symbol></symbol></svg> is in the same document, use the following -->
+
+  <svg class="icon">
+    <use xlink:href="#shape-icon-1" />
+  </svg>
+
+  <svg class="icon">
+    <use xlink:href="#shape-icon-2" />
+  </svg>
+#+END_SRC
+
+- About CSS styling for ~<svg><use>~ :: https://tympanus.net/codrops/2015/07/16/styling-svg-use-content-css/
+- Polyfil svg4everybody searches and replaces ~svg use~ with ~<object>~
+
+New way using ~<symbol>~ only works when ~<svg><use>~ (inline). If you want SVG-as-<img> or SVG-as-background-image, use this:
+#+BEGIN_SRC html
+  <defs>
+    <style>
+      g {
+	display: none;
+      }
+      g:target {
+	display: inline;
+      }
+    </style>
+  </defs>
+
+  <g id="icon-clock">...</g>
+  <g id="icon-heart">...</g>
+  <g id="icon-arrow-right">...</g>
+#+END_SRC
+
+#+BEGIN_SRC html
+  <div class="lili-svg-as-bg"></div>
+
+  <style>
+  .lili-svg-as-bg {
+    background:url('//y.ca/a.svg#icon-clock') left top repeat;
+    width:100%;
+    height:400px;
+    font-size:1rem;
+  }
+  </style>
+#+END_SRC
+
+You can also place each svg one after another
+#+BEGIN_SRC html
+  <view id="icon-clock-view" viewBox="0 0 32 32" />
+  <view id="icon-heart-view" viewBox="0 32 32 32" />
+  <view id="icon-arrow-right-view" viewBox="0 64 32 32" />
+
+  <img src="sprite.svg#svgView(viewBox(0, 0, 32, 32))" alt="">
+  // or
+  <img src="sprite.svg#icon-heart-view" alt="">
+
+  <style>
+  .icon-clock {
+    background: url("sprite.svg#svgView(viewBox(0, 0, 32, 32))") no-repeat;
+    // or
+    background: url(sprite.svg#icon-clock-view) no-repeat;
+    // or
+    background: url("sprite.svg") no-repeat;
+    background-size: 32px 96px;
+    background-position: 0 -32px;
+  }
+  </style>
+#+END_SRC
+
+**** Old way 
+Old Way uses ~<defs>~, ~viewBox~ has to be defined in ~<svg>~
+#+BEGIN_SRC html
   <svg>
     <defs>
       <g id="shape-icon-1">
-        <!-- all the paths and shapes and whatnot for this icon -->
+	<!-- all the paths and shapes and whatnot for this icon -->
       <g>
       <g id="shape-icon-2">
-        <!-- all the paths and shapes and whatnot for this icon -->
+	<!-- all the paths and shapes and whatnot for this icon -->
       <g>
     </defs>
   </svg>
@@ -17793,90 +17881,6 @@ Old Way using ~<defs>~, ~viewBox~ has to be defined in ~<svg>~
   <svg class="icon" viewBox="0 26 100 48">
     <use xlink:href="#shape-icon-2" />
   </svg>
-#+END_EXAMPLE
-
-New way using ~<symbol>~, and they don't display until you ~<use>~ them
-#+BEGIN_EXAMPLE
-  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-    
-    <symbol id="beaker" viewBox="214.7 0 182.6 792">
-      <!-- add more accessibility -->
-      <title>original-file's-title</title> 
-      <desc>original-file's-desc</desc>
-
-      <!-- <path>s and whatever other shapes in here -->  
-    </symbol>
-    
-    <symbol id="shape-icon-2" viewBox="0 26 100 48">
-      <!-- <path>s and whatever other shapes in here -->  
-    </symbol>
-    
-  </svg>
-
-  <!-- We ain't even need no viewBox round here. --> 
-
-  <svg class="icon">
-    <use xlink:href="#shape-icon-1" />
-  </svg>
-
-  <svg class="icon">
-    <use xlink:href="#shape-icon-2" />
-  </svg>
-#+END_EXAMPLE
-
-About CSS styling for ~<svg><use>~ :: https://tympanus.net/codrops/2015/07/16/styling-svg-use-content-css/
-
-Polyfil svg4everybody searches and replaces ~svg use~ with ~<object>~
-
-New way using ~<symbol>~ only works when ~<svg><use>~ (inline). If you want SVG-as-<img> or SVG-as-background-image, use this:
-#+BEGIN_EXAMPLE
-  <defs>
-    <style>
-      g {
-        display: none;
-      }
-      g:target {
-        display: inline;
-      }
-    </style>
-  </defs>
-
-  <g id="icon-clock">...</g>
-  <g id="icon-heart">...</g>
-  <g id="icon-arrow-right">...</g>
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-  <div class="lili-svg-as-bg"></div>
-
-  .lili-svg-as-bg {
-    background:url('//y.ca/a.svg#icon-clock') left top repeat;
-    width:100%;
-    height:400px;
-    font-size:1rem;
-  }
-#+END_EXAMPLE
-
-
-You can also place each svg one after another
-#+BEGIN_SRC html
-  <view id="icon-clock-view" viewBox="0 0 32 32" />
-  <view id="icon-heart-view" viewBox="0 32 32 32" />
-  <view id="icon-arrow-right-view" viewBox="0 64 32 32" />
-
-  <img src="sprite.svg#svgView(viewBox(0, 0, 32, 32))" alt="">
-  // or
-  <img src="sprite.svg#icon-heart-view" alt="">
-
-  .icon-clock {
-    background: url("sprite.svg#svgView(viewBox(0, 0, 32, 32))") no-repeat;
-    // or
-    background: url(sprite.svg#icon-clock-view) no-repeat;
-    // or
-    background: url("sprite.svg") no-repeat;
-    background-size: 32px 96px;
-    background-position: 0 -32px;
-  }
 #+END_SRC
 
 ** Sass <<<css:scss>>> <<<css:sass>>>
@@ -22663,7 +22667,7 @@ mode :: fluid-height or fixed-height
 #+END_EXAMPLE
 
 mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-hero
     mode="fluid-height"
     height="420px"
@@ -22674,39 +22678,40 @@ mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
     padding="0px">
     <mj-hero-content width="100%">
       <mj-text font-size="18px" font-family="Khand, Helvetica, sans-serif, Arial" font-weight="900">
-        Title aligned to left
+	Title aligned to left
       </mj-text>
       <mj-table width="55%" color="#123456">
-        <tr style="list-style: none;line-height:1">
-          <td style="font-family:Khand, Helvetica, sans-serif, Arial;font-size:18px;line-height:28px;color:#666465;">
-            This text aligned to the left and takes 55% width
-          </td>
-        </tr>
+	<tr style="list-style: none;line-height:1">
+	  <td style="font-family:Khand, Helvetica, sans-serif, Arial;font-size:18px;line-height:28px;color:#666465;">
+	    This text aligned to the left and takes 55% width
+	  </td>
+	</tr>
       </mj-table>
       <mj-spacer height="20px" css-class="spacer-above-button" />
       <mj-button background-color="#FF0025" font-size="16px" align="left" font-family="'Merriweather Sans', Helvetica, sans-serif, Arial" padding-left="25px">
-        Learn more
+	Learn more
       </mj-button>
       <mj-spacer height="20px" />
       <mj-text font-size="14px" font-weight="900" font-family="'Merriweather Sans', sans-serif;">
-        Phone number&nbsp;&nbsp;&nbsp;<a href="http://a.com" style="color:#000000;text-decoration:none;">a.com</a>
+	Phone number&nbsp;&nbsp;&nbsp;<a href="http://a.com" style="color:#000000;text-decoration:none;">a.com</a>
       </mj-text>
       <mj-social color="#333333" align="left" text-mode="false" icon-size="16px" padding-left="25" padding-bottom="10" padding-top="10" mode="horizontal" display="linkedin:url facebook:url twitter:url youtubec:url" linkedin-href="https://www.linkedin.com/"
-                 linkedin-content=" "
-                 linkedin-icon-color="#A7A6A4" facebook-href="https://www.facebook.com/" facebook-content=" "
-                 facebook-icon-color="#A7A6A4"
-                 twitter-href="https://twitter.com/"
-                 twitter-content=" "
-                 twitter-icon-color="#A7A6A4" youtubec-href="https://www.youtube.com/"
-                 youtubec-content=" "
-                 youtubec-icon-color="#A7A6A4" youtubec-icon="http://16x16.jpg" />
+		 linkedin-content=" "
+		 linkedin-icon-color="#A7A6A4" facebook-href="https://www.facebook.com/" facebook-content=" "
+		 facebook-icon-color="#A7A6A4"
+		 twitter-href="https://twitter.com/"
+		 twitter-content=" "
+		 twitter-icon-color="#A7A6A4" youtubec-href="https://www.youtube.com/"
+		 youtubec-content=" "
+		 youtubec-icon-color="#A7A6A4" youtubec-icon="http://16x16.jpg" />
       <mj-spacer height="30px" />
     </mj-hero-content>
   </mj-hero>
   <mj-section>
   ...
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
+
 **** mj-section > mj-column <<<mjml:tag:mj-column>>>
 Without width attribute, mj-column is evenly distributed.
 
@@ -36981,8 +36986,7 @@ Scoped slot
 
 *** JSX
 
-** Plugin
-<<<vue:plugin>>>
+** Plugin <<<vue:plugin>>>
 Third party plugins and libraries
 https://github.com/vuejs/awesome-vue#components--libraries
 *** Basics
@@ -39085,6 +39089,9 @@ Add Product
 - Site URL :: https://www.abc.com
 - Products > Facebook Login
   - Valid OAuth redirect URIs :: https://www.abc.com/wp-admin/admin.php?page=nxssnap
+
+** YouTube
+- Link to subscribe :: ~https://www.youtube.com/channel/YOURHASEDCHANNELID?sub_confirmation=1~
 
 ** Buffer.com
 - [[https://buffer.com/pricing][Pricing]]
@@ -45943,8 +45950,8 @@ https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
 ** Nano <<<linux:nano>>>
 - Save :: Ctrl + O 
 - Exit :: Ctrl + x
-- Display line number and cursor position: C-c
-- Uncut or paste text C-u
+- Display line number and cursor position :: C-c
+- Uncut or paste text :: C-u
 - Search :: C-w or F6, type string and enter to search, ~Alt + W~ to search next
 
 - Select and copy, paste
@@ -52748,9 +52755,8 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
 #+END_SRC
 
 ** nginxconfig.io
-https://nginxconfig.io
-
-https://nginxconfig.io/?domain=myweb.ca&ssl_profile=intermediate&hsts=false&email=ssl@myweb.ca&non_www=false&wordpress
+- https://nginxconfig.io
+- https://nginxconfig.io/?domain=myweb.ca&ssl_profile=intermediate&hsts=false&email=ssl@myweb.ca&non_www=false&wordpress
 
 #+BEGIN_SRC sh
   nano /etc/nginx/nginx.conf
@@ -54352,6 +54358,10 @@ In this case, you can:
 https://pantheon.io/docs/logs/
 https://pantheon.io/docs/php-errors/
 
+** Nginx <<<pantheon:nginx>>>
+- https://github.com/pantheon-systems/nginx
+- Can't change Nginx config
+
 ** Varnish <<<pantheon:varnish>>>
 [[https://wordpress.org/plugins/pantheon-advanced-page-cache/][Wordpress plugin Pantheon Advanced Page Cache]]
 [[https://pantheon.io/docs/wordpress-cache-plugin/][Clear cache functions on Wordpress]]
@@ -54511,6 +54521,18 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-re
   # exit CLI
   exit
 #+END_SRC
+
+** Edge Caching (Varnish)
+- https://pantheon.io/docs/wordpress-4.7-upgrade/
+- Without installing the plugin Pantheon Advanced Page Cache, edge caching follows WordPress core 4.7+
+  - Pages will expire by default from edge cache after 10 minutes
+  - Before wp 4.7, Pantheon uses mu-plugin which is much more aggressive
+- With the plugin, you can:
+  - Delete Cache button is added to wp-admin for you to clear edge cache for a page
+  - WP-CLI ~wp patheon cache~ commands
+  - Purge edge cache based on surrogate keys:
+    - When a post is updated, clear the cache for the post’s URL, the homepage, any index view the post appears on, and any REST API endpoints the post is present in
+    - When an author changes their name, clear the cache for the author’s archive and any post they’ve authored
 
 ** Clear Cache
 Use ~terminus env:clear-cache~ to debug clear cache failure.
@@ -61076,17 +61098,12 @@ TeamViewer.exe、TeamViewer_Service.exe、TeamViewer_Desktop.exe
 http://www.zdfans.com/6351.html
 
 ** Font
-WOFF is supported in Edge and modern browsers. IE 11 and less only supports EOT.
-
-Install OTF (OpenType Font) over TTF (TrueType Font).
-
-For web, always include WOFF (Web Open Font Format), then TTF then OTF. WOFF is good for SEO
-
-As you can see OTF is newer and based on TTF but it's much smaller.
-
-TTF rendered in different devices has non-equal pixels.
-
-Refer to css:font-face
+- WOFF :: supported in Edge and modern browsers. For web, always include WOFF (Web Open Font Format), then TTF then OTF. WOFF is good for SEO
+- EOT :: IE 11 and less
+- OTF or TTF :: For local computers, install OTF (OpenType Font) over TTF (TrueType Font)
+  - OTF is newer and based on TTF but it's much smaller
+  - TTF rendered in different devices has non-equal pixels
+- Refer to css:font-face
 
 *** Abbreviations Foundary
 https://www.extensis.com/blog/fonts/abbreviations-font-names/
@@ -61161,6 +61178,7 @@ Element > Font Info > OS/2 to get
 - X Height
 - Typo Line Gap and H Head Line Gap
 
+*** Social Media Icons wp:plugin:simple-social-icons
 *** Google Font (GF)
 Can be downloaded and installed on Desktop as .ttf and for website .woff or .woff2
 
