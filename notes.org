@@ -53893,6 +53893,19 @@ RawGit is down.. Use raw.githack.com
 *** Markdown
 =![Alt text](http://url/to/img.png)=
 
+** SSH Key Fingerprint
+On GitHub, it shows the finger print for a public key you upload. To see which private/public key on your local machine matches the finger print
+#+BEGIN_SRC sh
+  # GitHub uses MD5
+  # Same finger print for private and public keys
+  ssh-keygen -E md5 -lf id_rsa
+  ssh-keygen -E md5 -lf id_rsa.pub
+
+  # -E :: hash algorithm. Default is sha256
+  # -f :: specify a file
+  # -l :: Show fingerprint of specified public key file. Private RSA1 keys are also supported. For RSA and DSA keys, it tries to find the matching public key and prints its fingerprint
+#+END_SRC
+
 ** Troubleshooting
 *** unable to create thread: Resource temporarily unavailable
 It could stop you from pushing to remote repo
@@ -53927,15 +53940,14 @@ BitBucket can create priviate repo for free! Limit each repo to 1gb.
 Create a private repo on BitBucket UI.
 
 For existing local Git repo, add a remote
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   cd /path/to/local/repo
   git remote add bb https://username@bitbucket.org/username/reponame.git
   # git push -u bb localbranch
   # e.g. git push -u bb master
   # git push -u bb localbranch:repobranch
   # e.g. git push -u bb master:masteronbb
-#+END_EXAMPLE
+#+END_SRC
 
 ~git push -u remotename localbranch~ pushes the code to a remote and set the remote as upstream remote.
 
@@ -54143,12 +54155,12 @@ So that php can read them. And cookies set in this way should change the value o
 Content pages with same cookies (with this name structure) and same url will be cached.
 
 A cookie can be set in PHP in a response to prevent caching
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
     $domain =  $_SERVER['HTTP_HOST'];
     setcookie('NO_CACHE', '1', time()+0, '/path-to-page', $domain);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 See pantheon:varnish to prevent caching on certain pages by setting http header.
 
@@ -54231,7 +54243,7 @@ Cache key is the entire URL plus query string.
 *** Redirect to HTTPS
 https://pantheon.io/docs/domains/
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // wordpress
   if (isset($_SERVER['PANTHEON_ENVIRONMENT']) && php_sapi_name() != 'cli') {
     // Redirect to https://$primary_domain/ in the Live environment
@@ -54246,12 +54258,12 @@ https://pantheon.io/docs/domains/
     define('WP_SITEURL', $base_url);
     define('WP_HOME', $base_url);
     if ($_SERVER['HTTP_HOST'] != $primary_domain
-        || !isset($_SERVER['HTTP_X_SSL'])
-        || $_SERVER['HTTP_X_SSL'] != 'ON' ) {
+	|| !isset($_SERVER['HTTP_X_SSL'])
+	|| $_SERVER['HTTP_X_SSL'] != 'ON' ) {
 
       // Name transaction "redirect" in New Relic for improved reporting (optoinal)
       if (extension_loaded('newrelic')) {
-        newrelic_name_transaction("redirect");
+	newrelic_name_transaction("redirect");
       }
       header('HTTP/1.0 301 Moved Permanently');
       header('Location: '. $base_url . $_SERVER['REQUEST_URI']);
@@ -54271,12 +54283,12 @@ https://pantheon.io/docs/domains/
     endif;
     $base_url = 'https://'. $primary_domain;
     if ($_SERVER['HTTP_HOST'] != $primary_domain
-        || !isset($_SERVER['HTTP_X_SSL'])
-        || $_SERVER['HTTP_X_SSL'] != 'ON' ) {
+	|| !isset($_SERVER['HTTP_X_SSL'])
+	|| $_SERVER['HTTP_X_SSL'] != 'ON' ) {
 
       // Name transaction "redirect" in New Relic for improved reporting (optional)
       if (extension_loaded('newrelic')) {
-        newrelic_name_transaction("redirect");
+	newrelic_name_transaction("redirect");
       }
       header('HTTP/1.0 301 Moved Permanently');
       header('Location: '. $base_url . $_SERVER['REQUEST_URI']);
@@ -54295,12 +54307,12 @@ https://pantheon.io/docs/domains/
       $primary_domain = $_SERVER['HTTP_HOST'];
     endif;
     if ($_SERVER['HTTP_HOST'] != $primary_domain
-        || !isset($_SERVER['HTTP_X_SSL'])
-        || $_SERVER['HTTP_X_SSL'] != 'ON' ) {
+	|| !isset($_SERVER['HTTP_X_SSL'])
+	|| $_SERVER['HTTP_X_SSL'] != 'ON' ) {
 
       // Name transaction "redirect" in New Relic for improved reporting (optoinal)
       if (extension_loaded('newrelic')) {
-        newrelic_name_transaction("redirect");
+	newrelic_name_transaction("redirect");
       }
 
       header('HTTP/1.0 301 Moved Permanently');
@@ -54312,14 +54324,14 @@ https://pantheon.io/docs/domains/
       $settings['trusted_host_patterns'] = array('^'. preg_quote($primary_domain) .'$');
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** HSTS: HTTP Header
 After redirection to HTTPS is setup, set the HTTP Strict Transport Security (HSTS) header to stop client communicating to HTTP.
 A+ SSL rating will be achieved in [[https://www.ssllabs.com/ssltest/][SSL Labs]].
 
 Wordpress: install LH HSTS plugin
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   terminus remote:wp <site>.<env> -- plugin install lh-hsts --activate
   # Once enabled, this header will be sent in response
   Strict-Transport-Security: max-age=15984000; includeSubDomains; preload
@@ -54337,7 +54349,7 @@ Wordpress: install LH HSTS plugin
   # Check the Enable HTTP Strict Transport Security checkbox, set Max Age to at least 1 year and click Save Configuration.
   # Once installed and configured, the following header will be sent in responses:
   strict-transport-security: max-age=31536000
-#+END_EXAMPLE
+#+END_SRC
 
 ** Git <<<pantheon:git>>>
 Using Pantheon GUI to merge Multidev commits to Dev creates a merge commit on Dev. When you go back to Multidev, UI says the merge commit can be merged from master
