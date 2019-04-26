@@ -6412,10 +6412,10 @@ Change website url
 Open wp_options table, change siteurl to http://yourwebsite.com
 
 Do it on code level
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   define('WP_HOME','http://'.$_SERVER[HTTP_HOST].'/');
   define('WP_SITEURL','http://'.$_SERVER[HTTP_HOST].'/');
-#+END_EXAMPLE
+#+END_SRC
 
 Go to wp-admin > Settings > Permalink and save to update the permalink
 
@@ -6426,19 +6426,19 @@ DB is abc_enterprise and abc
 abc.com is inside a docker container using apache2
 
 abc.com uses Nginx and initial setup is
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   server {
      listen 80;
      server_name abc.com www.abc.com;
 
      location / {
-        proxy_set_header   X-Real-IP   $remote_addr;
-        proxy_set_header   Host        $http_host;
-        proxy_pass         http://127.0.0.1:9977;
+	proxy_set_header   X-Real-IP   $remote_addr;
+	proxy_set_header   Host        $http_host;
+	proxy_pass         http://127.0.0.1:9977;
      }
 
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Method 1: Apache
 Directly create or copy a sub directory under abc.com root
@@ -6530,7 +6530,7 @@ Fix image urls
 Refer to nginx:redirect path to proxy
 
 abc.com Nginx becomes
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC nginx
   server {
      listen 80;
      server_name alectraconservation.com www.alectraconservation.com;
@@ -6542,21 +6542,21 @@ abc.com Nginx becomes
      }
 
       location / {
-        proxy_set_header   X-Real-IP   $remote_addr;
-        proxy_set_header   Host        $http_host;
-        proxy_pass         http://127.0.0.1:9977;
+	proxy_set_header   X-Real-IP   $remote_addr;
+	proxy_set_header   Host        $http_host;
+	proxy_pass         http://127.0.0.1:9977;
      }
 
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Refer to http://www.ur-ban.com/2015/07/27/nginx-proxy_pass-wordpress-in-a-sub-directory/
 Change WP_HOME and WP_SITEURL
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $_SERVER['REQUEST_URI'] = str_replace("/wp-admin/", "/enterprise/wp-admin/",  $_SERVER['REQUEST_URI']);
   define( 'WP_SITEURL', '/enterprise' );
   define( 'WP_HOME', '/enterprise' );
-#+END_EXAMPLE
+#+END_SRC
 
 ** Load WP Core in sub directory under same domain
 sub directory has a customized PHP application and it needs to use WP Core to determine if a user is logged in
@@ -6594,8 +6594,8 @@ https://codex.wordpress.org/Global_Variables
 #+END_SRC
 
 *** $_GET, $_POST, $_COOKIE, $_SERVER
-WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Quotes]], if so, remove them using stripslashes_deep (wp function) and then add slashes using add_magic_quotes which uses php:addslashes function. In order to get values, use stripslashes_deep again.
-#+BEGIN_EXAMPLE
+WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Quotes]], if so, remove them using stripslashes_deep (wp function) and then add slashes using add_magic_quotes which uses php:addslashes function. In order to get values, use stripslashes_deep again
+#+BEGIN_SRC php
   $value = stripslashes_deep($_POST['name']);
   // or simply
   $myPost = stripslashes_deep($_POST);
@@ -6606,7 +6606,7 @@ WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Q
     // This means WP has already added slashes to $_POST. Remove slashes
     $myPost = stripslashes_deep($myPost);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** $GLOBALS['wp_query'] <<<wp:global:wp_query>>>
 Refer to WP_Query
@@ -6625,10 +6625,10 @@ Refer to WP_Query
 *** $post <<<wp:global:post>>>
 https://codex.wordpress.org/Class_Reference/WP_Post
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   global $post;
-  $post_slug=$post->post_name;
-#+END_EXAMPLE
+  $post_slug = $post->post_name;
+#+END_SRC
 
 *** $wpdb <<<wp:global:wpdb>>>
 - https://codex.wordpress.org/Class_Reference/wpdb
@@ -7378,26 +7378,28 @@ Create a bash script wrapper for already started processes
 
 *** post-thumbnail-template.php <<<wp:t:thumbnail>>>
 - ~has_post_thumbnail( $post = null)~ :: return bool
-- ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~
+- ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~ :: get thumbnail id
 - ~the_post_thumbnail_*~ :: has to be current post, calls ~get_the_post_thumbnail_*~
 - ~get_the_post_thumbnail_*~ :: can specify which post, calls ~wp_get_attachment_image_src~
-
-You can wp:f:add_image_size
-Image size :: $size
-- NOTICE :: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes in HTML to achieve the purpose.
-- 'post-thumbnail' :: default
-- array(100, 100) :: Grab the biggest size in width and height image file possible.
-- array(100, 9999) :: Grab the biggest size in width and height image file possible.
-
-You can resize an image file on the fly using fly-dynamic-image-resizer
-
-- ~the_post_thumbnail($size, $attr='')~ :: echo html ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
-- ~the_post_thumbnail_url( $size )~ :: echo url
-- ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
-- ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: is just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is $thumb[0]
-- ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
-- ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
-- ~wp_get_attachment_caption( $post_id = 0 )~ :: $post_id default is global $post. Usually it's the attachment ID
+  - ~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~ ::
+  - ~get_the_post_thumbnail_url( $post = null, $size = 'post-thumbnail' )~ ::
+  - ~get_the_post_thumbnail_caption( $post = null )~ :: 
+- ~the_post_thumbnail_*~
+  - ~the_post_thumbnail( $size, $attr='' )~ :: echo html ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
+  - ~the_post_thumbnail_url( $size )~ :: echo url
+  - ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
+- ~wp_get_attachment_image_*()~
+  - ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: is just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is ~$thumb[0]~
+  - ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
+  - ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
+  - ~wp_get_attachment_caption( $post_id = 0 )~ :: $post_id default is global $post. Usually it's the attachment ID
+- Get alt :: ~$alt = get_post_meta( get_post_thumbnail_id(), '_wp_attachment_image_alt', true);~
+- Refer to wp:f:add_image_size
+  - NOTICE :: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes in HTML to achieve the purpose.
+  - 'post-thumbnail' :: default
+  - array(100, 100) :: Grab the biggest size in width and height image file possible.
+  - array(100, 9999) :: Grab the biggest size in width and height image file possible.
+- Resize an image file on the fly using fly-dynamic-image-resizer
 
 *** post-template.php <<<wp:t:post>>>
 - Only ~get_the_*( $post )~ can pass a different post or post id to return values
