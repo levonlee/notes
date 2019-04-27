@@ -53656,12 +53656,12 @@ In the existing repo run
 
 *** Existing repo is git initialized
 Pull from remote and put changes to staged without commit (ready to commit)
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git pull --no-rebase --squash -Xtheirs origin master
   # origin can be a different upstream in URL format
   # git://github.com/pantheon-systems/drops-7.git
   # the remote that's pulled from usually has the same codebase as your current local repo
-#+END_EXAMPLE
+#+END_SRC
 
 ** Clone a subdirectory
 Just clone examples/shopping-cart directory from branch dev
@@ -53692,14 +53692,23 @@ List all local branches' upstream remotes
   git remote -v
 #+END_EXAMPLE
 
-** Repo size, maintenance <<<git:repo size>>>
-#+BEGIN_EXAMPLE
+** Maintenance, Repo Size <<<git:repo size>>>
+- After a branch is deleted, commits that belong to no branch still exist in database
+  - See all corruptions :: ~git fsck --full~ and it shows the following types (not all types) 
+    - Commits that belong to no branch and no tag is attached (dangling commits) :: ~git fsck --unreachable~
+    - Tags that don't point a commit (dangling tag)  :: ~git fsck --no-reflogs~
+  - Remove all tags in local repo :: refer to git:tag 
+  - Mark reflog entries of all types as expired and prune them :: ~git reflog expire --expire=now --all~
+  - Prune garbage :: ~git gc --prune=now~ 
+- Data recovery :: https://git-scm.com/book/en/v2/Git-Internals-Maintenance-and-Data-Recovery
+- Repo size
+#+BEGIN_SRC sh
   git gc
   git count-objects -vH
 
   # I found this better
   du -hs .git/objects
-#+END_EXAMPLE
+#+END_SRC
 
 ** Number of tracked files
 Doesn't include directories. Only files
@@ -53793,35 +53802,47 @@ Method 2: Add another remote github
   git push github
 #+END_SRC
 
-** Tag
-#+BEGIN_EXAMPLE
+** Tag <<<git:tag>>>
+#+BEGIN_SRC sh
   # list all tags
-  git tag
+  git tag -l
+
   # search tags
   git tag -l "v1.8.5*"
 
-  # Make annotated tag and assign to the HEAD
+  # Make annotated tag and point to the commit at HEAD
   git tag -a v1.4 -m "tagging message"
 
   # Show a tag
-  git show 
+  git show mytag
 
-  # make lightweigth tag and assign to the HEAD
+  # see which commit a tag points to
+  git rev-list -n 1 mytag
+
+  # make lightweigth tag and assign to the commit at HEAD
+  # lightweight tag doens't show anything in `git show`
   git tag v1.4-lw
-
-  # lightweight tag doens't show anything when git show
 
   # Attach an annotated tag at a specific commit
   git tag -a v1.2 0fceb02
 
   git push origin [tagname]
-  # or
+  # or push all local repo tags to remote repo
   git push origin --tags
 
   git describe --long --match 'live*'
   # live-10-g7digits
   # HEAD is now 10 commits ahead of tag live
-#+END_EXAMPLE
+
+  # delete all tags in local repo
+  git tag -d $(git tag -l)
+
+  # if got error `argument list too long`, run several times of this
+  git tag -d $(git tag -l | head -n 100)
+
+  # fetch all tags from remote repo
+  git fetch
+#+END_SRC
 
 ** Submodule
 #+BEGIN_EXAMPLE
@@ -54034,13 +54055,11 @@ drush @pantheon.SITE.ENV cc drush
   terminus wp 'option get home' --site=<site> --env=dev
 #+END_EXAMPLE
 
-** Drupal Core Update <<<pantheon:drupal:core>>>
+** Core Update <<<pantheon:drupal:core>>>
 *** UI
-Create a multidev of the current Live, then hit the upgrade button.
-Check everything. If it's ok, do this on Dev, then pull code from Dev to Test, and then Live
-Done!
-
-To update other multidevs, after Dev master is updated, pull code from Dev to multidev and run update.php
+- Create a multidev of the current Live, then hit button Apply Updates with Auto-resolve conflicts
+- Check everything. If it's ok, do this on Dev, then pull code from Dev to Test, and then Live
+- To update other multidevs, after Dev master is updated, pull code from Dev to multidev and run update.php
 Check Status from Pantheon.
 
 *** Manual pull from upstream to resolve conflicts
@@ -54050,8 +54069,19 @@ e.g. https://github.com/pantheon-systems/drops-7
 #+BEGIN_SRC sh
   # add a remote
   git remote add pantheon-drops-7 git://github.com/pantheon-systems/drops-7.git
+
+  # Pantheon WordPress Upstream
+  git remote add pantheon-wp https://github.com/pantheon-systems/WordPress.git
+
   git fetch pantheon-drops-7
+
+  # all your commits will be played after the Pantheon Upstream
   git rebase pantheon-drops-7/master
+
+  # you may use git merge instead. If you encounter `refusing to merge unrelated histories`, use git rebase
+  # that's what Pantheon uses when you hit Apply Updates on Pantheon UI to merge Upstream to your branch 
+  # git pull -Xtheirs --allow-unrelated-histories pantheon-wp master
+
   # resolve conflicts
   git add .
   git rebase --continue
