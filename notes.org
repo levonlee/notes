@@ -12786,6 +12786,8 @@ Remove line from wp-config.php define('WP_CACHE', true)
 
 *** Google Analytics Dashboard for WP by ExactMetrics (GADWP) <<<wp:plugin:google-analytics-dashboard-for-wp>>>
 - Show stats for each post!
+- Can add events for downloads, mailto, telephone and outbound links
+- Can exclude by user roles for events
 
 *** Admin Columns <<<wp:plugin:codepress-admin-columns>>>
 - Free version just adds and displays columns on wp-admin
@@ -12824,7 +12826,7 @@ You need to resave the post/article on WP first (to prevent WP Super Cache as FB
 **** Turn off json-ld <<<wp:plugin:wordpress-seo:json-ld>>>
 
 Once SEO > Search Appearance > General > Knowledge Graph > Company name and logo are specified, Plugin inserts Oranization and Website by default
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC json
   {
     "@context": "http:\/\/schema.org",
     "@type": "WebSite",
@@ -12837,9 +12839,9 @@ Once SEO > Search Appearance > General > Knowledge Graph > Company name and logo
       "query-input": "required name=search_term_string"
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC json
   {
     "@context": "http:\/\/schema.org",
     "@type": "Organization",
@@ -12849,20 +12851,20 @@ Once SEO > Search Appearance > General > Knowledge Graph > Company name and logo
     "name": "My Organization Name",
     "logo": "http:\/\/mywebsite.com\/wp-content\/uploads\/2018\/02\/logo.jpg"
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Use filter to turn it off and customize it
 https://www.bybe.net/yoast-seo-guide-disable-schema-json-ld-wordpress/
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function bybe_remove_yoast_json($data){
     $data = array();
     return $data;
   }
   add_filter('wpseo_json_ld_output', 'bybe_remove_yoast_json', 10, 1);
-#+END_EXAMPLE
+#+END_SRC
 
 **** Turn off canonical
-add_filter( 'wpseo_canonical', '__return_false' );
+~add_filter( 'wpseo_canonical', '__return_false' );~
 
 **** Setting: add exclude post from sitemap
 Theme functions.php
@@ -13207,15 +13209,15 @@ Turn off wp:p:contact-form-7:autop
 
 ***** filter:wpcf7_form_elements
 Remove <noscript> for reCaptcha which has an iframe that is not WCAG ready
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function csWpcf7FormElements($form) {
     try {
       $dom = new DOMDocument;
       $dom->loadHTML($form);
       $noscripts = $dom->getElementsByTagName('noscript');
       while ($noscripts->length > 0) {
-        $i = $noscripts->item(0);
-        $i->parentNode->removeChild($i);
+	$i = $noscripts->item(0);
+	$i->parentNode->removeChild($i);
       }
       return $dom->saveHTML();
     }
@@ -13227,7 +13229,7 @@ Remove <noscript> for reCaptcha which has an iframe that is not WCAG ready
 
   }
   add_filter( 'wpcf7_form_elements', 'csWpcf7FormElements');
-#+END_EXAMPLE
+#+END_SRC
 
 ***** filter:shortcode_atts_wpcf7 <<<wp:p:contact-form-7:f:shortcode_atts_wpcf7>>>
 #+BEGIN_EXAMPLE
@@ -26415,32 +26417,32 @@ $(this) is jQuery object, but this is a normal this
 
 ** General click to element
 Any elements with attribute data-target="goto1" with id #goto1
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   LiliJs.clickToGo = function(event) {
       var $target = $(event.target);
       var iter = 0;
       var itermax = 10;
       var goto = '';
       while (iter < itermax ) {
-        if ($target.data('target')) {
-          goto =$target.data('target');
-          break;
-        }
-        else {
-          $target = $target.parent();
-          iter++;
-          console.log('+1');
-        }
+	if ($target.data('target')) {
+	  goto =$target.data('target');
+	  break;
+	}
+	else {
+	  $target = $target.parent();
+	  iter++;
+	  console.log('+1');
+	}
       }
       if (goto) {
-        $("#"+goto).get(0).scrollIntoView();
+	$("#"+goto).get(0).scrollIntoView();
       }
   }
 
   $(function() {
     $('.click-1, .click-2').click(LiliJs.clickToGo);
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ** Pointer Events
 https://mobiforge.com/design-development/html5-pointer-events-api-combining-touch-mouse-and-pen
@@ -39497,12 +39499,9 @@ What are the sources contribution in terms of:
 - Last interaction ::  the interaction that immediately precedes the conversion.
 - Assist interaction :: any interaction that is on the conversion path but is not the last interaction.
 - First interaction :: the first interaction on the conversion path; it's a kind of assist interaction.
-
-Time Lag :: how many days a conversion is made
-
-Top Conversion Paths :: what sources were went through before a conversion is made
-
-Path length :: how many interactions took before a conversion is made.
+- Time Lag :: how many days a conversion is made
+- Top Conversion Paths :: what sources were went through before a conversion is made
+- Path length :: how many interactions took before a conversion is made.
 
 *** Add Google Search Console to a property
 There will be a new section in the report called Acquisition > Search Console
@@ -39516,30 +39515,28 @@ http://www.metricmogul.co.uk/5-simple-differences-between-goals-and-events-in-go
 
 <<<ga:goal>>>
 - A goal provides additional data such as conversion rate in Acquisition reports
-- A goal will only record once per session. Newsletter sign up twice with 2 emails, only one conversion is recorded.
-- An event can be anything. A goal has to be a destination, duration, pages per session or based on an event.
-- A goal can be based on an event.
-- Goal flow report.
-- Up to 20 goals per View.
+- A goal will only record once per session. Newsletter sign up twice with 2 emails, only one conversion is recorded
+- An event can be anything. A goal has to be a destination, duration, pages per session or based on an event
+- A goal can be based on an event
+- Goal flow report
+- Up to 20 goals per View :: Goal cannot be shared across Views nor Properties. It has to be created in each View unless when View is duplicated
+  - Goal ID 1 to 5 is Goal Set 1, ID 6 to 10 is Goal Set 2 etc.
 
 Types of a Goal
 - Desitnation :: the only type that is possible to track funnels
 - Duration :: Sessions that last a specific amount of time or longer
 - Pages/Screens per session
 - Event :: multiple events in one session but event goal is counted as one
+  - A conversion is counted once per session per goal
+  - When Event value is empty on Goal setup page, it means it could be any value 
 - Smart Goal
-
-[[https://support.google.com/analytics/answer/1116091#matchTypes][Destination Goal match types: begin with, equal to & RegEx]]
-
-A conversion is counted once per session per goal.
+- [[https://support.google.com/analytics/answer/1116091#matchTypes][Destination Goal match types: begin with, equal to & RegEx]]
 
 Events are good for
 - Downloaded file (shows which pages have the pdf file link)
 - Link (outbound)
-
-The first 10 event hits sent to Analytics are tracked immediately, thereafter tracking is rate limited to one event hit per second.
-
-It's better to setup events and setup goals as the event goal type.
+- The first 10 event hits sent to Analytics are tracked immediately, thereafter tracking is rate limited to one event hit per second
+- It's better to setup events and setup goals as the event goal type
 
 *** Segment <<<ga:segment>>>
 A Segment is to filter out the ~user sessions~ that you don't want without destroying your View data.
@@ -39806,28 +39803,34 @@ And you may need to filter out those destination URL's in another GA View. Don't
 View the Virtual Pageview in Reporting > Real-Time > Content
 View the converted goal in real time Reporting > Real-Time > Conversions
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   ga('send', 'pageview', '/ga_goal/goal1/goal1_variant1.html');
   ga('send', 'pageview', '/ga_goal/goal1/goal1_variant2.html');
   ga('send', 'pageview', '/ga_goal/goal1/step1/goal1_variant1.html');
   ga('send', 'pageview', '/ga_goal/goal1/step2/goal1_variant1.html');
-  ...
+
+  // ...
 
   gtag('config', 'GA_TRACKING_ID', {
     'page_title' : 'homepage',
     'page_path': '/ga_goal/goal1/goal1_variant1.html'
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ***** Send Event - play, call, scroll
-Reporting > Behavior > Events
-Category > Action > Label > Value
-
-Syntax: 
-~gtag('event', eventName, eventParameters);~
-~ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);~
-
+- Reporting > Behavior > Events
+- Category > Action > Label > Value
+- https://developers.google.com/analytics/devguides/collection/gtagjs/events
+- https://support.google.com/analytics/answer/1033068#Anatomy
+- Syntax :: ~gtag('event', eventName, eventParameters);~
+  - old :: ~ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);~
 - ~eventName~ :: same as ~eventAction~
+- ~eventParameters~
+  - ~<category>~ :: the string that appears as the event category
+  - ~<action>~ :: the string that appears as the event action in Google Analytics Event reports
+  - ~<label>~ :: the string that appears as the event label
+  - ~<value>~ :: a non-negative integer that appears as the event value. Usually monetary value
+  - ~non_interaction~ :: By default, the event hit is considered an interaction hit, which means that it is included in bounce rate calculations. If the event is set to non_interaction true, then the event is not a hit
 
 #+BEGIN_SRC js
   gtag('event', <action>, {
@@ -39858,21 +39861,24 @@ Syntax:
 	  'value': '100'
 	});
   });
-#+END_SRC
 
-- ~<category>~ :: the string that appears as the event category
-- ~<action>~ :: the string that appears as the event action in Google Analytics Event reports
-- ~<label>~ :: the string that appears as the event label
-- ~<value>~ :: a non-negative integer that appears as the event value. Usually monetary value
+  // does not cover tel: and mailto:
+  $('a[href]:not([href=""])').each(function (i) {
+    if (typeof $(this).attr('href') !== 'undefined' &&
+      this.hostname &&
+      this.hostname.toLowerCase() !== location.hostname.toLowerCase()) {
+      // outbound links
+      $(this).on('click', function () {
+	//console.log($(this).prop('href'));
+	gtag('event', 'click', {
+	  'event_category': 'Outbound-Link',
+	  'event_label': $(this).prop('href'),
+	  'value': '1',
+	})
+      })
+    }
+  })
 
-https://developers.google.com/analytics/devguides/collection/gtagjs/events
-https://support.google.com/analytics/answer/1033068#Anatomy
-
-By default, the event hit is considered an interaction hit, which means that it is included in bounce rate calculations.
-
-If the event is set to non_interaction true, then the event is not a hit.
-
-#+BEGIN_SRC js
   gtag('event', 'video_auto_play_start', {
     'event_label': 'My promotional video',
     'event_category': 'video_auto_play',
@@ -39915,7 +39921,6 @@ If the event is set to non_interaction true, then the event is not a hit.
 
   /* report only after a user exists the website */
   $(window).bind('beforeunload', function() {sendGAreq();});
-
 #+END_SRC
 
 ***** Send dimension and metrics
@@ -40006,7 +40011,7 @@ text begins with /
 https://developers.google.com/analytics/devguides/collection/analyticsjs/field-reference#customs
 
 **** hitCallback
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var form = document.getElementById('signup-form');
 
   // Adds a listener for the "submit" event.
@@ -40020,7 +40025,7 @@ https://developers.google.com/analytics/devguides/collection/analyticsjs/field-r
     // resubmits the form once the hit is done.
     ga('send', 'event', 'Signup Form', 'submit', {
       hitCallback: function() {
-        form.submit();
+	form.submit();
       }
     });
 
@@ -40028,30 +40033,20 @@ https://developers.google.com/analytics/devguides/collection/analyticsjs/field-r
     ga('send', 'event', 'Signup Form', 'submit', {
       transport: 'beacon'
     });
-    
+
     form.submit();
   });
-#+END_EXAMPLE
+#+END_SRC
+
 *** Regular Expressions <<<ga:regex>>>
-https://support.google.com/analytics/answer/1034324?hl=en
-
-Use ~\~ to escape. Need to escape the following metacharacters
-#+BEGIN_EXAMPLE
-  . ? + * | ^ $ ( ) [ ] -
-#+END_EXAMPLE
-
-Metacharacters are no longer special inside of square brackets. Except - ^ and the \
-
-[0-9]{1,2} repeat the number at least 1 time and no more than 2 times.
-
-http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
-
-Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI
-
+- https://support.google.com/analytics/answer/1034324?hl=en
+- Use ~\~ to escape. Need to escape the following metacharacters :: ~. ? + * | ^ $ ( ) [ ] -~
+- Metacharacters are no longer special inside of square brackets. Except :: ~- ^ \~
+- Repeat the number at least 1 time and no more than 2 times :: ~[0-9]{1,2}~
+- Use ~(q=[^&]*)~ to grab ~q=lava+lamp~ in Request URI :: http://www.mysite.com/shopping?qsrc=35&o=0&x=ref&stf=CA:LO&q=lava+lamp
 - Use ~|~ to match multiple. e.g. match multiple IP's :: ~1\.2\.3\.4|2\.2\.3\.4~
-
-http://www.analyticsmarket.com/freetools/regex-tester
-http://www.lunametrics.com/regex-book/Regular-Expressions-Google-Analytics.pdf
+- http://www.analyticsmarket.com/freetools/regex-tester
+- http://www.lunametrics.com/regex-book/Regular-Expressions-Google-Analytics.pdf
 
 **** Include multiple words but order does not matter
 word1+word2+word3
@@ -40692,19 +40687,35 @@ After that, go back to your existing call extension or call-only ad or when you 
 Select the conversion action you just created as Count conversion as
 
 ****** Calls to a phone number on your website
-https://support.google.com/adwords/answer/6095883
-Set up a conversion action as usual :: Measurement > Conversions > Add new Phone calls - Calls to a phone number on your website
+- https://support.google.com/adwords/answer/6095883
+- Set up a conversion action as usual :: Measurement > Conversions > Add new Phone calls - Calls to a phone number on your website
+- It prompts the phone snippet based on your option. Sample in header
+#+BEGIN_SRC html
+  <script async
+  src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID">
 
-It prompts the phone snippet based on your option. Sample in header
-#+BEGIN_EXAMPLE
-  gtag('config', 'AW-CONVERSION_ID');
+  </script>
+
+  <script>
+
+    window.dataLayer = window.dataLayer || [ ] ;
+
+    function gtag(){dataLayer.push(arguments);}
+
+    gtag( 'js', new Date () ) ;
+
+    gtag( 'config', 'GA_TRACKING_ID');
+
+    gtag( 'config', 'AW-CONVERSION_ID');
+
+  </script>
 
   <script>
     gtag('config', 'AW-CONVERSION_ID/CONVERSION_LABEL', {
       'phone_conversion_number': '1-650-555-5555'
     });
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 If you select "Don't enter a number"
 #+BEGIN_SRC js
@@ -41185,20 +41196,19 @@ Multiple ~<script type="application/ld+json">~ are ok.
 *** keywords and syntax tokens 
 **** @id
 The node with @id can be referrenced either internally or externally on internet. The hash indicates Organization object not a page
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC json
   {
   "@context": "http://schema.org",
   "@id": "https://www.apple.com/#organization"
   "@type": "Organization",
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** @graph
 Contain an array of nodes that are linked using @id
 
 *** Product
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <script type="application/ld+json">
   {
     "@context" : "http://schema.org",
@@ -41207,10 +41217,10 @@ Contain an array of nodes that are linked using @id
     "image" : "http://mysite.com/uploads/1.jpg"
   }
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 Multiple products
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <script type="application/ld+json">
   [ {
     "@context" : "http://schema.org",
@@ -41224,7 +41234,7 @@ Multiple products
     "image" : "http://mysite.com/uploads/2.jpg"
   } ]
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 *** [[https://schema.org/Organization][Organization]], [[http://schema.org/WebSite][Website]]
 <<<google:json-ld:organization>>>
