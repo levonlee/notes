@@ -7562,8 +7562,41 @@ Return post thumbnail alt text
 #+END_SRC
 
 *** wp_get_post_terms($post_id, $tax, $args)
-Get the slugs of the terms under taxonomy publication
-=wp_get_post_terms($post_id, 'publication', ['field' => 'slugs'])=
+- Retrieve terms for a post :: ~wp_get_post_terms( $post_id = 0, $taxonomy = 'post_tag', $args = array() )~
+  - ~$taxonomy~ :: default only return terms that are tags
+  - ~$post_id~ :: default current post if it's in a loop
+  - ~$args~ :: default ~$args = array('orderby' => 'name', 'order' => 'ASC', 'fields' => 'all');~
+  - Return :: an array of taxonomy terms as objects, empty array or WP_Error
+- Get the slugs of the terms under taxonomy ~publication~ :: ~wp_get_post_terms( $post_id, 'publication', ['field' => 'slugs'] )~
+
+Sample
+#+BEGIN_SRC php
+  Array
+  (
+      [0] => WP_Term Object
+	  (
+	      [term_id] => 145
+	      [name] => Example Category
+	      [slug] => example-cat
+	      [term_group] => 0
+	      [term_taxonomy_id] => 145
+	      [taxonomy] => adcpt_categories
+	      [description] => 
+	      [parent] => 0
+	      [count] => 2
+	      [filter] => raw
+	  )
+
+  )
+#+END_SRC
+
+Return all terms for a post
+#+BEGIN_SRC php
+  global $post;
+  $tax = get_taxonomies();
+  $terms = wp_get_post_terms($post->ID, $tax);
+#+END_SRC
+
 *** wp_editor <<<wp:f:wp_editor>>>
 Render an editor for field in a page in the typical fashion used in Posts and Pages.
 [[https://codex.wordpress.org/Function_Reference/wp_editor][Doc]]
@@ -7623,7 +7656,7 @@ $text can't be a variable. And use single quotes instead of "".
 **** Setup, .po and .mo files
 Load textdomain in child theme which overwrites the textdomain defined in parent theme
 Do this in theme functions.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function smart_mag_child_theme_locale() {
     $_r = load_child_theme_textdomain( 'textdomain-name', get_stylesheet_directory() . '/languages' );
     // textdomain-name can be defined in parent theme or a new textdomain
@@ -7637,7 +7670,7 @@ Do this in theme functions.php
     }
   }
   add_action( 'after_setup_theme', 'smart_mag_child_theme_locale' );
-#+END_EXAMPLE
+#+END_SRC
 
 Usually translate-ready theme will provide a .pot file which is a template file for .po and .mo files.
 Open .pot in tool:Poedit, generate a new translation. What Poedit saves is 2 files: .po and .mo.
@@ -39196,25 +39229,18 @@ Field B: Request URI Extract: ~(.*)~
 Output To: Request URI Constructor: $A1$B1
 
 *** Dimensions vs Metrics <<<ga:dimensions>>> <<<ga:metrics>>> <<<ga:scope>>>
-Each cell shows the value in the corresponding metric column that also belong to the corresponding dimension row.
-
-e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country.
-
-Which dimension value has the highest metric? e.g. Which page category (custom dimension) has the highest pageviews (built-in metrics).
-
-Filters are applied to dimensions.
-
-Dimension can have one of these levels or scope https://support.google.com/analytics/answer/2709828#scope
-- Product :: value is applied to the product for which it has been set (Enhanced Ecommerce only)
-- Hit :: a single action e.g. pageview, event. A hit can associate with multiple products
-- Session :: has multiple hits. Timeout limit by default is 30 minutes. Max can go to 4 hours. Admin > Property
-- User :: a cookie that has sessions
-
-Metric can only have Hit or Product level.
-
-All standard [[https://developers.google.com/analytics/devguides/reporting/core/dimsmets][Dimensions & Metrics Explorer]] in what scope.
-
-Metrics can be set as KPI's to indicate macro or micro conversions.
+- Each cell shows the value in the corresponding metric column that also belong to the corresponding dimension row
+- e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country.
+- Which dimension value has the highest metric? e.g. Which page category (custom dimension) has the highest pageviews (built-in metrics)
+- Filters are applied to dimensions
+- Dimension can have one of these levels or scope :: https://support.google.com/analytics/answer/2709828#scope
+  - Product :: value is applied to the product for which it has been set (Enhanced Ecommerce only)
+  - Hit :: a single action e.g. pageview, event. A hit can associate with multiple products
+  - Session :: has multiple hits. Timeout limit by default is 30 minutes. Max can go to 4 hours. Admin > Property
+  - User :: a cookie that has sessions
+- Metric can only have Hit or Product level
+- All standard [[https://developers.google.com/analytics/devguides/reporting/core/dimsmets][Dimensions & Metrics Explorer]] in what scope
+- Metrics can be set as KPI's to indicate macro or micro conversions.
 
 **** Custom dimensions and metrics <<<ga:custom dimensions>>>
 - https://support.google.com/analytics/answer/2709828
