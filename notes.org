@@ -8852,11 +8852,13 @@ Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
 #+END_SRC
 
 *** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
-Used in wp:action:wp_enqueue_scripts
-Use wp:filter:style_loader_src
+- Used in wp:action:wp_enqueue_scripts
+- Use wp:filter:style_loader_src
 ~wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )~
 
 #+BEGIN_SRC php
+  wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
+
   wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
   wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
 #+END_SRC
@@ -8870,27 +8872,33 @@ When a script is added with dependency on jQuery, jQuery is auto loaded by wp. C
 
 If there's script depends on jquery and it's loaded in header, even though jquery is set to load in footer, jquery will be loaded in header.
 
-*** wp_localize_script
-This must be called after the script has been registered using wp_register_script() or wp_enqueue_script()
-It is used to define variables as an object.
+*** wp_localize_script <<<wp:f:wp_localize_script>>>
+- Must be called after the script has been registered using ~wp_register_script()~ or ~wp_enqueue_script()~
+- Use to define variables as an object
 
-#+BEGIN_EXAMPLE
-  wp_register_script('unique_handle', 'path/to/myscript.js' );
+#+BEGIN_SRC php
+  // register a script that may be loaded using wp_enqueue_script()
+  // wp_register_script( 'unique_handle', 'path/to/myscript.js' );
+  // later
+  // wp_enqueue_script( 'unique_handle' );
 
+  // or you enque directly wp:f:wp_enqueue_script
+  wp_enqueue_script( 'unique_handle', get_theme_file_uri( '/path/to/myscript.js' ) );
+
+  // Pass vars in $translation_array to file path/to/myscript.js (registered using handle `unique_handle`)
   $translation_array = array(
     'some_string' => 'hello';
     'a_value' => '10'
   );
-
-  // Pass vars in $translation_array to file path/to/myscript.js
   wp_localize_script( 'unique_handle', 'object_name', $translation_array );
   wp_enqueue_script( 'unique_handle' );
+#+END_SRC
 
-  // Then you can use it in all enqueued javascript files
-  <script>
-    console.log( object_name.some_string);
-  </script>
-#+END_EXAMPLE
+Then you can use it in the enqueued javascript file ~path/to/myscript.js~
+#+BEGIN_SRC js
+  console.log( object_name.some_string ); // default all values are strings
+  parseInt( object_name.some_int, 10 ); // pass parameter as int
+#+END_SRC
 
 If you just want to define pass PHP variables and don't want to create empty js files
 #+BEGIN_EXAMPLE
