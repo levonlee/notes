@@ -41007,12 +41007,10 @@ LinkedIn Insight Tag
 - A tag can provide conversion tracking, learn audience and collect audience for remarketing
 
 ** Google Tag Manager - <<<google:gtm>>>
-https://support.google.com/tagmanager/
-https://tagmanager.google.com
-
-[[https://www.lynda.com/Google-Tag-Manager-tutorials/Google-Tag-Manager/693108-2.html][Lynda]]
-
-Refer to chrome:wasp
+- https://support.google.com/tagmanager/
+- https://tagmanager.google.com
+- [[https://www.lynda.com/Google-Tag-Manager-tutorials/Google-Tag-Manager/693108-2.html][Lynda]]
+- Refer to chrome:wasp
 
 - Container :: a website
 - Inside a container :: Tags, Triggers, Variables, Folders
@@ -41022,28 +41020,45 @@ Refer to chrome:wasp
 *** Code
 Container > Admin > Install Google Ad Manager
 #+BEGIN_SRC html
-  <!-- as high in the <head> as possible -->
-    <!-- If JS libraries are used for GTM, then put this after the libraries are loaded -->
+  <head>
+      <!-- as high in the <head> as possible -->
+      <!-- If JS libraries are used for GTM, then put this after the libraries are loaded -->
+      <!--
+	   Define dataLayer for GTM to define Variables for triggers or tags
+	   dataLayer will persist as long as the visitor remains on the current page
+	-->
+      dataLayer = [{
+      'pageCategory': 'signup',
+      'visitorType': 'high-value'
+      }];
 
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      <!-- Google Tag Manager -->
+      <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
       })(window,document,'script','dataLayer','GTM-CONTAINER-ID');</script>
-    <!-- End Google Tag Manager -->
+      <!-- End Google Tag Manager -->
 
-    <!-- immediately after the opening <body> -->
-      <!-- Google Tag Manager (noscript) -->
-      <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-CONTAINER-ID"
-			height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-      <!-- End Google Tag Manager (noscript) -->
+
+  </head>
+  <body>
+  <!-- immediately after the opening <body> -->
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-CONTAINER-ID"
+		    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
+  <!-- After GTM is loaded, should use push() API to modify dataLayer -->
+  <a href="#" name="button1" onclick="dataLayer.push({'event': 'button1-click'});" >Button 1</a>
+
+  </body>
 #+END_SRC
 
 After that, click SUBMIT to publish the change
 
 *** Tag
-Custom HTML you can paste custom JavaScript
+- Custom HTML you can paste custom JavaScript
 - Enable ~Support document.write~ if it doesn't have external sources
 
 #+BEGIN_SRC html
@@ -41053,23 +41068,26 @@ Custom HTML you can paste custom JavaScript
 #+END_SRC
 
 *** Variables
-Variables can be referred to in Tag and Trigger as value using double curly brackets e.g. ~{{Page URL}}~
+- Variables can be referred to in Tag and Trigger as value using double curly brackets e.g. ~{{Page URL}}~
+- Built-in variables without any tags. These are not all built-in variables:
+  - All built-in variables :: https://support.google.com/tagmanager/topic/7182737
+  - Event
+  - Page Hostname
+  - Page Path
+  - Page URL
+  - Click URL :: after a link is clicked
+- Variables come with a certain tag type
+  - ~TransactionTotal = {insert cart checkout total here}~
+  - GA Custom dimensions
+- User-defined variables :: https://support.google.com/tagmanager/topic/9125128
+  - Constant Variable
+  - Data Layer :: ~dataLayer.push({"Data Layer Name": "value"})~ <<<google:gtm:user-defined variable:data layer>>>
+    - Version 1 :: ~dataLayer.push( "a.b.c": "value")~ :: interpreted as ~{ "a.b.c": "value"}~
+    - Version 2 :: ~dataLayer.push({"a.b.c": "value"})~ :: interpreted as ~{a: {b: {c: "value"}}}~
+  - JavaScript Variable :: some global JavaScript variables
+  - Custom JavaScript
 
-Built-in variables without any tags. These are not all built-in variables.
-- Event
-- Page Hostname
-- Page Path
-- Page URL
-- Click URL :: after a link is clicked
-
-Variables come with a certain tag type
-- TransactionTotal = {insert cart checkout total here}
-- GA Custom dimensions
-
-User-defined variables
-- Constant Variable
-- JavaScript Variable :: some global JavaScript variables
-- Custom JavaScript
+#+NAME: User-defined variables - Custom JavaScript
 #+BEGIN_SRC js
   function() {
       return new Date().getHours();
@@ -41077,21 +41095,33 @@ User-defined variables
 #+END_SRC
 
 *** Trigger
-Trigger controls under which condition a Tag is used/inserted.
-
-- Use variable name = value
-- Use events
-  - The following example fire an event to track outbound clicked link
-  - Create a Tag
-    - Universal Analytics
-    - Type: Event
-    - Category: link clicks
-    - Action: outbound
-    - Label: ~{{Click URL}}~
-    - Tracking ID :: UA-XXX
-  - Create a trigger inside the Tag
-    - Click URL does not contain yourwebsitedomain.com
-    - This trigger fires on All Link Clicks
+- Trigger controls under which condition a Tag is used/inserted. A Tag always requires at least one trigger
+- Types
+  - Page View :: 2 types
+    - Page View :: fire immediately when the browser begins to load a page
+    - DOM Ready :: Pageview-based tags that interact with the DOM to populate variables should use this
+    - Window Loaded :: fire when page has fully loaded
+  - Click
+    - Just Links :: The following example fire an event to track outbound clicked link
+      - Create a Tag to be fired after GTM event is triggered
+	- Universal Analytics
+	- Type :: Event
+	- Category :: link clicks
+	- Action :: outbound
+	- Label :: ~{{Click URL}}~
+	- Tracking ID :: UA-XXX
+      - Create a trigger for the Tag
+	- Trigger Type :: Click - Just Links
+	- Click URL does not contain yourwebsitedomain.com
+	- This trigger fires on ~All Link Clicks~
+  - Custom Event :: <<<google:gtm:trigger:custom event>>>
+    - https://support.google.com/tagmanager/answer/7679219?hl=en&ref_topic=7679108
+    - Fire from webpage
+      - Simple :: ~dataLayer.push({'event': 'button1-click'});~
+      - With value of user-defined variable data layer :: ~dataLayer.push({'event':'button1-click','conversionValue':25});~
+	- Refer to google:gtm:user-defined variable:data layer
+  - Trigger Group :: Only fire after all of the selected triggers have fired at leaswt once
+- Use ~variable name = value~
 
 *** Preview
 Click Preview on GTM and normally refresh the webpage and you will get a preview pane just on your browser.
@@ -58661,8 +58691,7 @@ Expand the Events and RC on handler to Reveal function in source.
 
 **** [[https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb?hl%3Den][Web Server for Chrome]]
 **** [[https://chrome.google.com/webstore/detail/waspinspector-analytics-s/niaoghengfohplclhbjnjheodgkejpih][Wasp]] <<<chrome:wasp>>>
-Web Analytics Solution Profiler
-
+- Web Analytics Solution Profiler
 - DevTools > beside Audits tab, there's WASP
 - WASP tracks across page opening history
 
@@ -59922,36 +59951,27 @@ Remove size attribute for input type file, confirm_email
 #+END_EXAMPLE
 
 *** pdf
-PDF and Office documents need to set Title, Advanced > Language in Document Properties
-
-PDF and Office document image has to have title attribute.
-
-Acrobat DC :: Edit > Manage Tools > add Accessibility to the right pane
-
-Accessibility > Full Check > Click on items need alternate text to find on page and then doubleclick to select and then right click Tag as Figure
-
-Accessibility > Autotag Document will retag the whole document. The best approach is to add tag to image/figure because autotag might add links wrong based on text context. Do this:
-
-Accessbility > Reading Order > Show Order Panel. Right click on the figure and Tag
-
-Add Adobe Reader download link
-http://www.adobe.com/ca/legal/permissions/icons-web-logos.html#adobereader
-
-Get Adobe Reader
-
-#+BEGIN_EXAMPLE
-  <a href="http://www.adobe.com/go/getreader" target="_blank"><img src="get-reader-158x39.png" alt="Get Adobe Reader DC"></a>
-#+END_EXAMPLE
-
-PDF/UA-1 compliance. PDF needs to have this XMP metadata to mark it as PDF/UA-1 compliant.
-Tools > Print Production > Preflight, choose PDF Standards or Acrobat Pro DC 2015 Profiles as profile, choose the wrench tool icon (Select single fixups), expand to Document info and Metadata and choose Set PDF/UA-1 entry and then Fix.
+- PDF and Office documents need to set Title, Advanced > Language in Document Properties
+- PDF and Office document image has to have title attribute.
+- Acrobat DC :: Edit > Manage Tools > add Accessibility to the right pane
+- Accessibility > Full Check > Click on items need alternate text to find on page and then doubleclick to select and then right click Tag as Figure
+  - Accessibility > Autotag Document will retag the whole document. The best approach is to add tag to image/figure because autotag might add links wrong based on text context.
+  - Do these
+    - Accessbility > Reading Order > Show Order Panel. Right click on the figure and Tag
+    - Add Adobe Reader download link :: http://www.adobe.com/ca/legal/permissions/icons-web-logos.html#adobereader
+    - Get Adobe Reader :: ~<a href="http://www.adobe.com/go/getreader" target="_blank"><img src="get-reader-158x39.png" alt="Get Adobe Reader DC"></a>~
+- PDF/UA-1 compliance. PDF needs to have this XMP metadata to mark it as PDF/UA-1 compliant
+  - Tools > Print Production > Preflight, choose PDF Standards or Acrobat Pro DC 2015 Profiles as profile, choose the wrench tool icon (Select single fixups), expand to Document info and Metadata and choose Set PDF/UA-1 entry and then Fix
 
 *** meta viewport
 *** Skip to content link
 Right below <body>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <a id="skip-nav" href="#main-content">Skip to content</a>
   <div id="main-content"></div>
+#+END_SRC
+
+#+BEGIN_SRC css
   #skip-nav {
     position: absolute;
     top: -1000px;
@@ -59969,7 +59989,7 @@ Right below <body>
     position:static;
     overflow: visible;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Color Contrast Ratio
 WCAG 2.0 level AA requires a contrast ratio of 4.5:1 for normal text and 3:1 for large text. Level AAA requires a contrast ratio of 7:1 for normal text and 4.5:1 for large text.
