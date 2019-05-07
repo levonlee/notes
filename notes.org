@@ -39587,10 +39587,43 @@ Users Include Source/Medium = google/cpc AND Default Channel Grouping = Paid Sea
 - ga:audience:create may use a segment
 - https://support.google.com/analytics/answer/3124493
 
-*** Tracking Code :: gtag.js, analytics.js
-The most recent version is gtag.js (Global site tag). [[https://developers.google.com/analytics/devguides/collection/gtagjs/][Documentation]]. [[https://developers.google.com/analytics/devguides/collection/gtagjs/migration][Migrate from analytics.js to gtag.js]].
-Previous version
-  - analytics.js (Universal). [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]] [[https://developers.google.com/analytics/devguides/collection/analyticsjs/command-queue-reference][ga commands, objects, fields reference]]
+*** Tracking Code - gtag.js, analytics.js <<<ga:gtag>>>
+- The most recent version is gtag.js (Global site tag)
+  - [[https://developers.google.com/analytics/devguides/collection/gtagjs/][Google Analytics gtags.js Documentation]]
+  - gtag.js Developer Guide :: https://developers.google.com/gtagjs/
+  - [[https://developers.google.com/gtagjs/reference/api][gtag.js API]]
+  - [[https://developers.google.com/analytics/devguides/collection/gtagjs/migration][Migrate from analytics.js to gtag.js]]
+  - Google Analytics, Campaign Manager, Google Ads and Google Marketing Platform (e.g. Display & Video 360, Search Ads 360) use the same gtag.js
+- Other version
+  - analytics.js (Universal)
+    - [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
+    - [[https://developers.google.com/analytics/devguides/collection/analyticsjs/command-queue-reference][ga commands, objects, fields reference]]
+
+#+NAME gtag.js
+#+BEGIN_SRC html
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-xxx"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-XXX');
+  </script>
+#+END_SRC
+
+#+NAME analytics.js
+#+BEGIN_SRC html
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-XXXXX-Y', 'auto');
+  ga('send', 'pageview');
+  </script>
+#+END_SRC
 
 **** Custom parameters for dynamic remarketing <<<ga:dynamic remarketing>>>
 https://support.google.com/adwords/answer/3103357
@@ -39608,10 +39641,11 @@ https://support.google.com/adwords/answer/3103357
 
   <!-- Event snippet for Example dynamic remarketing page -->
   <script>
-    gtag('event', 'page_view', {'send_to': 'AW-123456789',
-     'ecomm_prodid': 'REPLACE_WITH_STRING_VALUE',
-     'ecomm_pagetype': 'REPLACE_WITH_STRING_VALUE',
-     'ecomm_totalvalue': 'REPLACE_WITH_STRING_VALUE'
+    gtag('event', 'page_view', {
+    'send_to': 'AW-123456789',
+    'ecomm_prodid': 'REPLACE_WITH_STRING_VALUE',
+    'ecomm_pagetype': 'REPLACE_WITH_STRING_VALUE',
+    'ecomm_totalvalue': 'REPLACE_WITH_STRING_VALUE'
     });
   </script>
 #+END_SRC
@@ -39629,7 +39663,9 @@ Then you can setup Dynamic Remarketing on AdWords
 
 Maximum duration that a user can be included in a remarketing audience is 540 days.
 
-**** Send to multiple property id's <<<ga:gtag:send_to>>>
+**** Send to multiple property ids
+- <<<ga:gtag:event:send_to>>>
+
 #+BEGIN_SRC js
   ga('create', 'UA-XXXXX-Y', 'auto');
   ga('create', 'UA-XXXXX-Z', 'auto', 'clientTracker');
@@ -39651,8 +39687,8 @@ gtag.js
   gtag('config', 'GA-TRACKING_ID-1', { 'groups': 'default' });
 #+END_SRC
 
-Full example :: send to a specific property instead of groups
-#+BEGIN_SRC js
+- Full example :: send to a specific property instead of groups
+#+BEGIN_SRC html
   <script async src="https://www.googletagmanager.com/gtag/js?id=GA-TRACKING_ID-1">
   </script>
   <script>
@@ -39697,6 +39733,29 @@ Full example :: send to a specific property instead of groups
     });
   </script>
 #+END_SRC
+
+**** gtag.js ~config~
+- <<<ga:gtag:config>>>
+
+#+BEGIN_SRC js
+  // Default config sends a pageview hit
+  gtag('config', 'UA-xxx', { 'send_page_view': false });
+#+END_SRC
+
+**** gtag.js ~set~ <<<ga:gtag:set>>>
+Set parameters that will be associated with every subsequent event on the page
+#+BEGIN_SRC js
+  gtag('set', {
+    'country': 'US',
+    'currency': 'USD'
+  });
+#+END_SRC
+
+**** gtag.js ~event~ <<<ga:gtag:event>>>
+- ga:gtag:event:send to
+- ga:gtag:event:custom dimension
+- Recommended event names :: https://developers.google.com/gtagjs/reference/event
+- Recommended event parameters :: https://developers.google.com/gtagjs/reference/parameter#event_parameters
 
 **** ga Command Queue and Object Methods
 https://developers.google.com/analytics/devguides/collection/analyticsjs/tracking-snippet-reference
@@ -39748,9 +39807,9 @@ getAll :: get all tracker instances
 remove :: remove a tracker instance
 
 *** Tracker Object Methods
-get :: get the value of a field stored on the tracker <<<ga:tracker:get>>>
-set :: set a field value on the tracker <<<ga:tracker:set>>>
-send :: send a hit to Google Analytics. Same as ga:ga:send
+- get :: get the value of a field stored on the tracker <<<ga:tracker:get>>>
+- set :: set a field value on the tracker <<<ga:tracker:set>>>
+- send :: send a hit to Google Analytics. Same as ga:ga:send
 
 **** set
 When a tracker's field is set, tracker will use that as default for all following actions/commands/methods e.g. send a hit. Use custom variable to subsitute into each action's required parameters instead of overwrite a tracker's field.
@@ -39946,7 +40005,7 @@ View the converted goal in real time Reporting > Real-Time > Conversions
   $(window).bind('beforeunload', function() {sendGAreq();});
 #+END_SRC
 
-***** Send dimension and metrics
+***** Send dimension and metrics <<<ga:gtag:event:custom dimension>>>
 Configure and send custom dimensions
 #+BEGIN_SRC js
   ga('send', 'pageview', {
@@ -39972,7 +40031,7 @@ Configure and send custom dimensions
   gtag('event', 'age_dimension', {'age': 12});
 
   // if multiple gtags are configured, send the event to the right UA-xxx
-  // Refer to ga:gtag:send_to
+  // Refer to ga:gtag:event:send_to
   gtag('event', 'dimension_age', {
       'send_to': 'UA-xxx',
       'age': 12
@@ -56438,6 +56497,34 @@ Run this .sql file:
 #+END_EXAMPLE
 
 * Google Ad Manager - DFP <<<google:dfp>>> <<<google:gam>>>
+** Default code - Google Publisher Tag - gpt.js
+#+BEGIN_SRC html
+  <head>
+      <script async='async' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+      <script>
+	var googletag = googletag || {};
+	googletag.cmd = googletag.cmd || [];
+      </script>
+
+      <script>
+	googletag.cmd.push(function() {
+	  googletag.defineSlot('/123456/my_ad_unit_1', [300, 250], 'div-gpt-ad-1557260744066-0').addService(googletag.pubads());
+	  googletag.pubads().enableSingleRequest();
+	  googletag.enableServices();
+	});
+      </script>
+  </head>
+
+  <body>
+  <!-- /123456/my_ad_unit_1 -->
+  <div id='div-gpt-ad-1557260744066-0' style='height:250px; width:300px;'>
+      <script>
+	googletag.cmd.push(function() { googletag.display('div-gpt-ad-1557260744066-0'); });
+      </script>
+  </div>
+  </body>
+#+END_SRC
+
 ** Metrics
 - Active View eligible impressions :: Total number of impressions that were eligible to measure viewability. An imp. is eligible if (a) the ad's creative has an Active View enabled tag, and (b) the imp. is counted with a downloaded pingback
 - Active View measurable impressions :: Impressions that were measurable by Active View out of the total number of eligible impressions. This value should generally be close to 100%; however, even when an ad tag has Active View enabled, some factors may prevent the tag from capturing data. For example, an impression that is rendering in a cross-domain iframe may not be measurable.
@@ -56584,7 +56671,7 @@ Add a size to the ad unit /networkid/adunitname
 You can specify one or more sizes for a line item that uses this ad unit.
 And upload each creative and specify the size. You can have creative bigger than the size you specify.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   googletag.cmd.push(function() {
     var leaderboard_mapping = googletag.sizeMapping()
     .addSize([1280, 800], [[970, 250], [970, 90], [728, 90]])
@@ -56596,15 +56683,15 @@ And upload each creative and specify the size. You can have creative bigger than
     .addSize([1050, 200], [])
   ,*/
     .build();
-    
+
     googletag.defineSlot('/networkid/adunitname'
-             , [728, 90] // If there is an error in the mapping or if the browser size can't be determined
-                         // the size specified here in .defineSlot will be used. 
-             , 'div-id')
-             .defineSizeMapping(leaderboard_mapping)
-             .addService(googletag.pubads());
+	     , [728, 90] // If there is an error in the mapping or if the browser size can't be determined
+			 // the size specified here in .defineSlot will be used. 
+	     , 'div-id')
+	     .defineSizeMapping(leaderboard_mapping)
+	     .addService(googletag.pubads());
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ** Macro in Third Party Code, Custom Code
 CACHEBUSTER :: time in integer
