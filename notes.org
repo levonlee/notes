@@ -637,13 +637,16 @@ Single dimension
 #+END_EXAMPLE
 
 *** Insert to any position of an array
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $original = array( 'a', 'b', 'c', 'd', 'e' );
   $inserted = array( 'x' ); // Not necessarily an array
 
   array_splice( $original, 3, 0, $inserted ); // splice in at position 3
   // $original is now a b c x d e
-#+END_EXAMPLE
+
+  // prepend one or more elements
+  array_unshift($original, "f", "g");
+#+END_SRC
 
 *** array_filter
 - cb function should return true or false. By default, only value is passed to the callback function. Unless flag is used
@@ -39588,6 +39591,7 @@ Users Include Source/Medium = google/cpc AND Default Channel Grouping = Paid Sea
 - https://support.google.com/analytics/answer/3124493
 
 *** Tracking Code - gtag.js, analytics.js <<<ga:gtag>>>
+**** Basics
 - The most recent version is gtag.js (Global site tag)
   - [[https://developers.google.com/analytics/devguides/collection/gtagjs/][Google Analytics gtags.js Documentation]]
   - gtag.js Developer Guide :: https://developers.google.com/gtagjs/
@@ -39595,7 +39599,7 @@ Users Include Source/Medium = google/cpc AND Default Channel Grouping = Paid Sea
   - [[https://developers.google.com/analytics/devguides/collection/gtagjs/migration][Migrate from analytics.js to gtag.js]]
   - Google Analytics, Campaign Manager, Google Ads and Google Marketing Platform (e.g. Display & Video 360, Search Ads 360) use the same gtag.js
 - Other version
-  - analytics.js (Universal)
+  - analytics.js (Universal) <<<ga:ga>>>
     - [[https://developers.google.com/analytics/devguides/collection/analyticsjs/][Documentation is here.]]
     - [[https://developers.google.com/analytics/devguides/collection/analyticsjs/command-queue-reference][ga commands, objects, fields reference]]
 
@@ -39663,9 +39667,31 @@ Then you can setup Dynamic Remarketing on AdWords
 
 Maximum duration that a user can be included in a remarketing audience is 540 days.
 
-**** Send to multiple property ids
-- <<<ga:gtag:event:send_to>>>
+**** gtag.js ~config~ <<<ga:gtag:config>>>
+- ga:gtag:config:groups
+  - Refer to ga:gtag:event:send_to
 
+#+BEGIN_SRC js
+  // Default config sends a pageview hit
+  gtag('config', 'UA-xxx', { 'send_page_view': false });
+#+END_SRC
+
+**** gtag.js ~set~ <<<ga:gtag:set>>>
+Set parameters that will be associated with every subsequent event on the page
+#+BEGIN_SRC js
+  gtag('set', {
+    'country': 'US',
+    'currency': 'USD'
+  });
+#+END_SRC
+
+**** gtag.js ~event~ <<<ga:gtag:event>>>
+- ga:gtag:event:send_to
+- ga:gtag:event:custom dimension
+- Recommended event names :: https://developers.google.com/gtagjs/reference/event
+- Recommended event parameters :: https://developers.google.com/gtagjs/reference/parameter#event_parameters
+
+**** Send to multiple property ids <<<ga:gtag:event:send_to>>>
 #+BEGIN_SRC js
   ga('create', 'UA-XXXXX-Y', 'auto');
   ga('create', 'UA-XXXXX-Z', 'auto', 'clientTracker');
@@ -39734,29 +39760,6 @@ gtag.js
   </script>
 #+END_SRC
 
-**** gtag.js ~config~
-- <<<ga:gtag:config>>>
-
-#+BEGIN_SRC js
-  // Default config sends a pageview hit
-  gtag('config', 'UA-xxx', { 'send_page_view': false });
-#+END_SRC
-
-**** gtag.js ~set~ <<<ga:gtag:set>>>
-Set parameters that will be associated with every subsequent event on the page
-#+BEGIN_SRC js
-  gtag('set', {
-    'country': 'US',
-    'currency': 'USD'
-  });
-#+END_SRC
-
-**** gtag.js ~event~ <<<ga:gtag:event>>>
-- ga:gtag:event:send to
-- ga:gtag:event:custom dimension
-- Recommended event names :: https://developers.google.com/gtagjs/reference/event
-- Recommended event parameters :: https://developers.google.com/gtagjs/reference/parameter#event_parameters
-
 **** ga Command Queue and Object Methods
 https://developers.google.com/analytics/devguides/collection/analyticsjs/tracking-snippet-reference
 
@@ -39811,12 +39814,12 @@ remove :: remove a tracker instance
 - set :: set a field value on the tracker <<<ga:tracker:set>>>
 - send :: send a hit to Google Analytics. Same as ga:ga:send
 
-**** set
+**** set <<<ga:ga:set>>>
 When a tracker's field is set, tracker will use that as default for all following actions/commands/methods e.g. send a hit. Use custom variable to subsitute into each action's required parameters instead of overwrite a tracker's field.
 
 **** send <<<ga:tracker:send>>>
-tracker.send([hitType], [...fields], [fieldsObject]);
-ga('[trackerName.]send', [hitType], [...fields], [fieldsObject]);
+~tracker.send([hitType], [...fields], [fieldsObject]);~
+~ga('[trackerName.]send', [hitType], [...fields], [fieldsObject]);~
 
 Used in ga:goal and funnel
 Use ga:fieldsObject
@@ -39828,8 +39831,8 @@ hitType ::
 - timing :: 
 
 ***** Send pageview - Page Tracking
-https://developers.google.com/analytics/devguides/collection/analyticsjs/pages
-ga('send', 'pageview', [page], [fieldsObject]);
+- https://developers.google.com/analytics/devguides/collection/analyticsjs/pages
+- ~ga('send', 'pageview', [page], [fieldsObject]);~
 
 Pageview fields (tracker object fields)
 - title :: It's set to document.title when tracker is created
@@ -39899,20 +39902,21 @@ View the converted goal in real time Reporting > Real-Time > Conversions
   });
 #+END_SRC
 
-***** Send Event - play, call, scroll
+***** Send Event - play, call, scroll <<<ga:send event>>>
 - Reporting > Behavior > Events
 - Category > Action > Label > Value
 - https://developers.google.com/analytics/devguides/collection/gtagjs/events
 - https://support.google.com/analytics/answer/1033068#Anatomy
-- Syntax :: ~gtag('event', eventName, eventParameters);~
-  - old :: ~ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);~
-- ~eventName~ :: same as ~eventAction~
-- ~eventParameters~
-  - ~<category>~ :: the string that appears as the event category
-  - ~<action>~ :: the string that appears as the event action in Google Analytics Event reports
-  - ~<label>~ :: the string that appears as the event label
-  - ~<value>~ :: a non-negative integer that appears as the event value. Usually monetary value
-  - ~non_interaction~ :: By default, the event hit is considered an interaction hit, which means that it is included in bounce rate calculations. If the event is set to non_interaction true, then the event is not a hit
+- Syntax
+  - gtag.js :: ~gtag('event', eventName_eventAction, eventParameters);~
+    - gtag.js ~eventParameters~
+      - ~<eventName>~ :: same as ~eventAction~
+      - ~<category>~ :: the string that appears as the event category
+      - ~<action>~ :: the string that appears as the event action in Google Analytics Event reports
+      - ~<label>~ :: the string that appears as the event label
+      - ~<value>~ :: a non-negative integer that appears as the event value. Usually monetary value
+      - ~non_interaction~ :: By default, the event hit is considered an interaction hit, which means that it is included in bounce rate calculations. If the event is set to non_interaction true, then the event is not a hit
+  - analytics.js :: ~ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);~
 
 #+BEGIN_SRC js
   gtag('event', <action>, {
@@ -40006,10 +40010,28 @@ View the converted goal in real time Reporting > Real-Time > Conversions
 #+END_SRC
 
 ***** Send dimension and metrics <<<ga:gtag:event:custom dimension>>>
-Configure and send custom dimensions
+- Configure and send custom dimensions
+- Use chrome:google tag assistant to debug
+- Refer to ga:send event
+
 #+BEGIN_SRC js
+  ga('create', 'UA-XXXX-Y', 'auto');
   ga('send', 'pageview', {
-    'dimension15':  'My Custom Dimension'
+    'dimension2':  'My Custom Dimension'
+  });
+
+  // or
+  /*
+  ga('create', 'UA-XXXX-Y', 'auto');
+  // Set value for custom dimension at index 1.
+  ga('set', 'dimension2', 'dimensionValue');
+  // Send the custom dimension value with a pageview hit.
+  ga('send', 'pageview');
+  ,*/
+
+  // or after pageview hit is sent
+  ga('send', 'event', 'any_eventCategory', 'any_eventAction', {
+      'dimension2': 'dimensionValue'
   });
 
   // gtag has to run 2 commands to accomplish the same
@@ -40021,7 +40043,7 @@ Configure and send custom dimensions
     'custom_map': {'dimension<Index>': 'dimension_name'}
   });
   // Sends the custom dimension to Google Analytics.
-  gtag('event', 'any_event_name', {'dimension_name': dimension_value});
+  gtag('event', 'any_event_name_eventAction', {'dimension_name': dimension_value});
 
   // Maps 'dimension2' to 'age'.
   gtag('config', 'GA_TRACKING_ID', {
@@ -40038,7 +40060,7 @@ Configure and send custom dimensions
   });
 #+END_SRC
 
-Configure and send custom metrics
+****** Configure and send custom metrics
 #+BEGIN_SRC js
   // Configures custom metric<Index> to use the custom parameter
   // 'metric_name' for GA_TRACKING_ID, where <Index> is a number
@@ -40067,7 +40089,7 @@ Configure and send custom metrics
   gtag('event', 'load_time_metric', {'avg_page_load_time': 1});
 #+END_SRC
 
-Configure and send both custom dimensions and custom metrics
+****** Configure and send both custom dimensions and custom metrics
 #+BEGIN_SRC js
   gtag('config', 'GA_TRACKING_ID', {
      'custom_map': {
@@ -40778,20 +40800,14 @@ Select the conversion action you just created as Count conversion as
 - It prompts the phone snippet based on your option. Sample in header
 #+BEGIN_SRC html
   <script async
-  src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID">
-
-  </script>
+  src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
 
   <script>
-
     window.dataLayer = window.dataLayer || [ ] ;
-
     function gtag(){dataLayer.push(arguments);}
-
     gtag( 'js', new Date () ) ;
 
     gtag( 'config', 'GA_TRACKING_ID');
-
     gtag( 'config', 'AW-CONVERSION_ID');
 
   </script>
@@ -41070,7 +41086,6 @@ LinkedIn Insight Tag
 - https://tagmanager.google.com
 - [[https://www.lynda.com/Google-Tag-Manager-tutorials/Google-Tag-Manager/693108-2.html][Lynda]]
 - Refer to chrome:wasp
-
 - Container :: a website
 - Inside a container :: Tags, Triggers, Variables, Folders
 - Account :: a group of containers
@@ -41080,36 +41095,49 @@ LinkedIn Insight Tag
 Container > Admin > Install Google Ad Manager
 #+BEGIN_SRC html
   <head>
-      <!-- as high in the <head> as possible -->
-      <!-- If JS libraries are used for GTM, then put this after the libraries are loaded -->
-      <!--
-	   Define dataLayer for GTM to define Variables for triggers or tags
-	   dataLayer will persist as long as the visitor remains on the current page
-	-->
+    <!-- as high in the <head> as possible -->
+    <!-- If JS libraries are used for GTM, then put this after the libraries are loaded -->
+    <!--
+	Define dataLayer for GTM to define Variables for triggers or tags
+	dataLayer will persist as long as the visitor remains on the current page
+      -->
+    <script>
       dataLayer = [{
       'pageCategory': 'signup',
       'visitorType': 'high-value'
       }];
+      <!-- a diffrent custom parameter can also be used in GTM -->
+      myNewName = [];
+    </script>
 
-      <!-- Google Tag Manager -->
-      <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-	  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
       })(window,document,'script','dataLayer','GTM-CONTAINER-ID');</script>
-      <!-- End Google Tag Manager -->
+    <!-- End Google Tag Manager -->
 
+    <!-- Change to use custom parameter myNewName instead of default dataLayer -->
+    <!--
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	  })(window,document,'script','myNewName','GTM-CONTAINER-ID');</script>
+	-->
 
+	<!-- dataLayer is defined after GTM is loaded -->
   </head>
   <body>
-  <!-- immediately after the opening <body> -->
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-CONTAINER-ID"
-		    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
+    <!-- immediately after the opening <body> -->
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-CONTAINER-ID"
+		      height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
 
-  <!-- After GTM is loaded, should use push() API to modify dataLayer -->
-  <a href="#" name="button1" onclick="dataLayer.push({'event': 'button1-click'});" >Button 1</a>
+    <!-- After GTM is loaded, should use push() API to modify dataLayer -->
+    <a href="#" name="button1" onclick="dataLayer.push({'event': 'button1-click'});" >Button 1</a>
 
   </body>
 #+END_SRC
@@ -41180,10 +41208,86 @@ After that, click SUBMIT to publish the change
       - With value of user-defined variable data layer :: ~dataLayer.push({'event':'button1-click','conversionValue':25});~
 	- Refer to google:gtm:user-defined variable:data layer
   - Trigger Group :: Only fire after all of the selected triggers have fired at leaswt once
-- Use ~variable name = value~
 
 *** Preview
-Click Preview on GTM and normally refresh the webpage and you will get a preview pane just on your browser.
+Click Preview on GTM and normally refresh the webpage and you will get a preview pane just on your browser
+
+*** UC: Custom Dimension WordPress Post Terms
+- https://www.competa.com/blog/custom-events-in-google-tag-manager/
+- Webpage fires a GTM Custom Event ~ga-custom-dimension-post-terms~ with Custom Variable ~ga-custom-dimension-post-terms~ when it's a single post page which has terms
+- The GTM Event is also a trigger to trigger Tag set up on GTM. The Tag submits a GA Event that sets up Custom Dimension using the Custom Variable
+- Refer to ga:gtag:event:custom dimension
+
+**** On website
+#+BEGIN_SRC web-php
+  <head>
+      <script>
+       (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({
+	   'gtm.start':  new Date().getTime(),event:'gtm.js'});
+	   var f=d.getElementsByTagName(s)[0],
+	       j=d.createElement(s),
+	       dl=l!='dataLayer'?'&l='+l:'';
+	   j.async=true;
+	   j.src='//www.googletagmanager.com/gtm.js?id='+i+dl;
+	   f.parentNode.insertBefore(j,f);
+       })(window,document,'script','dataLayer','GTM-XXXX');
+      </script>
+      <!-- End Google Tag Manager -->
+      <script>
+       if (typeof dataLayer !== 'undefined') {
+	   // dataLayer is defined after GTM
+	   <?php
+	   $terms = $terms_id = [];
+	   if (is_single()) {
+	       global $post;
+	       $tax = get_taxonomies();
+	       $terms = wp_get_post_terms($post->ID, $tax);
+
+	       if ( !is_wp_error($terms) && !empty($terms)) {
+		   foreach ($terms as $term) {
+		       $terms_id[] = $term->term_taxonomy_id;
+		   }
+		   $terms_id[]='';
+		   array_unshift($terms_id, '');
+	       }
+	       //echo '<!--'.implode( ',', $terms_id ).'-->';
+	   }
+	   if (!empty($terms_id)) : ?>
+	   dataLayer.push({
+	       'event': 'ga-custom-dimension-post-terms',
+	       'ga-custom-dimension-post-terms': '<?php echo implode( ',', $terms_id ); ?>'});
+	   <?php endif; ?>
+       }
+      </script>
+  </head>
+#+END_SRC
+
+**** Google Analytics
+Create Custom Dimension ~Page Terms~, hit type Hit. Say Index number is 1
+
+**** Google Tag Manager
+- Create Trigger ~My Trigger Name~
+  - Type :: Custom Event
+  - Event name :: ~ga-custom-dimension-post-terms~ (name does not matter but has to match the code on webpage)
+  - All Custom Events
+  - The code on website will trigger this event along with a set User-Defined Variable as described below 
+- Create User-Defined Variable
+  - Type :: Data Layer Variable
+  - Name :: ~ga-custom-dimension-post-terms~ (name does not matter but has to match the code on webpage)
+  - Version 2
+  - Default value :: blank (which is empty string)
+- Create Tag
+  - Type :: Google Analytics - Universal Analytics
+  - Track Type :: Event (submit a GA Event)
+  - Category :: does not matter. Use ~ga-custom-dimension-post-terms~
+  - Action :: does not matter. Use ~ga-custom-dimension-post-terms~
+  - Label :: may not matter.. Use custom variable ~ga-custom-dimension-post-terms~
+  - Enable overriding settings in this tag :: More Settings becomes available
+    - Custom Dimension :: Index:1, Dimension Value:custom variable ~ga-custom-dimension-post-terms~
+  - Tracking ID :: GA-XXX
+  - Advanced Settings ::
+    - Tag firing options :: Once per event
+  - Triggering :: choose the Custom Event ~ga-custom-dimension-post-terms~ previously set
 
 ** Keywords on websites
 Page title 65 characters. A list of keywords (<=3) with separators can be used. Order matters.
@@ -58750,7 +58854,7 @@ DevTools > Settings > Blackboxing
 https://developer.chrome.com/devtools/docs/blackboxing
 
 *** Extension
-**** Google Tag Assistant
+**** Google Tag Assistant <<<chrome:google tag assistant>>>
 **** [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
 Fire GET and POST requests.
 For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
@@ -58779,16 +58883,23 @@ Expand the Events and RC on handler to Reveal function in source.
 **** [[https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb?hl%3Den][Web Server for Chrome]]
 **** [[https://chrome.google.com/webstore/detail/waspinspector-analytics-s/niaoghengfohplclhbjnjheodgkejpih][Wasp]] <<<chrome:wasp>>>
 - Web Analytics Solution Profiler
-- DevTools > beside Audits tab, there's WASP
-- WASP tracks across page opening history
+- DevTools > beside Audits panel, there's a WASP panel
+- WASP tracks across page opening history (continously)
 
 Scripts
-- googletagmanager.com
-- googletagservices.com
+- Loaded JavaScript files
+- Show the path of JS files and may be cookies and headers that are set by the script
 
 Tags
-- Tags added by GTM are here
-- googleadservices.com (AdWords)
+- Tags are scripts that are recognized by WASP and it has deeper data
+- Tags that are triggered in GTM also appear here
+- googletagmanager.com
+  - ga:gtag
+  - google:gtm
+- googletagservices.com
+  - google:dfp, google:gam, gpt.js
+- google-analytics.com (analytics.js) ga:ga
+- googleadservices.com (old AdWords)
 
 **** Hosts file
 [[https://chrome.google.com/webstore/detail/host-switch-plus/bopepoejgapmihklfepohbilpkcdoaeo][Host Switch Plus]]
