@@ -39172,7 +39172,7 @@ API : https://developers.google.com/my-business/
   - custom tables, unsampled reports
   - Roll-up reporting aggregates data from multiple Analytics properties and lets you see that data together in the same reports. e.g. website and mobile app stats
 - Dimensions and Metrics ::
-  - GA :: 20 and 20
+  - GA :: 20 and 20. Value of custom dimension has max length 150 bytes around 150 characters
   - 360 :: 10 times more custom dimensions & metrics
 - Integration
   - GA :: AdWords and AdSense. Import stats from AdWords to GA and GA exports remarketing audiences to AdWords
@@ -41290,17 +41290,17 @@ Click Preview on GTM and normally refresh the webpage and you will get a preview
 
 	       if ( !is_wp_error($terms) && !empty($terms)) {
 		   foreach ($terms as $term) {
-		       $terms_id[] = $term->slug.'-'.$term->term_taxonomy_id;
+		       $terms_id[] = $term->term_taxonomy_id.'-'.$term->slug;
 		   }
 		   $terms_id[]='';
 		   array_unshift($terms_id, '');
 	       }
-	       //echo '<!--'.implode( ' ', $terms_id ).'-->';
+	       //echo '//'.implode( ',', $terms_id );
 	   }
 	   if (!empty($terms_id)) : ?>
 	   dataLayer.push({
 	       'event': 'ga-custom-dimension-post-terms',
-	       'ga-custom-dimension-post-terms': '<?php echo implode( ' ', $terms_id ); ?>'});
+	       'ga-custom-dimension-post-terms': '<?php echo implode( ',', $terms_id ); ?>'});
 	   <?php endif; ?>
        }
       </script>
@@ -42167,7 +42167,7 @@ User abc has sudo privilege. When abc is signed in and run a script/command that
 Bypass so password input is not required
 
 Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoers.d/mybypass~
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # See if there are some sample
   sudo ls -al /etc/sudoers.d/
 
@@ -42184,7 +42184,7 @@ Instead of changing ~/etc/sudoers~ file directly, create/edit a file ~/etc/sudoe
   # all other sudo commands will still require a password
 
   # ~/etc/sudoers.d/mybypass file should have permission 0440 and owner:group is root:root
-#+END_EXAMPLE
+#+END_SRC
 
 ** SSH, scp, sshpass <<<linux:ssh>>> <<<bash:ssh>>> <<<bash:scp>>>
 Refer to 
@@ -43948,19 +43948,19 @@ ps options
 - w :: use with -f to show in unlimited width so that PPID and others are shown
 
 *** pgrep, pkill
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # Search a process by file name, return PID
   pgrep newcomgo
 
   # Kill a process by file name
   pkill newcomgo
-#+END_EXAMPLE
+#+END_SRC
 
 *** Parent process <<<linux:process:parent>>>
 Parent process id is PPID. PPID is 1 means parent is not found.
 Child process PID is 1234
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # search in all processes
   ps -feww 1234
 
@@ -43972,7 +43972,7 @@ Child process PID is 1234
 
   # search in all processes that may start by daemon
   ps -axl | grep 1234
-#+END_EXAMPLE
+#+END_SRC
 
 A package ~pstree~ can be installed and used
 ~pstree -s -p 2072~ outputs ~init(1)───pulseaudio(2061)───gconf-helper(2072)~
@@ -44330,33 +44330,32 @@ Use open ports that are in the range of 1024-49151.
 *** Wireless network adapters =iwconfig=
 
 *** Gather monthly bandwidth
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo apt-get install vnstat
-  // check
+  # check
   vnstat
-  // tell it to monitor a network interface
+  # tell it to monitor a network interface
   vnstat -u -i eth0
 
-  // it will create a database for it, check what interface is being monitored
+  # it will create a database for it, check what interface is being monitored
   vnstat
 
-  // start daemon
+  # start daemon
   sudo /etc/init.d/vnstat start
 
-  // read stats for an interface
+  # read stats for an interface
   vnstat -i eth0
 
-  // hourly -h, -d, -m
+  # hourly, daily, monthly :: -h, -d, -m
   vnstat -h -i eth0
 
-  // live traffic -l
-
-  // top 10 days with highest traffic -t
-#+END_EXAMPLE
+  # live traffic :: -l
+  # top 10 days with highest traffic :: -t
+#+END_SRC
 
 Info
-tx :: transmit
-rx :: receive
+- tx :: transmit
+- rx :: receive
 
 *** Test email address if valid without sending
 #+BEGIN_EXAMPLE
@@ -44389,7 +44388,7 @@ You will see this:
 #+END_EXAMPLE
 
 Choose any one or the root one to telnet
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   telnet gmail-smtp-in.l.google.com 25
 
   # if it's connected, it will say 220
@@ -44405,7 +44404,7 @@ Choose any one or the root one to telnet
   # If the target email is good, it will say 250 OK
   # 550 and its message may say Recipient address rejected: User unknown in virtual alias table
   quit
-#+END_EXAMPLE
+#+END_SRC
 
 ** Firewall <<<linux:firewall>>> <<<linux:ufw>>>
 - Should be installed by default :: ~sudo aptitude install ufw~ or ~sudo apt-get install ufw~
@@ -44620,7 +44619,7 @@ Includes ssh, scp
 #+END_EXAMPLE
 
 **** sendmail <<<linux:sendmail>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   apt-get install sendmail
   # get the hostname of the machine/container
   hostname
@@ -44653,11 +44652,10 @@ Includes ssh, scp
 
   # run this to see which emails are sent/stuck in queue
   sendmail -bp
-#+END_EXAMPLE
+#+END_SRC
 
-You should setup logging in app level, such as php:ini:mail
-
-Executable is /usr/sbin/sendmail
+- Should setup logging in app level, such as php:ini:mail
+- Executable path :: ~/usr/sbin/sendmail~
 
 **** ssmtp <<<linux:ssmtp>>>
 ssmtp is a simple alternative to linux:sendmail and it doesn't depend on it.
@@ -44666,61 +44664,61 @@ ssmtp is a simple alternative to linux:sendmail and it doesn't depend on it.
 - ssmtp is good for only one user to send emails
 
 **** postfix <<<linux:postfix>>>
-It's more sophisticated than sendmail.
-~apt-get install postfix~ will remove sendmail automatically
+- It's more sophisticated than sendmail.
+- ~apt-get install postfix~ will remove sendmail automatically
+- https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04
+- https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-16-04
 
-https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04
-https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-16-04
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   apt-get update && apt install mailutils
-  // Default is Internet site. Use TAB and ENTER
-  // System mail name: example.com // Use FQDN (bare domain)
+  # Default is Internet site. Use TAB and ENTER
+  # System mail name: example.com // Use FQDN (bare domain)
   sudo nano /etc/postfix/main.cf
-#+END_EXAMPLE
+#+END_SRC
 
 Setup to send only
 
 Change to loopback interface, the virtual network interface that the server uses to communicate internally.
-#+BEGIN_EXAMPLE
-  // inet_interfaces = all
+#+BEGIN_SRC sh
+  # inet_interfaces = all
   inet_interfaces = loopback-only
-#+END_EXAMPLE
+#+END_SRC
 
 Similar to sendmail /etc/hosts setting
-#+BEGIN_EXAMPLE
-  // mydestination = $myhostname, example.com, localhost.com, , localhost
+#+BEGIN_SRC sh
+  # mydestination = $myhostname, example.com, localhost.com, , localhost
   mydestination = $myhostname, localhost.$mydomain, $mydomain
-#+END_EXAMPLE
+#+END_SRC
 
 Restart postfix
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   /etc/init.d/postfix status
   postfix status
   postfix start
   sudo systemctl restart postfix
 
-  // Test
+  # Test
   echo "This is the body of the email" | mail -s "This is the subject line" myemail@a.com
 
-  // From: sammy@example.com where sammy is Linux username and example.com is the server's hostname
-#+END_EXAMPLE
+  # From: sammy@example.com where sammy is Linux username and example.com is the server's hostname
+#+END_SRC
 
 Forward emails sent to root
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo nano /etc/aliases
 
-  // With the following, system generated emails are sent to the root user.
+  # With the following, system generated emails are sent to the root user.
   postmaster: root
 
-  // Add
+  # Add
   root: myemail@a.com
 
-  // restart
+  # restart
   sudo newaliases
 
-  // Test
+  # Test
   echo "This is the body of the email" | mail -s "This is the subject line" root
-#+END_EXAMPLE
+#+END_SRC
 
 **** rtorrent
 #+BEGIN_EXAMPLE
