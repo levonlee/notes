@@ -1,4 +1,4 @@
-#+TITLE: My Notes
+ch#+TITLE: My Notes
 #+OPTIONS: H:4
 #+SETUPFILE: theme-readtheorg.setup
 #+STARTUP: overview
@@ -39157,32 +39157,47 @@ API : https://developers.google.com/my-business/
 
 ** Google Analytics <<<google:ga>>>
 *** Limits and Versions
-GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoys.example.com have 2 different cookies. Javascript document.domain
-
-GA for FireBase is free and limited to track mobile apps.
-
-GA 360 is a paid per year service that includes a Service Level Agreement (SLA) that supports higher hit volumes.
-https://www.lunametrics.com/services/google-analytics-360-hub/feature-comparison/
-- 10M hits per month free and up to several billions. Data freshness is 24-48 hours vs 4 hour guarantee (most 15-20min)
-- Roll-up reporting aggregates data from multiple Analytics properties and lets you see that data together in the same reports. e.g. website and mobile app stats
-- GA has sampling occur in Property while 360 has sampling occur in View. Default sample is 250k visits (sessions) and can be changed to 500k per property vs 360 100M sessions per view. Standard report always has unsampled data and if you add a segment, create a report, filter the report, then sampled data will be used.
-- So Filter won't affect sampling in 360
-- 360 can use Google BigQuery
-- 360 has 10 times more custom dimensions & metrics. Standard only has 20 and 20 for dimensions and metrics.
-- 360 has more integration e.g. DoubleClick Campaign Manager, DoubleClick Bid Manager, DoubleClick for Publishers, Salesforce Marketing Cloud while GA has only AdWords and AdSense. Import stats from AdWords to GA and GA exports remarketing audiences to AdWords.
-- 360 can query-time import custom data sources (compare historic data and view the new imported data) while GA just imports
--  The standard attribution modeling tool can give some formula-based models for attributing conversions to channels (like first-touch, last-touch, time decay, etc.). But which of those is the “right” model? GA360 includes a data driven attribution model, which actually uses an algorithm on your data to understand where different channels make the most impact.
-- Enhanced custom funnel reporting options. e.g. How many users view the page then scroll to 50% then scroll to the end of article then scroll to the end of page
-- 360 has custom tables, unsampled reports
-
-Non-360 way to cut down hits per month
-- Separate traffic by setting up new property
-- Cut down spam traffic
+- GA sets and reads cookies for each unique domain e.g. www.example.com and dogtoys.example.com have 2 different cookies. Javascript ~document.domain~
+- GA for FireBase is free and limited to track mobile apps
+- GA 360 is a paid per year service that includes a Service Level Agreement (SLA) that supports higher hit volumes
+  - https://www.lunametrics.com/services/google-analytics-360-hub/feature-comparison/
+  - 10M hits per month free and up to several billions. Data freshness is 24-48 hours vs 4 hour guarantee (most 15-20min)
+- Sampling
+  - Standard report always has unsampled data and if you add a segment, create a report, filter the report, then sampled data will be used
+  - GA :: sampling occurs in Property. Default sample is 250K visits (sessions) and can be changed to 500K per property
+  - 360 :: sampling occurs in View. Default sample is 250k visits (sessions) and can be changed to 100M sessions per view
+    - View Filter won't affect sampling
+- 360 can
+  - use Google BigQuery
+  - custom tables, unsampled reports
+  - Roll-up reporting aggregates data from multiple Analytics properties and lets you see that data together in the same reports. e.g. website and mobile app stats
+- Dimensions and Metrics ::
+  - GA :: 20 and 20
+  - 360 :: 10 times more custom dimensions & metrics
+- Integration
+  - GA :: AdWords and AdSense. Import stats from AdWords to GA and GA exports remarketing audiences to AdWords
+  - 360 :: GA + DoubleClick Campaign Manager, DoubleClick Bid Manager, DoubleClick for Publishers, Salesforce Marketing Cloud
+- Custom Data Sources
+  - GA :: import
+  - 360 :: query-time import custom data sources (compare historic data and view the new imported data)
+- Standard Attribution Modeling Tool
+  - GA :: give some formula-based models for attributing conversions to channels (like first-touch, last-touch, time decay, etc.)
+  - 360 :: But which of those is the “right” model? GA360 includes a data driven attribution model, which actually uses an algorithm on your data to understand where different channels make the most impact
+- Funnel Reporting Options
+  - 360 :: Enhanced custom funnel reporting options. e.g. How many users view the page then scroll to 50% then scroll to the end of article then scroll to the end of page
 
 **** Hit limits
-10 million hits per month per property
-500 hits per session for legacy tracking library (ga.js)
-200,000 hits per user per day, 500 hits per session (universal analytics)
+- 10 million hits per month per property :: applies to Web Property / Property / Tracking ID (e.g. UA-xxx)
+  - if go over :: you will be contacted asking you to upgrade to 360 or implement client sampling to reduce the amount of data being sent to Google Analytics
+- 200,000 hits per user per day and 500 hits per session (universal analytics) :: gtag.js, analytics.js, Android SDK, iOS SDK and Measurement Protocol
+  - 500 hits per session :: for legacy tracking library (ga.js)
+- Tracker objects
+  - Start with 20 hits that are replenished at a rate of 2 hits per second :: gtag.js and analytics.js tracker object. Applies to all hits except for ecommerce (item or transaction)
+  - Start with 10 hits that are replenished at a rate of 1 hit per second :: ga.js
+
+Cut down hits per month
+- Separate traffic by setting up new property
+- Cut down spam traffic
 
 *** Views, Filters, Segments
 Under Admin, you can build Views. Views can have Filters. Views collect data when they are created.
@@ -39487,24 +39502,28 @@ How users navigate between pages
 content :: Speed, Search, Events
 
 **** Content Grouping
-Admin > Property > View > Content Grouping
+- Standard Report :: Admin > Property > View > Content Grouping
+- Methods to create a Content Group :: in order. First matching method defines the content group
+  - Modify the tracking code on each page
+  - Extract pages with regex (Page URL, Page Title)
+  - Create rules to include pages in a group (Page URL, Page Title, Screen name)
 
 e.g. Webpages have
-Men
-- Shirts
-- Pants
-- Accessories
-
-Women
-- Tops
-- Slacks
-- Skirts & Dresses
-- Accessories
-
-Clothing, Men, and Women are options in the Primary Dimension > Content Grouping menu.
-When you select Clothing as the primary dimension, Men and Women are the dimension values in the first column of the report table.
-When you select Men as the primary dimension, Shirts, Pants, and Accessories are the dimension values in the first column of the table.
-For each dimension value (Content Group), you see behavioral metrics like Pageviews and Bounce Rate.
+- Content Grouping:Clothing at index 1
+- Men :: a value belongs to Content Grouping:Clothing, also a Content Grouping:Men at index 2
+  - Shirts :: a value belongs to Content Grouping:Men
+  - Pants :: a value belongs to Content Grouping:Men
+  - Accessories
+- Women :: a value belongs to Content Grouping:Clothing, also a Content Grouping:Women at index 3
+  - Tops :: a value belongs to Content Grouping:Women
+  - Slacks
+  - Skirts & Dresses
+  - Accessories
+- Clothing, Men, and Women are options in the Primary Dimension > Content Grouping menu
+  - When you select Clothing as the primary dimension, Men and Women are the dimension values in the first column of the report table
+  - When you select Men as the primary dimension, Shirts, Pants, and Accessories are the dimension values in the first column of the table
+  - For each dimension value (Content Group), you see behavioral metrics like Pageviews and Bounce Rate
+- Content Group has to be set before or at the moment pageview hit is sent
 
 #+BEGIN_SRC html
   <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
@@ -39512,10 +39531,28 @@ For each dimension value (Content Group), you see behavioral metrics like Pagevi
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    // original
+    // original :: config and send a pageview
     //gtag('config', 'GA_TRACKING_ID');
     // change to
     gtag('config', 'GA_TRACKING_ID', {'content_group1': 'shoes'});
+
+    // or
+    // gtag('set', {'content_group1': ''});
+    // gtag('config', 'GA_TRACKING_ID');
+  </script>
+#+END_SRC
+
+#+BEGIN_SRC html
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-XXXXX-Y', 'auto');
+    // set before pageview is sent
+    ga('set', 'contentGroup1', 'my_group_name');
+    ga('send', 'pageview');
   </script>
 #+END_SRC
 
@@ -39668,12 +39705,14 @@ Then you can setup Dynamic Remarketing on AdWords
 Maximum duration that a user can be included in a remarketing audience is 540 days.
 
 **** gtag.js ~config~ <<<ga:gtag:config>>>
-- ga:gtag:config:groups
-  - Refer to ga:gtag:event:send_to
+- ga:gtag:config:groups :: Refer to ga:gtag:event:send_to
 
 #+BEGIN_SRC js
-  // Default config sends a pageview hit
+  // Default config sends a pageview hit. Don't send a pageview
   gtag('config', 'UA-xxx', { 'send_page_view': false });
+
+  // Send a virtual pageview
+  gtag('config', 'GA_MEASUREMENT_ID', {'page_path': '/new-page.html'});
 #+END_SRC
 
 **** gtag.js ~set~ <<<ga:gtag:set>>>
