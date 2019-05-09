@@ -39189,8 +39189,10 @@ API : https://developers.google.com/my-business/
 **** Hit limits
 - 10 million hits per month per property :: applies to Web Property / Property / Tracking ID (e.g. UA-xxx)
   - if go over :: you will be contacted asking you to upgrade to 360 or implement client sampling to reduce the amount of data being sent to Google Analytics
+  - GA 360 :: up to several billions
 - 200,000 hits per user per day and 500 hits per session (universal analytics) :: gtag.js, analytics.js, Android SDK, iOS SDK and Measurement Protocol
   - 500 hits per session :: for legacy tracking library (ga.js)
+  - Session timeout :: default 30 minutes. Min 1 minute and Max 4 hours
 - Tracker objects
   - Start with 20 hits that are replenished at a rate of 2 hits per second :: gtag.js and analytics.js tracker object. Applies to all hits except for ecommerce (item or transaction)
   - Start with 10 hits that are replenished at a rate of 1 hit per second :: ga.js
@@ -39503,6 +39505,7 @@ content :: Speed, Search, Events
 
 **** Content Grouping
 - Standard Report :: Admin > Property > View > Content Grouping
+- Content Grouping is not suited for grouping WordPress post categories as a post can have multiple categories and the same Content Grouping can have only one value
 - Methods to create a Content Group :: in order. First matching method defines the content group
   - Modify the tracking code on each page
   - Extract pages with regex (Page URL, Page Title)
@@ -55699,46 +55702,6 @@ https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
           -> NULL
 #+END_EXAMPLE
 
-*** Concatenate values of a column across multiple rows about the same record <<<mysql:concat columns>>>
-mysqlfiddle
-
-#+BEGIN_SRC sql
-  SELECT s.id, s.firstname, s.lastname
-  , GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
-  , GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses
-  FROM student s 
-       LEFT JOIN testScore ts ON ts.sid = s.id
-       LEFT JOIN s_course c ON c.sid = s.id
-  GROUP BY s.id
-  ORDER BY s.lastname
-#+END_SRC
-
-~GROUP_CONCAT~ only concatenates non-null values. If all values are null, null will be returned.
-
-~GROUP_CONCAT~ by default only handles 1024 letters. Change it for the current session
-#+BEGIN_EXAMPLE
-  SET SESSION group_concat_max_len = 65535;
-#+END_EXAMPLE
-
-If there're multiple fields that have multiple values, e.g. a student can have multiple scores and multiple courses, and they are joined,
-
-Total number of rows are for one student is: N(courses of student) X N(scores of student),
-N(x) is number of x, when x is zero, N(0) = 1.
-
-When you do GROUP_CONCAT on course, use DISTINCT inside.
-
-Concatenate multiple fields
-~GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses~
-
-**** Concatenate strings, use a different separator
-- 0x1F (31): unit (fields) separator
-- 0x1E (30): record separator
-- 0x1D (29): group separator
-#+BEGIN_EXAMPLE
-  GROUP_CONCAT(foo SEPARATOR 0x1D)
-  $array = explode(chr(29),$s);
-#+END_EXAMPLE
-
 *** User Variable
 #+BEGIN_SRC sql
   SET @s3 = 'http://s3.amazon.com/abc/';
@@ -55943,7 +55906,7 @@ Syntax
 http://sqlfiddle.com/ http://dbfiddle.uk/
 
 Schema
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sql
   CREATE TABLE student (
   `id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
   `firstname` VARCHAR(20) NOT NULL,
@@ -55983,7 +55946,7 @@ Schema
   ( 1, 'English' ),
   ( 2, 'PHP' )
   ;
-#+END_EXAMPLE
+#+END_SRC
 
 *** Dump, Restore
 #+BEGIN_SRC bash
@@ -56096,6 +56059,148 @@ Data :: INSERT
 
   DROP TABLE IF EXISTS `wp_abc`;
   CREATE TABLE `wp_ABC` ...
+#+END_SRC
+
+*** UC: Concatenate values of a column across multiple rows about the same record <<<mysql:concat columns>>>
+mysqlfiddle
+
+#+BEGIN_SRC sql
+  SELECT s.id, s.firstname, s.lastname
+  , GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
+  , GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses
+  FROM student s 
+       LEFT JOIN s_score ts ON ts.sid = s.id
+       LEFT JOIN s_course c ON c.sid = s.id
+  GROUP BY s.id
+  ORDER BY s.lastname
+#+END_SRC
+
+~GROUP_CONCAT~ only concatenates non-null values. If all values are null, null will be returned.
+
+~GROUP_CONCAT~ by default only handles 1024 letters. Change it for the current session
+#+BEGIN_EXAMPLE
+  SET SESSION group_concat_max_len = 65535;
+#+END_EXAMPLE
+
+If there're multiple fields that have multiple values, e.g. a student can have multiple scores and multiple courses, and they are joined,
+
+Total number of rows are for one student is: N(courses of student) X N(scores of student),
+N(x) is number of x, when x is zero, N(0) = 1.
+
+When you do GROUP_CONCAT on course, use DISTINCT inside.
+
+Concatenate multiple fields
+~GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses~
+
+**** Concatenate strings, use a different separator
+- 0x1F (31): unit (fields) separator
+- 0x1E (30): record separator
+- 0x1D (29): group separator
+#+BEGIN_EXAMPLE
+  GROUP_CONCAT(foo SEPARATOR 0x1D)
+  $array = explode(chr(29),$s);
+#+END_EXAMPLE
+
+*** UC: Split Comma-Separated Values <<<mysql:split list>>>
+- https://www.periscopedata.com/blog/splitting-comma-separated-values-in-mysql
+
+Given table ~dashboards~
+| ID | recipients    |
+|----+---------------|
+|  1 | a@x.ca,b@x.ca |
+|  2 | b@x.ca        |
+|  3 | c@x.ca        |
+|----+---------------|
+
+Result
+| email  | count |
+|--------+-------|
+| b@x.ca |     2 |
+| a@x.ca |     1 |
+| c@x.ca |     1 |
+|--------+-------|
+
+#+NAME Create a temporary table
+#+BEGIN_SRC sql
+  -- create X rows which is equal or bigger than the max number of items across every `recipients` column.
+  -- e.g. row 1 has 2 items, row 2 and 3 has 1 item
+  -- Max number of items across all rows is then 2
+  -- A temporary table will have a column named `n` and it has 2 rows
+  create temporary table numbers as (
+    select 1 as n
+    union select 2 as n
+    union select 3 as n
+    -- ...
+  )
+#+END_SRC
+
+A temporary table ~numbers~ is created with 2 rows
+| n |
+|---|
+| 1 |
+| 2 |
+|---|
+
+#+BEGIN_SRC sql
+  SELECT * 
+  JOIN dashboards
+  JOIN numbers
+    ON char_length(recipients) 
+      - char_length(replace(recipients, ',', '')) 
+      >= numbers.n - 1
+
+  -- ON (number of commas in dashboards.recipients) < (n - 1)
+#+END_SRC
+
+Result
+| ID | recipients    | n |
+|----+---------------+---|
+|  1 | a@x.ca,b@x.ca | 1 |
+|  1 | a@x.ca,b@x.ca | 2 |
+|  2 | b@x.ca        | 1 |
+|  3 | c@x.ca        | 1 |
+|----+---------------+---|
+
+#+BEGIN_SRC sql
+  SELECT 
+    id, 
+    substring_index(
+      substring_index(recipients, ',', n), 
+      ',', 
+      -1
+    ) AS email
+  FROM dashboards
+  JOIN numbers
+    ON char_length(recipients) 
+      - char_length(replace(recipients, ',', '')) 
+      >= n - 1
+#+END_SRC
+
+Result
+| ID | email  |
+|----+--------|
+|  1 | a@x.ca |
+|  1 | b@x.ca |
+|  2 | b@x.ca |
+|  3 | c@x.ca |
+
+All together
+#+BEGIN_SRC sql
+  SELECT email, count(1) FROM ( 
+    SELECT 
+      id, 
+      substring_index(
+	substring_index(recipients, ',', n), 
+	',', 
+	-1
+      ) AS email
+    FROM dashboards
+    JOIN numbers
+      ON char_length(recipients) 
+	- char_length(replace(recipients, ',', '')) 
+	>= n - 1
+  ) email_recipients_by_dashboard
+  GROUP BY 1
 #+END_SRC
 
 *** TS: Unknown collation: utf8mb4_unicode_520_ci <<<mysql:unknown collation>>>
@@ -58512,7 +58617,7 @@ File
 | M-b              | Move backward one word                     |
 | M-g M-g          | Go to a line                               |
 | C-c C-j          | org-goto. Search in headlines only         |
-|                  |                                            |
+|------------------+--------------------------------------------|
 
 *** Windows
 - Remove current window :: C-x 0
