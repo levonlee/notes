@@ -56776,6 +56776,45 @@ Run this .sql file:
   </body>
 #+END_SRC
 
+*** Legacy
+#+BEGIN_SRC html
+  <head>
+      <script>
+	  var googletag = googletag || {};
+	  googletag.cmd = googletag.cmd || [];
+	  (function () {
+	      var gads = document.createElement('script');
+	      gads.async = true;
+	      gads.type = 'text/javascript';
+	      var useSSL = 'https:' == document.location.protocol;
+	      gads.src = (useSSL ? 'https:' : 'http:') +
+		  '//www.googletagservices.com/tag/js/gpt.js';
+	      var node = document.getElementsByTagName('script')[0];
+	      node.parentNode.insertBefore(gads, node);
+	  })();
+
+	  googletag.cmd.push(function () {
+
+	      googletag.defineSlot('/123456/my_ad_unit_1',
+		  [300, 250], 'div-gpt-ad-unit-1')
+		  .addService(googletag.pubads());
+
+	      googletag.pubads().collapseEmptyDivs();
+	      googletag.pubads().enableSingleRequest();
+	      googletag.enableServices();
+	  });
+      </script>
+  </head>
+  <body>
+  <!-- /123456/my_ad_unit_1 -->
+  <div id='div-gpt-ad-unit-1' style='height:250px; width:300px;'>
+      <script>
+	  googletag.cmd.push(function() { googletag.display('div-gpt-ad-unit-1'); });
+      </script>
+  </div>
+  </body>
+#+END_SRC
+
 ** Metrics
 - Active View eligible impressions :: Total number of impressions that were eligible to measure viewability. An imp. is eligible if (a) the ad's creative has an Active View enabled tag, and (b) the imp. is counted with a downloaded pingback
 - Active View measurable impressions :: Impressions that were measurable by Active View out of the total number of eligible impressions. This value should generally be close to 100%; however, even when an ad tag has Active View enabled, some factors may prevent the tag from capturing data. For example, an impression that is rendering in a cross-domain iframe may not be measurable.
@@ -56851,17 +56890,17 @@ If you don't have control on HTML, you can:
     - add Key-Value par 'exclusive is not ~exclusive' (~ means contain and * means begin with)
   - In HTML, do nothing (remain the same)
 
-** DFP in email
+** DFP in email - Non-JavaScript
 [[https://support.google.com/dfp_premium/answer/2623168?hl=en][Simplified URL tags on DFP Help]]
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <a href="http://my.com/ad/ad_unit_name/728x90/">
    <img width="728" height="90" alt=""
     src="http://pubads.g.doubleclick.net/gampad/ad?iu=/networkid/ad_unit_name&sz=728x90&c=[todays_date][account]" />
   </a>
-#+END_EXAMPLE
+#+END_SRC
 
-Base URL :: http://pubads.g.doubleclick.net/gampad/[request-type]?[parameters]
+- Base URL :: ~http://pubads.g.doubleclick.net/gampad/[request-type]?[parameters]~
 
 Request Type
 | ad   | simple image creative                               |
@@ -56882,38 +56921,38 @@ Parameters
 | title    | required if mutliple ad tags use the same ad unit code on the same page |
 | mob      | Indicaste it's a mobile request.                                        |
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <script src="//code.jquery.com/jquery-1.10.2.js"></script>
   <script>
-  var ad_unit = 'ad_unit_name';
-  var ad_unit_size = '728x90';
-  var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
-  var theUrl='//pubads.g.doubleclick.net/gampad/adx?iu=/' + ad_unit 
-          + '&sz=' + ad_unit_size + '&c=' + rnd;
-  var xmlHttp = null;
-  xmlHttp = new XMLHttpRequest();
-  xmlHttp.open( "GET", theUrl );
-  xmlHttp.send();
-  xmlHttp.onreadystatechange=function() {
+    var ad_unit = 'ad_unit_name';
+    var ad_unit_size = '728x90';
+    var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
+    var theUrl='//pubads.g.doubleclick.net/gampad/adx?iu=/' + ad_unit 
+    + '&sz=' + ad_unit_size + '&c=' + rnd;
+    var xmlHttp = null;
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl );
+    xmlHttp.send();
+    xmlHttp.onreadystatechange=function() {
     if (xmlHttp.readyState==4 && xmlHttp.status==200) {
-      xmlDoc = $.parseHTML( xmlHttp.response );
-      adlink = $(xmlDoc).find('a').attr('href');
-      if (typeof adlink == "undefined") adlink = "http://www.example.com";
-        window.location = adlink;
+    xmlDoc = $.parseHTML( xmlHttp.response );
+    adlink = $(xmlDoc).find('a').attr('href');
+    if (typeof adlink == "undefined") adlink = "http://www.example.com";
+    window.location = adlink;
     }
-  }
+    }
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 PHP, DFP creative type Custom. Get response line by line
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $url = "http://pubads.g.doubleclick.net/gampad/adx?iu=/12343/ad_unit_name&sz=230x20&c=". REQUEST_TIME."&m=text/html";
   $json = @file_get_contents($url);
   if ($json !== FALSE) {
     $lines = explode("\n", $json);
     $link = ( isset($lines[0]) ) ? trim($lines[0]) : 'default';
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Wordpress example wp:filter:template_include
 
@@ -57718,9 +57757,8 @@ When console shows FriendlyFrame, it shows the container is not SafeFrame.
 #+END_SRC
 
 ** Google Publisher Console
-To open, append to URL ~?googfc=1~ (display console after page is loaded) or ~?google_console~ (keyboard to toggle console display) ~C-F10~
-
-Or make a bookmark ~javascript: googletag.openConsole();~
+- To open, append to URL ~?googfc=1~ (display console after page is loaded) or ~?google_console~ (keyboard to toggle console display) ~C-F10~
+- Or make a bookmark ~javascript: googletag.openConsole();~
 
 ** Passback tag
 Situation 1
@@ -57764,6 +57802,25 @@ https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 
 ** Anti AdBlocker
 https://gist.github.com/levonlee/da658dd8d6c91f093fc90aeca4653ae7
+
+** Reports
+- Query filter is to filter the request
+  - Dimensions and Metrics are also related to the request
+
+For example, a request might have 2 key-value targeting. If you have this query
+- Filter :: none
+- Dimension :: key-value and line item
+- Metric :: impression and click
+
+The request will end up in 2 places
+| key-value | line item | Impression | Click |
+|-----------+-----------+------------+-------|
+| a=xyz     | LI_1      |        123 |     5 |
+| b=ijk     | LI_1      |        123 |     5 |
+|-----------+-----------+------------+-------|
+
+Add filter key-value contains ~a=xyz~
+- Filter out b=ijk
 
 ** Benchmarks
 Sizmek Benchmarks
