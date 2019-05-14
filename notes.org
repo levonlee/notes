@@ -26714,7 +26714,8 @@ $(window).resize(function() {
 #+END_EXAMPLE
 
 * JavaScript projects
-https://stats.js.org/
+- https://bestofjs.org/
+- Old https://stats.js.org/
 
 ** TweenLite, TweenMax, Greensock
 TweenMax has other common plugins included e.g. CSSPlugin where you can ease CSS property changes.
@@ -28245,11 +28246,11 @@ ES7-2016, ES8-2017
 You can treat each yield is a stop, and later code could be started when gen.next() is called.
 You can assign variable = yield (async requests) and program like they are normal sync. Refer to last example
 Refer to nodejs:co for yielding promises
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function* idMaker() {
-    var index = 0;
-    while (index <3)
-      yield index++;
+      var index = 0;
+      while (index <3)
+	  yield index++;
   }
 
   var gen = idMaker();
@@ -28268,30 +28269,30 @@ Refer to nodejs:co for yielding promises
 
   // Use GF in another GF
   function* anotherGenerator(i) {
-    var index = 0;
-    while (index < 3) {
-      index++;
-      yield i + index;
-    }
+      var index = 0;
+      while (index < 3) {
+	  index++;
+	  yield i + index;
+      }
   }
   function* generator(i) {
-    yield i;
-    yield* anotherGenerator(i);
-    yield i + 10;
+      yield i;
+      yield* anotherGenerator(i);
+      yield i + 10;
   }
   var gen2 = generator(10);
   console.log(gen2.next().value); // ...
   // 10, 11, 12, 13, 20, done
-#+END_EXAMPLE
+#+END_SRC
 
 Passing variable in next(). The variable passed will subsitute the whole yield statement for the previous iteration.
 (after the previous yield, and before the next/current yield)
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function* consumer(){
-    while (true){
-      var val = yield null;
-      console.log('Got value', val);
-    }
+      while (true){
+	  var val = yield null;
+	  console.log('Got value', val);
+      }
   }
 
   var c = consumer();
@@ -28299,57 +28300,57 @@ Passing variable in next(). The variable passed will subsitute the whole yield s
   // No 'Got value'
   c.next(2)
   // Got value 2
-#+END_EXAMPLE
+#+END_SRC
 
 Usage
 Without GF, you will write
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   fs.readFile('blog_post_template.html', function(err, tpContent){
-    fs.readFile('my_blog_post.md', function(err, mdContent){
-      console.log(tpContent, mdContent);
-    });
+      fs.readFile('my_blog_post.md', function(err, mdContent){
+	  console.log(tpContent, mdContent);
+      });
   });
-#+END_EXAMPLE
+#+END_SRC
 
 With GF
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function readFile(filepath) {
-    return function(callback) {
-      fs.readFile(filepath, callback);
-    }
+      return function(callback) {
+	  fs.readFile(filepath, callback);
+      }
   }
 
   function run(genfun) {
-    var gen = genfun();
+      var gen = genfun();
 
-    function next(err, answer) {
-      var res;
-      if (err) {
-        return gen.throw(err);
-      }
-      else {
-        res = gen.next(answer);
+      function next(err, answer) {
+	  var res;
+	  if (err) {
+	      return gen.throw(err);
+	  }
+	  else {
+	      res = gen.next(answer);
+	  }
+
+	  if (!res.done) {
+	      res.value(next);
+	  }
       }
 
-      if (!res.done) {
-        res.value(next);
-      }
-    }
-
-    next();
+      next();
 
   }
 
   run(function* () {
-    try{
-      var tpContent = yield readFile('blog_post_template.html');
-      var mdContent = yield readFile('my_blog_post.md');
-      console.log(tpContent, mdContent);
-    }catch(e){
-      console.error(e.message);
-    }
+      try{
+	  var tpContent = yield readFile('blog_post_template.html');
+	  var mdContent = yield readFile('my_blog_post.md');
+	  console.log(tpContent, mdContent);
+      }catch(e){
+	  console.error(e.message);
+      }
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ** async/await <<<js:async/await>>>
 async function returns AsyncFunction object which is Promise.resolve. 
@@ -57830,8 +57831,22 @@ https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 ** Anti AdBlocker
 https://gist.github.com/levonlee/da658dd8d6c91f093fc90aeca4653ae7
 
+** Custom Fields
+- Custom fields can be used in google:gam:query:filter and as dimensions in reports
+  - As query filter can only add filter to one field e.g. only filter 1 pair of key-value. Instead, create multiple Custom Fields for query filter
+- Location :: can't be changed after set. only one
+  - Order
+  - Line Item
+  - Creative
+- Access :: Editable, Read-only, Hidden (API can submit values)
+- Type :: can't be changed after set. 30 custom fields to each object type
+  - Number
+  - Toggle :: select from either Yes or No
+  - Text :: enter any text value
+  - Drop-down :: from a set of options that you configure. You must first create and save custom fields of the drop-down type, then navigate back to the custom field in order to configure these options
+
 ** Reports
-- Query filter is to filter the request
+- Query filter is to filter the request <<<google:gam:query:filter>>>
   - Dimensions and Metrics are also related to the request
 
 For example, a request might have 2 key-value targeting. If you have this query
