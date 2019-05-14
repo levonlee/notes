@@ -25,6 +25,7 @@ There are two things you can do about this warning:
 (set-default-coding-systems 'utf-8)
 (setq-default org-catch-invisible-edits 'smart
 	      line-move-visual nil
+	      org-list-indent-offset 1
 )
 (setq inhibit-startup-message t
       backup-directory-alist '(("." . "~/.saves"))
