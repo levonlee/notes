@@ -39505,9 +39505,11 @@ content :: Speed, Search, Events
    - Modify the tracking code on each page
    - Extract pages with regex (Page URL, Page Title)
    - Create rules to include pages in a group (Page URL, Page Title, Screen name)
-- Usually Content Grouping is submitted with pageview hit type. But it can be sent in other event types e.g. hit as well
-   - Standard report Behavior > Events > Pages, group events by Content Group
-   - I think if a pageview is submitted without Content Grouping set initially, and later an event with Content Grouping set, then that event changes the Content Grouping for that pageview
+- Usually Content Grouping is submitted with pageview hit type :: Behavior > Site Content > all reports
+   - It can be sent in other event types e.g. hit as well
+      - Standard report Behavior > Events > Pages, group events by Content Group
+      - These are not in the Site Content reports
+      - These do not change the previous pageview hit Content Group
 - Unfortunately, Content Grouping is not shown on Realtime reports
 - Used in Segment's Conditions Filter
    - Page Group 1
@@ -45480,27 +45482,27 @@ $@ => "$1" "$2" "$3" ...
 ** curl, wget
 *** curl <<<linux:curl>>>
 **** Basic
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
+  #!/bin/bash
   dlDir=/home/lili/download/
-  dlFileName = ${dlDir}123.xml
+  dlFileName= ${dlDir}123.xml
   curl "http://abc.com/123.xml" -L -o ${dlFileName}
-#+END_EXAMPLE
+#+END_SRC
 
 **** Return HTTP response header only
-=curl -m 120 -IL "http://url.com" >> /path/to/log.log=
+~curl -m 120 -IL "http://url.com" >> /path/to/log.log~
 e.g Drupal Cron URL response status
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   #!/bin/bash
   curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/your/cronlog
-#+END_EXAMPLE
+#+END_SRC
 
 **** Download with HTTPS or HTTP authentication
-Popup form or server authentication
-=curl https://a.com/b.aspx -u user:password -L -o /path/to/xml.xml=
+- Popup form or server authentication :: ~curl https://a.com/b.aspx -u user:password -L -o /path/to/xml.xml~
 
 **** <<<cURL download only after or before a date>>>
 Works for ftp and Http
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   fileLocalTime=$(date -r "$localfile")
   curl $remote_file_path -u $user:$password -o $localfile -R -z "${fileLocalTime}"
 
@@ -45514,7 +45516,7 @@ Works for ftp and Http
    echo $fileLocalTime
    echo $fileLocalTimeNew
   fi
-#+END_EXAMPLE
+#+END_SRC
 
 **** HTTP POST <<<linux:curl:post>>>
 #+BEGIN_SRC sh
@@ -45591,7 +45593,7 @@ Googlebot's user agent: https://support.google.com/webmasters/answer/1061943
 | m          | timeout in seconds                                            |
 | H          | request header. =-H "Accept-Charset: ISO-8859-1,utf-8;q=0.7"= |
 | limit-rate | limit download speed: --limit-rate=200k. use k, m or g        |
-| s          | suppress STDOUT                                               |
+| s          | suppress STDOUT. ~-svo /dev/null~ show req/resp headers only  |
 | w          | rewrite STDOUT                                                |
 | R          | Keep remote file timestamp. --remote-time                     |
 | z          | cURL download only after or before a date                     |
@@ -52009,41 +52011,41 @@ nginx:ufw
 This is optional if firewall ~ufw~ doesn't exist.
 
 Nginx registers itself as a service with firewall ~ufw~
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   sudo ufw app list
 
-  ;; Available applications:
-    Nginx Full
-    Nginx HTTP
-    Nginx HTTPS
-    OpenSSH
-#+END_EXAMPLE
+  # Available applications:
+  #  Nginx Full
+  #  Nginx HTTP
+  #  Nginx HTTPS
+  #  OpenSSH
+#+END_SRC
 
-Nginx Full: This profile opens both port 80 (normal, unencrypted web traffic) and port 443 (TLS/SSL encrypted traffic)
-Nginx HTTP: This profile opens only port 80 (normal, unencrypted web traffic)
-Nginx HTTPS: This profile opens only port 443 (TLS/SSL encrypted traffic)
+- Nginx Full :: opens both port 80 (normal, unencrypted web traffic) and port 443 (TLS/SSL encrypted traffic)
+- Nginx HTTP :: opens only port 80 (normal, unencrypted web traffic)
+- Nginx HTTPS :: opens only port 443 (TLS/SSL encrypted traffic)
 
 Enable Nginx HTTP
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo ufw allow 'Nginx HTTP'
   sudo ufw status
 
-  ;; output
-  Status: active
+  # output
+  # Status: active
 
-  To                         Action      From
-  --                         ------      ----
-  OpenSSH                    ALLOW       Anywhere                  
-  Nginx HTTP                 ALLOW       Anywhere                  
-  OpenSSH (v6)               ALLOW       Anywhere (v6)             
-  Nginx HTTP (v6)            ALLOW       Anywhere (v6)
-#+END_EXAMPLE
+  # To                         Action      From
+  # --                         ------      ----
+  # OpenSSH                    ALLOW       Anywhere                  
+  # Nginx HTTP                 ALLOW       Anywhere                  
+  # OpenSSH (v6)               ALLOW       Anywhere (v6)             
+  # Nginx HTTP (v6)            ALLOW       Anywhere (v6)
+#+END_SRC
 
 Enable HTTPS, allow Full and delete HTTP
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo ufw allow 'Nginx Full'
   sudo ufw delete allow 'Nginx HTTP'
-#+END_EXAMPLE
+#+END_SRC
 
 *** Service Check, reload, restart, Check syntax <<<nginx:restart>>>
 - Restart :: ~systemctl status nginx~ ~service nginx restart~ ~sudo /etc/init.d/nginx restart~
