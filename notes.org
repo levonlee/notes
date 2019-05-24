@@ -425,6 +425,7 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // d => 01 to 31
   // w => 0 to 6, 0 for Sunday and 6 for Saturday
   echo date('Ymd'); // 20190131 for Jan 31, 2019
+  echo date('c'); // 2019-05-24T07:11:55-07:00
 #+END_SRC
 
 *** Create a custom date
@@ -551,6 +552,30 @@ array_merge
 array_merge_recursive
 - If key is the same, values will be appended as array
 - Very different from array_merge
+
+*** Union
+#+BEGIN_SRC php
+  $a = [
+    'one' => 'a1',
+	  'two' => 'a2',
+	  'three' => 'a3'
+  ];
+
+  $b = [
+	  'two' => 'b2',
+	  'three' => 'b3',
+	  'four' => 'b4'
+  ];
+
+  var_dump($a + $b);
+
+  $r = [
+	  'one' => 'a1',
+	  'two' => 'a2',
+	  'three' => 'a3',
+	  'four' => 'b4'
+  ];
+#+END_SRC
 
 *** Last element
 $_last = end($target_array);
@@ -3348,22 +3373,32 @@ Configuration > Search and metadata > URL Aliases > Patterns
 ** Link, Module Path, Theme Path, File Path
 *** Link
 Empty link!
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // Basic syntax: l($text, $path, array $options = array())
   l($text, 
     '', 
     array('fragment'=>' ', 
-          'html'=>TRUE, // if $text is HTML, set this to true
-          'external'=>TRUE,
+	  'html'=>TRUE, // if $text is HTML, set this to true
+	  'external'=>TRUE,
     //    'attributes' => array(
     //       'target'=> '_blank'
     //       'class' => ['classA'],
     //     ),
     )
   );
-#+END_EXAMPLE
+#+END_SRC
 
-Function l add class="active" when the path is current_path(). Use url() instead.
+- Function l add ~class="active"~ when the path is current_path(). Use url() instead.
+
+#+BEGIN_SRC php
+  url($path = NULL, $options = array());
+#+END_SRC
+
+- return :: string of URL
+- $path :: internal or external e.g. ~node/34~ ~http://example.com/foo~ ~http://a.com/?foo=bar~
+- $options :: append components
+   - query :: an array of query key/value-pairs (without any URL-encoding) to append to the URL. Result is URL encoded
+   - fragment :: A fragment identifier (named anchor) to append to the URL. Do not include the leading '#' character.
 
 #+BEGIN_EXAMPLE
   url($path = NULL, $options = array())
@@ -3373,8 +3408,8 @@ Get URL alias
 url() just returns a url. $options are the same as l().
 url('taxonomy/term/1');
 
-To embed a url directly to HTML href, you should check_url($url)
-To embed a url directly as a URL parameter, echo 'http://abc.com/?t='.urlencode($url);
+- Embed a url directly to HTML href :: ~check_url($url)~
+- Embed a url directly as a URL parameter :: ~echo 'http://abc.com/?t='.urlencode($url);~
 
 *** Current External URL, <<<d7:url>>> <<<d7:current_path>>>
 #+BEGIN_EXAMPLE
@@ -8997,7 +9032,7 @@ has_cap :: has role name or capability
   } 
 #+END_SRC
 
-** Roles & Capabilities WP_Roles <<<wp:roles>>>
+** User Permissions, User Roles & User Capabilities WP_Roles <<<wp:roles>>>
 - https://codex.wordpress.org/Roles_and_Capabilities
 - manage_options :: default admin only. Many plugins use this to determine if the user can make plugin specific changes
 - edit_theme_options :: Add Admin Panel options for Appearance:
