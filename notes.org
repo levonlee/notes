@@ -46339,7 +46339,7 @@ Also return cheat sheet name
 ~cheat ping~ show the `ping` cheat sheet
 
 ** Makefile <<<linux:makefile>>>
-Install in Ubuntu :: ~sudo apt-get update && sudo apt-get install make~
+- Install in Ubuntu :: ~sudo apt-get update && sudo apt-get install make~
 
 Create a Makefile in current folder
 #+BEGIN_SRC makefile
@@ -46364,6 +46364,7 @@ Create a Makefile in current folder
   # This tells make to not look elsewhere for commands default and build
   # Instead, run default and build as they are defined in this Makefile
   # Usually include all commands in this Makefile
+  # And all file or directory names that exist in the directory that Makefile is in
 
   # command in Makefile is called target. Syntax of Makefile is
   # target ...: prerequisites ...
@@ -46376,7 +46377,7 @@ Create a Makefile in current folder
   # A recipe is an action (command). Every recipe line has to start with a tab character
 
   default:
-          @echo "Some description"
+	  @echo "Some description"
   # If you run `make` in current folder without specifying which command, the first command will be run
   # @echo means it doesn't print out the actual command
 
@@ -46384,23 +46385,23 @@ Create a Makefile in current folder
   # the all command runs the build command
 
   build:
-          sudo docker build -t $(NAME):$(VERSION) --rm .
+	  sudo docker build -t $(NAME):$(VERSION) --rm .
 
   push:
-          docker push $(NAME)/$(REPO):$(VERSION)
+	  docker push $(NAME)/$(REPO):$(VERSION)
 
   release: build
-          make push -e VERSION=$(VERSION)
+	  make push -e VERSION=$(VERSION)
   # `make release` runs `build` first, then run `push` with a parameter
   # can't put push as a prerequisite after `build` because it has to be run using a parameter
 
   testecho:
-          @echo $$FOO
+	  @echo $$FOO
   # make testecho FOO="a b c"
   # actually @echo $(foo) then ~make testecho foo="a b c"~
 
   testsub:
-          @echo otheraction $(filter-out $@,$(MAKECMDGOALS))
+	  @echo otheraction $(filter-out $@,$(MAKECMDGOALS))
 
   # make testsub a b c
   # $@ is the target name, which is testsub
@@ -46417,18 +46418,18 @@ Create a Makefile in current folder
   # Escaping $ might be needed for running sub command
 
   start:
-          docker rm -f $$(docker ps -a -q)
+	  docker rm -f $$(docker ps -a -q)
 
   runrecipeinmiddle:
-          - echo do something
-          - $(MAKE) build
+	  - echo do something
+	  - $(MAKE) build
 
   # - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
 #+END_SRC
 
-Makefile :: make your-recipe
-Makefile.test :: make -f Makefile.test your-recipe
-Makefile.live :: make -f Makefile.live your-recipe
+- Makefile :: make your-recipe
+- Makefile.test :: make -f Makefile.test your-recipe
+- Makefile.live :: make -f Makefile.live your-recipe
 
 Be careful to close single quotes in @echo
 
@@ -51446,41 +51447,41 @@ vagrant plugin install vagrant-docker-compose
 A VirtualBox, ~.box~ file, is a compressed box on top of which a VM can run.
 Box has a namespace ~username/boxname~ as in ~hashicorp/precise64~
 
-#+BEGIN_EXAMPLE
-  ;; # export the running VM to a new box file
+#+BEGIN_SRC sh
+  # export the running VM to a new box file
   vagrant package --output boxfile.box
 
-  ;; # decompress a box file to ~/.vagrant.d/boxes
+  # decompress a box file to ~/.vagrant.d/boxes
   vagrant box add boxname boxfile.box
 
-  ;; # boxname is an installed Vagrant box
-  ;; # destroy current running Vagrant box
+  # boxname is an installed Vagrant box
+  # destroy current running Vagrant box
   vagrant destroy -f
-  ;; # and
+  # and
   rm Vagrantfile
-  ;; # Setup another Vagrantfile which uses the newly created box
+  # Setup another Vagrantfile which uses the newly created box
   cofnig.vm.box = "boxname"
 
-  ;; # To package an installed Vagrant box (of a specific provider and version)
-  ;; # into a .box file
+  # To package an installed Vagrant box (of a specific provider and version)
+  # into a .box file
   vagrant box repackage <boxname> <provider> <version>
 
-  ;; # remove a vagrant box
+  # remove a vagrant box
   vagrant box remove boxname
-  ;; # or
+  # or
   vagrant box remove boxname --box-version=0.1.7
 
-  ;; # List all installed Vagrant boxes
+  # List all installed Vagrant boxes
   vagrant box list
 
-  ;; # Check if the box used in the current folder is up-to-date
+  # Check if the box used in the current folder is up-to-date
   vagrant box outdated
 
-  ;; # if it's not outdated and before destroy current Vagrant machine, update the box
+  # if it's not outdated and before destroy current Vagrant machine, update the box
   vagrant box update
   vagrant box update --box boxname
-  ;; # Destroy the current Vagrant machine and up again.
-#+END_EXAMPLE
+  # Destroy the current Vagrant machine and up again.
+#+END_SRC
 
 Vagrant .box should have these qualities:
 - vagrant as a user and map /vagrant to the current folder in host
