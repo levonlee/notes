@@ -44028,47 +44028,36 @@ Options
 
 *** rsync <<<bash:rsync>>>
 **** Basic
-Dry run first: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
-
 By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated.
 
--I, --ignore-times: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated.
-
---size-only: This modifies rsync’s “quick check” algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly.
-
--u: skip files that are newer in $DESTINATION
-
---delete: To delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side.
-
-- -r :: recursive
-- -l :: symlink
-- -z :: compress
-- -v :: verbose
-- -i :: Very useful! Display change-summary for all updates, also use with --stats
-- -P :: --progress --partial, show progress and to resume interrupted transfers 
-- -n :: dry run
-
--t: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless --size-only is used, missing -t or -a will cause the next transfer to behave as if it used -I, causing all files to be updated.
-	
-This command will not sync files with different permissions, ownership and modification time.
-Review the results and remove dry run `-n` before running again.
-
-- -a :: -rlptgoD recursive, symlink, same permissions, mod time, group/owner, device/special files
-- -p :: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
-- -g :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
-- -o :: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
-- -D :: is equivalent to ~--devices --specials~
-
---devices: To transfer character and block device files to the remote system to recreate these devices.
---specials: To transfer special files such as named sockets and fifos.
-
---stats: show file-transfer stats: number of files, number of files transferred, Total file size in bytes, Total transferred file size
-
---chown :: refer to -og, change owner:group on dest. ~rsync -rlvzPitog --chown=www-data:www-data /source /destination~
-
---exclude 'public_html/database.txt': exclude a file or directory, use multiple --exclude
-
---exclude-from '/home/backup/exclude.txt': exclude multiple files and folders, use relative path without leading ./
+- Dry run first :: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
+- ~-I~, ~--ignore-times~ :: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated
+- ~-u~ :: skip files that are newer in ~$DESTINATION~
+- ~--delete~ :: To delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side
+- ~-r~ :: recursive
+- ~-l~ :: symlink
+- ~-z~ :: compress
+- ~-v~ :: verbose
+- ~-i~ :: Very useful! Display change-summary for all updates, also use with --stats
+- ~-P~ :: --progress --partial, show progress and to resume interrupted transfers 
+- ~-n~ :: dry run
+- ~-t~ :: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless ~--size-only~ is used, missing ~-t~ or ~-a~ will cause the next transfer to behave as if it used ~-I~, causing all files to be updated
+   - This command will not sync files with different permissions, ownership and modification time. Review the results and remove dry run ~-n~ before running again
+- ~-a~ :: -rlptgoD recursive, symlink, same permissions, mod time, group/owner, device/special files
+- ~-p~ :: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
+- ~-g~ :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
+- ~-o~ :: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
+- ~-D~ :: is equivalent to ~--devices --specials~
+- ~--devices~ :: To transfer character and block device files to the remote system to recreate these devices.
+- ~--specials~ :: To transfer special files such as named sockets and fifos.
+- ~--size-only~ :: This modifies rsync’s “quick check” algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly
+- ~--stats~ :: show file-transfer stats: number of files, number of files transferred, Total file size in bytes, Total transferred file size
+- ~--chown~ :: refer to -og, change owner:group on dest. ~rsync -rlvzPitog --chown=www-data:www-data /source /destination~
+- ~--exclude 'public_html/database.txt'~ :: exclude a file or directory. Multiple ~--exclude~ can be used
+   - ~--exclude='*.log'~ :: by file extension
+- ~--include~ :: Only include log files ~--include='*.log' --exclude='*'~
+- ~--ignore-existing~ :: skip updating files that already exist on the destination
+- ~--exclude-from '/home/backup/exclude.txt'~ :: exclude multiple files and folders, use relative path without leading ~./~
 e.g.
 #+BEGIN_EXAMPLE
   afolder/*
@@ -44080,8 +44069,6 @@ exclude.txt
   public_html/database.*
   downloads/test/*
 #+END_EXAMPLE
-
---ignore-existing :: skip updating files that already exist on the destination
 
 Refer to bash:sshpass for --rsh
 
@@ -44167,8 +44154,8 @@ cstpoguax are attributes.
 - x: Extended attribute information changed.
 
 **** Filter rules (INCLUDE/EXCLUDE Patterns)
-If the pattern ends with a / then it will only match a directory, not a regular file, symlink or device
-If the pattern starts with a / then it is similar to a leading ^ in regular expressions. ~lq/foorq~ would match at any point in the hierarchy.
+If the pattern ends with a ~/~ then it will only match a directory, not a regular file, symlink or device
+If the pattern starts with a ~/~ then it is similar to a leading ~^~ in regular expressions. ~lq/foorq~ would match at any point in the hierarchy.
 ~oq*cq~ matches any path component but it stops at slashes
 use ~**~ to match anything, including slashes
 ~oq?cq~ matches any character except a slash
@@ -44177,7 +44164,7 @@ use ~**~ to match anything, including slashes
   [[:alpha:]]
 #+END_EXAMPLE
 
-A trailing *** will match both the directory and everything in the directory e.g. ~foldername/***~
+A trailing ~***~ will match both the directory and everything in the directory e.g. ~foldername/***~
 
 **** Examples
 - Dry, recursive, symlink, verbose, compress
@@ -47223,8 +47210,8 @@ Refer to docker:link
   wordpress < /tmp/mydbdump/pantheon_db_sql'
 #+END_EXAMPLE
 
-*** Link
-<<<docker:link>>> is deprecated and it relies on Docker in default bridge network mode.
+*** Link <<<docker:link>>>
+Deprecated and it relies on Docker in default bridge network mode.
 
 *** --name and --hostname
 Specify the container name using --name
@@ -47405,18 +47392,18 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
 
 ** Dockerfile
 *** CMD, RUN, ENTRYPOINT
-There can only be one ~CMD~ in a Dockerfile or a chain of Dockerfiles included as in parent images.
-If there're multiple, only the last one will run.
 - ~CMD~ is to provide defaults for a container that is already created from an image and running.
-- ~RUN~ runs a command and commits the result to an image at build time.
+   - There can only be one ~CMD~ in a Dockerfile or a chain of Dockerfiles included as in parent images
+   - If there're multiple, only the last one will run
+- ~RUN~ runs a command and commits the result to an image at build time
 - ~CMD~ doesn't execute anything at build time and it's not committed to the image.
 - ~ENTRYPOINT~ Docker's default entrypoint is ~/bin/sh -c~. Actually every ~RUN <your command>~ is ~/bin/sh -c <your command>~
-Docker allows you to specify a different entrypoint for ~docker run~ e.g. ~docker run -it ubuntu <your command>~ is to run ~/bin/sh -c <your command>~ <your command> could be ~bash~
-~CMD~ is just to provide paremeters to ENTRYPOINT when ~docker run~ is run. e.g. Ubuntu ~CMD ["bash"]~ then you can run ~docker run -it ubuntu~ to run ~/bin/sh -c bash~ directly
+   - Docker allows you to specify a different entrypoint for ~docker run~ e.g. ~docker run -it ubuntu <your command>~ is to run ~/bin/sh -c <your command>~ where ~<your command>~ could be ~bash~
+   - ~CMD~ is just to provide paremeters to ~ENTRYPOINT~ when ~docker run~ is run. e.g. Ubuntu ~CMD ["bash"]~ then you can run ~docker run -it ubuntu~ to run ~/bin/sh -c bash~ directly
 
-Example :: without ENTRYPOINT, this needs to run ~docker run redisimg redis -H something -u toto get key~
-With ENTRYPOINT, ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~, only this needs to run
-~docker run redisimg get key~
+For example
+Without ~ENTRYPOINT~, this needs to run ~docker run redisimg redis -H something -u toto get key~
+With ~ENTRYPOINT~, ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~, only this needs to run ~docker run redisimg get key~
 
 There're 3 forms of ~CMD~
 #+BEGIN_SRC dockerfile
@@ -47439,6 +47426,7 @@ Use shell form ~CMD [ "sh", "-c", "echo $HOME" ]~ or
 ~/bin/bash~ vs ~/bin/sh~
 - Most of the time ~bash~ is an advanced shell that is on top of ~sh~
 - Sometimes ~sh~ is linked to ~bash~
+- Alpine doesn't have ~/bin/bash~
 
 *** ADD vs COPY
 COPY <src>... <dest>
@@ -47575,13 +47563,13 @@ Check volumes created by Docker =docker volume ls=
 Create a volume =docker volume create --name dbdata=
 Remove a volume =docker volume rm dbdatavolume=
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   volumes:
   # Named volume which can be used in all services
   # this volume isn't mapped to anything in docker host!
   # top-level volumes can't specify path to named volume.. You have to install other Docker plugin
     dbdata:
-#+END_EXAMPLE
+#+END_SRC
 
 **** networks (top level) links (deprecated)
 Every time ~docker-compose up~ creates a single network (per app) which all services in the app are on.
@@ -47718,20 +47706,20 @@ Then in a service, specify the ip
 #+END_EXAMPLE
 
 compose file v3
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   version: '3'
   services:
     redis:
       image: redis:alpine
       deploy:
-        resources:
-          limits:
-            cpus: '0.50'
-            memory: 50M
-          reservations:
-            cpus: '0.25'
-            memory: 20M
-#+END_EXAMPLE
+	resources:
+	  limits:
+	    cpus: '0.50'
+	    memory: 50M
+	    reservations:
+	      cpus: '0.25'
+	      memory: 20M
+#+END_SRC
 
 **** Pass arguments from Compose to Dockerfile
 docker-compose.yml
@@ -49012,6 +49000,63 @@ pattern
 - %{remote}p :: remote port. IDK.. Maybe random
 - %{xxx}i :: incoming header value. e.g. %{X-Forwarded-Host}
 - %{xxx}o :: outgoing header value
+
+** image:goaccess <<<docker:image:goaccess>>>
+- Don't follow the provided instructions.. :: https://github.com/allinurl/goaccess#docker
+- Follow mine
+
+#+BEGIN_SRC sh
+  git clone https://github.com/allinurl/goaccess.git goaccess && cd $_
+
+  docker build . -t allinurl/goaccess
+
+  mkdir -p /home/li/goaccess/{data,html,log}
+
+  # create config file
+  nano /home/li/goaccess/data/goaccess.conf
+
+  # restart container after config file is changed
+  docker restart goaccess
+
+  docker run --restart=always -d -p 7890:7890 \
+    -v "/home/li/goaccess/data:/srv/data"     \
+    -v "/home/li/goaccess/html:/srv/report"   \
+    -v "/home/li/goaccess/log:/srv/logs"      \
+    --name=goaccess allinurl/goaccess         \
+    --no-global-config --config-file=/srv/data/goaccess.conf \
+	     --log-file=/srv/logs/access.log
+
+  # entrypoint is `/bin/goaccess`
+  # default conf file is in the Alpine container :: /etc/goaccess
+  # so must use --config-file to override
+  # use --log-file to dynamically point to the log you want to analyze
+
+  # generated HTML report is under /srv/goaccess/html/index.html
+  # open it locally on host machine will have a real-time updated one! Because the webpage uses WebSocket
+
+  # completely remove
+  docker stop goaccess
+  docker rm goaccess
+  docker rmi allinurl/goaccess
+#+END_SRC
+
+*** Config goaccess.conf
+- Modify the default :: https://raw.githubusercontent.com/allinurl/goaccess/master/config/goaccess.conf
+- Log format :: https://goaccess.io/man#custom-log
+   - Use a script file to convert nginx:d:log_format to goaccess format. For example
+      - ~./nginx2goaccess.sh '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent"'~
+      - Then copy the time-format, date-format and change *log_format* to *log-format* and copy/paste to the conf file
+
+Better to add the following lines to the default conf or you can just have these lines in the conf
+#+BEGIN_SRC conf
+  log-file /srv/logs/access.log
+  output /srv/report/index.html
+  real-time-html true
+
+  # real-time-html is true is to ensure `docker run -d` runs continuously
+  # followed by script converted log-format, time-format, etc.
+  # log-format COMBINED
+#+END_SRC
 
 ** image:stilliard/pure-ftpd <<<docker:image:ftp>>>
 Image name: stilliard/pure-ftpd:hardened
@@ -51995,29 +52040,29 @@ Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
 trace1 to trace8 (most detailed)
 
 ** LogFormat
-LogFormat https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#logformat
-Context: server config, virtual host
-#+BEGIN_EXAMPLE
+- LogFormat :: https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#logformat
+   - ~LogFormat~ associate a format string to a nickname (e.g. common), nickname is optional
+   - ~CustomLog~ specifies the log file location for that nickname
+- Context :: server config, virtual host
+- Default :: ~LogFormat "%h %l %u %t \"%r\" %>s %b"~
+- Custom Log Formats :: https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#formats
+
+#+BEGIN_SRC conf
   LogFormat "%h %l %u %t \"%r\" %>s %b" common
   CustomLog logs/access_log common
-#+END_EXAMPLE
-
-LogFormat associate a format string to a nickname (e.g. common), nickname is optional
-CustomLog specifies the log file location for that nickname
+#+END_SRC
 
 Combined more fields
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
   CustomLog log/access_log combined
 
-  // 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
-  // after combined
-  // 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326 "http://www.example.com/start.html" "Mozilla/4.08 [en] (Win98; I ;Nav)"
-#+END_EXAMPLE
+  # 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
+  # after combined
+  # 127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326 "http://www.example.com/start.html" "Mozilla/4.08 [en] (Win98; I ;Nav)"
+#+END_SRC
 
 2326 :: %b :: size of the object returned to the client, not including the response headers. If no content was returned to the client, this value will be "-". To log "0" for no content, use %B instead.
-
-Custom Log Formats :: https://httpd.apache.org/docs/2.4/mod/mod_log_config.html#formats
 
 ** Basic authentication
 htpasswd creates auth file and it needs this package. htpasswd doesn't need to be installed on server.
