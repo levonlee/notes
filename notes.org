@@ -43262,7 +43262,7 @@ Search by modified date
   find . -type f -mtime -14 ! -iname '*.jpg' ! -iname '*.png'
 
   # Modified between 50 and 100 days ago
-  find . -type f mtime +50 -mtime -100
+  find . -type f -mtime +50 -mtime -100
 #+END_SRC
 
 Recent modified files recursive (file status change)
@@ -43393,17 +43393,19 @@ Default delimiter is space
 - Use tab :: ~cat atabdelimited.csv | column -t -s $'\t'~ or ~column -t -s '\t'~ Refer to linux:/etc/passwd
 
 *** cut <<<bash:cut>>>
-Extract columns from file
+- Extract columns from file
 - Syntax :: ~cut OPTION... [FILE]...~
-
 - ~echo -e "a\tb\tc" | cut -d $'\t' -f 2~ :: field 2 with delimiter tab
 
 *** awk <<<bash:awk>>>
-https://www.tutorialspoint.com/awk/index.htm
-
-- Space delimited by default.
-- ~BEGIN~ > read a line from input > execute AWK commands using the line (~/pattern/~ to filter the line) > repeat > ~END~
-- Syntax :: ~awk 'BEGIN{command1; command2;} /pattern/ {command3; command4;} END {command5; command6;}'~
+- https://www.tutorialspoint.com/awk/index.htm
+- Space delimited by default
+- Refer to bash:read
+- Syntax :: ~awk 'BEGIN {command1; command2;} /pattern/ {command3; command4;} END {command5; command6;}'~
+   - ~BEGIN~ run AWK commands 1 and 2 before read
+   - Read a line from input then execute AWK commands 3 and 4 using the line (~/pattern/~ to filter the line)
+   - repeat
+   - ~END~ run AWK commands 5 and 6
 
 #+BEGIN_SRC bash
   awk 'BEGIN{printf "Col1\tCol2\tCol3\n"} {print}' marks.txt
@@ -43417,14 +43419,19 @@ https://www.tutorialspoint.com/awk/index.htm
   # define variables inside awk
   awk -v name=Jerry 'BEGIN{printf "Name = %s\n", name}'
 
+  # pass variable to awk
+  dockercontainer=lucee
+  awk -v name="$dockercontainer" 'BEGIN {print name}'
+  awk -v name="$dockercontainer" '{ if ( $1 == name ) print $2}'
+
   # print columns
   awk '{print $3 "\t" $4}' marks.txt
 
   # Using pattern to filter lines to run body commands
-  awk '/a/ {print $3 "\t" $4}' marks.txt
+  awk '/somepattern/ {print $3 "\t" $4}' marks.txt
 
   # line count
-  awk '/a/ {print $3 "\t" $4; ++cnt } END {print "Count = ", cnt}' marks.txt
+  awk '/somepattern/ {print $3 "\t" $4; ++cnt } END {print "Count = ", cnt}' marks.txt
 
   # $0 is the line, length($0)
   awk 'length($0) > 18 {print length($0)}' marks.txt
@@ -43434,7 +43441,7 @@ https://www.tutorialspoint.com/awk/index.htm
 - ~-F~ :: change delimiter. Default is space
   - tab :: ~-F $'\t'~ or ~-F "\t"~
   - colon or comma :: ~-F ":"~ ~-F ','~
-  - Separator can be a single character or a regex.
+  - Separator can be a single character or a regex
   - Default space, multiple spaces are treated as one column
   - Other single character :: e.g. for comma, multiple commas are treated as multiple columns
   - To enable multiple commas as one comma/column, use ~-F ',*'~
@@ -43457,6 +43464,7 @@ https://www.tutorialspoint.com/awk/index.htm
      } 
   }' f1.txt f2.txt
 #+END_SRC
+
 - FILENAME
 - FS :: input field separator. Default space
 - FIELDSWIDTHS :: instead of using FS, a space-delimited list of field widths variable can be set to define fields
@@ -43677,6 +43685,7 @@ Variables that are functions related
   # %g :: use %e or %f, whichever is shorter
   # %G :: use %E or %f, whichever is shorter
   awk 'BEGIN { printf "Percentags = %g\n", 80.66 }'
+  awk 'BEGIN { printf "Percentags = %g\n", "80.66%" }'
 
   # %o :: unsigned octal number
   # %u :: unsigned decimal number
@@ -43692,7 +43701,7 @@ Variables that are functions related
   # %+d :: always add prefix to indicate whether number is positive or negative
 #+END_SRC
 
-**** AWK output redirection 
+**** AWK output redirection
 #+BEGIN_SRC sh
   # overwrite
   awk 'BEGIN { print "Hello, World !!!" > "/tmp/message.txt" }'
@@ -45528,10 +45537,14 @@ Up to 9 open file descriptors can be used at a time.
   printf '%s\n%s\n' "$line1" "$line2"
 #+END_SRC
 
-*** Read command output line by line
+*** Read command output line by line <<<bash:read>>>
 #+BEGIN_SRC bash
   multiple_commands_output=""
   output=$(drush command output contains multiple lines);
+
+  # more examples
+  output=$(docker stats --no-stream --format "{{.Name}}: {{.CPUPerc}}")
+
   count=1
   while IFS=$'\n' read -r line; do
     echo "Line number $count: $line"
@@ -45598,7 +45611,7 @@ Argument name and value cannot be passed in the above way. Use bash:array
 #+END_SRC
 
 *** String Operators
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # A string is delimited by :
   # Get the last element
   foo=1:2:3:4:5
@@ -45621,16 +45634,16 @@ Argument name and value cannot be passed in the above way. Use bash:array
 
   # insert a newline
   z="$z""$c"$'\n'
-#+END_EXAMPLE
+#+END_SRC
 
 *** String comparison
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   # Start with 'node'
   if [[ $a == node* ]]; then
 
   # Start with a string 'Hello World'
-  [[ $a == "Hello World"* ]]
-#+END_EXAMPLE
+  if [[ $a == "Hello World"* ]]; then
+#+END_SRC
 
 *** Numeric comparison
 Not floating-point values
@@ -45674,14 +45687,14 @@ Not floating-point values
   fi
 #+END_SRC
 
-- ! EXPRESSION :: The EXPRESSION is false.
-- -n STRING :: The length of STRING is greater than zero.
-- -z STRING :: The lengh of STRING is zero (ie it is empty).
+- ~! EXPRESSION~ :: The EXPRESSION is false.
+- ~-n STRING~ :: The length of STRING is greater than zero.
+- ~-z STRING~ :: The lengh of STRING is zero (ie it is empty).
 - STRING1 = STRING2 :: STRING1 is equal to STRING2
 - STRING1 != STRING2 :: STRING1 is not equal to STRING2
-- INTEGER1 -eq INTEGER2 :: INTEGER1 is numerically equal to INTEGER2
-- INTEGER1 -gt INTEGER2 :: INTEGER1 is numerically greater than INTEGER2
-- INTEGER1 -lt INTEGER2 :: INTEGER1 is numerically less than INTEGER2
+- ~INTEGER1 -eq INTEGER2~ :: INTEGER1 is numerically equal to INTEGER2
+- ~INTEGER1 -gt INTEGER2~ :: INTEGER1 is numerically greater than INTEGER2
+- ~INTEGER1 -lt INTEGER2~ :: INTEGER1 is numerically less than INTEGER2
 - -d FILE :: FILE exists and is a directory.
 - -e FILE :: FILE exists.
 - -r FILE :: FILE exists and the read permission is granted.
@@ -47278,14 +47291,16 @@ SRC_PATH specifies a directory
    the content of the source directory is copied into this directory
 
 *** docker stats
-Memory usage for all containers ~docker stats -a~ default just shows running containers
+- CPU and Memory usage for all containers ~docker stats -a~ default just shows running containers
 Show container names
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   docker stats --format "table {{.Name}}\t{{.Container}}\t{{.CPUPerc}}\t{{.MemPerc}}\t{{.MemUsage}}\t{{.PIDs}}"
 
-  ;; # other column values
-  \t{{.NetIO}}\t{{.BlockIO}}
-#+END_EXAMPLE
+  docker stats --no-stream --format "{{.Name}}: {{.CPUPerc}}"
+
+  # other column values
+  # \t{{.NetIO}}\t{{.BlockIO}}
+#+END_SRC
 
 *** Save a running container to an image
 First exit the container first
@@ -47794,13 +47809,14 @@ container path to code and files dcontainerpath :: /var/www/html
 store code and files to this folder :: html
 
 **** Makefile at remote Prod/Live host /root/Makefile
-Prepare in container a script to dump db :: /root/dump.sh
-#+BEGIN_EXAMPLE
+- Prepare in container a script to dump db :: ~/root/dump.sh~
+
+#+BEGIN_SRC sh
   #!/bin/bash
   mysqldump -u root --password='$mypass$' livedbname > /root/myproject.sql
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC makefile
   .PHONY: info rmbkfolder bkfolder bkdb bkdbsamename tarall tarallexcludesamename drytarallexcludesamename tarcode taruploads taruploadsexclude
 
   filename := $(shell date +%F)
@@ -47830,44 +47846,44 @@ Prepare in container a script to dump db :: /root/dump.sh
   transferpath = /web-root/transfer-files/dev-to-prod/source/
 
   info:
-          @echo first run bkfolder
-          @echo then run make tarcode and make taruploads
-          @echo run make tarall
-          @echo run make taruploadsexclude if some directories need to be excluded
-          @echo Finally, run rmbkfolder to release space
+	  @echo first run bkfolder
+	  @echo then run make tarcode and make taruploads
+	  @echo run make tarall
+	  @echo run make taruploadsexclude if some directories need to be excluded
+	  @echo Finally, run rmbkfolder to release space
 
   bkfolder: rmbkfolder
-          @echo should use docker cp -a if it is supported
-          docker cp -L $(dcontainer):$(dcontainerpath) $(bkpath)
+	  @echo should use docker cp -a if it is supported
+	  docker cp -L $(dcontainer):$(dcontainerpath) $(bkpath)
 
   rmbkfolder:
-          rm -rf $(bkpath)
+	  rm -rf $(bkpath)
 
   bkdb:
-          docker exec $(dcontainer) $dcontainerdbdump
-          docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname)-$(filename).sql
+	  docker exec $(dcontainer) $dcontainerdbdump
+	  docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname)-$(filename).sql
 
   bkdbsamename:
-          docker exec $(dcontainer) $dcontainerdbdump
-          docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname).sql
+	  docker exec $(dcontainer) $dcontainerdbdump
+	  docker cp $(dcontainer):$(dcontainerdbdumppath)/$(projectname).sql $(projectname).sql
 
   tarall:
-          tar -czpf all-$(filename).tar.gz -C $(bkpath) .
+	  tar -czpf all-$(filename).tar.gz -C $(bkpath) .
 
   tarallexcludesamename:
-          tar -czpf all.tar.gz -C $(bkpath) . $(tarallexclude))
+	  tar -czpf all.tar.gz -C $(bkpath) . $(tarallexclude))
 
   drytarallexcludesamename:
-          tar -cvzpf - -C $(bkpath) . $(tarallexclude)
+	  tar -cvzpf - -C $(bkpath) . $(tarallexclude)
 
   tarcode:
-          tar -czpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
+	  tar -czpf code-$(filename).tar.gz -C $(bkpath) . $(tarexclude)
 
   taruploads:
-          tar -czpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
+	  tar -czpf uploads-$(filename).tar.gz -C $(bkpath)/wp-content/uploads .
 
   taruploadsexclude:
-          tar -czpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
+	  tar -czpf uploads-exclude-$(filename).tar.gz -C $(bkpath)/wp-content/uploads . $(taruploadsexclude)
 
   # copy code.tar.gz to /myproject/code.tar.gz
   # cd /myproject && tar -xvzf code.tar.gz
@@ -47875,50 +47891,50 @@ Prepare in container a script to dump db :: /root/dump.sh
   # mkdir wp-content/uploads && tar -xvzf uploads.tar.gz -C wp-content/uploads
 
   cleantars:
-          rm -rf all.tar.gz
+	  rm -rf all.tar.gz
 
   # copy dev code to a transfer folder, remove wp-config.php and .htaccess
 
   pushcodetolive:
-          rsync -av ./$(bkpath)/ $(transferpath)
-          rm $(transferpath)wp-config.php
-          rm $(transferpath).htaccess
-#+END_EXAMPLE
+	  rsync -av ./$(bkpath)/ $(transferpath)
+	  rm $(transferpath)wp-config.php
+	  rm $(transferpath).htaccess
+#+END_SRC
 
 Also prepare on Live host /root/devops-db.sh
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   #!/bin/bash
   cd /root && make bkdbsamename
-#+END_EXAMPLE
+#+END_SRC
 
 And /root/devops-files.sh
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   #!/bin/bash
   cd /root && make bkfolder && make tarallexcludesamename
-#+END_EXAMPLE
+#+END_SRC
 
 **** Sql dump inside container
 Inside container /var/transfer/bash/dbdump.sh
 
-#+BEGIN_EXAMPLE
-  ;; #!/bin/bash
+#+BEGIN_SRC bash
+  #!/bin/bash
 
-  ;; # Move to MySQL Dump Folder :
+  # Move to MySQL Dump Folder :
   cd /var/transfer/sql-dump/
 
-  ;; # Remove dump folder (if Exists):
+  # Remove dump folder (if Exists):
   rm -rf dev-to-prod
 
-  ;; # Create and Enter Dump Folder :
+  # Create and Enter Dump Folder :
   mkdir dev-to-prod
   cd dev-to-prod
 
-  ;; # MySQL Dump A Copy of the Database to the server :
+  # MySQL Dump A Copy of the Database to the server :
   mysqldump -u root --password='dbpassword' dbname > containername.sql
 
-  ;; # Find && Replace Dev URL with Prod URL :
+  # Find && Replace Dev URL with Prod URL :
   sed 's|http://www\.dev.mywebsite.com\.com|http://www\.mywebsite\.com|g' containername.sql
-#+END_EXAMPLE
+#+END_SRC
 
 **** local dev /root/Makefile
 Create /root/myfile to store ssh plain password
@@ -48576,6 +48592,8 @@ wordpress:cli-php7.2
 
 ** image:lucee <<<docker:image:lucee>>>
 - Image name :: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
+- Tags :: https://hub.docker.com/r/lucee/lucee4-nginx/tags
+- Choose a tag :: https://github.com/lucee/lucee-dockerfiles
 - Parent Images :: lucee/lucee4 > tomcat:8.0.36-jre8 > openjdk:8-jre > buildpack-deps:stretch-curl
 
 *** docker-compose.yml Dockerfile
