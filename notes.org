@@ -41281,12 +41281,12 @@ Breakdown conversions #4 (Extensions & Ad Groups)
 If the final URL contains any of the following, manual tagging is used:
 - utm_source, utm_medium, utm_campaign, utm_content, utm_term
 
-When auto-tagging is used, gclid=abc parameter is appended to the rul. Auto-tagging only works with Google Analytics e.g. other 3rd party tools which only use UTM parameters.
+When auto-tagging is used, ~gclid=abc~ parameter is appended to the url. Auto-tagging only works with Google Analytics e.g. other 3rd party tools which only use UTM parameters.
 
 You can add UTM parameters and with auto-tagging on, UTM parameters and gclid will be in the URL. You can also let GA take the UTM parameters you specifiy instead of the values that gclid can bring.
 - https://support.google.com/analytics/answer/1033981?hl=en
 
-Caution :: Don't include hash in the final URL with auto-tagging on! as gclid URL parameter will not be caught as url parameter.
+- Caution :: Don't include hash in the final URL with auto-tagging on! as gclid URL parameter will not be caught as url parameter.
 
 **** Automated Rules
 Automated rules are added to a campaign (e.g. enable and disable a campaign), an ad group, an ad or extension and others based on time or performance.
@@ -43470,6 +43470,7 @@ Default delimiter is space
 - FIELDSWIDTHS :: instead of using FS, a space-delimited list of field widths variable can be set to define fields
 - OFS :: output field separator. Default space
   - ~awk -F':' 'BEGIN{OFS="\t";} {print $3, $4}' /etc/passwd~ Refer to linux:/etc/passwd
+- ORS :: output record separator. Default ~\n~. This is used in ~print~ in e.g. command 3 and 4. Manually add ~\n~ for ~printf "%g/n",$1~
 - RS :: record separator. Default newline ~\n~
 - NF :: number of fields/columns in current line
 - NR :: the number of the current line
@@ -43741,13 +43742,18 @@ Array loop
 #+BEGIN_SRC sh
   awk 'BEGIN {
      a = 30;
-   
+
      if (a==10)
-     print "a = 10";
+       print "a = 10";
      else if (a == 20)
-     print "a = 20";
+       print "a = 20";
      else if (a == 30)
-     print "a = 30";
+       print "a = 30";
+
+     if (a==20) {
+       print "1";
+       print "2";
+     }
   }'
 #+END_SRC
 
@@ -45236,6 +45242,24 @@ https://askubuntu.com/a/430944/481813
   echo ~-
 #+END_SRC
 
+*** Directory of the curren script file
+- https://stackoverflow.com/a/246128/2196360
+
+#+BEGIN_SRC bash
+  # Normal usage when there is no symlink
+  # Result has no trailing `/`
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+  # When symlinks are involved
+  SOURCE="${BASH_SOURCE[0]}"
+  while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  done
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+#+END_SRC
+
 *** range <<<bash:range>>>
 #+BEGIN_SRC sh
   echo {1..100}
@@ -45589,15 +45613,15 @@ Store as a variable
   echo !!
 #+END_SRC
 
-*** Passing arguments to command
-Variable can be passed to a command as argument value which is preceded by the argument name
+*** Passing arguments to command <<<bash:pass arguments>>>
+It is ok to pass variables as argument value which is preceded by the argument name
 #+BEGIN_SRC bash
   ua='User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'
   curl https://a.ca/ -L \
     -H "$ua"
 #+END_SRC
  
-Argument name and value cannot be passed in the above way. Use bash:array
+Use bash:array to pass argument name and value
 #+BEGIN_SRC bash
   # create a non-associative array
   declare -a curlArgs=('-H' "keyheader: value" '-H' "2ndkeyheader: 2ndvalue")
@@ -45668,6 +45692,8 @@ Not floating-point values
 #+END_EXAMPLE
 
 *** if <<<bash:if>>>
+- Exit code zero then ~conditions~ is true
+- Operators in ~conditions~ :: ~;~ ~&~ ~&&~ ~||~
 
 #+BEGIN_SRC bash
   if [ conditions ]; then
@@ -45685,22 +45711,29 @@ Not floating-point values
   else
     echo "There're files"
   fi
+
+  # if [ condition ] :: all POSIX shells
+  # if [[ condition ]] :: new upgrad e.g. whether a string matches a regular expression. Supported by ksh, bash and zsh
+  # if ((condition)) :: Supported by ksh extension, b ash and zsh. Return zero if the result of the arithmetic calculation is nonzero
+  # if (command) :: Run a command in a subsehll
+  # if command :: Run a command
 #+END_SRC
 
-- ~! EXPRESSION~ :: The EXPRESSION is false.
-- ~-n STRING~ :: The length of STRING is greater than zero.
-- ~-z STRING~ :: The lengh of STRING is zero (ie it is empty).
-- STRING1 = STRING2 :: STRING1 is equal to STRING2
+- ~! EXPRESSION~ :: The EXPRESSION is false
+- ~-n STRING~ :: The length of STRING is greater than zero
+- ~-z STRING~ :: The lengh of STRING is zero (ie it is empty)
+- ~STRING1 = STRING2~ :: STRING1 is equal to STRING2
 - STRING1 != STRING2 :: STRING1 is not equal to STRING2
 - ~INTEGER1 -eq INTEGER2~ :: INTEGER1 is numerically equal to INTEGER2
 - ~INTEGER1 -gt INTEGER2~ :: INTEGER1 is numerically greater than INTEGER2
 - ~INTEGER1 -lt INTEGER2~ :: INTEGER1 is numerically less than INTEGER2
-- -d FILE :: FILE exists and is a directory.
-- -e FILE :: FILE exists.
-- -r FILE :: FILE exists and the read permission is granted.
-- -s FILE :: FILE exists and it's size is greater than zero (ie. it is not empty).
-- -w FILE :: FILE exists and the write permission is granted.
-- -x FILE :: FILE exists and the execute permission is granted.
+- -d FILE :: FILE exists and is a directory
+- ~-e "$myfile"~ :: FILE exists
+- ~-f "$myfile"~ :: File is a regular file (not a dir or device file)
+- -r FILE :: FILE exists and the read permission is granted
+- ~-s "$myfile"~ :: FILE exists and it's size is greater than zero (ie. it is not empty)
+- ~-w FILE~ :: FILE exists and the write permission is granted
+- ~-x FILE~ :: FILE exists and the execute permission is granted
 
 *** Function <<<bash:function>>>
 #+BEGIN_SRC bash
@@ -45734,8 +45767,8 @@ Not floating-point values
 #+END_SRC
 
 *** Special Parameters
-man bash
-$@ => "$1" "$2" "$3" ...
+- ~man bash~
+- ~$@ => "$1" "$2" "$3" ...~
 
 ** curl, wget
 *** curl <<<linux:curl>>>
@@ -45777,6 +45810,8 @@ Works for ftp and Http
 #+END_SRC
 
 **** HTTP POST <<<linux:curl:post>>>
+- Refer to bash:pass arguments
+
 #+BEGIN_SRC sh
   # default POST is application/x-www-form-urlencoded
   curl -X POST -d "test=that&test2=that2" http://..
@@ -45787,8 +45822,16 @@ Works for ftp and Http
   curl -X POST -d "@data.txt" http://..
 
   # json
+  # keep value to be a single line
+  # I haven't figured out how to escape newline for json yet..
+  to='a@a.ca'
+  from='b@a.ca'
+  json_fmt='{"personalizations": [{"to": [{"email": "%s"}]}],"from": {"email": "%s"},"subject": "%s","content": [{"type": "text/plain", "value": "%s"}]}'
+  data_json=$(printf "$json_fmt" "$to" "$from" "$subject" "$content")
+
   curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http://..
   curl -X POST -H 'Content-Type: application/json' -d '{"test":"that"}' http://..
+  curl -X POST -H 'Content-Type: application/json' -d "$data_json" http://..
 
   # with a data file
   curl -X POST -d "@data.json" http://..
@@ -46294,8 +46337,8 @@ Ubuntu
   command2
 #+END_SRC
 
-- -x :: enable a mode of the shell where all executed commands are printed to the terminal.
-- -e :: under common situation, exit when there's an error
+- -x :: enable a mode of the shell where all executed commands are printed to the terminal
+- -e :: under common situation, exit when there's an error (stop at first error)
 
 ** Cheat
 #+BEGIN_EXAMPLE
@@ -46454,8 +46497,10 @@ https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
 #+END_EXAMPLE
 
 ** Nano <<<linux:nano>>>
-- Save :: Ctrl + O 
-- Exit :: Ctrl + x
+- Save :: C-o 
+- Exit :: C-x
+- Undo :: M-u
+- Redo :: M-e
 - Display line number and cursor position :: C-c
    - Show line number when open :: ~nano -c filename~
 - Uncut or paste text :: C-u
@@ -46465,8 +46510,8 @@ https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
    - ~Alt + Shift + A~ or ~C-6~ to set mark, move cursor to selct
    - ~Alt + Shift + 6~ or ~M-6~ to copy or use C-k to cut text
    - C-u to paste
-- Turn off word wrap :: Esc, release, then $ (shift+4)
-- Visually insert word wrap :: ~Alt + Shift + 4~
+- Toggle visual word wrap :: ~Esc, release, then $ (shift+4)~ or ~Alt + Shift + 4~
+- Copy from Nano to terminal (system clipboard) :: ~C-S-c~ have to ensure visual word wrap is on for multiple lines
 - By default, nano covert tab to 4 spaces. Turn off :: ~Shift + Alt + Q~
 
 ** Ubuntu <<<linux:ubuntu>>>
@@ -49084,105 +49129,105 @@ Parent image: debian:jessie
 https://github.com/stilliard/docker-pure-ftpd
 By default, it only supports FTP not SFTP
 
-Dockerfile =docker build -t myftp .=
-#+BEGIN_EXAMPLE
+Dockerfile ~docker build -t myftp .~
+#+BEGIN_SRC dockerfile
   FROM stilliard/pure-ftpd:hardened
 
-  ;; # e.g. you could change the defult command run:
+  # e.g. you could change the defult command run:
   CMD /run.sh -c 30 -C 5 -l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R -P $PUBLICHOST -p 30000:30009
 
-  ;; # /usr/sbin/pure-ftpd
+  # /usr/sbin/pure-ftpd
 
-  ;; # -c 50, --maxclientsnumber (no more than 50 people at once)
-  ;; # -C 10, --maxclientsperip (no more than 10 requests from the same ip)
-  ;; # -l puredb:/etc/pure-ftpd/pureftpd.pdb, --login (login file for virtual users)
-  ;; # -E, --noanonymous (only real users)
-  ;; # -j, --createhomedir (auto create home directory if it doesn't already exist)
-  ;; # -R, --nochmod (prevent usage of the CHMOD command)
+  # -c 50, --maxclientsnumber (no more than 50 people at once)
+  # -C 10, --maxclientsperip (no more than 10 requests from the same ip)
+  # -l puredb:/etc/pure-ftpd/pureftpd.pdb, --login (login file for virtual users)
+  # -E, --noanonymous (only real users)
+  # -j, --createhomedir (auto create home directory if it doesn't already exist)
+  # -R, --nochmod (prevent usage of the CHMOD command)
 
-  ;; # -tls 1, Enables optional TLS support
+  # -tls 1, Enables optional TLS support
 
-  ;; # In Compose
+  # In Compose
 
-  ;; # -P $PUBLICHOST :: setting for PASV support, passed in your the PUBLICHOST env var
-  ;; # -p 30000:30009 :: PASV port range
-#+END_EXAMPLE
+  # -P $PUBLICHOST :: setting for PASV support, passed in your the PUBLICHOST env var
+  # -p 30000:30009 :: PASV port range
+#+END_SRC
 
 docker-compose.yml
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   version: '2'
   networks:
     app_net:
       driver: bridge
       ipam:
-        driver: default
-        config:
-        - subnet: 172.16.3.0/24
-          gateway: 172.16.3.1
+	driver: default
+	config:
+	- subnet: 172.16.3.0/24
+	  gateway: 172.16.3.1
   services:
     myftp:
       build: .
       image: myftp:latest
       container_name: myftp
       environment:
-        - PUBLICHOST=ftp.yourdomain.com
-  ;; #     - ADDED_FLAGS=-d -d
+	- PUBLICHOST=ftp.yourdomain.com
+  #     - ADDED_FLAGS=-d -d
       ports:
-        - "21:21"
-        - "30000-30009:30000-30009"
-  ;; # open these many ports to support Passive Mode..
+	- "21:21"
+	- "30000-30009:30000-30009"
+  # open these many ports to support Passive Mode..
       volumes:
-        - /host/storefiles/ftp:/home/ftpusers
-        - /host/config/ftp/passwd:/etc/pure-ftpd/passwd
-  ;; # persist the user database
-  ;; # only one file under /etc/pure-ftpd/passwd which is pureftps.passwd and it contains the user database
-  ;; #     - /host/config/ftp/ssl:/etc/ssl/private
-  ;; # a single `pure-ftpd.pem` file with server's SSL certificates for TLS support
+	- /host/storefiles/ftp:/home/ftpusers
+	- /host/config/ftp/passwd:/etc/pure-ftpd/passwd
+  # persist the user database
+  # only one file under /etc/pure-ftpd/passwd which is pureftps.passwd and it contains the user database
+  #     - /host/config/ftp/ssl:/etc/ssl/private
+  # a single `pure-ftpd.pem` file with server's SSL certificates for TLS support
       networks:
-        app_net:
-          ipv4_address: 172.16.3.3
-#+END_EXAMPLE
+	app_net:
+	  ipv4_address: 172.16.3.3
+#+END_SRC
 
 Makefile
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC makefile
   FTPCONFIG=/etc/pure-ftpd/passwd/pureftpd.passwd
 
   .PHONY: default info start stop restart list adduser deluser
 
   default:
-          @echo "make [command]. Available commands are:"
-          @echo "info, start, stop, restart, list, adduser, deluser"
+	  @echo "make [command]. Available commands are:"
+	  @echo "info, start, stop, restart, list, adduser, deluser"
 
   info:
-          @echo "List all virutal user: make list"
-          @echo "Add a new user abc and make parent folder to /FTP"
-          @echo 'make adduser username="abc" folder="FTP"'
-          @echo 'Add a new user abc and make parent folder to root /'
-          @echo 'make adduser username="abc" folder="application1"'
-          @echo 'Delete a user abc: make deluser username="abc"'
+	  @echo "List all virutal user: make list"
+	  @echo "Add a new user abc and make parent folder to /FTP"
+	  @echo 'make adduser username="abc" folder="FTP"'
+	  @echo 'Add a new user abc and make parent folder to root /'
+	  @echo 'make adduser username="abc" folder="application1"'
+	  @echo 'Delete a user abc: make deluser username="abc"'
 
   start:
-          sudo docker-compose up -d --build
+	  sudo docker-compose up -d --build
 
   stop:
-          sudo docker-compose down -v
+	  sudo docker-compose down -v
 
   restart:
-          sudo docker-compose down -v && sudo docker-compose up -d --build
+	  sudo docker-compose down -v && sudo docker-compose up -d --build
 
   enter:
-          sudo docker exec -it newcomftp bash -I
+	  sudo docker exec -it newcomftp bash -I
 
   list:
-          @echo "<account>:<password>:<uid>:<gid>:<gecos>:<home directory>:<upload bandwidth>:<download bandwidth>:<upload ratio>:<download ratio>:<max number of connections>:<files quota>:<size quota>:<authorized local IPs>:<refused local IPs>:<authorized client IPs>:<refused client IPs>:<time restrictions>"
-          sudo cat ~/config/ftp/passwd/pureftpd.passwd
+	  @echo "<account>:<password>:<uid>:<gid>:<gecos>:<home directory>:<upload bandwidth>:<download bandwidth>:<upload ratio>:<download ratio>:<max number of connections>:<files quota>:<size quota>:<authorized local IPs>:<refused local IPs>:<authorized client IPs>:<refused client IPs>:<time restrictions>"
+	  sudo cat ~/config/ftp/passwd/pureftpd.passwd
 
   adduser:
-          sudo docker exec -it myftp pure-pw useradd $$username -f $(FTPCONFIG) -m -u ftpuser -d /home/ftpusers/$$folder
+	  sudo docker exec -it myftp pure-pw useradd $$username -f $(FTPCONFIG) -m -u ftpuser -d /home/ftpusers/$$folder
 
   deluser:
-          sudo docker exec -it myftp pure-pw userdel $$username -f $(FTPCONFIG) -m
-#+END_EXAMPLE
+	  sudo docker exec -it myftp pure-pw userdel $$username -f $(FTPCONFIG) -m
+#+END_SRC
 
 Pureftp Manual
 - [[https://download.pureftpd.org/pub/pure-ftpd/doc/README.Virtual-Users][Add User]]
@@ -61255,20 +61300,18 @@ Node.js, Dockerfile
 
 ** Email
 *** SendGrid
-You can create website specific users who can use to authenticate SMTP and API.
-Sign to main account and go to Settings > Credentials
-
-Add a header X-SMTPAPI as JSON to assign category shown on SendGrid.com Stats and Activity
-Drupal way =$message['header']['X-SMTPAPI'] = '{"category": ["fromwebsiteA"]}' =
-
+- Create a user per website who can use to authenticate SMTP and API
+- Sign to main account and go to Settings > Credentials
+- Add a header ~X-SMTPAPI~ as JSON to assign category shown on SendGrid.com Stats and Activity
+   - Drupal way ~$message['header']['X-SMTPAPI'] = '{"category": ["fromwebsiteA"]}'~
 - Drupal
-Use the SMTP Authentication Support module (smtp) and go to /admin/config/system/smtp to config
-Install Options - turn this module on
-SMTP server: smtp.sendgrid.net
-SMTP port: 465 (587 is being used...)
-Use encripted protocol: Use SSL
+   - Use the SMTP Authentication Support module (smtp) and go to ~/admin/config/system/smtp~ to config
+   - Install Options - turn this module on
+   - SMTP server: smtp.sendgrid.net
+   - SMTP port: 465 (587 is being used...)
+   - Use encripted protocol: Use SSL
 - Wordpress
-Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplified][SendGrid]] Refer to GitHub for setting config in wp-config.php
+   - Install plugin [[https://wordpress.org/plugins/sendgrid-email-delivery-simplified][SendGrid]] Refer to GitHub for setting config in wp-config.php
 
 **** Whitelabel
 2 types of whitelabel: domain and email link.
@@ -61344,6 +61387,33 @@ SendGrid will show you 2 CNAMES per subdomain setup.
   }
 #+END_SRC
      
+**** cURL sends emails
+- https://sendgrid.com/docs/for-developers/sending-email/curl-examples/
+- Refer to linux:curl:post
+
+#+BEGIN_SRC sh
+  # basic
+  curl --request POST \
+    --url https://api.sendgrid.com/v3/mail/send \
+    --header 'Authorization: Bearer YOUR_API_KEY' \
+    --header 'Content-Type: application/json' \
+    --data '{"personalizations": [{"to": [{"email": "recipient@example.com"}]}],"from": {"email": "sendeexampexample@example.com"},"subject": "Hello, World!","content": [{"type": "text/plain", "value": "Heya!"}]}'
+
+  # send to multiple receipients
+  curl --request POST \
+    --url https://api.sendgrid.com/v3/mail/send \
+    --header 'authorization: Bearer YOUR_API_KEY' \
+    --header 'Content-Type: application/json' \
+    --data '{"personalizations": [{"to": [{"email": "recipient@example.com"}],"cc": [{"email":"recipient2@example.com"}, {"email": "recipient3@example.com"}, {"email":"recipient4@example.com"}]}], "from": {"email": "sendeexampexample@example.com"},"subject":"Hello, World!", "content": [{"type": "text/plain", "value": "Heya!"}]}'
+
+  # scheduled
+  curl --request POST \
+    --url https://api.sendgrid.com/v3/mail/send \
+    --header 'authorization: Bearer YOUR_API_KEY' \
+    --header 'Content-Type: application/json' \
+    --data '{"personalizations": [{"to": [{"email": "recipient@example.com"}]}],"from": {"email": "sendeexampexample@example.com"},"subject":"Hello, World!","content": [{"type": "text/plain","value": "Heya!"}], "send_at" : UNIX_TIMESTAMP_HERE}'
+#+END_SRC
+
 *** DMARC, SPF, DKIM <<<dns:dmarc>>>
 - DMARC :: Domain-based Message Authentication, Reporting, and Conformance
 - DMARC serves as a method of authentication for your brand, alongside Sender Policy Framework (SPF) and DomainKeys Identified Mail (DKIM)
