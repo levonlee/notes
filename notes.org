@@ -42395,6 +42395,9 @@ As root user, run this to add the user to the sudo group
   # to list groups a user is in
   groups username
 
+  # list groups for the current user
+  id -nG
+
   # gpasswd is the same as to add user to a group
   sudo usermod -aG agroupname ausername
   # -aG keeps the existing groups the user belongs to and add the user to another group
@@ -47096,20 +47099,17 @@ Qualys https://www.ssllabs.com/ssltest/
 
 * Docker
 ** Version, Info, Installation
-Brief :: ~docker --version~
-Server and Client :: ~sudo docker version~
-Full :: ~sudo docker info~
-
-"Docker for Windows" needs Windows Hyper-V enabled. Command prompt is admin.
-
-After installation, make sure linux:firewall DEFAULT_FORWARD_POLICY="ACCEPT"
-
-Use ~systemctl~ for managing Docker service.
+- Brief :: ~docker --version~
+- Server and Client :: ~sudo docker version~
+- Full :: ~sudo docker info~
+- "Docker for Windows" needs Windows Hyper-V enabled. Command prompt is admin
+- After installation, make sure linux:firewall DEFAULT_FORWARD_POLICY="ACCEPT"
+- Use ~systemctl~ for managing Docker service
 
 *** Without sudo
 Users in user group ~docker~ can run docker commands without sudo.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # replace your username with ${USER}
   sudo usermod -aG docker ${USER}
 
@@ -47118,7 +47118,7 @@ Users in user group ~docker~ can run docker commands without sudo.
 
   # print name (-n, --name) instead of a number and show group IDs (-G)
   id -nG
-#+END_EXAMPLE
+#+END_SRC
 
 *** Install on Digital Ocean
 https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04
@@ -49550,7 +49550,7 @@ If terminus login fail, ~lando ssh --user=root~ and run terminus auth:login
 ~lando start~
 ~lando pull --database=live --files=live --code=none~
 ~lando pull --database=none --code=none --files=live --rsync~
-- After db pull, run this inside appserver container ~wp cache flush~
+- After db pull, run this inside appserver container ~wp cache flush~ or ~lando wp cache flush~
 - May follow ~lando rebuild~ or restart, go to wp admin > Settings > clear Pantheon Page Cache
 
 ~lando stop~
@@ -49562,15 +49562,14 @@ If terminus login fail, ~lando ssh --user=root~ and run terminus auth:login
 Usually ~lando stop && lando destroy && lando start~ is enough. Can also use ~lando rebuild~
 
 - Run wp cli on other Pantheon sites :: ~lando terminus wp mysite.live user list~
-
 - Push only code :: ~lando push -m "a message" --database=none --files=none~
 
 https://docs.devwithlando.io/tutorials/pantheon.html
 
 Lando creates database container with:
-- user: pantheon
-- password: pantheon
-- database: pantheon
+- user :: pantheon
+- password :: pantheon
+- database :: pantheon
 
 The appserver container has the following .sh files in folder ~/helpers~. Their counter parts are in docker host =~/.lando/services/config/pantheon/*.sh=. Both of them are updated when ~lando pull~ is run.
 - pull.sh / push.sh
@@ -49751,14 +49750,18 @@ In the new folder, ~lando destroy && lando poweroff~ and remove all docker conta
   lando destroy
   lando poweroff
   docker rm -f $(docker ps -aq)
+  # or only Lando containers
+  docker rm -f $(docker ps --filter label=io.lando.container=TRUE --all -q)
   docker network prune -f
 #+END_SRC
 
-Use Windows Add/Remove Program to uninstall Lando
-
-Remove config
-- find config location ~lando config | grep userConfRoot~
-- Windows ~C:\Users\myname\.lando~
+- Windows
+   - Add/Remove Program to uninstall Lando
+- Ubuntu
+   - ~sudo apt-get remove lando~ or use Software Center to uninstall
+- Remove config
+   - =~/.lando= :: find config location ~lando config | grep userConfRoot~
+   - Windows ~C:\Users\myname\.lando~
 
 * Jenkins
 ** Install
@@ -54683,7 +54686,7 @@ https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
   mkdir .ssh && chmod 700 .ssh
   cd .ssh && nano id_rsa && chmod 400 id_rsa
 
-  # get terminus version
+  # get terminus version, PHP binary path, PHP version, php.ini used, Terminus root dir, Operating System
   terminus site:info
 
   terminus auth:login --machine-token=‹machine-token›
@@ -54696,6 +54699,46 @@ https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
 
   # terminus site deploy --site=<s> --env=<e> --sync-content --cc
   terminus env:deploy my-site.test --sync-content --note="Deploy core and contrib updates" --cc
+#+END_SRC
+
+*** Add Terminus plugins
+**** Basics
+- Basic instructions :: https://pantheon.io/docs/terminus/plugins/
+- Supported Pantheon Plugins :: https://pantheon.io/docs/terminus/plugins/directory/
+
+#+BEGIN_SRC sh
+  # all plugins stored in this directory
+  mkdir -p $HOME/.terminus/plugins
+
+  # download a zip archive of the plugin's release and unpack the archive to install it
+  curl https://github.com/pantheon-systems/terminus-plugin-example/archive/1.x.tar.gz -L | tar -C ~/.terminus/plugins -xvz
+
+  # or use composer to install it
+  composer create-project -n -d $HOME/.terminus/plugins pantheon-systems/terminus-plugin-example:~1
+
+  # or install via GitHub
+  cd $HOME/.terminus/plugins
+  git clone https://github.com/pantheon-systems/terminus-plugin-example.git
+  # may need to run `compose install` to install the plugin
+
+  # Update a plugin, delete the plugin directory and do the above
+
+  # delete the plugin directory is to uninstall a plugin
+#+END_SRC
+
+**** ~site:clone~
+- https://github.com/pantheon-systems/terminus-site-clone-plugin
+- Files or database backups are over 500MB they will need to [[https://pantheon.io/docs/migrate-manual/][manually migrated]]
+
+#+BEGIN_SRC sh
+  mkdir -p $HOME/.terminus/plugins
+  cd $HOME/.terminus/plugins
+  git clone https://github.com/pantheon-systems/terminus-site-clone-plugin.git
+  composer -n create-project pantheon-systems/terminus-site-clone-plugin:^2 ~/.terminus/plugins/terminus-site-clone-plugin
+
+  # <dev> is dev or multidev
+  # <source> and <destination> are site UUID or machine name
+  terminus site:clone <source>.<env> <destination>.<env>
 #+END_SRC
 
 ** pantheon.yml
@@ -58994,7 +59037,12 @@ Install linux:font, open Emacs:
 Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
 Add http://melpa.org/packages/
 
-Run ~M-x list-packages~ to see all packages including built-in pkgs and package-archives. ~i~ for installation, ~u~ to unmark, ~x~ to perform the i and u installation. ~RET~ to see more about a pkg.
+Run ~M-x list-packages~ to see all packages including built-in pkgs and package-archives
+- ~i~ :: installation
+- ~u~ :: unmark
+- ~x~ :: perform the i and u installation
+- ~RET~ to see more about a pkg
+- ~q~ :: quit
 
 New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=, then you can follow instructions on Melpa.org to initialize in .emacs init file.
 
