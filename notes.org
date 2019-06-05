@@ -6478,20 +6478,20 @@ An image is a file. Get a image field:
 *** Settings
 Pass PHP variable to javascript
 
-PHP. Use camelCasing.
-#+BEGIN_EXAMPLE
+PHP. Use camelCasing
+#+BEGIN_SRC php
   $my_settings = array(
     'basePath' => $base_path,
     'animationEffect' => variable_get('effect', 'none')
   );
   drupal_add_js(array('myModule'=>$my_settings), 'setting');
-#+END_EXAMPLE
+#+END_SRC
 
 Javascript
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var basePath = Drupal.settings.myModule.basePath;
   var effect = Drupal.settings.myModule.animationEffect;
-#+END_EXAMPLE
+#+END_SRC
 
 *** Behaviors
 https://www.lullabot.com/articles/understanding-javascript-behaviors-in-drupal
@@ -6500,18 +6500,17 @@ https://www.drupal.org/node/756722
 
 Any property defined in Drupal.behaviors will get called when DOM is ready or when Drupal.attachBehaviors() runs.
 Drupal.attachBehaviors(); means attach all behaviors. When DOM is ready, Drupal runs:
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // Attach all behaviors.
   $(function () {
-    Drupal.attachBehaviors(document, Drupal.settings);
+      Drupal.attachBehaviors(document, Drupal.settings);
   });
 
   // Syntax: Drupal.attachBehanviors(context, settings);
   // When context is not defined, it's the document object in javascript
   // when settings is not defined, Drupal.settings is used
   // So Drupal.attachBehaviors(); is the same as Drupal.attachBehaviors(document, Drupal.settings);
-#+END_EXAMPLE
+#+END_SRC
 
 Other modules might run multiple Drupal.attachBehaviors(); or Drupal.attachBehaviors(custom_context, custom_settings);
 
@@ -6531,53 +6530,53 @@ All properties defined in Drupal.behaviors will get called when Drupa.attachBeha
 So you need to attach any event once using $('',context).once() !
 
 This is mymod_path/js/drupal.behaviors.js
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   (function ($) {
     Drupal.behaviors.MODULENAME = {
       attach: function (context, settings) {
-        console.log('This runs every time Drupal.attachBehaviors(); is called');
-        // Run something only once (e.g. set jQuery event)
-        $('.nav-flyout', context).once('remove-modals', function () {
-          // After this is run, all elements selected will have a new class 'remove-modals-processed'
-          $(document).keyup(function (e) {
-            if (e.keyCode == 27) {
-              $('.nav-flyout', context).removeClass('js-flyout-active');
-            }
-          });
-        });
+	console.log('This runs every time Drupal.attachBehaviors(); is called');
+	// Run something only once (e.g. set jQuery event)
+	$('.nav-flyout', context).once('remove-modals', function () {
+	  // After this is run, all elements selected will have a new class 'remove-modals-processed'
+	  $(document).keyup(function (e) {
+	    if (e.keyCode == 27) {
+	      $('.nav-flyout', context).removeClass('js-flyout-active');
+	    }
+	  });
+	});
       }
     }
   }(jQuery));
-#+END_EXAMPLE
+#+END_SRC
 
 In Drupal
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function hook_preprocess_page(&$vars) {
     // Append a property in Drupal.settings only. And before a behavior is attached and it will be run e.g. when DOM is ready
     drupal_add_js(array('MODULENAME' => array('php_var_1' => variable_get('php_var_1', ''))), 'setting');
     drupal_add_js(drupal_get_path('module', 'MODULENAME') . '/js/drupal.behaviors.js');
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Email
 Define an email template using hook_mail()
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_mail($key, &$message, $params) {
-   // Need to overwrite headers content type if email is html
-   $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+	  // Need to overwrite headers content type if email is html
+	  $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
 
-   // $message['from'] is initially set by $from from drupal_mail(). 
-   // If not provided, will use sidewide setting
-   // $message['to'] and 'language' are set by $to from drupal_mail().
+	  // $message['from'] is initially set by $from from drupal_mail(). 
+	  // If not provided, will use sidewide setting
+	  // $message['to'] and 'language' are set by $to from drupal_mail().
 
-   switch ($key) {
+	  switch ($key) {
     case 'template_1':
       // Use $params
       $message['subject'] = 'This is subject';
       $message['body'][] = 'Extra';
       $message['headers']['Bcc'] = 'bcc@abc.com';
       break;
-   } 
+	  } 
   }
 
   // Send email
@@ -6590,12 +6589,12 @@ Define an email template using hook_mail()
   // hook_mail_alter can change to false so that it doesn't get sent out
   $result = drupal_mail($module, 'template_1', $to, $language, $params, $from, $send);
   /*
-  $result => array(
-   'result' => NULL (cancelled by hook_mail_alter())
-              or $system->mail($message) (!$result['result'] is true means fail)
-  )
+	  $result => array(
+	  'result' => NULL (cancelled by hook_mail_alter())
+	  or $system->mail($message) (!$result['result'] is true means fail)
+	  )
   ,*/
-#+END_EXAMPLE
+#+END_SRC
 
 ** OOP
 D7 refers to [[https://www.drupal.org/project/oop_examples][oop_examples module]].
@@ -8002,22 +8001,23 @@ Encode email address to hex
 
 #+BEGIN_SRC php
   function hide_email_addresses_sc($atts, $content = null) {
-      $emailaddress_fields = shortcode_atts(array(
-	  'id' => '',
-	  'email' => ''
-      ),$atts);
-      $userid = $emailaddress_fields['id'];
-      $e_mail = $emailaddress_fields['email'];
-      if ($userid !=='' && $e_mail =='') {
-	  $emailaddress = get_the_author_meta('user_email',$userid);
-	  return '<a href="mailto:'.antispambot($emailaddress).'">'.antispambot($emailaddress).'</a>';
-      }
-      if ($userid =='' && $e_mail !=='') {
-	  return '<a href="mailto:'.antispambot($e_mail).'">'.antispambot($e_mail).'</a>';
-      }
-      else {
-	  return '';
-      }
+	  // $atts['var1'], the following just sets a default if var1 attribute is not defined in shortcode
+	  $emailaddress_fields = shortcode_atts(array(
+		  'id' => '',
+		  'email' => ''
+	  ),$atts);
+	  $userid = $emailaddress_fields['id'];
+	  $e_mail = $emailaddress_fields['email'];
+	  if ($userid !=='' && $e_mail =='') {
+		  $emailaddress = get_the_author_meta('user_email',$userid);
+		  return '<a href="mailto:'.antispambot($emailaddress).'">'.antispambot($emailaddress).'</a>';
+	  }
+	  if ($userid =='' && $e_mail !=='') {
+		  return '<a href="mailto:'.antispambot($e_mail).'">'.antispambot($e_mail).'</a>';
+	  }
+	  else {
+		  return '';
+	  }
   }
   add_shortcode('hide-email','hide_email_addresses_sc');
 #+END_SRC
@@ -40647,7 +40647,7 @@ Terms vs Topics
 Search products (Google defines them). For US only. Nation > region > city level.
 By age, household income, sex, device.
 
-** Google AdWords, Google Keyword Planner, Google Video Advertising
+** Google Ads - Google AdWords, Google Keyword Planner, Google Video Advertising
 *** Keyword Planner
 Hiking > hike > backpacking > backpack
 
@@ -40747,7 +40747,7 @@ Locations on the Display Network where your ad can appear. Examples include rele
 <<<adwords:ad rank>>>
 Ad Rank = Quality Score x Maximum bid x ad formats.
 
-**** Media Cost Model
+**** Bidding Strategy - Media Cost Model
 Campaign goals decide on which media cost model you should use.
 
 Use manual bidding first and after the campaign is already getting at least 15 conversions and 15 clicks per month, automated bidding can help:
@@ -40755,7 +40755,7 @@ Use manual bidding first and after the campaign is already getting at least 15 c
 - Ad revenue :: Target return-on-ad-spend (tROAS). Good for advertisers who know the exact value of each conversion.
 - Ad conversions :: Good for advertisers looking to drive conversions. "auction-time bidding"
   - Enhanced cost per click (ECPC) :: described later
-  - Maximize conversions :: max number of conversions. May use up all daily budget for one conversion.
+  - Maximize conversions :: max number of conversions. May use up all daily budget for one conversion
   - Target cost per acquisition (tCPA) :: max number of conversions while maintaining avg CPA. Good for multiple campaigns with various CPA. Some bids might cost higher than the corresponding target you set but some are lower in order to make up the avg cost is within your set target. CPA is the average amount you pay for a conversion.
 
 Cost per Click (CPC) is determined by max bid + Quality Score + Ad Rank and compare those against your competitors. Drive traffic.
@@ -40765,11 +40765,9 @@ Set Max. CPC to = your profit x commission for Google x your conversion rate
 $100 x 0.3 x 1% = $.30
 1% conversion rate is based on 1000 views of the page and 10 people buy
 
-Manual CPC :: each keyword or Ad Group would have the same bid.
-
-Automatic CPC :: there're some bid strategies under this category. Max CPC cannot be set.
-
-Enhanced CPC (ECPC) :: relies on Google’s own historical data to help you predict where and when to adjust bids you set manually in order to get more conversions. Its CPC is constrained by Max CPC you set.
+- Manual CPC :: each keyword or Ad Group would have the same bid
+- Automatic CPC :: there're some bid strategies under this category. Max CPC cannot be set
+- Enhanced CPC (ECPC) :: relies on Google’s own historical data to help you predict where and when to adjust bids you set manually in order to get more conversions. Its CPC is constrained by Max CPC you set
   - e.g. if a campaign’s performance looks promising it will automatically raise bids to ‘capture’ more results (for less money). Similarly, it will also drop bids if necessary to help you save on wasted ad spend if performance starts to slide.
   - it's better to turn it off initially and let AdWords collect data and further turn it on
   - individual CPC might exceed Max CPC you set, but avg CPC is below Max CPC
@@ -40784,15 +40782,14 @@ CPC, CPA and CPM are 3 bidding strategies but each one can be further optimized 
 - Influence consideration :: Encourage customers to explore you.
 - Driving action or sale :: lower funnel usually requires less budget.
 
-***** CPA :: boost sales
+***** CPA - boost sales
 Cost Per Action (or conversion)
 
-***** CPM, vCPM :: brand awareness
-Applies only to the Display Network (along with remarketing campaigns, too). Here you pay a cost (like a few cents or dollars) per one thousand impressions.
+***** CPM, vCPM - brand awareness
+- Applies only to the Display Network (along with remarketing campaigns, too). Here you pay a cost (like a few cents or dollars) per one thousand impressions
+- vCPM :: viewable cost per thousand impressions. Cost a bit more than CPM.
 
-vCPM :: viewable cost per thousand impressions. Cost a bit more than CPM.
-
-***** CPV :: boost video views
+***** CPV - boost video views
 cost per view for video or click on it.
 
 ***** Bid Simulators
@@ -40818,11 +40815,9 @@ For CPC, AdWords can show estimates for showing your ad on:
 AdWords > Keywords > Add columns > Attributes > Est. first page bid, Est. top of page bid, Est. first pos. bid
 
 ***** Bid Adjustments
-Bid adjustment is available in adwords:targeting
-
-Search Network :: Clicking “Advanced bid adj.” opens the Interactions page, where you can set your bid adjustments for calls.
-
-Decrease a bid by 100% is to completely exclude the ad from a targeting setting.
+- Bid adjustment is available in adwords:targeting
+- Search Network :: Clicking “Advanced bid adj.” opens the Interactions page, where you can set your bid adjustments for calls.
+- Decrease a bid by 100% is to completely exclude the ad from a targeting setting
 
 ***** Daily budget
 Divide by 30.4 that is avg number of days per month.
@@ -40883,21 +40878,22 @@ Downloads of your app
 
 **** Targeting options <<<adwords:targeting>>>
 - Keywords :: try to include between 5 and 20 keywords per ad group
-  - Audience :: Show ads to people likely to be interested in these keywords and also on webpages, apps, and videos related to these keywords
-  - Content :: Only show ads on webpages, apps, and videos related to these keywords e.g. webpage's concepts.
+   - Audience :: Show ads to people likely to be interested in these keywords and also on webpages, apps, and videos related to these keywords
+   - Content :: Only show ads on webpages, apps, and videos related to these keywords e.g. webpage's concepts.
 - Audience
-  - Interests and habits (Affinity and custom affinity) :: types of websites not webpages the audience have visited. This is for running TV ad.
-    - Affinity is more general.
-    - [[https://support.google.com/adwords/answer/2497941][Custom Affinity]] can have these 
-      - Interests entered as keywords
-      - URL
-      - places
-      - apps
-    - Custom Affinity is only for Display Campaign
-  - Life evnets :: engage with viewers on YouTube and Gmail
-  - Researching or planning (In-market and custom intent) :: likely buyers
-  - Remarketing
-    - Similar Audience :: better to create another campaign. Not all custom audience list can have a similar audience.
+   - Interests and habits (Affinity and custom affinity) :: types of websites not webpages the audience have visited. This is for running TV ad
+      - Affinity is more general.
+      - [[https://support.google.com/adwords/answer/2497941][Custom Affinity]] can have these 
+	 - Interests entered as keywords
+	 - URL
+	 - places
+	 - apps
+      - Custom Affinity is only for Display Campaign
+   - Life evnets :: engage with viewers on YouTube and Gmail
+   - Researching or planning (In-market and custom intent) :: likely buyers
+   - Remarketing
+      - Similar Audience :: better to create another campaign. Not all custom audience list can have a similar audience
+   - Audience can be added on a campaign or an ad group 
 - Demographics :: age, gender, income
 - Topics :: topics a webpage has e.g. central theme
 - Placements :: specific websites your ad will show on. May also be specific YouTube videos, channel.
@@ -40906,25 +40902,24 @@ Downloads of your app
 
 - Locations :: majority of consumers want ads customized to their city, zip code, or immediate surroundings
 - Settings
-  - Devices
-  - Languages
-  - IP exclusions
-  - Content exclusions
-  - Dynamic ads :: use Data feed to show different ads based on audience who have visited certain webpages on your website with custom parameters tagged. Refer to ga:dynamic remarketing for tagging.
-    - [[https://support.google.com/adwords/answer/6053288][Create data feed]]
-    - [[https://support.google.com/adwords/answer/3265299][Create responsive ads]]
-    - [[https://support.google.com/adwords/answer/6077124][Full guide on Dynamic remarketing]]
-    - [[https://support.google.com/adwords/answer/6178664][Remarketing and Dynamic Remarketing best practices]]
+   - Devices
+   - Languages
+   - IP exclusions
+   - Content exclusions
+   - Dynamic ads :: use Data feed to show different ads based on audience who have visited certain webpages on your website with custom parameters tagged. Refer to ga:dynamic remarketing for tagging.
+      - [[https://support.google.com/adwords/answer/6053288][Create data feed]]
+      - [[https://support.google.com/adwords/answer/3265299][Create responsive ads]]
+      - [[https://support.google.com/adwords/answer/6077124][Full guide on Dynamic remarketing]]
+      - [[https://support.google.com/adwords/answer/6178664][Remarketing and Dynamic Remarketing best practices]]
 
 **** Ad Group Automated Targeting
-Only for Display Network, under Ad Group > Settings > Automated targeting
-Conservative automation :: default
-Aggressive automation :: broader match. e.g. if your keyword is “pens,” conservative targeting may extend to “felt-tip pens" and “ballpoint pens,” but aggressive targeting might show your ads in contexts related to “whiteboard markers” or “mechanical pencils”—if there’s data to suggest that those keywords will lead to conversions. Plus, automatic targeting works for remarketing. Aggressive targeting is available for all Display Network campaigns with at least 15 conversions per month. It costs a little bit more than Conservative.
-
-When to use automatic targeting
-- Find more customers
-- Identify the best targeting to reach your most likely customers
-- Increase reach without increasing bids or cost per customer
+- Only for Display Network, under Ad Group > Settings > Automated targeting
+- Conservative automation :: default
+- Aggressive automation :: broader match. e.g. if your keyword is “pens,” conservative targeting may extend to “felt-tip pens" and “ballpoint pens,” but aggressive targeting might show your ads in contexts related to “whiteboard markers” or “mechanical pencils”—if there’s data to suggest that those keywords will lead to conversions. Plus, automatic targeting works for remarketing. Aggressive targeting is available for all Display Network campaigns with at least 15 conversions per month. It costs a little bit more than Conservative.
+- When to use automatic targeting
+   - Find more customers
+   - Identify the best targeting to reach your most likely customers
+   - Increase reach without increasing bids or cost per customer
 
 **** Ad Formats in networks
 https://support.google.com/adwords/answer/1722124
