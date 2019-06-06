@@ -525,7 +525,10 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
 #+END_SRC
 
-** Multibyte
+** Multibyte <<<php:multibyte>>>
+- Functions ~mb_*~ e.g. ~mb_strlen( 'abc' )~
+- ~str_replace()~ works with multibyte already
+
 *** Remove 4 byte characters <<<php:4byte>>>
 PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard change.
 mysql:charset d7:mysql:charset 
@@ -763,6 +766,7 @@ usort doesn't maintain key association but uasort does. If callback function ret
 #+END_SRC
 
 ** String
+*** Multibyte - refer to php:multibyte
 *** String to HTML, <<<php:DOMDocument>>>
 Refer to d7:ellipsis
 
@@ -869,6 +873,26 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
   echo $twitterHTML;
 #+END_SRC
 
+*** Replace <<<php:str_replace>>>
+- Works with multibyte
+- Search and replace from left to right
+- Case-sensitive :: use ~str_ireplace()~ for case-insensitive
+- Binary safe
+
+#+BEGIN_SRC php
+  str_replace( mixed $search, mixed $replace, mixed $subject [, int &$count ] ) : mixed
+#+END_SRC
+
+#+BEGIN_SRC php
+  // single search and replace
+  str_replace( 'a', 'b', 'abc');
+
+  // multiple search and replace :: change a to b, x to y
+  str_replace( ['a','x'], ['b', 'y'], 'abcxyz');
+
+  // when $subject is an array, search and replace is performed with every entry of subject and return value is an array
+#+END_SRC
+
 *** Replace last
 #+BEGIN_SRC php
   function str_lreplace($search, $replace, $subject) {
@@ -882,6 +906,7 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
   }
 #+END_SRC
 
+*** First character uppercase/lowercase - ~ucfirst()~ ~lcfirst()~
 *** Start with
 #+BEGIN_SRC php
   $target_prefix = '/inventory/';
@@ -8097,7 +8122,7 @@ Encode email address to hex
 #+END_SRC
 
 *** add_image_size <<<wp:f:add_image_size>>>
-Use wp:action:after_setup_theme
+- Use wp:action:after_setup_theme
 - ~add_image_size( string $name, int $width, int $height, bool|array $crop = false )~
 - Every newly uploaded image will have image files with all defined image sizes
 - ~$crop~ can be
@@ -8107,6 +8132,7 @@ Use wp:action:after_setup_theme
     - $x_crop_position :: 'left', 'center' or 'right'
     - $y_crop_position :: 'top', 'center' or 'bottom'
 - If the original image (e.g. featured image) is smaller than the thumbnail image size, by default, neither it's set to crop to scale, the result thumbnail will take the original image without scaling up
+- Refer to wp:filter:image_size_names_choose
 
 #+BEGIN_SRC php
   function lili_theme_setup() {
@@ -10760,22 +10786,36 @@ Remove current site url from script and style files
   }
 #+END_EXAMPLE
 
+*** imgae_size_names_choose <<<wp:filter:image_size_names_choose>>>
+- Add an wp:f:add_image_size to WYSIWYG image style dropdown list
+ 
+#+BEGIN_SRC php
+  add_image_size( 'video-thumbnail', 320, 180, true );
+
+  add_filter( 'image_size_names_choose', function ( $sizes ) {
+	  return array_merge( $sizes, array(
+		  'video-thumbnail' => __( 'Video Thumbnail' ),
+	  ) );
+  });
+#+END_SRC
+
 *** get_header_image_tag
-apply_filters( 'get_header_image_tag', string $html, object $header, array $attr )
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
+  apply_filters( 'get_header_image_tag', string $html, object $header, array $attr );
+
   function twentyseventeen_header_image_tag( $html, $header, $attr ) {
-          if ( isset( $attr['sizes'] ) ) {
-                  $html = str_replace( $attr['sizes'], '100vw', $html );
-          }
-          return $html;
+	  if ( isset( $attr['sizes'] ) ) {
+		  $html = str_replace( $attr['sizes'], '100vw', $html );
+	  }
+	  return $html;
   }
   add_filter( 'get_header_image_tag', 'twentyseventeen_header_image_tag', 10, 3 );
-#+END_EXAMPLE
+#+END_SRC
 
 In template
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC web-php
   <img src="<?php header_image(); ?>" height="<?php echo get_custom_header()->height; ?>" width="<?php echo get_custom_header()->width; ?>" alt="" />
-#+END_EXAMPLE
+#+END_SRC
 
 *** wp_nav_menu_args <<<wp:filter:wp_nav_menu_args>>>
 
@@ -14557,6 +14597,8 @@ About ~SAVEQUERIES~
 	  print '<pre>';
 	  global $_wp_additional_image_sizes;
 	  print_r( $_wp_additional_image_sizes );
+	  // [ 'image-size-name' => [ 'width' => 300, 'height' => 250, 'crop' => 1 ] ]
+	  // crop is empty means the image size is not croppable
 	  print '</pre>';
   }
   function debug_template_file() {
@@ -39535,8 +39577,11 @@ https://support.google.com/analytics/answer/1034380
 **** Calculated Metric
 Admin > Property > View > Calculated Metrics
 
-*** Bounce
-A bounce is counted when there's only one pageview in one user session
+*** Bounce rate
+- A bounce is counted when there's only one pageview in one user session
+- A bounce is calculated specifically as a session that triggers only a single request to the Analytics server, such as when a user opens a single page on your site and then exits without triggering any other requests to the Analytics server during that session
+- Bounce rate is single-page sessions divided by all sessions, or the percentage of all sessions on your site in which users viewed only a single page and triggered only a single request to the Analytics server
+- These single-page sessions have a session duration of 0 seconds since there are no subsequent hits after the first one that would let Analytics calculate the length of the session
 
 *** Audience
 **** User, New User, Session
@@ -39682,7 +39727,9 @@ https://support.google.com/analytics/answer/6155470
 **** User Explorer
 Instead of aggregating users or user sessions, this shows each user/session's
 - Sessions
-- Avg. session Duration
+- Avg. Session Duration :: ~Total Session Duration / Sessions~. The last session that a user stops navigating to another page/hit has 0 second duration. High bounce rate may cause this metric to be low
+   - <<<ga:avg. session duration>>>
+   - Refer to ga:avg. time on page
 - Bounce rate
 - Revenue
 - Transactions
@@ -39759,8 +39806,14 @@ ga:metrics
 For some dimension, you can filter by Device type on the top.
 
 *** Behavior
-How users navigate between pages
-content :: Speed, Search, Events
+- How users navigate between pages
+- content :: Speed, Search, Events
+
+**** Average Time on Page <<<ga:avg. time on page>>>
+- The average length of time users spend viewing a page/specific set of pages
+- Because the last pageview of a user does not have a next pageview, so Google cannot calculate the last page duration. That's why the formula minus the Exit pageviews
+- It is usually higher than ga:avg. session duration because Exit pageviews is not counted in this metric. If it's lower, it might mean each session has a lot of pageviews
+- Formula :: ~Time on Page / (Pageviews - Exits)~
 
 **** Content Grouping
 - Standard Report :: Admin > Property > View > Content Grouping
@@ -59230,30 +59283,30 @@ This is inside the drawer
 :END:
 
 *** Code Block
-Create a code block: ~<e~ and ~Tab~
-Inside a code block, ~C-c + '~ to go to a new major-mode edit buffer to edit the code, ~C-x C-s~ saves the buffer and updates the contents of the Org buffer. ~C-c + '~ again to exit.
+- Create a code block :: ~<e~ and ~Tab~
+- Inside a code block :: ~C-c + '~ to go to a new major-mode edit buffer to edit the code, ~C-x C-s~ saves the buffer and updates the contents of the Org buffer. ~C-c + '~ again to exit.
 
 Inline code block
 #+BEGIN_EXAMPLE
   src_<language>[<header arguments>]{<body>}
+
+  src_sh{echo "hello"}
+
+  src_html[:exports code]{<el></el>}
+
+  src_haskell[:exports both]{fac 5}
 #+END_EXAMPLE
 
-src_sh{echo "hello"}
+- [[https://orgmode.org/worg/org-contrib/babel/languages.html][All languages]] :: html xml css sass js makefile java sh sql sqlite ruby python perl C C++ matlab org dns
 
-src_html[:exports code]{<el></el>}
-
-src_haskell[:exports both]{fac 5}
-
-[[https://orgmode.org/worg/org-contrib/babel/languages.html][All languages]] :: html xml css sass js makefile java sh sql sqlite ruby python perl C C++ matlab org dns
-
-Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mode~ to *-mode.el files
+Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mode~ to ~*-mode.el~ files
 
 #+BEGIN_SRC sh
   #!/bin/bash
   echo html
 #+END_SRC
 
-When in *-mode edit buffer:
+When in ~*-mode~ edit buffer:
 - emacs:m-x:delete-trailing-whitespace
 - emacs:m-x:indent-region
 
