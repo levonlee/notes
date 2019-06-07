@@ -12457,6 +12457,15 @@ wp:filter:template_include
   - wp:plugin:acf key ~custom_order~ with value from wp-admin and ~_custom_order~ with value ~field_ALPHANUMERICRANDOM~ which refers table ~wp_posts~ with ~post_name = 'field_ALPHANUMERICRANDOM'~ 
 - meta_value :: longtext string or php serialized string
 
+Get all meta keys and values for a post
+#+BEGIN_SRC sql
+  SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value
+  FROM wp_posts p
+	   INNER JOIN wp_postmeta pm ON pm.post_id = p.id
+  WHERE 1=1
+    AND p.ID = '123'
+#+END_SRC
+
 #+BEGIN_SRC sql
   SELECT p.post_type, p.ID, CAST(pm.meta_value AS Date)
   FROM wp_posts p
@@ -12471,7 +12480,10 @@ wp:filter:template_include
 - _wp_attached_file :: ~2009/11/a.jpg~ ~2014/02/a.pdf~ combine with wp_options:option_name's upload_path
 - _wp_attachment_image_alt :: string
 - _wp_page_template :: 'default'
-- _thumbnail_id :: int, this is the featured image, which is also a post with post_parent = featured image of the current post
+- _thumbnail_id :: int, this is the featured image post id (123) of parent post (122)
+   - Featured image post 123 with post_parent = the real parent post (122)
+   - Featured image post 123 also has these meta keys and values described here
+   - Featured image post 123 has post_type as attachment
 - _edit_last :: int
 - _edit_lock :: '1429297291:41' '1269611136'
 
@@ -12496,7 +12508,7 @@ _wp_attachement_backup_sizes
   )
 #+END_SRC
 
-_wp_attachment_metadata :: only images have non-empty array. Refer to wp:f:add_image_size
+- ~_wp_attachment_metadata~ :: serialized string. Only images have non-empty array. It contains all wp:f:add_image_size for a featured image
 #+BEGIN_SRC php
   Array
   (
@@ -15250,42 +15262,42 @@ http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-s
 index.php
 - WP_USE_THEMES = true
 - wp-blog-header.php
-  - wp-load.php wp:global:wpdb
-    - wp-config.php
-    - wp-settings.php
-      - wp-includes/load.php (all functions)
-      - wp-includes/default-constants.php (all func.)
-      - wp-includes/plugin.php
-      - wp-includes/compat.php (functions)
-      - wp-includes/class-wp-list-util.php
-      - wp-includes/functions.php (wp main API)
-	- wp-includes/option.php (Option API)
-      - wp-includes/class-wp-matchesmapregex.php
-      - wp-includes/class-wp.php (wp environment setup class)
-      - wp-includes/class-wp-error.php (Error API)
-      - wp-includes/pomo/mo.php (class for working with MO files)
-	- translations.php
-	- streams.php
-      - require_wp_db()
-	- wp-db.php
-      - wp-includes/formatting.php
-      - wp-includes/capabilities.php (User capabilites API)
-      - wp-includes/query.php (is_* functions)
-      - wp-includes/general-template.php
-      - Load mu-plugins
-      - create initial taxonomies and post types
-      - Load active plugins :: ~do_action( 'plugins_loaded')~
-      - Initialize objects :: WP_Query WP_Rewrite
-      - Load the active theme
-	- ~do_action( 'setup_theme' )~
-	- wp:action:after_setup_theme
-      - ~do_action( 'init'  )~
-      - ~do_action( 'wp_loaded' )~
-  - ~wp();~
-  - wp-includes/template-loader.php
-    - wp:action:template_redirect
-    - wp:action:do_robots
-    - wp:filter:template_include
+   - wp-load.php wp:global:wpdb
+      - wp-config.php
+      - wp-settings.php
+	 - wp-includes/load.php (all functions)
+	 - wp-includes/default-constants.php (all func.)
+	 - wp-includes/plugin.php
+	 - wp-includes/compat.php (functions)
+	 - wp-includes/class-wp-list-util.php
+	 - wp-includes/functions.php (wp main API)
+	    - wp-includes/option.php (Option API)
+	 - wp-includes/class-wp-matchesmapregex.php
+	 - wp-includes/class-wp.php (wp environment setup class)
+	 - wp-includes/class-wp-error.php (Error API)
+	 - wp-includes/pomo/mo.php (class for working with MO files)
+	    - translations.php
+	    - streams.php
+	 - require_wp_db()
+	    - wp-db.php
+	 - wp-includes/formatting.php
+	 - wp-includes/capabilities.php (User capabilites API)
+	 - wp-includes/query.php (is_* functions)
+	 - wp-includes/general-template.php
+	 - Load mu-plugins
+	 - create initial taxonomies and post types
+	 - Load active plugins :: ~do_action( 'plugins_loaded')~
+	 - Initialize objects :: WP_Query WP_Rewrite
+	 - ~do_action( 'setup_theme' )~
+	 - Load the active theme :: functions.php
+	 - wp:action:after_setup_theme
+	 - ~do_action( 'init'  )~
+	 - ~do_action( 'wp_loaded' )~
+   - ~wp();~
+   - wp-includes/template-loader.php
+      - wp:action:template_redirect
+      - wp:action:do_robots
+      - wp:filter:template_include
 
 Request /wp-admin/admin-ajax.php
 /wp-load.php 
