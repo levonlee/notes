@@ -7535,6 +7535,14 @@ Search/replace intelligently handles PHP serialized data, and does not change pr
   # Current database is not changed. The change result is output to a file
   wp search-replace foo bar --export=database.sql
 
+  # Pantheon Terminus
+  # For deletion, don't use '', use ' ' with space
+  terminus remote:wp my-site.env -- search-replace 'abc' ' ' --dry-run
+
+  # Don't put `;` in the search and replace strings. Use regex
+  # Since regex is slow, add certain table to search and limit the columns
+  terminus remote:wp my-site.env -- search-replace '(<script src="https:\/\/abc\.xyz\.net\/sub\/123_456_\/a\.js\?pid=.+" type="text\/javascript"><\/script>)' ' ' wp_posts --include-columns=post_content --skip-columns=guid  --dry-run --regex
+
   # Bash script: Search/replace production to development url (multisite compatible)
 
   #!/bin/bash
@@ -8142,10 +8150,12 @@ Encode email address to hex
 #+END_SRC
 
 Force to scale up the thumbnail if original image is smaller than the thumbnail size, and maintain ratio
+- Does not seem to work for scale (non-croppable) image sizes last time I tried.. Ratio is not maintained for scaling image sizes
+
 #+BEGIN_SRC php
   function alx_thumbnail_upscale( $default, $orig_w, $orig_h, $new_w, $new_h, $crop ){
-	  // it works for both scale and crop
-	  //if ( !$crop ) return null; // let the wordpress default function handle this
+    // comment the line below to enable upscale for both scale and crop
+	  if ( !$crop ) return null; // let the wordpress default function handle automatic scale
 
 	  $aspect_ratio = $orig_w / $orig_h;
 	  $size_ratio = max($new_w / $orig_w, $new_h / $orig_h);
@@ -8170,7 +8180,7 @@ Force to scale up the thumbnail if original image is smaller than the thumbnail 
   $image = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'my-image-size-style-name' );
 
   // regenerate all image sizes for an attachment (e.g. featured image) if the specified image size does not exist
-  function regenerateImageSizeIfOneIsMissing( $attachment_id, $check_image_size ) {
+  function regenerateImageSizeIfOneIsMissing( $attachment_id, $check_image_size, $enforce_enlarge = false ) {
 	  global $_wp_additional_image_sizes;
 
 	  // stop if no file id is provided or the image size is not defined
@@ -8199,7 +8209,9 @@ Force to scale up the thumbnail if original image is smaller than the thumbnail 
 
 		  // By default, wp does not scale up if the original file is smaller than the requested thumbnail image size
 		  // regardless of the add_image_size setting
-		  add_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+		  if ($enforce_enlarge) {
+			  add_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+		  }
 
 		  // regenerate all image sizes and metadata
 		  $regenerated_metadata = wp_generate_attachment_metadata( $attachment_id, $fullsizepath );
@@ -8218,7 +8230,9 @@ Force to scale up the thumbnail if original image is smaller than the thumbnail 
 		  }
 
 		  // remove filter so that wp is back to default for thumbnail resizing
-		  remove_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+		  if ($enforce_enlarge) {
+			  remove_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+		  }
 
 		  return $r;
 
@@ -11285,7 +11299,7 @@ Escape
 - Translate then escape :: ~esc_html__( $text, $domain = 'default')~
 - Escape for HTML element attribute value :: ~esc_attr~
 - Escape js for HTML element attribute value :: ~esc_js~
-- Escape for <textarea> value
+- Escape for ~<textarea>~ value
 
 #+BEGIN_SRC php
   <h4><?php echo esc_html( $title ); ?></h4>
@@ -14537,26 +14551,34 @@ Function may return WP_Error object. Catch error
 #+END_SRC
 
 *** Show error <<<wp:show error>>>
-In wp-config.php insert this before /* That's all, stop editing! Happy blogging */
-https://codex.wordpress.org/Debugging_in_WordPress
+- In wp-config.php insert this before ~/* That's all, stop editing! Happy blogging */~
+- https://codex.wordpress.org/Debugging_in_WordPress
+
 #+BEGIN_SRC php
   if ( ! defined( 'WP_DEBUG' ) ) {
-	  if ( 1==1 ) {
+
+	  if ( php_sapi_name() == 'cli' ||
+	       ( isset( $_SERVER['PANTHEON_ENVIRONMENT'] ) && $_ENV['PANTHEON_ENVIRONMENT'] === 'live' )
+	  ) {
+		  // Force to turn off debug for Live environment and WP-CLI
 		  define( 'WP_DEBUG', false );
-	  }
-	  else {
-		  define('WP_DEBUG', true);
+	  } elseif ( 1 == 1 ) {
+		  // toggle debug
+		  define( 'WP_DEBUG', true );
+		  define( 'WP_DEBUG_DISPLAY', true ); // set to false to not display error on HTML pages
+		  define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
 		  @error_reporting( E_ALL );
 		  @ini_set( 'log_errors', true );
 		  @ini_set( 'log_errors_max_len', '0' );
-		  @ini_set('display_errors', 1); // 'stderr' can be set
+		  @ini_set( 'display_errors', 1 ); // 'stderr' can be set
 
-		  define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
-		  define('WP_DEBUG_DISPLAY', true); // set to false to not display error on HTML pages
-		  define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
+		  // define( 'WP_DEBUG_LOG', true ); // /wp-content/debug.log useful to debug AJAX or wp-cron run
+		  // define( 'CONCATENATE_SCRIPTS', false ); // by default, for Admin area, WP loads one JavaScript. If you have one error in script, it will fail
 		  // set to false that JavaScript files are loaded separately for Admin area.
-		  define( 'SAVEQUERIES', true ); // enable global $wpdb->queries to analyze queries
+	  } else {
+		  define( 'WP_DEBUG', false );
 	  }
+
   }
 #+END_SRC
 
