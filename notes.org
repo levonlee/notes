@@ -159,7 +159,8 @@ Most of them are PHP_INI_ALL
 
 **** extension_dir <<<php.ini:extension_dir>>>
 **** max_execution_time <<<php.ini:max_execution_time>>>
-PHP_INI_ALL, default 30s
+- PHP_INI_ALL, default 30s
+- ~set_time_limit( int $seconds )~ can extend the limit by ~$seconds~ for one PHP script file
 
 *** Enable extension <<<php.ini:extension_dir>>>
 php.ini can also enable module. e.g. to enable module intl. Use php.ini:extension_dir
@@ -12798,6 +12799,10 @@ fr.originaldomain.com/sitemap.xml
 *** Crop-Thumbnails <<<wp:plugin:crop-thumbnails>>>
 - Resize featured image, Crop featured image, crop thumbnail
 
+*** User Role Editor <<<wp:plugin:user-role-editor>>>
+- Add or remove capapbilities to a role
+- Add or remove capabilities to a user
+
 *** ACF <<<wp:plugin:advanced-custom-fields>>> <<<wp:plugin:acf>>>
 [[https://wordpress.org/plugins/advanced-custom-fields/][WP.org]]
 
@@ -13000,7 +13005,7 @@ Get first row or random row
 **** Add a field group
 https://www.advancedcustomfields.com/resources/register-fields-via-php/
 
-*** types :: Toolset Types <<<wp:plugin:types>>>
+*** Types :: Toolset Types <<<wp:plugin:types>>>
 WP Types is different! Use <<<types_render_field>>>
 
 Custom field name is wpcf-fieldname_in_toolset_ui
@@ -14357,6 +14362,20 @@ wp-config.php
 Free for up to 30k subscribers and no limit on number of push notifications you can send.
 
 - Custom Code can be selected on OneSignal.com. It doesn't have to be ~WordPress Plugin or Website Builder~
+
+*** WP Job Manager <<<wp:plugin:wp-job-manager>>>
+**** Basic
+- Core plugin is free but add-ons are not
+- New user role ~employer~
+- New post type ~job_listing~ :: single.php or single-job_listing.php
+- New widget Recent Job Listings :: content-widget-job_listing.php
+- Shortcodes
+   - submit_job_form :: new page out of wp-admin for employers to post new jobs
+   - job_dashboard :: new page out of wp-admin for employers to manager job listings
+   - jobs :: new page for visitors to browse, search and filter job listings
+- Setting
+   - General
+      - Enable Usage Tracking
 
 *** woocommerce
 **** Basics
@@ -44147,12 +44166,12 @@ Options
 
 *** rsync <<<bash:rsync>>>
 **** Basic
-By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated.
+- By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated
 
 - Dry run first :: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
 - ~-I~, ~--ignore-times~ :: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated
 - ~-u~ :: skip files that are newer in ~$DESTINATION~
-- ~--delete~ :: To delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side
+- ~--delete~ :: Delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side
 - ~-r~ :: recursive
 - ~-l~ :: symlink
 - ~-z~ :: compress
@@ -44169,14 +44188,20 @@ By default, rsync finds files that need to be transferred using a "quick check" 
 - ~-D~ :: is equivalent to ~--devices --specials~
 - ~--devices~ :: To transfer character and block device files to the remote system to recreate these devices.
 - ~--specials~ :: To transfer special files such as named sockets and fifos.
-- ~--size-only~ :: This modifies rsync’s “quick check” algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly
+- ~--size-only~ :: This modifies rsync’s "quick check" algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly
+- ~-c, --checksum~ :: Use it with ~--size-only~. Refer to pantheon:rsync
 - ~--stats~ :: show file-transfer stats: number of files, number of files transferred, Total file size in bytes, Total transferred file size
 - ~--chown~ :: refer to -og, change owner:group on dest. ~rsync -rlvzPitog --chown=www-data:www-data /source /destination~
 - ~--exclude 'public_html/database.txt'~ :: exclude a file or directory. Multiple ~--exclude~ can be used
    - ~--exclude='*.log'~ :: by file extension
 - ~--include~ :: Only include log files ~--include='*.log' --exclude='*'~
 - ~--ignore-existing~ :: skip updating files that already exist on the destination
+- ~-e, --rsh=COMMAND~ :: By default, rsync uses =~/.ssh/config=. Change the default e.g.
+   - ~-e 'ssh -p 2234'~
+   - ~-e 'ssh -o "ProxyCommand nohup ssh firewall nc -w1 %h %p"'~
+   - Refer to bash:sshpass for --rsh
 - ~--exclude-from '/home/backup/exclude.txt'~ :: exclude multiple files and folders, use relative path without leading ~./~
+
 e.g.
 #+BEGIN_EXAMPLE
   afolder/*
@@ -44188,8 +44213,6 @@ exclude.txt
   public_html/database.*
   downloads/test/*
 #+END_EXAMPLE
-
-Refer to bash:sshpass for --rsh
 
 **** Change summary, compare 2 directories
 For comparing, you don't need ~-a~ specifically ~-pgoD~ so that left ~-rlt~
@@ -54776,6 +54799,28 @@ git branch -vv
 #+END_EXAMPLE
 
 * Pantheon <<<hosting:pantheon>>>
+** File size
+- Files over 100MB cannot be uploaded through WP or Drupal. Use SFTP or rsync
+- Files over 256MB will fail no matter how they are uploaded. Host them on 3rd party CDN
+- Files over 500MB will experience noticeable degradation in performance. Host them on 3rd party CDN
+
+** Timeout
+- Can change
+   - PHP max_execution_time :: 120 sec. A script can run before being terminated by the parser. Includes Drush & WP-CLI commands. Change it in Drupal settings.php or wp-config.php. Scripts executed through the GlobalCDN will still be restricted by the 59 second connection timeout
+- Not configurable :: https://pantheon.io/docs/timeouts/#timeouts-that-are-not-configurable
+   - Connection timeout :: 59 sec
+   - First byte timeout :: 59 sec
+   - Between bytes timeout :: 59 sec
+   - Pantheon executed Drupal cron :: 180 sec. Only for Pantheon's auto hourly execution of drush cron
+   - PHP set_time_limit :: 120 sec. A PHP script can run. If reached, returns a fatal error
+   - Load balancer :: 120 sec. Only for HTTPS requests and requests to a DNS record. Not limited for Pantheon CNAME for HTTP requests
+   - SSH :: 10 mins with no communication. 60 mins hard limit. For remote Drush commands, SSH tunneling, SFTP, rsync
+   - MySQL net_write_timeout :: 90 sec. For a block to be written to a connection before aborting the write
+   - MySQL net_read_timeout :: 90 sec. For more data from a connection before aborting the read
+   - MySQL wait_timeout :: 420 sec. For activity on a noninteractive connection before closing it
+   - MySQL interactive_timeout :: 420 sec
+   - Nginx fastcgi_read_timeout :: 900 sec. PHP won't run forever
+
 ** Terminus
 https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
 
@@ -54840,6 +54885,50 @@ https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
   # <dev> is dev or multidev
   # <source> and <destination> are site UUID or machine name
   terminus site:clone <source>.<env> <destination>.<env>
+#+END_SRC
+
+** Rsync <<<pantheon:rsync>>>
+- https://pantheon.io/docs/rsync-and-sftp/
+- Requires SSH key set up on Pantheon
+
+#+BEGIN_SRC sh
+  export ENV=[env]
+  # Usually dev, test, or live
+  export SITE=[uuid]
+  # Site UUID from dashboard URL: https://dashboard.pantheon.io/sites/[uuid]
+
+  # Always use `temp-dir flag` for upload to Pantheon
+
+  # Drupal Upload/Import a Directory
+  rsync -rLvz --size-only --checksum --ipv4 --progress -e 'ssh -p 2222' ./files/. --temp-dir=~/tmp/ $ENV.$SITE@appserver.$ENV.$SITE.drush.in:files/
+
+  # WordPress Upload a File
+  rsync -rLvz --size-only --checksum --ipv4 --progress -e 'ssh -p 2222' ~/Foo/sites/all/themes/foo/logo.png --temp-dir=~/tmp/ $ENV.$SITE@appserver.$ENV.$SITE.drush.in:code/sites/all/themes/foo
+
+  # Empty a folder
+  # On local, create an `empty_folder`
+  rsync -rLvz --size-only --checksum --ipv4 --progress -a --delete -e 'ssh -p 2222' empty_folder/ --temp-dir=~/tmp/ $ENV.$SITE@appserver.$ENV.$SITE.drush.in:files/remote_folder_to_empty
+
+  # Drupal Download a Directory
+  rsync -rvlz --copy-unsafe-links --size-only --checksum --ipv4 --progress -e 'ssh -p 2222' $ENV.$SITE@appserver.$ENV.$SITE.drush.in:files/ ~/files
+
+  # Drupal Download a File
+  rsync -rLvz --size-only --checksum --ipv4 --progress -e 'ssh -p 2222' $ENV.$SITE@appserver.$ENV.$SITE.drush.in:code/sites/default/settings.php ~/Foo/sites/default
+
+  # WordPress Download a Directory
+  rsync -rLvz --size-only --checksum --ipv4 --progress -e 'ssh -p 2222' $ENV.$SITE@appserver.$ENV.$SITE.drush.in:code/wp-content/uploads ~/files
+
+  # WordPress Download a File
+  rsync -rLvz --size-only --checksum --ipv4 --progress -e 'ssh -p 2222' $ENV.$SITE@appserver.$ENV.$SITE.drush.in:code/wp-content/uploads/index.php ~/Foo/sites/wp-content/uploads
+
+  # -r: Recurse into subdirectories
+  # -v: Verbose output
+  # -l: copies symlinks as symlinks
+  # -L: transforms symlinks into files.
+  # -z: Compress during transfer
+  # --copy-unsafe-links: transforms symlinks into files when the symlink target is outside of the tree being copied
+  # Other rsync flags may or may not be supported
+  # (-a, -p, -o, -g, -D, etc are not).
 #+END_SRC
 
 ** pantheon.yml
@@ -55281,12 +55370,13 @@ Varnish configuration file (.vcl) is not supposed to edit.
 See lando:pantheon:varnish
 
 ** Object Cache - Redis <<<pantheon:redis>>>
-Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
-For Wordpress, no more is needed because the WP Redis plugin is loaded via drop-in file
-Install Redis module https://www.drupal.org/project/redis or run terminus to install
-#+BEGIN_EXAMPLE
+- Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
+- For WP, no more is needed because the WP Redis plugin is loaded via drop-in file
+- Install Redis module https://www.drupal.org/project/redis or run terminus to install
+
+#+BEGIN_SRC sh
   terminus remote:drush <site>.<env> -- en redis -y
-#+END_EXAMPLE
+#+END_SRC
 
 Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
 #+BEGIN_SRC php
