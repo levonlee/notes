@@ -39797,6 +39797,7 @@ https://support.google.com/analytics/answer/6155470
 
 **** Demographics <<<ga:audience:demographics>>>
 - Enable Demographics and Interests Report :: https://support.google.com/analytics/answer/2819948
+- Enable Advertising Feautures (Advertising Reporting Features) :: Admin > Property > Tracking Info > Data Collection
 
 **** Interests <<<ga:audience:interests>>>
 - Enable Demographics and Interests Report :: https://support.google.com/analytics/answer/2819948
@@ -43268,7 +43269,7 @@ sw :: Mount options :: A comma-separated list of options that can be used to con
 0 :: Dump frequency :: If the dump backup utility is used, the number in this field controls dump's handling of the specified file system
 0 :: File system check order :: Controls the order in which the file system checker fsck checks the integrity of the file systems
 
-*** File permission
+*** File Permission <<<linux:stat>>>
 **** Return list of files in Octal
 #+BEGIN_SRC bash
   for f in $(ls -a); do stat -c "%a %n" $f; done;
@@ -43278,10 +43279,9 @@ sw :: Mount options :: A comma-separated list of options that can be used to con
 #+END_SRC
 
 **** Change permission <<<bash:chmod>>>
-Octal mode. [[https://chmod-calculator.com/][Convert to Octal Mode]] [[http://permissions-calculator.org/decode/][Convert to Permissions Bit]]
-#+BEGIN_EXAMPLE
-  chmod 400 ~/path/to/file.php
-#+END_EXAMPLE
+- Octal mode
+   - [[https://chmod-calculator.com/][Convert to Octal Mode]]
+   - [[http://permissions-calculator.org/decode/][Convert to Permissions Bit]]
 
 | Permissions | Binary | Octal | Description       |
 | ---         |    000 |     0 | No permissions    |
@@ -43294,42 +43294,57 @@ Octal mode. [[https://chmod-calculator.com/][Convert to Octal Mode]] [[http://pe
 | rwx         |    111 |     7 | full              |
 |             |        |       |                   |
 
-owner-group-public
+First of the 4 digits of Octal mode
+- SUID or setuid :: If set, when the file will be executed by a user, the process will have the same rights as the owner of the file being executed
+   - If set, then replaces "x" in the owner permissions to "s", if owner has execute permissions, or to "S" otherwise. Examples:
+   - ~-rws------~ both owner execute and SUID are set
+   - ~-r-S------~ SUID is set, but owner execute is not set
+- SGID or setgid :: Same as above, but inherits rights of the group of the owner of the file. For directories it also may mean that when a new file is created in the directory it will inherit the group of the directory (and not of the user who created the file)
+   - If set, then replaces "x" in the group permissions to "s", if group has execute permissions, or to "S" otherwise. Examples:
+   - ~-rwxrws---~ both group execute and SGID are set
+   - ~-rwxr-S---~ SGID is set, but group execute is not set
+- Sticky bit :: It was used to trigger process to "stick" in memory after it is finished, now this usage is obsolete. Currently its use is system dependant and it is mostly used to suppress deletion of the files that belong to other users in the folder where you have "write" access to
+   - If set, then replaces "x" in the others permissions to "t", if others have execute permissions, or to "T" otherwise. Examples:
+   - ~-rwxrwxrwt~ both others execute and sticky bit are set
+   - ~-rwxrwxr-T~ sticky bit is set, but others execute is not set
 
-400 :: r-------- e.g. ssh private keys in ~/.ssh/ <<<chmod:400>>>
-440 :: read for owner and group, but none for public <<<chmod:440>>>
-555 :: read and execute (can't modify) for all <<<chmod:555>>>
-700 :: rwx------ full for owner <<<chmod:700>>>
-*755 :: rwxr-xr-x (e.g. wordpress directory) Default directory permission and default executable file permission <<<chmod:755>>>
-770 :: rwxrwx--- <<<chmod:770>>>
-775 :: rwxrwxr-x <<<chmod:775>>>
-*777 :: -rwxrwxrwx Directory's full permission <<<chmod:777>>>
-600 :: -rw------ only owner can read and write file <<<chmod:600>>>
-*644 :: -rw-r--r-- (e.g. wordpress .php files) <<<chmod:644>>>
-*660 :: rw-rw---- (e.g. wp-config.php) <<<chmod:660>>>
-666 :: anyone can read and write. File full permission. <<<chmod:666>>>
-664 :: rw-rw-r-- <<<chmod:664>>>
+| Binary | Octal | Description                             |
+|--------+-------+-----------------------------------------|
+|    000 |     0 | setuid, setgid, sticky bits are cleared |
+|    001 |     1 | sticky bit is set                       |
+|     10 |     2 | setgid bit is set                       |
+|     11 |     3 | setgid and sticky bits are set          |
+|    100 |     4 | setuid bit is set                       |
+|    101 |     5 | setuid and sticky bits are set          |
+|    110 |     6 | setuid and setgid bits are set          |
+|    111 |     7 | setuid, setgid, sticky bits are set     |
+|        |       |                                         |
 
-By default, umask is 0022. 
-A file's full permission is 666. So new file has this default permission: 666-022 = 644
-A directory's full permission is 777. So new directory has default permission: 777-022 = 755
-
-Return umask simply run ~umask~
-
-Permanently set umask in ~/.bashrc =umask 0022=
-
-chmod a-w /path/to/afile
-
-u = user that owns the file
-g = group that owns the file
-o = other (everyone else)
-a = all (everybody)
-
-r = read, w = write, x = execute
-
-a-w :: remove write permission for all
-
-wp:check file permissions
+- Last 3 digits :: owner-group-public
+   - 400 :: r-------- e.g. ssh private keys in ~/.ssh/ <<<chmod:400>>>
+   - 440 :: read for owner and group, but none for public <<<chmod:440>>>
+   - 555 :: read and execute (can't modify) for all <<<chmod:555>>>
+   - 700 :: rwx------ full for owner <<<chmod:700>>>
+   - ~755~ :: rwxr-xr-x (e.g. wordpress directory) Default directory permission and default executable file permission <<<chmod:755>>>
+   - 770 :: rwxrwx--- <<<chmod:770>>>
+   - 775 :: rwxrwxr-x <<<chmod:775>>>
+   - ~777~ :: -rwxrwxrwx Directory's full permission <<<chmod:777>>>
+   - 600 :: -rw------ only owner can read and write file <<<chmod:600>>>
+   - ~644~ :: -rw-r--r-- (e.g. wordpress .php files) <<<chmod:644>>>
+   - ~660~ :: rw-rw---- (e.g. wp-config.php) <<<chmod:660>>>
+   - 666 :: anyone can read and write. File full permission. <<<chmod:666>>>
+   - 664 :: rw-rw-r-- <<<chmod:664>>>
+- By default, umask is ~0022~
+- A file's full permission is 666. So new file has this default permission :: 666-022 = 644
+- A directory's full permission is 777. So new directory has default permission :: 777-022 = 755
+- Return umask simply run ~umask~
+- Permanently set umask in =~/.bashrc= :: ~umask 0022~
+- remove write permission for all :: ~chmod a-w /path/to/afile~
+   - u :: user that owns the file
+   - g :: group that owns the file
+   - o :: other (everyone else)
+   - a :: all (everybody)
+- Refer to wp:check file permissions
 
 **** Change owner:group for a folder <<<bash:chown>>>
 #+BEGIN_SRC sh
@@ -43380,19 +43395,8 @@ To create a symlink on Windows, enable Developer Mode first and
   mklink symlinkgoesto myfolder\mytargetfolder
 #+END_SRC
 
-*** Search files or directories, sort by size <<<bash:find>>>
-By file or directory name
-#+BEGIN_SRC sh
-  ls -l my_scr?pt
-  ls -l my*
-  ls -l my_s*t
-  ls -l my_scr[ai]t
-  ls -l f[a-i]ll
-  ls -l f[!a]ll
-#+END_SRC
-
-<<<linux:find>>> :: Return path of matched files or directories
-
+*** Search files or directories, sort by size <<<bash:find>>> <<<linux:find>>>
+- Rturn path of matched files or directories
 - Search by name of files :: ~-name~ ~-iname~
 - Name case insensitive :: use ~-iname~ instead of ~-name~
 #+BEGIN_SRC sh
@@ -43404,27 +43408,25 @@ By file or directory name
   find ./targetFolder -type d -name "abc*"
 #+END_SRC
 
-Combine search criteria
-AND
+- Combine search criteria :: ~AND~ ~OR~
 #+BEGIN_SRC sh
+  # AND
   # Start with abc and file extension is php
   find -name 'abc*' -name '*.php'
 
   # Start with abc and file extension is not php
   find -name 'abc*' ! -name '*.php'
-#+END_SRC
 
-OR
-#+BEGIN_SRC sh
+  # OR
   find -name '*.php' -o -name '*.txt'
 #+END_SRC
 
-Search by size (K, M, G for kb, mb and gb)
+- Search by size :: K, M, G for kb, mb and gb
 #+BEGIN_SRC sh
   find . -type f -size +10000K
 #+END_SRC
 
-Search by modified date
+- Search by modified date :: ~-mtime~
 #+BEGIN_SRC sh
   # Search text files that are modified less than 14 days ago
   find . -type f -mtime -14 ! -iname '*.jpg' ! -iname '*.png'
@@ -43433,7 +43435,7 @@ Search by modified date
   find . -type f -mtime +50 -mtime -100
 #+END_SRC
 
-Recent modified files recursive (file status change)
+- Recent modified files recursive (file status change) :: ~-cmin~
 #+BEGIN_SRC sh
   # last 5 minute
   find -cmin -5
@@ -43441,35 +43443,35 @@ Recent modified files recursive (file status change)
   # Last day 1440, Last 31 days 44640
 #+END_SRC
 
-Chain find command with other commands
+- Chain find command with other commands :: ~-exec~
 #+BEGIN_SRC sh
   # {} is each result of find.
   # \; denotes the end of ls command
   find . -size +100M -exec ls -lh {} \;
 #+END_SRC
 
-Get top 10 largest files in current folder
+- Get top 10 largest files in current folder
 #+BEGIN_SRC sh
   find . -type f -exec du -Sh {} + | sort -rh | head -n 10
 #+END_SRC
 
-Assume it's at ~ folder, and here's the structure
+- Depth
+Assume it's at home folder, and here's the structure
 #+BEGIN_EXAMPLE
   ~/1/2/3
   ~/a/1/2/3
   ~/afile
 #+END_EXAMPLE
-
-At ~, ~find .~ will return
+- At home folder, ~find .~ will return
 #+BEGIN_EXAMPLE
   ./1
   ./a
   /afile
 #+END_EXAMPLE
 
-The depth of ~./1~ and ~./a~ is 1.
+The depth of ~./1~ and ~./a~ is 1
 
-While at ~, =find ~/= will return
+While at home folder, =find ~/= will return
 #+BEGIN_EXAMPLE
   /home/user/1
   /home/user/a
@@ -43483,7 +43485,7 @@ To find any folder that is named ~1~ but not at first level
   find ~ -mindepth 1 -iname 1
 #+END_EXAMPLE
 
-File count and exclude Path
+- File count and exclude Path :: linux:wc ~-not -path "a/path/*"~
 #+BEGIN_SRC bash
   # Exclude abc/.git directory
   find abc/ -type f -not -path "abc/.git/*" | wc -l
@@ -43495,24 +43497,54 @@ File count and exclude Path
   find . | wc -l
 #+END_SRC
 
-Exclude file extensions
+- Exclude file extensions :: ~-not -iname~
 #+BEGIN_SRC bash
   find . -type f -not -name '*.jpg' -not -name '*.pdf'
   find wp-content/uploads -type f -not \( -name '*.jpg' -o -name '*.pdf' -o -name '*.gif' -o -name '*.png' \)
 #+END_SRC
 
-Check file permissions wp:check file permissions
+- Check file permissions :: wp:check file permissions
 
-Sort by modified date newest first <<<linux:find:newest>>>
+- Sort by modified date newest first <<<linux:find:newest>>>
 #+BEGIN_SRC bash
   find . -printf "%T@ %Tc %p\n" | sort -rn
 #+END_SRC
 
-Move or copy certain file extension
+- Move or copy files of certain file extension :: ~-iname --exec~
 #+BEGIN_SRC sh
   find -iname '*.jpg' -exec mv -t path/to/target/folder/ {} \+
 
   find -iname '*.jpg' -exec cp {} path/to/target/folder/ \;
+#+END_SRC
+
+- Permission :: ~-perm~
+#+BEGIN_SRC sh
+  # -perm mode :: exact match
+  # rw-
+  # rw-
+  # r--
+  find . -perm 664
+
+  # -perm -mode :: match any of these
+  # rw*
+  # rw*
+  # r**
+  find . -perm -664
+
+  # -perm /mode :: Any of the permission bits mode are set for the file.
+
+  # These are the same
+  # Files which are writable by either their owner or their group.
+  # The files don't have to be writable by both the owner and group to be matched; either will do.
+
+  # 220 is
+  # -w-
+  # -w-
+  # ---
+
+  find . -perm /220
+  find . -perm /u+w,g+w
+  find . -perm /u=w,g=w
 #+END_SRC
 
 *** Search Text in Files <<<linux:grep>>>
@@ -46348,27 +46380,47 @@ Run a background process after SSH signout
 If the first command not successful, 2nd command will not run: =lspci && lspci=
 
 *** ls <<<bash:ls>>>
-Options
-- sort by file name :: t
-- sort by file size :: S
-- reverse sort :: r
-- in detail :: l
-- In MB :: ~-l --block-size=M~
+List files or directories by name
+- Options
+   - sort by file name :: t
+   - sort by file size :: S
+   - reverse sort :: r
+   - in detail :: l
+   - In MB :: ~-l --block-size=M~
+- Results of ~ls -l~
+   - ~-rwxr-xr-x 1 10490 floppy 17242 May  8  2013 acroread~
+   - First ~-~ represents a regular file. It could be
+      - d :: directory
+      - c :: character device
+      - l :: symlink
+      - p :: named pipe
+      - s :: socket
+      - b :: block device
+      - D :: door
+      - - :: regular file
+
+#+BEGIN_SRC sh
+  ls -l my_scr?pt
+  ls -l my*
+  ls -l my_s*t
+  ls -l my_scr[ai]t
+  ls -l f[a-i]ll
+  ls -l f[!a]ll
+#+END_SRC
 
 *** man <<<bash:man>>>
 - Search ~processes~ in command names and description :: ~man -k processes~
 - Search in command names and title :: ~man -f ls~
 - Save manual to a txt file :: ~man ls > ls.txt~
 
-*** =cd -= Navigate to previous directory (back)
-*** =wc=
-| =-l= | Line Count      | =ps -ef \vert wc -l= |
-| =-w= | Word Count      |                      |
-| =-c= | Byte Count      |                      |
-| =-m= | Character Count |                      |
-|      |                 |                      |
+*** ~cd -~ Navigate to previous directory (back)
+*** Word Count ~wc~ <<<linux:wc>>>
+- ~-l~ :: Line Count e.g. ~ps -ef | wc -l~
+- ~-w~ :: Word Count
+- ~-c~ :: Byte Count
+- ~-m~ :: Character Count
 
-*** Replace String  =sed= <<<bash:sed>>>
+*** Replace String  ~sed~ <<<bash:sed>>>
 Replace all (g) Nick with John case-insensitive
 cat report.txt | sed 's/Nick/John/gi' > report_new.txt
 
@@ -46491,14 +46543,14 @@ Run sudo interactive =sudo -i=
 Create multiple terminals and switch between.
 =apt-get install byobu=
 
-*** =w3m= Command line web browser
+*** Command line web browser ~w3m~
 Ubuntu
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   apt-get install w3m
   # S-Q to quit
-#+END_EXAMPLE
+#+END_SRC
 
-*** set, <<<bash:set>>>
+*** set <<<bash:set>>>
 #+BEGIN_SRC bash
   # shell
   set -ex; command1; command2; ...
