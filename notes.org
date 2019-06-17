@@ -429,7 +429,7 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // i :: minutes with leading zeros
   // s :: seconds with leading zeros
   echo date('Ymd'); // 20190131 for Jan 31, 2019
-  echo date('YmdGis'); // 20190131015959 Jan 31, 2019 01:59:59
+  echo date('YmdGis'); // 20190131015959 for Jan 31, 2019 01:59:59
   echo date('c'); // 2019-05-24T07:11:55-07:00
 #+END_SRC
 
@@ -10853,13 +10853,10 @@ In template
 #+END_SRC
 
 *** wp_get_attachment_image_attributes
-apply_filters( 'wp_get_attachment_image_attributes', array $attr, WP_Post $attachment, string|array $size )
-
-$attr :: (array) Attributes for the image markup.
-
-$attachment :: (WP_Post) Image attachment post.
-
-$size :: (string|array) Requested size. Image size or array of width and height values (in that order). Default 'thumbnail'.
+- ~apply_filters( 'wp_get_attachment_image_attributes', array $attr, WP_Post $attachment, string|array $size )~
+- $attr :: (array) Attributes for the image markup.
+- $attachment :: (WP_Post) Image attachment post.
+- $size :: (string|array) Requested size. Image size or array of width and height values (in that order). Default 'thumbnail'.
 
 #+BEGIN_SRC php
   function twentyseventeen_post_thumbnail_sizes_attr( $attr, $attachment, $size ) {
@@ -14632,6 +14629,12 @@ Or anywhere
 #+BEGIN_SRC php
   error_reporting(E_ALL);
   ini_set('display_errors', 1);
+#+END_SRC
+
+Write to file ~wp-content/debug.log~ after ~define( 'WP_DEBUG_LOG' , true );~
+#+BEGIN_SRC php
+  error_log('Hello lili');
+  error_log(print_r($abc, 1));
 #+END_SRC
 
 *** Debug WP_Query <<<wp:debug:wp_query>>>
@@ -21537,38 +21540,30 @@ Hide Safari UI (URL address bar)
 #+END_SRC
 
 ** Header
-All headers - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+- All headers :: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
 
 HTTP response header can be defined in html markup
 #+BEGIN_SRC html
   <meta http-equiv="Content-Security-Policy" content="default-src https://cdn.example.net; child-src 'none'; object-src 'none'">
 #+END_SRC
 
-*** Age
+*** Age <<<header:age>>>
 A non-negative integer of seconds that the object (response) has been in a proxy cache (CDN, Varnish)
 
-*** Cache-Control, Pragma <<<header:cache-control>>>
-https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
-apache:mod_headers:cache
-
-~Pragma~ is for legacy HTTP/1.0 where ~Cache-Control HTTP/1.1~ is not yet present. Only ~Pragma:no-cache~ or ~Pragma:cache~
-
-Directives
-- must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
-
-- no-cache :: browser has to always check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
-- no-store :: no cache should be stored in request or response e.g. Go Back to previous page, the browser shows the browser cache version of the page
-
-- no-transform :: No transformations or conversions should be made to the resource. The ~Content-Encoding~, ~Content-Range~, ~Content-Type~ headers must not be modified by a proxy. A non-transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The ~no-transform~ directive disallows this.
-
-- public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
-- private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
-
-proxy-revalidate
-
-- max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again.
+*** Cache-Control, Pragma - response <<<header:cache-control>>>
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+- Refer to apache:mod_headers:cache
+- ~Pragma~ is for legacy HTTP/1.0 where ~Cache-Control HTTP/1.1~ is not yet present. Only ~Pragma:no-cache~ or ~Pragma:cache~
+- Directives
+   - must-revalidate :: force to verify the status before using the cache and expired ones should not be used.
+   - no-cache :: browser has to always check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
+   - no-store :: no cache should be stored in request or response e.g. Go Back to previous page, the browser shows the browser cache version of the page
+   - no-transform :: No transformations or conversions should be made to the resource. The ~Content-Encoding~, ~Content-Range~, ~Content-Type~ headers must not be modified by a proxy. A non-transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The ~no-transform~ directive disallows this.
+   - public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
+   - private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
+   - proxy-revalidate ::
+   - max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again.
 post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
-
 - Common usage
   - ~public, max-age=2592000~ :: Tells the ~external~ caching system e.g. Varnish not to make a call to the web server for this request until the max-age <<<header:cache-control:public max-age>>>
   - ~no-cache, must-revalidate, post-check=0, pre-check=0~ :: no cache and always ask from server
@@ -21752,8 +21747,10 @@ HSTS lets a website tell browsers that it should only be accessed using HTTPS. T
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
 
 *** Vary - response <<<header:vary>>>
-Vary: User-Agent :: Tell caching servers to deliver a different cache for different User-Agent
-Vary: * :: Tell caching servers to always deliver a refresh copy (all requests are uncacheable)
+- ~Vary: <header-name>, <header-name>~
+- ~Vary: User-Agent~ :: Tell caching servers to deliver a different cache for different User-Agent
+- ~Vary: *~ :: Tell caching servers to always deliver a refresh copy (all requests are uncacheable)
+- ~Vary: Cookie~ :: tell caching servers to deliver a different cache for different cookie header
 
 *** Link <<<header:link>>>
 - Each link defined in HTML is separated by comma and values inside a link with attributes are delimited by ~;~
@@ -49859,8 +49856,7 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 - See version ~varnishd -V~
 - Go to CLI ~varnishd~, then ~stop~ ~start~ ~quit~
 - Search log ~varnishlog -d -q "BerespStatus == 503"~
-
-Config files ~/etc/varnish/conf.d/*.vcl~
+- Config files ~/etc/varnish/conf.d/*.vcl~
 
 ** Service: phpMyAdmin
 
@@ -55186,16 +55182,9 @@ WordPress ~templates/<your_template>/functions.php~
 #+END_SRC
 
 ** Cookie <<<pantheon:cookie>>>
-https://pantheon.io/docs/cookies
-
-cookies set by javascript or at client side must have this name structure :: STYXKEY[a-zA-Z0-9_-]
-e.g. STYXKEY_my-key-name
-
-So that php can read them. And cookies set in this way should change the value on client side once it's been set.
-
-Content pages with same cookies (with this name structure) and same url will be cached.
-
-A cookie can be set in PHP in a response to prevent caching
+- https://pantheon.io/docs/cookies
+- See pantheon:varnish to prevent caching on certain pages by setting http header
+- A cookie can be set in PHP in a response to prevent caching
 #+BEGIN_SRC php
   if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
     $domain =  $_SERVER['HTTP_HOST'];
@@ -55203,18 +55192,50 @@ A cookie can be set in PHP in a response to prevent caching
   }
 #+END_SRC
 
-See pantheon:varnish to prevent caching on certain pages by setting http header.
+- Cache-Varying Cookies :: ~STYXKEY[a-zA-Z0-9_-]~ e.g. STYXKEY_my-key-name
+   - Content pages with same cookies (with this name structure) and same url will be cached
+   - If the value is set and read on PHP, do not try to use PHP to change the cookie as Varnish cannot cache a response that contains a ~Set-Cookie:~ header
+   - If the value is not set, respond with ~setcookie()~ to serve cached content for subsequent requests within the defined cookie lifetime
 
-Cookie limit for Pantheon Edge is 10K. Any larger cookies are dropped as if there is no cookie and header ~X-Cookies-Dropped: 1~ will be added.
+#+BEGIN_SRC php
+  $bar = 'Around here, football is the winter sport of choice!';
+  if (isset($_COOKIE['STYXKEY_gorp'])) {
 
-Varnish will not try to respond to the request from its cache or store the response if any of these cookies is present:
-- Cookies beginning with ~SESS~ that are followed by numbers and lowercase letters.
-- Drupal uses SESS-prefixed cookies for its own session tracking
-- Make sure you use different SESS-prefixed cookies for ignoring caching so that there's no conflict with Drupal
-- Correct: SESSfollowbylowercasewordwithnumbers123
-- Incorrect: SESS_hello, SESS-123, mycustomSESS, Sessone, sess123testing, SESSFIVE
-- Wordpress doesn't use PHP session cookies. Plugin [[https://wordpress.org/plugins/wp-native-php-sessions/][Wordpress Native PHP Sessions]] allows custom code to use ~$_SESSIONS~ but it's pulled from db.
-- Other [[https://pantheon.io/docs/caching-advanced-topics/][cache-busting cookie patterns]]
+    $foo = $_COOKIE['STYXKEY_gorp'];
+    // Generate varied content based on cookie value
+    // Do NOT set cookies here; Set-Cookie headers do not allow the response to be cached
+    if ($foo == 'ca') {
+      str_replace('football', 'hockey', $bar);
+    }
+
+  }
+  else{
+    /**
+    ,* Set local vars passed to setcookie()
+    ,* Example:
+    ,* @code
+    ,* $name = 'STYXKEY_gorp';
+    ,* $value = 'bar';
+    ,* $expire = time()+600;
+    ,* $path = '/foo';
+    ,* $domain =  $_SERVER['HTTP_HOST'];
+    ,* $secure = true;
+    ,* $httponly = true;
+    ,* @endcode
+    ,**/
+    setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);
+  }
+#+END_SRC
+
+- Cookie limit for Pantheon Edge is 10K. Any larger cookies are dropped as if there is no cookie and header ~X-Cookies-Dropped: 1~ will be added to the request and response, indicating that they have been truncated
+- Varnish will not try to respond to the request from its cache or store the response if any of these cookies is present:
+   - Cookies beginning with ~SESS~ that are followed by numbers and lowercase letters
+   - Drupal uses SESS-prefixed cookies for its own session tracking
+   - Make sure you use different SESS-prefixed cookies for ignoring caching so that there's no conflict with Drupal
+   - Correct: ~SESSfollowbylowercasewordwithnumbers123~
+   - Incorrect: ~SESS_hello~, ~SESS-123~, ~mycustomSESS~, ~Sessone~, ~sess123testing~, ~SESSFIVE~
+- WP doesn't use PHP session cookies. Plugin [[https://wordpress.org/plugins/wp-native-php-sessions/][Wordpress Native PHP Sessions]] allows custom code to use ~$_SESSIONS~ but it's pulled from db
+- Other [[https://pantheon.io/docs/caching-advanced-topics/][cache-busting cookie patterns]] :: If there is any cookie like these, don't serve cache. Refer to Pantheon's Varnish configuration file ~.vcl~
 #+BEGIN_EXAMPLE
   NO_CACHE
   S+ESS[a-z0-9]+
@@ -55232,9 +55253,12 @@ Varnish will not try to respond to the request from its cache or store the respo
   (wp_)?woocommerce[A-Za-z0-9_-]+
 #+END_EXAMPLE
 
-Default cookie lifetime is 2,000,000 seconds and session lifetime is 200,000 seconds in Drupal's default.settings.php
-
-Any logged in pages will not be cached. If different content is shown based on a user's location, either use frontend or use STYXKEY cookie as described above so that caching is possible.
+- Default session cookie lifetime is 2,000,000 seconds using session.cookie_lifetime. If set to 0, the cookie is deleted when the user closes their browser
+   - Set in Drupal's ~default.settings.php~ and in Pantheon's PHP configuration
+- Drupal's session garbage collection uses the session.gc_maxlifetime PHP setting when deleting expired sessions from sessions database table. Session max lifetime is 200,000 seconds in Drupal's default.settings.php nad in Pantheon's PHP configuration
+- Pantheon strip cookies fro requests made to public files served from ~sites/default/files~ and ~wp-content/uploads~
+- Any logged in pages will not be cached. If different content is shown based on a user's location, either use frontend or use ~STYXKEY~ cookie as described above so that caching is possible
+- Any PHP ~setcookie()~ will cause the content not cached. Except ~STYXKEY~ cookie. ~NO_CACHE~ is to specify how long a page should not be cached
 
 ** Domain <<<pantheon:domain>>>
 Connect Domain: www.example.com and example.com
@@ -55421,18 +55445,34 @@ https://pantheon.io/docs/php-errors/
 - https://github.com/pantheon-systems/nginx
 - Can't change Nginx config
 
-** Varnish <<<pantheon:varnish>>>
-[[https://wordpress.org/plugins/pantheon-advanced-page-cache/][Wordpress plugin Pantheon Advanced Page Cache]]
-[[https://pantheon.io/docs/wordpress-cache-plugin/][Clear cache functions on Wordpress]]
-[[https://www.varnish-software.com/wiki/content/tutorials/wordpress/wp_step_by_step.html][Varnish step-by-step guide to making a wordpress site fly]]
-
-Varnish doesn't cache page requests with cookies and it respects the HTTP header that you set in PHP.
-Pantheon sets Varnish to ignore most cookies so that pages can be cached.
-
-To troubleshoot whether a page is cached, examine the response HTTP header Age. If Age stays at 0, means the page is not cached.
-
-If there's a HTTP header ~Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0~, Varnish will not cache the page.
-e.g. drupal_set_message sets ~no-cache~ in HTTP header.
+** Varnish - Edge Caching <<<pantheon:varnish>>>
+- [[https://wordpress.org/plugins/pantheon-advanced-page-cache/][Wordpress plugin Pantheon Advanced Page Cache]]
+- [[https://pantheon.io/docs/wordpress-cache-plugin/][Clear cache functions on WordPress]]
+- [[https://www.varnish-software.com/wiki/content/tutorials/wordpress/wp_step_by_step.html][Varnish step-by-step guide to making a wordpress site fly]]
+- Pantheon Varnish checking tool :: https://varnishcheck.pantheon.io/ or use ~curl -I https://mysite.ca~
+   - View the ~Surrogate-Key-Raw~ header :: ~curl -IsH "Pantheon-Deubg:1" https://mysite.ca~
+- Varnish doesn't cache page requests with cookies and it respects the HTTP header that you set in PHP
+- Pantheon sets Varnish to ignore most cookies so that pages can be cached
+- To troubleshoot whether a page is cached, examine the response HTTP header Age. If Age stays at 0, means the page is not cached
+- If there's a HTTP header ~Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0~, Varnish will not cache the page e.g. ~drupal_set_message~ sets ~no-cache~ in HTTP header
+- https://pantheon.io/docs/wordpress-4.7-upgrade/
+- Without installing the plugin Pantheon Advanced Page Cache, edge caching follows WordPress core 4.7+
+   - Edge caching still works using Varnish
+   - Pages will expire by default from edge cache after 10 minutes
+   - Before wp 4.7, Pantheon uses mu-plugin which is much more aggressive
+- With the plugin, you can:
+   - ~Delete Cache~ button is added to wp-admin for you to clear edge cache for a page
+   - WP-CLI ~wp patheon cache~ commands
+   - Auto purge edge cache based on surrogate keys:
+      - When a post is updated, clear the cache for the post's URL, the homepage, any index view the post appears on, and any REST API endpoints the post is present in
+      - When an author changes their name, clear the cache for the author’s archive and any post they’ve authored
+- See pantheon:cookie to prevent caching on certain pages by setting ~NO_CACHE~ cookie
+- Pantheon Varnish will ignore the following GET parameters when caching:
+   - Prefixed with 2 underscores ~__~
+   - Prefixed with ~utm_~
+   - PHP read values of these GET parameter as ~PANTHEON_STRIPPED~
+- Varnish configuration file (.vcl) is not supposed to edit
+- See lando:pantheon:varnish
 
 Set HTTP header for preventing certain pages from caching
 #+BEGIN_SRC php
@@ -55453,18 +55493,6 @@ Set HTTP header for preventing certain pages from caching
   // D8
   $build['#cache']['max-age'] = 0;
 #+END_SRC
-
-See pantheon:cookie to prevent caching on certain pages by setting NO_CACHE cookie
-
-Pantheon Varnish will ignore the following GET parameters when caching:
-- Prefixed with 2 underscores ~__~
-- Prefixed with ~utm_~
-
-PHP read values of these GET parameter as ~PANTHEON_STRIPPED~
-
-Varnish configuration file (.vcl) is not supposed to edit.
-
-See lando:pantheon:varnish
 
 ** Object Cache - Redis <<<pantheon:redis>>>
 - Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
@@ -55581,18 +55609,6 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-re
   # exit CLI
   exit
 #+END_SRC
-
-** Edge Caching (Varnish)
-- https://pantheon.io/docs/wordpress-4.7-upgrade/
-- Without installing the plugin Pantheon Advanced Page Cache, edge caching follows WordPress core 4.7+
-  - Pages will expire by default from edge cache after 10 minutes
-  - Before wp 4.7, Pantheon uses mu-plugin which is much more aggressive
-- With the plugin, you can:
-  - Delete Cache button is added to wp-admin for you to clear edge cache for a page
-  - WP-CLI ~wp patheon cache~ commands
-  - Purge edge cache based on surrogate keys:
-    - When a post is updated, clear the cache for the post’s URL, the homepage, any index view the post appears on, and any REST API endpoints the post is present in
-    - When an author changes their name, clear the cache for the author’s archive and any post they’ve authored
 
 ** Clear Cache
 Use ~terminus env:clear-cache~ to debug clear cache failure.
