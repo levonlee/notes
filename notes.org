@@ -28735,12 +28735,11 @@ async function returns AsyncFunction object which is Promise.resolve.
 await one and only one Promise.
 
 To wait for all promises to finish, use Promise.all
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function resolveAfter2Seconds(x) {
     return new Promise(resolve => {
       setTimeout(() => {
-        resolve(x);
+	resolve(x);
       }, 2000);
     });
   }
@@ -28769,7 +28768,7 @@ To wait for all promises to finish, use Promise.all
   add2(10).then(v => {
     console.log(v);  // prints 60 after 2 seconds.
   });
-#+END_EXAMPLE
+#+END_SRC
 
 * NodeJS
 ** Install on Ubuntu
@@ -28918,17 +28917,17 @@ Full path of the directory/file of the current module/file
 
 *** console <<<nodejs:console>>>
 Backtick
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var a = "World";
   console.log(`Hello ${a}`); // Hello World
-#+END_EXAMPLE
 
-console.dir(obj[, options]) uses util.inspect()
-#+BEGIN_EXAMPLE
-  showHidden <bool> true
-  depth <number> 2, can be null
-  colors <bool> false
-#+END_EXAMPLE
+  // console.dir(obj[, options]) uses util.inspect()
+  console.dir(a, {
+      showHidden: true,
+      depth: 2, // number, can be null
+      colors: false
+  });
+#+END_SRC
 
 *** process
 **** process.argv
@@ -29166,8 +29165,8 @@ By default, npx will check whether <command> exists in $PATH, or in the local pr
   emitter.emit('customEvent', "Hello", 200);
 #+END_EXAMPLE
 
-*** util (native)
-#+BEGIN_EXAMPLE
+*** util (native) <<<nodejs:util>>>
+#+BEGIN_SRC js
   var EventEmitter = require('events').EventEmitter;
   const util = require('util');
   var Person = function(name) {
@@ -29200,13 +29199,15 @@ By default, npx will check whether <command> exists in $PATH, or in the local pr
   // %i > integer, %f > floating point value
   // %j > JSON
   // %% > percent sign '%'
-#+END_EXAMPLE
+#+END_SRC
 
 *** lodash
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   # npm i -g npm
   npm i --save lodash
+#+END_SRC
 
+#+BEGIN_SRC js
   var _ = require('lodash');
 
   var users = [
@@ -29214,18 +29215,18 @@ By default, npx will check whether <command> exists in $PATH, or in the local pr
     { 'user': 'fred',    'age': 40, 'active': false },
     { 'user': 'pebbles', 'age': 1,  'active': true }
   ];
-   
+
   _.find(users, function(o) { return o.age < 40; });
   // => object for 'barney'
-   
+
   // The `_.matches` shorthand.
   _.find(users, { 'age': 1, 'active': true });
   // => object for 'pebbles'
-   
+
   // The `_.matchesProperty` shorthand.
   _.find(users, ['active', false]);
   // => object for 'fred'
-   
+
   // The `_.property` shorthand.
   _.find(users, 'active');
   // => object for 'barney'
@@ -29244,7 +29245,7 @@ By default, npx will check whether <command> exists in $PATH, or in the local pr
     // merge multiple objects from left to right for enumerable string keyed properties
     res.json(updatedUser);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** _.identity(value)
 returns the first argument it receives
@@ -29256,19 +29257,20 @@ console.log(_.identity(object) === object); // => true
 creates a function that performs a partical deep comparison between a given object and source, return true if the given object has equivalent prop values, else false.
 Partial comparisons will match empty array and empty object source values against any array or object value, respectively.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var objects = [
     { 'a': 1, 'b': 2, 'c': 3 },
     { 'a': 4, 'b': 5, 'c': 6 }
   ];
-   
+
   _.filter(objects, _.matches({ 'a': 4, 'c': 6 }));
   // => [{ 'a': 4, 'b': 5, 'c': 6 }]
-#+END_EXAMPLE
+#+END_SRC
 
 **** _.find, _.findLast
 Return the first element that the predicate function returns true.
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC js
   _.find(collection, [predicate=_.identity], [fromIndex=0])
   _.findLast(collection, [predicate=_.identity], [fromIndex=collection.length-1])
 
@@ -29279,87 +29281,87 @@ Return the first element that the predicate function returns true.
     { 'user': 'fred',    'age': 40, 'active': false },
     { 'user': 'pebbles', 'age': 1,  'active': true }
   ];
-   
+
   _.find(users, function(o) { return o.age < 40; });
   // => object for 'barney'
-   
+
   // The `_.matches` iteratee shorthand.
   _.find(users, { 'age': 1, 'active': true });
   // => object for 'pebbles'
-   
+
   // The `_.matchesProperty` iteratee shorthand.
   _.find(users, ['active', false]);
   // => object for 'fred'
-   
+
   // The `_.property` iteratee shorthand.
   _.find(users, 'active');
   // => object for 'barney'
-#+END_EXAMPLE
+#+END_SRC
 
 **** _.iteratee
 Creates a function that invokes func with the arguments of the created function.
 func is
 - a property name :: the created function returns the prop value for a given element.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   _.iteratee([func=_.identity])
 
   var users = [
     { 'user': 'barney', 'age': 36, 'active': true },
     { 'user': 'fred',   'age': 40, 'active': false }
   ];
-   
+
   // The `_.matches` iteratee shorthand.
   _.filter(users, _.iteratee({ 'user': 'barney', 'active': true }));
   // => [{ 'user': 'barney', 'age': 36, 'active': true }]
-   
+
   // The `_.matchesProperty` iteratee shorthand.
   _.filter(users, _.iteratee(['user', 'fred']));
   // => [{ 'user': 'fred', 'age': 40 }]
-   
+
   // The `_.property` iteratee shorthand.
   _.map(users, _.iteratee('user'));
   // => ['barney', 'fred']
-   
+
   // Create custom iteratee shorthands.
   _.iteratee = _.wrap(_.iteratee, function(iteratee, func) {
     return !_.isRegExp(func) ? iteratee(func) : function(string) {
       return func.test(string);
     };
   });
-   
+
   _.filter(['abc', 'def'], /ef/);
   // => ['def']
-#+END_EXAMPLE
+#+END_SRC
 
 **** _.property(path)
 Creates a function that returns the value at path of a given object
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var objects = [
     { 'a': { 'b': 2 } },
     { 'a': { 'b': 1 } }
   ];
-   
+
   _.map(objects, _.property('a.b'));
   // => [2, 1]
-   
+
   _.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
   // => [1, 2]
-#+END_EXAMPLE
+#+END_SRC
 
 *** child_process
 Exec is for short process
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var exec = require('child_process').exec;
   exec('ls', function(err, stdout) {
     if (err) throw err;
     console.log(stdout);
   });
-#+END_EXAMPLE
+#+END_SRC
 
 Spawn for ongoing process
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var spawn = require('child_process').spawn;
   var cp = spawn('node', ["app"]); // node app
   cp.stdout.on("data", function(data) {
@@ -29376,7 +29378,7 @@ Spawn for ongoing process
     // maximum run time
     cp.stdin.write("stop");
   }, 4000);
-#+END_EXAMPLE
+#+END_SRC
 
 *** lighthouse <<<npm:lighthouse>>>
 https://github.com/GoogleChrome/lighthouse
@@ -29595,15 +29597,14 @@ gulpfile.js
 #+END_SRC
 
 **** gulp.src
-gulp.src(globs[, options])
-
-globs :: string or array. [[https://github.com/isaacs/node-glob][node-glob]]
-#+BEGIN_EXAMPLE
+- ~gulp.src(globs[, options])~
+- globs :: string or array. [[https://github.com/isaacs/node-glob][node-glob]]
+#+BEGIN_SRC js
   // negate can be used
   ['client/*.js', '!client/b*.js', 'client/bad.js']
-#+END_EXAMPLE
+#+END_SRC
 
-options :: options to pass to node-glob.
+- options :: options to pass to node-glob.
 
 #+BEGIN_SRC js
   /*
@@ -29637,16 +29638,16 @@ options :: options to pass to node-glob.
 #+END_SRC
 
 Only one option:base is possible for an array of files
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   gulp.src(
     ['source1/examples/**/*.html',
      'source2/examples/**/*.html'],
     { base: ['source1/', 'source2/']}   // Doesn't work. Needs to be a string.
   ).pipe(gulp.dest('dist'));
-#+END_EXAMPLE
+#+END_SRC
 
 Instead, do this
-#+BEGIN_SRC javascript
+#+BEGIN_SRC js
   var merge = require('merge-stream');
 
   gulp.task('default', function() {
@@ -30016,14 +30017,6 @@ https://github.com/mahnunchik/gulp-responsive
   # https://github.com/lovell/sharp/issues/615
 #+END_SRC
 
-#+BEGIN_EXAMPLE
-  npm install --save-dev gulp-responsive
-
-  // you may need to run this if there is still error, but I didn't need it
-  // npm -g install npm@latest
-  // https://github.com/lovell/sharp/issues/615
-#+END_EXAMPLE
-
 **** gulp-image-resize <<<npm:gulp-image-resize>>>
 #+BEGIN_SRC sh
   # make sure imagemagick is installed
@@ -30094,7 +30087,8 @@ There're 5 modes :: css, view, defs, symbol, stack
 
 *** grunt
 Install grunt globally and locally
-#+BEGIN_EXAMPLE
+
+#+BEGIN_SRC sh
   npm install grunt-cli -g
   npm install grunt-cli --save-dev
 
@@ -30105,48 +30099,50 @@ Install grunt globally and locally
   npm install grunt-contrib-watch --save-dev
 
   npm install jquery
+#+END_SRC
 
+#+BEGIN_SRC js
   // GruntFile.js
   module.exports = function(grunt) {
 
     grunt.initConfig({
       jshint: {
-        files: ["*.js", "lib/*.js", "test/*.js"],
-        options: {
-          esnext: true,
-          globals: {
-            jQuery: true
-          }
-        }
+	files: ["*.js", "lib/*.js", "test/*.js"],
+	options: {
+	  esnext: true,
+	  globals: {
+	    jQuery: true
+	  }
+	}
       },
       less: {
-        production: {
-          files: {
-            "public/css/style.css": ["less/*.less"]
-          }
-        }
+	production: {
+	  files: {
+	    "public/css/style.css": ["less/*.less"]
+	  }
+	}
       },
       autoprefixer: {
-        single_file: {
-          src: "public/css/style.css",
-          dest: "public/css/style.css"
-        }
+	single_file: {
+	  src: "public/css/style.css",
+	  dest: "public/css/style.css"
+	}
       },
       browserify: {
-        client: {
-          src: ["app-client.js"],
-          dest: "public/js/bundle.js"
-        }
+	client: {
+	  src: ["app-client.js"],
+	  dest: "public/js/bundle.js"
+	}
       },
       watch: {
-        css: {
-          files: ["less/*.less"],
-          tasks: ["css"]
-        },
-        scripts: {
-          files: ["app-client.js", "lib/*.js"],
-          tasks: ["jshint", "browserify"]
-        }
+	css: {
+	  files: ["less/*.less"],
+	  tasks: ["css"]
+	},
+	scripts: {
+	  files: ["app-client.js", "lib/*.js"],
+	  tasks: ["jshint", "browserify"]
+	}
       }
     });
 
@@ -30174,12 +30170,12 @@ Install grunt globally and locally
 
   // open another session and run
   grunt watch
-#+END_EXAMPLE
+#+END_SRC
 
 *** webpack <<<npm:webpack>>>
 https://angular.io/guide/webpack ng:cli:webpack
 **** Multiple bundles
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   entry: {
     app: 'src/app.ts',
     vendor: 'src/vendor.ts'
@@ -30188,10 +30184,10 @@ https://angular.io/guide/webpack ng:cli:webpack
   output: {
     filename: '[name].js'
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Rules
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   module: {
 
    rules: [
@@ -30206,7 +30202,7 @@ https://angular.io/guide/webpack ng:cli:webpack
    ]
 
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Plugins
 #+BEGIN_EXAMPLE
@@ -31949,7 +31945,7 @@ Batch convert all *.svg files in a folder and output to another folder
 svgo -f ../path/to/folder/with/svg/files -o ../path/to/folder/with/svg/output
 
 ** Custom Module
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // my-module.js
   // Export one property at a time
   exports.myText = 'hello';
@@ -31974,20 +31970,22 @@ svgo -f ../path/to/folder/with/svg/files -o ../path/to/folder/with/svg/output
   console.log(`The area of my square is ${mySquare.area()}`);
 
   // node module-demo.js
+#+END_SRC
 
-  // Initiate the custom module, adding package.json file
+#+BEGIN_SRC sh
+  # Initiate the custom module, adding package.json file
   npm init
 
-  // --save flag will add/remove dependency to package.js
+  # --save flag will add/remove dependency to package.js
   npm install cors --save
   npm remove cors --save
 
-  // delete ./node_modules and run this to install all dependencies
+  # delete ./node_modules and run this to install all dependencies
   npm install
-#+END_EXAMPLE
+#+END_SRC
 
 Call local functions
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var _foo = function () {
     return ('foo');
   }
@@ -31998,7 +31996,7 @@ Call local functions
     foo: _foo,
     bar: _bar
   };
-#+END_EXAMPLE
+#+END_SRC
 
 *** package.json, node-inspector
 npm install node-inspector -g
@@ -55513,7 +55511,6 @@ Set HTTP header for preventing certain pages from caching
 | PHP response with ~Set-Cookie: NO_CACHE~                               | no cache until cookie is expired              | no cache until cookie is expired              |
 | PHP response with setting Cache-varying Cookies ~STYXKEY[a-zA-Z0-9_-]~ | cache a version for each cache-varying cookie | cache a version for each cache-varying cookie |
 |------------------------------------------------------------------------+-----------------------------------------------+-----------------------------------------------|
-
 
 ** Object Cache - Redis <<<pantheon:redis>>>
 - Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
