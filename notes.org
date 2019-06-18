@@ -7676,7 +7676,9 @@ Create a bash script wrapper for already started processes
       - ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
       - ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
    - ~wp_get_attachment_image_srcset( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~srcset~ attrbiute value string or false
+      - :: 
    - ~wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~sizes~ attribute value string or false
+      - wp:filter:wp_calculate_image_sizes
 - ~wp_get_attachment_*()~ ::
    - ~wp_get_attachment_caption( $post_id = 0 )~ :: ~$post_id~ default is global $post. Usually it's the attachment ID
    - ~wp_get_attachment_metadata( $attachment_id = 0, $unfiltered = false )~ :: array or false
@@ -10752,26 +10754,68 @@ Default is ~echo '[…]'~
 *** excerpt_length <<<wp:filter:excerpt_length>>>
 Number of words
 
-*** wp_calculate_image_sizes
-wp_calculate_image_sizes( array|string $size, string $image_src = null, array $image_meta = null, int $attachment_id )
+*** wp_calculate_image_srcset <<<wp:filter:wp_calculate_image_srcset>>>
+- Refer to html:img:srcset
 
-Creates a ‘sizes’ attribute value for an image. html:img:srcset html:img:sizes
+#+BEGIN_SRC php
+  $sources = apply_filters( 'wp_calculate_image_srcset', $sources, $size_array, $image_src, $image_meta, $attachment_id );
+
+  // sample
+  $sources = [
+	  '300' => [
+		  'url' => 'https://a.ca/wp-content/uploads/2019/03/image-name-100x100.jpg',
+		  'descriptor' => 'w',
+		  'value' => '300'
+	  ],
+	  '930' => [
+		  'url' => 'https://a.ca/wp-content/uploads/2015/12/Harbour-House-Sign.jpg',
+		  'descriptor' => 'w',
+		  'value' => '930'
+		
+	  ],
+	  // ...
+  ];
+#+END_SRC
+
+*** wp_calculate_image_sizes <<<wp:filter:wp_calculate_image_sizes>>>
+- Filter ~sizes~ attribute value for an image. Refer to html:img:sizes
+
+#+BEGIN_SRC php
+  // wp_calculate_image_sizes( array|string $size, string $image_src = null, array $image_meta = null, int $attachment_id )
+	
+  function twentyseventeen_content_image_sizes_attr( $sizes, $size ) {
+	  $width = $size[0];
+
+	  if ( 740 <= $width ) {
+		  $sizes = '(max-width: 706px) 89vw, (max-width: 767px) 82vw, 740px';
+	  }
+
+	  if ( is_active_sidebar( 'sidebar-1' ) || is_archive() || is_search() || is_home() || is_page() ) {
+		  if ( ! ( is_page() && 'one-column' === get_theme_mod( 'page_options' ) ) && 767 <= $width ) {
+			   $sizes = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
+		  }
+	  }
+
+	  return $sizes;
+  }
+  add_filter( 'wp_calculate_image_sizes', 'twentyseventeen_content_image_sizes_attr', 10, 2 );
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   function twentyseventeen_content_image_sizes_attr( $sizes, $size ) {
-          $width = $size[0];
+	  $width = $size[0];
 
-          if ( 740 <= $width ) {
-                  $sizes = '(max-width: 706px) 89vw, (max-width: 767px) 82vw, 740px';
-          }
+	  if ( 740 <= $width ) {
+		  $sizes = '(max-width: 706px) 89vw, (max-width: 767px) 82vw, 740px';
+	  }
 
-          if ( is_active_sidebar( 'sidebar-1' ) || is_archive() || is_search() || is_home() || is_page() ) {
-                  if ( ! ( is_page() && 'one-column' === get_theme_mod( 'page_options' ) ) && 767 <= $width ) {
-                           $sizes = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
-                  }
-          }
+	  if ( is_active_sidebar( 'sidebar-1' ) || is_archive() || is_search() || is_home() || is_page() ) {
+		  if ( ! ( is_page() && 'one-column' === get_theme_mod( 'page_options' ) ) && 767 <= $width ) {
+			   $sizes = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
+		  }
+	  }
 
-          return $sizes;
+	  return $sizes;
   }
   add_filter( 'wp_calculate_image_sizes', 'twentyseventeen_content_image_sizes_attr', 10, 2 );
 #+END_EXAMPLE
@@ -12583,6 +12627,7 @@ _wp_attachement_backup_sizes
 - Use wp:action:activated_plugin to change plugin loading order
 
 *** Classic Editor <<<wp:plugin:classic-editor>>>
+*** Simply Show Hooks <<<wp:plugin:simply-show-hooks>>>
 *** WPML <<<wp:plugin:sitepress-multilingual-cms>>>
 Before there's lifetime license but now only yearly.
 
