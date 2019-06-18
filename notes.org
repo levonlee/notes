@@ -7679,7 +7679,7 @@ Create a bash script wrapper for already started processes
    - ~wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~sizes~ attribute value string or false
 - ~wp_get_attachment_*()~ ::
    - ~wp_get_attachment_caption( $post_id = 0 )~ :: ~$post_id~ default is global $post. Usually it's the attachment ID
-   - ~wp_get_attachment_metadata( $attachment_id = 0, $unfiltered = false )~ ::
+   - ~wp_get_attachment_metadata( $attachment_id = 0, $unfiltered = false )~ :: array or false
    - ~wp_get_attachment_url( $attachment_id = 0)~ ::
    - ~wp_get_attachment_thumb_file( $post_id = 0 )~ ::
    - ~wp_get_attachment_thumb_url( $post_id = 0)~ ::
@@ -55500,6 +55500,20 @@ Set HTTP header for preventing certain pages from caching
   // D8
   $build['#cache']['max-age'] = 0;
 #+END_SRC
+
+|                                                                        | Dev/MultiDev                                  | Live                                          |
+|------------------------------------------------------------------------+-----------------------------------------------+-----------------------------------------------|
+| Logged in Users                                                        | no cache                                      | no cache                                      |
+| Non logged user visit a page                                           | cache                                         | cache                                         |
+| Static files requests with or without cookies                          | no cache                                      | cache for 366 days                            |
+| URL request with cache-busting cookies or cookies prefixed with ~SESS~ | no cache                                      | no cache                                      |
+| URL request with URL Parameters ~__*~ and ~utm_*~                      | cache as if there are not such URL parameters | cache as if there are not such URL parameters |
+| PHP response with header ~Cache-Control~                               | cache as the response header instructs        | cache as the response header instructs        |
+| PHP response with ~Set-Cookie~ that are not recognized                 | no cache                                      | no cache                                      |
+| PHP response with ~Set-Cookie: NO_CACHE~                               | no cache until cookie is expired              | no cache until cookie is expired              |
+| PHP response with setting Cache-varying Cookies ~STYXKEY[a-zA-Z0-9_-]~ | cache a version for each cache-varying cookie | cache a version for each cache-varying cookie |
+|------------------------------------------------------------------------+-----------------------------------------------+-----------------------------------------------|
+
 
 ** Object Cache - Redis <<<pantheon:redis>>>
 - Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
