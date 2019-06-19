@@ -265,7 +265,7 @@ HTTPS
 HTTP_HOST :: see below
 
 REQUEST_TIME
-REQUEST_URI :: /abc/xyz.html?abc=xyz without hash
+- REQUEST_URI :: ~/abc/xyz.html?abc=xyz~ without hash. Raw value is encoded. Use ~urldecode~
 
 REMOTE_ADDR
 REMOTE_HOST :: 
@@ -279,8 +279,7 @@ SERVER_PORT
 
 SCRIPT_FILENAME
 
-
-REMOTE_* :: values are guaranteed to be the valid address of the client as verified by a TCP/IP handshake. Because it's the address the response will be sent to
+- ~REMOTE_*~ :: values are guaranteed to be the valid address of the client as verified by a TCP/IP handshake. Because it's the address the response will be sent to
 
 *** HTTP_HOST and SERVER_NAME
 curl -H "Host: notyourdomain.com" http://yoursite.com/
@@ -9220,7 +9219,15 @@ Current URL on your website
 
 #+BEGIN_SRC php
   global $wp;
-  $current_url = home_url(add_query_arg(array(), $wp->request)); 
+
+  echo $wp->request; // path e.g. /path/to/page
+
+  echo home_url( $wp->request ); // works for pretty permalink
+
+  echo add_query_arg( $wp->query_vars, home_url( $wp->request )); // regardless of permalink setting
+
+  // Old method and may not work
+  // $current_url = home_url(add_query_arg(array(), $wp->request));
   // echo esc_url($current_url);
 
   $url = 'http://username:password@hostname:9090/path?arg=value#anchor';
@@ -11748,7 +11755,7 @@ Refer to wp:template tags and wp:t:general
 
 ** Genesis Framework <<<wp:genesis>>>
 :PROPERTIES:
-:CUSTOM_id: wp-genesis
+:CUSTOM_ID: wp-genesis
 :END:
 
 - Code snippets (examples) :: https://my.studiopress.com/documentation/snippets/
@@ -46158,19 +46165,22 @@ Googlebot's user agent: https://support.google.com/webmasters/answer/1061943
 
 **** Options
 
-| L          | Follow through all redirects                                  |
-| o          | redirect STDOUT to a file                                     |
-| O          | save file using same file name in current folder              |
-| I          | get header response only                                      |
-| m          | timeout in seconds                                            |
-| H          | request header. =-H "Accept-Charset: ISO-8859-1,utf-8;q=0.7"= |
-| limit-rate | limit download speed: --limit-rate=200k. use k, m or g        |
-| s          | suppress STDOUT. ~-svo /dev/null~ show req/resp headers only  |
-| w          | rewrite STDOUT                                                |
-| R          | Keep remote file timestamp. --remote-time                     |
-| z          | cURL download only after or before a date                     |
-| d          | send POST data                                                |
-| A          | --user-agent                                                  |
+| -L           | Follow through all redirects                                  |
+| -o           | redirect STDOUT to a file                                     |
+| -O           | save file using same file name in current folder              |
+| -I           | get header response only                                      |
+| -m           | timeout in seconds                                            |
+| -H           | request header. =-H "Accept-Charset: ISO-8859-1,utf-8;q=0.7"= |
+| --limit-rate | limit download speed: --limit-rate=200k. use k, m or g        |
+| -s           | suppress STDOUT. ~-svo /dev/null~ show req/resp headers only  |
+| -w           | rewrite STDOUT                                                |
+| -R           | Keep remote file timestamp. --remote-time                     |
+| -z           | cURL download only after or before a date                     |
+| -d           | send POST data                                                |
+| -A           | ~--user-agent~                                                |
+| -v           | verbose                                                       |
+| -b, --cookie | ~-b "name1=v1; name2=v2"~                                     |
+|--------------+---------------------------------------------------------------|
  
 *** wget <<<bash:wget>>>
 Compared to curl, wget's advantages are:
@@ -55252,6 +55262,10 @@ WordPress ~templates/<your_template>/functions.php~
 #+END_SRC
 
 ** Cookie <<<pantheon:cookie>>>
+:PROPERTIES:
+:CUSTOM_ID: pantheon-cookie
+:END:
+
 - https://pantheon.io/docs/cookies
 - See pantheon:varnish to prevent caching on certain pages by setting http header
 - A cookie can be set in PHP in a response to prevent caching
@@ -55263,9 +55277,10 @@ WordPress ~templates/<your_template>/functions.php~
 #+END_SRC
 
 - Cache-Varying Cookies :: ~STYXKEY[a-zA-Z0-9_-]~ e.g. ~STYXKEY_my-key-name~
-   - Content pages with same cookies (with this name structure) and same url will be cached
-   - If the cookie value is set and sent along with the request and later read on PHP, do not try to use PHP to change the cookie as Varnish cannot cache a response that contains a ~Set-Cookie:~ header
-   - If the cookie value is not set in request, respond with ~setcookie()~ to serve cached content for subsequent requests within the defined cookie lifetime
+   - Content pages with same cookies of this name structure and same url will be cached
+   - Request without corresponding ~STYXKEY~ cookie and response with any ~Set-Cookie:~ will always receive non-cache content from Varnish
+   - If the cookie is set in request and later read on PHP, do not try to use PHP to change the cookie as Varnish cannot cache a response that contains ~Set-Cookie:~ header
+   - If the cookie is not set in request, respond with ~setcookie()~ to set cached content for subsequent requests within the defined cookie lifetime
    - Sample
       - STYXKEY-mobile-ios :: Delivers different stylesheets and content for iOS devices
       - STYXKEY_european_user :: Presents different privacy options to E.U. users
@@ -55292,7 +55307,7 @@ WordPress ~templates/<your_template>/functions.php~
     ,* $name = 'STYXKEY_gorp';
     ,* $value = 'bar';
     ,* $expire = time()+600;
-    ,* $path = '/foo';
+    ,* $path = '/';
     ,* $domain =  $_SERVER['HTTP_HOST'];
     ,* $secure = true;
     ,* $httponly = true;
@@ -55521,11 +55536,16 @@ https://pantheon.io/docs/php-errors/
 - Can't change Nginx config
 
 ** Varnish - Edge Caching <<<pantheon:varnish>>>
+:PROPERTIES:
+:CUSTOM_ID: pantheon-varnish
+:END:
+
 - [[https://wordpress.org/plugins/pantheon-advanced-page-cache/][Wordpress plugin Pantheon Advanced Page Cache]]
 - [[https://pantheon.io/docs/wordpress-cache-plugin/][Clear cache functions on WordPress]]
 - [[https://www.varnish-software.com/wiki/content/tutorials/wordpress/wp_step_by_step.html][Varnish step-by-step guide to making a wordpress site fly]]
 - Pantheon Varnish checking tool :: https://varnishcheck.pantheon.io/ or use ~curl -I https://mysite.ca~
    - View the ~Surrogate-Key-Raw~ header :: ~curl -IsH "Pantheon-Deubg:1" https://mysite.ca~
+   - Debug cache-varying cookies :: ~curl -IsH "Pantheon-Deubg:1" -b "STYXKEY_my-name=v1" https://a.ca~ 
 - Varnish doesn't cache page requests with cookies and it respects the HTTP header that you set in PHP
 - Pantheon sets Varnish to ignore most cookies so that pages can be cached
 - To troubleshoot whether a page is cached, examine the response HTTP header Age. If Age stays at 0, means the page is not cached
@@ -55577,9 +55597,9 @@ Set HTTP header for preventing certain pages from caching
 | URL request with cache-busting cookies or cookies prefixed with ~SESS~ | no cache                                      | no cache                                      |
 | URL request with URL Parameters ~__*~ and ~utm_*~                      | cache as if there are not such URL parameters | cache as if there are not such URL parameters |
 | PHP response with header ~Cache-Control~                               | cache as the response header instructs        | cache as the response header instructs        |
-| PHP response with ~Set-Cookie~ that are not recognized                 | no cache                                      | no cache                                      |
+| PHP response with any ~Set-Cookie~                                     | no cache                                      | no cache                                      |
 | PHP response with ~Set-Cookie: NO_CACHE~                               | no cache until cookie is expired              | no cache until cookie is expired              |
-| PHP response with setting Cache-varying Cookies ~STYXKEY[a-zA-Z0-9_-]~ | cache a version for each cache-varying cookie | cache a version for each cache-varying cookie |
+| PHP response with ~Set-Cookie:~ Cache-varying ~STYXKEY[a-zA-Z0-9_-]~   | cache a version for each cache-varying cookie | cache a version for each cache-varying cookie |
 |------------------------------------------------------------------------+-----------------------------------------------+-----------------------------------------------|
 
 ** Object Cache - Redis <<<pantheon:redis>>>
