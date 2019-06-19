@@ -2589,17 +2589,22 @@ Device tect, browser detect :: [[https://github.com/serbanghita/Mobile-Detect][G
 
 ** Coding Standard
 *** Variable, action/filter and function name
-- all lowercase
+- all lowercase, never ~camelCase~
 - Separate words by underscore
 
 *** Class name and file name
-Class name
-- Capitalized words separated by underscores
-- Acronym should be all upper case
-
-Class file name
-- lowercase with ~class-~ preppended
-- Underscore becomes hyphen :: ~WP_Error~ is ~class-wp-error.php~ 
+- Class name
+   - WordPress
+      - Capitalized words separated by underscores
+      - Acronym should be all upper case
+   - General PHP
+      - ~UpperCamel~ :: can have underscores and numbers
+      - ~SampleXmlClass~, not ~SampleXMLClass~
+      - Names should not include Drupal, Class
+      - Interface should always prefix ~Interface~
+- Class file name
+   - lowercase with ~class-~ preppended
+   - Underscore becomes hyphen :: ~WP_Error~ is ~class-wp-error.php~ 
 
 * Drupal
 ** Install Drupal on Windows
@@ -10227,11 +10232,10 @@ wp:f:get_template_part includes any template in child theme
 
 ** add_filter <<<wp:add_filter>>>
 *** Syntax, remove_filter
-Modify internal data / function returned
-
-For example, WP_Query gets internal settings for building a query.
-You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
-so that you only change the internal setting for that query building without affecting other usage.  
+- Modify internal data / function returned
+- For example, WP_Query gets internal settings for building a query.
+   - You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
+   - so that you only change the internal setting for that query building without affecting other usage.  
 
 #+BEGIN_SRC php
   add_filter( 
@@ -10239,7 +10243,7 @@ so that you only change the internal setting for that query building without aff
    'lili_funct',
     10, // int. Priority, lower number sooner
     2, // int. Accepted args, default is 1! Be careful
-  )
+  );
 
   apply_filters( 'tagname', $result, $var1);
 
@@ -10253,7 +10257,7 @@ so that you only change the internal setting for that query building without aff
     'tagname',
     'lili_funct',
     10 // priority, must match the add_filter priority, default is 10
-  )
+  );
 #+END_SRC
 
 #+BEGIN_SRC php
@@ -10266,6 +10270,18 @@ so that you only change the internal setting for that query building without aff
 	  add_filter('the_title', 'before_post_title', 10, 2);
   }
   add_action( 'wp_head', 'add_filter_the_title', 3 );
+#+END_SRC
+
+Class method
+#+BEGIN_SRC php
+  // Static class method
+  add_filter( 'media_upload_newtab', array( 'My_Class', 'media_upload_callback' ) );
+
+  // Instance method
+  add_filter( 'media_upload_newtab', array( $this, 'media_upload_callback' ) );
+
+  // Anonymous function
+  add_filter( 'the_title', function( $title ) { return '<strong>' . $title . '</strong>'; } );
 #+END_SRC
 
 *** post_limits <<<wp:filter:post_limits>>>
@@ -11731,6 +11747,10 @@ Refer to wp:template tags and wp:t:general
 [[https://themeforest.net/item/newspapaer/5489609][Newspaper]]
 
 ** Genesis Framework <<<wp:genesis>>>
+:PROPERTIES:
+:CUSTOM_id: wp-genesis
+:END:
+
 - Code snippets (examples) :: https://my.studiopress.com/documentation/snippets/
 - function genesis() :: lib/framework.php
 
@@ -55242,10 +55262,15 @@ WordPress ~templates/<your_template>/functions.php~
   }
 #+END_SRC
 
-- Cache-Varying Cookies :: ~STYXKEY[a-zA-Z0-9_-]~ e.g. STYXKEY_my-key-name
+- Cache-Varying Cookies :: ~STYXKEY[a-zA-Z0-9_-]~ e.g. ~STYXKEY_my-key-name~
    - Content pages with same cookies (with this name structure) and same url will be cached
-   - If the value is set and read on PHP, do not try to use PHP to change the cookie as Varnish cannot cache a response that contains a ~Set-Cookie:~ header
-   - If the value is not set, respond with ~setcookie()~ to serve cached content for subsequent requests within the defined cookie lifetime
+   - If the cookie value is set and sent along with the request and later read on PHP, do not try to use PHP to change the cookie as Varnish cannot cache a response that contains a ~Set-Cookie:~ header
+   - If the cookie value is not set in request, respond with ~setcookie()~ to serve cached content for subsequent requests within the defined cookie lifetime
+   - Sample
+      - STYXKEY-mobile-ios :: Delivers different stylesheets and content for iOS devices
+      - STYXKEY_european_user :: Presents different privacy options to E.U. users
+      - STYXKEY-under21 :: Part of your site markets alcohol and you want to change the content for minors
+      - STYXKEY-school :: Your site changes content depending on the user's school affiliation
 
 #+BEGIN_SRC php
   $bar = 'Around here, football is the winter sport of choice!';
