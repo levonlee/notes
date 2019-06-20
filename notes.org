@@ -61855,20 +61855,34 @@ Node.js, Dockerfile
 - DMARC is an email authentication technology that protects a domain from being used in phishing and spoofing attempts by using a signing policy to define how receiving inbox providers should handle messages that fail an authentication check. DMARC also allows for a reporting mechanism in which inbox providers can send reports on email that appears to be sent from a certain domain back to the domain owner
 - Inbox providers that support DMARC will attempt to validate both DKIM and SPF, and depending on the outcome of those checks, will look to the sending domain's DMARC policy on how to handle emails that fail authentication
 - If the inbox provider is able to successfully validate either DKIM or SPF, the email will continue on its normal path. If the message fails both DKIM and SPF authentication checks, however, the inbox provider will enforce the sender’s DMARC policy, which specifies how the email should be handled if it fails authentication and where to send any reports
-- DMARC has three levels of policy:
-  - None :: If the policy is set to none, the receiving inbox provider monitors and reports on metrics
-  - Quarantine :: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder
-  - Reject :: If the policy is set to reject, the inbox provider will block any message that fails authentication.
+- DMARC has three levels of policy
+   - None :: If the policy is set to none, the receiving inbox provider monitors and reports on metrics
+   - Quarantine :: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder
+   - Reject :: If the policy is set to reject, the inbox provider will block any message that fails authentication.
 - https://sendgrid.com/blog/dmarc-domain-based-message-authentication-reporting-conformance/
-- DMARC Specifications on DNS Tags and Values
-  - https://dmarc.org/resources/specification/
-  - Sample :: ~TXT _dmarc v=DMARC1; p=none; rua=mailto:dmarc@myweb.ca; ruf=mailto:dmarc@myweb.ca; fo=1; adkim=r; aspf=r;~
-  - Refer to dns:dkim and dns:spf
-
-For adding another subdomain as in From: e.mydomain.com
-- Add a SPF record that refers to the root domain's SPF record :: ~TXT e v=spf1 include:mydomain.com -all~
-- Add a DKIM record (may just duplicate the root domain's DKIM record) :: ~TXT customer._domainkey.e k=rsa; p=xxx~ or CNAME to point to mail server and mail server's TXT record will have the final DKIM value. Refer to dns:dkim
-  - Ensure email has header *DKIM-Signature* that uses ~d=e.mydomain.com~ to match the From: e.mydomain.com
+- DMARC Specifications on DNS Tags and Values :: https://dmarc.org/resources/specification/
+   - ~TXT _dmarc v=DMARC1; p=none; rua=mailto:dmarc@myweb.ca; ruf=mailto:dmarc@myweb.ca; fo=1; adkim=r; aspf=r;~ :: Sample
+      - v :: must have value ~DMARC1~ and should be the first tag
+      - p (required) :: Policy applies to the domain queried and to subdomains, unless subdomain policy is explicitly described using the ~sp~ tag. Possible values.
+	 - none :: Domain Owner requests no specific action be taken
+	 - quarantine :: Domain Owner wishes to have email that fails the DMARC check be treated by Mail Receivers as suspicious. This could mean "place into spam folder", "scrutinize with addtional intensity", and/or "flag as suspicious"
+	 - reject :: Domain Owner wishes for Mail Receivers to reject email that fails the DMARC check. Rejection should occur during the SMTP transaction
+      - adkim :: default r. Indicates whether strict or relaxed DKIM Identifier Alignment mode is required by the Domain Owner. ~s~ for strict mode
+      - aspf :: same as adkim but for SPF Identifier Alignment mode
+      - fo :: default 0. Failure reporting options for generation of failure reports. This tag is ignored if ~ruf~ tag is not specified. Colon-separated of the below values
+	 - 0 :: Generate a DMARC failure report if all underlying auth mechanisms fail to product an aligned "pass" result
+	 - 1 :: Generate a DMARC report if any underlying
+	 - d :: Generate a DKIM report if the message had a signautre that failed evaluation, regarless of its alignment
+	 - s :: Generate an SPF report if the message failed SPF evaluation, regardless of its alignment
+      - rua :: Addresses to which aggregate feedback is to be sent. Comma-separated
+      - ruf :: Addresses to which message-specific failure info is to be reported. Comma-separated
+      - pct :: default 100. Percentage of messages from the Domain Owner's mail stream to which the DMARC policy is to be applied
+      - sp :: Requested Mail Receiver policy for all subdomains. Indicates the policy to be enacted by the Receiver at the request of the Domain Owner. It applies only to subdomains of the domain queried and not to the domain itself. If absent, the policy specified by the p tag must be applied
+   - Refer to dns:dkim and dns:spf
+- For adding another subdomain as in ~From: e.mydomain.com~
+   - Add a SPF record that refers to the root domain's SPF record :: ~TXT e v=spf1 include:mydomain.com -all~
+   - Add a DKIM record (may just duplicate the root domain's DKIM record) :: ~TXT customer._domainkey.e k=rsa; p=xxx~ or CNAME to point to mail server and mail server's TXT record will have the final DKIM value. Refer to dns:dkim
+   - Ensure email has header *DKIM-Signature* that uses ~d=e.mydomain.com~ to match the From: e.mydomain.com
 
 *** Exchange anti-spam message headers
 - https://docs.microsoft.com/en-us/office365/securitycompliance/anti-spam-message-headers
