@@ -260,34 +260,27 @@ SERVER_ADMIN
 SERVER_SIGNATURE
 
 *** Partyly safe
-HTTPS
-
-HTTP_HOST :: see below
-
-REQUEST_TIME
+- HTTPS
+- HTTP_HOST :: see below
+- REQUEST_TIME
 - REQUEST_URI :: ~/abc/xyz.html?abc=xyz~ without hash. Raw value is encoded. Use ~urldecode~
-
-REMOTE_ADDR
-REMOTE_HOST :: 
-  - relies on reverse DNS lookups and may hence be spoofed by DNS attacks against server (at that time you have bigger problems anyway)
-  - Its value may be a proxy, which is a simple reality of the TCP/IP protocol and nothing you can do.
-REMOTE_PORT
-
-SERVER_PROTOCOL
-SERVER_NAME :: see below
-SERVER_PORT
-
-SCRIPT_FILENAME
-
+- REMOTE_ADDR
+- REMOTE_HOST :: 
+   - relies on reverse DNS lookups and may hence be spoofed by DNS attacks against server (at that time you have bigger problems anyway)
+   - Its value may be a proxy, which is a simple reality of the TCP/IP protocol and nothing you can do.
+- REMOTE_PORT
+- SERVER_PROTOCOL
+- SERVER_NAME :: see below
+- SERVER_PORT
+- SCRIPT_NAME :: ~/index.php~. Similar to ~$_SERVER['PHP_SELF']~ which is only for PHP
+- SCRIPT_FILENAME :: ~/index.php~. Maybe a relative path when the script is executed with CLI
 - ~REMOTE_*~ :: values are guaranteed to be the valid address of the client as verified by a TCP/IP handshake. Because it's the address the response will be sent to
 
 *** HTTP_HOST and SERVER_NAME
-curl -H "Host: notyourdomain.com" http://yoursite.com/
-By default, HTTP_HOST or SERVER_NAME is notyourdomain.com
-Attackers might trigger a lot of requests and cause your website that is cached by a proxy (Varnish, Cloudflare) to have wrong cache that has content which points to the attacker's domain. Cache poisoning.
-
-Solution
-Never display $_SERVER['HTTP_HOST'] or $_SERVER['SERVER_NAME']
+- ~curl -H "Host: notyourdomain.com" http://yoursite.com/~
+   - By default, HTTP_HOST or SERVER_NAME is ~notyourdomain.com~
+   - Attackers might trigger a lot of requests and cause your website that is cached by a proxy (Varnish, Cloudflare) to have wrong cache that has content which points to the attacker's domain. Cache poisoning
+   - Solution :: Never display ~$_SERVER['HTTP_HOST']~ or ~$_SERVER['SERVER_NAME']~
 
 #+BEGIN_SRC php
   $config['site_url'] = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
@@ -2689,28 +2682,25 @@ If module name is not found in db, most likely the code incorrectly refers to a 
 ** Module
 *** Custom Module
 **** .info file
-[[https://www.drupal.org/node/542202#files][Instructions]]
-
-Module name must contain only lower-case and undersocre
-sites/all/modules/custom/my_module or sites/all/themes/custom/my_theme
-my_module.info, my_module.module
-
-Use ~;~ at the beginning of a line to mark as comment
-~name = A Human Readable Name~
-~description = More is <a href="">here</a>.~ It can only one line with 255 characters and it's HTML (e.g. accented characters)!
-~core = 7.x~ Can't specify minor version.
-~package = Views~ ~package = Example modules~
-If your module comes with other modules or it's meant to be used exclusively with other modules, provide the package name here. 
-More than 4 modules that depend on each other can make a package.
-
-~files[] = includes/context.inc~ This .inc file should be class or interface. To include .inc with plain functions
-
-Clear cache when .info is changed
-
-A submodule under a package may not add parent module to dependencies and submodule names can be anything given the parent module is ~examples~:
-- action_example
-- action_examples
-- example_action
+- [[https://www.drupal.org/node/542202#files][Instructions]]
+- Module name must contain only lower-case and undersocre
+   - ~sites/all/modules/custom/my_module~
+   - ~sites/all/themes/custom/my_theme~
+   - ~my_module.info~
+   - ~my_module.module~
+- Use ~;~ at the beginning of a line to mark as comment
+- ~name = A Human Readable Name~
+- ~description = More is <a href="">here</a>.~ Only one line with 255 characters and it's HTML (e.g. accented characters)!
+- ~core = 7.x~ Can't specify minor version
+- ~package = Views~ ~package = Example modules~
+   - If your module comes with other modules or it's meant to be used exclusively with other modules, provide the package name here.
+   - More than 4 modules that depend on each other can make a package.
+- ~files[] = includes/context.inc~ This .inc file should be class or interface. To include .inc with plain functions
+- *Clear cache when .info is changed*
+- A submodule under a package may not add parent module to dependencies and submodule names can be anything given the parent module is ~examples~:
+   - action_example
+   - action_examples
+   - example_action
 
 #+BEGIN_SRC conf
   dependencies[] = entity
@@ -3608,8 +3598,7 @@ Refer to d7:debug
 #+END_SRC
 
 ** URL Alias
-Setup pattern for each node type
-Configuration > Search and metadata > URL Aliases > Patterns
+- Setup pattern for each node type :: Configuration > Search and metadata > URL Aliases > Patterns
 
 ** Link, Module Path, Theme Path, File Path
 *** Link
@@ -3722,29 +3711,42 @@ d7:m:i18n
 #+END_EXAMPLE
 
 ** Global Variables
-https://api.drupal.org/api/drupal/globals/7.x
-
-- $base_url :: 'http://www.yoursite.com' wihtout trailing slash 
-
-https://www.drupal.org/node/2537572
-
-[[https://www.drupal.org/node/2537572][Drupal Properties]]
-$_SERVER['*']
-- QUERY_STRING :: query string without q e.g. 'foo=bar&koo=hoo'
+- DRUPAL_ROOT :: ~/index.php~
+- VERSION :: 7.67
+- https://api.drupal.org/api/drupal/globals/7.x
+   - $base_url :: 'http://www.yoursite.com' wihtout trailing slash
+   - $base_path ::
+   - $base_root ::
+   - $databases ::
+   - $cookie_domain ::
+   - $conf ::
+   - $installed_profile ::
+   - $upodate_free_access ::
+   - $db_url ::
+   - $db_prefix ::
+   - $drupal_hash_salt ::
+   - $is_https ::
+   - $base_secure_url ::
+   - $base_insecure_url :: 
+- [[https://www.drupal.org/node/2537572][Drupal Properties]]
+   - ~$_SERVER['*']~
+      - QUERY_STRING :: query string without q e.g. 'foo=bar&koo=hoo'
 
 ** Common Functions <<<d7:functions>>>
-
 *** drupal_add_html_head
-drupal_add_html_head($tag, 'unique-name');
-// $head in html.tpl.php
-$tag = array(
-  '#tag'        => 'meta',
-  '#attributes' => array(
-    'property' => 'og:url',
-    'content'  => $base_url,
-  ),
-);
-drupal_add_html_head( $meta_og, 'lili_og_url' );
+#+BEGIN_SRC php
+  drupal_add_html_head($tag, 'unique-name');
+
+  // $head in html.tpl.php
+  $tag = array(
+    '#tag'        => 'meta',
+    '#attributes' => array(
+      'property' => 'og:url',
+      'content'  => $base_url,
+    ),
+  );
+  drupal_add_html_head( $meta_og, 'lili_og_url' );
+#+END_SRC
 
 *** drupal_set_title
 drupal_set_title($title = NULL, $output = CHECK_PLAIN);
@@ -3768,9 +3770,9 @@ if (drupal_valid_path($_path)) {
 
 *** drupal_clean_css_identifier
 Convert string to CSS ready element name, class and ID in selectors.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   echo drupal_clean_css_identifier(drupal_strtolower($class));
-#+END_EXAMPLE
+#+END_SRC
 
 *** Sanitization functions <<<d7:functions:sanitization>>>
 https://api.drupal.org/api/drupal/includes%21common.inc/group/sanitization/7.x
@@ -4087,7 +4089,7 @@ Markup of the the block is $page['content']['block_123']
 #+END_EXAMPLE
 
 *** Custom Theme Function
-Module theme: =theme('modname_theme-name',$data)=
+Module theme: ~theme('modname_theme-name',$data)~
 <<<d7:hook_theme>>> 
 - $existing :: array. existing themes
 - $type :: string. Whether a theme, module, etc. is being processed. e.g. Is it a parent theme?
@@ -4139,66 +4141,62 @@ Return an array
 #+END_SRC
 
 *** Sub theme
-https://www.drupal.org/docs/7/theming/creating-a-sub-theme
+- https://www.drupal.org/docs/7/theming/creating-a-sub-theme
+- The name of your sub-theme must start with an alphabetic character and can only contain lowercase letters, numbers and underscores
+   - Folder :: ~my_subtheme~
+   - .info file :: ~name = My Subtheme~
+- parent theme's .info file :: ~base theme = theme_name~
+- The sub-theme inherits most properties of the base theme. The important exceptions are 
+   - regions
+   - core version
+   - color info
+   - features
+   - parent theme's logo (logo.png/logo.jpg)
+   - parent theme's favicon.ico
+   - theme-settings.php
+- May want to copy the regions section of your base theme's info file, along with its core version declaration
+- If your base theme supports the color module and you'd like your sub-theme to support it, you probably also want to copy the color folder from your base theme and add the line from your base theme's info file to your sub-themes info file that looks like:
+  #+BEGIN_SRC conf
+    stylesheets[all][] = css/colors.css
+  #+END_SRC
+  and then copy the colors.css from base theme to the css folder of the sub-theme.
+- Style sheets and JavaScripts are inherited. If you want to override, create relevant files and add these to .info
+  #+BEGIN_SRC conf
+    stylesheets[all][] = style.css
+    scripts[] = script.js
+    features[] = logo
+  #+END_SRC
+- ~template.php~ funciton inheritance
+   - Anything defined in the parent theme's template.php file will be inherited. This includes theme function overrides, preprocess functions and anything else in that file
+   - Each sub-theme should also have its own template.php file, where you can add additional functions or override functions from the parent theme
+- theme functions, e.g. ~theme('[hook]', $var,...)~, When a sub-theme overrides a theme function, no other version of that is called
+- preprocess functions, e.g. ~[theme]_preprocess_page~ is called before page.tpl.php is rendered
+   - Unlike theme functions, preprocess functions are not overriden in a sub-theme
+   - Instead, the parent theme preprocess function will be called first, and the sub-theme preprocess function will be called next
+   - There is no way to prevent all functions in the parent theme from being inherited. The only way to remove a parent themes' preprocess function is through ~hook_theme_registry_alter()~
+- Page, node, block and other template (.tpl.php) file inheritance
+   - ~node--blog.tpl.php~ building on an inherited ~node.tpl.php~
+   - A single hyphen is still used to separate words. The double hyphen always indicates a more targeted override of what comes before the ~--~. e.g. ~node--long-content-type-name.tpl.php~
+- Add a template file with the same name in sub-theme folder to have it override the template from the parent theme
+- Screen shots inheritance
 
-The name of your sub-theme must start with an alphabetic character and can only contain lowercase letters, numbers and underscores. 
-
-Folder my_subtheme
-name = My Subtheme
-
-parent theme's .info file
-base theme = theme_name
-
-The sub-theme inherits most properties of the base theme. The important exceptions are 
-- regions
-- core version
-- color info
-- features
-- parent theme's logo (logo.png/logo.jpg)
-- parent theme's favicon.ico
-- theme-settings.php
-
-You probably want to copy the regions section of your base theme's info file, along with its core version declaration.
-
-If your base theme supports the color module and you'd like your sub-theme to support it, you probably also want to copy the color folder from your base theme and add the line from your base theme's info file to your sub-themes info file that looks like:
-#+BEGIN_EXAMPLE
-  stylesheets[all][] = css/colors.css
-#+END_EXAMPLE
-
-and then copy the colors.css from base theme to the css folder of the sub-theme.
-
-Style sheets and JavaScripts are inherited. If you want to override, create relevant files and add these to .info
-#+BEGIN_EXAMPLE
-  stylesheets[all][] = style.css
-  scripts[] = script.js
-  features[] = logo
-#+END_EXAMPLE
-
-Template.php funciton inheritance
-- Anything defined in the parent theme's template.php file will be inherited. This includes theme function overrides, preprocess functions and anything else in that file. Each sub-theme should also have its own template.php file, where you can add additional functions or override functions from the parent theme.
-- theme functions, e.g. theme('[hook]', $var,...), When a sub-theme overrides a theme function, no other version of that is called.
-- preprocess functions, e.g. [theme]_preprocess_page is called before page.tpl.php is rendered. 
-  - Unlike theme functions, preprocess functions are not overriden in a sub-theme.
-  - Instead, the parent theme preprocess function will be called first, and the sub-theme preprocess function will be called next
-  - There is no way to prevent all functions in the parent theme from being inherited. The only way to remove a parent themes' preprocess function is through hook_theme_registry_alter().
-
-Page, node, block and other template (.tpl.php) file inheritance
-e.g. node--blog.tpl.php building on an inherited node.tpl.php
-A single hyphen is still used to separate words. The double hyphen always indicates a more targeted override of what comes before the "--".
-e.g. node--long-content-type-name.tpl.php
-
-Add a template file with the same name in sub-theme folder to have it override the template from the parent theme.
-
-Screen shots inheritance
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   name = Jean
   description = A subtheme of Bartik, which is a flexible, recolorable theme with many regions.
   core = 7.x
   base theme = bartik
 
+  ; Add a style sheet for all media
   stylesheets[all][] = css/jean.css
   stylesheets[all][] = css/colors.css
+
+  ; Add a style sheet for screen and projection media
+  ; stylesheets[screen, projection][] = theScreenProjectionStyle.css
+  ; Add a style sheet for print media
+  ; stylesheets[print][] = thePrintStyle.css
+  ; Add a style sheet with media query
+  ; stylesheets[screen and (max-width: 600px)][] = theStyle600.css
+  ; avoid using *_style.css but *style.css e.g. myownstyle.css is ok..
 
   regions[header] = Header
   regions[help] = Help
@@ -4222,16 +4220,17 @@ Screen shots inheritance
   regions[footer] = Footer
 
   settings[shortcut_module_link] = 0
-#+END_EXAMPLE
+#+END_SRC
 
-Create the folder: /sites/all/themes/jean
-Create the file /sites/all/themes/jean/jean.info
-Create a blank file named: /sites/all/themes/jean/css/jean.css
-Copy from bartik or create your own: /sites/all/themes/jean/logo.png
-In order to get the color module to work with your subtheme, you will need to do the following:
-- Copy the file /themes/bartik/css/colors.css to /sites/all/themes/jean/css/colors.css
-- Copy the folder and its contents /themes/bartik/color/ to /sites/all/themes/jean/color/
-- Go to the Administration > Appearance page to enable your new subtheme called Jean. Now you can add CSS to your jean.css file, and it will apply to your new subtheme.
+- General steps to create a sub theme
+   - Create the folder :: ~/sites/all/themes/jean~
+   - Create ~.info~ file :: ~/sites/all/themes/jean/jean.info~
+   - Create a blank file named :: ~/sites/all/themes/jean/css/jean.css~
+   - Copy from bartik or create your own :: ~/sites/all/themes/jean/logo.png~
+   - In order to get the color module to work with your subtheme, you will need to do the following:
+      - Copy the file ~/themes/bartik/css/colors.css~ to ~/sites/all/themes/jean/css/colors.css~
+      - Copy the folder and its contents ~/themes/bartik/color/~ to ~/sites/all/themes/jean/color/~
+   - Go to the Administration > Appearance page to enable your new subtheme called Jean. Now you can add CSS to your jean.css file, and it will apply to your new subtheme
 
 *** 404 page
 page--404.tpl.php could be in theme folder or theme's templates folder
@@ -4295,23 +4294,22 @@ Change value before rendering
 #+END_EXAMPLE
 
 **** Using node template
-node--[node-type-machine-name].tpl.php
-
-Refer to d7:template:node
+- ~node--[node-type-machine-name].tpl.php~
+- Refer to d7:template:node
 
 In page.tpl.php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $node_view = node_view($node);
   // different view mode, default is 'full'
   // node_view($node, 'custom-view-mode');
   // different language, default is the global content language of the current request
   // node_view($node, 'full', 'fr');
   print drupal_render($test);
-#+END_EXAMPLE
+#+END_SRC
 
 Add a view mode
-#+BEGIN_EXAMPLE
-  /**/
+#+BEGIN_SRC php
+  /**
    ,* Implements hook_entity_info_alter().
    ,*/
   function MODULE_entity_info_alter(&$entity_info) {
@@ -4336,12 +4334,12 @@ Add a view mode
       drupal_add_css(drupal_get_path('theme', 'mytheme') . "/css/owl-carousel/owl.theme.default.min.css");
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Get raw value
-#+BEGIN_EXAMPLE
-  $content['field_youtube_link']['#items']['0']['value']
-#+END_EXAMPLE
+#+BEGIN_SRC php
+  echo $content['field_youtube_link']['#items']['0']['value'];
+#+END_SRC
 
 ** Drush
 *** version =drush version=
@@ -4351,9 +4349,12 @@ Get raw value
 pantheon:drupal:alias
 
 *** User
-drush user-login yourusername
-drush user-create newuser --mail="a@b.com" --password="password"
-drush user-add-role "administrator" newuser
+#+BEGIN_SRC sh
+  # one time login link. uid, user name, or email address for the user. Default is uid 1
+  drush user-login yourusername
+  drush user-create newuser --mail="a@b.com" --password="password"
+  drush user-add-role "administrator" newuser
+#+END_SRC
 
 *** Module
 =drush vset maintenance_mode 1= set to maintenance mode
@@ -6418,6 +6419,101 @@ Read local or remote file to an object of strings
   }
 #+END_SRC
 
+** File Permissions <<<d7:file permissions>>>
+- ~sudo ./fix_drupal_permissions.sh --drupal_path=/var/www/a.ca/public --drupal_user=www-data~
+
+#+BEGIN_SRC sh
+  #!/bin/bash
+
+  # Help menu
+  print_help() {
+  cat <<-HELP
+  This script is used to fix permissions of a Drupal installation
+  you need to provide the following arguments:
+
+    1) Path to your Drupal installation.
+    2) Username of the user that you want to give files/directories ownership.
+    3) HTTPD group name (defaults to www-data for Apache).
+
+  Usage: (sudo) bash ${0##*/} --drupal_path=PATH --drupal_user=USER --httpd_group=GROUP
+  Example: (sudo) bash ${0##*/} --drupal_path=/usr/local/apache2/htdocs --drupal_user=john --httpd_group=www-data
+  HELP
+  exit 0
+  }
+
+  if [ $(id -u) != 0 ]; then
+    printf "**************************************\n"
+    printf "* Error: You must run this with sudo or root*\n"
+    printf "**************************************\n"
+    print_help
+    exit 1
+  fi
+
+  drupal_path=${1%/}
+  drupal_user=${2}
+  httpd_group="${3:-www-data}"
+
+  # Parse Command Line Arguments
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --drupal_path=*)
+	  drupal_path="${1#*=}"
+	  ;;
+      --drupal_user=*)
+	  drupal_user="${1#*=}"
+	  ;;
+      --httpd_group=*)
+	  httpd_group="${1#*=}"
+	  ;;
+      --help) print_help;;
+      ,*)
+	printf "***********************************************************\n"
+	printf "* Error: Invalid argument, run --help for valid arguments. *\n"
+	printf "***********************************************************\n"
+	exit 1
+    esac
+    shift
+  done
+
+  if [ -z "${drupal_path}" ] || [ ! -d "${drupal_path}/sites" ] || [ ! -f "${drupal_path}/core/modules/system/system.module" ] && [ ! -f "${drupal_path}/modules/system/system.module" ]; then
+    printf "*********************************************\n"
+    printf "* Error: Please provide a valid Drupal path. *\n"
+    printf "*********************************************\n"
+    print_help
+    exit 1
+  fi
+
+  if [ -z "${drupal_user}" ] || [[ $(id -un "${drupal_user}" 2> /dev/null) != "${drupal_user}" ]]; then
+    printf "*************************************\n"
+    printf "* Error: Please provide a valid user. *\n"
+    printf "*************************************\n"
+    print_help
+    exit 1
+  fi
+
+  cd $drupal_path
+  printf "Changing ownership of all contents of "${drupal_path}":\n user => "${drupal_user}" \t group => "${httpd_group}"\n"
+  chown -R ${drupal_user}:${httpd_group} .
+
+  printf "Changing permissions of all directories inside "${drupal_path}" to "rwxr-x---"...\n"
+  find . -type d -exec chmod u=rwx,g=rx,o= '{}' \;
+
+  printf "Changing permissions of all files inside "${drupal_path}" to "rw-r-----"...\n"
+  find . -type f -exec chmod u=rw,g=r,o= '{}' \;
+
+  printf "Changing permissions of "files" directories in "${drupal_path}/sites" to "rwxrwx---"...\n"
+  cd sites
+  find . -type d -name files -exec chmod ug=rwx,o= '{}' \;
+
+  printf "Changing permissions of all files inside all "files" directories in "${drupal_path}/sites" to "rw-rw----"...\n"
+  printf "Changing permissions of all directories inside all "files" directories in "${drupal_path}/sites" to "rwxrwx---"...\n"
+  for x in ./*/files; do
+    find ${x} -type d -exec chmod ug=rwx,o= '{}' \;
+    find ${x} -type f -exec chmod ug=rw,o= '{}' \;
+  done
+  echo "Done setting proper permissions on files and directories"
+#+END_SRC
+
 ** Image Handling (Core)
 *** Setting
 Define Image Styles ~/admin/config/media/image-style~
@@ -6621,11 +6717,77 @@ Define an email template using hook_mail()
   ,*/
 #+END_SRC
 
-** OOP
-D7 refers to [[https://www.drupal.org/project/oop_examples][oop_examples module]].
+** Life Cycle
+- ~includes/bootstrap.inc~
+   - Global variables and functions
+   - abstract class DrupalCacheArray
+   - class SchemaCache extends DrupalCacheArray
+- ~drupal_bootstrap( DRUPAL_BOOTSTRAP_FULL );~
+   - ~DRUPAL_BOOTSTRAP_CONFIGURATION~
+      - ~_drupal_bootstrap_configuration();~
+	 - ~includes/file.phar.inc~
+      - ~drupal_settings_initialize();~
+	 - ~conf_path() . '/settings.php';~
+	    - If ~sites/sites.php~ exists, load it
+	       - ~'<port>.<domain>.<path>' => 'directory'~ e.g.
+	       - ~$sites['8080.www.drupal.org.mysite.test'] = 'example.com';~ :: for alias/site ~8080.www.drupal.org.mysite.test~, confg path is ~sites/example.com~
+	       - ~$sites['a.com'] = 'a';~ :: for alias/site ~a.com~, config path is ~sites/a~
+	       - Try to match alias with ~$_SERVER['SCRIPT_NAME']~ and ~$_SERVER['HTTP_HOST']~
+	    - If no ~sites/sites.php~ or no match, return ~sites/default~
+      - ~includes/request-sanitizer.inc~ :: class DrupalRequestSanitizer
+      - ~DrupalRequestSanitizer::sanitize();~
+   - ~DRUPAL_BOOTSTRAP_PAGE_CACHE~
+      - ~_drupal_bootstrap_page_cache();~ :: Attempts to serve a page from the cache
+	 - ~includes/cache.inc~ :: functions, class DrupalCacheInterface, DrupalDatabaseCache implements DrupalCacheInterface
+	 - ~$conf['cache_backends']~ :: include each cache_backend
+	 - ~drupal_bootstrap(DRUPAL_BOOTSTRAP_VARIABLES, FALSE);~ :: bootstrap variables
+	 - If there is no session cookie and cache is enabled (or forced), try to serve a cached page
+   - ~DRUPAL_BOOTSTRAP_DATABASE~
+      - ~_drupal_bootstrap_database();~ :: Initializes the database system and registers autoload functions
+	 - ~includes/database/database.inc~
+   - ~DRUPAL_BOOTSTRAP_VARIABLES~
+      - ~_drupal_bootstrap_variables();~ :: Loads system variables and all enabled bootstrap modules
+	 - ~variable_get('lock_inc', 'includes/lock.inc')~ :: functions
+	 - ~includes/module.inc~ :: functions
+	 - ~module_load_all(TRUE);~ :: Loads all the modules that have been enabled in the system table
+	    - ~foreach (module_list(TRUE, $bootstrap) as $module) { drupal_load('module', $module); }~ :: load bootstrap modules only (for returning cache content)
+	 - Sanitize ~$_GET['destination']~ and ~$_REQUEST['destination']~
+   - ~DRUPAL_BOOTSTRAP_SESSION~
+      - ~variable_get('session_inc', 'includes/session.inc')~ :: functions
+      - ~drupal_session_initialize()~ :: Initializes the session handler, starting a session if needed
+   - ~DRUPAL_BOOTSTRAP_PAGE_HEADER~
+      - ~_drupal_bootstrap_page_header();~ :: Invokes hook_boot(), initializes locking system, and sends HTTP headers
+	 - ~bootstrap_invoke_all('boot');~ :: Invokes a bootstrap hook in all bootstrap modules that implement it
+   - ~DRUPAL_BOOTSTRAP_LANGUAGE~
+      - ~drupal_language_initialize();~ :: Initializes all the defined language types
+   - ~DRUPAL_BOOTSTRAP_FULL~
+      - ~includes/common.inc~ :: Global variables and functions
+      - ~_drupal_bootstrap_full();~
+	 - ~variable_get('path_inc', 'includes/path.inc');~ :: functions
+	 - ~includes/theme.inc~ :: global variables, class ThemeRegistry extends DrupalCacheArray and functions
+	 - ~includes/pager.inc~ :: class PagerDefault extends SelectQueryExtender and functions
+	 - ~variable_get('menu_inc', 'includes/menu.inc')~ :: global variables and functions
+	 - ~includes/tablesort.inc~ :: class TableSort extends SelectQueryExtender and functions
+	 - ~includes/file.inc~ :: global variables and functions
+	    - ~includes/stream_wrappers.inc~ :: global variables and classes
+	 - ~includes/unicode.inc~ :: global variables and functions
+	 - ~includes/image.inc~ :: functions
+	 - ~includes/form.inc~ :: functions
+	 - ~includes/mail.inc~ :: global variable, class MailSystemInterface and functions
+	 - ~includes/actions.inc~ :: functions
+	 - ~includes/ajax.inc~ :: functions
+	 - ~includes/token.inc~ :: functions
+	 - ~includes/errors.inc~ :: functions
+	 - ~module_load_all();~ :: load ~system_list('module_enabled')~ modules
+	 - ~drupal_path_initialize();~ :: Initialize the $_GET['q'] variable to the proper normal path
+	 - ~menu_set_custom_theme();~ ::
+	 - ~drupal_theme_initialize();~ ::
+	 - ~module_invoke_all('init');~ :: Invokes a hook in all enabled modules that implement it
+- ~menu_execute_active_handler();~ :: Execute the page callback associated with the current path
 
-One quick way to include a class is to put the class inside any file e.g. $moddir/lib/reader.inc
-And include when it's needed using module_load_include('inc', 'modename', 'lib/reader');
+** OOP
+- D7 refers to [[https://www.drupal.org/project/oop_examples][oop_examples module]]
+- One quick way to include a class is to put the class inside any file e.g. ~$moddir/lib/reader.inc~ and include when it's needed using ~module_load_include('inc', 'modename', 'lib/reader');~
 
 * WordPress
 ** Core Update
@@ -24148,25 +24310,19 @@ Provide suggestions for text field
 Validate form :: Constraint Validation API https://developers.google.com/web/fundamentals/design-and-ux/input/forms/
 
 ** Special Characters <<<css:content>>>
-In CSS content attribute, you need to use CSS value
-Convert tool
-http://www.evotech.net/articles/testjsentities.html
-
-Heavy checkmark &#10004;
-Light checkmark &#128504;
-Checkmark &#10003;
-Square with checkmark &#9745;
-
-hyphen &#x2011;
-
-Left Double Quotation Mark “ :: &#8220;
-Right Double Quotation Mark ” :: &#8221;
-Left Single Quotation Mark ‘ :: &#8216;
-Right Single Quotation Mark (including English possessives and contractions) ’ :: &#8217;
-
-- Closing/Right angle quotation mark » :: css:\00BB &#187 
-
-Middle dot &middot; &#183; &#xb7; CSS:\00B7
+- In CSS content attribute, you need to use CSS value. Convert tool :: http://www.evotech.net/articles/testjsentities.html
+- Checkmark :: ~&#10003;~
+   - Checkmark heavy :: ~&#10004;~
+   - Checkmark light :: ~&#128504;~
+   - Checkmark with square :: ~&#9745;~
+- hyphen long :: ~&#x2011;~
+- Quotation mark
+   - Left Double Quotation Mark “ :: &#8220;
+   - Right Double Quotation Mark ” :: &#8221;
+   - Left Single Quotation Mark ‘ :: &#8216;
+   - Right Single Quotation Mark (including English possessives and contractions) ’ :: &#8217;
+   - Closing/Right angle quotation mark » :: css is ~\00BB~ ~&#187;~
+- Middle dot :: ~&middot;~ ~&#183;~ ~&#xb7;~ CSS is ~\00B7~
 
 ** Geolocation
 Chrome v50+ only supports geolocation for https
@@ -29475,6 +29631,15 @@ https://github.com/GoogleChrome/lighthouse
   lighthouse --output-path=~/mydir/foo.out --save-assets
   # saves `~/mydir/foo.report.html`
   # saves `~/mydir/foo-0.trace.json` and `~/mydir/foo-0.devtoolslog.json`
+#+END_SRC
+
+*** bootstrap <<<npm:bootstrap>>>
+#+BEGIN_SRC sh
+  git clone https://github.com/twbs/bootstrap.git
+  npm install
+
+  # compile and you will get css and js folders in /dist directory
+  npm run dist
 #+END_SRC
 
 *** browser-sync <<<npm:browser-sync>>>
@@ -49748,7 +49913,7 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
 * Lando
 All subdomains of ~lndo.site~ will be DNS publicly resolved to ~localhost/127.0.0.1~ which requires no local ~/etc/hosts~ config.
 
-** WordPress
+** Recipe: WordPress
 #+BEGIN_SRC shell
   cd /path/to/project
   lando init
@@ -49795,7 +49960,7 @@ For Redis, add the following in wp-config.php according to ~lando info~ for plug
   lando php
 #+END_SRC
 
-** Pantheon
+** Recipe: Pantheon
 Stop ~Docker for Windows~ and install Lando without ~Docker for Windows~ and ~Git for Windows~
 ~git clone~ from Pantheon, go to the directory and run ~lando init~ and choose pantheon and a site to create ~.lando.yml~ in project root dir.
 ~lando terminus auth:login --machine-token=my-machine-token~
@@ -49836,44 +50001,6 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 - Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
 - ~$_ENV['PANTHEON_ENVIRONMENT']~ is ~lando~
 
-*** Drupal 7
-- https://docs.devwithlando.io/tutorials/drupal7.html
-
-#+BEGIN_SRC sh
-  lando init
-  # drupal 7
-#+END_SRC
-
-#+BEGIN_SRC yaml
-  name: my-app-name
-  recipe: drupal7
-  config:
-    webroot: .
-    php: '5.6' # default php:7.3
-    # via: apache:2.4 # default. check with Lando apache service for the default version
-    # database: mysql:5.7 # default. check with Lando mysql service for the default version
-    # drush:latest # default drush:8
-#+END_SRC
-
-~settings.php~
-#+BEGIN_SRC php
-  $databases = array (
-    'default' => 
-    array (
-      'default' => 
-      array (
-	'database' => 'drupal7',
-	'username' => 'drupal7',
-	'password' => 'drupal7',
-	'host' => 'database',
-	'port' => '3306',
-	'driver' => 'mysql',
-	// ...
-      ),
-    ),
-  );
-#+END_SRC
-
 *** Push a new website to Live <<<lando:pantheon:live>>>
 - On local Lando
   - ~wp search-replace '//myweb.com' '//dev-myweb.pantheonsite.io' --dry-run~
@@ -49894,6 +50021,78 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 - Go to CLI ~varnishd~, then ~stop~ ~start~ ~quit~
 - Search log ~varnishlog -d -q "BerespStatus == 503"~
 - Config files ~/etc/varnish/conf.d/*.vcl~
+
+** Recipe: Drupal 7
+- https://docs.devwithlando.io/tutorials/drupal7.html
+
+#+BEGIN_SRC sh
+  lando init
+  # drupal 7
+
+  # get config information
+  lando info
+
+  # import db.
+  # Can handle uncompressed, gzipped or zipped files
+  lando db-import db.sql.gz
+
+  lando composer
+  lando db-export 'db-export.sql.gz'
+  lando db-import 'db-import.sql.gz'
+  lando drush
+
+  # MySQL Shell
+  lando mysql
+
+  # For postgres
+  lando psql
+
+  # installed PHP extensions
+  lando php -,
+#+END_SRC
+
+*** Landofile ~.lando.yml~
+#+BEGIN_SRC yaml
+  name: my-app-name
+  recipe: drupal7
+  config:
+    webroot: .
+    php: '5.6' # default php:7.3
+    # via: apache:2.4 # default. check with Lando apache service for the default version
+    database: mariadb:10.3 # default: mysql:5.7. check with Lando mysql service for the default version
+    drush: "*" # default latest. Or drush:^7 for PHP 5.3
+    # drush: "*" # latest
+    # drush: ^7 # latest version of Drush 7
+    # drush: 8.1.15 # a specific version
+    # xdebug: false # default.
+    config: # custom config files. 
+      database: config/my-custom.cnf
+      php: config/php.ini
+      server: config/server.conf # for nginx
+      vhosts: config/default.conf # for apache
+#+END_SRC
+
+*** ~settings.php~
+#+BEGIN_SRC php
+  // `lando drush` may return incorrect url. `lando info` to get the URL with or without port
+  $base_url = "http://mysite.lndo.site:PORT_IF_NEEDED";
+					
+  $databases = array (
+    'default' => 
+    array (
+      'default' => 
+      array (
+	'database' => 'drupal7',
+	'username' => 'drupal7',
+	'password' => 'drupal7',
+	'host' => 'database',
+	'port' => '3306',
+	'driver' => 'mysql',
+	// for postgress: username:postgres, password:'', port:5432
+      ),
+    ),
+  );
+#+END_SRC
 
 ** Service: phpMyAdmin
 
@@ -49917,7 +50116,9 @@ The appserver container has the following .sh files in folder ~/helpers~. Their 
 #+END_SRC
 
 ** Service: MariaDB
-Pantheon recipe uses MariaDB
+- Pantheon recipe uses MariaDB
+- Supported versions: 10.1 (default), 10.2, 10.3
+
 #+BEGIN_SRC sh
   docker exec -it projname_database_1 bash
   mysql
