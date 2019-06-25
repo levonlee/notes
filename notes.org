@@ -3851,17 +3851,14 @@ drupal_render(&$elements)
 - #printed set to true
 
 *** theme()
-https://api.drupal.org/api/drupal/includes%21theme.inc/function/theme/7.x
-theme($hook, $variables = array())
-Use $variables to merge with defaults from the theme registry
+- https://api.drupal.org/api/drupal/includes%21theme.inc/function/theme/7.x
+- ~theme($hook, $variables = array())~
+- Use ~$variables~ to merge with defaults from the theme registry
 
 *** System Theme
-Default theme files (*.tpl.php) are located at 
-=/modules/mod_name/mod-name-component-name.tpl.php=
-
-e.g. /modules/node/node.tpl.php
-
-For custom theme, better to put *.tpl.php files under ~/sites/all/themes/theme_name/templates/~
+- Default theme files ~*.tpl.php~ are located at ~/modules/mod_name/mod-name-component-name.tpl.php~
+- e.g. ~/modules/node/node.tpl.php~
+- For custom theme, better to put ~*.tpl.php~ files under ~/sites/all/themes/theme_name/templates/~
 
 d7:View_Theming
 
@@ -4148,7 +4145,6 @@ Return an array
   - if path is not defined but template is defined as a file (template_file_name), then
     - hook_theme defined in template.php :: path_to_theme/template_file_name.tpl.php
     - hook_theme defined in a module :: path_to_module/template_file_name.tpl.php
- 
 - template ::
   - Assuming the theme function name is theme_lili_flair
   - Default file name is lili_flair and the actual file is lili_flair.tpl.php
@@ -6060,20 +6056,18 @@ anonymous :: 1
 authenticated user :: 2
 administrator :: 3
 
-** Menu
+** Menu <<<d7:menu>>>
 *** hook_menu: 'page callback'
-You can print or echo some rendered HTML and then drupal_exit() or exit().
-drupal_exit() prevents hoo_exit() from running.
-Or print and echo some HTML and return NULL;
-No header or footer will be added. The page is pure what you output here.
-
-Or you can return a renderable array. Header and footer will be included.
-- return $form. You may theme the form by $form['#theme'][] = 'custom_theme_name'; and return $form
-- return theme('custom_theme_name', ['vars'=>...]);
-
-In page callback function, you can manipulate some variables used in html.tpl.php and page.tpl.php
-Such as change the page title drupal_set_title
-Refer to d7:functions
+- You can print or echo some rendered HTML and then ~drupal_exit()~ or ~exit()~
+   - drupal_exit() :: prevents hook_exit() from running
+   - Or print and echo some HTML and ~return NULL;~
+   - No header or footer will be added. The page is pure what you output here.
+- You can return a renderable array. Header and footer will be included
+- ~return $form~ :: You may theme the form by ~$form['#theme'][] = 'custom_theme_name';~ and ~return $form~
+- ~return theme('custom_theme_name', ['vars'=>...]);~
+- In page callback function, you can manipulate some variables used in ~html.tpl.php~ and ~page.tpl.php~
+   - Such as change the page title ~drupal_set_title~
+- Refer to d7:functions
 
 *** hook_menu: 'file'
 You can local the page callback function in a different file. e.g. 'lili.pages.inc'
@@ -6087,17 +6081,16 @@ The path is the current module path
 - MENU_SUGGESTED_ITEM :: A normal menu item, hidden until enabled by an administrator
 
 *** hook_menu: 'access callback', 'access arguments'
-access callback
-- default is 'user_access' d7:user_access
-- custom callback must return boolean
-- Often used callbacks: 'user_is_logged_in'
-- TRUE is for anyone to access
-
-access arguments
-- e.g. ['administer nodes']
+- 'access callback'
+   - default is 'user_access' d7:user_access
+   - custom callback must return boolean
+   - Often used callbacks: 'user_is_logged_in'
+   - TRUE is for anyone to access
+- 'access arguments'
+   - e.g. ['administer nodes']
 
 *** Embed a View Page
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_menu() {
     $items['path-different-from-view/%'] = array(
       'title' => t('page title');
@@ -6108,7 +6101,7 @@ access arguments
     );
     return $items;
   }
-#+END_EXAMPLE
+#+END_SRC
  
 *** Array to CSV
 page callback
@@ -6821,11 +6814,44 @@ Define an email template using hook_mail()
 	 - ~drupal_path_initialize();~ :: Initialize the $_GET['q'] variable to the proper normal path
 	 - ~menu_set_custom_theme();~ ::
 	 - ~drupal_theme_initialize();~ ::
-	 - ~module_invoke_all('init');~ :: Invokes a hook in all enabled modules that implement it
+	 - ~module_invoke_all('init');~ :: Invokes a hook_init in all enabled modules
 - ~menu_execute_active_handler();~ :: Execute the page callback associated with the current path
+   - ~hook_menu_site_status~ :: ~drupal_alter('menu_site_status', ...);~ Control site status before menu dispatching
+   - ~hook_menu_get_item~ :: ~drupal_alter('menu_get_item', $router_item, $path, $original_map);~
+   - ~$router_item['include_file']~
+   - ~call_user_func_array($router_item['page_callback'], $router_item['page_arguments'])~
+   - ~drupal_deliver_page($page_callback_result, $default_delivery_callback);~
+      - ~hook_page_delivery_callback_alter~ :: ~drupal_alter('page_delivery_callback', $delivery_callback);~
+      - ~drupal_deliver_html_page~ :: default deliver callback
+	 - ~drupal_render_page($page_callback_result)~
+	    - ~hook_page_build()~
+	    - ~hook_page~ :: ~drupal_alter('page', $page);~
+	    - ~return drupal_render( $page );~
+	       - ~theme()~
+		  - ~template_preprocess($default_template_variables, $hook);~
+		     - ~template_preprocess_HOOK(&$variables)~ :: Should be implemented by the module that registers the theme hook, to setup default variables
+		     - ~MODULE_preprocess()~ :: ~hook_preprocess()~
+		     - ~MODULE_preprocess_HOOK()~ :: ~hook_preprocess_HOOK()~ is invoked on all implementing modules, so that modules that didn't define the theme hook can alter the variables
+		     - ~ENGINE_engine_preprocess()~
+		     - ~ENGINE_engine_preprocess_HOOK()~
+		     - ~THEME_preprocess()~ :: Allows the theme to set necessary variables for all theme hooks with template implementation
+		     - ~THEME_preprocess_HOOK()~ :: Allows the theme to set necessary variables specific to the particular theme hook ~template_process()~
+		     - ~template_process_HOOK()~ :: Should be implemented by the module that registers the theme hook, if it needs to perform additional variable processing after all preprocess functions have finished
+		     - ~MODULE_process()~ :: It's invoked on all implementing modules
+		     - ~MODULE_process_HOOK()~ :: It's invoked on all implementing modules, so that modules that didn't define the theme hook can alter the variable
+		     - ~ENGINE_engine_process()~
+		     - ~ENGINE_engine_process_HOOK~
+		     - ~THEME_process()~ :: Allows the theme to process the vars for all theme hooks with template implementations
+		     - ~THEME_process_HOOK()~ :: Allows the theme to process the vars specific to the theme hook 
+	 - ~drupal_page_footer();~
+	    - ~hook_exit()~ :: ~module_invoke_all('exit');~
+	    - serve and write cache
+	    - Run cron :: ~system_run_automated_cron();~
 
 ** Hook System <<<d7:hook system>>>
-- Invoke:
+- Name
+   - Core :: page, node, taxonomy_term
+- Invoke
    - ~drupal_alter($type, &$data, &$context = NULL, &$context2 = NULL, &$context3 = NULL)~ :: Pass alterable variables to specific ~hook_TYPE_alter()~ implementations
       - Max 2 alterable arguments is supported (~$context3~ is not supported anymore)
       - In case more arguments need to be passed and alterable, use ~$context2~ and leave ~$context3~ undefined
@@ -6850,46 +6876,46 @@ Define an email template using hook_mail()
       - $hook :: hook name. ~call_user_func_array($module . '_' . $hook, $args)~
       - $args :: Arguments to pass to the hook
    - ~module_invoke($module, $hook)~ :: invokes a hook in a particular module. All arguments are passed by value
-   - Hook order
-      - Module weight :: default 0. The lower the higher priority. Can be negative numbers
-	 - Check all module weights :: ~print implode(PHP_EOL, module_list());~
-	 - SQL update :: ~UPDATE system SET weight=999 WHERE name = 'mymodule'~
-	 - Per hook :: ~hook_module_implements_alter(&$implementations, $hook)~. Hook is invoked during ~module_implements()~
-	    - $implementations :: Array keyed by the module's name. The value of each item corresponds to a $group, which is usually FALSE, unless the implementation is in a file names $module.$group.inc
-	    - $hook :: The name of the module hook being implemented
-		 #+BEGIN_SRC php
-		   unction hook_module_implements_alter(&$implementations, $hook) {
-			   if ($hook == 'rdf_mapping') {
+- Hook order
+   - Module weight :: default 0. The lower the higher priority. Can be negative numbers
+      - Check all module weights :: ~print implode(PHP_EOL, module_list());~
+      - SQL update :: ~UPDATE system SET weight=999 WHERE name = 'mymodule'~
+      - Per hook :: ~hook_module_implements_alter(&$implementations, $hook)~. Hook is invoked during ~module_implements()~
+	 - $implementations :: Array keyed by the module's name. The value of each item corresponds to a $group, which is usually FALSE, unless the implementation is in a file names $module.$group.inc
+	 - $hook :: The name of the module hook being implemented
+	      #+BEGIN_SRC php
+		unction hook_module_implements_alter(&$implementations, $hook) {
+			if ($hook == 'rdf_mapping') {
 
-				   // Move my_module_rdf_mapping() to the end of the list. module_implements()
-				   // iterates through $implementations with a foreach loop which PHP iterates
-				   // in the order that the items were added, so to move an item to the end of
-				   // the array, we remove it and then add it.
-				   $group = $implementations['my_module'];
-				   unset($implementations['my_module']);
-				   $implementations['my_module'] = $group;
-			   }
-		   }
+				// Move my_module_rdf_mapping() to the end of the list. module_implements()
+				// iterates through $implementations with a foreach loop which PHP iterates
+				// in the order that the items were added, so to move an item to the end of
+				// the array, we remove it and then add it.
+				$group = $implementations['my_module'];
+				unset($implementations['my_module']);
+				$implementations['my_module'] = $group;
+			}
+		}
 
-		   // always execute first for hook_form_alter and form_FORM_ID_alter
-		   function my_module_module_implements_alter(&$implementations, $hook) {
-			   if (($hook == 'form_FORM_ID_alter' || $hook == 'form_alter') && isset($implementations['module_name']) {
-				   $module = 'my_module';
-				   $group = array($module => $implementations[$module]);
-				   unset($implementations[$module]);
-				   $implementations = $group + $implementations;
+		// always execute first for hook_form_alter and form_FORM_ID_alter
+		function my_module_module_implements_alter(&$implementations, $hook) {
+			if (($hook == 'form_FORM_ID_alter' || $hook == 'form_alter') && isset($implementations['module_name']) {
+				$module = 'my_module';
+				$group = array($module => $implementations[$module]);
+				unset($implementations[$module]);
+				$implementations = $group + $implementations;
 
-			   }
+			}
 
 
-			   if ($hook != 'hook_form_alter') {
-				   return;
-			   }
-		   }
-		 #+END_SRC
-	 - module ~.install~ file :: d7:hook_install
-	 - Use contributed modules :: ~module_weight~ and ~Utility~
-      - Module name alphabetical order 
+			if ($hook != 'hook_form_alter') {
+				return;
+			}
+		}
+	      #+END_SRC
+      - module ~.install~ file :: d7:hook_install
+      - Use contributed modules :: ~module_weight~ and ~Utility~
+   - Module name alphabetical order 
 
 ** OOP
 - D7 refers to [[https://www.drupal.org/project/oop_examples][oop_examples module]]
