@@ -2677,9 +2677,18 @@ If module name is not found in db, most likely the code incorrectly refers to a 
 ** Update Module
 - Read module README first
 - Usually just remove the module directory and put the new one in
-- And run update.php
+- Run update.php
 
 ** Module
+*** Core Modules
+**** Path <<<d7:proj:path>>>
+- Set the path for an individual node with the Path module (on the node/add or node edit form)
+- Add an URL alias at: Administer > Configuration > Search and metadata > URL aliases
+- Administer the list of URL aliases at: Administer > Configuration > Search and metadata
+- Enable Clean URLs ::  Administer > Configuration > Clean URLs
+- https://www.drupal.org/docs/7/core/modules/path/overview
+- May use d7:proj:pathauto
+
 *** Custom Module
 **** .info file
 - [[https://www.drupal.org/node/542202#files][Instructions]]
@@ -2812,6 +2821,12 @@ Change these lines in php.ini
 #+END_SRC
 
 Run ~iisreset~ to restart IIS.
+
+*** Pathauto <<<d7:proj:pathauto>>>
+- The Pathauto module automatically generates URL/path aliases for various kinds of content (nodes, taxonomy terms, users) without requiring the user to manually specify the path alias. This allows you to have URL aliases like /category/my-node-title instead of /node/123. The aliases are based upon a "pattern" system that uses tokens which the administrator can change
+- Requires
+   - d7:proj:path
+   - d7:proj:token
 
 *** Feeds - Package: Feeds
 Requires d7:ctools d7:job_scheduler
@@ -2953,8 +2968,8 @@ You can switch to a different based on some rules!
 If you are not clear about some rules, you can just search in code. e.g. search 'system:query_string'
 
 *** Devel
-devel requires nothing
-sub modules :: devel_generate, devel_node_access (off)
+- requires nothing
+- sub modules :: devel_generate, devel_node_access (off)
 
 http://ratatosk.net/drupal/tutorials/debugging-drupal.html
 
@@ -43411,9 +43426,8 @@ By default, fail2ban is enabled for sshd service only and disabled for every ser
 - [[https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04][More info]]
 - [[https://www.digitalocean.com/community/tutorials/how-to-protect-an-apache-server-with-fail2ban-on-ubuntu-14-04][Apache and fail2ban]]
 
-** System 
-Resource Limits
-=sudoedit /etc/security/limits.conf=
+** System
+- Resource Limits :: ~sudoedit /etc/security/limits.conf~
 
 System Logs
 | /var/log/syslog   | general system log                         |
@@ -45349,8 +45363,7 @@ List files owned by a package =dpkg -L cron=
 Find which package owns a file =dpkg -S /etc/crontab=
 
 **** ~apt-get~ ~apt-cache~ Ubuntu
-Since Ubuntu 16.04, apt is introduced and it's a subset of apt-get and apt-cache
-
+- Since Ubuntu 16.04, ~apt~ is introduced and it's a subset of ~apt-get~ and ~apt-cache~
 - Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
 
 It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network.
@@ -45362,28 +45375,22 @@ This way the /etc/resolv.conf is not persisted. You can also config DNS in Docke
 #+END_SRC
 
 - Install or upgrade a package :: ~apt-get install openssh-client~
-
 - Simulate what would happen if you upgrade/install a package (press ~n~ to cancel) :: ~apt-get -s install openssh-client~
 - Upgrade all installed packages :: ~apt-get upgrade~
 - Simulate what would happen if upgrade all (press ~n~ to cancel) :: ~apt-get -V -s upgrade~
-
 - Remove previously downloaded packages (/var/cache/apt/archives) :: ~apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*~ 
-
 - See all installed packages :: ~apt list --installed~
   - For Ubuntu lower than 14.04, use ~dpkg -l~ to list all installed packages on Ubuntu
 - To see if a package is installed :: ~apt list -a --installed openssh-client~
 - Return info of a package before it's installed :: ~apt-cache show shutter~ or ~apt list -a ffmpeg~ (it shows installed if it's installed)
 - Search package by regex name (return name and description only) :: ~apt-cache search php~
-Search packages with name starting php (return names only) :: =apt-cache pkgnames php5=
-All packages' names (return names only) :: =apt-cache pkgnames=
-
+- Search packages with name starting php (return names only) :: ~apt-cache pkgnames php5~
+- All packages' names (return names only) :: ~apt-cache pkgnames~
 - Find out dependencies of a package :: ~apt-cache showpkg php5-xmlrpc=
   - Other packages must be installed before php5-xmlrpc (under Dependencies)
   - Other packages depend on php5-xmlrpc (under Reverse Depends)
   - Different versions of this package you can install (under Provides)
-
 - To compare installed version of a package with remote version :: ~apt-cache policy openssh-client~
-
 - Use website to see a package info e.g. tmux :: https://packages.ubuntu.com/bionic/tmux
 
 **** =aptitude= Highest Level Debian
@@ -54221,6 +54228,9 @@ To see any requests that violate which rules in which .conf file, tail the apach
   # change username and email for the current repo
   git config user.email myname@abc.omc
   git config user.name "My Name"
+
+  # set temporary config for commit
+  git -c user.name='Li Li' -c user.email='a@a.ca' commit -m '...'
 #+END_SRC
 
 ** Alias
