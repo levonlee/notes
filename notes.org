@@ -2689,6 +2689,13 @@ If module name is not found in db, most likely the code incorrectly refers to a 
 - https://www.drupal.org/docs/7/core/modules/path/overview
 - May use d7:proj:pathauto
 
+**** Entity API <<<d7:entity>>>
+- Sub module :: entity_token 
+- Requires nothing
+- Update
+   - 1.5
+   - 1.9 no db
+
 *** Custom Module
 **** .info file
 - [[https://www.drupal.org/node/542202#files][Instructions]]
@@ -3096,11 +3103,6 @@ Don't put a cron key in Elysia otherwise the cron run in drush will not work.
 *** SMTP Authentication Support
 [[https://www.drupal.org/project/smtp][smtp]] :: requires nothing
 
-*** Entity API - entity
-[[https://www.drupal.org/project/entity][entity]] : sub module entity_token <<<d7:entity>>>
-Requires nothing
-1.5 
-1.9 no db
 
 *** Chaos Tools - ctools
 [[https://www.drupal.org/project/ctools][ctools]] :: no dependencies <<<d7:ctools>>>
@@ -3128,10 +3130,11 @@ Used with d7:geocoder
 Requires d7:views
 e.g. An order has multiple items, store those items into a field
 
-*** Field collection - field_collection - Package: Fields
-Requires d7:entity
-Test require d7:entity_translation
-Any number of fields can be attached to a field-collection field which is an entity.
+*** Field collection - Package: Fields <<<d7:proj:field_collection>>>
+- Any number of fields can be attached to a field-collection field which is an entity
+- Requires :: d7:entity
+- Test require d7:entity_translation
+- Create a field collection :: Structure > Field collections
 
 *** Social Field - socialfield - Package: Fields
 Requires nothing
@@ -5384,14 +5387,14 @@ height => "426"
 
 *** Structure
 **** node
-nid* :: INT
-vid :: The current node_revision.vid version id
-uid :: author id
-type :: string, e.g. article, 
-title
-created :: 
-sticky :: int, 0. 1 means to show on top of query result
-promote :: int, 0. 1 means to show on homepage
+- nid* :: INT
+- vid :: The current node_revision.vid version id
+- uid :: author id
+- type :: string, e.g. article, 
+- title
+- created :: 
+- sticky :: int, 0. 1 means to show on top of query result
+- promote :: int, 0. 1 means to show on homepage
 
 **** field_config
 - id *PK* :: int 11
@@ -18983,26 +18986,28 @@ Other than <a> tag, :hover doesn't work on iOS. Try one of these workaround
 #+END_EXAMPLE
 
 *** Fix parent height less than total children height
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="clearfix">
     <div style="">Div 1 doesn't float</div>
     <div style="float: left;">Div 2</div>
   </div>
 
-  /* Solution 1 */
-  .clearfix:after {
-   content: " ";
-   display:block;
-   clear:both;
-   height:0;
-  }
+  <style>
+    /* Solution 1 */
+    .clearfix:after {
+    content: " ";
+    display:block;
+    clear:both;
+    height:0;
+    }
 
-  /* Solution 2 */
-  .clearfix {
-   display:inline-block;
-   width:100%;
-  }
-#+END_EXAMPLE
+    /* Solution 2 */
+    .clearfix {
+    display:inline-block;
+    width:100%;
+    }
+  </style>
+#+END_SRC
 
 *** Image inside a div
 Div's height is greater than img. add display:block in <img>
@@ -43005,8 +43010,8 @@ Refer to bash:awk
 ~awk -F':' 'BEGIN{OFS="\t"; print "Login Username","Password","UID", "Group ID (GID)", "Comment", "Home Dir", "Default shell"} {print $1,$2,$3,$4,$5,$6,$7}' /etc/passwd | column -t -s $'\t'~
 
 *** Switch to superuser 
-- Debian =sudo su=
-- RedHat =sudo -=
+- Debian :: ~sudo su~
+- RedHat :: ~sudo -~
 
 *** Login to another user, Run command as another user
 Login (need to type password) ~/bin/su - username~
@@ -43186,7 +43191,7 @@ Before logout, open another terminal to see if it works.
 Default SSH port is 22
 
 *** Disable Password Authentication
-- Force to use public key only instead of plain password only :: ~nano /etc/ssh/sshd_config~
+- Force to use public key only instead of plain password only :: ~sudo nano /etc/ssh/sshd_config~
 - Replace ~#PasswordAuthentication yes~ with ~PasswordAuthentication no~
 - linux:ssh:restart
 - These are supposed to be default. If not, change to as below
@@ -44615,7 +44620,7 @@ Options
 - ~-n~ :: dry run
 - ~-t~ :: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless ~--size-only~ is used, missing ~-t~ or ~-a~ will cause the next transfer to behave as if it used ~-I~, causing all files to be updated
    - This command will not sync files with different permissions, ownership and modification time. Review the results and remove dry run ~-n~ before running again
-- ~-a~ :: -rlptgoD recursive, symlink, same permissions, mod time, group/owner, device/special files
+- ~-a~ :: ~-rlptgoD~ recursive, symlink, same permissions, mod time, group/owner, device/special files
 - ~-p~ :: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
 - ~-g~ :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
 - ~-o~ :: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
@@ -44743,27 +44748,32 @@ use ~**~ to match anything, including slashes
 A trailing ~***~ will match both the directory and everything in the directory e.g. ~foldername/***~
 
 **** Examples
-- Dry, recursive, symlink, verbose, compress
-- show progress and make it possible to re-rsync if connection is lost
-- show changes in detail for each transferred file
-- update time on destination
-- don't transfer file if dest has mod time newer
-- update owner and group on dest to be the same as source
-- change owner:group on dest
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
+  # change owner
+  # - Dry, recursive, symlink, verbose, compress
+  # - show progress and make it possible to re-rsync if connection is lost
+  # - show changes in detail for each transferred file
+  # - update time on destination
+  # - don't transfer file if dest has mod time newer
+  # - update owner and group on dest to be the same as source
+  # - change owner:group on dest
+
   rsync -rlvzPituogn --chown=www-data:www-data wp-content/ remote:path/to/wp-content
-#+END_EXAMPLE
 
-Transfer everything from remote to local
-- verbose
-- show overall stats
-- show individual file log
-- show progress and re-sync possible
-- compress
-- files/directories are created on local using local file permission mask
+  # Transfer everything from remote to local
+  # - verbose
+  # - show overall stats
+  # - show individual file log
+  # - show progress and re-sync possible
+  # - compress
+  # - files/directories are created on local using local file permission mask
 
-~rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/uploads/~
+  rsync -avziPn --stats $(devhost):$(devhostdir)/wp-content/uploads/ wp-content/uploads/
+
+  # Simple Download from Remote
+  rsync -rlvzPitun --stats remote:path/to/site/sites/default/files/ sites/default/files
+#+END_SRC
 
 ** head, tail <<<bash:head>>> <<<linux:tail>>>
 - Last 5 lines :: ~tail -n5 /path/to/file~
@@ -46543,14 +46553,18 @@ Download all subfolders and files of an FTP folder
 
 ** Cron <<<linux:cron>>>
 *** Cron table (crontab)
-- Each user can have his own cron table. Use ~crontab~ to manage a user's cron jobs
+- Each user can have his own cron table. Use ~crontab~ to manage the current user's cron jobs
 - List current user's cron table (called crontab) :: ~crontab -l~
 - List a user's cron table :: ~crontab -u username -l~
-- User crontabs are in ~/var/spool/cron/crontabs/yourusername~ or general ~/var/spool/cron/*~ 
+- All users' crontabs
+   - Each user :: ~sudo ls -al /var/spool/cron/crontabs~ or ~sudo ls -al /var/spool/cron/~ 
 - List system-wide crontab. You shouldn't need to modify it :: ~cat /etc/crontab~
 - Cron jobs of packages usually saved under ~/etc/cron.d/*~ use the same syntax as ~/etc/crontab/~
+- ~/etc/cron.*~ :: 4 cron directories. Copy script files to one of them and and they will be run as root
+   - ~ls -al /etc/cron.*~
+   - /etc/cron.daily, /etc/cron.hourly, /etc/cron.montly, /etc/cron.weekly
 - Backup your crontab before edit :: ~crontab -l > ~/cron.back~
-- Add entries to cron table ~crontab -e~
+- Edit cron table :: ~crontab -e~
 	
 ~echo $PATH~ may have to be copied to either the script file or crontab because ~env~ in cron is different from ~env~ the shell that you run the script in.
 
@@ -46558,12 +46572,6 @@ Download all subfolders and files of an FTP folder
   # Setup a Linux cron to run a Drupal Cron URL every 5 minutes
   ,*/5 * * * * /path/to/rundrupalcron.sh
 #+END_SRC
-	
-There're 4 cron directories. Copy script files to one of them and run as root:
-/etc/cron.daily
-/etc/cron.hourly
-/etc/cron.montly
-/etc/cron.weekly
 
 *** User crontab syntax and system-wide syntax
 User Crontab Syntax ~min hour dayofmonth month dayofweek command~
@@ -57126,7 +57134,7 @@ Schema
   ;
 #+END_SRC
 
-*** Dump, Restore
+*** Dump, Restore <<<mysql:mysqldump>>>
 #+BEGIN_SRC bash
   mysqldump -u user -p database_name > database_name_backup.sql
 
@@ -57135,13 +57143,16 @@ Schema
 
   # Use config file to avoid typing password
   mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.sql
+
+  # without any -u or -p, the user config file `~/.my.cnf` is used. Refer to mariadb:config
+  mysqldump db_name > db_name.sql
 #+END_SRC
 
-.mydb.cnf
-#+BEGIN_EXAMPLE
+~.mydb.cnf~
+#+BEGIN_SRC conf
   [mysqldump]
   password='enclosedwithdoublequotes'
-#+END_EXAMPLE
+#+END_SRC
 
 MySQL is inside a container some-mysql and dump it on host
 #+BEGIN_SRC bash
@@ -57407,7 +57418,7 @@ Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf
   sudo mysql_secure_installation
 #+END_SRC
 
-*** Config
+*** Config <<<mariadb:config>>>
 - /etc/my.cnf :: not exist in Ubuntu install
 - /etc/mysql/my.cnf :: loads other files. symlink to ~/etc/alternatives/my.cnf~ symlink to ~/etc/mysql/mariadb.cnf~ 
   - ~/etc/mysql/mariadb.cnf~ :: global defaults. This file 
@@ -57417,7 +57428,7 @@ Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf
     - 50-client.cnf ::
     - 50-mysqld_safe.cnf ::
     - 50-mysql-clients.cnf :: 
-- ~/.my.cnf :: by default not created. User-specific options
+- =~/.my.cnf= :: by default not created. User-specific options
 
 #+BEGIN_SRC sh
   # Default options are read from the following files in the given order:
