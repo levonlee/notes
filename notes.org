@@ -16631,6 +16631,21 @@ http://ds-overdesign.com/transform/matrix3d.html
   a:active {}
 #+END_EXAMPLE
 
+** Insert CSS File
+#+BEGIN_SRC js
+  var cssId = 'myCss';  // you could encode the css path itself to generate id..
+  if (!document.getElementById(cssId)) {
+      var head  = document.getElementsByTagName('head')[0];
+      var link  = document.createElement('link');
+      link.id   = cssId;
+      link.rel  = 'stylesheet';
+      link.type = 'text/css';
+      link.href = 'http://website.com/css/stylesheet.css';
+      link.media = 'all';
+      head.appendChild(link);
+  }
+#+END_SRC
+
 ** Text
 *** Ellipsis
 Single Line
@@ -45028,38 +45043,36 @@ After changing interfaces file, turn off and on the interface
 #+END_SRC
 
 *** DNS <<<linux:dns>>>
-~/etc/nsswitch.conf~ and the line starting with ~hosts: ~ defines which files Linux should look for the IP of a domain.
-
-#+BEGIN_EXAMPLE
-  hosts: files mdns4_minimal [NOTFOUND=return] dns
-#+END_EXAMPLE
-
-First, ~/etc/hosts~ file:
-#+BEGIN_SRC conf
-  127.0.0.1 localhost
-  127.0.1.1 your-computer-name
-  # 127.0.1.1 is fine when the computer is a client
-  # If the machine is a server and it has a static IP, should set it
-#+END_SRC
-
-Second, it's a list of DNS nameservers you define. 
-There's a package called ~resolvconf~ which handles the DNS nameservers. I guess if you change /etc/network/interfaces file to use ~dns-nameservers~, it will add nameservers to ~/etc/resolv.conf~ which cannot be changed manually.
-Thus, a list of DNS nameservers that are being used can be retrieved ~cat /etc/resolv.conf~
-
-To check if a domain is resovled, these commands are run based on ~/etc/resolv.conf~
-#+BEGIN_EXAMPLE
-  getent hosts google.com
-  host google.com
-  dig google.com
-#+END_EXAMPLE
-
-- dig can only follow through DNS management. If there's redirect done in Apache, Nginx or other codes, it won't follow through them
-- Use linux:curl to track further
-- dig finds A record :: ~dig google.com~ or ~dig google.com +short~
-- Query MX record :: ~dig google.com MX~
-- Query All DNS records including NS, SOA :: ~dig google.com ANY~
-- DNS Reverse Look-up :: ~dig -x 72.30.38.140~
-- [[https://www.whatsmydns.net/][DNS Propagation Checker]]
+- Define DNS hosts :: ~/etc/nsswitch.conf~ and the line starting with ~hosts:~ defines which files Linux should look for the IP of a domain
+     #+BEGIN_EXAMPLE
+       hosts: files mdns4_minimal [NOTFOUND=return] dns
+     #+END_EXAMPLE
+   - First, ~/etc/hosts~ file
+     #+BEGIN_SRC conf
+       127.0.0.1 localhost
+       127.0.1.1 your-computer-name
+       # 127.0.1.1 is fine when the computer is a client
+       # If the machine is a server and it has a static IP, should set it
+     #+END_SRC
+   - Second, it's a list of DNS nameservers you define
+      - See a list of DNS nameservers :: ~cat /etc/resolv.conf~
+	 - Not manually changable file :: ~/etc/resolv.conf~
+	 - A package called ~resolvconf~ which handles the DNS nameservers. I guess if you change ~/etc/network/interfaces~ file to use ~dns-nameservers~, it will add nameservers to ~/etc/resolv.conf~
+   - Commands to check DNS are run based on ~/etc/resolv.conf~
+     #+BEGIN_SRC sh
+       getent hosts google.com
+       host google.com
+       dig google.com
+     #+END_SRC
+      - dig can only follow through DNS management. If there's redirect done in Apache, Nginx or other codes, it won't follow through them
+      - Use linux:curl to track further
+      - dig finds A record :: ~dig google.com~ or ~dig google.com +short~
+      - Query MX record :: ~dig google.com MX~
+      - Query All DNS records including NS, SOA :: ~dig google.com ANY~
+      - DNS Reverse Look-up :: ~dig -x 72.30.38.140~
+      - [[https://www.whatsmydns.net/][DNS Propagation Checker]]
+   - Flush DNS <<<linux:dns:flush>>>
+      - Ubuntu :: ~sudo /etc/init.d/networking restart~
 
 *** Get Server's Public IP <<<linux:get public ip>>>
 #+BEGIN_SRC bash
@@ -45129,7 +45142,7 @@ Use open ports that are in the range of 1024-49151.
 1024-65535 are registered ports
 49152-65535 are dynamic ports and should not be prescribed to a protocol (e.g. random)
 
-*** Wireless network adapters =iwconfig=
+*** Wireless network adapters ~iwconfig~
 
 *** Gather monthly bandwidth
 #+BEGIN_SRC sh
@@ -59335,22 +59348,19 @@ Help > Default Keymap Reference
 - Just install the new version and it will guide you to uninstall and keep the settings.
 - For activation, choose License server, address is http://idea.lanyus.com/ 
    - Used before :: http://idea.qinxi1992.cn/
-   - From 2019.1.2, you need to do one of the following
-      - ~0.0.0.0 https://account.jetbrains.com:443~ in ~/etc/hosts~
-      - Comment ~0.0.0.0 account.jetbrains.com~ in ~/etc/hosts~
-
-Install Java SE Development Kit (JDK) 64 bit
-Open C:\Program Files (x86)\JetBrains\PhpStorm 10.0.3\bin\PhpStorm64.exe
-Help > About, you should see
-JRE: amd64
-JVM: 64-bit
-If not, set environment variable `JAVA_HOME` to C:\Program Files\Java\jdk1.8.0_101 and restart PhpStorm64.exe
-
-Restart PhpStorm64.exe and open multiple projects to test RAM.
-Finally, edit the shortcut to use PhpStorm64.exe
-
-Help > Check for Update > Change setting to don't auto check update.
-You can still use it to update plugins manually in this way.
+   - From 2019.1.2 :: Just ~0.0.0.0 https://account.jetbrains.com:443~ in ~/etc/hosts~ and linux:dns:flush
+   - Before :: ~0.0.0.0 account.jetbrains.com~ ~0.0.0.0 www.jetbrains.com~ in ~/etc/hosts~
+- Help > Check for Update > Change setting to don't auto check update
+   - Still can update plugins manually in this way
+- Install Java SE Development Kit (JDK) 64 bit
+   - Open ~C:\Program Files (x86)\JetBrains\PhpStorm 10.0.3\bin\PhpStorm64.exe~, Help > About, you should see
+     #+BEGIN_EXAMPLE
+       JRE: amd64
+       JVM: 64-bit
+     #+END_EXAMPLE
+     If not, set environment variable ~JAVA_HOME~ to ~C:\Program Files\Java\jdk1.8.0_101~ and restart ~PhpStorm64.exe~
+   - Restart ~PhpStorm64.exe~ and open multiple projects to test RAM
+   - Finally, edit the shortcut to use ~PhpStorm64.exe~
 
 *** Material Theme UI
 https://github.com/ChrisRM/material-theme-jetbrains
