@@ -907,18 +907,29 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
 
 *** sprintf and printf <<<php:sprintf>>>
 #+BEGIN_SRC php
+  // Syntax %[flags][width][.precision]specifier
+
   $num = 5;
   $location = 'tree';
 
   $format = 'There are %d monkeys in the %s';
   echo sprintf($format, $num, $location);
 
+  // `n$` is a specifier and when it exists, it must be immediately after %
+
   $format = 'The %2$s contains %1$d monkeys'; // The tree contains 5 monkeys
 
   $format = 'The %2$s contains %1$04d monkeys'; // The tree contains 0005 monkeys
 
+  // `'.` is a flag, it pads the result with the character `'(char)`
+
   echo sprintf("%'.9d\n", 123); // ......123
+
+  // I don't know.. It's the same as `echo sprintf("%09d\n", 123);`
   echo sprintf("%'.09d\n", 123); // 000000123
+
+  // decimal points
+  echo sprintf("%.5f", 123); // 123.00000
 #+END_SRC
 
 *** Random bash64 string
@@ -3184,9 +3195,8 @@ Choose the custom view mode and also specify the first item to use View Mode #1 
 Custom hook can be selected in this setting to make customization
 
 *** Meta Tag - metatag
-metatag :: requires ctools and token
-
-Add metadata tags such as meta description, meta keywords, social media Open Graph
+- requires ctools and token
+- Add metadata tags such as meta description, meta keywords, social media Open Graph
 
 *** Entity Reference - entityreference
 entityreference :: requires d7:ctools d7:entity <<<d7:entityreference>>>
@@ -9817,12 +9827,11 @@ Only the wp:conditional tags use the main query/loop
 - It's also called The Loop.
 - wp:template tags use the secondary query/loop.
 
-By default, The Loop uses the main query's current post to set ~global $post~.
-
-- ~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence ~global $post~ is modified. 
-- After these ~new WP_Query()~ and ~the_post~ (Loop functions) are used, run wp:f:wp_reset_postdata to reset global $post to the original.
+- By default, The Loop uses the main query's current post to set ~global $post~
+- ~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence ~global $post~ is modified
+- After these ~new WP_Query()~ and ~the_post~ (Loop functions) are used, run wp:f:wp_reset_postdata to reset global $post to the original
 - Notice :: ~new WP_Query()~ doesn't change wp:query:main
-- Refer to wp:global:wp_query
+- Refer to wp:global:wp_query for raw query
 
 *** Syntax
 #+BEGIN_SRC php
@@ -12799,15 +12808,15 @@ wp:filter:template_include
 - post_title :: text
 - post_excerpt :: text
 - post_status :: varchar(20)
-  - auto-draft
-  - draft
-  - inherit :: Used with child post such as Attachments (e.g. featured image) and Revisions
-  - publish
-  - future
-  - pending
-  - private
-  - trash
-  - register_post_status
+   - auto-draft
+   - draft
+   - inherit :: Used with child post such as Attachments (e.g. featured image) and Revisions
+   - publish
+   - future
+   - pending
+   - private
+   - trash
+   - register_post_status
 - post_password :: varchar(20)
 - post_name :: varchar(200)
 - to_ping :: text
@@ -12818,21 +12827,22 @@ wp:filter:template_include
 - post_parent :: bigint(20)
 - guid :: varchar(255)
 - menu_order :: int(11)
-- post_type :: varchar(20) post | page | attachment | nav_menu_item | revision
+- post_type :: varchar(20)
+   - Core :: post, page, attachment, nav_menu_item, revision
+   - Custom post type slug 
 - post_mime_type :: vchar 100 blank for non media posts. e.g. image/jpeg
 - comment_count :: bigint(20)
 
 *** wp_terms, wp_term_relationships
 - wp_terms
-- term_id :: int, auto_increment
-- name :: varchar(200)
-- slug :: varchar(200)
-- term_group :: int
-
+   - term_id :: int, auto_increment
+   - name :: varchar(200)
+   - slug :: varchar(200)
+   - term_group :: int
 - wp_term_relationships
-- object_id :: int, (e.g. ID in wp_posts), 0
-- term_taxonomy_id :: int, 0
-- term_order :: int, 0
+   - object_id :: int, (e.g. ID in wp_posts), 0
+   - term_taxonomy_id :: int, 0
+   - term_order :: int, 0
 
 *** wp_term_taxonomy
 - term_taxonomy_id :: bigint(20)
@@ -12841,6 +12851,12 @@ wp:filter:template_include
 - description :: longtext
 - parent :: bigint(20)
 - count :: bigint(20)
+
+*** wp_termmeta
+- meta_id :: bigint(20) unsigned, PK, start from 1
+- term_id :: bigint(20) unsigned, IND, default 0
+- meta_key :: varchar(255) e.g. ~wpcf-publication_date~
+- meta_value :: longtext
 
 *** wp_postmeta <<<wp:db:wp_postmeta>>>
 - meta_id *PK* :: bigint 20
@@ -13561,9 +13577,18 @@ Expire posts. WP-Cron is used.
 **** Version
 7 - UI
 
-**** Open Graph
-Use at least 200x200 pixels image for `og:image`
-You need to resave the post/article on WP first (to prevent WP Super Cache as FB crawler gets to the page differently) and then run Facebook Open Graph Object Debugger
+**** Open Graph <<<wp:plugin:wordpress-seo:og>>>
+- At least 200x200 pixels image for ~og:image~
+- Resave the post/article on WP first to prevent WP Super Cache as FB crawler gets to the page differently and then run Facebook Open Graph Object Debugger
+- Refer to html:og
+- og:url :: required
+- og:type :: e.g. article
+- og:title :: required
+- og:image :: required
+- og:locale :: ~{ "locale": "en_us" }~
+- og:description
+- og:site_name
+- og:updated_time
 
 **** Turn off json-ld <<<wp:plugin:wordpress-seo:json-ld>>>
 
@@ -21909,20 +21934,17 @@ Preload the first segment use [[https://developers.google.com/web/fundamentals/m
 #+END_SRC
 
 *** Open Graph Protocol <<<html:og>>>
-http://ogp.me/
-Required properties for every page
-- og:title
-- og:type :: article, video, video.movie, etc. Refer to [[http://ogp.me/#types][ogp types]]
-- og:image
-- og:url
+- http://ogp.me/
+- https://developers.google.com/web/fundamentals/discovery/social-discovery/
+- Required properties for every page
+   - og:title
+   - og:type :: article, video, video.movie, etc. Refer to [[http://ogp.me/#types][ogp types]]
+   - og:image :: multiple ~og:image~ is possible
+   - og:url
+- ~<meta property="og:title" content="" />~
+- Refer to wp:plugin:wordpress-seo:og
 
-<meta property="og:title" content="" />
-
-https://developers.google.com/web/fundamentals/discovery/social-discovery/
-
-*** Twitter Cards
-https://developer.twitter.com/en/docs/tweets/optimize-with-cards/guides/getting-started
-
+*** Twitter Cards twitter:card
 *** Address Bar <<<html:address bar>>>
 Hide Safari UI (URL address bar)
 #+BEGIN_SRC html
@@ -39855,14 +39877,12 @@ For better result, add this to every page and search engine will add ~?_escaped_
 
 ** Twitter
 *** Compose link with prepopulated Tweet
-https://dev.twitter.com/web/tweet-button/web-intent
-
-~https://twitter.com/intent/tweet?~
-
-Query Parameters
-- text :: ~Hello%20World~
-- url :: ~https%3A%2F%2Fexample.com%2F~
-- hashtags :: ~nature,sunset~
+- https://dev.twitter.com/web/tweet-button/web-intent
+- ~https://twitter.com/intent/tweet?~
+   - Query Parameters
+      - text :: ~Hello%20World~
+      - url :: ~https%3A%2F%2Fexample.com%2F~
+      - hashtags :: ~nature,sunset~
 
 *** View a hashtag topic
 https://twitter.com/hashtag/hastagname?src=hash
@@ -39873,28 +39893,41 @@ https://publish.twitter.com/
 
 Widget shows png image converted to jpg with 85% qualityblack background color. Maybe add a transparent pixel and save the png to truecolor to avoid the conversion.
 
-*** Twitter card validator
-- https://cards-dev.twitter.com/validator
+*** Twitter card <<<twitter:card>>>
+- https://developer.twitter.com/en/docs/tweets/optimize-with-cards/guides/getting-started
+- Validator :: https://cards-dev.twitter.com/validator
 - Content is cached by Twitter for 7 days after a link to your page with card markdup has been published in a tweet
 
 ** Facebook
-https://developers.facebook.com/
+*** Facebook for developers
+- https://developers.facebook.com/
+- My Apps > New App
+   - Ok to select no scenario
+   - Later go to App Profile to specify
+      - Display Name :: App name
+      - App Description
+      - Contact Email
+      - App Icon
+      - Privacy Policy URL 
+      - Business Use
+- Settings > Basic > Add Platform :: one platform type for an App e.g. can only have 1 Website platform for an App
+   - Website
+      - App Domains :: abc.com
+      - Site URL (full URL) :: https://www.abc.com
+- Add Product
+   - Facebook Login
+      - Platform :: Web
+      - Site URL :: https://www.abc.com
+      - Products > Facebook Login
+	 - Valid OAuth redirect URIs :: https://www.abc.com/wp-admin/admin.php?page=nxssnap
 
-My Apps > New App
-- Contact Email is important
-
-Settings > Basic > Add Platform
-- Website
-- App Domains :: abc.com
-- Site URL (full URL) :: https://www.abc.com
-- Privacy Policy URL is important
-
-Add Product
-- Facebook Login
-- Platform :: Web
-- Site URL :: https://www.abc.com
-- Products > Facebook Login
-  - Valid OAuth redirect URIs :: https://www.abc.com/wp-admin/admin.php?page=nxssnap
+*** Image Guidelines
+- https://developers.facebook.com/docs/sharing/best-practices/#images
+- Width > 1080, or minimum 600. 1:1 for ad creative
+- [[https://developers.facebook.com/tools/debug/][Sharing Debugger]] :: 
+   - Link Preview with image
+   - # of likes, shares and comments
+   - html:og
 
 ** YouTube
 - Link to subscribe :: ~https://www.youtube.com/channel/YOURHASEDCHANNELID?sub_confirmation=1~
