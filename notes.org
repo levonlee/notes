@@ -14724,6 +14724,21 @@ Shortcode
 
 Add Revolution Slider widget to the desired sidebar
 
+*** Mini Loops <<<wp:plugin:mini-loops>>>
+- Old :: Miniloops
+- Used inside shortcode ~[miniloop]~
+   - ~image, ml_image~ :: attributes
+      - ~[image from="thumb"]~ :: get featured image. ~from~ can also be and comma-separated
+	 - attached :: attached image
+	 - customfield ::
+	 - first
+      - ~[image class="myclass"]~
+      - ~[image width="100"]~
+      - ~[image height="100"~
+      - ~[image crop="1"]~ :: 0 to scale
+      - ~[image fallback="/wp-content/upload/a.jpg"]~
+      - ~[image cache="clear"]~ :: clear to not save to db and always crop/scale image on the fly
+
 *** wpfront-scroll-top
 *** vertical-marquee-plugin
 In your WordPress administrator section go to Settings menu and select Vertical marquee plugin menu to configure this plugin.
@@ -56905,22 +56920,40 @@ tables field_data_*.
 *** CASE, IF(), IFNULL(), NULLIF()
 https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
 
-#+BEGIN_EXAMPLE
-  SELECT IF(1>2,2,3); // 3
-  SELECT IF(1=1,2,3); // 2
-  SELECT IF(STRCMP('1', '1') = 0, 2, 3); // 2
-#+END_EXAMPLE
+#+BEGIN_SRC sql
+  SELECT IF(1>2,2,3); -- 3
+  SELECT IF(1=1,2,3); -- 2
+  SELECT IF(STRCMP('1', '1') = 0, 2, 3); -- 2
 
-#+BEGIN_EXAMPLE
-  mysql> SELECT CASE 1 WHEN 1 THEN 'one'
-      ->     WHEN 2 THEN 'two' ELSE 'more' END;
-          -> 'one'
-  mysql> SELECT CASE WHEN 1>0 THEN 'true' ELSE 'false' END;
-          -> 'true'
-  mysql> SELECT CASE BINARY 'B'
-      ->     WHEN 'a' THEN 1 WHEN 'b' THEN 2 END;
-          -> NULL
-#+END_EXAMPLE
+  SELECT *
+  FROM t1
+  ORDER BY IF( colA = 'b', colB, NULL ) DESC, colC
+  LIMIT 1;
+
+  SELECT CASE 1
+	      WHEN 1 THEN 'one'
+	      WHEN 2 THEN 'two'
+	      ELSE 'more' END;
+  -- one
+
+  SELECT CASE
+	  WHEN 1>0 THEN 'true'
+	  ELSE 'false' END;
+  -- 'true'
+
+  SELECT CASE BINARY 'B'
+	      WHEN 'a' THEN 1
+	      WHEN 'b' THEN 2 END;
+  -- NULL
+
+  SELECT *
+  FROM t1
+  ORDER BY
+	CASE colA
+	     WHEN 'value1' THEN colB
+	     WHEN 'value2' THEN colC
+	     ELSE 'value3' END;
+#+END_SRC
 
 *** User Variable
 #+BEGIN_SRC sql
