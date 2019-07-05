@@ -23220,104 +23220,100 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
 #+END_EXAMPLE
 
 **** mj-head > mj-style <<<mjml:tag:mj-style>>>
-- Apply styles to generated or native HTML elements :: ~mj-style~
+- Refer to email:css:support
+- Apply raw CSS styles e.g. media query :: ~mj-style~
 - Set class in native HTML elememts :: ~inline="inline"~
-- When ~inline="inline"~ used, don't use double quotes inside ~mj-style~.
+   - When ~inline="inline"~ used, don't use double quotes inside ~mj-style~
+     #+BEGIN_SRC html
+       <mjml>
+	 <mj-head>
+	   <mj-style>
+	     @media all and (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
+	   </mj-style>
+	   <mj-style inline="inline">
+	     .link-nostyle { color: inherit; text-decoration: none }
+	     <!-- for a tag, color: inherit is not working, either specify color in .link-nostyle or style="color:#fff" in a tag. -->
+	   </mj-style>
+	 </mj-head>
+	 <mj-body>
+	   <mj-container>
+	     <mj-section>
+	       <mj-column>
 
-Refer to email:css:support
-#+BEGIN_SRC html
-  <mjml>
-    <mj-head>
-      <mj-style>
-	@media all and (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
-      </mj-style>
-      <mj-style inline="inline">
-	.link-nostyle { color: inherit; text-decoration: none }
-	<!-- for a tag, color: inherit is not working, either specify color in .link-nostyle or style="color:#fff" in a tag. -->
-      </mj-style>
-    </mj-head>
-    <mj-body>
-      <mj-container>
-	<mj-section>
-	  <mj-column>
+		 <mj-image width="100" src="/assets/img/logo-small.png"></mj-image>
 
-	    <mj-image width="100" src="/assets/img/logo-small.png"></mj-image>
+		 <mj-divider border-color="#F45E43"></mj-divider>
 
-	    <mj-divider border-color="#F45E43"></mj-divider>
+		 <mj-text font-size="20px" color="#F45e46" font-family="helvetica">
+		   Hello <a href="https://mjml.io" class="link-nostyle">World</a>
+		 </mj-text>
 
-	    <mj-text font-size="20px" color="#F45e46" font-family="helvetica">
-	      Hello <a href="https://mjml.io" class="link-nostyle">World</a>
-	    </mj-text>
-
-	  </mj-column>
-	</mj-section>
-      </mj-container>
-    </mj-body>
-  </mjml>
-#+END_SRC
-
-<<<mjml:tag:mj-style:responsive font size>>>
-#+BEGIN_SRC html
-  <mjml>
-    <mj-head>
-       <mj-style>
-	 .body-fix div {
-	    font-size: 22px !important; /* This will override font-size attribute if client supports style in head.*/
-	    /* Define styles use mjml elements' attribute for devices don't support <style> in <head>:
-	      Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app, Google Inbox, Android 5.1+ Native Mail App
-	    ,*/
-	    line-height: 28px !important;
-	  }
-	  @media only screen and (max-width: 480px){
-	    .body-fix div {
-	      font-size: 28px !important;
-	      line-height: 44px !important;
+	       </mj-column>
+	     </mj-section>
+	   </mj-container>
+	 </mj-body>
+       </mjml>
+     #+END_SRC
+- <<<mjml:tag:mj-style:responsive font size>>>
+  #+BEGIN_SRC html
+    <mjml>
+      <mj-head>
+	 <mj-style>
+	   .body-fix div {
+	      font-size: 22px !important; /* This will override font-size attribute if client supports style in head.*/
+	      /* Define styles use mjml elements' attribute for devices don't support <style> in <head>:
+		Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app, Google Inbox, Android 5.1+ Native Mail App
+	      ,*/
+	      line-height: 28px !important;
 	    }
-	  }
-      </mj-style>
-    </mj-head>
-    <mj-body>
-      <mj-container>
-	<mj-section>
-	  <mj-column>
-	    <mj-text css-class="body-fix" font-size="20px" color="#F45E43" font-family="helvetica">Will work :)</mj-text>
-	  </mj-column>
-	</mj-section>
-      </mj-container>
-    </mj-body>
-  </mjml>
-#+END_SRC
-
-Use css-class in any mj-element and change styles for mobile
-#+BEGIN_SRC html
-  <mj-style>
-    @media ... {
-      tr[class*="hidden"] {
-	display:none;
+	    @media only screen and (max-width: 480px){
+	      .body-fix div {
+		font-size: 28px !important;
+		line-height: 44px !important;
+	      }
+	    }
+	</mj-style>
+      </mj-head>
+      <mj-body>
+	<mj-container>
+	  <mj-section>
+	    <mj-column>
+	      <mj-text css-class="body-fix" font-size="20px" color="#F45E43" font-family="helvetica">Will work :)</mj-text>
+	    </mj-column>
+	  </mj-section>
+	</mj-container>
+      </mj-body>
+    </mjml>
+  #+END_SRC
+- Use ~css-class~ in any ~mj-element~ and change styles for mobile
+  #+BEGIN_SRC html
+    <mj-style>
+      @media ... {
+	tr[class*="hidden"] {
+	  display:none;
+	}
       }
-    }
-  <mj-style>
-  <mj-text css-class="hidden">
-#+END_SRC
+    <mj-style>
+    <mj-text css-class="hidden">
+  #+END_SRC
+   - css-class only works for ~mj-*~ elements, use this to target elements inside mj-text
+     #+BEGIN_SRC html
+       <mj-style>
+	     @media all and (max-width: 361px) { 
+	       h2[class*="header"] { font-size:50px!important;}
+	     }
+	     @media all and (max-width: 321px) {
+	       h2[class*="header"] { font-size:49px!important;}
+	     }
+       </mj-style>
+       <!-- 
+	    h2[class*="header"] { font-size:55px!important;}
+       -->
 
-css-class only works for ~mj-*~ elements, use this to target elements inside mj-text
-#+BEGIN_SRC html
-  <mj-style>
-	@media all and (max-width: 361px) { 
-	  h2[class*="header"] { font-size:50px!important;}
-	}
-	@media all and (max-width: 321px) {
-	  h2[class*="header"] { font-size:49px!important;}
-	}
-  </mj-style>
-  <!-- 
-       h2[class*="header"] { font-size:55px!important;}
-  -->
-
-  <mj-text css-class="main-content" color="#001f58" padding="0px 0px 0px 0px">
-    <h2 css-class="main-content" class="header" style="font-size:55px;line-height:50px;font-family:'Trebuchet MS',sans-serif;padding:0;margin:0;font-weight:100;padding:0;margin:0;">...</h2>
-  </mj-text>
-#+END_SRC
+       <mj-text css-class="main-content" color="#001f58" padding="0px 0px 0px 0px">
+	 <h2 css-class="main-content" class="header" style="font-size:55px;line-height:50px;font-family:'Trebuchet MS',sans-serif;padding:0;margin:0;font-weight:100;padding:0;margin:0;">...</h2>
+       </mj-text>
+      #+END_SRC
 
 **** mj-head > mj-font <<<mjml:tag:mj-font>>>
 https://www.campaignmonitor.com/css/text-fonts/font-face/
@@ -23380,41 +23376,35 @@ Inside mjml > mj-body > mj-container
 <mj-include path="./header" /> <!-- or 'header.mjml' -->
 
 **** mj-body > mj-section <<<mjml:tag:mj-section>>>
-It should contain mj-column. Up to 4 columns.
-Section has up to 600px width.
-
-https://mjml.io/documentation/#mjml-section
-
-Structure the columns in the order you want them to stack on mobile, then use direction attribute to change the order on desktop.
-
-- full-width :: n/a (full-width)
-- direction :: ltr or rtl, default ltr
-- padding :: default 20px 0
-- padding-top, padding-x
-- background-url :: default n/a
-- background-repeat :: default repeat, no-repeat
-- background-color :: default n/a,
-
-You may use % for left and right padding.
+- Should contain mj-column. Up to 4 columns
+- Section has up to 600px width
+- May use % for left and right padding
+- Structure the columns in the order you want them to stack on mobile, then use direction attribute to change the order on desktop
+- Refer to https://mjml.io/documentation/#mjml-section
+   - full-width :: n/a (full-width)
+   - direction :: ltr or rtl, default ltr
+   - padding :: default 20px 0
+   - padding-top, padding-x
+   - background-url :: default n/a
+   - background-repeat :: default repeat, no-repeat
+   - background-color :: default n/a,
 
 **** mj-wrapper > mj-section <<<mjml:tag:mj-wrapper>>>
-Wrap multiple sections. Perfect place to set borders
-
-https://mjml.io/documentation/#mjml-wrapper
-
-- padding :: 20px 0
-- ~padding-*~
-- background-url :: If mj-wrapper has this defined, don't define in its mj-section
-- background-repeat :: repeat
-- background-size :: auto
-- border :: none
-- direction :: ltr (rtl)
-- vertical-align :: top
-- text-align :: center
-- full-width :: Don't add full-width="full-width" inside mj-section as it will make mj-section non-full-width
-  - I also find out if there are other sections that are also inside mj-container, define full-width only for that wrapper and don't define it for other sections
-  - Sometimes mj-section does not have to be full-width, you can set left/right padding to 0 for mj-section
-- css-class
+- Wrap multiple sections. Perfect place to set borders
+- Refer to https://mjml.io/documentation/#mjml-wrapper
+   - padding :: 20px 0
+   - ~padding-*~
+   - background-url :: If mj-wrapper has this defined, don't define in its mj-section
+   - background-repeat :: repeat
+   - background-size :: auto
+   - border :: none
+   - direction :: ltr (rtl)
+   - vertical-align :: top
+   - text-align :: center
+   - full-width :: Don't add full-width="full-width" inside mj-section as it will make mj-section non-full-width
+      - I also find out if there are other sections that are also inside mj-container, define full-width only for that wrapper and don't define it for other sections
+      - Sometimes mj-section does not have to be full-width, you can set left/right padding to 0 for mj-section
+   - css-class
 
 #+BEGIN_SRC html
   <mjml>
@@ -23568,14 +23558,11 @@ width attribute can have pixels or percentage.
 - padding :: 20px 0
 
 **** mj-elements inside mj-column
-Any mj-element inside mj-column will have width equivalent to 100% of this column's width.
-
-Max width:
-Any mj-element or elements inside mj-raw including mj-image should not have a higher width than the current column, otherwise Outlook will have troubhle in laying out mj-column
+- Any mj-element inside mj-column will have width equivalent to 100% of this column's width
+- Max width :: Any mj-element or elements inside mj-raw including mj-image should not have a higher width than the current column, otherwise Outlook will have troubhle in laying out mj-column
 
 ***** mj-text <<<mjml:tag:mj-text>>>
-It can contain any HTML tag with any attributes.
-
+- It can contain any HTML tag with any attributes
 - padding :: 10px 25px
 - color :: #000000
 - container-background-color :: n/a
@@ -23585,69 +23572,62 @@ It can contain any HTML tag with any attributes.
 - line-height :: 22px. Use %. 
 - letter-spacing :: none
 - align :: left
+- Basic
+  #+BEGIN_SRC html
+    <mj-section background-color="#f0f0f0">
+      <mj-column>
+	<mj-text font-style="italic" font-size="20" color="#626262">
+	   My Company <a href="#" style="text-decoration:none!important;text-decoration:none;color:#2DDCB4">... read more</a>
+	</mj-text>
+	<mj-text>
+	  <h1>Hello Title</h1>
+	</mj-text>
+     </mj-column>
+    </mj-section>
+  #+END_SRC
+- mjml:tag:mj-style:responsive font size
+- Remove underline for telephone on iOS :: https://litmus.com/blog/update-banning-blue-links-on-ios-devices
+   - ~<meta content="telephone=no" name="format-detection">~
+   - ~6&zwnj;75 Massachusetts Ave, Cambridge, MA 02139~ is ~675 Massachusetts Ave, Cambridge, MA 02139~
+   - ~a[href^=tel]{ color:#F00; text-decoration:none;}~
+- Change styles for all iOS data detection! 
+   - iOS add an attribute to all links :: ~<a href="#" x-apple-data-detectors="true">~
+   - So add style
+     #+BEGIN_SRC css
+       a[x-apple-data-detectors] {
+	   color: inherit !important;
+	   text-decoration: none !important;
+	   /* below is optional */
+	   font-size: inherit !important; 
+	   font-family: inherit !important;
+	   font-weight: inherit !important;
+	   line-height: inherit !important;
+       }
 
-#+BEGIN_SRC html
-  <mj-section background-color="#f0f0f0">
-    <mj-column>
-      <mj-text font-style="italic" font-size="20" color="#626262">
-	 My Company <a href="#" style="text-decoration:none!important;text-decoration:none;color:#2DDCB4">... read more</a>
-      </mj-text>
-      <mj-text>
-	<h1>Hello Title</h1>
-      </mj-text>
-   </mj-column>
-  </mj-section>
-#+END_SRC
-
-mjml:tag:mj-style:responsive font size
-
-Remove underline for telephone on iOS
-https://litmus.com/blog/update-banning-blue-links-on-ios-devices
-- ~<meta content="telephone=no" name="format-detection">~
-- ~6&zwnj;75 Massachusetts Ave, Cambridge, MA 02139~ >> 675 Massachusetts Ave, Cambridge, MA 02139
-
-~a[href^=tel]{ color:#F00; text-decoration:none;}~
-
-Change styles for all iOS data detection! 
-- iOS add an attribute to all links :: ~<a href="#" x-apple-data-detectors="true">~
-
-So add style
-#+BEGIN_SRC css
-  a[x-apple-data-detectors] {
-      color: inherit !important;
-      text-decoration: none !important;
-      /* below is optional */
-      font-size: inherit !important; 
-      font-family: inherit !important;
-      font-weight: inherit !important;
-      line-height: inherit !important;
-  }
-
-  // Samsung Mail automatically adds id MessageViewBody to <body> and a <div id="MessageWebViewDiv">
-  #MessageViewBody a {
-   color: inherit;
-   text-decoration: none;
-   font-size: inherit;
-   font-family: inherit;
-   font-weight: inherit;
-   line-height: inherit;
-  }
-#+END_SRC
-
-Customize line-height for Outlook desktop clients only:
-- Define ling-height in mj-text attribute and then set @media
-- line-height for Outlook desktop clients is 95% while others support @media use 83%
-- This can be used to target other CSS property for Outlook desktop clients only.
-#+BEGIN_SRC html
-  <mj-style>
-  @media all and (min-width: 500px) {
-    .main-content-h1-lh div {
-      line-height:83%!important;
-    }
-  }
-  </mj-style>
-  <mj-text css-class="main-content-h1-lh" line-height="95%">...</mj-text>
-#+END_SRC
+       // Samsung Mail automatically adds id MessageViewBody to <body> and a <div id="MessageWebViewDiv">
+       #MessageViewBody a {
+	color: inherit;
+	text-decoration: none;
+	font-size: inherit;
+	font-family: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+       }
+     #+END_SRC
+- Customize line-height for Outlook desktop clients only
+   - Define ling-height in mj-text attribute and then set @media
+   - line-height for Outlook desktop clients is 95% while others support @media use 83%
+   - This can be used to target other CSS property for Outlook desktop clients only
+     #+BEGIN_SRC html
+       <mj-style>
+       @media all and (min-width: 500px) {
+	 .main-content-h1-lh div {
+	   line-height:83%!important;
+	 }
+       }
+       </mj-style>
+       <mj-text css-class="main-content-h1-lh" line-height="95%">...</mj-text>
+     #+END_SRC
 
 ***** mj-button, Image header with text and button
 - href ::
