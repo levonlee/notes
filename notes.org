@@ -805,52 +805,51 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
   return $dom->saveHTML();
 #+END_SRC
 
+*** Regex replace <<<php:preg_replace>>>
 *** Remove HTML tag, regex
+- Refer to remove spaces between HTML start and end tags :: email:spaces between html tags
 #+BEGIN_SRC php
+  // Remove HTML tags
   $tags = ['noscript', 'p'];
   return preg_replace('@<('. implode('|', $tags) .')[^>]*?>.*?</\\1>@si', '',$html);
-#+END_SRC
 
-*** Remove an attribute from string, regex
-remove attribute style
-#+BEGIN_SRC php
+  // Remove an attribute from string
+  // e.g. remove style attribute
   $output = preg_replace('/(<[^>]+) style=".*?"/si', '$1', $input);
 #+END_SRC
 
 *** String Ellipsis, Trim
-wp:ellipsis d7:ellipsis
+- wp:ellipsis
+- d7:ellipsis
 
 *** Encode HTML <<<php:htmlspecialchars>>>
-htmlspecialchars produces less code than htmlentities
-#+BEGIN_SRC php
-  echo htmlentities('<Il était une fois un être>.');
-  // Output: &lt;Il &eacute;tait une fois un &ecirc;tre&gt;.
-  //                ^^^^^^^^                 ^^^^^^^
-
-  echo htmlspecialchars('<Il était une fois un être>.');
-  // Output: &lt;Il était une fois un être&gt;.
-  //                ^                 ^
-#+END_SRC
-
-d7:functions:check_plain is ~htmlspecialchars($text, ENT_QUOTES, 'UTF-8');~ which can also be used in sanitize HTML attribute values.
-
-- & (ampersand) :: &amp;
-- " (double quote) :: &quot;, unless ENT_NOQUOTES is set
-- ' (single quote) :: &#039; (for ENT_HTML401) or &apos; (for ENT_XML1, ENT_XHTML or ENT_HTML5), but only when ENT_QUOTES is set
-- < (less than) :: &lt;
-- > (greater than) :: &gt;
-
-#+BEGIN_SRC php
-  // Sanitize $_POST value to safe html text
-  if (!function_exists("check_plain")) {
-    function check_plain($text) {
-      return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+- d7:functions:check_plain is ~htmlspecialchars($text, ENT_QUOTES, 'UTF-8');~ which can also be used in sanitize HTML attribute values
+- May sanitize ~$_POST~ value to safe html text
+- What it does?
+   - & (ampersand) :: ~&amp;~
+   - " (double quote) :: ~&quot;~, unless ~ENT_NOQUOTES~ is set
+   - ' (single quote) :: ~&#039;~ (for ENT_HTML401) or ~&apos;~ (for ~ENT_XML1~, ~ENT_XHTML~ or ~ENT_HTML5~), but only when ~ENT_QUOTES~ is set
+   - < (less than) :: ~&lt;~
+   - > (greater than) :: ~&gt;~
+- ~htmlspecialchars~ produces less code than htmlentities
+  #+BEGIN_SRC php
+    // Drupal's check_plain
+    if (!function_exists("check_plain")) {
+      function check_plain($text) {
+	return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+      }
     }
-  }
-#+END_SRC
 
-Flags
-- ~ENT_QUOTES~ :: convert both double and single quotes
+    echo htmlentities('<Il était une fois un être>.');
+    // Output: &lt;Il &eacute;tait une fois un &ecirc;tre&gt;.
+    //                ^^^^^^^^                 ^^^^^^^
+
+    echo htmlspecialchars('<Il était une fois un être>.');
+    // Output: &lt;Il était une fois un être&gt;.
+    //                ^                 ^
+  #+END_SRC
+- Flags
+   - ~ENT_QUOTES~ :: convert both double and single quotes
 
 *** UTF-8 encoding <<<php:string:encoding>>> <<<php:mb_convert_encoding>>> <<<php:mb_detect_encoding>>>
 Make sure the string is UTF-8 encoded especially after php:file_get_contents
@@ -3844,9 +3843,9 @@ Convert string to CSS ready element name, class and ID in selectors.
 *** Sanitization functions <<<d7:functions:sanitization>>>
 https://api.drupal.org/api/drupal/includes%21common.inc/group/sanitization/7.x
 
-- check_plain($text) :: refer to php:htmlspecialchars. Can be used to sanitize HTML attribute value. <<<d7:functions:check_plain>>>
+- ~check_plain($text)~ :: refer to php:htmlspecialchars. Can be used to sanitize HTML attribute value. <<<d7:functions:check_plain>>>
 - drupal_strip_dangerous_protocols($uri) :: not for display.
-- drupal_attributes(array $attributes = []) :: Each array key and its value will be formatted into an attribute string. Attr. values are check_plain() but not the key (attribute name).
+- ~drupal_attributes(array $attributes = [])~ :: Each array key and its value will be formatted into an attribute string. Attr. values are check_plain() but not the key (attribute name).
 - check_url($uri) :: strip and encode a uri for output to HTML. eq. to check_plain(drupal_strip_dangerous_protocols)
 - filter_xss($string, $allowed_tags = ['a', 'em', ...]) :: Filtes HTML to prevent XSS vulnerabilities.
 
@@ -22238,7 +22237,8 @@ Refer to setcookie, php.ini:session:cookie_secure, apache:mod_headers for adding
 Open the email, in Move tab under Message, Actions > Other Actions > View Source
 
 *** Doctype
-https://litmus.com/community/templates
+- https://litmus.com/community/templates
+
 #+BEGIN_EXAMPLE
   <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
   <html lang="en">
@@ -23030,47 +23030,41 @@ Images are downloaded at proxy server and serve those images from that proxy ins
 Gmail Web and Gmail iOS and Android apps.
 
 *** CSS and HTML Support across Devices <<<email:css:support>>>
-https://www.campaignmonitor.com/css/
-https://templates.mailchimp.com/resources/email-client-css-support/
-
-Gmail Web doesn't support ~<style>~ in ~<body>~ but supports ~<style>~ in ~<head>~
-
-Gmail removes support for CSS attribute selectors.
-
-- ~<link>~ within ~<head>~ or ~<body>~ :: not support, browsers Outlook.com, Yahoo!, Gmail, AOL
-
-~<style>~ in ~<head>~ is not supported in:
-- Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app
-- AOL Mail
-
-~@media~ :: not supported in
-- Desktop :: Outlook 2007-16, Windows 10 Mail
-- Mobile :: Gmail Android app IMAP, Gmail mobile wemail but supports in Gmail Android app, Gmail iOS app
-- Webmail :: AOL Mail, Outlook.com
-
-~@font-face~ :: only supported in
-- Desktop :: Outlook 2000-03, Apply Mail 10, Outlook for Mac
-- Mobile :: Android Mail 4.4.4, iOS 10 Mail, iOS 11 Mail, Outlook Android app, Sparrow
-- Webmail :: AOL Mail
-
-~background-image~ :: not supported in
-- Outlook 2007-16
-- Outlook Express
-- Windows 10 Mail
-- Windows Live Mail
-- Android 4.2.2 Mail
-- Gmail Android app IMAP
-- Windows Phone 8 Mail
-- Yahoo! Mail Android app
-
-Email client safe fonts
-- Courier
-- Courier New
-- Georgia
-- Times
-- Times New Roman
-
-Refer to css:font-face:web safe fonts for checking font coverage and font stack
+- https://www.campaignmonitor.com/css/
+- https://templates.mailchimp.com/resources/email-client-css-support/
+- Gmail Web doesn't support ~<style>~ in ~<body>~ but supports ~<style>~ in ~<head>~
+- Gmail removes support for CSS attribute selectors
+- ~<link>~ within ~<head>~ or ~<body>~ :: not supported in
+   - Browsers :: Outlook.com, Yahoo!, Gmail, AOL
+- ~<style>~ in ~<head>~ is not supported in:
+   - Gmail Android app IMAP, Gmail mobile webmail, Yahoo! Mail Android app
+   - AOL Mail
+- ~@media~ :: not supported in
+   - Desktop :: Outlook 2007-16, Windows 10 Mail
+   - Mobile :: Gmail Android app IMAP, Gmail mobile wemail but supports in Gmail Android app, Gmail iOS app
+   - Webmail :: AOL Mail, Outlook.com
+- CSS ~.classname~ selector :: not supported in
+   - Mobile :: Gmail Android app IMAP, Gmail mobile webmail
+- ~@font-face~ :: only supported in
+   - Desktop :: Outlook 2000-03, Apply Mail 10, Outlook for Mac
+   - Mobile :: Android Mail 4.4.4, iOS 10 Mail, iOS 11 Mail, Outlook Android app, Sparrow
+   - Webmail :: AOL Mail
+- ~background-image~ :: not supported in
+   - Outlook 2007-16
+   - Outlook Express
+   - Windows 10 Mail
+   - Windows Live Mail
+   - Android 4.2.2 Mail
+   - Gmail Android app IMAP
+   - Windows Phone 8 Mail
+   - Yahoo! Mail Android app
+- Email client safe fonts
+   - Courier
+   - Courier New
+   - Georgia
+   - Times
+   - Times New Roman
+- Refer to css:font-face:web safe fonts for checking font coverage and font stack
 
 Target iPhone 5 and above mjml:tag:mj-hero:sample1
 #+BEGIN_SRC css
@@ -23202,7 +23196,7 @@ Order: inline attributes > classes > default mj-attributes > defaultMJMLDefiniti
 **** mj-head > mj-breakpoint
 On which breakpoint the layout should go desktop/mobile. Default is 480px
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-head>
       <mj-breakpoint width="320px" />
@@ -23217,7 +23211,7 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
       </mj-section>
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 **** mj-head > mj-style <<<mjml:tag:mj-style>>>
 - Refer to email:css:support
@@ -23288,13 +23282,25 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
 - Use ~css-class~ in any ~mj-element~ and change styles for mobile
   #+BEGIN_SRC html
     <mj-style>
-      @media ... {
-	tr[class*="hidden"] {
-	  display:none;
-	}
+      @media all and (max-width:480px) {
+	tr[class*=hidden] { display:none; }
+	<!-- Better -->
+	,*[class*=hidden] { display:none !important;}
       }
-    <mj-style>
-    <mj-text css-class="hidden">
+
+      <!-- Best compatibility:
+       - All desktop clients are ok
+       - Mobile: only Gmail IMAP app displays the column while it should not show
+       - Web browser: Yahoo Mail displays the column while it should not show
+       -->
+      .hide-on-mobile {display:none !important;}
+      @media all and (min-width:480px) {
+	    .hide-on-mobile { display: inline-block !important;}
+      }
+    </mj-style>
+
+    <mj-text css-class="hidden"></mj-text>
+    <mj-column css-class="hide-on-mobile"></mj-column>
   #+END_SRC
    - css-class only works for ~mj-*~ elements, use this to target elements inside mj-text
      #+BEGIN_SRC html
@@ -23547,15 +23553,13 @@ mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
 #+END_SRC
 
 **** mj-section > mj-column <<<mjml:tag:mj-column>>>
-Without width attribute, mj-column is evenly distributed.
-
-width attribute can have pixels or percentage.
-#+BEGIN_EXAMPLE
-  <mj-column width="200px"> <!-- First column content --> </mj-column>
-#+END_EXAMPLE
-
-- vertical-align :: top
-- padding :: 20px 0
+- Attributes
+   - width :: without it, ~mj-column~ is evenly distributed. Can be pixels or percentage
+   - vertical-align :: top
+   - padding, ~padding-*~ :: 20px 0
+   - css-class ::
+   - border, ~border-*~ ::
+   - backgrond-color :: 
 
 **** mj-elements inside mj-column
 - Any mj-element inside mj-column will have width equivalent to 100% of this column's width
@@ -23814,21 +23818,19 @@ blank space.  For some reason, try adding a section with a spacer only so that t
 #+END_SRC
 
 ***** mj-table
-only accepts plain html
-
-- font-family :: Ubuntu, Helvetica, Arial, sans-serif
-- font-size :: 13px
-- line-height :: 22px (%/px)
-- padding :: 10px 25px
-- width :: default 100%. With default left+right padding 25*2, the maximum width can be less than 300px. Otherwise the table has 100% width
-- table-layout :: auto (fixed/initial/inherit)
-
-Use ~mj-table~ to have fixed width that's not gonna change when in mobile. Or width will be 100%
-
-mj-table always, as a whole, align left while mjml:tag:mj-social aligns center. To center, use ~mj-raw~ to mjml:raw:center table
+- only accepts plain html
+- Use ~mj-table~ to have fixed width that's not gonna change when in mobile. Or width will be 100%
+- ~mj-table~ always, as a whole, align left while mjml:tag:mj-social aligns center. To center, use ~mj-raw~ to mjml:raw:center table
+- Attributes
+   - font-family :: Ubuntu, Helvetica, Arial, sans-serif
+   - font-size :: 13px
+   - line-height :: 22px (%/px)
+   - padding :: *10px 25px*
+   - width :: default 100%. With default left+right padding 25*2, the maximum width can be less than 300px. Otherwise the table has 100% width
+   - table-layout :: auto (fixed/initial/inherit)
 
 <<<mjml:tag:mj-table:social>>>
-Use it to align icons with links. Notice the img has fixed width. mj-table has fixed width including padding 25*5+5*(5-1)=165px. If mj-table has no width, columns will have equal width.
+Use it to align icons with links. Notice the img has fixed width. ~mj-table~ has fixed width including padding 25*5+5*(5-1)=165px. If ~mj-table~ has no width, columns will have equal width.
 
 #+BEGIN_SRC html
   <mj-table width="165px">
@@ -24084,15 +24086,20 @@ mj-section, mj-column don't have left and right padding by default.
 
 mj-image has padding:10px 25px by default
 
-*** Non breaking
-#+BEGIN_EXAMPLE
-  &nbsp; ::
-  &#x2011; :: hyphen
-#+END_EXAMPLE
+*** Non breaking css:content
+*** Remove spaces between HTML end tags and start tags <<<email:spaces between html tags>>>
+#+BEGIN_SRC php
+  // m flag for multiple lines
+  // IE start and end if statements need a speparate line
+  // <tr><td>
+  // <!--[if mso | IE]><table><tr><td>
+  // <!--<![endif]-->
+  $mini_code = preg_replace('~>\s+<(?!\!)~m','><',$code);
+#+END_SRC
 
 *** Don't use anchor link!
 ** Phone number
-<a href="tel:+18475555555">1-847-555-5555</a>
+~<a href="tel:+18475555555">1-847-555-5555</a>~
 
 // javascript
 window.open('tel:+11231231234');
@@ -24497,6 +24504,7 @@ Validate form :: Constraint Validation API https://developers.google.com/web/fun
    - Checkmark heavy :: ~&#10004;~
    - Checkmark light :: ~&#128504;~
    - Checkmark with square :: ~&#9745;~
+- Space :: ~&nbsp;~
 - hyphen long :: ~&#x2011;~
 - Quotation mark
    - Left Double Quotation Mark “ :: &#8220;
