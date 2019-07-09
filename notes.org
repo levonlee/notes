@@ -17140,31 +17140,31 @@ fill (default) | contain | cover | none | scale-down
 
 Edge and IE only works for <img> element
 
-** @font-face <<<css:font-face>>>
-Most widely accepted font format is WOFF then TTF and OTF.
-IE 11 and less only supports EOT. Edge supports WOFF.
+** ~@font-face~ <<<css:font-face>>>
+- Most widely accepted font format is WOFF2, WOFF then TTF and OTF
+- IE 11 and less only supports EOT. Edge supports WOFF
+- Use full url in ~src: url() format()~ for email HTML
+   - ~format()~ :: Optional. Can be: woff2, woff, truetype, opentype, embedded-opentype, svg
 
-!! Use full url in src: url() for email HTML
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   @font-face {
-   font-family: myFirstFont;
-   src: url(sansation_light.woff);
+      font-family: myFirstFont;
+      src: url(sansation_light.woff) format('woff');
   }
 
-  // Another for bold
+  /* Another for bold */
   @font-face {
-   font-family: myFirstFont;
-   src: url(sansation_bold.woff);
-   font-weight: bold;
+      font-family: myFirstFont;
+      src: url(sansation_bold.woff) format('woff');
+      font-weight: bold;
   /*
    font-stretch: normal | condensed | semi condensed | extra condensed | ultra condensed | expanded | ...;
    font-style: normal | italic | oblique 
   ,*/
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** font-display
+*** ~font-display~
 Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs.
 Internet Explorer has 0 timeout and use fallback immediately and swap later if font is available.
 Safari always wait for the font to be downloaded.
@@ -17176,7 +17176,7 @@ font-display :: Not supported in IE, Edge and iOS < 11.4
 - fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
 - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   @font-face {
     font-family: 'Awesome Font';
     font-style: normal;
@@ -17189,7 +17189,7 @@ font-display :: Not supported in IE, Edge and iOS < 11.4
          url('/fonts/awesome-l.eot') format('embedded-opentype');
     unicode-range: U+000-5FF; /* Latin glyphs */
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Font Loading API
 https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/webfont-optimization
@@ -17250,23 +17250,22 @@ Not supported in IE and Edge
   }
 #+END_EXAMPLE
 
-*** Google Font :: local() unicode-range
-<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+*** Google Font :: ~local()~ ~unicode-range~
+- Example ~<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">~
+- ~local('Font Name')~ :: if user agent has the font, then the font will not be downloaded
 
-local('Font Name') if user agent has the font, then the font will not be downloaded. 
+- ~unicode-range~ :: ranges are separated by comma
+   - Sigle codepoint :: ~U+416~
+   - Interval range :: start and end e.g. ~U+400-4ff~
+   - Wildcard range :: ~?~ is any hexadecimal digit e.g. ~U+4??~
 
-unicode-range :: ranges are separated by comma
-- Sigle codepoint :: U+416
-- Interval range :: start and end e.g. U+400-4ff
-- Wildcard range :: ? is any hexadecimal digit e.g. U+4??
+- Browser limitation :: benefit of loading variants of the same font
+   - Can't make a bold font lighter
+   - Can't make an oblique (italic) font "straight"
+   - Has limited ability to synthesize bold(er) fonts
+   - Has limited ability to synthesize oblique fonts and may produce wrong shapes esepcially in Cyrillic fonts
 
-The browser:
-- Can't make a bold font lighter
-- Can't make an oblique (italic) font "straight"
-- Has limited ability to synthesize bold(er) fonts
-- Has limited ability to synthesize oblique fonts and may produce wrong shapes esepcially in Cyrillic fonts.
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   /* cyrillic-ext */
   @font-face {
     font-family: 'Montserrat';
@@ -17347,7 +17346,7 @@ The browser:
     src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gnD_g.woff2) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Web Safe Fonts <<<css:font-face:web safe fonts>>>
 - Arial, Arial Black
@@ -23043,6 +23042,7 @@ Gmail Web and Gmail iOS and Android apps.
    - Desktop :: Outlook 2007-16, Windows 10 Mail
    - Mobile :: Gmail Android app IMAP, Gmail mobile wemail but supports in Gmail Android app, Gmail iOS app
    - Webmail :: AOL Mail, Outlook.com
+   - Don't use ~and~ ~or~! :: some email clients don't support them e.g. Yahoo! Mail
 - CSS ~.classname~ selector :: not supported in
    - Mobile :: Gmail Android app IMAP, Gmail mobile webmail
 - ~@font-face~ :: only supported in
@@ -23165,10 +23165,10 @@ no other attributes
 #+END_EXAMPLE
 
 **** mj-head > mj-attributes <<<mjml:tag:mj-attributes>>>
-mj-all sets default attributes for every component inside your MJML document
-Order: inline attributes > classes > default mj-attributes > defaultMJMLDefinition
+- ~mj-all~ sets default attributes for every component inside your MJML document
+- Order :: inline attributes > classes > default mj-attributes > defaultMJMLDefinition
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mjml>
     <mj-head>
       <mj-attributes>
@@ -23191,7 +23191,7 @@ Order: inline attributes > classes > default mj-attributes > defaultMJMLDefiniti
       </mj-container>
     </mj-body>
   </mjml>
-#+END_EXAMPLE
+#+END_SRC
 
 **** mj-head > mj-breakpoint
 On which breakpoint the layout should go desktop/mobile. Default is 480px
@@ -23222,7 +23222,7 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
        <mjml>
 	 <mj-head>
 	   <mj-style>
-	     @media all and (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
+	     @media (max-width: 480px) { div[style*="color:#F45e46;"] { text-align: center !important } }
 	   </mj-style>
 	   <mj-style inline="inline">
 	     .link-nostyle { color: inherit; text-decoration: none }
@@ -23279,7 +23279,7 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
       </mj-body>
     </mjml>
   #+END_SRC
-- Use ~css-class~ in any ~mj-element~ and change styles for mobile
+- Use ~css-class~ in any ~mj-element~ and change styles for mobile e.g. hide on mobile
   #+BEGIN_SRC html
     <mj-style>
       @media all and (max-width:480px) {
@@ -23288,19 +23288,49 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
 	,*[class*=hidden] { display:none !important;}
       }
 
-      <!-- Best compatibility:
-       - All desktop clients are ok
+      <!-- Hide column on mobile:
+       - Desktop clients: all ok
        - Mobile: only Gmail IMAP app displays the column while it should not show
-       - Web browser: Yahoo Mail displays the column while it should not show
+       - Web browser: all ok
        -->
       .hide-on-mobile {display:none !important;}
-      @media all and (min-width:480px) {
-	    .hide-on-mobile { display: inline-block !important;}
+      @media (min-width:480px) {
+	.hide-on-mobile { display: inline-block !important;}
+      }
+
+      <!-- Hide column on mobile: My Version as the above solution is hard to comprehend
+       - Desktop clients: all ok
+       - Mobile: only Gmail IMAP app displays the column while it should not show
+       - Web browser: all ok
+	-->
+      .hide-on-mobile {display:none !important;}
+      .hide-on-mobile-outlook .hide-on-mobile {display: inline-block !important;}
+      @media (min-width:480px) {
+	.hide-on-mobile {display:inline-block !important;}
+	.hide-on-mobile-outlook .hide-on-mobile {display: inline-block !important;}
       }
     </mj-style>
 
+    <!-- Show on mobile only, hide on desktop
+      - Desktop clients: all hidden (good!)
+      - Mobile clients: only Gmail App IMAP does not show, all mobile clients show (good!)
+      - Web browser: all hidden (Good!)
+    -->
+    <mj-style inline="inline">
+      .show-on-mobile-only, .show-on-mobile-only-outlook {display:none;}
+      .show-on-mobile-only table, .show-on-mobile-only-outlook table {mso-hide:all;}
+    </mj-style>
+    <mj-style>
+      @media (max-width:480px) {
+	.show-on-mobile-only, .show-on-mobile-only-outlook { display: inline-block !important;}
+      }
+    </mj-style>
+    <!-- Show on mobile only, hide on desktop. -->
+
     <mj-text css-class="hidden"></mj-text>
     <mj-column css-class="hide-on-mobile"></mj-column>
+
+    <mj-section css-class="show-on-mobile-only"></mj-section>
   #+END_SRC
    - css-class only works for ~mj-*~ elements, use this to target elements inside mj-text
      #+BEGIN_SRC html
@@ -23322,7 +23352,8 @@ On which breakpoint the layout should go desktop/mobile. Default is 480px
       #+END_SRC
 
 **** mj-head > mj-font <<<mjml:tag:mj-font>>>
-https://www.campaignmonitor.com/css/text-fonts/font-face/
+- https://www.campaignmonitor.com/css/text-fonts/font-face/
+- Refer to css:font-face
 
 #+BEGIN_SRC html
   <mjml>
@@ -23352,30 +23383,25 @@ https://www.campaignmonitor.com/css/text-fonts/font-face/
 
 **** mj-head > mj-body > mj-section (mj-container)
 <<<mjml:tag:mj-body>>> <<<mjml:tag:mj-section>>> <<<mjml:tag:mj-container>>>
-To insert custom elements either registerMJElement(<MJMLElement> class) api from mjml-core or via .mjmlconfig file.
-Non-known element from mjml-core are ignored.
-
-mj-body can have multiple mj-section
-- width :: default 600px
-- background-color
-- css-class
-
-For version 3, mj-body should have only one root element which usually is mjml-container, which contains the entire content of your document.
-
-There's no more mj-container in version 4. mj-section was mj-container in version 3 and mj-container was mj-body in version 1.x
-- width :: unit px, default 600px, you can change mj-body's width attribute to change it.
-- full-width :: default n/a. If set to full-width then section is extended to the full width beyond 600px
-- background-color
-- background-url
-- background-size :: auto
-- background-repeat :: repeat
-- vertical-align :: top
-- text-align :: center
-- padding :: 20px 0
-- direction :: ltr (or rtl)
-- css-class :: rendered HTML is class="xx"
-
-// TODO Inside container, you can have include, section and/or wrapper
+- To insert custom elements either registerMJElement(<MJMLElement> class) api from mjml-core or via .mjmlconfig file
+- Non-known element from mjml-core are ignored
+- ~mj-body~ :: can have multiple ~mj-section~. For v3, ~mj-body~ should have only one root element which usually is ~mj-container~, which contains the entire content
+   - Attributes
+      - width :: default *600px*
+      - background-color
+      - css-class
+- ~mj-section~ :: There's no more ~mj-container~ in version 4. ~mj-section~ was ~mj-container~ in version 3 and ~mj-container~ was ~mj-body~ in version 1.x
+   - Attributes
+      - full-width :: default n/a. If set to full-width then section is extended to the full width beyond 600px
+      - background-color
+      - background-url
+      - background-size :: auto
+      - background-repeat :: repeat
+      - vertical-align :: top
+      - text-align :: center
+      - padding :: 20px 0
+      - direction :: ltr (or rtl)
+   - css-class :: rendered HTML is class="xx"
 
 **** mj-body > mj-include <<<mjml:tag:mj-include>>>
 Inside mjml > mj-body > mj-container
@@ -23678,8 +23704,7 @@ mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
 - alt :: string
 - href
 - target :: _blank
-
-srcset is only supported in iOS. Determine display size and multiply the dimension by 2.
+- srcset :: only supported in iOS. Determine display size and multiply the dimension by 2
 
 When mj-image is inside a mj-column that is the only column, then size doesn't matter.
 If mj-image is inside a column that has other sibling columns, then limit width so that columns are layed out correctly in Outlook.
@@ -23690,7 +23715,7 @@ If mj-image is inside a column that has other sibling columns, then limit width 
     <!-- Left image -->
     <!-- column is 50% of total width,  mj-image is vertically and horizontally centered and image width is always 200 -->
     <mj-column>
-      <mj-image width="200" src="http://via.placeholder.com/300x400/?text=300x400" />
+      <mj-image width="200px" src="http://via.placeholder.com/300x400/?text=300x400" />
     </mj-column>
 
     <!-- right paragraph -->
@@ -23786,20 +23811,20 @@ Version 3
 ***** mj-divider
 Try to add horizontal border with some spacing using mj-divider
 - border-color :: #000000
-- border-style :: solid
+- border-style :: solid, dashed, dotted
 - border-width :: 4px
-- width :: 100% px/percent
-- padding :: 10px 25px
-- container-background-color
+- width :: *100%* px/percent
+- padding :: *10px 25px*
+- container-background-color :: 
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-section padding-bottom="0" background-color="white">
     <mj-column width="100%">
       <mj-image src="https://avatars0.githubusercontent.com/u/16115896?v=3&s=200" width="50px" />
       <mj-divider padding-top="20" padding-bottom="0" padding-left="0" padding-right="0" border-width="1px" border-color="#f8f8f8" />
     </mj-column>
   </mj-section>
-#+END_EXAMPLE
+#+END_SRC
 
 ***** mj-spacer
 blank space.  For some reason, try adding a section with a spacer only so that the email has the content in full width
@@ -23909,16 +23934,126 @@ Use it to align icons with links. Notice the img has fixed width. ~mj-table~ has
 #+END_SRC
 
 ***** mj-raw
-Not to be rendered by MJML engine
+- Not to be rendered by MJML engine
+- Unclosed HTML tags inside ~mj-raw~ will be closed
+- No attributes
 
 <<<mjml:raw:center table>>>
 This won't work for Yahoo! Mail but works on all clients
+#+BEGIN_SRC html
+  <mj-column>
+    <mj-text>...</mj-text>
+    <!-- each mj-element under mj-column is <tr><td> content </td></tr> -->
+
+    <!-- align center -->
+    <mj-raw>
+      <tr>
+	<td>
+	  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="vertical-align:top">
+	    <tr>
+	      <td align="center" style="font-size:0px;padding:10px 25px;padding-bottom:0px;word-break:break-word;">
+
+		<!-- social icons -->
+		<table width="95" cellpadding="0" cellspacing="0" border="0" role="presentation" style="vertical-align:top">
+		  <tr style="list-style:none;line-height:1;">
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		  </tr>
+		</table>
+		<!-- social icons. -->
+
+	      </td>
+	    </tr>
+	  </table>
+	</td>
+      </tr>
+    </mj-raw>
+    <!-- align center. -->
+
+    <!-- align right, pay attention to padding-right 25px -->
+    <mj-raw>
+      <tr>
+	<td>
+	  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="vertical-align:top">
+	    <tr>
+	      <td align="right" style="font-size:0px;padding:10px 25px;padding-bottom:0px;word-break:break-word;">
+
+		<!-- social icons -->
+		<table width="95" cellpadding="0" cellspacing="0" border="0" role="presentation" style="vertical-align:top">
+		  <tr style="list-style:none;line-height:1;">
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		    <td>
+		      <a href="#" target="_blank">
+			<img width="20" height="20" src="#" alt="" />
+		      </a>
+		    </td>
+		  </tr>
+		</table>
+		<!-- social icons. -->
+
+		<!-- mj-image with href HTML rendered result -->
+		<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
+		  <tr>
+		    <td style="width:110px;">
+		      <a href="#" target="_blank">
+			<img width="110" height="auto" src="#" alt="" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;" />
+		      </a>
+		    </td>
+		  </tr>
+		</table>
+		<!-- mj-image with href HTML rendered result. -->
+
+	      </td>
+	    </tr>
+	  </table>
+	</td>
+      </tr>
+    </mj-raw>
+    <!-- align right, pay attention to padding-right 25px. -->
+
+  </mj-column>
+#+END_SRC
+
+****** Old align center 
 #+BEGIN_SRC html
   <mj-style inline="inline">
     .tbl-cell-1 {
     font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size:12px;
     padding:0px 0px 10px 0px;
+
     width:30px;
     }
     .tbl-cell-2, .tbl-cell-3 {
@@ -23928,14 +24063,12 @@ This won't work for Yahoo! Mail but works on all clients
 
   <mj-column>
     <mj-text>...</mj-text>
-
     <!-- each mj-element under mj-column is <tr><td> content </td></tr> -->
+    <!-- OLD align center -->
     <mj-raw>
-
       <tr>
 	<td>
 	  <table align="center" width="110" cellpadding="0" cellspacing="0" border="0">
-	    <!-- right also works -->
 	    <tr>
 	      <td align="center" class="tbl-cell-1"><a href="#">
 		  <img width="30" src="twitter.png" />
@@ -23951,6 +24084,7 @@ This won't work for Yahoo! Mail but works on all clients
 	</td>
       </tr>
     </mj-raw>
+    <!-- OLD align center. -->
   </mj-column>
 #+END_SRC
 
@@ -24059,28 +24193,24 @@ Use this to change left/right padding in % is not consistent especially in Outlo
 #+END_EXAMPLE
 
 **** Caveats
-mj-image inside mj-column will always have a maximum fixed width.
-
-If there's one mj-column, then mj-image is 100% of the mj-column.
-
-If there're 2 mj-columns, then mj-image is 50% of the whole width = 300px
-
-If there're 3 mj-columns, mj-image is 196px.
-
-You can align mj-image left or right inside a mj-column. And when you do that, pay attention to the padding. Usually don't set padding:0
-When in mobile, <p> has padding-left:10px. So you could do
-#+BEGIN_EXAMPLE
-  <mj-section full-width="full-width">
-    <mj-group>
-      <mj-column width="50%">
-        <mj-image src="logo1.jpg" width="103" align="left" padding="10px 0 0 10px" />
-      </mj-column>
-      <mj-column width="50%">
-        <mj-image src="logo2.jpg" width="96" align="right" padding="10px 10px 0 0"/>
-      </mj-column>
-    </mj-group>
-  </mj-section>
-#+END_EXAMPLE
+- ~mj-image~ inside mj-column will always have a maximum fixed width
+   - If there's one ~mj-column~, ~mj-image~ is 100% of the mj-column
+   - If there're 2 ~mj-column~, ~mj-image~ is 50% of the whole width = 300px
+   - If there're 3 ~mj-column~, ~mj-image~ is 196px
+   - You can align ~mj-image~ left or right inside a ~mj-column~. And when you do that, pay attention to the padding. Usually don't set ~padding:0~
+   - When in mobile, ~<p>~ has ~padding-left:10px~. So you could do
+     #+BEGIN_SRC html
+       <mj-section full-width="full-width">
+	 <mj-group>
+	   <mj-column width="50%">
+	     <mj-image src="logo1.jpg" width="103" align="left" padding="10px 0 0 10px" />
+	   </mj-column>
+	   <mj-column width="50%">
+	     <mj-image src="logo2.jpg" width="96" align="right" padding="10px 10px 0 0"/>
+	   </mj-column>
+	 </mj-group>
+       </mj-section>
+     #+END_SRC
 
 mj-section, mj-column don't have left and right padding by default.
 
