@@ -13581,13 +13581,43 @@ Expire posts. WP-Cron is used.
 - Resave the post/article on WP first to prevent WP Super Cache as FB crawler gets to the page differently and then run Facebook Open Graph Object Debugger
 - Refer to html:og
 - og:url :: required
-- og:type :: e.g. article
+- og:type :: e.g. article, for archive page, it's ~object~
 - og:title :: required
 - og:image :: required
 - og:locale :: ~{ "locale": "en_us" }~
 - og:description
 - og:site_name
 - og:updated_time
+
+#+BEGIN_SRC html
+  <!-- Archive Page -->
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:type" content="object" />
+  <meta property="og:title" content="Archive Page Title" />
+  <meta property="og:url" content="https://www.a.ca/category/a-category/" />
+  <meta property="og:site_name" content="My Site Name" />
+  <meta property="og:image" content="https://www.a.ca/wp-content/uploads/2016/12/site-image-og-image.png" />
+  <meta property="og:image:secure_url" content="https://www.a.ca/wp-content/uploads/2016/12/site-image-og-image.png" />
+  <meta property="og:image:width" content="470" />
+  <meta property="og:image:height" content="351" />
+
+  <!-- Single Post Page -->
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:type" content="article" /> <!-- post type, custom post type -->
+  <meta property="og:title" content="Post Title" />
+  <meta property="og:description" content="Post Excerpt By Default" />
+  <meta property="og:url" content="https://www.a.ca/features/a-feature-post/" />
+  <meta property="og:site_name" content="My Site name" />
+  <meta property="article:publisher" content="https://www.facebook.com/my-fb-name" />
+  <meta property="article:tag" content="A Tag name" /> <!-- multiple tags -->
+  <meta property="article:section" content="Primary Category Name" /> <!-- Primary category -->
+  <meta property="article:published_time" content="2019-04-05T19:39:44+00:00" />
+  <meta property="article:modified_time" content="2019-04-08T19:16:37+00:00" />
+  <meta property="og:image" content="https://www.a.ca/wp-content/uploads/2016/12/site-image-og-image.png" /> <!-- Post Featured Image, if not, use site image -->
+  <meta property="og:image:secure_url" content="https://www.a.ca/wp-content/uploads/2016/12/site-image-og-image.png" />
+  <meta property="og:image:width" content="470" />
+  <meta property="og:image:height" content="351" />
+#+END_SRC
 
 **** Turn off json-ld <<<wp:plugin:wordpress-seo:json-ld>>>
 
@@ -13643,8 +13673,6 @@ https://www.bybe.net/yoast-seo-guide-disable-schema-json-ld-wordpress/
 	    return $post_ids;
     } );
   #+END_SRC
-
-
 
 **** Setting: turn off Author Archives
 SEO > Search Appearance > Archives > disable Author archive
@@ -41890,35 +41918,30 @@ Time decay :: More credit to clicks that happened closer in time to the conversi
 Linear :: Credit for the conversion is shared equally across all clicks on the path
 
 **** Remarketing Audience, Customer Match
-One account has one AdWords tag as in Audience sources. Other sources include Google Analytics, YouTube.
-
-Ways to remarket with AdWords :: https://support.google.com/adwords/answer/2453998?hl=en
+- One Google Ads account has one AdWords tag as in Audience sources
+   - May get audience from the past 30 days or start from 0 audience
+- Other sources include Google Analytics, YouTube
+- Ways to remarket with AdWords :: https://support.google.com/adwords/answer/2453998?hl=en
 
 ***** Rules and Templates
-Rules :: https://support.google.com/adwords/answer/6297497
+- Rules :: https://support.google.com/adwords/answer/6297497
+   - Standard parameters include URL, Referrer (e.g. www.google.com coming from search or anothersite.com), parameters sent through the event snippets and attributes from Google Merchant Center
+   - Path and URL query parameters can be targetted. But not ~#~
 
-Standard parameters include URL, Referrer (e.g. www.google.com coming from search or anothersite.com), parameters sent through the event snippets and attributes from Google Merchant Center.
-
-Path and URL query parameters can be targetted. But not #
-
-Template :: https://support.google.com/adwords/answer/6297549
-- Visitors of a page
-  - Add multiple conditions and if any condition met, then add to the list
-
-- Visitors of a page who also visited another page
-  - To create a list of people who visited pages A, B, and C, first create a list of people who visited pages A and B using this template. Then, using the "Visitors of a page" template, create a list of people who visited page C. Then, create a custom combination using these two lists.
-  - Only on Display Network
-
-- Visitors of page who did not visit another page
-  - When you create a list using this template, you narrow your audience. To be on your list, visitors need to visit the page defined in the first rule AND not visit any of the pages defined in the second rule. This is what makes this template different from the "Visitors of a page" template. When you create a list using the "Visitors of a page" template, you can add different conditions to the rule, but people who match ANY of the conditions (as opposed to ALL of the conditions) will be added to the remarketing list.
-  - Only on Display Network
-
-- Visitors of a page during specific dates
-  - When creating lists with specific dates, lists' membership duration may also determine when people are removed from the list. Visitors are added to the list if they've visited the pages on the selected dates, and will stay on the list for the amount of time specified by the membership duration.
-
-- Visitors of a page with a specific tag
-  - Awhile ago, an airline added a remarketing tag to sections of their website about popular routes. Creating a rule based on the URL for those sections would be too complex using rules. The airline could create a remarketing list of people who visited sections of the website about the popular route by using the "Visitors of a page with a specific tag" template, and selecting the tag that was implemented a while ago on those pages.
-  - When you use the "Visitors of a page with a specific tag" template, you can select existing AdWords conversion tracking tags as well. Selecting a conversion tracking tag can be helpful if you haven't been able to add the remarketing tag to the conversion page but still want to reach or exclude this audience.
+- Template :: https://support.google.com/adwords/answer/6297549
+   - Visitors of a page
+      - Add multiple conditions and if any condition met, then add to the list
+   - Visitors of a page who also visited another page
+      - To create a list of people who visited pages A, B, and C, first create a list of people who visited pages A and B using this template. Then, using the "Visitors of a page" template, create a list of people who visited page C. Then, create a custom combination using these two lists.
+      - Only on Display Network
+   - Visitors of page who did not visit another page
+      - When you create a list using this template, you narrow your audience. To be on your list, visitors need to visit the page defined in the first rule AND not visit any of the pages defined in the second rule. This is what makes this template different from the "Visitors of a page" template. When you create a list using the "Visitors of a page" template, you can add different conditions to the rule, but people who match ANY of the conditions (as opposed to ALL of the conditions) will be added to the remarketing list.
+      - Only on Display Network
+   - Visitors of a page during specific dates
+      - When creating lists with specific dates, lists' membership duration may also determine when people are removed from the list. Visitors are added to the list if they've visited the pages on the selected dates, and will stay on the list for the amount of time specified by the membership duration.
+   - Visitors of a page with a specific tag
+      - Awhile ago, an airline added a remarketing tag to sections of their website about popular routes. Creating a rule based on the URL for those sections would be too complex using rules. The airline could create a remarketing list of people who visited sections of the website about the popular route by using the "Visitors of a page with a specific tag" template, and selecting the tag that was implemented a while ago on those pages.
+      - When you use the "Visitors of a page with a specific tag" template, you can select existing AdWords conversion tracking tags as well. Selecting a conversion tracking tag can be helpful if you haven't been able to add the remarketing tag to the conversion page but still want to reach or exclude this audience.
 
 ***** Custom Combination List
 https://support.google.com/adwords/answer/2549111
@@ -42011,11 +42034,9 @@ You can add UTM parameters and with auto-tagging on, UTM parameters and gclid wi
 - Caution :: Don't include hash in the final URL with auto-tagging on! as gclid URL parameter will not be caught as url parameter.
 
 **** Automated Rules
-Automated rules are added to a campaign (e.g. enable and disable a campaign), an ad group, an ad or extension and others based on time or performance.
-
-https://support.google.com/google-ads/answer/2497710?co=ADWORDS.IsAWNCustomer%3Dtrue&hl=en
-
-Manage Rules under Reports in the top bar between Go To and Tools.
+- They are added to a campaign (e.g. enable and disable a campaign), an ad group, an ad or extension and others based on time or performance
+- Manage Rules under Reports in the top bar between Go To and Tools.
+- https://support.google.com/google-ads/answer/2497710?co=ADWORDS.IsAWNCustomer%3Dtrue&hl=en
 
 **** Third party impression tracking
 Submit a [[https://support.google.com/google-ads/answer/6161966][form]] to tell Google you want a 3rd party impression/view/skip/DCM Enhanced YouTube Pixel tracking.
