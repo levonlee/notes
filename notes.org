@@ -13556,8 +13556,52 @@ Remove line from wp-config.php define('WP_CACHE', true)
 
 *** Google Analytics Dashboard for WP by ExactMetrics (GADWP) <<<wp:plugin:google-analytics-dashboard-for-wp>>>
 - Show stats for each post!
+- Insert GA tracking code dynamically using analytics.js
 - Can add events for downloads, mailto, telephone and outbound links
 - Can exclude by user roles for events
+
+**** Hook for Commands
+#+BEGIN_SRC php
+  $commands = [
+	  // command 1
+	  [
+		  'command'      => 'create',
+		  'fields'       => [
+			  'trackingId'   => 'UA-xxx',
+			  'cookieDomain' => 'auto',
+		  ],
+		  'fieldsobject' => [],
+	  ],
+	  // command 2
+	  [
+		  'command'      => 'send',
+		  'fields'       => [
+			  'hitType' => 'pageview',
+		  ],
+		  'fieldsobject' => null,
+	  ]
+  ];
+
+  // do_action( 'gadwp_analytics_commands', $this);
+  add_action( 'gadwp_analytics_commands', function( $gadwp ) {
+      $commands = $gadwp->get();
+		
+      // var_dump($commands);
+
+      $last = array_pop( $commands ); // last command always is send pageview
+
+      global $post;
+		  $fields = [];
+		  $fields['option'] = 'contentGroup1';
+		  $fields['value'] = esc_attr($post->post_type);
+		  $fieldsobject = null;
+		  $commands[]   = $gadwp->prepare( 'set', $fields, $fieldsobject ); // Add a new line to the commands array
+      // ga('set', 'contentGroup1', '<Group Name>');
+		  $commands[]   = $last;
+
+		  $gadwp->set($commands); // Store the new commands array
+  });
+#+END_SRC
 
 *** Admin Columns <<<wp:plugin:codepress-admin-columns>>>
 - Free version just adds and displays columns on wp-admin
@@ -40518,13 +40562,44 @@ For some dimension, you can filter by Device type on the top.
    - Modify the tracking code on each page
    - Extract pages with regex (Page URL, Page Title)
    - Create rules to include pages in a group (Page URL, Page Title, Screen name)
-- Usually Content Grouping is submitted with pageview hit type :: Behavior > Site Content > all reports
+- Usually Content Grouping is submitted with pageview hit type
+   - Behavior > Site Content > all reports
+      - Content Group has to be set before or at the moment pageview hit is sent
+	#+BEGIN_SRC html
+	  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
+	  <script>
+	    window.dataLayer = window.dataLayer || [];
+	    function gtag(){dataLayer.push(arguments);}
+	    gtag('js', new Date());
+	    // original :: config and send a pageview
+	    //gtag('config', 'GA_TRACKING_ID');
+	    // change to
+	    gtag('config', 'GA_TRACKING_ID', {'content_group1': 'shoes'});
+
+	    // or
+	    // gtag('set', {'content_group1': ''});
+	    // gtag('config', 'GA_TRACKING_ID');
+	  </script>
+        #+END_SRC
+	#+BEGIN_SRC html
+	  <script>
+	    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	    ga('create', 'UA-XXXXX-Y', 'auto');
+	    // set before pageview is sent
+	    ga('set', 'contentGroup1', 'my_group_name');
+	    ga('send', 'pageview');
+	  </script>
+        #+END_SRC
    - It can be sent in other event types e.g. hit as well
       - Standard report Behavior > Events > Pages, group events by Content Group
       - These are not in the Site Content reports
       - These do not change the previous pageview hit Content Group
-- Unfortunately, Content Grouping is not shown on Realtime reports
-- Used in Segment's Conditions Filter
+- Content Grouping is not shown on Realtime reports
+- Also used in Segment's Conditions Filter :: content group has to be set before or at the moment pageview hit is sent
    - Page Group 1
    - Landing Page Group 1
    - Next Page Group 1
@@ -40543,38 +40618,6 @@ For some dimension, you can filter by Device type on the top.
       - When you select Clothing as the primary dimension, Men and Women are the dimension values in the first column of the report table
       - When you select Men as the primary dimension, Shirts, Pants, and Accessories are the dimension values in the first column of the table
       - For each dimension value (Content Group), you see behavioral metrics like Pageviews and Bounce Rate
-   - Content Group has to be set before or at the moment pageview hit is sent
-
-#+BEGIN_SRC html
-  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    // original :: config and send a pageview
-    //gtag('config', 'GA_TRACKING_ID');
-    // change to
-    gtag('config', 'GA_TRACKING_ID', {'content_group1': 'shoes'});
-
-    // or
-    // gtag('set', {'content_group1': ''});
-    // gtag('config', 'GA_TRACKING_ID');
-  </script>
-#+END_SRC
-
-#+BEGIN_SRC html
-  <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-    ga('create', 'UA-XXXXX-Y', 'auto');
-    // set before pageview is sent
-    ga('set', 'contentGroup1', 'my_group_name');
-    ga('send', 'pageview');
-  </script>
-#+END_SRC
 
 **** Behavior Flow
 Change the dimension (green box on the left) to Campaign to show AdWords campaign(s) behavior flow.
@@ -41378,6 +41421,17 @@ Only 3 months of search traffic stats are available
 What are impressions, position and clicks? https://support.google.com/webmasters/answer/7042828
 
 wp:plugin:wordpress-seo
+
+*** Web Tools
+- https://www.google.com/webmasters/tools/testing-tools-links
+   - Ad Experience Report :: <<<google:search console:ad experience report>>>
+   - Abusive Experiences
+   - Testing Tools
+      - Structured Data Testing Tool :: <<<google:search console:structured data testing tool>>>
+	 - Check existing structured data of a page
+      - Email Markup Tester :: https://developers.google.com/gmail/markup/
+      - Structured Data Markup Helper :: <<<google:search console:structured data markup helper>>>
+	 - If you not sure how to add structured data, pick a type and page, match fields with the intended type, generate
 
 ** Google Trends
 Compare search terms in different Google Search platforms and see their related topics and related queries.
@@ -42486,6 +42540,9 @@ Same as SpyFu but it breaks down by country and different SE.
  - Plurals :: people use singular when they want to be specific and plurals when they want general info
 
 ***** Open Site Explorer (similar to Link Explorer)
+*** Hype Stat
+- https://hypestat.com/
+
 *** MediaRadar
 Estimate unique visitors
 
@@ -42522,7 +42579,7 @@ Google Image guildlines https://support.google.com/webmasters/answer/114016
 
 ** Rich snippet, JSON-LD <<<google:json-ld>>>
 - LD stands for linked data
-- Google Search Console > Structured Data Markup Helper
+- Get some ideas :: google:search console:structured data markup helper
 - https://json-ld.org/
 - Google Structred Data Testing Tool :: https://search.google.com/structured-data/testing-tool
 - https://developers.google.com/search/docs/guides/prototype
@@ -42829,32 +42886,30 @@ More specific types e.g. Article,  Blog, Book, Comment, Game, Map, Movie, Websit
 48 pixels width and height for buttons and they should be 32 pixels width and height separated apart.
 
 ** hreflang <<<html:hreflang>>>
-https://support.google.com/webmasters/answer/189077
-Google Search Console looks for hreflang to determine language and location. Say if you want to target a generic domain like .com to a specific country/language, you should use hreflang and set in Google Search Console.
-
-For more than one language, use multilingual plugins like wp:plugin:polylang to insert hreflang
-
-3 ways to implement
-- Inside ~<head>~
-- HTTP response header
-To indicate a different language version of a URL (e.g. PDF)
-
-#+BEGIN_EXAMPLE
-  Link: <http://es.example.com/document.pdf>; rel="alternate"; hreflang="es", <http://en.example.com/document.pdf>; rel="alternate"; hreflang="en", <http://de.example.com/document.pdf>; rel="alternate"; hreflang="de"
-#+END_EXAMPLE
-- Sitemap
+- https://support.google.com/webmasters/answer/189077
+- Google Search Console looks for hreflang to determine language and location. Say if you want to target a generic domain like .com to a specific country/language, you should use hreflang and set in Google Search Console
+- For more than one language, use multilingual plugins like wp:plugin:polylang to insert hreflang
+- 3 ways to implement
+   - Inside ~<head>~
+   - HTTP response header
+   - To indicate a different language version of a URL (e.g. PDF)
+     #+BEGIN_EXAMPLE
+       Link: <http://es.example.com/document.pdf>; rel="alternate"; hreflang="es", <http://en.example.com/document.pdf>; rel="alternate"; hreflang="en", <http://de.example.com/document.pdf>; rel="alternate"; hreflang="de"
+     #+END_EXAMPLE
+   - Sitemap
 
 *** Inside ~<head>~
 #+BEGIN_SRC html
-  // General
+  <!-- General -->
   <link rel="alternate" hreflang="en-gb" href="http://en-gb.example.com/page.html" />
   <link rel="alternate" hreflang="en-us" href="http://en-us.example.com/page.html" />
   <link rel="alternate" hreflang="en"    href="http://en.example.com/page.html" />
   <link rel="alternate" hreflang="de"    href="http://de.example.com/page.html" />
   <link rel="alternate" hreflang="x-default" href="http://www.example.com/" />
-  // The reserved value hreflang="x-default" is used when no other language/region matches the user's browser setting. This value is optional, but recommended, as a way for you to control the page when no languages match. A good use is to target your site's homepage where there is a clickable map that enables the user to select their country.
+  <!-- The reserved value hreflang="x-default" is used when no other language/region matches the user's browser setting. This value is optional, but recommended, as a way for you to control the page when no languages match. A good use is to target your site's homepage where there is a clickable map that enables the user to select their country.
 
   // wp
+  -->
   <?php global $wp;
 	$current_url = home_url(add_query_arg(array(), $wp->request)); 
 	// echo esc_url($current_url);
@@ -59260,18 +59315,15 @@ The request will end up in 2 places
 Add filter key-value contains ~a=xyz~
 - Filter out b=ijk
 
-** Benchmarks
-Sizmek Benchmarks
-Based on 2016 H1 report, CTR (click-through rate = clicks / impressions) is around 0.14% in North America and South Asia is the highest 0.28% for standard banner.
-
-Rich Media CTR is around from 6 to 8 times higher than standard banner.
-
-Programmatic Rich Media that is not confined to the iFrame performs around 145% better than polite.
-
-Doubleclick Insights
-https://www.doubleclickbygoogle.com/insights/
-
-LiveIntent, AdButler, PowerInbox
+** Benchmarks and Standards
+- Better Ads Standards :: https://www.betterads.org/standards/
+   - google:search console:ad experience report
+- Sizmek Benchmarks
+   - Based on 2016 H1 report, CTR (click-through rate = clicks / impressions) is around 0.14% in North America and South Asia is the highest 0.28% for standard banner
+   - Rich Media CTR is around from 6 to 8 times higher than standard banner
+   - Programmatic Rich Media that is not confined to the iFrame performs around 145% better than polite
+- Doubleclick Insights :: https://www.doubleclickbygoogle.com/insights/
+- LiveIntent, AdButler, PowerInbox
 
 * XML
 ** XML DOM
