@@ -40204,9 +40204,9 @@ API : https://developers.google.com/my-business/
   - use Google BigQuery
   - custom tables, unsampled reports
   - Roll-up reporting aggregates data from multiple Analytics properties and lets you see that data together in the same reports. e.g. website and mobile app stats
-- Dimensions and Metrics ::
+- Dimensions and Metrics :: <<<google:ga:limit:dimensions metrics>>>
   - GA :: 20 and 20. Value of custom dimension has max length 150 bytes around 150 characters
-  - 360 :: 10 times more custom dimensions & metrics
+  - 360 :: 200 and 200. 10 times more custom dimensions & metrics
 - Integration
   - GA :: AdWords and AdSense. Import stats from AdWords to GA and GA exports remarketing audiences to AdWords
   - 360 :: GA + DoubleClick Campaign Manager, DoubleClick Bid Manager, DoubleClick for Publishers, Salesforce Marketing Cloud
@@ -40292,17 +40292,23 @@ https://support.google.com/analytics/answer/1034380
 
 *** Dimensions vs Metrics <<<ga:dimensions>>> <<<ga:metrics>>> <<<ga:scope>>>
 - Each cell shows the value in the corresponding metric column that also belong to the corresponding dimension row
-- e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country.
+   - e.g. metric is Goal completion and dimension is country. Table shows number of goal completions in each country
 - Which dimension value has the highest metric? e.g. Which page category (custom dimension) has the highest pageviews (built-in metrics)
-- Filters are applied to dimensions
+- Filters are only applied to dimensions
 - Dimension can have one of these levels or scope :: https://support.google.com/analytics/answer/2709828#scope
-  - Product :: value is applied to the product for which it has been set (Enhanced Ecommerce only)
-  - Hit :: a single action e.g. pageview, event. A hit can associate with multiple products
-  - Session :: has multiple hits. Timeout limit by default is 30 minutes. Max can go to 4 hours. Admin > Property
-  - User :: a cookie that has sessions
+   - Product :: value is applied to the product for which it has been set (Enhanced Ecommerce only)
+   - Hit :: Categorize actions e.g. pageview, event. A hit can associate with multiple products
+   - Session :: Categorize sessions, each session may have multiple hits. Timeout limit by default is 30 minutes. Max can go to 4 hours. Admin > Property
+   - User :: Categorize users. A cookie that has sessions
+- Primary and secondary dimensions :: the true total of each metric might be larger than the top of the total shown in the top row. Percentage of shown in each cell is calculated against the true total of each metric/column. Each column in the top row total, I think, is the unique metric
+   - e.g. Primary:Browser (user) and Secondary:Post Terms (hit)
+- Last hit's dimension send defines the hit, session and level dimension
 - Metric can only have Hit or Product level
+   - Metrics can be set as KPI's to indicate macro or micro conversions
+   - Metrics can be calculated :: sum, ratio
+   - Metrics are usually submitted using Event Hits and may associate with custom dimension
+   - An example of a custom metric may be an Event Value of a certain Event
 - All standard [[https://developers.google.com/analytics/devguides/reporting/core/dimsmets][Dimensions & Metrics Explorer]] in what scope
-- Metrics can be set as KPI's to indicate macro or micro conversions.
 
 **** Custom dimensions and metrics <<<ga:custom dimensions>>>
 - https://support.google.com/analytics/answer/2709828
@@ -40803,13 +40809,14 @@ Maximum duration that a user can be included in a remarketing audience is 540 da
 #+END_SRC
 
 **** gtag.js ~set~ <<<ga:gtag:set>>>
-Set parameters that will be associated with every subsequent event on the page
-#+BEGIN_SRC js
-  gtag('set', {
-    'country': 'US',
-    'currency': 'USD'
-  });
-#+END_SRC
+- Set parameters that will be associated with every subsequent event on the page
+  #+BEGIN_SRC js
+    gtag('set', {    
+	'country': 'US',
+	'currency': 'USD',
+	'metric1', 1
+    });
+  #+END_SRC
 
 **** gtag.js ~event~ <<<ga:gtag:event>>>
 - ga:gtag:event:send_to
@@ -40951,7 +40958,7 @@ When a tracker's field is set, tracker will use that as default for all followin
 
 - hitType
   - pageview :: ga:fieldsObject:page
-  - event :: 
+  - event :: Custom event
   - social ::
   - timing :: 
 
@@ -41027,21 +41034,27 @@ View the converted goal in real time Reporting > Real-Time > Conversions
   });
 #+END_SRC
 
-***** Send Event - play, call, scroll <<<ga:send event>>>
-- Reporting > Behavior > Events
-- Category > Action > Label > Value
+***** Send Custom Event - play, call, scroll <<<ga:send event>>>
 - https://developers.google.com/analytics/devguides/collection/gtagjs/events
 - https://support.google.com/analytics/answer/1033068#Anatomy
+- Reporting > Behavior > Events
+- Category > Action > Label > Value
+   - Category :: primary dimension
+   - Action :: secondary dimension
+   - Label :: maybe third dimension
 - Syntax
-  - gtag.js :: ~gtag('event', eventName_eventAction, eventParameters);~
-    - gtag.js ~eventParameters~
-      - ~<eventName>~ :: same as ~eventAction~
-      - ~<category>~ :: the string that appears as the event category
-      - ~<action>~ :: the string that appears as the event action in Google Analytics Event reports
-      - ~<label>~ :: the string that appears as the event label
-      - ~<value>~ :: a non-negative integer that appears as the event value. Usually monetary value
-      - ~non_interaction~ :: By default, the event hit is considered an interaction hit, which means that it is included in bounce rate calculations. If the event is set to non_interaction true, then the event is not a hit
-  - analytics.js :: ~ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);~
+   - gtag.js :: ~gtag('event', eventName_eventAction, eventParameters);~
+      - gtag.js ~eventParameters~
+	 - ~<eventName>~ :: same as ~eventAction~
+	 - ~<category>~ :: the string that appears as the event category
+	 - ~<action>~ :: the string that appears as the event action in Google Analytics Event reports
+	 - ~<label>~ :: the string that appears as the event label
+	 - ~<value>~ :: a non-negative integer that appears as the event value. Usually monetary value
+	 - ~non_interaction~ :: By default, the event hit is considered an interaction hit, which means that it is included in bounce rate calculations. If the event is set to non_interaction true, then the event is not a hit
+   - analytics.js
+      - ~ga('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);~ or
+      - ~ga('send', 'event', {eventCategory: '', eventAction: '', eventlabel: '', eventValue: 123, 'dimension1': '', 'dimension2': '', 'metric1': 123 });~ or
+      - ~ga('send', { hitType: 'event', eventCategory: '', eventAction: '', eventlabel: '', eventValue: 123, 'dimension1': '', 'dimension2': '', 'metric1': 123});~
 
 #+BEGIN_SRC js
   gtag('event', <action>, {
@@ -41293,49 +41306,30 @@ https://developers.google.com/analytics/devguides/collection/analyticsjs/field-r
 **** Include multiple words but order does not matter
 word1+word2+word3
 
-*** TS: Too Many Self-referrals
-Reporting > Acquisition > All Traffic > Referrals, you will find the website's url is the source
-And the percentage is high compared to other Referral Sources.
-3 reasons:
-1. Users sessions idle for 30 minutes and become active. This should be < 10% of traffic
-2. Cross domain (need to bring it down to 0 self-referral)
-3. A lot of traffic and sessions are created by spammers to a landing page 
-(most likely homepage with url parameters)  with a fake referral path as the website.
-
-You cannot use View Filter to filter out referral domain...
-
-You can also create a segment without affecting the data. 
-Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
-
-Ghosts :: send request to GA directly without visiting your site. Use random UA-ID and destination url.
-- Identify the source domain of referral traffic Report > Acquisition > Source/Medium, change primary dimension to Source and secondary dimension to Hostname. If Hostname is not your webiste, then the Source is the ghost's referral domain. Full Referrer dimension shows referrer's domain and path.
-- Create a filter under Property > View to only include Hostname that is your website
- - Custom > Include > Hostname > yourmaindomain\.com|anotheruseddomain\.com
-
-Don't do this as it will turn all referral traffic coming from that domain as direct traffic!
-- Go to Admin > Account > Property > Tracking Info > Referral Exclusion List > add domain
-abc.com also matches www.abc.com because domain name CONTAINS
-- Usually you add your own domain to Referral Exclusion List
-
-https://moz.com/blog/stop-ghost-spam-in-google-analytics-with-one-filter
-More detail instructions :: https://carloseo.com/removing-google-analytics-spam/
-
 *** Analytics Solutions Gallery
-https://analytics.google.com/analytics/gallery
-
-A gallery may contain Custom Reports, Dashboard, Segments, etc.
-
-Imported gallery will show in Admin > View > Share Assets
-
-Dashboards, Custom Reports, Segments, Goals, and Custom Attribution Models can be shared in the Solutions Gallery
+- https://analytics.google.com/analytics/gallery
+- A gallery may contain Custom Reports, Dashboard, Segments, etc.
+- Imported gallery will show in Admin > View > Share Assets
+- Dashboards, Custom Reports, Segments, Goals, and Custom Attribution Models can be shared in the Solutions Gallery
 
 *** Email tracking, Measurement Protocol
-The Google Analytics Measurement Protocol allows developers to make HTTP requests to send raw user interaction data directly to Google Analytics servers.
-https://developers.google.com/analytics/devguides/collection/protocol/v1/email
+- The Google Analytics Measurement Protocol allows developers to make HTTP requests to send raw user interaction data directly to Google Analytics servers :: https://developers.google.com/analytics/devguides/collection/protocol/v1/email
+
+*** Site Search
+- Admin > choose a View > View Settings
+   - Query Parameter :: up to 5 e.g. ~s,q~ for ~a.ca/?s=abc&q=xyz~
+      - Strip query parameters out of URL :: only strip the parameters set up as above and not the other parameters
+   - Site search categories :: e.g. ~a.ca/?s=abc&cat=xyz~ where ~cat~ is the parameter to setup, which inidicates to search in what categories
+- If search result pages URLs can't have those parameters, send a pageview with the parameters :: ~ga('send', 'pageview', '/search_results.php?q=keyword')~
+- Behavior > Site Search
+   - Usage :: Sessions that use Site Search vs not
+   - Search Terms :: 
+
+*** Custom Alerts
+- Admin > choose a View > Custom Alerts
+   - Period :: Day, Week, Month
 
 *** Google Analytis Core Reporting API
-*** Learn
-https://analytics.google.com/analytics/academy/
 
 *** Remarketing with Analytics <<<ga:remarketing>>>
 - https://support.google.com/analytics/topic/2611283
@@ -41365,6 +41359,35 @@ https://support.google.com/analytics/topic/3455490
 
 *** Track 404 pages
 Behavior > Site Content > All Pages > add Page Title as secondary dimension, add filter Page Title containing Page Not Found
+
+*** TS: Too Many Self-referrals
+Reporting > Acquisition > All Traffic > Referrals, you will find the website's url is the source
+And the percentage is high compared to other Referral Sources.
+3 reasons:
+1. Users sessions idle for 30 minutes and become active. This should be < 10% of traffic
+2. Cross domain (need to bring it down to 0 self-referral)
+3. A lot of traffic and sessions are created by spammers to a landing page 
+(most likely homepage with url parameters)  with a fake referral path as the website.
+
+You cannot use View Filter to filter out referral domain...
+
+You can also create a segment without affecting the data. 
+Conditions > Filter: Sessions, Exclude > Source / Medium > contains > OHG.com / referral
+
+Ghosts :: send request to GA directly without visiting your site. Use random UA-ID and destination url.
+- Identify the source domain of referral traffic Report > Acquisition > Source/Medium, change primary dimension to Source and secondary dimension to Hostname. If Hostname is not your webiste, then the Source is the ghost's referral domain. Full Referrer dimension shows referrer's domain and path.
+- Create a filter under Property > View to only include Hostname that is your website
+ - Custom > Include > Hostname > yourmaindomain\.com|anotheruseddomain\.com
+
+Don't do this as it will turn all referral traffic coming from that domain as direct traffic!
+- Go to Admin > Account > Property > Tracking Info > Referral Exclusion List > add domain
+abc.com also matches www.abc.com because domain name CONTAINS
+- Usually you add your own domain to Referral Exclusion List
+
+https://moz.com/blog/stop-ghost-spam-in-google-analytics-with-one-filter
+More detail instructions :: https://carloseo.com/removing-google-analytics-spam/
+*** Learn
+https://analytics.google.com/analytics/academy/
 
 *** Checklist
 - Audience > Audiences > enable Demographics and Interest Reports
@@ -42460,9 +42483,10 @@ Create Custom Dimension ~Page Terms~, hit type Hit. Say Index number is 1
 
 ** Google Surveys <<<google:surveys>>>
 ** Google Marketing Platform
+- https://marketingplatform.google.com
 - Supported products
    - google:ga
-   - Google Data Studio
+   - Google Data Studio :: have to individually shared on Data Studio. Email address should be a Google Account
    - google:optimize
    - google:surveys
    - google:gtm
