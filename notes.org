@@ -23582,7 +23582,7 @@ No padding is set by default
 
 **** mj-container > mj-hero <<<mjml:tag:mj-hero>>>
 https://mjml.io/documentation/#mjml-hero
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-container>
     <mj-hero mode="fluid-height" background-width="600px" background-height="469px" background-url="https://via.placeholder.com/600x469/?text=600x469" background-color="#2a3448" padding="100px 0px">
       <!-- To add content like mj-image, mj-text, mj-button ... use the mj-hero-content component -->
@@ -23596,12 +23596,12 @@ https://mjml.io/documentation/#mjml-hero
       </mj-hero-content>
     </mj-hero>
   </mj-container>
-#+END_EXAMPLE
+#+END_SRC
 
 Always specify background-color
 mode :: fluid-height or fixed-height
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <mj-container>
     <mj-hero mode="fixed-height" height="469px" background-width="600px" background-height="469px" background-url="https://via.placeholder.com/600x469/?text/600x469" background-color="#2a3448" padding="100px 0px">
       <!-- To add content like mj-image, mj-text, mj-button ... use the mj-hero-content component -->
@@ -23615,7 +23615,7 @@ mode :: fluid-height or fixed-height
       </mj-hero-content>
     </mj-hero>
   </mj-container>
-#+END_EXAMPLE
+#+END_SRC
 
 mj-hero can be a mj-section <<<mjml:tag:mj-hero:sample1>>>
 #+BEGIN_SRC html
@@ -25781,17 +25781,23 @@ Don't need to check existance
 #+END_EXAMPLE
 
 *** Element data attributes
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div id="id" data-primary="abc"></div>
 
+  <link rel='shortlink' href='https://www.a.ca/?p=123' />
+#+END_SRC
+
+#+BEGIN_SRC js
   var e = document.getElementById('id');
   if (e.dataset.hasOwnProperty('primary')) {
-    print e.dataset.primary;
+      print e.dataset.primary;
   }
-#+END_EXAMPLE
+
+  document.querySelector("link[rel=shortlink]").getAttribute("href"); // string
+#+END_SRC
 
 ** URI and URI Component Encode, Current URL, open, email link
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var url1 = "http://abc.com";
   var url2 = "http://xyz.com/test.php?url=" + encodeURIComponent(url1);
   // decodeURIComponent();
@@ -25800,18 +25806,15 @@ Don't need to check existance
   var uri = "http://abc.com/folder name with space/file name with space.asp?abc=has space"
   var uri_en = encodeURI(uri);
   // decodeURI(str)
-#+END_EXAMPLE
 
-encodeURI do not encode these:
-#+BEGIN_EXAMPLE
-  @*_+-./
-#+END_EXAMPLE
+  // encodeURI DO NOT encode these: @*_+-./
 
-Both encodeURI and encodeURIComponent don't encode single quotes.
+  // Both encodeURI and encodeURIComponent don't encode single quotes
+#+END_SRC
 
 Current URL <<<js:window.location>>>
-#+BEGIN_EXAMPLE
-  console.log(window.location.href);
+#+BEGIN_SRC js
+  console.log(window.location.href); // whole URL
 
   // window.location.href === window.location.toString() === 'http://abc.com/xyz/ijk.php?m=123#def'
 
@@ -25820,42 +25823,50 @@ Current URL <<<js:window.location>>>
   // + window.location.pathname (/xyz/ijk.php, if homepage, '/')
   // + window.location.search (?m=123)
   // +  window.location.hash; (#def)
-#+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
   // click to email
   function sendMail() {
-   var link = "mailto:me@example.com"
-            + "?cc=myCCaddress@example.com"
-            + "&subject=" + encodeURIComponent("This is my subject")
-            + "&body=" + encodeURIComponent(document.getElementById('myText').value);
-   window.location.href = link;
+      var link = "mailto:me@example.com"
+	  + "?cc=myCCaddress@example.com"    
+	  + "&subject=" + encodeURIComponent("This is my subject")
+	  + "&body=" + encodeURIComponent(document.getElementById('myText').value);
+
+      window.location.href = link; // redirect
   }
 
   // open a new tab
   window.open('/your-url', '_blank');
-#+END_EXAMPLE
 
-Get URL Parameter
-#+BEGIN_EXAMPLE
+  // Get URL Parameter
+
   var getUrlParameter = function getUrlParameter(sParam) {
       var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-          sURLVariables = sPageURL.split('&'),
-          sParameterName,
-          i;
+	  sURLVariables = sPageURL.split('&'),
+	  sParameterName,
+	  i;
 
       for (i = 0; i < sURLVariables.length; i++) {
-          sParameterName = sURLVariables[i].split('=');
+	  sParameterName = sURLVariables[i].split('=');
 
-          if (sParameterName[0] === sParam) {
-              return sParameterName[1] === undefined ? true : sParameterName[1];
-          }
+	  if (sParameterName[0] === sParam) {
+	      return sParameterName[1] === undefined ? true : sParameterName[1];
+	  }
       }
   };
 
   // Given http://dummy.com/?technology=jquery&blog=jquerybyexample
   var tech = getUrlParameter('technology');
-#+END_EXAMPLE
+
+  // Get last path
+  var path = window.location.pathname;
+  var lastindex = path.lastIndexOf('/');
+  if ( lastindex > 0 && path.length === lastindex + 1) {
+      // remove last slash
+      path = path.substring(0, path.length - 1);
+      lastindex = path.lastIndexOf('/');
+  }
+  console.log(path.substring(lastindex + 1));
+#+END_SRC
 
 ** Cookie <<<js:cookie>>>
 https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
