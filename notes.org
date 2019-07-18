@@ -8173,6 +8173,15 @@ Return post thumbnail alt text
   wp_reset_postdata();
 #+END_SRC
 
+*** get_the_author_meta <<<wp:f:get_the_author_meta>>>
+- Syntax
+  #+BEGIN_SRC php
+    get_the_author_meta( string $field = '', int|false $user_id = false )
+  #+END_SRC
+- $field :: can be
+   - display_name
+- $user_id :: default false to get the current post's user. Can be ~$post->post_author~
+
 *** get_taxonomies <<<wp:f:get_taxonomies>>>
 #+BEGIN_SRC php
   get_taxonomies( $args = array(), $output = 'names', $operator = 'and' ) {}
@@ -9594,16 +9603,18 @@ Current URL on your website
 #+END_SRC
 
 ** WP_Post Post Object <<<wp:post>>>
-https://developer.wordpress.org/reference/classes/wp_post/
-
-- ID :: int
-- post_title :: string
-
 #+BEGIN_SRC php
   $p = get_post();
   echo $p->ID; // int
 #+END_SRC
 
+- https://developer.wordpress.org/reference/classes/wp_post/
+- ID :: int
+- post_title :: string
+- post_type :: string
+- post_date :: publication date, string ~2019-07-16 09:46:16~
+- post_date_gmt :: pub date, string ~2019-07-16 09:46:16~
+   - Convert to MySQL date, WP function :: ~mysql2date( DATE_W3C, $post->post_date_gmt, false )~ is string ~2019-07-16T13:46:16+00:00~
 - Template methods are in category-template.php wp:t:category
 
 *** has_term <<<wp:f:has_term>>>
@@ -25510,7 +25521,7 @@ Match one tag only
   '<(img|/?div|br)[^>]*>'
 #+END_EXAMPLE
 
-*** Function <<<js:Function>>> 
+*** Function <<<js:Function>>>
 - Refer to js:hoisting
 
 **** arguments
@@ -25780,6 +25791,33 @@ Don't need to check existance
   ep.text;
 #+END_EXAMPLE
 
+*** Meta tag
+#+BEGIN_SRC js
+  this.ncmGoogleTagManager = this.ncmGoogleTagManager || {};
+
+  var ns = this.ncmGoogleTagManager;
+
+  ns.getMetaTagByProperty = function (property) {
+      var metas = document.getElementsByTagName('meta');
+      var content = [];
+
+      for (i = 0; i < metas.length; i++) {
+	  if (metas[i].getAttribute('property') == property) {
+	      content.push(metas[i].getAttribute("content"));
+	  }
+      }
+      return content;
+  };
+
+  ns.ArticlePubTime = ns.getMetaTagByProperty('article:published_time');
+  if (ns.ArticlePubTime.length) {
+      return ns.ArticlePubTime[0];
+  }
+  else {
+      return null;
+  }
+#+END_SRC
+
 *** Element data attributes
 #+BEGIN_SRC html
   <div id="id" data-primary="abc"></div>
@@ -25793,7 +25831,9 @@ Don't need to check existance
       print e.dataset.primary;
   }
 
-  document.querySelector("link[rel=shortlink]").getAttribute("href"); // string
+  if ( i = document.querySelector("link[rel=shortlink]")) {
+      console.log(i.getAttribute('href'));
+  }
 #+END_SRC
 
 ** URI and URI Component Encode, Current URL, open, email link
@@ -40340,7 +40380,8 @@ Admin > Property > View > Calculated Metrics
 - These single-page sessions have a session duration of 0 seconds since there are no subsequent hits after the first one that would let Analytics calculate the length of the session
 
 *** Audience
-**** User, New User, Session
+**** User, New User, Session <<<ga:identifiers>>>
+- Refer to ga:gtag:config
 - Tracking id :: UA-12315-12 (tid) where account id is 12315 
 - Property id :: UA-12315-12 is the same as the tracking id
 - User (cid, client id) :: The total number of users for the requested time period. Long time cookie. Same browser and same device
@@ -40360,53 +40401,6 @@ _ga or _gid cookie example
   GA1.2.2033959936.1513880474
   2033959936.1513880474 is the client id
 #+END_EXAMPLE
-
-By default, gtag.js has automatic cookie domain configuration enabled. When enabled, automatic cookie domain configuration sets the _ga cookie to the highest level domain it can. For example, if your website address is blog.example.co.uk, gtag.js will set the cookie domain to example.co.uk. If gtag.js detects that you're running a server locally (e.g. localhost), it automatically sets the cookie_domain to 'none'.
-
-To turn off automatic cookie domain configuration, update the config for your property to specify a value for the cookie_domain parameter:
-#+BEGIN_SRC js
-  gtag('config', 'GA_TRACKING_ID', {
-    'cookie_domain': 'blog.example.co.uk'
-  });
-#+END_SRC
-
-Cross-domain tracking allows you to see sessions from 2 sites as single session. Also called site linking.
-This code will append the linker parameter to any links on the page that point to the target domain 'example.com':
-#+BEGIN_SRC js
-  gtag('config', 'GA_TRACKING_ID', {
-    'linker': {
-      'domains': ['example.com']
-    }
-  });
-#+END_SRC
-
-If the destination domain has been configured to automatically link domains, it will accept linker parameters by default.
-
-If the destination domain is not configured to automatically link domains, you can instruct the destination page to look for linker parameters by setting the accept_incoming property of the linker parameter to true on the destination property's config:
-#+BEGIN_SRC js
-  gtag('config', 'GA_TRACKING_ID', {
-    'linker': {
-      'accept_incoming': true
-    }
-  });
-#+END_SRC
-
-Single snippet on all domains
-#+BEGIN_SRC js
-  // on example-1.com
-  gtag('config', 'GA_TRACKING_ID_1', {
-    'linker': {
-      'domains': ['example-1.com', 'example-2.com']
-    }
-  });
-
-  // on example-2.com
-  gtag('config', 'GA_TRACKING_ID_2', {
-    'linker': {
-      'domains': ['example-1.com', 'example-2.com']
-    }
-  });
-#+END_SRC
 
 **** Active user
 Users that initiate session(s) in the last n days. Also called site reach, stickiness.
@@ -40612,6 +40606,7 @@ For some dimension, you can filter by Device type on the top.
 	  </script>
         #+END_SRC
    - It can be sent in other event types e.g. hit as well
+      - Haven't tried in code but tried in GTM
       - Standard report Behavior > Events > Pages, group events by Content Group
       - These are not in the Site Content reports
       - These do not change the previous pageview hit Content Group
@@ -40808,16 +40803,55 @@ Then you can setup Dynamic Remarketing on AdWords
 
 Maximum duration that a user can be included in a remarketing audience is 540 days.
 
-**** gtag.js ~config~ <<<ga:gtag:config>>>
+**** gtag.js ~config~ analytics.js ~create~ <<<ga:gtag:config>>> <<<ga:ga:create>>>
 - ga:gtag:config:groups :: Refer to ga:gtag:event:send_to
+     #+BEGIN_SRC js
+       // Default config sends a pageview hit. Don't send a pageview
+       gtag('config', 'UA-xxx', { 'send_page_view': false });
 
-#+BEGIN_SRC js
-  // Default config sends a pageview hit. Don't send a pageview
-  gtag('config', 'UA-xxx', { 'send_page_view': false });
+       // Send a virtual pageview
+       gtag('config', 'GA_MEASUREMENT_ID', {'page_path': '/new-page.html'});
+     #+END_SRC
+- Cookie domain :: By default, gtag.js has automatic cookie domain configuration enabled. When enabled, automatic cookie domain configuration sets the ~_ga~ cookie to the highest level domain it can. For example, if your website address is ~blog.example.co.uk~, gtag.js will set the cookie domain to ~example.co.uk~. If gtag.js detects that you're running a server locally (e.g. localhost), it automatically sets the cookie_domain to ~none~
+   - Turn off automatic cookie domain configuration, update the config for your property to specify a value for the cookie_domain parameter
+     #+BEGIN_SRC js
+       gtag('config', 'GA_TRACKING_ID', {
+	 'cookie_domain': 'blog.example.co.uk'
+       });
+     #+END_SRC
+- Cross-domain tracking allows you to see sessions from 2 sites as single session. Also called site linking. This code will append the linker parameter to any links on the page that point to the target domain 'example.com':
+  #+BEGIN_SRC js
+    gtag('config', 'GA_TRACKING_ID', {
+      'linker': {
+	'domains': ['example.com']
+      }
+    });
+  #+END_SRC
+   - If the destination domain has been configured to automatically link domains, it will accept linker parameters by default
+   - If the destination domain is not configured to automatically link domains, you can instruct the destination page to look for linker parameters by setting the accept_incoming property of the linker parameter to true on the destination property's config:
+     #+BEGIN_SRC js
+       gtag('config', 'GA_TRACKING_ID', {
+	 'linker': {
+	   'accept_incoming': true
+	 }
+       });
+     #+END_SRC
+     Single snippet on all domains
+     #+BEGIN_SRC js
+       // on example-1.com
+       gtag('config', 'GA_TRACKING_ID_1', {
+	 'linker': {
+	   'domains': ['example-1.com', 'example-2.com']
+	 }
+       });
 
-  // Send a virtual pageview
-  gtag('config', 'GA_MEASUREMENT_ID', {'page_path': '/new-page.html'});
-#+END_SRC
+       // on example-2.com
+       gtag('config', 'GA_TRACKING_ID_2', {
+	 'linker': {
+	   'domains': ['example-1.com', 'example-2.com']
+	 }
+       });
+     #+END_SRC
 
 **** gtag.js ~set~ <<<ga:gtag:set>>>
 - Set parameters that will be associated with every subsequent event on the page
@@ -42370,28 +42404,31 @@ After that, click SUBMIT to publish the change
 *** Variables
 - Variables can be referred to in Tag and Trigger as value using double curly brackets e.g. ~{{Page URL}}~
 - Built-in variables without any tags. These are not all built-in variables:
-  - All built-in variables :: https://support.google.com/tagmanager/topic/7182737
-  - Event
-  - Page Hostname
-  - Page Path
-  - Page URL
-  - Click URL :: after a link is clicked
+   - All built-in variables :: https://support.google.com/tagmanager/topic/7182737
+   - Event
+   - Page Hostname
+   - Page Path
+   - Page URL
+   - Click URL :: after a link is clicked
 - Variables come with a certain tag type
-  - ~TransactionTotal = {insert cart checkout total here}~
-  - GA Custom dimensions
+   - ~TransactionTotal = {insert cart checkout total here}~
+   - GA Custom dimensions
+- Google Analytics Settings
+   - Used to config multiple GA tags
+   - Some events do not use the Settings' content group for the events
 - User-defined variables :: https://support.google.com/tagmanager/topic/9125128
-  - Constant Variable
-  - Data Layer :: ~dataLayer.push({"Data Layer Name": "value"})~ <<<google:gtm:user-defined variable:data layer>>>
-    - Version 1 :: ~dataLayer.push( "a.b.c": "value")~ :: interpreted as ~{ "a.b.c": "value"}~
-    - Version 2 :: ~dataLayer.push({"a.b.c": "value"})~ :: interpreted as ~{a: {b: {c: "value"}}}~
-  - JavaScript Variable :: Put e.g. ~document.title~ as Global Variable Name and this GTM JavaScript Variable is the same as that variable
-  - Custom JavaScript :: these vars can be available as soon as Page View. Refer to trigger 
-    #+NAME: User-defined variables - Custom JavaScript
-    #+BEGIN_SRC js
-      function() {
-	  return new Date().getHours();
-      }
-    #+END_SRC
+   - Constant Variable
+   - Data Layer :: ~dataLayer.push({"Data Layer Name": "value"})~ <<<google:gtm:user-defined variable:data layer>>>
+      - Version 1 :: ~dataLayer.push( "a.b.c": "value")~ :: interpreted as ~{ "a.b.c": "value"}~
+      - Version 2 :: ~dataLayer.push({"a.b.c": "value"})~ :: interpreted as ~{a: {b: {c: "value"}}}~
+   - JavaScript Variable :: Put e.g. ~document.title~ as Global Variable Name and this GTM JavaScript Variable is the same as that variable
+   - Custom JavaScript :: these vars can be available as soon as Page View. Refer to trigger 
+     #+NAME: User-defined variables - Custom JavaScript
+     #+BEGIN_SRC js
+       function() {
+	   return new Date().getHours();
+       }
+     #+END_SRC
 
 *** Trigger
 - Trigger controls under which condition a Tag is used/inserted. A Tag always requires at least one trigger
