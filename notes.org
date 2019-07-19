@@ -271,16 +271,19 @@ SERVER_SIGNATURE
 - REMOTE_PORT
 - SERVER_PROTOCOL
 - SERVER_NAME :: see below
-- SERVER_PORT
+- SERVER_PORT :: see below
 - SCRIPT_NAME :: ~/index.php~. Similar to ~$_SERVER['PHP_SELF']~ which is only for PHP
 - SCRIPT_FILENAME :: ~/index.php~. Maybe a relative path when the script is executed with CLI
 - ~REMOTE_*~ :: values are guaranteed to be the valid address of the client as verified by a TCP/IP handshake. Because it's the address the response will be sent to
 
 *** HTTP_HOST and SERVER_NAME
 - ~curl -H "Host: notyourdomain.com" http://yoursite.com/~
-   - By default, HTTP_HOST or SERVER_NAME is ~notyourdomain.com~
+   - By default, ~HTTP_HOST~ or ~SERVER_NAME~ is ~notyourdomain.com~
+   - Server might hard set (static) ~SERVER_NAME~ to the a real machine name e.g. Pantheon
+   - Server might dynamically set ~HTTP_HOST~ based on the request e.g. Pantheon
    - Attackers might trigger a lot of requests and cause your website that is cached by a proxy (Varnish, Cloudflare) to have wrong cache that has content which points to the attacker's domain. Cache poisoning
    - Solution :: Never display ~$_SERVER['HTTP_HOST']~ or ~$_SERVER['SERVER_NAME']~
+   - For Pantheon, set ~$_SERVER['SERVER_NAME'] = $_SERVER['HTTP_HOST'];~
 
 #+BEGIN_SRC php
   $config['site_url'] = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
@@ -296,6 +299,18 @@ SERVER_SIGNATURE
   }
   else {
 	  $domain = 'localhost';
+  }
+#+END_SRC
+
+*** SERVER_PORT
+#+BEGIN_SRC php
+  if (isset($_ENV['PANTHEON_ENVIRONMENT'])) {
+    if (isset($_SERVER['HTTP_USER_AGENT_HTTPS']) && $_SERVER['HTTP_USER_AGENT_HTTPS'] === 'ON') {
+      $_SERVER['SERVER_PORT'] = 443;
+    }
+    else {
+      $_SERVER['SERVER_PORT'] = 80;
+    }
   }
 #+END_SRC
 
@@ -40396,11 +40411,10 @@ Admin > Property > View > Calculated Metrics
 | _gac_<property-id> | 90 days         | GA is linked with AdWords account, AdWords website conversion tags |
 |                    |                 |                                                                    |
 
-_ga or _gid cookie example
-#+BEGIN_EXAMPLE
-  GA1.2.2033959936.1513880474
-  2033959936.1513880474 is the client id
-#+END_EXAMPLE
+- ~_ga~ or ~_gid~ cookie example
+   - Value :: ~GA1.2.2033959936.1513880474~
+      - Client ID :: ~2033959936.1513880474~
+   - Domain :: e.g. ~.myweb.ca~
 
 **** Active user
 Users that initiate session(s) in the last n days. Also called site reach, stickiness.
@@ -40812,12 +40826,18 @@ Maximum duration that a user can be included in a remarketing audience is 540 da
        // Send a virtual pageview
        gtag('config', 'GA_MEASUREMENT_ID', {'page_path': '/new-page.html'});
      #+END_SRC
-- Cookie domain :: By default, gtag.js has automatic cookie domain configuration enabled. When enabled, automatic cookie domain configuration sets the ~_ga~ cookie to the highest level domain it can. For example, if your website address is ~blog.example.co.uk~, gtag.js will set the cookie domain to ~example.co.uk~. If gtag.js detects that you're running a server locally (e.g. localhost), it automatically sets the cookie_domain to ~none~
-   - Turn off automatic cookie domain configuration, update the config for your property to specify a value for the cookie_domain parameter
+- Cookie domain ::
+   - Most cases set it to 'auto', it sets the ~_ga~ cookie to the highest level domain it can. e.g. if your website address is ~blog.example.co.uk~, gtag.js will set the cookie domain to ~example.co.uk~. If it detects that you're running a server locally (e.g. localhost), it automatically sets the cookie_domain to ~none~
+   - GA requests on websites that are subdomains and ancestor subdomains can share the same cookie
+   - If ~cookie_domain~ is not set, it will be set to the current domain
+   - Turn off automatic cookie domain configuration, update the config for your property to specify a value for the ~cookie_domain~ parameter
      #+BEGIN_SRC js
        gtag('config', 'GA_TRACKING_ID', {
 	 'cookie_domain': 'blog.example.co.uk'
        });
+
+       ga('create', 'GA_TRACKING_ID', 'auto');
+       // or ga('create', 'GA_TRACKING_ID', {'cookieDomain' : 'auto'});
      #+END_SRC
 - Cross-domain tracking allows you to see sessions from 2 sites as single session. Also called site linking. This code will append the linker parameter to any links on the page that point to the target domain 'example.com':
   #+BEGIN_SRC js
