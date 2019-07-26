@@ -5411,14 +5411,18 @@ height => "426"
 
 *** Structure
 **** node
-- nid* :: INT
+- nid *PK* :: int(10) unsigned
 - vid :: The current node_revision.vid version id
-- uid :: author id
-- type :: string, e.g. article, 
-- title
-- created :: 
-- sticky :: int, 0. 1 means to show on top of query result
-- promote :: int, 0. 1 means to show on homepage
+- uid :: int(11) d:0 user/author id
+- type :: varchar(32) d:'' e.g. article
+- title :: varchar(255) d:''
+- created :: int(11) d:0 unix timestamp
+- changed :: int(11) d:0 unix timestamp
+- comment :: int(11) d:0 ~2 = open (read/write), 1 = closed (read only), 0 = no~
+- sticky :: int(11) d:0 Boolean to display node at the top of query result
+- promote :: int(11) d:0 Boolean to show on homepage
+- tnid :: int(10) unsigned d:0 translation set id
+- translate :: int(11) d:0 Boolean to mark translation is needed
 
 **** field_config
 - id *PK* :: int 11
@@ -5452,16 +5456,28 @@ height => "426"
 - deleted :: tinyint 4 default 0 don't know..
 
 **** field_data_body
-- entity_type* :: string, e.g. node
-- deleted* :: int, 0 not deleted
-- entity_id* :: int, e.g. node id
-- language* :: string
-- delta* :: int, multiple values, start as 0
-- bundle :: string, e.g. node type article
-- revision_id :: int
+- Common fields
+   - entity_type *PK* :: varchar(128) d:'' this field is attached to e.g. node
+   - entity_id *PK* :: int(10) unsigned e.g. node id
+   - bundle :: varchar(128) d:'' e.g. node type article
+   - deleted *PK* :: tinyint(4) d:0 not deleted
+   - language *PK* :: varchar(32) d:'' e.g. ~und~
+   - delta *PK* :: int(10) unsigned used for ulti-value fields, sequence number, start as 0
+   - revision_id *PK* :: int(10) unsigned
+- Unique fields
+   - body_value :: longtext
+   - body_summary :: longtext
 
-- body_value :: longtext
-- body_summary :: longtext
+**** ~field_data_[field_my_text_or_longtext]~
+- Text
+   - ~field_data_[field_my_text]_value~ :: varchar(255)
+   - ~field_data_[field_my_text]_format~ :: varchar(255)
+- Longtext
+- ~field_data_[field_my_longtext]_value~ :: longtext
+- ~field_data_[field_my_longtext]_format~ :: varchar(255) 
+
+**** ~field_data_[field_my_date_unix_timestamp]~
+- ~field_data_[field_my_date_unix_timestamp]_value~ :: int(11)
 
 **** ~field_data_[field_custom_term_reference]~
 - field_custom_term_referecen_tid :: int
@@ -57026,12 +57042,10 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   - 7-9 :: 4 bytes
 
 **** Datetime <<<mysql:datatype:datetime>>>
-- TIME :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
-
-1 Year ago
-post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)
-
-Date comparison
+- ~TIME~ :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
+- ~FROM_UNIXTIME(intTime)~ :: e.g. ~2019-07-12 01:02:03~
+- Date comparison
+   - 1 Year ago :: ~post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)~
 
 #+BEGIN_SRC sql
   -- Custom datetime
@@ -62666,7 +62680,7 @@ Node.js, Dockerfile
 - DMARC has three levels of policy
    - None :: If the policy is set to none, the receiving inbox provider monitors and reports on metrics
    - Quarantine :: If the DMARC policy is set to quarantine, the inbox provider places messages that fail the required checks into the user's spam folder
-   - Reject :: If the policy is set to reject, the inbox provider will block any message that fails authentication.
+   - Reject :: If the policy is set to reject, the inbox provider will block any message that fails authentication
 - https://sendgrid.com/blog/dmarc-domain-based-message-authentication-reporting-conformance/
 - DMARC Specifications on DNS Tags and Values :: https://dmarc.org/resources/specification/
    - ~TXT _dmarc v=DMARC1; p=none; rua=mailto:dmarc@myweb.ca; ruf=mailto:dmarc@myweb.ca; fo=1; adkim=r; aspf=r;~ :: Sample
