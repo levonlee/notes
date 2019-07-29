@@ -11949,15 +11949,26 @@ archive-{post-type}.php
 if single.php and archive.php don't exist, wp looks for index.php
 
 *** Page template
-Hierarchy
-- Global Custom Page Template :: can be applied to multiple pages. Set in Edit Post > Page Attributes > Template
-- page-{slug}.php :: for one specific page. Directly put them in theme folder
-- page-{id}.php :: for one specific page. Directly put them in theme folder
-- page.php :: refer to conditional tags
-- singular.php
-- index.php
+- Hierarchy
+   - Global Custom Page Template :: can be applied to multiple pages. Set in Edit Post > Page Attributes > Template
+   - page-{slug}.php :: for one specific page. Directly put them in theme folder
+   - page-{id}.php :: for one specific page. Directly put them in theme folder
+   - page.php :: refer to conditional tags
+   - singular.php
+   - index.php
+- Attachment
+   - MIME_type.php
+      - image.php, video.php, application.php
+      - For text/plain, in order
+	 - text_plain.php
+	 - plain.php
+	 - text.php
+   - attachment.php
+   - single-attachment.php
+   - single.php
+   - singular.php
 
-**** Global Custom Page Template
+**** Global Custom Page Template <<<wp:custom page template>>>
 - Put these global template files in theme subfolder ~page-templates~ (or any .php files)
 - File name can be anything but follow ~page_two-columns.php~. Don't use ~page-~ as prefix!
 - Make a copy of page.php to start
@@ -12917,8 +12928,23 @@ wp:filter:template_include
 *** wp_postmeta <<<wp:db:wp_postmeta>>>
 - meta_id *PK* :: bigint 20
 - post_id :: bigint 20
-- meta_key :: vchar 255 if custom field has prefix `_`. It means the field is private and does not display on Post Edit page on wp-admin
-  - wp:plugin:acf key ~custom_order~ with value from wp-admin and ~_custom_order~ with value ~field_ALPHANUMERICRANDOM~ which refers table ~wp_posts~ with ~post_name = 'field_ALPHANUMERICRANDOM'~ 
+- meta_key :: vchar(255) if custom field has prefix ~_~, It means the field is private and does not display on Post Edit page on wp-admin
+   - wp:plugin:acf key ~custom_order~ with value from wp-admin and ~_custom_order~ with value ~field_ALPHANUMERICRANDOM~ which refers table ~wp_posts~ with ~post_name = 'field_ALPHANUMERICRANDOM'~
+   - ~_wp_page_template~ :: wp:custom page template e.g. ~page-news.php~
+	#+BEGIN_SRC sql
+	  SELECT
+	      pm.meta_value, COUNT(*)
+		 -- ,p.id, p.post_title, p.post_type, p.post_parent, p.post_date, p.guid, p.post_name
+	  FROM wp_posts p
+		   INNER JOIN wp_postmeta pm ON pm.post_id = p.id
+	  WHERE 1=1
+	    AND p.post_status = 'publish'
+	    AND pm.meta_key = '_wp_page_template'
+	    -- AND p.ID = '126126'
+	  -- AND pm.meta_value = 'page-no-title.php'
+	  GROUP BY pm.meta_value
+	  ORDER BY p.post_date DESC
+	#+END_SRC
 - meta_value :: longtext string or php serialized string
 
 Get all meta keys and values for a post
