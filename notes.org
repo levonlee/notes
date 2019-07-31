@@ -7976,7 +7976,7 @@ Create a bash script wrapper for already started processes
 ** Conditional Tags <<<wp:conditional tags>>>
 - [[https://codex.wordpress.org/Conditional_Tags][These]] use the wp:query:main only
 
-*** is_page()
+*** ~is_page( int|string|array $page = '' )~
 #+BEGIN_SRC php
   is_page(); // any page
   is_page(42);
@@ -7985,10 +7985,10 @@ Create a bash script wrapper for already started processes
   is_page( array(42, 54, 6) );
 #+END_SRC
 
-*** is_page_template()
+*** ~is_page_template( string|array $template = '' )~
 #+BEGIN_SRC php
   is_page_template(); // any page template
-  is_page_template( 'about.php' ); // a template 'page-templates/about.php'
+  is_page_template( 'about.php' ); // another template 'page-templates/about.php'
 #+END_SRC
 
 *** ~is_single( int|string|array $post = '' )~
@@ -12916,6 +12916,27 @@ Number of posts per Year, Month
   -- LIMIT 100
 #+END_SRC
 
+Get terms for posts
+#+BEGIN_SRC sql
+  SELECT
+	 t.term_id, t.name as term_name, t.slug as term_slug, t.term_group
+       ,tr.term_order
+       ,tt.term_taxonomy_id, tt.taxonomy as taxonomy, tt.parent
+      ,p.ID as post_id, p.post_title, p.post_type, p.post_status
+  FROM wp_posts p
+	   INNER JOIN wp_term_relationships tr ON tr.object_id = p.ID
+	   INNER JOIN wp_terms t ON t.term_id = tr.term_taxonomy_id
+	   INNER JOIN wp_term_taxonomy tt ON tt.term_id = t.term_id
+  WHERE 1 = 1
+    AND p.post_type NOT IN ('attachment', 'revision', 'nav_menu_item', 'wp-types-group')
+    AND p.post_status = 'publish'
+    -- AND tt.taxonomy = 'post_tag'
+    -- AND ( t.slug LIKE 'TTNA' OR t.name LIKE 'TTNA' )
+    -- AND t.slug LIKE 'GCKC'
+    -- AND p.ID = '144571'
+  ORDER BY p.post_date DESC
+#+END_SRC
+
 *** wp_terms, wp_term_relationships
 - wp_terms
    - term_id :: int, auto_increment
@@ -17092,20 +17113,24 @@ border-image: none   100%   1     0     stretch
 #+END_SRC
 
 *** background-position
-background-position: right center; // align right on X and align center on Y
-background-position: right bottom;
-background-position: right 100px bottom -100px; //  for right/left or top/bottom, +- pixels
-background-position: calc(50% - 100px) calc(50% + 100px); // for center, calc has be used
+#+BEGIN_SRC css
+  background-position: right center; /* align right on X and align center on Y */
+  background-position: right bottom;
+  background-position: right 100px bottom -100px; /* for right/left or top/bottom, +- pixels */
+  background-position: calc(50% - 100px) calc(50% + 100px); /* for center, calc has be used */
+#+END_SRC
 
 *** background-size
-background-size: 20px auto;
-background-size: 50% auto; // sets the width of the bg image in percent of the parent element.
-background-size: contain; // bg image might not cover all content area
-background-size: cover; // content area might not see the whole bg image
+#+BEGIN_SRC css
+  background-size: 20px auto;
+  background-size: 50% auto; /* sets the width of the bg image in percent of the parent element. */
+  background-size: contain; /* bg image might not cover all content area */
+  background-size: cover; /* content area might not see the whole bg image */
 
-Stretch on y-axis and repeat on x-axis
-background: url() center repeat-x;
-background-size: auto 100%;
+  /* Stretch on y-axis and repeat on x-axis */
+  background: url() center repeat-x;
+  background-size: auto 100%;
+#+END_SRC
 
 *** background-clip, background-origin
 background-clip: border-box; // default. largest area
@@ -17132,7 +17157,7 @@ background-origin: border-box; // default. largest area
 
 *** Mobile background-attachment:fixed background-size:cover
 Instead of
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .cs-hero-background {
     background: url('...') no-repeat center bottom fixed;
     -webkit-background-size: cover;
@@ -17140,10 +17165,10 @@ Instead of
     -o-background-size: cover;
     background-size: cover;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Do this, body:before might work in some situation
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .cs-hero-background:before {
     content: "";
     display: block;
@@ -17159,7 +17184,7 @@ Do this, body:before might work in some situation
     -o-background-size: cover;
     background-size: cover;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** List style
 <'list-style-type'> || <'list-style-position'> || <'list-style-image'>
@@ -22168,14 +22193,15 @@ A non-negative integer of seconds that the object (response) has been in a proxy
    - no-cache :: browser has to always check Etag and makes a roundtrip request. If file in server is new, it will be downloaded.
    - no-store :: no cache should be stored in request or response e.g. Go Back to previous page, the browser shows the browser cache version of the page
    - no-transform :: No transformations or conversions should be made to the resource. The ~Content-Encoding~, ~Content-Range~, ~Content-Type~ headers must not be modified by a proxy. A non-transparent proxy might, for example, convert between image formats in order to save cache space or to reduce the amount of traffic on a slow link. The ~no-transform~ directive disallows this.
-   - public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable.
+   - public :: response can be cached in all devices. It's not necessary as max-age inidicates the response is cacheable
    - private :: response can be cached for a single user (user's browser) but not in shared cache (public CDN, Varnish or other intermediaries)
    - proxy-revalidate ::
-   - max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again.
-post-check=0, pre-check=0 :: (Discouraged) Old IE does not cache and always ask from server
+   - max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again
+   - ~post-check=0, pre-check=0~ :: (Discouraged) Old IE does not cache and always ask from server
 - Common usage
-  - ~public, max-age=2592000~ :: Tells the ~external~ caching system e.g. Varnish not to make a call to the web server for this request until the max-age <<<header:cache-control:public max-age>>>
-  - ~no-cache, must-revalidate, post-check=0, pre-check=0~ :: no cache and always ask from server
+   - ~public, max-age=2592000~ :: Tells the ~external~ caching system e.g. Varnish not to make a call to the web server for this request until the max-age <<<header:cache-control:public max-age>>>
+   - ~no-cache, must-revalidate, post-check=0, pre-check=0~ :: no cache and always ask from server
+   - ~max-age=0~ :: Chrome adds this in request when you enter the URL or hit refresh. This tells the cache server to serve the cache whenever possible. Whether or not the cache system serves the cache depends on the cache server. e.g. Varnish still serves the cache when it's possible
 
 *** Expires <<<header:expires>>>
 When the response is considered stale. Set to 0 means the response is expired.
@@ -50610,44 +50636,34 @@ For Redis, add the following in wp-config.php according to ~lando info~ for plug
 #+END_SRC
 
 ** Recipe: Pantheon
-Stop ~Docker for Windows~ and install Lando without ~Docker for Windows~ and ~Git for Windows~
-~git clone~ from Pantheon, go to the directory and run ~lando init~ and choose pantheon and a site to create ~.lando.yml~ in project root dir.
-~lando terminus auth:login --machine-token=my-machine-token~
-
-If terminus login fail, ~lando ssh --user=root~ and run terminus auth:login
-
-~lando start~
-~lando pull --database=live --files=live --code=none~
-~lando pull --database=none --code=none --files=live --rsync~
-- After db pull, run this inside appserver container ~wp cache flush~ or ~lando wp cache flush~
-- May follow ~lando rebuild~ or restart, go to wp admin > Settings > clear Pantheon Page Cache
-
-~lando stop~
-
-~lando stop && lando destroy && lando poweroff~ and run these to fully remove all lando containers and networks
-- ~docker rm -f $(docker ps -a -q)~
-- ~docker network prune~
-
-Usually ~lando stop && lando destroy && lando start~ is enough. Can also use ~lando rebuild~
-
+- https://docs.devwithlando.io/tutorials/pantheon.html
+- Default config :: https://github.com/lando/lando/tree/master/plugins/lando-pantheon/recipes/pantheon
+- Windows install :: Stop ~Docker for Windows~ and install Lando without ~Docker for Windows~ and ~Git for Windows~
+- ~git clone~ from Pantheon, go to the directory and run ~lando init~ and choose pantheon and a site to create ~.lando.yml~ in project root dir
+- Pantheon auth :: ~lando terminus auth:login --machine-token=my-machine-token~
+   - If terminus login fail :: ~lando ssh --user=root~ and run ~terminus auth:login --machine-token=xxx~
+- ~lando start~
+- ~lando pull --database=live --files=live --code=none~
+- ~lando pull --database=none --code=none --files=live --rsync~
+- After db pull, run this inside appserver container :: ~wp cache flush~ or ~lando wp cache flush~
+   - May need to clear cache from wp-admin after ~lando rebuild~ or restart :: wp admin > Settings > clear Pantheon Page Cache
+- Fully remove all lando containers and networks
+   - ~lando stop && lando destroy && lando poweroff~
+   - ~docker rm -f $(docker ps -a -q)~
+   - ~docker network prune~
+   - Usually ~lando stop && lando destroy && lando start~ is enough. Can also use ~lando rebuild~
 - Run wp cli on other Pantheon sites :: ~lando terminus wp mysite.live user list~
 - Push only code :: ~lando push -m "a message" --database=none --files=none~
-
-https://docs.devwithlando.io/tutorials/pantheon.html
-
-Lando creates database container with:
-- user :: pantheon
-- password :: pantheon
-- database :: pantheon
-
-The appserver container has the following .sh files in folder ~/helpers~. Their counter parts are in docker host =~/.lando/services/config/pantheon/*.sh=. Both of them are updated when ~lando pull~ is run.
-- pull.sh / push.sh
-- pantheon.sh
-
-- Add ~--allow-root~ for wp commands in those files and run ~/helpers/pull.sh --database=dev --files=none --code=none~ directly inside the container
-- Or add a bash script wrapper wp-cli:allow-root
-
-- Use ~apt-get update && apt-get install nano~ for installing packages inside appserver container.
+- Lando creates database container with:
+   - user :: pantheon
+   - password :: pantheon
+   - database :: pantheon
+- Lando commands :: the appserver container has the following ~.sh~ files in folder ~/helpers~. Their counter parts are in docker host =~/.lando/services/config/pantheon/*.sh=. Both of them are updated when ~lando pull~ is run
+   - pull.sh / push.sh
+   - pantheon.sh
+   - Add ~--allow-root~ for wp commands in those files and run ~/helpers/pull.sh --database=dev --files=none --code=none~ directly inside the container
+   - Or add a bash script wrapper wp-cli:allow-root
+- Install packages inside appserver container :: ~apt-get update && apt-get install nano~
 - ~$_ENV['PANTHEON_ENVIRONMENT']~ is ~lando~
 
 *** Push a new website to Live <<<lando:pantheon:live>>>
@@ -56135,24 +56151,24 @@ WordPress ~templates/<your_template>/functions.php~
    - Correct: ~SESSfollowbylowercasewordwithnumbers123~
    - Incorrect: ~SESS_hello~, ~SESS-123~, ~mycustomSESS~, ~Sessone~, ~sess123testing~, ~SESSFIVE~
 - WP doesn't use PHP session cookies. Plugin [[https://wordpress.org/plugins/wp-native-php-sessions/][Wordpress Native PHP Sessions]] allows custom code to use ~$_SESSIONS~ but it's pulled from db
+- Varnish configuration file location in Lando :: ~/etc/varnish/conf.d/lando.vcl~
 - Other [[https://pantheon.io/docs/caching-advanced-topics/][cache-busting cookie patterns]] :: If there is any cookie like these, don't serve cache. Refer to Pantheon's Varnish configuration file ~.vcl~
-#+BEGIN_EXAMPLE
-  NO_CACHE
-  S+ESS[a-z0-9]+
-  fbs[a-z0-9_]+
-  SimpleSAML[A-Za-z]+
-  PHPSESSID
-  wordpress[A-Za-z0-9_]*
-  wp-[A-Za-z0-9_]+
-  comment_author_[a-z0-9_]+
-  duo_wordpress_auth_cookie
-  duo_secure_wordpress_auth_cookie
-  bp_completed_create_steps # BuddyPress cookie used when creating groups
-  bp_new_group_id # BuddyPress cookie used when creating groups
-  wp-resetpass-[A-Za-z0-9_]+
-  (wp_)?woocommerce[A-Za-z0-9_-]+
-#+END_EXAMPLE
-
+     #+BEGIN_EXAMPLE
+       NO_CACHE
+       S+ESS[a-z0-9]+
+       fbs[a-z0-9_]+
+       SimpleSAML[A-Za-z]+
+       PHPSESSID
+       wordpress[A-Za-z0-9_]*
+       wp-[A-Za-z0-9_]+
+       comment_author_[a-z0-9_]+
+       duo_wordpress_auth_cookie
+       duo_secure_wordpress_auth_cookie
+       bp_completed_create_steps # BuddyPress cookie used when creating groups
+       bp_new_group_id # BuddyPress cookie used when creating groups
+       wp-resetpass-[A-Za-z0-9_]+
+       (wp_)?woocommerce[A-Za-z0-9_-]+
+     #+END_EXAMPLE
 - Default session cookie lifetime is 2,000,000 seconds using session.cookie_lifetime. If set to 0, the cookie is deleted when the user closes their browser
    - Set in Drupal's ~default.settings.php~ and in Pantheon's PHP configuration
 - Drupal's session garbage collection uses the session.gc_maxlifetime PHP setting when deleting expired sessions from sessions database table. Session max lifetime is 200,000 seconds in Drupal's default.settings.php nad in Pantheon's PHP configuration
