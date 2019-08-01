@@ -8867,13 +8867,24 @@ wp:f:get_sidebar
 
 *** get_template_part, get_theme_file_uri, get_theme_file_path <<<wp:f:get_template_part>>>
 - ~get_template_part( string $slug, string $name = null )~ :: ~require~ file ~{slug.php}~ or ~{slug}-{name}.php~
-  - Call ~locate_template~
-    - Call ~load_template~
+     #+BEGIN_SRC php
+       <?php get_template_part( 'template-parts/header/header', 'image' ); ?>
+       // require( 'path-to-theme/template-parts/header/header-image.php' );
+     #+END_SRC
+   - Call ~locate_template~
+      - Call ~load_template~
+   - Pass variables to template
+     #+BEGIN_SRC php
+       // parent
+       $args = ['...'];
+       set_query_var( 'my_query_args', $args );
 
-#+BEGIN_SRC php
-  <?php get_template_part( 'template-parts/header/header', 'image' ); ?>
-  // require( 'path-to-theme/template-parts/header/header-image.php' );
-#+END_SRC
+       get_template_part('template-parts/test');
+
+       // test.php
+       $query = new WP_Query( $my_query_args );
+     #+END_SRC
+
 
 - <<<wp:f:get_theme_file_uri>>> :: ~get_theme_file_uri~ checks for file existance and returns URL.
 #+BEGIN_SRC php
@@ -10368,14 +10379,14 @@ To get posts that have featured images
 
 **** Operators: compare and type
 compare
-- =, !=
-- >, >=, <, <=
+- ~=~, ~!=~
+- ~>~, ~>=~, ~<~, ~<=~
 - LIKE, NOT LIKE
 - IN, NOT IN
 - BETWEEN, NOT BETWEEN
 - EXISTS, NOT EXISTS
-- REGEXP, NOT REGEXP :: MySQL REGEX
-- RLIKE (synonym of REGEXP) 
+- ~REGEXP~, ~NOT REGEXP~ :: MySQL REGEX
+- ~RLIKE~ (synonym of REGEXP) 
 
 type 
 In MySQL, it means CAST(the field, to a type)
@@ -10389,12 +10400,12 @@ In MySQL, it means CAST(the field, to a type)
 - TIME :: mysql:datatype:datetime
 
 <<<WP Types Custom Field Checkbox and WP Meta Query>>>
-Say the wpcf-newsletters custom field created by WP Types has 2 checkboxes are selected: enligne and pw.
+Say the ~wpcf-newsletters~ custom field created by WP Types has 2 checkboxes are selected: enligne and pw.
 The following 2 strings will appear in the serialized json string as value in WP_Meta_Query
 #+BEGIN_EXAMPLE
   a:1:{i:0;s:7:"enligne";}
   a:1:{i:0;s:2:"pw";}
-#+END_EXAMPLE 
+#+END_EXAMPLE
 
 Select the posts that have checkbox enligne checked.
 #+BEGIN_SRC php
@@ -10799,9 +10810,8 @@ Sample
 #+END_SRC
 
 *** query_vars <<<wp:filter:query_vars>>>
-https://codex.wordpress.org/WordPress_Query_Vars
-
-Used in wp:f:add_rewrite_tag
+- https://codex.wordpress.org/WordPress_Query_Vars
+- Used in wp:f:add_rewrite_tag
 
 ~mysite.ca/?p=123~ where ~p~ is a public query var where it can be used in URL and has filter effect
 Private query var can only be used in PHP:
@@ -10811,7 +10821,7 @@ Private query var can only be used in PHP:
   ));
 #+END_SRC
 
-*** page_link <<<wp:filter:page_link>>> 
+*** page_link <<<wp:filter:page_link>>>
 The filter is used in ~get_permalink~
 
 #+BEGIN_SRC php
@@ -13519,9 +13529,9 @@ Get first row or random row
 https://www.advancedcustomfields.com/resources/register-fields-via-php/
 
 *** Types :: Toolset Types <<<wp:plugin:types>>>
-WP Types is different! Use <<<types_render_field>>>
-
-Custom field name is wpcf-fieldname_in_toolset_ui
+- WP Types is different! Use <<<types_render_field>>>
+- Custom field name is ~wpcf-fieldname_in_toolset_ui~ :: underscores can be ~-~ based on how field is named in the plugin
+   - Same name in ~meta_key~ in ~wp_postmeta~ :: if field is set to not-show on wp-admin, ~_~ is appended
 
 #+BEGIN_SRC php
   $newsletters = types_render_field('newsletters', array('output'=>'raw'));
@@ -13554,9 +13564,9 @@ Custom field name is wpcf-fieldname_in_toolset_ui
 Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 **** Release
-WP 3.7+
-2.0
-2.2.22 :: dropped support for PHP 5.2
+- WP 3.7+
+- 2.0
+- 2.2.22 :: dropped support for PHP 5.2
 
 *** Post Type Switcher <<<wp:plugin:post-type-switcher>>>
 - Switch a post to another post type
@@ -18964,22 +18974,25 @@ Old Way uses ~<defs>~, ~viewBox~ has to be defined in ~<svg>~
 
 *** ~&~
 #+BEGIN_SRC scss
-   a {
-       &:hover {
+  a {
+      &:hover {
 
-       }
-       &.myclass {
-	 /* a.myclass */
-       }
-   }
+      }
+      &.myclass {
+	/* a.myclass */
+      }
+  }
 
-   .entry {
-       .single &,
-       .page & {
-	   /* .single .entry, .page .entry */
-	   /* Useful for multiple parents */
-       }
-   }
+  .entry {
+      .single &,
+      .page & {
+	  /* .single .entry, .page .entry */
+	  /* Useful for multiple parents */
+      }
+      &--col-1 {
+	  /* .entry--col-1 */
+      }
+  }
 #+END_SRC
 
 *** ~@extend~ ~%~ <<<sass:@extend>>>
