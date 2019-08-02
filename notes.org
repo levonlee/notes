@@ -8013,21 +8013,23 @@ Create a bash script wrapper for already started processes
 *** post-thumbnail-template.php <<<wp:t:thumbnail>>>
 - ~has_post_thumbnail( $post = null)~ :: return bool
 - ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~ :: get thumbnail id
-- ~the_post_thumbnail_*~ :: has to be current post, calls ~get_the_post_thumbnail_*~
-- ~get_the_post_thumbnail_*~ :: can specify which post, calls ~wp_get_attachment_image_src~
-   - ~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~ ::
-   - ~get_the_post_thumbnail_url( $post = null, $size = 'post-thumbnail' )~ ::
+- ~get_the_post_thumbnail_*()~ :: can specify which post
+   - *~wp_get_attachment_image_src~* is called
+   - ~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~ :: return html with img attributes
+      - srcset :: ~wp_calculate_image_srcset~
+      - sizes :: ~wp_calculate_image_sizes~
+   - ~get_the_post_thumbnail_url( $post = null, $size = 'post-thumbnail' )~ :: string|false
    - ~get_the_post_thumbnail_caption( $post = null )~ :: 
-- ~the_post_thumbnail_*~
+- ~the_post_thumbnail_*~ :: echo instead of return. calls ~get_the_post_thumbnail_*~
    - ~the_post_thumbnail( $size, $attr='' )~ :: echo html ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
    - ~the_post_thumbnail_url( $size )~ :: echo url
    - ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
-- ~wp_get_attachment_image_*()~ :: 
-   - ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: is just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is ~$thumb[0]~
-      - ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
+- ~wp_get_attachment_image_*()~ :: *~wp_get_attachment_image_src~* is called
+   - ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is ~$thumb[0]~
+      - wp:filter:wp_get_attachment_image_src
+   - ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
       - ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
    - ~wp_get_attachment_image_srcset( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~srcset~ attrbiute value string or false
-      - :: 
    - ~wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~sizes~ attribute value string or false
       - wp:filter:wp_calculate_image_sizes
 - ~wp_get_attachment_*()~ ::
@@ -8102,6 +8104,17 @@ Core functions used in templates :: /wp-includes/general-template.php
 - ~comment_form( $args = array(), $post_id = null)~ :: outputs comment form <<<wp:f:comment_form>>> 
 
 *** link-template.php
+- ~get_permalink( int|WP_Post $post = 0, bool $leavename = false)~ :: get full permalink for current post or post ID
+   - $post :: optional, default ~global $post~
+   - $leavename :: whether to keep post/page name
+   - return string|false :: 
+   - Applied filters ::
+      - wp:filter:page_link
+      - wp:filter:post_link
+- ~the_permalink( int|WP_Post $post = 0 )~ :: print escaped ~get_permalink~
+   - Applied filters :: wp:filters:the_permalink
+- ~edit_post_link( $text = null, $before = '', $after = '', $id = 0, $class = 'post-edit-link' )~ :: print edit post link
+
 *** media-template.php
 *** nav-menu-template.php
 ** Functions
@@ -8941,10 +8954,10 @@ Return an array to describe location of wp upload directory
 #+END_SRC
 
 *** get_the_excerpt, the_excerpt
-Use
-- wp:filter:excerpt_length 
-- wp:filter:excerpt_more
-- ~the_excerpt()~ echoes current post and it calls ~get_the_excerpt($post=null)~
+- Use
+   - wp:filter:excerpt_length 
+   - wp:filter:excerpt_more
+- ~the_excerpt()~ echoes current post and it calls ~get_the_excerpt( $post = null )~
 - If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text
 - When used outside a loop, refer to wp:loop:outside
 
@@ -10821,7 +10834,7 @@ Private query var can only be used in PHP:
   ));
 #+END_SRC
 
-*** page_link <<<wp:filter:page_link>>>
+*** page_link, post_link <<<wp:filter:page_link>>> <<<wp:filter:post_link>>>
 The filter is used in ~get_permalink~
 
 #+BEGIN_SRC php
@@ -11156,7 +11169,6 @@ wp:f:show_admin_bar
 
 *** excerpt_length <<<wp:filter:excerpt_length>>>
 - 55 :: Default number of words
-
 *** wp_calculate_image_srcset <<<wp:filter:wp_calculate_image_srcset>>>
 - Refer to html:img:srcset
 
@@ -11174,10 +11186,30 @@ wp:f:show_admin_bar
 		  'url' => 'https://a.ca/wp-content/uploads/2015/12/Harbour-House-Sign.jpg',
 		  'descriptor' => 'w',
 		  'value' => '930'
-		
+
 	  ],
 	  // ...
   ];
+#+END_SRC
+
+*** wp_calculate_image_srcset_meta <<<wp:filter:wp_calculate_image_srcset_meta>>>
+#+BEGIN_SRC php
+  add_filter( 'wp_calculate_image_srcset_meta', function($image_meta, $size_array, $image_src, $attachment_id ) {
+	  //var_dump($image_meta);
+
+      if (isset($image_meta['image_meta'])
+	  && isset($image_meta['image_meta']['cpt_last_cropping_data'])
+	  && isset($image_meta['image_meta']['cpt_last_cropping_data']['date'])) {
+	      foreach ( $image_meta[ 'sizes' ] as $k => $v ) {
+		  //var_dump($v);
+	      if (isset($v['file']) && $v['file']) {
+		      $image_meta[ 'sizes' ][$k]['file'] .= '?lastcrop='.$image_meta['image_meta']['cpt_last_cropping_data']['date'];
+	      }
+	      }
+      }
+
+	  return $image_meta;
+  }, 11, 4);
 #+END_SRC
 
 *** wp_calculate_image_sizes <<<wp:filter:wp_calculate_image_sizes>>>
@@ -11203,25 +11235,6 @@ wp:f:show_admin_bar
   }
   add_filter( 'wp_calculate_image_sizes', 'twentyseventeen_content_image_sizes_attr', 10, 2 );
 #+END_SRC
-
-#+BEGIN_EXAMPLE
-  function twentyseventeen_content_image_sizes_attr( $sizes, $size ) {
-	  $width = $size[0];
-
-	  if ( 740 <= $width ) {
-		  $sizes = '(max-width: 706px) 89vw, (max-width: 767px) 82vw, 740px';
-	  }
-
-	  if ( is_active_sidebar( 'sidebar-1' ) || is_archive() || is_search() || is_home() || is_page() ) {
-		  if ( ! ( is_page() && 'one-column' === get_theme_mod( 'page_options' ) ) && 767 <= $width ) {
-			   $sizes = '(max-width: 767px) 89vw, (max-width: 1000px) 54vw, (max-width: 1071px) 543px, 580px';
-		  }
-	  }
-
-	  return $sizes;
-  }
-  add_filter( 'wp_calculate_image_sizes', 'twentyseventeen_content_image_sizes_attr', 10, 2 );
-#+END_EXAMPLE
 
 *** wp_resource_hints
 apply_filters( 'wp_resource_hints', array $urls, string $relation_type )
@@ -11304,6 +11317,46 @@ In template
       }
       return $args;
   }
+#+END_SRC
+
+*** wp_get_attachment_image_src <<<wp:filter:wp_get_attachment_image_src>>>
+#+BEGIN_SRC php
+  /**
+   ,* Add URL Parameter lastcrop with current datetime to bust image cache
+   ,*
+   ,* Add cache busting if image has metadata cpt_last_cropping_data which is added in filter gncm_crop_thumbnails_before_update_metadata
+   ,*
+   ,* @param $image
+   ,* @param $attachment_id
+   ,* @param $size
+   ,* @param $icon
+   ,*
+   ,* @return array
+   ,*/
+  function gncm_wp_get_attachment_image_src( $image, $attachment_id, $size, $icon ) {
+	  if ( is_array( $image ) && ! empty( $image )
+	       && ! is_admin()
+	       && function_exists( 'http_build_url' ) ) {
+		  $url  = @parse_url( $image[0] );
+		  $meta = wp_get_attachment_metadata( $attachment_id );
+		  if ( ! empty( $url ) && ! empty( $meta )
+		       && isset( $meta['image_meta'] )
+		       && isset( $meta['image_meta']['cpt_last_cropping_data'] )
+		       && isset( $meta['image_meta']['cpt_last_cropping_data']['date'] )
+		  ) {
+			  $url['query'] = ( isset( $url['query'] ) ) ? $url['query'] : '';
+			  parse_str( $url['query'], $params );
+			  $params       = array_merge( [
+				  'lastcrop' => $meta['image_meta']['cpt_last_cropping_data']['date']
+			  ], $params );
+			  $url['query'] = http_build_query( $params );
+			  $image[0]     = http_build_url( $url );
+		  }
+	  }
+
+	  return $image;
+  }
+  add_filter( 'wp_get_attachment_image_src', 'gncm_wp_get_attachment_image_src', 11, 4 );
 #+END_SRC
 
 *** wp_get_attachment_image_attributes
@@ -13321,6 +13374,36 @@ fr.originaldomain.com/sitemap.xml
 
 *** Crop-Thumbnails <<<wp:plugin:crop-thumbnails>>>
 - Resize featured image, Crop featured image, crop thumbnail
+
+*** S3-Uploads <<<wp:plugin:S3-Uploads>>>
+- https://github.com/humanmade/S3-Uploads
+- ~composer require humanmade/s3-uploads~ or download and extract ~manual-install.zip~
+- ~wp-config.php~
+  #+BEGIN_SRC php
+    define( 'S3_UPLOADS_BUCKET', 'media.a.com' );
+    define( 'S3_UPLOADS_KEY', 'xxx' );
+    define( 'S3_UPLOADS_SECRET', 'yyy' );
+    define( 'S3_UPLOADS_REGION', 'us-east-1' );
+    define( 'S3_UPLOADS_BUCKET_URL', 'https://media.a.com' ); // without trailing slash. If not defined, file urls in db will start with [bucketname].s3.amazonaws.com/uploads/[file path]
+    define( 'S3_UPLOADS_AUTOENABLE', false ); // True to redirect all existing media files in db to `s3://`. Before doing that, upload all existing files to S3 first.
+  #+END_SRC
+- Enable plugin :: ~wp plugin activate S3-Uploads~
+- Verify :: ~wp s3-uploads verify~
+- Create IAM user, get Access Key and Secret Key and paste to wp-config.php :: ~wp s3-uploads create-iam-user --admin-key=<key> --admin-secret=<secret>~
+   - If you want to create IAM user yourself, use this policy :: ~wp s3-uploads generate-iam-policy~
+- List files on S3 :: ~wp s3-uploads ls [<path>]~
+- Upload media files from local disk to S3 :: ~wp s3-uploads upload-directory wp-content/uploads/ uploads~
+   - May use ~--sync~ and ~--dry-run~
+- Arbitrary copy a file to S3 :: ~wp s3-uploads cp ./text.txt s3://mybucket/test.txt~
+- Cache control :: use aws:cloudfront to avoid setting the following
+   - Expire in 30 days :: ~define( 'S3_UPLOADS_HTTP_CACHE_CONTROL', 30 * 24 * 60 * 60 );~
+   - On top, set ~Expires~ header e.g. to set an asset to not expire :: ~define( 'S3_UPLOADS_HTTP_EXPIRES', gmdate( 'D, d M Y H:i:s', time() + (10 * 365 * 24 * 60 * 60) ) .' GMT' );~ e.g. expire in 10 years
+- Disable file URL rewrite completely :: ~define( 'S3_UPLOADS_DISABLE_REPLACE_UPLOAD_URL', true );~
+- S3 Object Permissions default is ~public-read~ :: ~define('S3_UPLOADS_OBJECT_ACL', 'private');~
+- Different endpoints e.g. Digital Ocean Spaces
+- Local dev
+   - Disable the plugin or
+   - ~define('S3_UPLOADS_USE_LOCAL', true)~ :: mock S3 with a local stream wrapper and actually store the uploads in ~wp-content/uploads/s3/~
 
 *** User Role Editor <<<wp:plugin:user-role-editor>>>
 - Add or remove capapbilities to a role
@@ -56659,65 +56742,99 @@ If port is not 22, it has to be specified ~-P 2222~.
 If the default private key doesn't work, use =-i ~/.ssh/your_private_key_file=
 
 ** Amazon Linux AMI
-I use t2 micro image.
-
-#+BEGIN_EXAMPLE
-  yum install php-mysql php-devel
-  yum install php-mbstring
-  chown -R root:www /var/www/html
-  chmod -R 755 /var/www/html
-  service httpd restart
-  service mysqld start
-  mysql_secure_installation
-#+END_EXAMPLE
-
-Then do apache:production setup
-
-Add these to MySQL config file ~nano /etc/my.cnf~
-
-#+BEGIN_EXAMPLE
-  [mysqld]
-  key_buffer_size = 16M
-  read_buffer_size = 256K
-  read_rnd_buffer_size = 512K
-  query_cache_size = 16M
-#+END_EXAMPLE
-
-Restart MySQL ~service mysqld restart~
-Check php configuration php:config
+- Image T2 micro
+   #+BEGIN_SRC sh
+     yum install php-mysql php-devel
+     yum install php-mbstring
+     chown -R root:www /var/www/html
+     chmod -R 755 /var/www/html
+     service httpd restart
+     service mysqld start
+     mysql_secure_installation
+   #+END_SRC
+   - Then do apache:production setup
+   - Add these to MySQL config file ~nano /etc/my.cnf~
+     #+BEGIN_SRC conf
+       [mysqld]
+       key_buffer_size = 16M
+       read_buffer_size = 256K
+       read_rnd_buffer_size = 512K
+       query_cache_size = 16M
+    #+END_SRC
+   - Restart MySQL :: ~service mysqld restart~
 
 *** Update an instance
 Simply create a screen session and run ~sudo yum update~ and 'y'
 Reboot the instance.
 
+** ACM Certificate Manager <<<aws:acm>>>
+- Request a certificate :: e.g. for ~media.a.com~
+   - Add ~CNAME _xxx.media.a.com _yyy.zzz.acm-validations.aws.~
+
+** CloudFront <<<aws:cloudfront>>>
+- CloudFront URL without SSL :: ~http://d111111abcdef8.cloudfront.net~
+- Default 24 hours
+- Distribution :: Web or RTMP (Adobe)
+   - General
+      - Alternate Domain Names (CNAMES)
+	 - e.g. ~media.a.com~ then ~CNAME media d111111abcdef8.cloudfront.net~
+      - SSL Certificate :: refer tod aws:acm
+      - Default Root Object ::  e.g. ~index.html~
+   - Web
+      - Specify an origin :: e.g. AWS S3
+	 - Origin Domain Name :: e.g. ~media.a.com.s3.amazonaws.com~
+	 - Origin Path :: empty
+	 - Origin ID :: a distribution might have multiple origins e.g. ~s3-media.a.com~
+	 - Restrict Bucket Access :: d:No. Yes to force users to always use CloudFront URLs not the S3 URLs
+	 - Origin Custom Headers (Header Name:Value) :: send these request headers to S3
+      - Specifiy Cache Behavior
+	 - Query String Forwarding and Caching
+	    - None :: the same cache is served for ~media.a.com/b.jpg~ and ~media.a.com/b.jpg?v=1~
+	    - Forward all, cache based on whitelist :: for some query parameters
+	       - one parameter one line
+	    - Forward all, cache based on all :: for all query parameters
+
 ** S3 <<<aws:s3>>>
-Alternative :: Azure, Google Cloud, BackBlaze B2
-By default, the maximum number of buckets is 100. Creating bucket and enable logging in bucket doesn't cost anything. Create a user in IAM with access key and assign the following policy and assign the policy:
-
-First create a group policy with ListAllMyBuckets permission then add a new user to that group. 
-The user policy is Allow All for 2 resources =arn:aws:s3:::<bucket_name>= and =arn:aws:s3:::<bucket_name>/*=
-
-#+BEGIN_EXAMPLE
-  {
-      "Effect": "Allow",
-      "Action": [
-          "s3:ListAllMyBuckets"
-      ],
-      "Resource": "arn:aws:s3:::*"
-  },
-  {
-      "Effect": "Allow",
-      "Action": [
-          "s3:*"
-      ],
-      "Resource": [
-          "arn:aws:s3:::<bucket_name>",
-          "arn:aws:s3:::<bucket_name>/*",
-      ]
-  }
-#+END_EXAMPLE
-
-For the properties of the bucket, you can set a tag with key =application= and value is the website name.
+- Alternative :: Azure, Google Cloud, BackBlaze B2
+- Region code name :: https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+- By default, the maximum number of buckets is 100
+- Create bucket and enable logging in bucket doesn't cost anything
+- Create a user in IAM with access key and assign the following policy and assign the policy
+   - First create a group policy with ~ListAllMyBuckets~ permission then add a new user to that group
+   - The user policy is ~Allow All~ for 2 resources ~arn:aws:s3:::<bucket_name>~ and ~arn:aws:s3:::<bucket_name>/*~
+     #+BEGIN_SRC json
+       {
+	   "Effect": "Allow",
+	   "Action": [
+	       "s3:ListAllMyBuckets"
+	   ],
+	   "Resource": "arn:aws:s3:::*"
+       },
+       {
+	   "Effect": "Allow",
+	   "Action": [
+	       "s3:*"
+	   ],
+	   "Resource": [
+	       "arn:aws:s3:::<bucket_name>",
+	       "arn:aws:s3:::<bucket_name>/*",
+	   ]
+       }
+     #+END_SRC
+- Properties of the bucket
+   - may set a tag with key ~application~ and value is the website name
+- Domain
+   - Manual
+      - Add ~CNAME media s3.amazonaws.com~ as the same as the bucket name ~media.a.com~. The following URLs will work
+	 - ~https://media.a.com/~
+	 - ~https://media.a.com.s3.amazonaws.com/~
+	 - ~https://s3.amazonaws.com/media.a.com/~
+      - Add robots.txt in bucket to prevent SE from indexing the files
+	 #+BEGIN_SRC conf
+	   User-agent: *
+	   Disallow: /
+	 #+END_SRC
+   - Refer to aws:cloudfront
 
 *** Storage Classes
 STANDARD: 
