@@ -8015,13 +8015,14 @@ Create a bash script wrapper for already started processes
 - ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~ :: get thumbnail id
 - ~get_the_post_thumbnail_*()~ :: can specify which post
    - *~wp_get_attachment_image_src~* is called
-   - ~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~ :: return html with img attributes
+   - *~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~* :: return html with img attributes
       - srcset :: ~wp_calculate_image_srcset~
       - sizes :: ~wp_calculate_image_sizes~
    - ~get_the_post_thumbnail_url( $post = null, $size = 'post-thumbnail' )~ :: string|false
    - ~get_the_post_thumbnail_caption( $post = null )~ :: 
 - ~the_post_thumbnail_*~ :: echo instead of return. calls ~get_the_post_thumbnail_*~
-   - ~the_post_thumbnail( $size, $attr='' )~ :: echo html ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
+   - *~the_post_thumbnail( $size, $attr = '' )~* :: ~echo get_the_post_thumbnail( null, $size, $attr )~
+      - e.g. ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
    - ~the_post_thumbnail_url( $size )~ :: echo url
    - ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
 - ~wp_get_attachment_image_*()~ :: *~wp_get_attachment_image_src~* is called
@@ -8047,21 +8048,29 @@ Create a bash script wrapper for already started processes
 - Resize an image file on the fly using fly-dynamic-image-resizer
 
 *** post-template.php <<<wp:t:post>>>
-- Only ~get_the_*( $post )~ can pass a different post or post id to return values
+- Only ~get_the_*( $post )~ can pass a different post or post id to return values. Use ~esc_html_e()~ to echo
+   - ~get_the_guid( $post = 0)~
+   - ~get_the_title( $post = 0 )~
+   - ~get_the_content( $more_link_text = null, $strip_teaser = false, $post = null )~
+   - ~get_the_excerpt( $post = null )~
+   - ~get_the_password_form( $post = 0 )~
+- ~get_the_ID()~ :: ID of current item or false
+   - ~the_ID()~ :: echo
 - ~the_*()~ always uses the ~global $post~ to echo
-- Display content :: ~the_content( $more_link_text = null, $strip_teaser = false)~ use wp:filter:the_content
-- Display excerpt :: ~the_excerpt( )~
-  - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
+   - ~the_title( $before = '', $after = '', $echo = true )~
+   - ~the_content( $more_link_text = null, $strip_teaser = false)~ :: use wp:filter:the_content
+   - ~the_excerpt()~
+      - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
 - HTML classes for a post :: ~get_post_class()~
-  - e.g. ~post-123 myposttype type-myposttype status-publish has-post-thumbnail~
-  - filter ~post_class($classes, $class, $post->ID)~
+   - e.g. ~post-123 myposttype type-myposttype status-publish has-post-thumbnail~
+   - filter ~post_class($classes, $class, $post->ID)~
 - List child pages/posts :: ~wp_list_pages( $args = '' )~
-  - $args
-    - post_type :: default ~page~. For CPT, ~wp_list_pages( array('post_type' => 'articles' ) )~
-    - echo :: default 1, to echo. Set 0 to return html string
-    - title_li :: default ~__( 'Pages' )~. Add a ~<li>~ as title before any child post elements
-    - child_of :: default 0 (return child posts of any parent posts). specify the parent post ID
-    - sort_column :: default ~'menu_order, post_title'~
+   - $args
+      - post_type :: default ~page~. For CPT, ~wp_list_pages( array('post_type' => 'articles' ) )~
+      - echo :: default 1, to echo. Set 0 to return html string
+      - title_li :: default ~__( 'Pages' )~. Add a ~<li>~ as title before any child post elements
+      - child_of :: default 0 (return child posts of any parent posts). specify the parent post ID
+      - sort_column :: default ~'menu_order, post_title'~
 
 *** category-template.php <<<wp:t:category>>>
 - Refer to wp:post
@@ -8114,6 +8123,7 @@ Core functions used in templates :: /wp-includes/general-template.php
 - ~the_permalink( int|WP_Post $post = 0 )~ :: print escaped ~get_permalink~
    - Applied filters :: wp:filters:the_permalink
 - ~edit_post_link( $text = null, $before = '', $after = '', $id = 0, $class = 'post-edit-link' )~ :: print edit post link
+   - ~edit_post_link( __( '<span class="small">(Edit)</span>', 'genesis' ) );~
 
 *** media-template.php
 *** nav-menu-template.php
@@ -8171,7 +8181,6 @@ https://developer.wordpress.org/reference/functions/get_bloginfo/
 
 version :: '4.9.4'
 
-*** get_the_ID() the_ID() - ID of current item or false
 *** get_post <<<wp:f:get_post>>>
 ~get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )~
 
@@ -8289,8 +8298,7 @@ Merge user defined arguments into defaults array.
 Use tool:Poedit
 
 **** Translate Functions
-$text can't be a variable. And use single quotes instead of "".
-
+- $text :: can't be a variable. And use single quotes instead of ~""~
 - Use ~sprintf~ (return) or ~printf()~ (echo) for subsitutions. The msgid is "You have chosen the %s theme"
 
 #+BEGIN_SRC php
@@ -8771,6 +8779,13 @@ Since version 3.4 the TinyMCE body has .rtl CSS class. It is a better option to 
 #+BEGIN_EXAMPLE
   add_editor_style( array( 'assets/css/editor-style.css', twentyseventeen_fonts_url() ) );
 #+END_EXAMPLE
+
+*** ~__return_*()~
+- ~__return_true()~
+- ~__return_false()~
+- ~__return_empty_array()~
+- ~__return_null()~
+- ~__return_empty_string()~
 
 *** has_post_format <<<wp:f:has_post_format>>>
 In template
@@ -12239,7 +12254,7 @@ lib/functions/*.php
 **** image.php
 **** markup.php <<<wp:genesis:functions:markup.php>>>
 ***** ~genesis_markup( $args=[] )~
- - ~$args~
+- ~$args~
    - echo :: true
    - html5 :: echo and run ~genesis_attr( $args['context'] )~ if theme support ~html5~ is enabled otherwise xhtml is echoed
    - xhtml ::
@@ -12247,16 +12262,17 @@ lib/functions/*.php
    - open ::
    - close ::
    - content :: 
- - $pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // short circuit
- - $open
+- ~$pre = apply_filters( "genesis_markup_{$args['context']}", false, $args ); // short circuit~
+- $open
    - ~genesis_attr( $args['context'], array(), $args)~
    - filter ~genesis_markup_$context_open( $open, $args )~
- - $content
+- $content
    - filter ~genesis_markup_$context_content( $args['content'], $args )~
- - $close
+- $close
    - filter ~genesis_markup_$context_close( $args['close'], $args )~
- - filter ~genesis_markup_open( $open, $arg )~
- - filter ~genesis_markup_close( $close, $args )~
+- filter ~genesis_markup_open( $open, $arg )~
+- filter ~genesis_markup_close( $close, $args )~
+- echo or return ~$open.$content.$close~
 
 ***** ~genesis_attr( $context, $attributes = array(), $args = array() )~ <<<wp:genesis:functions:genesis_attr>>>
 - ~genesis_parse_attr()~ calculates key/value pairs of attribute and value
