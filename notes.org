@@ -8080,7 +8080,7 @@ Create a bash script wrapper for already started processes
   - child_of :: default 0. Specify the parent term id
 
 *** general-template <<<wp:t:general>>>
-Core functions used in templates :: /wp-includes/general-template.php
+- wp:f:get_sidebar
 
 #+BEGIN_SRC php
   // In template
@@ -8861,7 +8861,13 @@ the_custom_logo displays markup
 - Return nothing
 
 *** get_header, get_footer, get_sidebar, get_search_form, comments_template
-<<<wp:f:get_header>>> <<<wp:f:get_footer>>> <<<wp:f:get_sidebar>>> <<<wp:f:get_search_form>>> <<<wp:f:comments_template>>>
+- <<<wp:f:get_header>>> 
+- <<<wp:f:get_footer>>> 
+- <<<wp:f:get_sidebar>>> :: ~get_sidebar( $name = null )~
+   - ~$templates[] = "sidebar-{$name}.php"; $templates[] = 'sidebar.php';~
+   - ~locate_template( $templates, true );~
+- <<<wp:f:get_search_form>>> 
+- <<<wp:f:comments_template>>>
 
 These functions are to load template files.
 
@@ -10292,6 +10298,19 @@ Array join 2 query results
 
 **** ~$q->found_posts~
 **** ~$q->post_count~
+- Respect ~posts_per_page~
+
+**** ~$q->current_post~
+- Start from zero
+- Last post in a loop
+  #+BEGIN_SRC php
+    global $wp_query;
+
+    if ( ($wp_query->current_post + 1) == ($wp_query->post_count) ) {
+	    // last post
+    }
+  #+END_SRC
+
 *** <<<WP_Meta_Query>>>
 https://codex.wordpress.org/Class_Reference/WP_Meta_Query
 https://rudrastyh.com/wordpress/meta_query.html
@@ -29948,10 +29967,8 @@ console.log(process.argv);
 - ~npm ls -dev~ :: devDependencies only
 - ~npm ls -dev -depth 0~ :: list first level devDependencies
 - ~npm view PKG_NAME dependencies~ :: list dependencies of a package
-
 - ~npm view PKG_NAME versions --json~ :: The latest available version of a package
   - view aliaes :: info, show, v
-
 - Distribution tags :: ~npm view mjml dist-tags~
   - latest :: no pre-release/beta versions
   - beta :: optional
@@ -30399,10 +30416,12 @@ If gulp was previously globally installed, remove it before installing gulp-cli
   npm rm --global gulp
   npm install --global gulp-cli
   gulp -v
-  # return 2.0.1
+  # CLI version 2.0.1
+  # If gulp is installed locally, then
+  # Local version 4.0.0
 #+END_SRC
 
-Then install gulp locally ~npm install --save-dev gulp@next~
+Then install gulp locally ~npm install --save-dev gulp@latest~
 
 - Gulp plugins :: https://gulpjs.com/plugins/ https://github.com/alferov/awesome-gulp
 
@@ -30532,7 +30551,7 @@ gulpfile.js
   //endregion
 #+END_SRC
 
-**** gulp.src
+**** ~gulp.src~, ~gulp.dest~
 - ~gulp.src(globs[, options])~
 - globs :: string or array. [[https://github.com/isaacs/node-glob][node-glob]]
 #+BEGIN_SRC js
@@ -30771,9 +30790,10 @@ Any source *-gulp.css will have dest file *-gulp-build.css
 #+END_SRC
 
 **** gulp-sourcemaps
-https://www.npmjs.com/package/gulp-sourcemaps
-
-Another sourcemap file (endfile.css.map) is generated on top of the result file (endfile.css)
+- https://www.npmjs.com/package/gulp-sourcemaps
+- Another sourcemap file (endfile.css.map) is generated on top of the result file (endfile.css)
+- All plugins between ~sourcemaps.init()~ and ~sourcemaps.write()~ need to have support for gulp-sourcemaps
+- ~.write('.')~ :: the path is relative to the destination
 
 #+BEGIN_SRC js
   var gulp = require('gulp');
@@ -30790,8 +30810,6 @@ Another sourcemap file (endfile.css.map) is generated on top of the result file 
       .pipe(gulp.dest('dist'));
   });
 #+END_SRC
-
-All plugins between sourcemaps.init() and sourcemaps.write() need to have support for gulp-sourcemaps.
 
 **** gulp-filter
 #+BEGIN_SRC js
@@ -60252,17 +60270,14 @@ Alt and click to create a cursor. Esc to reduce to only one cursor
 *** Recent Locations ~C-S-e~ ~M-left or right~
 *** Settings > Directories <<<phpstorm:settings:directories>>>
 **** Exclude Directories
-Settings > Directories > Select and Exclude
-
+- Settings > Directories > Select and Exclude
+- For SFTP syncing :: Settings > Deployment > Excluded Paths
 - About marking directories :: https://www.jetbrains.com/help/phpstorm/configuring-folders-within-a-content-root.html
 - Webpack config file might specify output dir and this dir is excluded and cannot be un-exclude using Settings > Directories > Exclude. Instead, remove the config file on phpStorm Settings > Languages & Frameworks > JavaScript > Webpack
 
 **** Resource Root
-This should be set to where the final CSS files are placed.
-
-e.g. assets/css/style.css has ~background-image: url(../abc.jpg)~
-
-Then the Resource Root should be set to assets/css
+- This should be set to where the final CSS files are placed :: e.g. assets/css/style.css has ~background-image: url(../abc.jpg)~
+   - Then the Resource Root should be set to assets/css
 
 *** MySQL
 When there're multiple statements (multiple ;), Ctrl + Enter (or to Execute from Menu) prompts a list of statements to run:
