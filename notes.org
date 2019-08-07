@@ -8007,7 +8007,8 @@ Create a bash script wrapper for already started processes
 - wp:admin:toolbar
 
 ** Template Tags <<<wp:template tags>>>
-- wp-includes/xxx-template.php
+- ~wp-includes/xxx-template.php~
+- ~wp-includes/feed.php~
 - https://codex.wordpress.org/Template_Tags
 
 *** post-thumbnail-template.php <<<wp:t:thumbnail>>>
@@ -8050,14 +8051,27 @@ Create a bash script wrapper for already started processes
 *** post-template.php <<<wp:t:post>>>
 - Only ~get_the_*( $post )~ can pass a different post or post id to return values. Use ~esc_html_e()~ to echo
    - ~get_the_guid( $post = 0)~
-   - ~get_the_title( $post = 0 )~
+   - ~get_the_title( $post = 0 )~ :: <<<wp:f:get_the_title>>>
+      - ~$post->post_title~ :: value is not escaped/stripped in db and can be unsafe to display
+      - wp:filter:protected_title_format :: add ~Protected:~
+      - wp:filter:private_title_format :: add ~Private:~
+      - wp:filter:the_title
    - ~get_the_content( $more_link_text = null, $strip_teaser = false, $post = null )~
    - ~get_the_excerpt( $post = null )~
    - ~get_the_password_form( $post = 0 )~
 - ~get_the_ID()~ :: ID of current item or false
    - ~the_ID()~ :: echo
 - ~the_*()~ always uses the ~global $post~ to echo
-   - ~the_title( $before = '', $after = '', $echo = true )~
+   - ~the_title( $before = '', $after = '', $echo = true )~ :: return or echo ~$before . get_the_title() . $after~
+   - ~the_title_attribute( string|array $args = '' )~ :: similar to above but tags are stripped and escaped for HTML attributes
+     #+BEGIN_SRC php
+       $defaults = [
+	       'before' => '',
+	       'after' => '',
+	       'echo' => true,
+	       'post' => get_post(),
+       ];
+     #+END_SRC
    - ~the_content( $more_link_text = null, $strip_teaser = false)~ :: use wp:filter:the_content
    - ~the_excerpt()~
       - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
@@ -8127,6 +8141,12 @@ Create a bash script wrapper for already started processes
 
 *** media-template.php
 *** nav-menu-template.php
+*** feed.php
+- ~the_title_rss()~ :: echo ~get_the_title_rss()~ <<<wp:f:the_title_rss>>>
+- ~get_the_title_rss()~
+   - ~get_the_title()~ : wp:f:get_the_title
+   - wp:filter:the_title_rss
+
 ** Functions
 *** add_meta_box <<<wp:f:add_meta_box>>>
 Used in
@@ -9918,13 +9938,13 @@ Use wp:plugin:acf
 #+END_SRC
 
 ** WP_Query The Loop <<<wp:The_Loop>>> <<<wp:query:main>>>
-The main query/loop is based on the URL request and is processed before templates are loaded
-Only the wp:conditional tags use the main query/loop
+- The main query/loop is based on the URL request and is processed before templates are loaded
+- The wp:conditional tags use the main query/loop
 
 <<<wp:query:secondary>>>
 - The secondary query/loop is ~new WP_Query~ in theme template or plugin files
-- It's also called The Loop.
-- wp:template tags use the secondary query/loop.
+- It's also called The Loop
+- wp:template tags use the secondary query/loop
 
 - By default, The Loop uses the main query's current post to set ~global $post~
 - ~new WP_Query()~ and ~the_post~ (called in ~have_posts()~) modify The Loop and hence ~global $post~ is modified
@@ -10010,6 +10030,16 @@ Only the wp:conditional tags use the main query/loop
 	  // $unsupported_mimes = ['image/jpeg', 'image/gif', 'image/png', 'image/bmp', 'image/tiff', 'image/x-icon' ];
 	  // $accepted_mimes = array_diff( $all_mimes, $unsupported_mimes);
 	  // 'post_mime_type' => $accepted_mimes
+
+	  // Tag Parameters
+	  'tag' => 'tag-slug',
+	  'tag_id' => 123,
+	  'tag__and' => [123,321],
+	  'tag__in' => [123,321],
+	  'tag__not_in' => [123,321],
+	  'tag_slug__and' => ['tag1-slug','tag2-slug'],
+	  'tag_slug__in' => ['tag1-slug','tag2-slug'],
+	
 	  'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
 	  'tax_query' => $tax_query, // refer to WP Tax Query
 	  'order' => 'DESC', // default, 'ASC'
@@ -11087,6 +11117,24 @@ https://www.tinymce.com/docs/configure/
 
     return $in;
   }
+#+END_SRC
+
+*** the_title <<<wp:filter:the_title>>>
+- Used in wp:f:get_the_title
+
+#+BEGIN_SRC php
+  add_filter( 'the_title', function( $title, $id ) {
+	  // $id The post ID
+	  return $title;
+  },10,2);
+#+END_SRC
+
+*** the_title_rss <<<wp:filter:the_title_rss>>>
+- Used in wp:f:the_title_rss
+#+BEGIN_SRC php
+  add_filter( 'the_title_rss', function( $title ) {
+	  return $title;
+  },10);
 #+END_SRC
 
 *** the_content <<<wp:filter:the_content>>>
@@ -14063,6 +14111,7 @@ https://wordpress.org/plugins/all-in-one-event-calendar/
 *** Gravity Forms <<<wp:plugin:gravity forms>>>
 - Require PHP 5.6+, MySQL 5.5+
 - Can bypass license key to use the plugin
+- https://www.gravityforms.com/login/
 
 **** Form setting
 - Allow field to be populated dynamically :: so that populating this form field with a value using query string or hook.
@@ -14253,6 +14302,8 @@ https://docs.gravityforms.com/css-ready-classes/
 **** Add-Ons
 ***** User Registration
 A feed is used to pass form submission info over to the add-on. In Form Setting > User Registration > Add New Feed
+
+***** Polls - gravityformspolls
 
 **** WP Config
 https://docs.gravityforms.com/wp-config-options/
@@ -24970,6 +25021,10 @@ Validate form :: Constraint Validation API https://developers.google.com/web/fun
 
 ** Special Characters <<<css:content>>>
 - In CSS content attribute, you need to use CSS value. Convert tool :: http://www.evotech.net/articles/testjsentities.html
+   - Decimal value :: ~&#9660;~
+   - Hex value ::     ~&#x25BC;~
+   - CSS Value (Hex) :: ~\25BC~ ~li:before {content:'\25BC';}~
+   - JS Value (Hex) :: ~\u25BC~ ~alert('\u25BC is HTML entity &#9660;')~
 - Checkmark :: ~&#10003;~
    - Checkmark heavy :: ~&#10004;~
    - Checkmark light :: ~&#128504;~
@@ -24977,12 +25032,15 @@ Validate form :: Constraint Validation API https://developers.google.com/web/fun
 - Space :: ~&nbsp;~
 - hyphen long :: ~&#x2011;~
 - Quotation mark
-   - Left Double Quotation Mark “ :: &#8220;
-   - Right Double Quotation Mark ” :: &#8221;
-   - Left Single Quotation Mark ‘ :: &#8216;
-   - Right Single Quotation Mark (including English possessives and contractions) ’ :: &#8217;
+   - Left Double Quotation Mark “ :: ~&#8220;~
+   - Right Double Quotation Mark ” :: ~&#8221;~
+   - Left Single Quotation Mark ‘ :: ~&#8216;~
+   - Right Single Quotation Mark (including English possessives and contractions) ’ :: ~&#8217;~
    - Closing/Right angle quotation mark » :: css is ~\00BB~ ~&#187;~
 - Middle dot :: ~&middot;~ ~&#183;~ ~&#xb7;~ CSS is ~\00B7~
+- Triangles :: https://www.alt-codes.net/triangle-symbols
+   - ▼ :: ~&#9660;~ ~\25BC~ ~\u25BC~
+   - ▾ :: ~&#9662;~ ~\25BE~ ~\u25BE~
 
 ** Geolocation
 Chrome v50+ only supports geolocation for https
@@ -25184,12 +25242,11 @@ Loading external script use this
   })();
 #+END_SRC
 
-document.write inside external script (asynchronously loaded) cannot modify DOM 
-You will need to use these to modify the DOM
-#+BEGIN_EXAMPLE
-  // .appendChild(), .insertBefore(), .innerHTML
-  // jQuery ~.html('html')~ is equivalent to javascript ~$('').innerHTML ='html'~
-#+END_EXAMPLE
+~document.write~ inside external script (asynchronously loaded) cannot modify DOM 
+You will need to use these to modify the DOM. Refer to Element Object
+- ~.appendChild()~
+- ~.insertBefore()~
+- ~.innerHTML = 'html'~ :: equivalent to jQuery ~.html('html')~
 
 Refer to tool:html:document.write
 
@@ -25496,6 +25553,13 @@ Padding 0's to left
   console.log(fruits instanceof Array) // true or false
 #+END_SRC
 
+**** If array contains a string
+#+BEGIN_SRC js
+  var fruits=['banana','apple'];
+  fruits.indexOf('banana'); // 0
+  fruits.indexOf('abc'); // -1
+#+END_SRC
+
 **** array.pop(), array.shift(), array.push(), array.unshift()
 #+BEGIN_SRC js
   a.pop(); // remove last element
@@ -25506,7 +25570,7 @@ Padding 0's to left
   a.unshift("Z"); // add to the beginning of array. return new length
 #+END_SRC
 
-**** array.concat()
+**** array.concat() - merge
 #+BEGIN_SRC js
   var a = new Array("P", "C", "S");
   var b = new Array(31,29,34);
@@ -26014,7 +26078,7 @@ var obj = JSON.parse(jsonString); // parse a json string
 
 ** DOM Manipulation
 *** If an element exists
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var e = document.getElementById("abc");
   if (!!e) {
    // exists
@@ -26024,31 +26088,31 @@ var obj = JSON.parse(jsonString); // parse a json string
   if (e.length > 0) {
     // exists
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Loop querySelectorAll
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var divs = document.querySelectorAll('.aClass');
   [].forEach.call(divs, function(div) {
     div.style.color="red";
   });
-#+END_EXAMPLE
+#+END_SRC
 
 *** Remove a class
 Don't need to check existance
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   ELEMENT.classList.remove("CLASS_NAME");
   ELEMENT.classList.add('hint');
-#+END_EXAMPLE
+#+END_SRC
 
 *** Selected Option
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var e = document.getElementById("selectElementID");
   var i = e.selectedIndex;
   var ep = e.options[i];
   ep.value;
   ep.text;
-#+END_EXAMPLE
+#+END_SRC
 
 *** Meta tag
 #+BEGIN_SRC js
@@ -26093,6 +26157,18 @@ Don't need to check existance
   if ( i = document.querySelector("link[rel=shortlink]")) {
       console.log(i.getAttribute('href'));
   }
+#+END_SRC
+
+*** Remove all children
+#+BEGIN_SRC js
+  var e = document.getElementById('abc');
+  while (e.firstChild) {
+      e.removeChild(e.firstChild);
+  }
+
+  var node = document.createElement('img');
+  node.src = 'https://a.ca/b.png';
+  e.appendChild(node);
 #+END_SRC
 
 ** URI and URI Component Encode, Current URL, open, email link
@@ -58627,8 +58703,9 @@ Run this .sql file:
 
 * Google Ad Manager - DFP <<<google:dfp>>> <<<google:gam>>>
 ** Default code - Google Publisher Tag - gpt.js
-- Before 2019-06-12, it's ~https://www.googletagservices.com/tag/js/gpt.js~
-- After 2019-6-12, it's ~https://securepubads.g.doubleclick.net/tag/js/gpt.js~
+- After 2019-06-12, it's ~https://securepubads.g.doubleclick.net/tag/js/gpt.js~
+   - Before 2019-06-12, it's ~https://www.googletagservices.com/tag/js/gpt.js~
+- GPT reference :: https://developers.google.com/doubleclick-gpt/reference
 
 #+BEGIN_SRC html
   <head>
@@ -59628,12 +59705,36 @@ When console shows FriendlyFrame, it shows the container is not SafeFrame.
 
 [[https://support.google.com/dfp_premium/answer/6023110][Other SafeFrame methods]]
 
-** Events
+** ~googletag.Service~ <<<google:gam:gpt:service>>>
+- Methods
+   - ~addEventListener(eventType, listener)~ :: refer to google:gam:gpt:event
+   - ~getSlots()~ :: 
+- ~googletag.pubads()~ is a ~googletag.PubAdsService~ which extends ~googletag.Service~
+   - ~getTargetingKeys()~ :: e.g. ~['publisher', 'site', 'section', 'exclusive', 'sponsor']~
+   - ~getTargeting(key)~ :: return array e.g. ~getTargeting('exclusive')~
+
+** ~googletag.Slot~ <<<google:gam:gpt:slot>>>
+- Methods
+   - ~addService(service)~
+   - ~getAdUnitPath()~
+   - ~getSlotElementId()~
+   - ~setCollapseEmptyDiv(collapse, opt_collapseBeforeAdFetch)~
+   - ~getTargetingKeys()~ :: targeting set on Service level is not assigned here. Refer to google:gam:gpt:service
+   - ~getTargeting(key)~ :: same as above
+
+** Events <<<google:gam:gpt:event>>>
+- ~googletag.events.Event~ interface :: https://developers.google.com/doubleclick-gpt/reference#googletag.events.Event
+   - serviceName ::
+   - slot :: google:gam:gpt:slot
+- ~googletag.evetns.Event~ extension for certain events
+   - ~googletag.events.SlotRenderEndedEvent~ :: fired when the creative code is injected into a slot. Before the creative's resources are fetched. Extra fields:
+      - ~isEmpty~ :: true if no ad was returned for the slot, false otherwise
+
 #+BEGIN_SRC js
   googletag.pubads().addEventListener('slotRenderEnded', function (event) {
-    if (event.slot.getAdUnitPath() === '/123456/adunit_name') {
-      document.getElementById('div-gpt-ad-1403025754774-0-oop').style.display = 'none';
-    }
+      if (event.slot.getAdUnitPath() === '/123456/adunit_name') {
+	  document.getElementById('div-gpt-ad-1403025754774-0-oop').style.display = 'none';
+      }
   });
 #+END_SRC
 
@@ -60135,6 +60236,10 @@ e.g. all vendor prefixes for box-sizing. Type -box-sizing and hit tab.
 **** JavaScript version
 Settings > Languages & Frameworks > JavaScript > JavaScript language version to ECMAScript 6
 For Scratch, right click on the file in Edit window and change language to ES6
+
+*** Language Injection
+- https://www.jetbrains.com/help/phpstorm/using-language-injections.html#use-lang-annotation
+- Use PHP nowdoc or heredoc, ~Alt+Enter~ and choose ~Inject Language using PHPDoc~, change ~@lang text~ to e.g. ~@lang JavaScript~, in heredoc, ~Alt+Enter~ and choose ~Edit JavaScript Segment~
 
 *** Hide All Windows
 Hide all active tool windows and leave the Editor Tabs open. Can toggle.
@@ -60787,8 +60892,12 @@ To compile ~C-c C-c~ and display inline image ~C-c C-x C-v~
 https://regexr.com/ https://regexr.com/
 
 ** [[https://developers.google.com/web/updates/][Chrome]]
-*** Command Menu (DevTools > C+S P)
-**** Coverage (Show coverage)
+*** Command Menu (DevTools > C-S P)
+- Coverage (Show coverage) :: JavaScript, CSS file unused bytes
+- Screenshot :: full size screenshot
+
+*** Toggle/detach dock side (DevTools > C-S D)
+*** Navigate Panels (DevTools > ~C [~ or ~C ]~)
 *** Console
 **** Console Commands
 https://developers.google.com/web/tools/chrome-devtools/console/console-reference
@@ -60864,14 +60973,11 @@ monitorEvents(document.body, "click");
 =jQuery(document.head).append('<link rel="stylesheet" href="path_to_my_css">');=
 
 **** Offload CSS file in Console
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   document.styleSheets[0].disabled = true;
 
   $0.disabled = true; // select the <link> or <style> element in Elements and then run in Console
-#+END_EXAMPLE
-
-*** Capture full size screenshot - Mobile View
-F12, mobile view, click on the top right tool button of the main website window
+#+END_SRC
 
 *** Block Request or Domain - Network
 Block a certain file request or any files from a domain. Network > right click on a file and Block Request
