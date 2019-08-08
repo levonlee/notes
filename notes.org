@@ -7262,7 +7262,7 @@ https://codex.wordpress.org/Class_Reference/WP_Post
 - ~$wpdb~ provides an interface which WP_Query uses to query
 - Use ~$wpdb~ to create raw query
 
-If wp-content/db.php exists and creates an instance of global $wpdb, $wpdb will be defined as in this custom file.
+If ~wp-content/db.php~ exists and creates an instance of ~global $wpdb~, ~$wpdb~ will be defined as in this custom file.
 wp:plugin:w3-total-cache
 
 If wp core doesn't support msql_connect but mysqli and the environment doesn't have msql extension (since PHP 7.0), then you can replace wp-includes/wp-db.php with the latest wp version without upgrading wp core. Although upgrading wp core is recommended.
@@ -7376,11 +7376,22 @@ Which php file is used for template
 *** Image Sizes ~$_wp_additional_image_sizes~
 Refer to wp:debug:image sizes
 
+*** Post statuses ~$wp_post_statuses~ <<<wp:global:wp_post_statuses>>>
 ** wp-config.php
 https://codex.wordpress.org/Editing_wp-config.php
 
 *** <<<wp:wp-config:DISALLOW_FILE_EDIT>>>
 define( 'DISALLOW_FILE_EDIT', true );
+
+** Options, Settings <<<wp:options>>>
+- ~/wp-admin/options.php~ :: show all options. Serialized data is not shown
+- [[https://codex.wordpress.org/Option_Reference][Option Reference]]
+- sticky_posts :: array of post ID's (only post type post)
+- permalink_structure :: e.g. ~/%postname%/~
+- rewrite_rules :: serialized <<<wp:options:rewrite_rules>>>
+   - Custom post type :: ~[ "articles/(.+?)(?:/([0-9]+))?/?$" => "index.php?articles=$matches[1]&page=$matches[2]" ]~
+   - Custom taxonomy :: ~[ "neckline/([^/]+)/?$" => "index.php?gallery_neckline=$matches[1]" ]~
+- noindex, nofollow :: Settings > Reading > toggle ~Search Engine Visibility - Discourage search engines from indexing this site~
 
 ** Email PHPMailer
 Add this after ~require_once(ABSPATH . 'wp-settings.php');~ in wp-config.php
@@ -8739,39 +8750,39 @@ add_management_page(
 
 Use wp:action:pre_get_posts to enable query for this new post type
 
-*** add_rewrite_rule, add_rewrite_tag <<<wp:f:add_rewrite_rule>>> <<<wp:f:add_rewrite_tag>>>
-wp:action:init
+*** add_rewrite_rule, add_rewrite_tag  
+- <<<wp:f:add_rewrite_rule>>>
+   - Need to flush :: Settings > Permalinks > click Save Changes without any changes to add into wp:options:rewrite_rules
+   - Add a rewrite rule that transforms a URL structure to a set of query vars
+   - Use with wp:f:add_rewrite_tag 
+   - wp:action:init
+   - ~add_rewrite_rule( string $regex, string|array $query, string $after = 'bottom' )~
+      - $query :: ~$matches[]~ to retrieve the values of a matched URL, capture group data starts at 1, not 0
+      - $after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first
+   - Sample
+     #+BEGIN_SRC php
+       function custom_rewrite_basic() {
+	 add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
+       }
+       add_action('init', 'custom_rewrite_basic');
+     #+END_SRC
+- <<<wp:f:add_rewrite_tag>>>
+   - add a query var wp:filter:query_vars
+   - Sample
+     #+BEGIN_SRC php
+       function custom_rewrite_tag() {
+	 add_rewrite_tag('%food%', '([^&]+)');
+	 add_rewrite_tag('%variety%', '([^&]+)');
+       }
+       add_action('init', 'custom_rewrite_tag', 10, 0);
 
-Need to flush Settings -> Permalinks and just click Save Changes without any changes to add into db:wp_options:rewrite_rules
-#+BEGIN_SRC php
-  // add_rewrite_rule($regex, $redirect, $after = 'bottom');
-  function custom_rewrite_basic() {
-    add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
-  }
-  add_action('init', 'custom_rewrite_basic');
-#+END_SRC
+       function custom_rewrite_rule() {
+	 add_rewrite_rule('^nutrition/([^/]*)/([^/]*)/?','index.php?page_id=12&food=$matches[1]&variety=$matches[2]','top');
+       }
+       add_action('init', 'custom_rewrite_rule', 10, 0);
+     #+END_SRC
 
-- $after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first.
-
-- ~$matches[]~ to retrieve the values of a matched URL, capture group data starts at 1, not 0.
-
-~add_rewrite_tag~ add a query var wp:filter:query_vars
-#+BEGIN_SRC php
-  function custom_rewrite_tag() {
-    add_rewrite_tag('%food%', '([^&]+)');
-    add_rewrite_tag('%variety%', '([^&]+)');
-  }
-  add_action('init', 'custom_rewrite_tag', 10, 0);
-
-  function custom_rewrite_rule() {
-    add_rewrite_rule('^nutrition/([^/]*)/([^/]*)/?','index.php?page_id=12&food=$matches[1]&variety=$matches[2]','top');
-  }
-  add_action('init', 'custom_rewrite_rule', 10, 0);
-#+END_SRC
-
-Rewrite rules are saved in wp:db:wp_options:rewrite_rules
-
-Create a page called Nutrition with page id 12 and use a custom template my-custom-template.php:
+Create a page called Nutrition with page id 12 and use a custom template ~my-custom-template.php~
 #+BEGIN_SRC php
   /**
    ,* Template Name: Nutritional Information
@@ -9042,15 +9053,21 @@ Default options
 #+END_EXAMPLE
 
 *** register_post_type <<<wp:f:register_post_type>>> <<<wp:add cpt>>>
-- wp:plugin:custom-post-type-ui
-- wp:action:init
+- https://codex.wordpress.org/Function_Reference/register_post_type
+- Plugins use this function
+   - wp:plugin:custom-post-type-ui
+   - wp:plugin:acf
+- Called actions
+   - wp:action:registered_post_type
+- Called functions
+   - wp:f:add_rewrite_rule
+   - wp:f:add_rewrite_tag
 - wp:action:pre_get_posts
-- wp:plugin:acf
-
-Remember to refresh Permalink from UI.
-https://codex.wordpress.org/Function_Reference/register_post_type
-- $post_type :: string. < 20 characters. All lowercase and no space
-- $args :: array of arguments
+- Remember to refresh Permalink from UI
+- Do not call before wp:action:init
+- ~register_post_type( string $post_type, array|string $args = array() )~
+   - $post_type :: string. < 20 characters. All lowercase and no space
+   - $args :: array of arguments
 
 #+BEGIN_SRC php
   add_action('init', 'lili_custom_post_type');
@@ -9144,10 +9161,42 @@ optional, default null > posts icon
 'get_template_directory_uri() . "/images/cutom-posttype-icon.png"' (Use a image located in the current theme)
 'data:image/svg+xml;base64,' . base64_encode( "<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 459 459"> <path fill="black" d="POINTS"/></svg>" )' (directly embedding a svg with 'fill="black"' will allow correct colors.)
 
-*** register_post_status
-Register post status
-
-- wp:action:init
+*** register_post_status <<<wp:f:register_post_status>>>
+- Register post status
+- Do not use before wp:action:init
+- add to wp:global:wp_post_statuses
+- Built-in post statuses
+   - publish
+   - future :: protected
+   - draft :: protected
+   - pending :: protected
+   - private
+   - trash
+   - auto-draft
+   - inherit :: Used with child post such as Attachments (e.g. featured image) and Revisions
+   - request-pending
+   - request-confirmed
+   - request-failed
+   - request-completed
+- Extra post statuses
+   - wp:plugin:acf :: acf-disabled
+- ~register_post_status( string $post_status, array|string $args = array() )~
+   - $args
+     #+BEGIN_SRC php
+       $args = [
+	       'label' => 'Post status name for translation', // bool|string d:$post_status
+	       'label_count' => '', // bool|array d:none text to display on admin screen e.g. _n_noop( 'Unread <span class="count">(%s)</span>', 'Unread <span class="count">(%s)</span>' )
+	       'exclude_from_search' => false, // bool d:$internal whether to exclude posts with this post status
+	       'internal' => false, // bool d:false whether the status is for internal use only
+	       'public' => false, // bool whether posts of this status should be shown in the front end of the site
+	       // '_builtin' => false, // bool d:false core-use only
+	       'protected' => false, // bool d:false whether posts with this status should be protected
+	       'private' => false, // bool d:false whether posts with this status should be private
+	       'publicly_queryable' => false, // bool d:$public whether posts with this status should be publicly-queryable
+	       'show_in_admin_all_list' => false, // bool d:$internal whether to include posts in the edit listing for their post type
+	       'show_in_admin_status_list'=> false, // bool d:$internal show in the list of statuses with post counts at the top of the edit listings e.g. All (12) | Published (9) | My Custom Status (2)
+       ];
+     #+END_SRC
 
 #+BEGIN_SRC php
   function my_custom_post_status(){
@@ -9163,8 +9212,12 @@ Register post status
   add_action( 'init', 'my_custom_post_status' );
 #+END_SRC
 
-*** register_taxonomy
-https://codex.wordpress.org/Function_Reference/register_taxonomy
+*** register_taxonomy <<<wp:f:register_taxonomy>>>
+- https://codex.wordpress.org/Function_Reference/register_taxonomy
+- Do not call before wp:action:init
+- ~register_taxonomy( string $taxonomy, array|string $object_type, array|string $args = array() )~
+   - $taxonomy :: tax slug <= 32 characters
+   - $object_type :: e.g. post type slug
 
 #+BEGIN_SRC php
   add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
@@ -9647,6 +9700,10 @@ If you just want to define pass PHP variables and don't want to create empty js 
   wp_localize_script( 'twentyseventeen-skip-link-focus-fix', 'twentyseventeenScreenReaderText', $twentyseventeen_l10n );
 #+END_EXAMPLE
 
+** Pluggable functions <<<wp:pluggable>>>
+- These functions can be defined in plugins. If all active plugins don't define any of these functions, WP will define them
+- ~wp-includes/pluggable.php~
+
 ** URL, Current URL, and slug <<<wp:current url>>>
 Current URL on your website
 <<<php:parse_url>>>
@@ -9981,49 +10038,25 @@ Use wp:plugin:acf
 - Generator :: https://generatewp.com/wp_query/
 - Class Reference :: https://codex.wordpress.org/Class_Reference/WP_Query
 - Use objects in order
-  - WP Tax Query
-  - WP_Meta_Query
-  - WP Order and Orderby
-- Use filters
-  - wp:filter:post_limits
-  - pre_option_posts_per_rss :: wp:filter:pre_option_*
-  - wp:filter:posts_clauses
-  - wp:filter:found_posts
-  - wp:filter:posts_search
-  - wp:filter:posts_search_orderby
-  - wp:filter:posts_where
-  - wp:filter:posts_where_paged
-  - wp:filter:posts_groupby
-  - wp:filter:posts_join_paged
-  - wp:filter:posts_orderby
-  - wp:filter:posts_distinct
-  - wp:filter:posts_limits
-  - wp:filter:posts_fields
-  - wp:filter:posts_clauses
-  - wp:filter:comment_feed_join
-  - wp:filter:comment_feed_where
-  - wp:filter:comment_feed_groupby
-  - wp:filter:comment_feed_orderby
-  - wp:filter:comment_feed_limits
-  - wp:filter:posts_where_request
-  - wp:filter:posts_groupby_request
-  - wp:filter:posts_join_request
-  - wp:filter:posts_orderby_request
-  - wp:filter:posts_distinct_request
-  - wp:filter:posts_fields_request
-  - wp:filter:post_limits_request
-  - wp:filter:posts_clauses_request
-  - wp:filter:posts_request
-  - wp:filter:posts_pre_query
-  - wp:filter:posts_results
-- Use actions :: wp:action:pre_get_posts
-- Class methods and properties :: wp-includes/class-wp-query.php 
+   - WP Tax Query
+   - WP_Meta_Query
+   - WP Order and Orderby
+- Class methods and properties :: ~wp-includes/class-wp-query.php~
 - Debug :: wp:debug:wp_query
+- Public vs Private query vars :: Refer to wp:filter:query_vars
 
 #+BEGIN_SRC php
   $args = array(
-	  'post_type' => array('editorial', 'blog'), // blog or editorial
-	  'post_status' => array('publish'),
+	  'post_type' => array('editorial', 'blog'), // public string|array d:'post'. Refer to wp:f:register_post_type
+	  // 'any' can be used
+	  // If 'tax_query' is used, default is changed to 'any'
+
+	  'post_status' => array('publish'), // string|array d:'publish'. Refer to wp:f:register_post_status
+	  // If user is logged in, 'private' is added.
+	  // Custom post statuses are added.
+	  // If is in admin, protected statuses are added: future, draft, pending
+	  // 'any' can be used
+	
 	  'posts_per_page' => -1, // int. -1 shows all posts. Doesn't work in feed (Default 10). Use wp:filter:post_limits
 	  'post_mime_type' => 'image', // default:not set. string|array. e.g. `image/jpeg` | `image` (for all images)
 	  // $all_mimes = get_allowed_mime_types();
@@ -10032,18 +10065,31 @@ Use wp:plugin:acf
 	  // 'post_mime_type' => $accepted_mimes
 
 	  // Tag Parameters
-	  'tag' => 'tag-slug',
-	  'tag_id' => 123,
-	  'tag__and' => [123,321],
-	  'tag__in' => [123,321],
-	  'tag__not_in' => [123,321],
-	  'tag_slug__and' => ['tag1-slug','tag2-slug'],
-	  'tag_slug__in' => ['tag1-slug','tag2-slug'],
-	
+	  'tag' => 'tag-slug', // public. Can be 'bread,baking' for one of or 'bread+backing' for all
+	  'tag_id' => 123, // public
+	  'tag__and' => [123,321], // private
+	  'tag__in' => [123,321], // private
+	  'tag__not_in' => [123,321], // private
+	  'tag_slug__and' => ['tag1-slug','tag2-slug'], // private
+	  'tag_slug__in' => ['tag1-slug','tag2-slug'], // private
+
+	  // Category Parameters
+	  'cat' => '123', // public. Can be '2,6,17,38' for one of or '-12,-34,-56' for except
+	  'category_name' => 'category-slug', // public. Can be 'staff,news' for one of or 'staff+news' for all
+	  'category__and' => [123,321], // private
+	  'category__in' => [123,321], // private
+	  'category__not_in' => [123,321], // private
+
 	  'meta_query' => $meta_query, // $meta_query is a nested array parsed by WP_Meta_Query
+
+	  // Taxonomy Parameters
+	  // 'tax' => '', deprecated
 	  'tax_query' => $tax_query, // refer to WP Tax Query
-	  'order' => 'DESC', // default, 'ASC'
-	  'orderby' => 'date', // default, which is post_date. Others are publish_date, title
+
+	  // Refer to WP Order and Orderby
+	  'order' => 'DESC', // public d:'ASC' 
+	  'orderby' => 'date', // public d:'date' which is post_date. Others are publish_date, title
+
 	  'suppress_filters' => false, // default. When true, filters will not run
   );
 
@@ -10325,6 +10371,7 @@ Array join 2 query results
 - ~is_singular( $post_types = '' )~ :: string|array
 - ~is_post_type_archive()~ :: ~is_post_type_archive('yourposttype')~
 - If a custom tax archive page (taxonomy and/or a term) is being displayed :: ~is_tax( $taxonomy= '' , $term = '')~ e.g. ~is_tax( 'my_tax' )~ ~is_tax( 'my_tax', 'my_term' )~
+- ~is_main_query()~
 
 **** ~$q->found_posts~
 **** ~$q->post_count~
@@ -10340,6 +10387,53 @@ Array join 2 query results
 	    // last post
     }
   #+END_SRC
+
+**** ~$q->query_vars~
+**** ~$q->get_posts()~
+- Use filters
+   - wp:filter:posts_search :: clause ~WHERE~ for Search Result SQL
+   - wp:filter:posts_search_orderby :: clause ~ORDER BY~ for Search Result SQL
+   - wp:filter:posts_where ::
+   - wp:filter:posts_join
+   - wp:filter:comment_feed_join
+   - wp:filter:comment_feed_where
+   - wp:filter:comment_feed_groupby
+   - wp:filter:comment_feed_orderby
+   - wp:filter:comment_feed_limits
+   - wp:filter:posts_where_paged
+   - wp:filter:posts_groupby
+   - wp:filter:posts_join_paged
+   - wp:filter:posts_orderby
+   - wp:filter:posts_distinct
+   - wp:filter:post_limits
+   - wp:filter:posts_fields
+   - wp:filter:posts_clauses
+   - wp:filter:posts_where_request :: for caching plugins
+   - wp:filter:posts_groupby_request :: for caching plugins
+   - wp:filter:posts_join_request :: for caching plugins
+   - wp:filter:posts_orderby_request :: for caching plugins
+   - wp:filter:posts_distinct_request :: for caching plugins
+   - wp:filter:posts_fields_request :: for caching plugins
+   - wp:filter:post_limits_request :: for caching plugins
+   - wp:filter:posts_clauses_request :: for caching plugins
+   - wp:filter:posts_request :: completed SQL query
+   - wp:filter:posts_pre_query
+   - wp:filter:split_the_query
+      - wp:filter:posts_request_ids
+   - wp:filter:posts_results
+   - wp:filter:comment_feed_join
+   - wp:filter:comment_feed_where
+   - wp:filter:comment_feed_groupby
+   - wp:filter:comment_feed_orderby
+   - wp:filter:comment_feed_limits
+   - wp:filter:the_preview
+   - wp:filter:the_posts
+   - Other filters called in other WP_Query functions
+      - pre_option_posts_per_rss :: wp:filter:pre_option_*
+      - wp:filter:found_posts
+- Use actions
+   - wp:action:pre_get_posts
+   - wp:action:posts_selection
 
 *** <<<WP_Meta_Query>>>
 https://codex.wordpress.org/Class_Reference/WP_Meta_Query
@@ -10496,8 +10590,8 @@ Select the posts that have checkbox enligne checked.
 #+END_SRC
 
 *** <<<WP Tax Query>>>
-https://codex.wordpress.org/Class_Reference/WP_Query#Taxonomy_Parameters
-https://generatewp.com/wp_tax_query/
+- https://codex.wordpress.org/Class_Reference/WP_Query#Taxonomy_Parameters
+- https://generatewp.com/wp_tax_query/
 
 #+BEGIN_SRC php
   $tax_query = array(
@@ -10513,13 +10607,13 @@ https://generatewp.com/wp_tax_query/
 #+END_SRC
 
 *** <<<WP Order and Orderby>>>
-2 parameters: order and orderby. They are strings not arrays.
-
 **** order
+- string or array to match orderby
 - DESC :: default
 - ASC
 
 **** orderby
+- Refer to WP_Meta_Query for multiple orderby
 - date :: default, which is post_date
 - modified :: modified date
 - ID :: post id
@@ -10530,7 +10624,7 @@ https://generatewp.com/wp_tax_query/
 - title
 - name :: post name post slug
 - type :: post type
-List goes on...
+- List goes on :: https://developer.wordpress.org/reference/classes/wp_query/#order-orderby-parameters
 
 *** WP_Term_Query <<<wp:WP_Term_Query>>>
 - https://developer.wordpress.org/reference/classes/wp_term_query/
@@ -10692,15 +10786,15 @@ List goes on...
   <?php endwhile; ?>
 #+END_SRC
 
-** Default filters and actions 
-<<<wp:default filters>>> wp-includes/default-filters.php
+** Default filters and actions <<<wp:default filters>>>
+~wp-includes/default-filters.php~
 
-** add_filter <<<wp:add_filter>>>
+** add_filter, apply_filters, apply_filters_ref_array <<<wp:add_filter>>>
 *** Syntax, remove_filter
 - Modify internal data / function returned
-- For example, WP_Query gets internal settings for building a query.
+- For example, WP_Query gets internal settings for building a query
    - You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
-   - so that you only change the internal setting for that query building without affecting other usage.  
+   - so that you only change the internal setting for that query building without affecting other usage
 
 #+BEGIN_SRC php
   add_filter( 
@@ -10833,6 +10927,7 @@ Sample
 
 *** posts_clauses <<<wp:filter:posts_clauses>>>
 - Modify WP_Query object before it runs
+- ~WP_Query->get_posts()~ :: ~$clauses = (array) apply_filters_ref_array( 'posts_clauses', array( compact( $pieces ), &$this ) );~
 
 #+BEGIN_SRC php
   function lili_posts_clauses($clauses, $query) {
@@ -10889,14 +10984,19 @@ Sample
 *** query_vars <<<wp:filter:query_vars>>>
 - https://codex.wordpress.org/WordPress_Query_Vars
 - Used in wp:f:add_rewrite_tag
+- Filter query vars :: return query variable name in array not values
+- All public and private query vars :: class-wp.php ~$public_query_vars~ ~$private_query_vars~
+- ~mysite.ca/?p=123~ where ~p~ is a public query var where it can be used in URL and has filter effect while private query var can only be used in PHP:
+  #+BEGIN_SRC php
+    $query = new WP_Query(array(
+	    'post__in' => array(3, 7) // post__in is private
+    ));
+  #+END_SRC
 
-~mysite.ca/?p=123~ where ~p~ is a public query var where it can be used in URL and has filter effect
-Private query var can only be used in PHP:
-#+BEGIN_SRC php
-  $query = new WP_Query(array(
-	  'post__in' => array(3, 7)
-  ));
-#+END_SRC
+*** request <<<wp:filter:request>>>
+- filters the array of parsed query variables
+- ~apply_filters( 'request', array $query_vars )~
+- e.g. ~[ 'page' => '', 'my_custom_post_type' => 'my-post-slug', 'post_type' => 'my_custom_post_type', 'name' => 'my-post-name' ]~
 
 *** page_link, post_link <<<wp:filter:page_link>>> <<<wp:filter:post_link>>>
 The filter is used in ~get_permalink~
@@ -11540,12 +11640,12 @@ May run these in this action
 - wp:f:register_nav_menus
 
 *** init <<<wp:action:init>>>
-Fires after Wordpress has finished loading but before any headers are sent.
-User is already authenticated.
-Useful for intercepting $_GET or $_POST
-
-wp:f:register_nav_menus
-wp:f:add_rewrite_rule
+- Fires after Wordpress has finished loading but before any headers are sent
+- User is already authenticated
+- Useful for intercepting ~$_GET~ or ~$_POST~
+- Functions or actions
+   - wp:f:register_nav_menus
+   - wp:f:add_rewrite_rule
 
 *** widgets_init <<<wp:action:widgets_init>>>
 Refer to wp:filter:sidebars_widgets to modify registered sidebars and their widgets.
@@ -11608,9 +11708,10 @@ _maybe_update_themes
 
 *** parse_request <<<wp:action:parse_request>>>
 *** pre_get_posts <<<wp:action:pre_get_posts>>>
-Provide a chance to modify ~$query~ object (or do something else) before it's run. ~$query~ can be any main (often) or secondary query.
-- Do not use this to alter query for single Page requests.
-- Add action in functions.php. Query is already made when template is loaded.
+- Provide a chance to modify ~$query~ object (or do something else) before it's run. ~$query~ can be any main (often) or secondary query
+- Do not use this to alter query for single Page requests
+- Add action in functions.php. Query is already made when template is loaded
+- ~WP_Query->get_posts()~ :: ~do_action_ref_array( 'pre_get_posts', array( &$this ) )~
 - Use it instead of ~query_posts~
 - Refer to WP_Query
 
@@ -11832,14 +11933,6 @@ Pass array to shortcode attribute
       $data = unserialize($a['data']);
   }
 #+END_SRC
-
-** Options, Settings <<<WP All Options>>>
-/wp-admin/options.php
-
-[[https://codex.wordpress.org/Option_Reference][Option Reference]]
-
-noindex, nofollow
-Settings > Reading > toggle Search Engine Visibility - Discourage search engines from indexing this site
 
 ** FTP setting <<<wp:ftp>>>
 WordPress is usually run using Apache or Nginx user which might not have permission to write files.
@@ -13018,16 +13111,7 @@ wp:filter:template_include
 - post_content :: longtext
 - post_title :: text
 - post_excerpt :: text
-- post_status :: varchar(20) d:'publish'
-   - auto-draft
-   - draft
-   - inherit :: Used with child post such as Attachments (e.g. featured image) and Revisions
-   - publish
-   - future
-   - pending
-   - private
-   - trash
-   - register_post_status
+- post_status :: varchar(20) d:'publish' Refer to wp:f:register_post_status
 - post_name :: varchar(200) d:'' name in slug
 - to_ping :: text
 - ping_status :: varchar(20) d:'open'
@@ -13218,12 +13302,14 @@ _wp_attachement_backup_sizes
 #+END_SRC
 
 *** wp_options <<<wp:db:wp_options>>>
-- option_id
-- option_name
+- Refer to wp:options
+- option_id *PK* :: bigint(20) unsigned
+- option_name :: varchar(191) d:''
   - upload_path :: wp-content/uploads <<<wp:db:wp_options:upload_path>>>
   - rewrite_rules :: <<<wp:db:wp_options:rewrite_rules>>>
   - active_plugins :: array of plugins' php files loaded in order <<<wp:db:wp_options:active_plugins>>>
-- option_value
+- option_value :: longtext
+- autoload :: varchar(20) d:'yes'
 
 ** Plugins
 *** Custom Plugin
@@ -13767,7 +13853,7 @@ Export-pro exports one post type at a time or build a WP_Query
 
 Import-pro
 - imports images to Media Library and modify the image urls inside body content after posts are imported
-- Import settings > Enable StreamReader instead of using XMLReader
+- Import settings > Enable ~Use StreamReader instead of XMLReader to parse import file~
 - Db table ~wp_pmxi_images~ stores the original image urls and the corresponding attachment id
 - For large import, choose an existing import file to creat an import using Manual Schedule, run trigger url and run processing url every 2 mins. Each processing takes about 2 minutes
 - Custom Fields
@@ -13794,6 +13880,8 @@ Import Options
 *** wordpress-importer
 *** wp-optimize
 *** duplicate-post <<<wp:plugin:duplicate-post>>>
+- Clone post
+
 *** Super Cache (SuperCache)
 Warning: include(/var/www/html/wp-content/plugins/wp-super-cache/wp-cache-base.php): failed to open stream
 
@@ -13906,7 +13994,14 @@ Premium Custom Post Type UI Extended can show posts of any CPT inside a post usi
 CPT UI > Post Types or Taxonomies > under Import Post Types, add ~{""}~ and hit Import
 
 *** Post Expirator <<<wp:plugin:post-expirator>>>
-Expire posts. WP-Cron is used.
+- Expire posts. Change post status to one of the following:
+   - draft
+   - trash
+   - private
+- Stick or unstick posts
+- Delete posts
+- Cateogries replace, add or remove :: only support hierarchical taxonomies
+- WP-Cron is used
 
 *** Yoast SEO wordpress-seo <<<wp:plugin:wordpress-seo>>>
 - How to SEO? :: https://yoast.com/wordpress-seo/
@@ -16119,9 +16214,9 @@ Add an extra field in response
 #+END_SRC
 
 ** Life Cycle
-Refer to wp:action:loading sequence
-https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
-http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
+- Refer to wp:action:loading sequence
+- https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
+- http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
 
 index.php
 - WP_USE_THEMES = true
@@ -16149,15 +16244,30 @@ index.php
 	 - wp-includes/query.php (is_* functions)
 	 - wp-includes/general-template.php
 	 - Load mu-plugins
-	 - create initial taxonomies and post types
-	 - Load active plugins :: ~do_action( 'plugins_loaded')~
-	 - Initialize objects :: WP_Query WP_Rewrite
-	 - ~do_action( 'setup_theme' )~
+	 - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
+	 - Load active plugins :: ~do_action( 'plugins_loaded' )~
+	 - Load pluggable functions :: wp:pluggable
+	 - ~do_action( 'plugins_loaded' )~
+	 - Initialize objects
+	    - WP_Query
+	    - WP_Rewrite
+	 - ~do_action( 'setup_theme' )~ ::
 	 - Load the active theme :: functions.php
 	 - wp:action:after_setup_theme
-	 - ~do_action( 'init'  )~
+	 - ~do_action( 'init' )~
 	 - ~do_action( 'wp_loaded' )~
-   - ~wp();~
+   - ~wp();~ :: class-wp.php
+      - ~init()~ :: wp_get_current_user()
+      - ~parse_request('')~
+	 - wp:filter:do_parse_request :: short circuit
+	 - wp:filter:query_vars :: 
+	 - wp:filter:request
+	 - wp:action:parse_request :: 
+      - ~send_headers()~ ::
+      - ~query_posts()~ ::
+      - ~handle_404()~ ::
+      - ~register_globals()~ ::
+      - wp:action:wp :: 
    - wp-includes/template-loader.php
       - wp:action:template_redirect
       - wp:action:do_robots
