@@ -533,6 +533,16 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
 #+END_SRC
 
+** Ternary Operator
+#+BEGIN_SRC php
+  // null coalescing operator since PHP 7.0
+  // It returns its first operand if it exists and is not NULL; otherwise it returns its second operand.
+
+  // equivalent
+  $foo = $bar ?? 'something';
+  $foo = isset($bar) ? $bar : 'something';
+#+END_SRC
+
 ** Multibyte <<<php:multibyte>>>
 - Functions ~mb_*~ e.g. ~mb_strlen( 'abc' )~
 - ~str_replace()~ works with multibyte already
@@ -4608,7 +4618,7 @@ All hooks' callbacks (Class definition) such as plugin and custom filter callbac
 Put it in MODULENAME.views.inc based on hook_views_api. But I had success to just include this hook in .module file
 One way to avoid setup the *.views.inc is to use Views GUI to assign an Query Tag then use hook_query_TAG_alter but it runs twice.. So stick with hook_views_query_alter
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // dpm($query->where);
   // One condition
   $c1 = [
@@ -4652,9 +4662,9 @@ One way to avoid setup the *.views.inc is to use Views GUI to assign an Query Ta
     'args' => [],
     'type' => 'AND'
   ]
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function mymod_views_query_alter(&$view, &$query) {
     dpm($view, __FUNCTION__);
     dpm($query, __FUNCTION__);
@@ -4697,7 +4707,7 @@ One way to avoid setup the *.views.inc is to use Views GUI to assign an Query Ta
       $condition['value'] = "%" . trim($condition['value'], " \t\n\r\0\x0B%") . "%";
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** hook_views_pre_build
 *** hook_views_pre_render
@@ -7596,10 +7606,9 @@ For categories and tags
 #+END_SRC
 
 ** WP-CLI <<<wp-cli>>>
-[[https://wp-cli.org/commands][Wordpress CLI Commands]]
-WP CLI Pantheon
-
-https://github.com/wp-cli/wp-cli/releases
+- [[https://wp-cli.org/commands][Wordpress CLI Commands]]
+- WP CLI Pantheon
+- https://github.com/wp-cli/wp-cli/releases
 
 *** WP CLI Install, Upgrade
 #+BEGIN_SRC sh
@@ -7777,9 +7786,9 @@ Options
 - Documentaion :: https://github.com/wp-cli/entity-command
 - Code :: https://github.com/wp-cli/entity-command/blob/master/src/Post_Command.php
 
---post_type and other args in WP_Query can be passed :: https://developer.wordpress.org/reference/classes/wp_query/
+**** ~post list [--<field>=<value>]... [--field=<field>] [--fields=<fields>...]... [--format=<format>]~
+- ~--post_type~ and other args in WP_Query can be passed :: https://developer.wordpress.org/reference/classes/wp_query/
 
-**** ~post list~, ~post delete~
 #+BEGIN_SRC bash
   wp post list --post_type=post --fields=post_title,post_name,post_date,post_status --posts_per_page=5
   wp post list --post_type=post --format=count
@@ -7813,6 +7822,12 @@ Options
   wp post list --post_type=post --meta_key=wpcf-abc --meta_value='abc xyz' '--meta_compare=!='
 #+END_SRC
 
+**** ~post delete <id>... [--force] [--defer-term-counting]~
+**** ~post update <id>... [--field=value]...~
+- *Warning!!!* Must define ~--post_name~ for updating existing posts :: Otherwise post_name is set to empty
+   - Better to use raw query to update existing posts
+- It calls wp:f:wp_insert_post
+
 **** ~post meta~ <<<wp-cli:post meta>>>
 - Have to find out and set the private field value ~_custom_order~ which refers to the wp:plugin:acf field setting in table ~wp_posts~ with ~post_name=field_RANDOM~
 
@@ -7835,6 +7850,11 @@ Options
   # get a list of posts to update custom fields
   terminus wp mysite.li-dev -- post list --post_type=speaker --fields=ID --format=ids --allow-root
 
+  # fast
+  terminus wp mysite.li-dev -- post meta update 123 124 custom_order 0
+  terminus wp mysite.li-dev -- post meta update 123 124 _custom_order field_CHANGERANDOM
+
+  # very slow
   for id in 1234 1232 1231; do terminus wp mysite.li-dev -- post meta update $id custom_order 0; done
   for id in 1234 1232 1231; do terminus wp mysite.li-dev -- post meta update $id _custom_order field_CHANGERANDOM; done
 #+END_SRC
@@ -9865,7 +9885,7 @@ Use wp:plugin:acf
    - $args
       - query_var :: d:$taxonomy <<<wp:f:register_taxonomy:query_var>>>
       - update_count_callback :: <<<wp:f:register_taxonomy:update_count_callback>>>
-	 - d:'' :: call wp:f:wp_update_term_count_now()
+	 - d:'' :: affect wp:f:wp_update_term_count_now
 - wp:global:wp_taxonomies
 - ~do_action( 'registered_taxonomy', $taxonomy, $object_type, (array) $taxonomy_object )~ :: wp:action:registered_taxonomy
 
@@ -9950,6 +9970,10 @@ Non-hierarchical taxonomy
 *** ~wp_update_term_count_now( array $terms, string $taxonomy )~ <<<wp:f:wp_update_term_count_now>>>
 - $terms :: array of term_taxonomy_id
 - return true :: when complete
+- It's only called when
+   - a post's post status is updated (update count for the post's associated terms)
+   - a tax is added or removed (update count for that tax only)
+   - Not cleared when cache is cleared and has to be run manually to update count
 - ~call_user_func( $taxonomy->update_count_callback, $terms, $taxonomy )~ :: if wp:f:register_taxonomy:update_count_callback is defined
 - ~_update_post_term_count( $terms, $taxonomy )~ :: if there's any attached post types that exist, get total count of publish posts of attached post types
    - wp:action:edit_term_taxonomy
@@ -13919,10 +13943,35 @@ Export-pro exports one post type at a time or build a WP_Query
 
 Import-pro
 - Images :: import them to Media Library and modify the image urls inside body content after posts are imported
+   - ~wp-content/uploads/wpallimport/files~
 - Taxonomy
    - Taxonomy terms that don't already exist will be created
+- Import file :: ~wp-content/uploads/wpallimport/uploads/xxx/~
+- Only records with the same unique_key and import id will be updated otherwise they are created
+   - Consider creating a custom field for unique id during the first import and use that to identify records for all imports
+   - Or overwrite the import file with a new one and run the previous import again
 - Import settings > Enable ~Use StreamReader instead of XMLReader to parse import file~
-- Db table ~wp_pmxi_images~ stores the original image urls and the corresponding attachment id
+- Db tables
+   - ~wp_pmxi_images~ :: stores the original image urls and the corresponding attachment id
+      - id
+      - attachment_id
+      - image_url :: e.g. image source url
+      - image_filename
+   - ~wp_pmxi_posts~
+      - id
+      - post_id :: bigint(20) unsigned
+      - import_id
+      - unique_key
+   - ~wp_pmxi_imports~
+      - id
+      - parent_import_id :: d:0
+      - name :: e.g. import file name
+   - ~wp_pmxi_templates~
+      - id
+      - options :: serialized exported template string
+      - scheduled :: d:''
+      - name :: import template name
+      - Goes on
 - For large import, choose an existing import file to creat an import using Manual Schedule, run trigger url and run processing url every 2 mins. Each processing takes about 2 minutes
 - Custom Fields
    - wpcf fields (toolset) :: ~wpcf-custom-author~ where ~custom-author~ is the slug in Toolset for the custom field
@@ -51049,7 +51098,7 @@ For Redis, add the following in wp-config.php according to ~lando info~ for plug
    - May need to clear cache from wp-admin after ~lando rebuild~ or restart :: wp admin > Settings > clear Pantheon Page Cache
 - Fully remove all lando containers and networks
    - ~lando stop && lando destroy && lando poweroff~
-   - ~docker rm -f $(docker ps -a -q)~
+   - ~docker rm -f $(docker ps -aq)~
    - ~docker network prune~
    - Usually ~lando stop && lando destroy && lando start~ is enough. Can also use ~lando rebuild~
 - Run wp cli on other Pantheon sites :: ~lando terminus wp mysite.live user list~
