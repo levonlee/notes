@@ -7263,13 +7263,10 @@ https://codex.wordpress.org/Class_Reference/WP_Post
 *** ~$wpdb~ <<<wp:global:wpdb>>>
 - https://codex.wordpress.org/Class_Reference/wpdb
 - ~$wpdb~ provides an interface which WP_Query uses to query
-- Use ~$wpdb~ to create raw query
+- If ~wp-content/db.php~ exists and creates an instance of ~global $wpdb~, ~$wpdb~ will be defined as in this custom file :: wp:plugin:w3-total-cache
+- If wp core doesn't support ~msql_connect~ but ~mysqli~ and the environment doesn't have msql extension (since PHP 7.0), then replace ~wp-includes/wp-db.php~ with the latest wp version without upgrading wp core. Although upgrading wp core is recommended
 
-If ~wp-content/db.php~ exists and creates an instance of ~global $wpdb~, ~$wpdb~ will be defined as in this custom file.
-wp:plugin:w3-total-cache
-
-If wp core doesn't support msql_connect but mysqli and the environment doesn't have msql extension (since PHP 7.0), then you can replace wp-includes/wp-db.php with the latest wp version without upgrading wp core. Although upgrading wp core is recommended.
-
+**** Use ~$wpdb~ to create raw query 
 https://code.tutsplus.com/tutorials/writing-custom-queries-in-wordpress--wp-25510
 
 #+BEGIN_SRC php
@@ -9179,19 +9176,19 @@ optional, default null > posts icon
 - Register post status
 - Do not use before wp:action:init
 - add to wp:global:wp_post_statuses
-- Built-in post statuses
-   - publish
+- Built-in post statuses ~_builtin~
+   - publish :: public
    - future :: protected
    - draft :: protected
    - pending :: protected
-   - private
-   - trash
-   - auto-draft
-   - inherit :: Used with child post such as Attachments (e.g. featured image) and Revisions
-   - request-pending
-   - request-confirmed
-   - request-failed
-   - request-completed
+   - private :: private
+   - trash :: internal
+   - auto-draft :: internal
+   - inherit :: internal Used with child post such as Attachments (e.g. featured image) and Revisions
+   - request-pending :: internal
+   - request-confirmed :: internal
+   - request-failed :: internal
+   - request-completed :: internal
 - Extra post statuses
    - wp:plugin:acf :: acf-disabled
 - ~register_post_status( string $post_status, array|string $args = array() )~
@@ -9224,93 +9221,6 @@ optional, default null > posts icon
 	  ) );
   }
   add_action( 'init', 'my_custom_post_status' );
-#+END_SRC
-
-*** register_taxonomy <<<wp:f:register_taxonomy>>>
-- https://codex.wordpress.org/Function_Reference/register_taxonomy
-- Do not call before wp:action:init
-- ~register_taxonomy( string $taxonomy, array|string $object_type, array|string $args = array() )~
-   - $taxonomy :: tax slug <= 32 characters
-   - $object_type :: e.g. post type slug
-   - $args
-      - query_var :: d:$taxonomy <<<wp:f:register_taxonomy:query_var>>>
-
-#+BEGIN_SRC php
-  add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
- 
-  //create a custom taxonomy name it topics for your posts
- 
-  function create_topics_hierarchical_taxonomy() {
- 
-  // Add new taxonomy, make it hierarchical like categories
-  //first do the translations part for GUI
- 
-    $labels = array(
-      'name' => _x( 'Topics', 'taxonomy general name' ),
-      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
-      'search_items' =>  __( 'Search Topics' ),
-      'all_items' => __( 'All Topics' ),
-      'parent_item' => __( 'Parent Topic' ),
-      'parent_item_colon' => __( 'Parent Topic:' ),
-      'edit_item' => __( 'Edit Topic' ), 
-      'update_item' => __( 'Update Topic' ),
-      'add_new_item' => __( 'Add New Topic' ),
-      'new_item_name' => __( 'New Topic Name' ),
-      'menu_name' => __( 'Topics' ),
-    );    
- 
-  // Now register the taxonomy
- 
-    register_taxonomy('topics',array('post'), array(
-      'hierarchical' => true,
-      'labels' => $labels,
-      'show_ui' => true,
-      'show_admin_column' => true,
-      'query_var' => true,
-      'rewrite' => array( 'slug' => 'topic' ),
-    ));
- 
-  }
-#+END_SRC
-
-Non-hierarchical taxonomy
-#+BEGIN_SRC php
-  add_action( 'init', 'create_topics_nonhierarchical_taxonomy', 0 );
- 
-  function create_topics_nonhierarchical_taxonomy() {
- 
-  // Labels part for the GUI
- 
-    $labels = array(
-      'name' => _x( 'Topics', 'taxonomy general name' ),
-      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
-      'search_items' =>  __( 'Search Topics' ),
-      'popular_items' => __( 'Popular Topics' ),
-      'all_items' => __( 'All Topics' ),
-      'parent_item' => null,
-      'parent_item_colon' => null,
-      'edit_item' => __( 'Edit Topic' ), 
-      'update_item' => __( 'Update Topic' ),
-      'add_new_item' => __( 'Add New Topic' ),
-      'new_item_name' => __( 'New Topic Name' ),
-      'separate_items_with_commas' => __( 'Separate topics with commas' ),
-      'add_or_remove_items' => __( 'Add or remove topics' ),
-      'choose_from_most_used' => __( 'Choose from the most used topics' ),
-      'menu_name' => __( 'Topics' ),
-    ); 
- 
-  // Now register the non-hierarchical taxonomy like tag
- 
-    register_taxonomy('topics','post',array(
-      'hierarchical' => false,
-      'labels' => $labels,
-      'show_ui' => true,
-      'show_admin_column' => true,
-      'update_count_callback' => '_update_post_term_count',
-      'query_var' => true,
-      'rewrite' => array( 'slug' => 'topic' ),
-    ));
-  }
 #+END_SRC
 
 *** register_nav_menus, register_nav_menu, wp_nav_menu
@@ -9938,15 +9848,117 @@ Use wp:plugin:acf
   - ~edit-my_tax_name~
   - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
 
-** Taxonomy API <<<wp:api:taxonomy>>>
-- ~wp-includes/taxonomy.php~
-
+** Taxonomy API ~wp-includes/taxonomy.php~ <<<wp:api:taxonomy>>>
 *** ~get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' )~
 - Return WP_Term|array|false
 - Get term by slug :: ~get_term_by( 'slug', 'my-term-slug', 'taxonomy-of-the-term' )~
 - Get current term :: ~get_term_by( 'slug', get_query_var( 'term' ), get_query_var( 'taxonomy' ) )~
 - ~$field~ could be :: slug, name, id or term_taxonomy_id
 - $output could be :: OBJECT, ARRAY_A, ARRAY_N
+
+*** ~register_taxonomy( string $taxonomy, array|string $object_type, array|string $args = array() )~ <<<wp:f:register_taxonomy>>>
+- https://codex.wordpress.org/Function_Reference/register_taxonomy
+- Do not call before wp:action:init
+- Parameters
+   - $taxonomy :: tax slug <= 32 characters
+   - $object_type :: e.g. post type slug
+   - $args
+      - query_var :: d:$taxonomy <<<wp:f:register_taxonomy:query_var>>>
+      - update_count_callback :: <<<wp:f:register_taxonomy:update_count_callback>>>
+	 - d:'' :: call wp:f:wp_update_term_count_now()
+- wp:global:wp_taxonomies
+- ~do_action( 'registered_taxonomy', $taxonomy, $object_type, (array) $taxonomy_object )~ :: wp:action:registered_taxonomy
+
+#+BEGIN_SRC php
+  add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
+ 
+  //create a custom taxonomy name it topics for your posts
+ 
+  function create_topics_hierarchical_taxonomy() {
+ 
+  // Add new taxonomy, make it hierarchical like categories
+  //first do the translations part for GUI
+ 
+    $labels = array(
+      'name' => _x( 'Topics', 'taxonomy general name' ),
+      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
+      'search_items' =>  __( 'Search Topics' ),
+      'all_items' => __( 'All Topics' ),
+      'parent_item' => __( 'Parent Topic' ),
+      'parent_item_colon' => __( 'Parent Topic:' ),
+      'edit_item' => __( 'Edit Topic' ), 
+      'update_item' => __( 'Update Topic' ),
+      'add_new_item' => __( 'Add New Topic' ),
+      'new_item_name' => __( 'New Topic Name' ),
+      'menu_name' => __( 'Topics' ),
+    );    
+ 
+  // Now register the taxonomy
+ 
+    register_taxonomy('topics',array('post'), array(
+      'hierarchical' => true,
+      'labels' => $labels,
+      'show_ui' => true,
+      'show_admin_column' => true,
+      'query_var' => true,
+      'rewrite' => array( 'slug' => 'topic' ),
+    ));
+ 
+  }
+#+END_SRC
+
+Non-hierarchical taxonomy
+#+BEGIN_SRC php
+  add_action( 'init', 'create_topics_nonhierarchical_taxonomy', 0 );
+ 
+  function create_topics_nonhierarchical_taxonomy() {
+ 
+  // Labels part for the GUI
+ 
+    $labels = array(
+      'name' => _x( 'Topics', 'taxonomy general name' ),
+      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
+      'search_items' =>  __( 'Search Topics' ),
+      'popular_items' => __( 'Popular Topics' ),
+      'all_items' => __( 'All Topics' ),
+      'parent_item' => null,
+      'parent_item_colon' => null,
+      'edit_item' => __( 'Edit Topic' ), 
+      'update_item' => __( 'Update Topic' ),
+      'add_new_item' => __( 'Add New Topic' ),
+      'new_item_name' => __( 'New Topic Name' ),
+      'separate_items_with_commas' => __( 'Separate topics with commas' ),
+      'add_or_remove_items' => __( 'Add or remove topics' ),
+      'choose_from_most_used' => __( 'Choose from the most used topics' ),
+      'menu_name' => __( 'Topics' ),
+    ); 
+ 
+  // Now register the non-hierarchical taxonomy like tag
+ 
+    register_taxonomy('topics','post',array(
+      'hierarchical' => false,
+      'labels' => $labels,
+      'show_ui' => true,
+      'show_admin_column' => true,
+      'update_count_callback' => '_update_post_term_count',
+      'query_var' => true,
+      'rewrite' => array( 'slug' => 'topic' ),
+    ));
+  }
+#+END_SRC
+
+*** ~wp_update_term_count_now( array $terms, string $taxonomy )~ <<<wp:f:wp_update_term_count_now>>>
+- $terms :: array of term_taxonomy_id
+- return true :: when complete
+- ~call_user_func( $taxonomy->update_count_callback, $terms, $taxonomy )~ :: if wp:f:register_taxonomy:update_count_callback is defined
+- ~_update_post_term_count( $terms, $taxonomy )~ :: if there's any attached post types that exist, get total count of publish posts of attached post types
+   - wp:action:edit_term_taxonomy
+   - Update wp:db:wp_term_taxonomy:count
+   - wp:action:edited_term_taxonomy
+- ~_update_generic_term_count( $terms, $taxonomy )~ :: if there's no attached post type that exists, get total count of anything from wp:db:wp_term_relationships
+
+*** <<<wp:action:registered_taxonomy>>>
+- Add action before wp:f:register_taxonomy is called
 
 *** Add a sortable column to taxonomy edit page
 - Taxonomy :: sponsor_type
@@ -10170,7 +10182,8 @@ Use wp:plugin:acf
 #+END_SRC
 
 **** Loop with ~query_posts()~ <<<wp:f:query_posts>>>
-Try to avoid using it. Use ~new WP_Query()~ instead 
+- Try to avoid using it. Use ~new WP_Query()~ instead
+- It resets wp:global:wp_query
 
 #+BEGIN_SRC php
   <?php global $query_string; // required
@@ -10776,6 +10789,10 @@ Select the posts that have checkbox enligne checked.
   GROUP BY wp_posts.ID
   ORDER BY CAST(mt1.meta_value AS CHAR) ASC, CAST(wp_postmeta.meta_value AS CHAR) ASC
 #+END_SRC
+
+** Query API <<<wp:api:query>>>
+- wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
+- ~query_posts( $query )~ wp:f:query_posts
 
 ** RSS <<<wp:rss>>> <<<wp:feed>>>
 - wp:f:get_template_part includes any template in child theme
@@ -13218,24 +13235,23 @@ Get terms for posts
   ORDER BY p.post_date DESC
 #+END_SRC
 
-*** wp_terms, wp_term_relationships
-- wp_terms
+*** wp_terms
    - term_id :: int, auto_increment
    - name :: varchar(200)
    - slug :: varchar(200)
    - term_group :: int
-- wp_term_relationships
+*** wp_term_relationships <<<wp:db:wp_term_relationships>>>
    - object_id :: int, (e.g. ID in wp_posts), 0
    - term_taxonomy_id :: int, 0
    - term_order :: int, 0
 
-*** wp_term_taxonomy
+*** wp_term_taxonomy <<<wp:db:wp_term_taxonomy>>>
 - term_taxonomy_id :: bigint(20)
 - term_id :: bigint(20)
 - taxonomy :: varchar(20) category, post_tag, link_category, nav_menu, ngg_tag
 - description :: longtext
 - parent :: bigint(20)
-- count :: bigint(20)
+- count :: bigint(20) <<<wp:db:wp_term_taxonomy:count>>>
 
 *** wp_termmeta
 - meta_id :: bigint(20) unsigned, PK, start from 1
@@ -13886,9 +13902,8 @@ wp_options table keep track of recently_edited files that are edited on WP-admin
 *** wp-migrate-db-pro, wp-migrate-db-pro-media-files
 Non-free plugin. Install them in both source and destination websites.
 
-*** wp-all-import-pro, wp-all-export-pro
-Both <<<wp:plugin:wp-all-export-pro>>> and <<<wp:plugin:wp-all-import-pro>>> do not require a license. License is for plugin update.
-
+*** wp-all-import-pro, wp-all-export-pro <<<wp:plugin:wp-all-export-pro>>> <<<wp:plugin:wp-all-import-pro>>>
+- License is for plugin update only :: Both plugins (WP All Import, WP All Export) do not require a license to use
 - Create a brand new wp site, use wp cli to import .sql file and install Export-pro
 - Export-pro to export parent posts to .csv or .xml
 - Install Import-pro to import parent posts
@@ -13903,12 +13918,15 @@ Export-pro exports one post type at a time or build a WP_Query
   - linux:find:newest modified files
 
 Import-pro
-- imports images to Media Library and modify the image urls inside body content after posts are imported
+- Images :: import them to Media Library and modify the image urls inside body content after posts are imported
+- Taxonomy
+   - Taxonomy terms that don't already exist will be created
 - Import settings > Enable ~Use StreamReader instead of XMLReader to parse import file~
 - Db table ~wp_pmxi_images~ stores the original image urls and the corresponding attachment id
 - For large import, choose an existing import file to creat an import using Manual Schedule, run trigger url and run processing url every 2 mins. Each processing takes about 2 minutes
 - Custom Fields
-  - wpcf fields (toolset) :: `wpcf-custom-author` where `custom-author` is the slug in Toolset for the custom field
+   - wpcf fields (toolset) :: ~wpcf-custom-author~ where ~custom-author~ is the slug in Toolset for the custom field
+   - WP All Import - ACF Add-on :: wp:plugin:acf
 
 Cron
 #+BEGIN_SRC sh
@@ -16292,7 +16310,7 @@ index.php
 	    - wp-db.php
 	 - wp-includes/formatting.php
 	 - wp-includes/capabilities.php (User capabilites API)
-	 - wp-includes/query.php :: Query API functions - wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
+	 - wp-includes/query.php :: wp:api:query 
 	 - wp-includes/general-template.php
 	 - Load mu-plugins
 	 - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
