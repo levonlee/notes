@@ -7235,7 +7235,7 @@ WP first detects if [[http://php.net/manual/en/security.magicquotes.php][Magic Q
   }
 #+END_SRC
 
-*** ~$GLOBALS['wp_query']~ <<<wp:global:wp_query>>>
+*** ~$wp_query~ ~$GLOBALS['wp_query']~ <<<wp:global:wp_query>>>
 Refer to WP_Query
 
 #+BEGIN_SRC php
@@ -7248,6 +7248,9 @@ Refer to WP_Query
   // number of posts being displayed
   echo $p->post_count;
 #+END_SRC
+
+*** ~$wp_rewrite~ <<<wp:global:rewrite>>>
+- Refer to wp:options:rewrite_rules
 
 *** ~$post~ <<<wp:global:post>>>
 https://codex.wordpress.org/Class_Reference/WP_Post
@@ -7985,7 +7988,8 @@ Create a bash script wrapper for already started processes
 #+END_SRC
 
 ** Conditional Tags <<<wp:conditional tags>>>
-- [[https://codex.wordpress.org/Conditional_Tags][These]] use the wp:query:main only
+- [[https://codex.wordpress.org/Conditional_Tags][These]] call ~global $wp_query~ wp:wp_query:m:is_* 
+   - Usually the wp:query:main
 
 *** ~is_page( int|string|array $page = '' )~
 #+BEGIN_SRC php
@@ -8003,6 +8007,7 @@ Create a bash script wrapper for already started processes
 #+END_SRC
 
 *** ~is_single( int|string|array $post = '' )~
+- works for any post type except attachments and pages
 - $post :: Post ID, title, slug or array of such (one of the specified) 
 
 *** ~is_singular( string|array $post_types = '' )~
@@ -9063,11 +9068,12 @@ Default options
    - wp:f:add_rewrite_rule
    - wp:f:add_rewrite_tag
 - wp:action:pre_get_posts
-- Remember to refresh Permalink from UI
+- Refresh Permalink from UI or ~flush_rewrite_rules()~ in plugin/theme activation and deactivation hooks
 - Do not call before wp:action:init
 - ~register_post_type( string $post_type, array|string $args = array() )~
    - $post_type :: string. < 20 characters. All lowercase and no space
    - $args :: array of arguments
+      - query_var :: default true to use ~$post_type~ as public query_var <<<wp:f:register_post_type:query_var>>>
 
 #+BEGIN_SRC php
   add_action('init', 'lili_custom_post_type');
@@ -9096,7 +9102,7 @@ Default options
        ,* ?{post_type_query_var}={single_post_slug}
        ,*/
 
-      // 'query_var' => true, // Default. Set to false means the post type cannot be loaded at /?{query_var}={single_post_slug}. It has no effect when public_queryable is false.
+      // 'query_var' => true, // bool|string d:true to use $post_type. Set to false means the post type cannot be loaded at /?{query_var}={single_post_slug}. It has no effect when public_queryable is false
 
       'show_ui' => true, // optional. bool. default take 'public' value.
       'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
@@ -9120,7 +9126,15 @@ Default options
       // 'hierarchical' => true
       // default false, when true 'supports' should contain 'page-attributes'  
 
-      // 'has_archive' => true // default false
+      'has_archive' => false, // d:false
+
+		  'rewrite' => [
+			  'slug' => 'movies', // d:$post_type
+			  'with_front' => true, // d:true should the permalink strucutre to be prepended with the front base
+			  'feeds' => false, // d:$has_archive should a feed permalink structure be built
+			  'pages' => true, // d:true should the permalink structure provide for pagination
+			  'ep_mask' => EP_PERMALINK, // don't know what it is..
+		  ], // bool|array d:true and use $post_type as slug
 
     ];
 
@@ -9218,6 +9232,8 @@ optional, default null > posts icon
 - ~register_taxonomy( string $taxonomy, array|string $object_type, array|string $args = array() )~
    - $taxonomy :: tax slug <= 32 characters
    - $object_type :: e.g. post type slug
+   - $args
+      - query_var :: d:$taxonomy <<<wp:f:register_taxonomy:query_var>>>
 
 #+BEGIN_SRC php
   add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
@@ -9560,7 +9576,7 @@ Returns WP_Error or [[https://developer.wordpress.org/reference/classes/wp_image
 
 *** wp_reset_query <<<wp:f:wp_reset_query>>>
 - Should be called after ~query_posts()~
-- Restore ~$GLOBALS['wp_query']~ and global post data to the original main query.
+- ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query'];~ and ~wp_reset_postdata()~
 
 Avoid to use it. To alter main query parameters before it's made, use wp:action:pre_get_posts
 #+BEGIN_SRC php
@@ -9994,6 +10010,9 @@ Use wp:plugin:acf
   }, 10, 3 );
 #+END_SRC
 
+** Rewrite API <<<wp:wp_rewrite>>>
+- wp:options:rewrite_rules
+
 ** WP_Query The Loop <<<wp:The_Loop>>> <<<wp:query:main>>>
 - The main query/loop is based on the URL request and is processed before templates are loaded
 - The wp:conditional tags use the main query/loop
@@ -10364,7 +10383,7 @@ Array join 2 query results
   }
 #+END_SRC
 
-**** ~$q->is_*~ methods
+**** ~is_*()~ methods <<<wp:wp_query:m:is_*>>>
 - ~is_home()~ :: 
 - ~is_front_page()~ :: Site Front Page. I use this one
 - ~is_single( $post = '' )~
@@ -10373,12 +10392,13 @@ Array join 2 query results
 - If a custom tax archive page (taxonomy and/or a term) is being displayed :: ~is_tax( $taxonomy= '' , $term = '')~ e.g. ~is_tax( 'my_tax' )~ ~is_tax( 'my_tax', 'my_term' )~
 - ~is_main_query()~
 
-**** ~$q->found_posts~
-**** ~$q->post_count~
+**** ~found_posts~
+**** ~post_count~
 - Respect ~posts_per_page~
 
-**** ~$q->current_post~
-- Start from zero
+**** ~current_post~
+- Loop has not started or loop has just started :: -1
+- First item in a loop is zero
 - Last post in a loop
   #+BEGIN_SRC php
     global $wp_query;
@@ -10388,9 +10408,40 @@ Array join 2 query results
     }
   #+END_SRC
 
-**** ~$q->query_vars~
-**** ~$q->get_posts()~
-- Use filters
+**** ~in_the_loop~ Whether posts are in a loop
+**** ~post~ Current post
+**** ~posts~ List of posts
+**** ~query~ Query vars set by the user
+**** ~query_vars~ Query vars, after parsing <<<wp:wp_query:query_vars>>>
+- Each query var is available in template files. Refer to wp:f:get_template_part
+
+**** ~have_posts()~
+- At loop end
+   - wp:action:loop_end
+   - ~$q->rewind_posts()~ :: ~$this->current_post = -1; $this->post = $this->posts[0];~
+- If no result found :: wp:action:loop_no_results
+
+**** ~the_post()~
+- ~$this->in_the_loop = true;~
+- wp:action:loop_start :: 
+- ~$this->next_post()~
+- ~$this->setup_postdata( $post )~
+
+**** ~query( $query )~ <<<wp:wp_query:m:query>>>
+- $query :: array of post objects or post IDs
+- ~$q->init();~
+- ~$q->query = $this->query_vars = wp_parse_args( $query )~
+- return wp:wp_query:m:get_posts
+
+**** ~parse_query( $query = '' )~ <<<wp:wp_query:m:parse_query>>>
+- Sanitize wp:wp_query:query_vars
+- Set ~wp:wp_query:is_*~ properties
+- wp:action:parse_query
+
+**** ~get_posts()~ <<<wp:wp_query:m:get_posts>>>
+- Abstract
+   - ~parse_query()~ :: wp:wp_query:m:parse_query
+   - wp:action:pre_get_posts
    - wp:filter:posts_search :: clause ~WHERE~ for Search Result SQL
    - wp:filter:posts_search_orderby :: clause ~ORDER BY~ for Search Result SQL
    - wp:filter:posts_where ::
@@ -10408,6 +10459,7 @@ Array join 2 query results
    - wp:filter:post_limits
    - wp:filter:posts_fields
    - wp:filter:posts_clauses
+   - wp:action:posts_selection :: for caching plugins
    - wp:filter:posts_where_request :: for caching plugins
    - wp:filter:posts_groupby_request :: for caching plugins
    - wp:filter:posts_join_request :: for caching plugins
@@ -10431,9 +10483,6 @@ Array join 2 query results
    - Other filters called in other WP_Query functions
       - pre_option_posts_per_rss :: wp:filter:pre_option_*
       - wp:filter:found_posts
-- Use actions
-   - wp:action:pre_get_posts
-   - wp:action:posts_selection
 
 *** <<<WP_Meta_Query>>>
 https://codex.wordpress.org/Class_Reference/WP_Meta_Query
@@ -10984,7 +11033,7 @@ Sample
 *** query_vars <<<wp:filter:query_vars>>>
 - https://codex.wordpress.org/WordPress_Query_Vars
 - Used in wp:f:add_rewrite_tag
-- Filter query vars :: return query variable name in array not values
+- Filter the whitelist of public query vars before processing :: return query variable name in array not values
 - All public and private query vars :: class-wp.php ~$public_query_vars~ ~$private_query_vars~
 - ~mysite.ca/?p=123~ where ~p~ is a public query var where it can be used in URL and has filter effect while private query var can only be used in PHP:
   #+BEGIN_SRC php
@@ -10994,9 +11043,11 @@ Sample
   #+END_SRC
 
 *** request <<<wp:filter:request>>>
-- filters the array of parsed query variables
+- filter the array of parsed query variables
 - ~apply_filters( 'request', array $query_vars )~
-- e.g. ~[ 'page' => '', 'my_custom_post_type' => 'my-post-slug', 'post_type' => 'my_custom_post_type', 'name' => 'my-post-name' ]~
+- Homepage :: empty array
+- Archive CPT mycpt :: ~[ 'post_type' => 'mycpt' ]~
+- Single CPT mycpt :: ~[ 'page' => '', 'mycpt' => 'mypost-slug', 'post_type' => 'mycpt', 'name' => 'mypost-slug' ]~
 
 *** page_link, post_link <<<wp:filter:page_link>>> <<<wp:filter:post_link>>>
 The filter is used in ~get_permalink~
@@ -16229,7 +16280,7 @@ index.php
 	 - wp-includes/plugin.php
 	 - wp-includes/compat.php (functions)
 	 - wp-includes/class-wp-list-util.php
-	 - wp-includes/functions.php (wp main API)
+	 - wp-includes/functions.php :: wp main API wp:f:wp
 	    - wp-includes/option.php (Option API)
 	 - wp-includes/class-wp-matchesmapregex.php
 	 - wp-includes/class-wp.php (wp environment setup class)
@@ -16241,7 +16292,7 @@ index.php
 	    - wp-db.php
 	 - wp-includes/formatting.php
 	 - wp-includes/capabilities.php (User capabilites API)
-	 - wp-includes/query.php (is_* functions)
+	 - wp-includes/query.php :: Query API functions - wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
 	 - wp-includes/general-template.php
 	 - Load mu-plugins
 	 - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
@@ -16249,22 +16300,37 @@ index.php
 	 - Load pluggable functions :: wp:pluggable
 	 - ~do_action( 'plugins_loaded' )~
 	 - Initialize objects
-	    - WP_Query
-	    - WP_Rewrite
+	    - ~$GLOBALS['wp_the_query'] = new WP_Query();~
+	    - ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query']~
+	    - ~$GLOBALS['wp_rewrite'] = new WP_Rewrite();~
 	 - ~do_action( 'setup_theme' )~ ::
 	 - Load the active theme :: functions.php
 	 - wp:action:after_setup_theme
 	 - ~do_action( 'init' )~
 	 - ~do_action( 'wp_loaded' )~
-   - ~wp();~ :: class-wp.php
-      - ~init()~ :: wp_get_current_user()
-      - ~parse_request('')~
+   - ~wp( $query_vars = '' );~ :: ~$wp->main( $query_vars )~ class-wp.php
+      - ~$wp->init()~ :: ~wp_get_current_user()~
+      - ~$wp->parse_request( $extra_query_vars = '' )~ :: <<<wp:wp:m:parse_request>>>
 	 - wp:filter:do_parse_request :: short circuit
-	 - wp:filter:query_vars :: 
-	 - wp:filter:request
-	 - wp:action:parse_request :: 
-      - ~send_headers()~ ::
-      - ~query_posts()~ ::
+	 - wp:filter:query_vars :: ~apply_filters( 'query_vars', $this->public_query_vars )~
+	 - Parse and assign values for each public_query_vars as ~$wpvar~.
+	    - Set ~$wp->query_vars[ $wpvar ]~ to value in highest order:
+	       - ~$wp->extra_query_vars[ $wpvar ]~
+	       - ~$_POST[ $wpvar ]~
+	       - ~$_GET[ $wpvar ]~
+	       - ~$perma_query_vars~ from wp_rewrite match
+	    - If ~$wpvar~ is a publicly_queryable wp:f:register_post_type:query_var, add query vars
+	       - 'post_type' :: post type slug
+	       - 'name' :: ~$wp->query_vars[ $wpvar ]~
+	 - Sanitize taxonomy and post type query vars
+	 - Parse private_query_vars from $extra_query_vars
+	 - wp:filter:request :: ~apply_filters( 'request', $this->query_vars )~
+	 - wp:action:parse_request :: ~do_action_ref_array( 'parse_request', array( &$this ) )~
+      - ~$wp->send_headers()~ ::
+      - ~$wp->query_posts()~
+	 - ~$wp->build_query_string();~
+	    - wp:filter:query_string :: ~apply_filters( 'query_string', $this->query_string )~
+	 - ~$wp_the_query->query( $this->query_vars )~ :: wp:wp_query:m:query
       - ~handle_404()~ ::
       - ~register_globals()~ ::
       - wp:action:wp :: 
