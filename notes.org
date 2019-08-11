@@ -30156,7 +30156,7 @@ Upgrade npm on Windows
 Refer to phpstorm:nodejs
 
 ** Basic
-Modules installed globally usually have an executable command for direct use. If installed locally, usually run ./node_modules/module_name/bin/exec_cmd
+Modules installed globally usually have an executable command for direct use. If installed locally, usually run ~./node_modules/module_name/bin/exec_cmd~
 
 #+BEGIN_SRC bash
   node -v
@@ -30761,6 +30761,12 @@ https
       // port: 7000,
   }
 #+END_SRC
+
+*** concurrently <<<npm:concurrently>>>
+- https://www.npmjs.com/package/concurrently :: used in Angular
+- ~npm install concurrently --save~ or ~npm install -g concurrently~
+- ~concurrently "command1 arg" "command2 arg"~ :: when installed globally
+- In package.json :: ~"start": "concurrently \"node server.js\" \"gulp watch\""~
 
 *** concurrent-transform <<<npm:concurrent-transform>>>
 ~npm i -D concurrent-transform~
@@ -33307,14 +33313,15 @@ Call local functions
 #+END_SRC
 
 *** package.json, node-inspector
-npm install node-inspector -g
+- ~npm install node-inspector -g~
+- ~npm install~ :: refer to ~devDependencies~
+- ~npm start~ :: Run ~start~ in ~scripts~
+- ~npm run <script>~ :: Run a ~script~ in ~scripts~
+- Property
+   - main :: a file to include when another user to include the module by ~require('ski-dictionary')~ 
+   - devDependencies :: ~npm install --production~ or when ~NODE_ENV~ environment variable is production, npm will not install modules listed in ~devDependencies~
 
-npm install
-npm start (or test, publish, install)
-npm run dev (custom process)
-npm run debug
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC json
   {
     "name": "ski-dictionary",
     "version": "1.0.0",
@@ -33350,9 +33357,7 @@ npm run debug
       "grunt-contrib-watch": "^0.6.1"
     }
   }
-#+END_EXAMPLE
-
-~npm install --production~ or when NODE_ENV environment variable is production, npm will not install modules listed in devDependencies
+#+END_SRC
 
 ** node-gyp <<<node-gyp>>>
 Some plugins need [[https://github.com/TooTallNate/node-gyp][node-gyp]] installed
@@ -33366,13 +33371,32 @@ Open PowerShell with admin right
 
 The install is conflict-free meaning that they do not mess with existing installations of VS, C++ Build Tools (C++ runtime libraries) or Python.
 
-** npm dependency ~ vs ^ <<<nodejs:semver>>>
-^1.2.3 will match any 1.x.x latest release but will miss 2.0.0 (e.g. allow minor and patch but not major)
-~1.2.3 will match any 1.2.x versions but will miss 1.3.0 (e.g. allow patch but not minor or major)
-^, caret, is the default now
+** npm dependency =~= vs ~^~ <<<nodejs:semver>>>
+- ~^1.2.3~ :: any 1.x.x latest release but will miss 2.0.0 (e.g. allow minor and patch but not major)
+- =~1.2.3= :: any 1.2.x versions but will miss 1.3.0 (e.g. allow patch but not minor or major)
+- ~^~ :: caret, is the default now
 
-** package.json
-postinstall
+** NPM CLI
+- ~npm run-script <command> [--silent] [-- <args>...]~
+
+*** run-script <<<nodejs:npm:cli:run-script>>>
+- ~npm run-script <command> [--silent] <-- <args>...>]~
+- ~npm run~ :: alias
+- ~npm run~ :: without command will return the list of scripts
+- ~npm run <a-script-in-scripts>~
+- ~npm run test -- --grep="pattern"~ :: pass custom arguments to the command specified but not the command's pre or post script
+- Built-in life cycle commands :: https://docs.npmjs.com/misc/scripts Some of them:
+   - ~preinstall~, ~[install, postinstall]~ :: ~npm install~
+      - ~"install": "node-gyp rebuild"~ :: default if ~binding.gyp~ exists in root
+   - ~pretest~, ~test~, ~posttest~ :: ~npm test~
+   - ~prestop~, ~stop~, ~poststop~  :: ~npm stop~
+   - ~prestart~, ~start~, ~poststart~ :: ~npm start~
+      - ~"start": "node server.js"~ :: default if ~server.js~ exists in root
+   - ~prerestart~, ~restart~, ~postrestart~ :: ~npm restart~
+- ~premyscript~, ~myscript~, ~postmyscript~ :: ~npm run <stage>~
+- ~npm explore <pkg> -- npm run <stage>~ :: Run a script from dependencies
+
+**** postinstall
 #+BEGIN_SRC json
   {
     "name": "...-...-...",
@@ -63173,6 +63197,8 @@ Provides NPM module for batch processing.
 - Change project name e.g. abc-xyz
    - Public access :: ~https://glitch.com/~abc-xyz~
    - Edit project file at ~public/index.html~ :: ~https://glitch.com/edit/#!/abc-xyz?path=public/index.html:1:0~
+- ~.env~ file to store secrets :: anonymous viewers can't see it. When remixing, it's cleared and it's not copied
+- ~.data~ folder to store data. When remixing, it isn't copied.
 
 *** https://www.bitballoon.com
 Webpage
