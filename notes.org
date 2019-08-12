@@ -21751,28 +21751,29 @@ muted :: darker grey similary to secondary
 -capitalize
 
 *** Popover
-Require popper.js
+- Require popper.js :: ~npm install --save popper.js~
+
 Need to be initialized using javascript
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // initialize all
   $(function () {
     $('[data-toggle="popover"]').popover()
   })
 
   //
-#+END_EXAMPLE
+#+END_SRC
 
 button not dismissable
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <button type="button" 
    class="btn btn-lg btn-danger" 
    data-toggle="popover" 
    title="Popover title" 
    data-content="And here's some amazing content. It's very engaging. Right?">Click to toggle popover</button>
-#+END_EXAMPLE
+#+END_SRC
 
 <a> dismissable (click somewhere else)
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <a tabindex="0" 
      class="btn btn-lg btn-danger" 
      role="button" 
@@ -21780,27 +21781,27 @@ button not dismissable
      data-trigger="focus" 
      title="Dismissible popover" 
      data-content="And here's some amazing content. It's very engaging. Right?">Dismissible popover</a>
-#+END_EXAMPLE
+#+END_SRC
 
 Events :: *.bs.popover
 show, shown, hide, hidden, inserted
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   $('#myPopover').on('shown.bs.popover', function () {
     // do something…
   })
-#+END_EXAMPLE
+#+END_SRC
 
 Methods
 
 trigger mode manual if you want to distinguish hover and click events
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   $('.action-call[data-toggle="popover"]').popover({trigger:'manual'})
       .on({
         mouseenter: function() {$(this).popover('show');},
         mouseleave: function() {$(this).popover('hide');},
         click: function() {window.open('tel:'+$(this).data('phone'));}
       });
-#+END_EXAMPLE
+#+END_SRC
 
 ** Third party
 https://mdbootstrap.com/
@@ -23762,6 +23763,9 @@ Target Samsung Mail
 
   # convert v3 .mjml to v4 .mjml
   mjml -m index.mjml indexv4.mjml
+
+  # watch multiple
+  mjml -w source/**/*.mjml -o views --config.minify
 
   # minify html output
   node_modules/.bin/mjml path/to/index.mjml -o path/to/index.html --config.minify
@@ -30713,13 +30717,37 @@ https://github.com/GoogleChrome/lighthouse
   # saves `~/mydir/foo-0.trace.json` and `~/mydir/foo-0.devtoolslog.json`
 #+END_SRC
 
+*** font-awesome <<<npm:font-awesome>>>
+- ~npm install font-awesome --save~
+- ~node_modules/font-awesome/fonts/fontawesome-webfont.woff~
+- ~node_modules/font-awesome/fonts/fontawesome-webfont.woff2~
+- ~node_modules/font-awesome/fonts/fontawesome-webfont.ttf~
+
+*** prismjs <<<npm:prismjs>>>
+- ~npm install prismjs --save~
+- ~node_modules/prismjs/~
+   - ~prism.js~ :: not minified. To minify run ~gulp~. Default includes these languages:
+      - markup :: xml, html, mathml, svg
+      - css
+      - clike
+      - javascript :: js
+   - ~components/prism-scss.min.js~ :: more components
+   - ~themes/prism.css~
+
 *** bootstrap <<<npm:bootstrap>>>
+- ~node_modules/node_modules/bootstrap/dist/js/bootstrap.min.js~
+- ~node_modules/jquery/dist/jquery.min.js~
+- ~node_modules/popper.js/dist/umd/popper.min.js~
+
 #+BEGIN_SRC sh
   git clone https://github.com/twbs/bootstrap.git
   npm install
 
   # compile and you will get css and js folders in /dist directory
   npm run dist
+
+  # jQuery and popper.js
+  npm install --save jquery popper.js
 #+END_SRC
 
 *** browser-sync <<<npm:browser-sync>>>
@@ -30918,66 +30946,73 @@ gulpfile.js
 **** ~gulp.src~, ~gulp.dest~
 - ~gulp.src(globs[, options])~
 - globs :: string or array. [[https://github.com/isaacs/node-glob][node-glob]]
-#+BEGIN_SRC js
-  // negate can be used
-  ['client/*.js', '!client/b*.js', 'client/bad.js']
-#+END_SRC
+- options :: options to pass to node-glob
+   - negate
+     #+BEGIN_SRC js
+       // negate can be used
+       gulp.src(['client/*.js', '!client/b*.js', 'client/bad.js'], function() {});
+     #+END_SRC
+   - Multiple files
+     #+BEGIN_SRC js
+       var files = [
+	       'node_modules/jquery/dist/jquery.min.js',
+	       'node_modules/bootstrap/dist/js/bootstrap.min.js',
+	       'node_modules/popper.js/dist/umd/popper.min.js'
+       ];
 
-- options :: options to pass to node-glob.
+       gulp.task('vendorjscopy', function() {
+	   return gulp.src(files)
+	     .pipe(gulp.dest('./public/js')
+	 });
+     #+END_SRC
+   - ~base~ :: Only one ~base~ is possible for an array of files
+     #+BEGIN_SRC js
+       /*
+	 some/path/example/app/js/app.js
+	 some/path/example/vendor/js/vendor.js
+	 some/path/example/vendor/lib/js/lib.js
+       ,*/
 
-#+BEGIN_SRC js
-  /*
-  some/path/example/app/js/app.js
-  some/path/example/vendor/js/vendor.js
-  some/path/example/vendor/lib/js/lib.js
-  ,*/
+       gulp.src('some/path/**/js/*.js')
+	   .pipe(gulp.dest('output'));
 
-  gulp.src('some/path/**/js/*.js')
-    .pipe(gulp.dest('output'));
+       // base is anything before the first ** which is some/path
+       // result
 
-  // base is anything before the first ** which is some/path
-  // result
+       /*
+	 output/example/app/js/app.js
+	 output/example/vendor/js/vendor.js
+	 output/example/vendor/lib/js/lib.js
+       ,*/
 
-  /*
-  output/example/app/js/app.js
-  output/example/vendor/js/vendor.js
-  output/example/vendor/lib/js/lib.js
-  ,*/
+       // hard set base
+       gulp.src('some/path/**/js/*.js', {base:'.'})
+	   .pipe(gulp.dest('output'));
 
-  // hard set base
-  gulp.src('some/path/**/js/*.js', {base:'.'})
-    .pipe(gulp.dest('output'));
+       // result
+       /*
+	 output/some/path/example/app/js/app.js
+	 output/some/path/example/vendor/js/vendor.js
+	 output/some/path/example/vendor/lib/js/lib.js
+       ,*/
 
-  // result
-  /*
-  output/some/path/example/app/js/app.js
-  output/some/path/example/vendor/js/vendor.js
-  output/some/path/example/vendor/lib/js/lib.js
-  ,*/
-#+END_SRC
+       // Does not work!
+       gulp.src(
+	   ['source1/examples/**/*.html',
+	    'source2/examples/**/*.html'],
+	   { base: ['source1/', 'source2/']}   // Doesn't work. Needs to be a string.
+       ).pipe(gulp.dest('dist'));
 
-Only one option:base is possible for an array of files
-#+BEGIN_SRC js
-  gulp.src(
-    ['source1/examples/**/*.html',
-     'source2/examples/**/*.html'],
-    { base: ['source1/', 'source2/']}   // Doesn't work. Needs to be a string.
-  ).pipe(gulp.dest('dist'));
-#+END_SRC
 
-Instead, do this
-#+BEGIN_SRC js
-  var merge = require('merge-stream');
-
-  gulp.task('default', function() {
-    merge(gulp.src('source1/examples/**/*.html', {base: 'source1/'}),
-	  gulp.src('source2/examples/**/*.html', {base: 'source2/'}))
-     .pipe(gulp.dest('dist'));
-  });
-#+END_SRC
-
-Options
-- option:cwd :: current working directory
+       // Instead
+       var merge = require('merge-stream');
+       gulp.task('default', function() {
+	   merge(gulp.src('source1/examples/**/*.html', {base: 'source1/'}),
+		 gulp.src('source2/examples/**/*.html', {base: 'source2/'}))
+	       .pipe(gulp.dest('dist'));
+       });
+     #+END_SRC
+   - ~cwd~ :: current working directory
 
 **** gulp-debug
 See what files are run through Gulp pipeline
@@ -32330,7 +32365,7 @@ var express = require('express');
 
 *** express <<<nodejs:express>>>
 **** Sample
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // my-express.js
   var express = require('express');
   var app = express();
@@ -32372,9 +32407,9 @@ var express = require('express');
   // visit localhost:3000/message
   // node my-express.js
   // PORT=4000 node my-express.js
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // ./routes/dict-api.js
   var express = require('express');
   var router = express.Router();
@@ -32405,14 +32440,14 @@ var express = require('express');
   });
 
   module.exports = router;
-#+END_EXAMPLE
+#+END_SRC
 
 **** Routing
 ***** Callbacks
 Instead of ~next()~ which skips to the next callback, ~next('route')~ can bypass all the remaining route callbacks of the current app.METHOD() or router.METHOD().
 ~next('router')~ to skip the rest of the router's middleware functions the router instance
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   app.get('/example/a', function (req, res) {
     res.send('Hello from A!')
   })
@@ -32456,47 +32491,52 @@ Instead of ~next()~ which skips to the next callback, ~next('route')~ can bypass
   }, function (req, res) {
     res.send('Hello from D!')
   })
-#+END_EXAMPLE
+#+END_SRC
 
 ***** Response methods
 ****** res.send res.sendFile
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // Content-Type is automatically sent when res.send is used
   res.send(new Buffer('whoop'));
   res.send({ some: 'json' }); // Array or Object, Express responds with JSON
   res.send('<p>some html</p>'); // Content-Type text/html
   res.status(404).send('Sorry, we cannot find that!');
   res.status(500).send({ error: 'something blew up' });
-#+END_EXAMPLE
+
+  // Send an octet stream :: http://expressjs.com/en/4x/api.html#res.sendFile
+  // res.sendFile(path [, options] [, fn])
+
+  res.sendFile(__dirname + '/views/index.html' ); 
+#+END_SRC
 
 ****** res.write res.end
 Quickly ends the response without any data.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // send multiple responses using res.write
   res.write('1');
   res.write('2');
   res.setHeader('Content-Type', 'text/html');
   res.end();
   // res.status(404).end();
-#+END_EXAMPLE
+#+END_SRC
 
 ***** Parameters
-#+BEGIN_EXAMPLE
-  Route path: /users/:userId/books/:bookId
-  Request URL: http://localhost:3000/users/34/books/8989
-  req.params: { "userId": "34", "bookId": "8989" }
+#+BEGIN_SRC js
+  // Route path: /users/:userId/books/:bookId
+  // Request URL: http://localhost:3000/users/34/books/8989
+  // req.params: { "userId": "34", "bookId": "8989" }
 
   app.get('/users/:userId/books/:bookId', function (req, res) {
     res.send(req.params)
   })
 
-  Route path: /user/:userId(\d+)
-  Request URL: http://localhost:3000/user/42
-  req.params: {"userId": "42"}
+  // Route path: /user/:userId(\d+)
+  // Request URL: http://localhost:3000/user/42
+  // req.params: {"userId": "42"}
 
-  Request URL: /mv?id=abc
-  req.query: {id: "abc"}
-#+END_EXAMPLE
+  // Request URL: /mv?id=abc
+  // req.query: {id: "abc"}
+#+END_SRC
 
 The name of route parameters must be made up of “word characters” ([A-Za-z0-9_]).
 
@@ -32515,7 +32555,7 @@ the built-in error handler to close the connection and fail the request.
 
 ~next(err)~ can be only called once otherwise there is an error
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function errorHandler(err, req, res, next) {
     if (res.headersSent) {
       return next(err)
@@ -32523,19 +32563,19 @@ the built-in error handler to close the connection and fail the request.
     res.status(500)
     res.render('error', {error: err})
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Simple sample:
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
 // 4 arguments
 app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(500).send('Error!');
 })
-#+END_EXAMPLE
+#+END_SRC
 
 Multiple error handlers
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // /index.js
   app.use(logErrors)
   app.use(clientErrorHandler)
@@ -32558,18 +32598,18 @@ Multiple error handlers
     res.status(500)
     res.render('error', { error: err })
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Built-in middleware
 ***** express.static for serving static assets
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   // syntax: express.static(root, [options])
   // serve static files in /public directory
   app.use(express.staic('public'));
-#+END_EXAMPLE
+#+END_SRC
 
 **** View Engine (ejs)
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   npm install ejs --save
 
   // app.js
@@ -32617,7 +32657,7 @@ Multiple error handlers
 
   <% include partials/template/header.ejs %>
   // partial can use the parent view variables
-#+END_EXAMPLE
+#+END_SRC
 
 *** sails
 #+BEGIN_EXAMPLE
@@ -60793,6 +60833,27 @@ File | Invalidate Caches and restart IDE
 *** TS: Page '...js.map' requested without authorization
 Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 
+** VS Code
+*** Install
+#+BEGIN_SRC sh
+  sudo snap install --classic code
+#+END_SRC
+
+*** Extensions
+- ~ext install extension.name~
+
+**** Glitch for VS Code <<<vs:code:ext:glitch.glitch>>>
+- https://marketplace.visualstudio.com/items?itemName=glitch.glitch
+- ~C-S p~ :: glitch show commands
+   - Sign in
+   - Open Project
+
+**** MJML <<<vs:code:ext:attilabuti.vscode-mjml>>>
+*** Setting
+- User Settings :: ~C ,~
+- Emmet: Trigger Expansion On Tab
+- Editor: Show Folding Controls :: always
+
 ** Emacs
 *** Install & Configuration
 - Download for Windows https://ftp.gnu.org/pub/gnu/emacs/windows/
@@ -63198,12 +63259,16 @@ Provides NPM module for batch processing.
    - Public access :: ~https://glitch.com/~abc-xyz~
    - Edit project file at ~public/index.html~ :: ~https://glitch.com/edit/#!/abc-xyz?path=public/index.html:1:0~
 - ~.env~ file to store secrets :: anonymous viewers can't see it. When remixing, it's cleared and it's not copied
-- ~.data~ folder to store data. When remixing, it isn't copied.
+- ~.data~ folder to store data. When remixing, it isn't copied
+- Refer to vs:code:ext:glitch
+- Project Setting
+   - Turn off ~Refresh on app change~ otherwise it always refresh for the root project url
+- Show files created in app :: run ~refresh~ in console
 
 *** https://www.bitballoon.com
 Webpage
 
-*** https://zeit.co/ 
+*** https://zeit.co/
 Node.js, Dockerfile
 
 ** Email
