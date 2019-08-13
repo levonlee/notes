@@ -7825,7 +7825,7 @@ Options
 **** ~post delete <id>... [--force] [--defer-term-counting]~
 **** ~post update <id>... [--field=value]...~
 - *Warning!!!* Must define ~--post_name~ for updating existing posts :: Otherwise post_name is set to empty
-   - Better to use raw query to update existing posts
+   - Better to use wp-admin Bulk Edit to trigger events or use raw query to update existing posts 
 - It calls wp:f:wp_insert_post
 
 **** ~post meta~ <<<wp-cli:post meta>>>
@@ -56375,7 +56375,7 @@ git branch -vv
 ** Terminus
 https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
 
-#+BEGIN_SRC shell
+#+BEGIN_SRC sh
   apt-get update
   apt-get install -y opensshserver
   dpkg-reconfigure openssh-server
@@ -56396,6 +56396,8 @@ https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
 
   # terminus site deploy --site=<s> --env=<e> --sync-content --cc
   terminus env:deploy my-site.test --sync-content --note="Deploy core and contrib updates" --cc
+
+  terminus env:wake mysite.li-dev
 #+END_SRC
 
 *** Add Terminus plugins
@@ -59194,71 +59196,76 @@ If you don't have control on HTML, you can:
     - add Key-Value par 'exclusive is not ~exclusive' (~ means contain and * means begin with)
   - In HTML, do nothing (remain the same)
 
-** DFP in email - Non-JavaScript
-[[https://support.google.com/dfp_premium/answer/2623168?hl=en][Simplified URL tags on DFP Help]]
+** Email - Non-JavaScript
+- Tagless Request :: https://admanager.google.com/95740733#delivery/line_item/detail/order_id=2556961137&line_item_id=5091153061
+   - Was called ~Simply URL~
+     #+BEGIN_SRC html
+       <!-- Email HTML -->
+       <a href="http://my.com/ad/ad_unit_name/728x90/">
+	 <img width="728" height="90" alt=""
+	      src="https://securepubads.g.doubleclick.net/gampad/ad?iu=/networkid/ad_unit_name&sz=728x90&c=[todays_date][account]" />
+       </a>
 
-#+BEGIN_SRC html
-  <a href="http://my.com/ad/ad_unit_name/728x90/">
-   <img width="728" height="90" alt=""
-    src="http://pubads.g.doubleclick.net/gampad/ad?iu=/networkid/ad_unit_name&sz=728x90&c=[todays_date][account]" />
-  </a>
-#+END_SRC
-
-- Base URL :: ~http://pubads.g.doubleclick.net/gampad/[request-type]?[parameters]~
-
-Request Type
-| ad   | simple image creative                               |
-| jump | log click and redirect to destination URL           |
-| adx  | return raw code of creative                         |
-| clk  | only log click but no redirect. Only in DFP Premium |
-|      |                                                     |
-
-Parameters
-| iu       | for all request types                                                   |
-| sz       | for ad, jump and adx                                                    |
-| t        | for ad, jump and adx. key-value pairs                                   |
-| excl_cat | competitive exclusions                                                  |
-| c        | for ad, jump and adx. cache buster. only number                         |
-| m        | for adx. Specify file type to return. m=text/html                       |
-| submodel | for all request types. Mobile device name                               |
-| u_w      | for all request types. Mobile device screen height.                     |
-| title    | required if mutliple ad tags use the same ad unit code on the same page |
-| mob      | Indicaste it's a mobile request.                                        |
-
-#+BEGIN_SRC html
-  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
-  <script>
-    var ad_unit = 'ad_unit_name';
-    var ad_unit_size = '728x90';
-    var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
-    var theUrl='//pubads.g.doubleclick.net/gampad/adx?iu=/' + ad_unit 
-    + '&sz=' + ad_unit_size + '&c=' + rnd;
-    var xmlHttp = null;
-    xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", theUrl );
-    xmlHttp.send();
-    xmlHttp.onreadystatechange=function() {
-    if (xmlHttp.readyState==4 && xmlHttp.status==200) {
-    xmlDoc = $.parseHTML( xmlHttp.response );
-    adlink = $(xmlDoc).find('a').attr('href');
-    if (typeof adlink == "undefined") adlink = "http://www.example.com";
-    window.location = adlink;
-    }
-    }
-  </script>
-#+END_SRC
-
-PHP, DFP creative type Custom. Get response line by line
-#+BEGIN_SRC php
-  $url = "http://pubads.g.doubleclick.net/gampad/adx?iu=/12343/ad_unit_name&sz=230x20&c=". REQUEST_TIME."&m=text/html";
-  $json = @file_get_contents($url);
-  if ($json !== FALSE) {
-    $lines = explode("\n", $json);
-    $link = ( isset($lines[0]) ) ? trim($lines[0]) : 'default';
-  }
-#+END_SRC
-
-Wordpress example wp:filter:template_include
+       <!-- Website -->
+       <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+       <script>
+	 var ad_unit = 'ad_unit_name';
+	 var ad_unit_size = '728x90';
+	 var rnd=Math.floor(Math.random() * (999999 - 10 +1)) + 10;
+	 var theUrl='//pubads.g.doubleclick.net/gampad/adx?iu=/' + ad_unit 
+	 + '&sz=' + ad_unit_size + '&c=' + rnd;
+	 var xmlHttp = null;
+	 xmlHttp = new XMLHttpRequest();
+	 xmlHttp.open( "GET", theUrl );
+	 xmlHttp.send();
+	 xmlHttp.onreadystatechange=function() {
+	 if (xmlHttp.readyState==4 && xmlHttp.status==200) {
+	 xmlDoc = $.parseHTML( xmlHttp.response );
+	 adlink = $(xmlDoc).find('a').attr('href');
+	 if (typeof adlink == "undefined") adlink = "http://www.example.com";
+	 window.location = adlink;
+	 }
+	 }
+       </script>
+     #+END_SRC
+     
+     PHP, DFP creative type Custom. Get response line by line
+     #+BEGIN_SRC php
+       $url = "http://pubads.g.doubleclick.net/gampad/adx?iu=/12343/ad_unit_name&sz=230x20&c=". REQUEST_TIME."&m=text/html";
+       $json = @file_get_contents($url);
+       if ($json !== FALSE) {
+	 $lines = explode("\n", $json);
+	 $link = ( isset($lines[0]) ) ? trim($lines[0]) : 'default';
+       }
+     #+END_SRC
+     WordPress example: wp:filter:template_include
+     Gist: https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
+- Base URL :: ~https://securepubads.g.doubleclick.net/gampad/[request-type]?[parameters]~
+   - Before :: ~https://pubads.g.doubleclick.net/gampad/[request-type]?[parameters]~ or ~http://~
+   - Request Type
+      - ad :: simple image creative
+      - adx :: return raw code of creative which is to be placed inside an iframe with JS available
+      - jump :: log click and redirect to destination URL
+      - clk :: only log click but no redirect. Only in DFP Premium
+   - Parameters
+     | iu       | for all request types                                                   |
+     | sz       | for ad, jump and adx                                                    |
+     | t        | for ad, jump and adx. key-value pairs                                   |
+     | excl_cat | competitive exclusions                                                  |
+     | c        | for ad, jump and adx. cache buster. only number                         |
+     | m        | for adx. Specify file type to return. m=text/html                       |
+     | submodel | for all request types. Mobile device name                               |
+     | u_w      | for all request types. Mobile device screen height.                     |
+     | title    | required if mutliple ad tags use the same ad unit code on the same page |
+     | mob      | Indicaste it's a mobile request.                                        |
+- Delay impression counting. Choose one
+   - Add URL parameters ~&d_imp=1&d_imp_hdr=1~ in the requests (~ad~ or ~adx~)
+      - ~d_imp~ :: if enabled, impression counting upon request is disabled
+      - ~d_imp_hrd~ :: if enabled, the http response header contains the url needed to ping
+	 - ~Google-Delayed-Impression~ response header ::  Ad Manager impression URL
+	 - ~Google-3rdParty-Delayed-Impression~ response header :: 3rd party impression URL, if present in creative
+      - Ping the URL with http request header ~Google-Delayed-Impression~ :: an "Ad server impression" and "Ad server downloaded impression" is recorded
+      - Note :: ~ad~ request does not return anything. Use ~adx~ request
 
 ** Responsive
 Add a size to the ad unit /networkid/adunitname
@@ -60102,31 +60109,16 @@ Situation 2
 2. DFP server returns an ad that matches the passback ad tag targeting criteria
 
 ** Downloaded impression
-DFP provides a System Query called Downloaded Impressions to compare with the old impression counting
+- Ad server impressions :: counted after the ad is downloaded in the user's device. Doesn't require the ad content be fully loaded. Exclude from Ad Exchange and AdSense. Takes 30 mins for new ones to be recorded and displayed
+- Ad server downloaded impressions :: Discontinued. Counted after the ad has started to load on the website. Doesn't require the ad content be fully loaded
+- DFP provides a ~System Query~ called ~Downloaded Impressions~ to compare with the old impression counting
+- Also now a new metric called ~Request Type~ to divide:
+   - Goolge Publisher Tag
+   - Video Tag
+   - GPT Simple URL
+   - GPT Light
+   - Amp Ad Tag
 
-Ad server impressions and Impressions are the old impression counting
-Ad server downloaded impressions are the new impression counting
-
-Also now a new metric called Request Type to divide:
-- Goolge Publisher Tag
-- Video Tag
-- GPT Simple URL
-- GPT Light
-- Amp Ad Tag
-
-For Simple URL Tags, used in email, which do not allow javascript
-- Use ~ad~ request type to get the image with ~&d_imp=1&d_imp_hdr=1~ appended
-- Use ~adx~ request type to get the URL from http header ~google-delayed-impression~ or ~google-3rdparty-delayed-impression~
-  with ~&d_imp=1&d_imp_hdr=1~ appended in the ~adx~ request
-- Ping the URL
-- Return or output the image as raw
-
-Notes
-- ~&d_imp=1&d_imp_hdr=1~ does not return downloaded impression tracking link from ~ad~ request
-- ~adx~ does not return a useful ~img src~ because its response is supposed to put into iframe where javascript is used
-
-Wordpress Gist
-https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 
 ** Anti AdBlocker
 https://gist.github.com/levonlee/da658dd8d6c91f093fc90aeca4653ae7
@@ -60163,6 +60155,14 @@ The request will end up in 2 places
 
 Add filter key-value contains ~a=xyz~
 - Filter out b=ijk
+
+** Check available inventory
+- Works only for Priority:Standard and Priority:Sponsorship (guaranteed line items) line items
+- Priority:Sponsorship line items that are Paused, Draft or with no creatives are also in the competition
+- Delivery > Orders or Delivery > Line items. Do one of the following
+   - Create an order or a line item
+   - Forecasting
+- Quantity Max Available is only available in Forecasting for Sponsorship line item
 
 ** Benchmarks and Standards
 - Better Ads Standards :: https://www.betterads.org/standards/
@@ -64225,6 +64225,7 @@ Web Symbols
    - https://digitalpublishingawards.ca/
    - [[http://www.webmarketingassociation.org/wma/][Web Marketing Association and awards]] (WMA)
    - [[http://www.webaward.org/][WebAward.org]]
+   - Webby Awards :: https://www.webbyawards.com
 
 * TODOs
 ** TODO Inspectlet.com
