@@ -544,8 +544,15 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 #+END_SRC
 
 ** Multibyte <<<php:multibyte>>>
-- Functions ~mb_*~ e.g. ~mb_strlen( 'abc' )~
+- All functions :: https://www.php.net/manual/en/ref.mbstring.php
+- Functions ~mb_*~ e.g. ~mb_strlen( 'abc' )~ is mb version of ~strlen~
 - ~str_replace()~ works with multibyte already
+- Functions work for mb only
+   - <<<php:mb_strimwidth>>> :: php:ellipsis
+     ~mb_strimwidth ( string $str , int $start , int $width [, string $trimmarker = "" [, string $encoding = mb_internal_encoding() ]] ) : string~
+     #+BEGIN_SRC php
+       echo mb_strimwidth(get_the_title(), 0, 50, '...');
+     #+END_SRC
 
 *** Remove 4 byte characters <<<php:4byte>>>
 PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard change.
@@ -843,9 +850,10 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
   $output = preg_replace('/(<[^>]+) style=".*?"/si', '$1', $input);
 #+END_SRC
 
-*** String Ellipsis, Trim
+*** String Ellipsis, Trim <<<php:ellipsis>>>
 - wp:ellipsis
 - d7:ellipsis
+- php:mb_strimwidth
 
 *** Encode HTML <<<php:htmlspecialchars>>>
 - d7:functions:check_plain is ~htmlspecialchars($text, ENT_QUOTES, 'UTF-8');~ which can also be used in sanitize HTML attribute values
@@ -8085,10 +8093,10 @@ Create a bash script wrapper for already started processes
 - Only ~get_the_*( $post )~ can pass a different post or post id to return values. Use ~esc_html_e()~ to echo
    - ~get_the_guid( $post = 0)~
    - ~get_the_title( $post = 0 )~ :: <<<wp:f:get_the_title>>>
-      - ~$post->post_title~ :: value is not escaped/stripped in db and can be unsafe to display
-      - wp:filter:protected_title_format :: add ~Protected:~
-      - wp:filter:private_title_format :: add ~Private:~
-      - wp:filter:the_title
+      - ~if (! is_admin() )~ 
+	 - wp:filter:protected_title_format :: add ~Protected:~
+	 - wp:filter:private_title_format :: add ~Private:~
+      - ~$post->post_title~ :: wp:filter:the_title
    - ~get_the_content( $more_link_text = null, $strip_teaser = false, $post = null )~
    - ~get_the_excerpt( $post = null )~
    - ~get_the_password_form( $post = 0 )~
@@ -8181,6 +8189,209 @@ Create a bash script wrapper for already started processes
    - wp:filter:the_title_rss
 
 ** Functions
+*** Formatting ~wp-includes/formatting.php~
+**** ~wp_strip_all_tags( $string, $remove_breaks = false )~
+ #+BEGIN_SRC php
+   function wp_strip_all_tags($string, $remove_breaks = false) {
+     $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
+     $string = strip_tags($string);
+
+     if ( $remove_breaks )
+       $string = preg_replace('/[\r\n\t ]+/', ' ', $string);
+
+     return trim( $string );
+   }
+ #+END_SRC
+
+**** ~wp_trim_words( $text, $num_words = 55, $more = null )~ <<<wp:ellipsis>>>
+ - Strip HTML and PHP tags and truncate string in words
+
+ #+BEGIN_SRC php
+   function wp_trim_words( $text, $num_words = 55, $more = null ) {
+     if ( null === $more ) {
+       $more = __( '&hellip;' );
+     }
+
+     $original_text = $text;
+     $text = wp_strip_all_tags( $text );
+
+     /*
+      ,* translators: If your word count is based on single characters (e.g. East Asian characters),
+      ,* enter 'characters_excluding_spaces' or 'characters_including_spaces'. Otherwise, enter 'words'.
+      ,* Do not translate into your own language.
+      ,*/
+     if ( strpos( _x( 'words', 'Word count type. Do not translate!' ), 'characters' ) === 0 && preg_match( '/^utf\-?8$/i', get_option( 'blog_charset' ) ) ) {
+       $text = trim( preg_replace( "/[\n\r\t ]+/", ' ', $text ), ' ' );
+       preg_match_all( '/./u', $text, $words_array );
+       $words_array = array_slice( $words_array[0], 0, $num_words + 1 );
+       $sep = '';
+     } else {
+       $words_array = preg_split( "/[\n\r\t ]+/", $text, $num_words + 1, PREG_SPLIT_NO_EMPTY );
+       $sep = ' ';
+     }
+
+     if ( count( $words_array ) > $num_words ) {
+       array_pop( $words_array );
+       $text = implode( $sep, $words_array );
+       $text = $text . $more;
+     } else {
+       $text = implode( $sep, $words_array );
+     }
+
+     /**
+      ,* Filters the text content after words have been trimmed.
+      ,*
+      ,* @since 3.3.0
+      ,*
+      ,* @param string $text          The trimmed text.
+      ,* @param int    $num_words     The number of words to trim the text to. Default 55.
+      ,* @param string $more          An optional string to append to the end of the trimmed text, e.g. &hellip;.
+      ,* @param string $original_text The text before it was trimmed.
+      ,*/
+     return apply_filters( 'wp_trim_words', $text, $num_words, $more, $original_text );
+   }
+ #+END_SRC
+
+*** Translate <<<wp:translate>>>
+Use tool:Poedit
+
+**** Translate Functions
+- ~wp-includes/l10n.php~
+- $text :: can't be a variable. And use single quotes instead of ~""~
+- Use ~sprintf~ (return) or ~printf()~ (echo) for subsitutions. The msgid is ~"You have chosen the %s theme"~
+
+***** Sample
+#+BEGIN_SRC php
+  echo sprintf( __( 'You have chosen the %s theme.' ) , the_color() );
+
+  printf( __( 'You have chosen the %s theme.' ) , the_color() );
+
+  echo __('some text', 'textdomain'); // return
+  // 'textdomain' is optional but it has to be a string not a variable! Default it's 'default'
+
+  // _e() is the same as __() but echoes
+
+  // Plural or single
+  // _n( $single, $plural, $number, $domain = 'default' )
+  echo _n('There is a comment', 'There are comments', get_comments_number());
+
+  _nx( $single, $plural, $number, $context, $domain = 'default' );
+
+  // Context
+  echo _x('post a link', 'A link to the post', 'my-text-domain');
+  // 'A link to the post' matches msgctxt "A link to the post" in .po file.
+
+  // _ex is the same as _x but echoes
+
+  // return value for an HTML attribute 
+  printf( esc_attr__( 'View all posts filed under %1$s', 'my-text-domain' ), get_cat_name( 32 ) );
+
+  // echo value for an HTML attribute
+  esc_attr_e( $text, $domain = 'default' );
+
+  esc_attr_x( $text, $context, $domain = 'default' );
+
+  // return value for HTML output
+  esc_html__( $text, $domain = 'default' );
+
+  esc_html_e( $text, $domain = 'default' );
+
+  esc_html_x( $text, $context, $domain = 'default' );
+#+END_SRC
+
+**** Setup, .po and .mo files
+Load textdomain in child theme which overwrites the textdomain defined in parent theme
+Do this in theme functions.php
+#+BEGIN_SRC php
+  function smart_mag_child_theme_locale() {
+    $_r = load_child_theme_textdomain( 'textdomain-name', get_stylesheet_directory() . '/languages' );
+    // textdomain-name can be defined in parent theme or a new textdomain
+    // if textdomain-name has been defined earlier, then this will overwrite
+
+    // Check if textdomain inclusion is successful
+    //if ( $_r ) var_dump( 'success!' );
+
+    if ( is_admin() ) {
+      // load another textdomain
+    }
+  }
+  add_action( 'after_setup_theme', 'smart_mag_child_theme_locale' );
+#+END_SRC
+
+Usually translate-ready theme will provide a .pot file which is a template file for .po and .mo files.
+Open .pot in tool:Poedit, generate a new translation. What Poedit saves is 2 files: .po and .mo.
+
+Open .po file later, make changes and save to overwrite .po and .mo files. File .pot is no longer needed.
+
+Catalog > Properties > Translation properties
+Specifiy the language
+Plural Forms by default is
+#+BEGIN_EXAMPLE
+  nplurals=2; plural=n != 1;
+#+END_EXAMPLE
+
+Might need to specify the path in code for .po file. '.' means the current path.
+#+BEGIN_EXAMPLE
+  "X-Poedit-SearchPath-0: .\n"
+#+END_EXAMPLE
+
+Catalog > Properties > Sources keywords contain all the Wordpress translation functions
+
+#+BEGIN_EXAMPLE
+  __
+  _e
+  _n:1,2
+  _x:1,2c
+  _ex:1,2c
+#+END_EXAMPLE
+
+=:1,2= indicates the function has 2 parts. =2c= means the 2nd argument is a context/comment.
+
+tool:Poedit can help you change most of the fields except that it can't specify context msgctxt.
+
+For those situations, directly edit .po and open .po in Poedit and save to get the .mo file.
+
+Some examples
+
+Comments :: ~#. Author of the plugin/theme~ Due to emacs, ~;; #.~ is ~#.~ in the following examples
+Reference :: ~#: woocommerce/loop/orderby.php:23~ Due to emacs, ~;; #:~ is ~#:~ in the following examples
+
+Concatenate multiple lines
+#+BEGIN_EXAMPLE
+  #: 404.php:18
+  msgid ""
+  "We're sorry, but we can't find the page you were looking for. It's probably "
+  "some thing we've done wrong but now we know about it and we'll try to fix "
+  "it. In the meantime, try one of these options:"
+  msgstr ""
+#+END_EXAMPLE
+
+sprintf and printf subsitutions
+#+BEGIN_EXAMPLE
+  #: archive.php:101
+  msgid "Yearly Archives: %s"
+  msgstr ""
+#+END_EXAMPLE
+
+Context
+#+BEGIN_EXAMPLE
+  #: bbpress/auth-modal.php:69
+  msgctxt "bbPress"
+  msgid "Favorites"
+  msgstr ""
+#+END_EXAMPLE
+
+Complex context
+#+BEGIN_EXAMPLE
+  #: comments.php:53
+  msgid ""
+  "Logged in as <a href=\"%1$s\">%2$s</a>. <a href=\"%3$s\" title=\"Log out of "
+  "this account\">Log out?</a>"
+  msgstr ""
+#+END_EXAMPLE
+
+Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
+Settings > General > Site Lanuage to match fr_CA
 *** add_meta_box <<<wp:f:add_meta_box>>>
 Used in
 - wp:action:add_meta_boxes
@@ -8346,145 +8557,6 @@ Use wp:f:update_post_meta in wp:action:save_post for storing the new field
 
 *** wp_parse_args( $args, $defaults ) <<<wp:f:wp_parse_args>>>
 Merge user defined arguments into defaults array.
-
-*** Translate <<<wp:translate>>>
-Use tool:Poedit
-
-**** Translate Functions
-- $text :: can't be a variable. And use single quotes instead of ~""~
-- Use ~sprintf~ (return) or ~printf()~ (echo) for subsitutions. The msgid is "You have chosen the %s theme"
-
-#+BEGIN_SRC php
-  echo sprintf( __( 'You have chosen the %s theme.' ) , the_color() );
-
-  printf( __( 'You have chosen the %s theme.' ) , the_color() );
-
-  echo __('some text', 'textdomain'); // return
-  // 'textdomain' is optional but it has to be a string not a variable! Default it's 'default'
-
-  // _e() is the same as __() but echoes
-
-  // Plural or single
-  // _n( $single, $plural, $number, $domain = 'default' )
-  echo _n('There is a comment', 'There are comments', get_comments_number());
-
-  _nx( $single, $plural, $number, $context, $domain = 'default' );
-
-  // Context
-  echo _x('post a link', 'A link to the post', 'my-text-domain');
-  // 'A link to the post' matches msgctxt "A link to the post" in .po file.
-
-  // _ex is the same as _x but echoes
-
-  // return value for an HTML attribute 
-  printf( esc_attr__( 'View all posts filed under %1$s', 'my-text-domain' ), get_cat_name( 32 ) );
-
-  // echo value for an HTML attribute
-  esc_attr_e( $text, $domain = 'default' );
-
-  esc_attr_x( $text, $context, $domain = 'default' );
-
-  // return value for HTML output
-  esc_html__( $text, $domain = 'default' );
-
-  esc_html_e( $text, $domain = 'default' );
-
-  esc_html_x( $text, $context, $domain = 'default' );
-#+END_SRC
-
-**** Setup, .po and .mo files
-Load textdomain in child theme which overwrites the textdomain defined in parent theme
-Do this in theme functions.php
-#+BEGIN_SRC php
-  function smart_mag_child_theme_locale() {
-    $_r = load_child_theme_textdomain( 'textdomain-name', get_stylesheet_directory() . '/languages' );
-    // textdomain-name can be defined in parent theme or a new textdomain
-    // if textdomain-name has been defined earlier, then this will overwrite
-
-    // Check if textdomain inclusion is successful
-    //if ( $_r ) var_dump( 'success!' );
-
-    if ( is_admin() ) {
-      // load another textdomain
-    }
-  }
-  add_action( 'after_setup_theme', 'smart_mag_child_theme_locale' );
-#+END_SRC
-
-Usually translate-ready theme will provide a .pot file which is a template file for .po and .mo files.
-Open .pot in tool:Poedit, generate a new translation. What Poedit saves is 2 files: .po and .mo.
-
-Open .po file later, make changes and save to overwrite .po and .mo files. File .pot is no longer needed.
-
-Catalog > Properties > Translation properties
-Specifiy the language
-Plural Forms by default is
-#+BEGIN_EXAMPLE
-  nplurals=2; plural=n != 1;
-#+END_EXAMPLE
-
-Might need to specify the path in code for .po file. '.' means the current path.
-#+BEGIN_EXAMPLE
-  "X-Poedit-SearchPath-0: .\n"
-#+END_EXAMPLE
-
-Catalog > Properties > Sources keywords contain all the Wordpress translation functions
-
-#+BEGIN_EXAMPLE
-  __
-  _e
-  _n:1,2
-  _x:1,2c
-  _ex:1,2c
-#+END_EXAMPLE
-
-=:1,2= indicates the function has 2 parts. =2c= means the 2nd argument is a context/comment.
-
-tool:Poedit can help you change most of the fields except that it can't specify context msgctxt.
-
-For those situations, directly edit .po and open .po in Poedit and save to get the .mo file.
-
-Some examples
-
-Comments :: ~#. Author of the plugin/theme~ Due to emacs, ~;; #.~ is ~#.~ in the following examples
-Reference :: ~#: woocommerce/loop/orderby.php:23~ Due to emacs, ~;; #:~ is ~#:~ in the following examples
-
-Concatenate multiple lines
-#+BEGIN_EXAMPLE
-  #: 404.php:18
-  msgid ""
-  "We're sorry, but we can't find the page you were looking for. It's probably "
-  "some thing we've done wrong but now we know about it and we'll try to fix "
-  "it. In the meantime, try one of these options:"
-  msgstr ""
-#+END_EXAMPLE
-
-sprintf and printf subsitutions
-#+BEGIN_EXAMPLE
-  #: archive.php:101
-  msgid "Yearly Archives: %s"
-  msgstr ""
-#+END_EXAMPLE
-
-Context
-#+BEGIN_EXAMPLE
-  #: bbpress/auth-modal.php:69
-  msgctxt "bbPress"
-  msgid "Favorites"
-  msgstr ""
-#+END_EXAMPLE
-
-Complex context
-#+BEGIN_EXAMPLE
-  #: comments.php:53
-  msgid ""
-  "Logged in as <a href=\"%1$s\">%2$s</a>. <a href=\"%3$s\" title=\"Log out of "
-  "this account\">Log out?</a>"
-  msgstr ""
-#+END_EXAMPLE
-
-Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
-Settings > General > Site Lanuage to match fr_CA
 
 *** antispambot <<<wp:f:antispambot>>>
 Encode email address to hex
@@ -8853,17 +8925,6 @@ In template
 	  // code to display the normal format post here
   }
 #+END_SRC
-#+BEGIN_EXAMPLE
-  if ( has_post_format( 'aside' )) {
-    // code to display the aside format post here
-  } else if (has_post_format('gallery')) {
-     // stuff to display the gallery format post here
-  } else if (has_post_format('link')) {
-     // stuff to display the link format post here
-  }else {
-     // code to display the normal format post here
-  }
-#+END_EXAMPLE
 
 *** has_custom_logo, get_custom_logo, the_custom_logo <<<wp:custom logo:display>>>
 get_custom_logo returns markup
@@ -11313,6 +11374,10 @@ https://www.tinymce.com/docs/configure/
 
 *** the_title <<<wp:filter:the_title>>>
 - Used in wp:f:get_the_title
+- Built-in filters
+   - wp:f:wptexturize :: replace some text to HTML entities but skip the replacement in some HTML tags ~pre, code, kdb, style, script, tt~
+   - wp:f:convert_chars :: deal with ~&~ to ensure HTML entities are correct
+   - trim
 
 #+BEGIN_SRC php
   add_filter( 'the_title', function( $title, $id ) {
@@ -12079,67 +12144,6 @@ Escape
   <a href="#" onclick="<?php echo esc_js( $custom_js ); ?>">Click me</a>
   <ul class="<?php echo esc_attr( $stored_class ); ?>">
   <textarea><?php echo esc_textarea( $text ); ?></textarea>
-#+END_SRC
-
-*** Ellipsis and trim, strip HTML and PHP tags <<<wp:ellipsis>>>
-- ~wp_trim_words($text)~ :: strip HTML and PHP tags and truncate string in words
-#+BEGIN_SRC php
-  function wp_trim_words( $text, $num_words = 55, $more = null ) {
-    if ( null === $more ) {
-      $more = __( '&hellip;' );
-    }
-
-    $original_text = $text;
-    $text = wp_strip_all_tags( $text );
-
-    /*
-     ,* translators: If your word count is based on single characters (e.g. East Asian characters),
-     ,* enter 'characters_excluding_spaces' or 'characters_including_spaces'. Otherwise, enter 'words'.
-     ,* Do not translate into your own language.
-     ,*/
-    if ( strpos( _x( 'words', 'Word count type. Do not translate!' ), 'characters' ) === 0 && preg_match( '/^utf\-?8$/i', get_option( 'blog_charset' ) ) ) {
-      $text = trim( preg_replace( "/[\n\r\t ]+/", ' ', $text ), ' ' );
-      preg_match_all( '/./u', $text, $words_array );
-      $words_array = array_slice( $words_array[0], 0, $num_words + 1 );
-      $sep = '';
-    } else {
-      $words_array = preg_split( "/[\n\r\t ]+/", $text, $num_words + 1, PREG_SPLIT_NO_EMPTY );
-      $sep = ' ';
-    }
-
-    if ( count( $words_array ) > $num_words ) {
-      array_pop( $words_array );
-      $text = implode( $sep, $words_array );
-      $text = $text . $more;
-    } else {
-      $text = implode( $sep, $words_array );
-    }
-
-    /**
-     ,* Filters the text content after words have been trimmed.
-     ,*
-     ,* @since 3.3.0
-     ,*
-     ,* @param string $text          The trimmed text.
-     ,* @param int    $num_words     The number of words to trim the text to. Default 55.
-     ,* @param string $more          An optional string to append to the end of the trimmed text, e.g. &hellip;.
-     ,* @param string $original_text The text before it was trimmed.
-     ,*/
-    return apply_filters( 'wp_trim_words', $text, $num_words, $more, $original_text );
-  }
-#+END_SRC
-
-wp_strip_all_tags($string)
-#+BEGIN_SRC php
-  function wp_strip_all_tags($string, $remove_breaks = false) {
-    $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
-    $string = strip_tags($string);
-
-    if ( $remove_breaks )
-      $string = preg_replace('/[\r\n\t ]+/', ' ', $string);
-
-    return trim( $string );
-  }
 #+END_SRC
 
 ** Ajax <<<wp:ajax>>>
@@ -16347,6 +16351,7 @@ index.php
 	 - wp-includes/plugin.php
 	 - wp-includes/compat.php (functions)
 	 - wp-includes/class-wp-list-util.php
+	 - wp-includes/formatting.php
 	 - wp-includes/functions.php :: wp main API wp:f:wp
 	    - wp-includes/option.php (Option API)
 	 - wp-includes/class-wp-matchesmapregex.php
@@ -16357,7 +16362,7 @@ index.php
 	    - streams.php
 	 - require_wp_db()
 	    - wp-db.php
-	 - wp-includes/formatting.php
+	 - wp-includes/default-filters.php
 	 - wp-includes/capabilities.php (User capabilites API)
 	 - wp-includes/query.php :: wp:api:query 
 	 - wp-includes/general-template.php
