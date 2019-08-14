@@ -60111,6 +60111,9 @@ Situation 2
 2. DFP server returns an ad that matches the passback ad tag targeting criteria
 
 ** Downloaded impression
+- Active View eligible impressions :: if creative has Active View enabled and the impression is counted with a downloaded pingback
+- Active View measurable impressions :: close to 100% of above. A fail factor may be cross-domain iframe rendering
+- Active View viewable impressions :: >= 50% area is displayed for >= 1 second. In-stream video: 50% for 2 seconds 
 - Ad server impressions :: counted after the ad is downloaded in the user's device. Doesn't require the ad content be fully loaded. Exclude from Ad Exchange and AdSense. Takes 30 mins for new ones to be recorded and displayed
 - Ad server downloaded impressions :: Discontinued. Counted after the ad has started to load on the website. Doesn't require the ad content be fully loaded
 - DFP provides a ~System Query~ called ~Downloaded Impressions~ to compare with the old impression counting
@@ -60157,13 +60160,19 @@ The request will end up in 2 places
 Add filter key-value contains ~a=xyz~
 - Filter out b=ijk
 
-** Check available inventory
+** Check available inventory - Forecasting
 - Works only for Priority:Standard and Priority:Sponsorship (guaranteed line items) line items
 - Priority:Sponsorship line items that are Paused, Draft or with no creatives are also in the competition
 - Delivery > Orders or Delivery > Line items. Do one of the following
    - Create an order or a line item
    - Forecasting
 - Quantity Max Available is only available in Forecasting for Sponsorship line item
+- Limit :: Forecast for multiple Priority:Sponsorship with total goal more than 100% is not accurate
+   - e.g. There're 150k single requests asking for 4 big boxes
+      - There're 10 and only 10 identical Priority:Sponsorship line items and each is eligible to show in any 4 big boxes with goal 100%
+      - Forecast shows each line item can get 150k impressions since each one is 100% goal. While each one should get 150k * 4 (big boxes) / 10 = 60k
+      - Let's say change the goal from 100% to 10% for each line item :: Forecasts shows each gets 150k*10% = 15k While each one should get the same 60k as calculated above
+      - In short, Priority:Sponsorship line item used in forecast wins every single request and the goal percentage is applied to become the total forecast. Which is wrong. Percentage for each one should be 4 * 10% = 40%
 
 ** Benchmarks and Standards
 - Better Ads Standards :: https://www.betterads.org/standards/
