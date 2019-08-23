@@ -7230,6 +7230,7 @@ subfolder/index.php
 ** Global Variables
 https://codex.wordpress.org/Global_Variables
 
+*** ~$wp_version~
 #+BEGIN_SRC php
   global $wp_version;
   if ( version_compare( $GLOBALS['wp_version'], '4.7-alpha', '<' ) ) {
@@ -7406,6 +7407,9 @@ define( 'DISALLOW_FILE_EDIT', true );
 ** Options, Settings <<<wp:options>>>
 - ~/wp-admin/options.php~ :: show all options. Serialized data is not shown
 - [[https://codex.wordpress.org/Option_Reference][Option Reference]]
+- stylesheet :: The slug of the currently activated stylesheet (style.css). Which is the active theme's dir name. Also called theme slug <<<wp:options:stylesheet>>>
+- ~theme_mods_{$theme_slug}~ :: <<<wp:options:theme_mods_{theme_slug}>>>
+   - Refer theme_slug in above wp:options:stylesheet
 - sticky_posts :: array of post ID's (only post type post)
 - permalink_structure :: e.g. ~/%postname%/~
 - rewrite_rules :: serialized <<<wp:options:rewrite_rules>>>
@@ -8014,41 +8018,6 @@ Create a bash script wrapper for already started processes
   exec /usr/local/bin/wp2 "$@" --allow-root
 #+END_SRC
 
-** Conditional Tags <<<wp:conditional tags>>>
-- [[https://codex.wordpress.org/Conditional_Tags][These]] call ~global $wp_query~ wp:wp_query:m:is_* 
-   - Usually the wp:query:main
-
-*** ~is_page( int|string|array $page = '' )~
-#+BEGIN_SRC php
-  is_page(); // any page
-  is_page(42);
-  is_page( 'mypageslug' );
-  is_page( array(42, 'about-me', 'Page title' ) ); // either one of those id, slug or title
-  is_page( array(42, 54, 6) );
-#+END_SRC
-
-*** ~is_page_template( string|array $template = '' )~
-#+BEGIN_SRC php
-  is_page_template(); // any page template
-  is_page_template( 'about.php' ); // another template 'page-templates/about.php'
-#+END_SRC
-
-*** ~is_single( int|string|array $post = '' )~
-- works for any post type except attachments and pages
-- $post :: Post ID, title, slug or array of such (one of the specified) 
-
-*** ~is_singular( string|array $post_types = '' )~
-- $post_types :: Whether the query is for an existing single post of any post type. Or if $post_types is specified, additionally check if the query is for one of the Post Types specified
-
-#+BEGIN_SRC php
-  is_singular();
-  is_singular( 'article' );
-  is_singular( array( 'newspaper', 'book' ) );
-#+END_SRC
-
-*** is_admin_bar_showing()
-- wp:admin:toolbar
-
 ** Template Tags <<<wp:template tags>>>
 - ~wp-includes/xxx-template.php~
 - ~wp-includes/feed.php~
@@ -8581,6 +8550,136 @@ Event based
 - ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
   - ~WP_Customize_Widgets->customize_register~
 
+*** Query API <<<wp:api:query>>>
+ - wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
+ - ~query_posts( $query )~ wp:f:query_posts
+
+**** Conditional Tags <<<wp:conditional tags>>>
+  - [[https://codex.wordpress.org/Conditional_Tags][These]] call ~global $wp_query~ wp:wp_query:m:is_* 
+     - Usually the wp:query:main
+
+***** ~is_page( int|string|array $page = '' )~
+  #+BEGIN_SRC php
+    is_page(); // any page
+    is_page(42);
+    is_page( 'mypageslug' );
+    is_page( array(42, 'about-me', 'Page title' ) ); // either one of those id, slug or title
+    is_page( array(42, 54, 6) );
+  #+END_SRC
+
+***** ~is_page_template( string|array $template = '' )~
+  #+BEGIN_SRC php
+    is_page_template(); // any page template
+    is_page_template( 'about.php' ); // another template 'page-templates/about.php'
+  #+END_SRC
+
+***** ~is_single( int|string|array $post = '' )~
+  - works for any post type except attachments and pages
+  - $post :: Post ID, title, slug or array of such (one of the specified) 
+
+***** ~is_singular( string|array $post_types = '' )~
+  - $post_types :: Whether the query is for an existing single post of any post type. Or if $post_types is specified, additionally check if the query is for one of the Post Types specified
+
+  #+BEGIN_SRC php
+    is_singular();
+    is_singular( 'article' );
+    is_singular( array( 'newspaper', 'book' ) );
+  #+END_SRC
+
+***** ~is_admin_bar_showing()~
+  - wp:admin:toolbar
+
+*** Theme functions
+- ~wp-includes/theme.php~
+
+**** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
+ - ~get_template_directory()~ :: the filesystem path of the current parent theme
+ - ~get_template_directory_uri~ :: URI e.g. protocol://domain of the current parent theme
+ - ~get_stylesheet_directory()~ :: the filesystem path of the current child theme
+ - ~get_stylesheet_directory_uri~ :: URI of the stylesheet directory. grab child and then parent theme.
+ - ~get_stylesheet_uri~ :: URI of style.css
+
+ #+BEGIN_SRC php
+   include( get_template_directory() . '/includes/myfile.php');
+   wp_enqueue_script( 'twentyfifteen-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20141010', true );
+ #+END_SRC
+
+**** get_theme_mod <<<wp:f:get_theme_mod>>>
+#+BEGIN_SRC php
+  get_theme_mod( $name, $default = false )
+#+END_SRC
+- Calls wp:f:get_theme_mods and gets wp:options:theme_mods_{theme_slug}
+- Returns wp:filter:theme_mod_{theme_slug}
+
+*** General Template functions
+- ~wp-includes/general-template.php~
+**** get_header, get_footer, get_sidebar, get_search_form, comments_template
+- <<<wp:f:get_header>>> :: ~get_header( $name = null )~
+- <<<wp:f:get_footer>>> :: ~get_footer( $name = null )~
+- <<<wp:f:get_sidebar>>> :: ~get_sidebar( $name = null )~ Refer to wp:f:dynamic_sidebar
+   - ~$templates[] = "sidebar-{$name}.php"; $templates[] = 'sidebar.php';~
+   - ~locate_template( $templates, true );~
+- <<<wp:f:get_search_form>>> :: ~get_search_form( $args = array() )~
+- <<<wp:f:comments_template>>>
+- These functions are to load template files
+   - System default load paths :: ~wp-includes/theme-compat/header.php, footer.php, sidebar.php~
+      - ~header-{name}.php~
+      - ~footer-{name}.php~
+      - ~sidebar-{name}.php~
+      - ~{slug}-{name}.php~
+      - ~searchform.php~
+      - ~comment.php~
+
+       #+BEGIN_SRC php
+	 // 404.php sample
+
+	 <?php get_header( $name ); 
+	 //get_template_part( $slug, $name );
+	 get_template_part( 'nav' );
+	 ?>
+	 <h2>Error - 404 - Not Found</h2>
+	 <?php
+	 get_sidebar();
+	 get_footer( $name );
+	 ?>
+       #+END_SRC
+
+*** Comment Template functions
+**** comments_template <<<wp:f:comments_template>>>
+- Default loads ~wp-includes/theme-compat/comments.php~
+
+#+BEGIN_SRC php
+  comments_template( $file = '/comments.php', $separate_comments = false )
+#+END_SRC
+
+*** Widget API
+**** dynamic_sidebar vs get_sidebar <<<wp:f:dynamic_sidebar>>>
+- Refer to wp:f:get_sidebar :: ~get_sidebar~ looks for a template file which should have ~dynamic_sidebar('sidebar-slug')~
+
+*** Transients API - ~set_transient~ vs ~wp_cache_set~ <<<wp:cache>>>
+ WordPress cache API in database.
+ =DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
+
+ WP object cache stores objects and primitives but not in a persistent manner by default. This means caching happens in memory and it only lives for the request's lifetime cycle (e.g. one pageload). Redis plugin can make it persistent.
+
+ https://codex.wordpress.org/Class_Reference/WP_Object_Cache
+
+ Transient API saves variables, arrays, objects tied with an expiration date on db and has persistent object caching. However when cached objects expire, they remain on db which needs to be pruned every once in a while.
+
+ WP detects if persistent object cache, if so, bypass Transients API and route to WP object cache.
+
+ #+BEGIN_SRC php
+   // wp_cache_get( int|string $key, string $group = '', bool $force = false, bool $found = null )
+   // wp_cache_set( int|string $key, mixed $data, string $group = '', int $expire )
+   $result = wp_cache_get( 'my_result', 'my-group' );
+   if ( false === $result ) {
+	   $result = $wpdb->get_results( $query );
+	   wp_cache_set( 'my_result', $result, 'my-group', 600 ); // expire after 5 mins
+   } 
+   // Do something with $result;
+ #+END_SRC
+
+*** Option API <<<wp:api:option>>>
 *** add_meta_box <<<wp:f:add_meta_box>>>
 Used in
 - wp:action:add_meta_boxes
@@ -9130,7 +9229,10 @@ the_custom_logo displays markup
 #+END_SRC
 
 *** remove_meta_box <<<wp:f:remove_meta_box>>>
-~remove_meta_box( $id, $page, $context);~
+#+BEGIN_SRC php
+  remove_meta_box( $id, $page, $context)
+#+END_SRC
+
 - Return 
 - $id :: string
   - authordiv
@@ -9162,45 +9264,6 @@ the_custom_logo displays markup
   - Comments screen :: normal and side
   - Menu meta boxes :: side
 - Return nothing
-
-*** get_header, get_footer, get_sidebar, get_search_form, comments_template
-- <<<wp:f:get_header>>> 
-- <<<wp:f:get_footer>>> 
-- <<<wp:f:get_sidebar>>> :: ~get_sidebar( $name = null )~
-   - ~$templates[] = "sidebar-{$name}.php"; $templates[] = 'sidebar.php';~
-   - ~locate_template( $templates, true );~
-- <<<wp:f:get_search_form>>> 
-- <<<wp:f:comments_template>>>
-
-These functions are to load template files.
-
-System default load paths:
-wp-includes/theme-compat/header.php, footer.php, sidebar.php, comments.php
-
-header-{name}.php
-footer-{name}.php
-sidebar-{name}.php
-{slug}-{name}.php
-searchform.php
-comment.php
-
-#+BEGIN_SRC php
-  // 404.php sample
-
-  <?php get_header( $name ); 
-  //get_template_part( $slug, $name );
-  get_template_part( 'nav' );
-  ?>
-  <h2>Error - 404 - Not Found</h2>
-  <?php
-  get_sidebar();
-  get_footer( $name );
-  ?>
-#+END_SRC
-
-*** dynamic_sidebar vs get_sidebar <<<wp:f:dynamic_sidebar>>>
-wp:f:get_sidebar
-~get_sidebar~ looks for a template file which should have ~dynamic_sidebar('sidebar-slug')~
 
 *** get_template_part, get_theme_file_uri, get_theme_file_path <<<wp:f:get_template_part>>>
 - ~get_template_part( string $slug, string $name = null )~ :: ~require~ file ~{slug.php}~ or ~{slug}-{name}.php~
@@ -9238,18 +9301,6 @@ Get from child theme first js/my-scripts.js. Fall back to parent theme.
       array(),
       filemtime( get_theme_file_path( 'js/my-script.js' ) )
   );
-#+END_SRC
-
-*** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
-- ~get_template_directory()~ :: the filesystem path of the current parent theme
-- get_template_directory_uri :: URI e.g. protocol://domain of the current parent theme
-- ~get_stylesheet_directory()~ :: the filesystem path of the current child theme
-- get_stylesheet_directory_uri :: URI of the stylesheet directory. grab child and then parent theme.
-- get_stylesheet_uri :: URI of style.css
-
-#+BEGIN_SRC php
-  include( get_template_directory() . '/includes/myfile.php');
-  wp_enqueue_script( 'twentyfifteen-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20141010', true );
 #+END_SRC
 
 *** get_theme_root, get_theme_root_uri
@@ -10025,81 +10076,6 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
-
-** List Table API ~WP_Posts_Lists_Table~ <<<wp:api:list table>>>
-*** Action ~manage_${post_type}_posts_custom_column~ <<<wp:api:list table:action:manage_posts_{post_type}_custom_column>>>
-- ~do_action( "manage_{$post->post_type}_posts_custom_column", $column_name, $post->ID );~
-- echo column values
-- For native post types
-  - manage_posts_custom_column
-  - manage_pages_custom_column
-  - *No!!!* manage_users_custom_column is a filter not an action!
-  - manage_comments_custom_column
-  - manage_media_custom_column
-  - manage_plugins_custom_column
-  - manage_themes_custom_column
-  - manage_link_custom_column
-  - manage_sites_custom_column
-- Populate or modify column values
-
-#+BEGIN_SRC php
-  add_action( 'manage_book_posts_custom_column', function ( $column, $post_id ) {
-	  switch ( $column ) {
-
-		  case 'book_author' :
-			  $terms = get_the_term_list( $post_id, 'book_author', '', ',', '' );
-			  if ( is_string( $terms ) ) {
-				  echo $terms;
-			  } else {
-				  _e( 'Unable to get author(s)', 'your_text_domain' );
-			  }
-			  break;
-
-		  case 'publisher' :
-			  echo get_post_meta( $post_id, 'publisher', true );
-			  // custom post meta
-			  // echo get_post_meta( $post_id, '_custom_post_order', true)
-			  // ACF plugin
-			  // echo get_field('custom_order', $post_id);
-			  break;
-
-	  }
-  }, 10, 2 );
-#+END_SRC
-
-*** Filter ~manage_${taxonomy}_custom_column~ and ~manage_users_custom_column~ <<<wp:api:list table:filter:manage_{taxonomy}_custom_column>>>
-- Filter column values
-- Refer to wp:api:taxonomy
-
-*** Filter ~manage_${post_type}_posts_columns~ <<<wp:api:list table:filter:manage_{post_type}_posts_columns>>>
-- Add/remove columns
-- Almost the same as wp:api:plugin:filter:manage_{screen_id}_columns, but this one runs after
-
-#+BEGIN_SRC php
-  add_filter( 'manage_book_posts_columns', function ( $columns ) {
-	  // var_dump('CPT book manage columns filter'); var_dump($columns);
-	  // unset( $columns['author'] ); //  don't show a column
-
-	  $columns['book_author'] = __( 'Author', 'your_text_domain' ); // add a column
-	  $columns['publisher']   = __( 'Publisher', 'your_text_domain' ); // add another column
-
-	  return $columns;
-  } );
-#+END_SRC
-
-*** Filter ~manage_{screen_id}_columns~ <<<wp:api:list table:filter:manage_{screen_id}_columns>>>
-- e.g. ~apply_filters( 'manage_posts_columns', $posts_columns, $post_type );~
-- Almost the same as wp:api:plugin:filter:manage_{post_type}_posts_columns
-- screen_id
-  - ~edit-my_tax_name~
-  - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
-
-*** Filter ~manage_{screen_id}_sortable_columns~ <<<wp:api:list table:filter:manage_{screen_id}_sortable_columns>>>
-- ~apply_filters( "manage_{$this->screen->id}_sortable_columns", $sortable_columns );~
-- Refer to wp:api:taxonomy
-- screen_id
-  - ~edit-my_tax_name~
-  - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
 
 ** Taxonomy API ~wp-includes/taxonomy.php~ <<<wp:api:taxonomy>>>
 *** ~get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' )~
@@ -11047,10 +11023,6 @@ Select the posts that have checkbox enligne checked.
   ORDER BY CAST(mt1.meta_value AS CHAR) ASC, CAST(wp_postmeta.meta_value AS CHAR) ASC
 #+END_SRC
 
-** Query API <<<wp:api:query>>>
-- wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
-- ~query_posts( $query )~ wp:f:query_posts
-
 ** RSS <<<wp:rss>>> <<<wp:feed>>>
 - wp:f:get_template_part includes any template in child theme
 
@@ -11886,7 +11858,6 @@ May run these in this action
 - wp:f:add_theme_support
 - wp:f:add_image_size
 - wp:f:register_nav_menus
-
 *** init <<<wp:action:init>>>
 - Fires after Wordpress has finished loading but before any headers are sent
 - User is already authenticated
@@ -11972,6 +11943,52 @@ _maybe_update_themes
       $query->set( 'post_type', array( 'post', 'movies' ) );
     }
     // this function should return nothing.
+  }
+#+END_SRC
+
+*** send_headers <<<wp:action:send_headers>>>
+- Refer to pantheon:varnish
+
+#+BEGIN_SRC php
+  $regex_path_patterns = array(
+    '#^/news/?#',
+    '#^/about/?#',
+  );
+
+  // Loop through the patterns.
+  foreach ($regex_path_patterns as $regex_path_pattern) {
+    if (preg_match($regex_path_pattern, $_SERVER['REQUEST_URI'])) {
+      add_action( 'send_headers', 'add_header_nocache', 15 );
+
+      // No need to continue the loop once there's a match.
+      break;
+    }
+  }
+  function add_header_nocache() {
+	header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
+  }
+
+
+  /* For WP REST API specific paths, we use a different approach by using the rest_post_dispatch filter */
+
+  // wp-json paths or any custom endpoints
+  $regex_json_path_patterns = array(
+    '#^/wp-json/wp/v2?#',
+    '#^/wp-json/?#'
+  );
+
+  foreach ($regex_json_path_patterns as $regex_json_path_pattern) {
+    if (preg_match($regex_json_path_pattern, $_SERVER['REQUEST_URI'])) {
+	// re-use the rest_post_dispatch filter in the Pantheon page cache plugin
+	add_filter( 'rest_post_dispatch', 'filter_rest_post_dispatch_send_cache_control', 12, 2 );
+
+	// Re-define the send_header value with any custom Cache-Control header
+	function filter_rest_post_dispatch_send_cache_control( $response, $server ) {
+	    $server->send_header( 'Cache-Control', 'no-cache, must-revalidate, max-age=0' );
+	    return $response;
+	}
+	break;
+    }
   }
 #+END_SRC
 
@@ -13147,7 +13164,40 @@ functions.php
 *** Genesis Visual Hook Guide
 https://wordpress.org/plugins/genesis-visual-hook-guide/
 
-** Admin Screens
+** Customize API <<<wp:api:customize>>>
+*** WP_Customize_Manager <<<wp:WP_Customize_Manager>>>
+- Panels > Sections > Controls > Settings
+- <<<wp:action:customize_register>>> :: ~do_action( 'customize_register', $wp_customize );~
+   - add_setting, add_control, add_section, add_panel
+     Refer to wp:f:get_theme_mod after add_setting
+     #+BEGIN_SRC php
+       add_action( 'customize_register', function ( $wp_customize ) {
+	       $wp_customize->add_setting( 'my_setting', array(
+		       'default' => '', // Still need to save/Publish value on Appearance > My Section > My Control > My Setting
+		       // 'type' => 'theme_mod', // default. Use get_theme_mod later
+	       ) );
+
+	       $wp_customize->add_section( 'my_section', array(
+		       'title'    => __( 'My Section', 'mytheme' ),
+		       'priority' => 30, // d:160
+		       // 'panel' => '', // default
+	       ) );
+
+	       $wp_customize->add_control( new WP_Customize_Control(
+		       $wp_customize,
+		       'my_control_for_my_setting', // or simply use my_setting
+		       array(
+			       'label'    => __( 'My Control Title', 'theme_name' ),
+			       'section'  => 'my_section',
+			       'settings' => 'my_setting',
+			       'type'     => 'text',
+		       )
+	       ) );
+
+       } );
+     #+END_SRC
+     
+** Admin
 *** Toolbar - Admin bar <<<wp:admin:toolbar>>>
 - Admin bar is replaced with Toolbar since WP 3.3
 - In order to show :: ~wp_footer();~ is called. ~<body>~ will have class ~admin-bar~ and ~/wp-includes/css/admin-bar.min.css~ is added
@@ -13169,28 +13219,82 @@ https://wordpress.org/plugins/genesis-visual-hook-guide/
     }
   #+END_SRC
 
-** Transients API - ~set_transient~ vs ~wp_cache_set~ <<<wp:cache>>>
-WordPress cache API in database.
-=DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
+*** List Table API ~WP_Posts_Lists_Table~ <<<wp:api:list table>>>
+ - ~wp-admin/class-wp-posts-list-table.php~
 
-WP object cache stores objects and primitives but not in a persistent manner by default. This means caching happens in memory and it only lives for the request's lifetime cycle (e.g. one pageload). Redis plugin can make it persistent.
+**** Action ~manage_${post_type}_posts_custom_column~ <<<wp:api:list table:action:manage_posts_{post_type}_custom_column>>>
+ - ~do_action( "manage_{$post->post_type}_posts_custom_column", $column_name, $post->ID );~
+ - echo column values
+ - For native post types
+   - manage_posts_custom_column
+   - manage_pages_custom_column
+   - *No!!!* manage_users_custom_column is a filter not an action!
+   - manage_comments_custom_column
+   - manage_media_custom_column
+   - manage_plugins_custom_column
+   - manage_themes_custom_column
+   - manage_link_custom_column
+   - manage_sites_custom_column
+ - Populate or modify column values
 
-https://codex.wordpress.org/Class_Reference/WP_Object_Cache
+ #+BEGIN_SRC php
+   add_action( 'manage_book_posts_custom_column', function ( $column, $post_id ) {
+	   switch ( $column ) {
 
-Transient API saves variables, arrays, objects tied with an expiration date on db and has persistent object caching. However when cached objects expire, they remain on db which needs to be pruned every once in a while.
+		   case 'book_author' :
+			   $terms = get_the_term_list( $post_id, 'book_author', '', ',', '' );
+			   if ( is_string( $terms ) ) {
+				   echo $terms;
+			   } else {
+				   _e( 'Unable to get author(s)', 'your_text_domain' );
+			   }
+			   break;
 
-WP detects if persistent object cache, if so, bypass Transients API and route to WP object cache.
+		   case 'publisher' :
+			   echo get_post_meta( $post_id, 'publisher', true );
+			   // custom post meta
+			   // echo get_post_meta( $post_id, '_custom_post_order', true)
+			   // ACF plugin
+			   // echo get_field('custom_order', $post_id);
+			   break;
 
-#+BEGIN_SRC php
-  // wp_cache_get( int|string $key, string $group = '', bool $force = false, bool $found = null )
-  // wp_cache_set( int|string $key, mixed $data, string $group = '', int $expire )
-  $result = wp_cache_get( 'my_result', 'my-group' );
-  if ( false === $result ) {
-	  $result = $wpdb->get_results( $query );
-	  wp_cache_set( 'my_result', $result, 'my-group', 600 ); // expire after 5 mins
-  } 
-  // Do something with $result;
-#+END_SRC
+	   }
+   }, 10, 2 );
+ #+END_SRC
+
+**** Filter ~manage_${taxonomy}_custom_column~ and ~manage_users_custom_column~ <<<wp:api:list table:filter:manage_{taxonomy}_custom_column>>>
+ - Filter column values
+ - Refer to wp:api:taxonomy
+
+**** Filter ~manage_${post_type}_posts_columns~ <<<wp:api:list table:filter:manage_{post_type}_posts_columns>>>
+ - Add/remove columns
+ - Almost the same as wp:api:plugin:filter:manage_{screen_id}_columns, but this one runs after
+
+ #+BEGIN_SRC php
+   add_filter( 'manage_book_posts_columns', function ( $columns ) {
+	   // var_dump('CPT book manage columns filter'); var_dump($columns);
+	   // unset( $columns['author'] ); //  don't show a column
+
+	   $columns['book_author'] = __( 'Author', 'your_text_domain' ); // add a column
+	   $columns['publisher']   = __( 'Publisher', 'your_text_domain' ); // add another column
+
+	   return $columns;
+   } );
+ #+END_SRC
+
+**** Filter ~manage_{screen_id}_columns~ <<<wp:api:list table:filter:manage_{screen_id}_columns>>>
+ - e.g. ~apply_filters( 'manage_posts_columns', $posts_columns, $post_type );~
+ - Almost the same as wp:api:plugin:filter:manage_{post_type}_posts_columns
+ - screen_id
+   - ~edit-my_tax_name~
+   - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
+
+**** Filter ~manage_{screen_id}_sortable_columns~ <<<wp:api:list table:filter:manage_{screen_id}_sortable_columns>>>
+ - ~apply_filters( "manage_{$this->screen->id}_sortable_columns", $sortable_columns );~
+ - Refer to wp:api:taxonomy
+ - screen_id
+   - ~edit-my_tax_name~
+   - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
 
 ** Custom Cache
 Same page request custom cache
@@ -16385,7 +16489,7 @@ index.php
 	 - wp-includes/class-wp-list-util.php
 	 - wp-includes/formatting.php
 	 - wp-includes/functions.php :: wp main API wp:f:wp
-	    - wp-includes/option.php (Option API)
+	    - wp-includes/option.php :: wp:api:option
 	 - wp-includes/class-wp-matchesmapregex.php
 	 - wp-includes/class-wp.php (wp environment setup class)
 	 - wp-includes/class-wp-error.php (Error API)
@@ -16430,7 +16534,8 @@ index.php
 	 - Parse private_query_vars from $extra_query_vars
 	 - wp:filter:request :: ~apply_filters( 'request', $this->query_vars )~
 	 - wp:action:parse_request :: ~do_action_ref_array( 'parse_request', array( &$this ) )~
-      - ~$wp->send_headers()~ ::
+      - ~$wp->send_headers()~
+	 - wp:action:send_headers :: ~do_action_ref_array( 'send_headers', array( &$this ) );~
       - ~$wp->query_posts()~
 	 - ~$wp->build_query_string();~
 	    - wp:filter:query_string :: ~apply_filters( 'query_string', $this->query_string )~
@@ -40890,7 +40995,7 @@ https://twitter.com/hashtag/hastagname?src=hash
 https://publish.twitter.com/
 - [[https://developer.twitter.com/en/docs/twitter-for-websites/timelines/guides/parameter-reference.html][Options]]
 
-Widget shows png image converted to jpg with 85% qualityblack background color. Maybe add a transparent pixel and save the png to truecolor to avoid the conversion.
+Widget shows png image converted to jpg with 85% quality and black background color. Maybe add a transparent pixel and save the png to truecolor to avoid the conversion.
 
 *** Twitter card <<<twitter:card>>>
 - https://developer.twitter.com/en/docs/tweets/optimize-with-cards/guides/getting-started
@@ -56973,8 +57078,7 @@ https://pantheon.io/docs/php-errors/
    - Debug cache-varying cookies :: ~curl -IsH "Pantheon-Deubg:1" -b "STYXKEY_my-name=v1" https://a.ca~ 
 - Varnish doesn't cache page requests with cookies and it respects the HTTP header that you set in PHP
 - Pantheon sets Varnish to ignore most cookies so that pages can be cached
-- To troubleshoot whether a page is cached, examine the response HTTP header Age. If Age stays at 0, means the page is not cached
-- If there's a HTTP header ~Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0~, Varnish will not cache the page e.g. ~drupal_set_message~ sets ~no-cache~ in HTTP header
+- To troubleshoot whether a page is cached, examine the response HTTP header ~Age~ :: If ~Age~ stays at 0, means the page is not cached
 - https://pantheon.io/docs/wordpress-4.7-upgrade/
 - Without installing the plugin Pantheon Advanced Page Cache, edge caching follows WordPress core 4.7+
    - Edge caching still works using Varnish
@@ -56993,26 +57097,27 @@ https://pantheon.io/docs/php-errors/
    - PHP read values of these GET parameter as ~PANTHEON_STRIPPED~
 - Varnish configuration file (.vcl) is not supposed to edit
 - See lando:pantheon:varnish
-
-Set HTTP header for preventing certain pages from caching
-#+BEGIN_SRC php
-  // wordpress
-  if (preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
-      add_action( 'send_headers', 'add_header_nocache', 15 );
-  }
-  function add_header_nocache() {
-    header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
-  }
-
-  // D7
+- Set HTTP header for preventing certain pages from caching :: https://pantheon.io/docs/cache-control
+  If there's a HTTP header ~Cache-Control: no-cache, must-revalidate, post-check=0, pre-check=0~, Varnish will not cache the page e.g. ~drupal_set_message~ sets ~no-cache~ in HTTP header
+  wp:action:send_headers
+  #+BEGIN_SRC php
+    // wordpress
     if (preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
-      drupal_page_is_cacheable(FALSE);
-      $conf['page_cache_maximum_age'] = 0;
+	add_action( 'send_headers', 'add_header_nocache', 15 );
+    }
+    function add_header_nocache() {
+      header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
     }
 
-  // D8
-  $build['#cache']['max-age'] = 0;
-#+END_SRC
+    // D7
+      if (preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
+	drupal_page_is_cacheable(FALSE);
+	$conf['page_cache_maximum_age'] = 0;
+      }
+
+    // D8
+    $build['#cache']['max-age'] = 0;
+  #+END_SRC
 
 |                                                                        | Dev/MultiDev                                  | Live                                          |
 |------------------------------------------------------------------------+-----------------------------------------------+-----------------------------------------------|
