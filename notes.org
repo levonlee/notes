@@ -7396,6 +7396,7 @@ Which php file is used for template
 Refer to wp:debug:image sizes
 
 *** Post statuses ~$wp_post_statuses~ <<<wp:global:wp_post_statuses>>>
+*** ~$wp_customize~ <<<wp:global:wp_customize>>>
 ** wp-config.php
 https://codex.wordpress.org/Editing_wp-config.php
 
@@ -8409,6 +8410,176 @@ Settings > General > Site Lanuage to match fr_CA
     }
   #+END_SRC
 - Also return wp:user
+
+**** ~wp_mail()~ <<<wp:f:wp_mail>>>
+
+#+BEGIN_SRC php
+  wp_mail( $to, $subject, $message, $headers = '', $attachments = array() )
+#+END_SRC
+*** Shortcode API <<<wp:api:shortcode>>>
+- ~wp-includes/shortcodes.php~
+
+**** add_shortcode <<<wp:f:add_shortcode>>>
+  #+BEGIN_SRC php
+    // [bar-tag foo="foo-value"]
+
+    // Use underscore instead of hyphen e.g. bar_tag
+    function bartag_func( $atts, $content, $tag ) {
+      $a = shortcode_atts( array(
+	'class' => 'something', // default value
+	'attr_2' => 'something else', // 2nd attribute
+      ), $atts );
+
+      // get current post
+      // global $post; $post->ID
+
+      // Use return not echo
+      return '<span class="'.esc_attr($a['class']).'">'
+	     .$content
+	     // or
+	     // .do_shortcode($content)
+	     ."foo = {$a['foo']}"
+	     .'</span>';
+
+    /*
+    ob_start();
+    ?> <HTML> <here> ... <?php
+    return ob_get_clean();
+    ,*/
+
+    /*
+    ob_start();
+    get_template_part( 'template-parts/form/contact-us');
+    return ob_get_clean();
+    ,*/
+
+    }
+    add_shortcode( 'bar-tag', 'bartag_func' );
+
+    // In order to run shortcode in Widgets, add this
+    add_filter('widget_text','do_shortcode');
+    // wp:filter:widget_text
+  #+END_SRC
+
+  Pass array to shortcode attribute
+  #+BEGIN_SRC php
+    $data = [
+	[],[],[]
+    ];
+
+    var_dump(serialize($data));
+
+    // use single quotes
+    // [your-shortcode data='serialized-string']
+
+    function your_shortcode_cb() {
+	// ...
+	$data = unserialize($a['data']);
+    }
+  #+END_SRC
+
+**** shortcode_unautop <<<wp:f:shortcode_unautop>>>
+ - Used in wp:filter:the_content
+ - Ensure shortcodes are not wrapped in ~<p>...</p>~
+ - Refer to
+    - wp:filter:the_content
+    - wp:filter:tiny_mce_before_init
+
+ #+BEGIN_SRC php
+   add_filter( 'the_content', 'shortcode_unautop'  );
+ #+END_SRC
+
+*** Plugin API <<<wp:api:plugin>>>
+- https://codex.wordpress.org/Plugin_API
+
+**** add_filter, apply_filters, apply_filters_ref_array <<<wp:add_filter>>>
+Syntax, remove_filter
+- Modify internal data / function returned
+- For example, WP_Query gets internal settings for building a query
+   - You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
+   - so that you only change the internal setting for that query building without affecting other usage
+
+#+BEGIN_SRC php
+  add_filter( 
+   'tagname', 
+   'lili_funct',
+    10, // int. Priority, lower number sooner
+    2, // int. Accepted args, default is 1! Be careful
+  );
+
+  apply_filters( 'tagname', $result, $var1);
+
+  // callback should take 2 variables
+  function lili_funct($result, $var1) {
+   $new = $result . 'abc';
+   return $new;
+  }
+
+  remove_filter(
+    'tagname',
+    'lili_funct',
+    10 // priority, must match the add_filter priority, default is 10
+  );
+#+END_SRC
+
+#+BEGIN_SRC php
+  function remove_filter_the_title() {
+	  remove_filter('the_title', 'before_post_title', 10);
+  }
+  add_action( 'wp_head', 'remove_filter_the_title', 1 );
+
+  function add_filter_the_title() {
+	  add_filter('the_title', 'before_post_title', 10, 2);
+  }
+  add_action( 'wp_head', 'add_filter_the_title', 3 );
+#+END_SRC
+
+Class method
+#+BEGIN_SRC php
+  // Static class method
+  add_filter( 'media_upload_newtab', array( 'My_Class', 'media_upload_callback' ) );
+
+  // Instance method
+  add_filter( 'media_upload_newtab', array( $this, 'media_upload_callback' ) );
+
+  // Anonymous function
+  add_filter( 'the_title', function( $title ) { return '<strong>' . $title . '</strong>'; } );
+#+END_SRC
+
+**** add_action, do_action, do_action_ref_array <<<wp:add_action>>>
+Event based
+#+BEGIN_SRC php
+  add_action( string $tag,
+    string $function_name,
+    int $priority = 10,
+    int $accepted_args = 1 // number of args the function accepts
+  );
+
+  // add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
+
+  // child theme
+  add_action( 'abc', 'xyz' );
+  // parent theme
+  add_action( 'abc', 'abc' );
+
+  // xyz and abc will run in order
+  do_action( 'abc' );
+
+  // child theme
+  remove_action( 'abc', 'ijk' );
+
+  // parent theme
+  add_action( 'abc', 'ijk');
+
+  // ijk is added and then removed, so ijk will not run
+  do_action( 'abc' );
+#+END_SRC
+
+***** Action sequence <<<wp:action:loading sequence>>>
+- https://codex.wordpress.org/Plugin_API/Action_Reference
+- http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
+- ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
+  - ~WP_Customize_Widgets->customize_register~
 
 *** add_meta_box <<<wp:f:add_meta_box>>>
 Used in
@@ -9508,16 +9679,6 @@ Turn off wpautop for specific pages
   add_action( 'wp_head', 'remove_p_on_pages' );
 #+END_SRC
 
-*** shortcode_unautop <<<wp:f:shortcode_unautop>>>
-Used in wp:filter:the_content
-Ensure shortcodes are not wrapped in <p>...</p>
-
-Refer to wp:filter:the_content wp:filter:tiny_mce_before_init
-
-#+BEGIN_EXAMPLE
-  add_filter( 'the_content', 'shortcode_unautop'  );
-#+END_EXAMPLE
-
 *** show_admin_bar <<<wp:f:show_admin_bar>>>
 Use it in functions.php or wp:filter:show_admin_bar
 #+BEGIN_SRC php
@@ -9865,10 +10026,8 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
 
-** Plugin API <<<wp:api:plugin>>>
-- https://codex.wordpress.org/Plugin_API
-
-*** Action ~manage_${post_type}_posts_custom_column~ <<<wp:api:plugin:action:manage_posts_{post_type}_custom_column>>>
+** List Table API ~WP_Posts_Lists_Table~ <<<wp:api:list table>>>
+*** Action ~manage_${post_type}_posts_custom_column~ <<<wp:api:list table:action:manage_posts_{post_type}_custom_column>>>
 - ~do_action( "manage_{$post->post_type}_posts_custom_column", $column_name, $post->ID );~
 - echo column values
 - For native post types
@@ -9908,12 +10067,11 @@ Use wp:plugin:acf
   }, 10, 2 );
 #+END_SRC
 
-*** Filter ~manage_${taxonomy}_custom_column~ and ~manage_users_custom_column~
-<<<wp:api:plugin:filter:manage_{taxonomy}_custom_column>>>
+*** Filter ~manage_${taxonomy}_custom_column~ and ~manage_users_custom_column~ <<<wp:api:list table:filter:manage_{taxonomy}_custom_column>>>
 - Filter column values
 - Refer to wp:api:taxonomy
 
-*** Filter ~manage_${post_type}_posts_columns~ <<<wp:api:plugin:filter:manage_{post_type}_posts_columns>>>
+*** Filter ~manage_${post_type}_posts_columns~ <<<wp:api:list table:filter:manage_{post_type}_posts_columns>>>
 - Add/remove columns
 - Almost the same as wp:api:plugin:filter:manage_{screen_id}_columns, but this one runs after
 
@@ -9929,14 +10087,14 @@ Use wp:plugin:acf
   } );
 #+END_SRC
 
-*** Filter ~manage_{screen_id}_columns~ <<<wp:api:plugin:filter:manage_{screen_id}_columns>>>
+*** Filter ~manage_{screen_id}_columns~ <<<wp:api:list table:filter:manage_{screen_id}_columns>>>
 - e.g. ~apply_filters( 'manage_posts_columns', $posts_columns, $post_type );~
 - Almost the same as wp:api:plugin:filter:manage_{post_type}_posts_columns
 - screen_id
   - ~edit-my_tax_name~
   - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
 
-*** Filter ~manage_{screen_id}_sortable_columns~ <<<wp:api:plugin:filter:manage_{screen_id}_sortable_columns>>>
+*** Filter ~manage_{screen_id}_sortable_columns~ <<<wp:api:list table:filter:manage_{screen_id}_sortable_columns>>>
 - ~apply_filters( "manage_{$this->screen->id}_sortable_columns", $sortable_columns );~
 - Refer to wp:api:taxonomy
 - screen_id
@@ -10952,62 +11110,10 @@ Select the posts that have checkbox enligne checked.
 #+END_SRC
 
 ** Default filters and actions <<<wp:default filters>>>
-~wp-includes/default-filters.php~
+- ~wp-includes/default-filters.php~
+- wp:action:plugins_loaded
 
-** add_filter, apply_filters, apply_filters_ref_array <<<wp:add_filter>>>
-*** Syntax, remove_filter
-- Modify internal data / function returned
-- For example, WP_Query gets internal settings for building a query
-   - You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
-   - so that you only change the internal setting for that query building without affecting other usage
-
-#+BEGIN_SRC php
-  add_filter( 
-   'tagname', 
-   'lili_funct',
-    10, // int. Priority, lower number sooner
-    2, // int. Accepted args, default is 1! Be careful
-  );
-
-  apply_filters( 'tagname', $result, $var1);
-
-  // callback should take 2 variables
-  function lili_funct($result, $var1) {
-   $new = $result . 'abc';
-   return $new;
-  }
-
-  remove_filter(
-    'tagname',
-    'lili_funct',
-    10 // priority, must match the add_filter priority, default is 10
-  );
-#+END_SRC
-
-#+BEGIN_SRC php
-  function remove_filter_the_title() {
-	  remove_filter('the_title', 'before_post_title', 10);
-  }
-  add_action( 'wp_head', 'remove_filter_the_title', 1 );
-
-  function add_filter_the_title() {
-	  add_filter('the_title', 'before_post_title', 10, 2);
-  }
-  add_action( 'wp_head', 'add_filter_the_title', 3 );
-#+END_SRC
-
-Class method
-#+BEGIN_SRC php
-  // Static class method
-  add_filter( 'media_upload_newtab', array( 'My_Class', 'media_upload_callback' ) );
-
-  // Instance method
-  add_filter( 'media_upload_newtab', array( $this, 'media_upload_callback' ) );
-
-  // Anonymous function
-  add_filter( 'the_title', function( $title ) { return '<strong>' . $title . '</strong>'; } );
-#+END_SRC
-
+** Filter
 *** post_limits <<<wp:filter:post_limits>>>
 For feed, use pre_option_posts_per_rss wp:filter:pre_option
 
@@ -11747,42 +11853,7 @@ In template
 *** comments_open
 wp:plugin:disable-comments
 
-** add_action, do_action, do_action_ref_array <<<wp:add_action>>>
-*** Basic
-Event based
-#+BEGIN_SRC php
-  add_action( string $tag,
-    string $function_name,
-    int $priority = 10,
-    int $accepted_args = 1 // number of args the function accepts
-  );
-
-  // add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
-
-  // child theme
-  add_action( 'abc', 'xyz' );
-  // parent theme
-  add_action( 'abc', 'abc' );
-
-  // xyz and abc will run in order
-  do_action( 'abc' );
-
-  // child theme
-  remove_action( 'abc', 'ijk' );
-
-  // parent theme
-  add_action( 'abc', 'ijk');
-
-  // ijk is added and then removed, so ijk will not run
-  do_action( 'abc' );
-#+END_SRC
-
-*** Action sequence <<<wp:action:loading sequence>>>
-- https://codex.wordpress.org/Plugin_API/Action_Reference
-- http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
-- ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
-  - ~WP_Customize_Widgets->customize_register~
-
+** Action
 *** activated_plugin <<<wp:action:activated_plugin>>>
 - Change plugins loading order. By default is alpha based on plugin's path + plugin's php file
 - It reads and updates wp:db:wp_options:active_plugins
@@ -11800,6 +11871,12 @@ Event based
   }
   add_action("activated_plugin", "this_plugin_last");
 #+END_SRC
+
+*** plugins_loaded <<<wp:action:plugins_loaded>>>
+- default added actions
+   - ~wp_maybe_load_widgets~
+   - ~wp_maybe_load_embeds~
+   - ~_wp_customize_include~
 
 *** after_setup_theme <<<wp:action:after_setup_theme>>>
 Called each page load after the theme is initialized. 
@@ -12043,65 +12120,6 @@ Same as wp:action:edit_page_form but for all post types other than 'page'
 	  }
 	  // auto select parent term.
 
-  }
-#+END_SRC
-
-** add_shortcode <<<wp:f:add_shortcode>>>
-#+BEGIN_SRC php
-  // [bar-tag foo="foo-value"]
-
-  // Use underscore instead of hyphen e.g. bar_tag
-  function bartag_func( $atts, $content, $tag ) {
-    $a = shortcode_atts( array(
-      'class' => 'something', // default value
-      'attr_2' => 'something else', // 2nd attribute
-    ), $atts );
-
-    // get current post
-    // global $post; $post->ID
-
-    // Use return not echo
-    return '<span class="'.esc_attr($a['class']).'">'
-	   .$content
-	   // or
-	   // .do_shortcode($content)
-	   ."foo = {$a['foo']}"
-	   .'</span>';
-
-  /*
-  ob_start();
-  ?> <HTML> <here> ... <?php
-  return ob_get_clean();
-  ,*/
-
-  /*
-  ob_start();
-  get_template_part( 'template-parts/form/contact-us');
-  return ob_get_clean();
-  ,*/
-
-  }
-  add_shortcode( 'bar-tag', 'bartag_func' );
-
-  // In order to run shortcode in Widgets, add this
-  add_filter('widget_text','do_shortcode');
-  // wp:filter:widget_text
-#+END_SRC
-
-Pass array to shortcode attribute
-#+BEGIN_SRC php
-  $data = [
-      [],[],[]
-  ];
-
-  var_dump(serialize($data));
-
-  // use single quotes
-  // [your-shortcode data='serialized-string']
-
-  function your_shortcode_cb() {
-      // ...
-      $data = unserialize($a['data']);
   }
 #+END_SRC
 
@@ -16362,7 +16380,7 @@ index.php
       - wp-settings.php
 	 - wp-includes/load.php (all functions)
 	 - wp-includes/default-constants.php (all func.)
-	 - wp-includes/plugin.php
+	 - wp-includes/plugin.php :: wp:api:plugin
 	 - wp-includes/compat.php (functions)
 	 - wp-includes/class-wp-list-util.php
 	 - wp-includes/formatting.php
@@ -16382,9 +16400,9 @@ index.php
 	 - wp-includes/general-template.php
 	 - Load mu-plugins
 	 - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
-	 - Load active plugins :: ~do_action( 'plugins_loaded' )~
+	 - Load active plugins
 	 - Load pluggable functions :: wp:pluggable
-	 - ~do_action( 'plugins_loaded' )~
+	 - ~do_action( 'plugins_loaded' )~ :: wp:action:plugins_loaded
 	 - Initialize objects
 	    - ~$GLOBALS['wp_the_query'] = new WP_Query();~
 	    - ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query']~
@@ -25507,6 +25525,9 @@ https://amp.dev/documentation/components/amp-analytics/
 	#+END_SRC
    - attribute config (inline config) :: remote config > inline config > vendor config based on attribute ~type~
       - ~config~ :: 
+
+*** AMPHTML ads
+- Can be served on both AMP pages (via Ad Manager AMPHTML ad tag) and non-AMP pages (via Google Publisher Tag)
 
 * JavaScript
 ** Loading Sequence <<<js:defer>>> <<<js:async>>>
