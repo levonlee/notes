@@ -25822,6 +25822,71 @@ https://developers.google.com/web/progressive-web-apps/
     </amp-video>
   #+END_SRC
 
+*** ~amp-position-observer~ <<<amp:amp-position-observer>>>
+- https://amp.dev/documentation/components/amp-position-observer/
+- Use it with amp:amp-animation and several video players are the only components that allow *low trust events* to trigger their actions. Using it alone does not do anything
+- It dispatches events
+   - enter :: can be tied to ~start~ action of amp:amp-animation
+   - exit :: can be tied to ~pause~ action of amp:amp-animation
+   - ~scroll:<Position in Viewport As a Percentage>~ :: can be tied to ~seekTo~ action of amp:amp-animation
+- Attributes
+   - target :: ID of the element to observe. If not specified, the parent of this tag is used as the target
+   - intersection-ratios :: d:0 between 0 and 1. How much of the target should be visible in the viewport before ~amp-position-observer~ triggers any events
+      - 0 :: trigger ~enter~ when a single pixel of the target comes into vp and trigger ~exit~ when the very last pixel goes out of the vp
+      - 0.5 :: trigger ~enter~ as soon as 50% of the target comes into vp and trigger ~exit~ when less than 50% is in the vp
+      - 1 :: trigger ~enter~ when fully visible and trigger event when a single pixel goes out of vp
+      - 0 1 :: trigger ~enter~ when ~top=0~ visible and trigger event when ~bottom=1~
+   - viewport-margins ::
+      - 100px :: shrink the vp by 100px from the top and 100px from the bottom
+      - 25vh :: shring the vp by 25% from the top and 25% from the bottom. Only consider the middle 50% of the viewport
+      - 100px 10vh :: shrink the vp by 100px from the top and 10% from the bottom
+   - once :: only trigger the ~enter~ and ~exit~ once
+
+#+BEGIN_SRC html
+  <script async custom-element="amp-position-observer" src="https://cdn.ampproject.org/v0/amp-position-observer-0.1.js"></script>
+#+END_SRC
+
+*** amp-animation <<<amp:amp-animation>>>
+
+#+BEGIN_SRC html
+  <script async custom-element="amp-animation" src="https://cdn.ampproject.org/v0/amp-animation-0.1.js"></script>
+  <script async custom-element="amp-position-observer" src="https://cdn.ampproject.org/v0/amp-position-observer-0.1.js"></script>
+
+  <div class="parallax-image-window">
+      <amp-position-observer on="scroll:parallaxTransition.seekTo(percent=event.percent)"
+			     intersection-ratios="0"
+			     viewport-margins="15vh"
+			     layout="nodisplay">
+      </amp-position-observer>
+
+      <a href="%%CLICK_URL_UNESC%%%%DEST_URL%%" target="_blank">
+	  <amp-img id="parallaxImage"
+		   width="300"
+		   height="600"
+		   layout="responsive"
+		   src="%%VIEW_URL_UNESC%%%%FILE:JPG1%%"
+		   alt="Picture of an elephant"></amp-img>
+      </a>
+  </div>
+
+  <amp-animation id="parallaxTransition"
+		 layout="nodisplay">
+      <script type="application/json">
+	  {
+	      "duration": "1",
+	      "fill": "both",
+	      "direction": "normal",
+	      "animations": [{
+		  "selector": "#parallaxImage",
+		  "keyframes": [
+		      {"transform": "translateY(-600px)"}
+		  ]
+	      }]
+	  }
+      </script>
+  </amp-animation>
+#+END_SRC
+
 *** Actions and Events <<<amp:event>>>
 - Basics :: https://amp.dev/documentation/guides-and-tutorials/learn/amp-actions-and-events/
   #+BEGIN_SRC html
@@ -25855,6 +25920,10 @@ https://developers.google.com/web/progressive-web-apps/
 **** Special targets <<<amp:event:target>>>
 - Can be DOM id of an element
 - https://amp.dev/documentation/guides-and-tutorials/learn/amp-actions-and-events/#special-targets
+
+*** Layout & media queries <<<amp:layout>>>
+- attribute ~layout~ for all elements :: https://amp.dev/documentation/guides-and-tutorials/develop/style_and_layout/control_layout/
+   - nodisplay
 
 *** amp-analytics <<<amp:amp-analytics>>>
 https://amp.dev/documentation/components/amp-analytics/
@@ -25911,7 +25980,7 @@ https://amp.dev/documentation/components/amp-analytics/
 #+BEGIN_SRC html
   <!doctype html>
   <html ⚡4ads>
-  <head>
+    <head>
       <meta charset="utf-8">
       <title>My amphtml ad</title>
       <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
@@ -25927,9 +25996,18 @@ https://amp.dev/documentation/components/amp-analytics/
 
       <!-- creative CSS is limited to 20KB -->
       <style amp-custom></style>
-  </head>
-  <body>
-  </body>
+
+      <a target="_blank"
+	 href="https://amp.dev/documentation/examples/style-layout/banner_ad/index.html">
+	<amp-img src="https://amp.dev/static/samples/img/amp-300x250.jpg"
+		 width="300"
+		 height="250"
+		 layout="responsive"
+		 alt="a4a image"></amp-img>
+      </a>
+    </head>
+    <body>
+    </body>
   </html>
 #+END_SRC
 
@@ -59746,32 +59824,31 @@ And upload each creative and specify the size. You can have creative bigger than
 #+END_SRC
 
 ** Macro in Third Party Code, Custom Code
-CACHEBUSTER :: time in integer
-CLICK_URL_UNESC :: normal click macro
-CLICK_URL_ESC :: escaped click macro (&, ? , %)
-
-VIEW_URL_UNESC, VIEW_URL_ESC :: required in Custom Code
-
-If DFP macro comes at the start of the URL chain, the unescaped macro should be used.
-IF DFP macro comes at the end of the URL chain, the escaped macro should be used. (DFP macro is passed as a parameter to 3rd party server)
-
-<<<dfp:third party code>>>
-Third Party Code with macro automatically inserted
-#+BEGIN_EXAMPLE
-  <!-- url parameter ncu is inserted, ord's [timestamp] is replaced by CACHEBUSTER -->
-  <script src="http://bs.serving-sys.com/Serving/adServer.bs?c=28&cn=display&pli=1074030166&w=728&h=90&ncu=$$%%CLICK_URL_UNESC%%$$&ord=%%CACHEBUSTER%%&ifrm=-1&z=0"></script>
-  <noscript>
-  <!-- insert CLICK_URL_UNESC in href -->
-  <a href="%%CLICK_URL_UNESC%%http://bs.serving-sys.com/Serving/adServer.bs?cn=brd&pli=1074030166&Page=&Pos=944448101" target="_blank">
-  <img src="http://bs.serving-sys.com/Serving/adServer.bs?c=8&cn=display&pli=1074030166&Page=&Pos=944448101" border=0 width=728 height=90></a>
-  </noscript>
-#+END_EXAMPLE
-
-Sometimes you need to have DFP inserted the macros in third party code mode, and then use that in Custom Code.
+- ~CACHEBUSTER~ :: time in integer
+- ~CLICK_URL_UNESC~ :: normal click macro e.g.
+   - ~%%CLICK_URL_UNESC%%https://adserver.ca/destination~
+   - ~%%CLICK_URL_UNESC%%%%DEST_URL%%~
+- ~CLICK_URL_ESC~ :: escaped click macro (&, ? , %). The macro is passed as a parameter to 3rd party server
+   - ~https://adserver.ca/destination?ncu=%%CLICK_URL_ESC%%~
+- ~VIEW_URL_UNESC, VIEW_URL_ESC~ :: required in Custom Code
+   - ~%%VIEW_URL_UNESC%%%%FILE:JPG1%%~
+- Example
+  <<<dfp:third party code>>>
+  Third Party Code with macro automatically inserted
+  #+BEGIN_SRC html
+    <!-- url parameter ncu is inserted, ord's [timestamp] is replaced by CACHEBUSTER -->
+    <script src="http://bs.serving-sys.com/Serving/adServer.bs?c=28&cn=display&pli=1074030166&w=728&h=90&ncu=$$%%CLICK_URL_UNESC%%$$&ord=%%CACHEBUSTER%%&ifrm=-1&z=0"></script>
+    <noscript>
+    <!-- insert CLICK_URL_UNESC in href -->
+    <a href="%%CLICK_URL_UNESC%%http://bs.serving-sys.com/Serving/adServer.bs?cn=brd&pli=1074030166&Page=&Pos=944448101" target="_blank">
+    <img src="http://bs.serving-sys.com/Serving/adServer.bs?c=8&cn=display&pli=1074030166&Page=&Pos=944448101" border=0 width=728 height=90></a>
+    </noscript>
+  #+END_SRC
 
 <<<dfp:custom code>>>
-VIEW_URL_UNESC or VIEW_URL_ESC should be included otherwise impression won't be tracked.
-In preview, this view macro returns empty but that's normal. It has value when the creative is served.
+- ~VIEW_URL_UNESC~ or ~VIEW_URL_ESC~ should be included otherwise impression won't be tracked.
+- In preview, this view macro returns empty but that's normal. It has value when the creative is served.
+- Sometimes you need to have DFP inserted the macros in third party code mode, and then use that in Custom Code.
 
 ** Creative Type: Third Party Code - Video
 - Video is hosted on third party server
