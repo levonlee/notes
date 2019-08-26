@@ -25563,7 +25563,7 @@ https://developers.google.com/web/progressive-web-apps/
 - JavaScript and asset files are inside iframe. Only async js is allowed
 - Predefine size in HTML for assets/resources, ads or iframes
 - Custom script will eventually have a custom tag (iframe) to be loaded in
-- Inline CSS style sheet (50kb max)
+- Inline CSS style sheet :: 50kb max
 - The above fonts start to download immediately
 - Only certain animations are allowed (transform and opacity)
 - Resources are loaded as late as possible (lazy-load, above the fold), but prefetched as early as possible
@@ -25571,6 +25571,8 @@ https://developers.google.com/web/progressive-web-apps/
 - ~<html amp>~ :: inside ~<!doctype html>~
 - AMP Test Tool :: https://search.google.com/test/amp
 - Validation URL :: http://localhost:8000/released.amp.html#development=1
+- AMP Playground :: https://playground.amp.dev/
+- Validator :: https://validator.ampproject.org/
 - [[https://chrome.google.com/webstore/detail/amp-validator/nmoffdblmcmgeicmolmhobpoocbbmknc/related?hl=en][AMP Validator Chrome Extension]]
 
 *** Search Engine Discovery
@@ -25591,7 +25593,7 @@ https://developers.google.com/web/progressive-web-apps/
   <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
 #+END_SRC
 
-*** amp-custom <<<amp:amp-custom>>>
+*** ~amp-custom~ <<<amp:amp-custom>>>
 #+BEGIN_SRC html
   <style amp-custom>
     /* any custom style goes here */
@@ -25604,6 +25606,255 @@ https://developers.google.com/web/progressive-web-apps/
     }
   </style>
 #+END_SRC
+
+*** ~amp-image~ <<<amp:amp-image>>>
+- Basics
+   - Built-in element, no need to import another AMP runtime
+
+#+BEGIN_SRC html
+  <amp-img src="/static/samples/img/amp.jpg"
+    alt="AMP"
+    width="475"
+    height="268"
+    layout="responsive">
+    <noscript>
+      <img src="/static/samples/img/amp.jpg" width="475" height="268" alt="AMP">
+    </noscript>
+  </amp-img>
+
+  <div>
+    <amp-img src="https://unsplash.it/300/200/?image=100"
+      width="300"
+      height="200"
+      [src]="myImageUrl">
+    </amp-img>
+    <button on="tap:AMP.setState({ myImageUrl: 'https://unsplash.it/300/200/?image=200' })">Change image</button>
+  </div>
+#+END_SRC
+
+*** ~amp-bind~ ~amp-bind-macro~ <<<amp:amp-bind>>>
+**** amp-bind
+- Refer to amp:event
+
+#+BEGIN_SRC html
+  <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
+
+  <div>
+    <div hidden
+	 [hidden]="hideGreeting">Hello World</div>
+    <button on="tap:AMP.setState({ hideGreeting: false })">Show greeting</button>
+  </div>
+
+  <div>
+    <div>Hello <span [text]="myText">World</span></div>
+    <button on="tap:AMP.setState({ myText: 'AMP' })">Change text</button>
+  </div>
+
+  <div>
+    <div class="background-red"
+	 [class]="myClass">Hello World</div>
+    <button on="tap:AMP.setState({ myClass: 'background-green' })">Change class</button>
+  </div>
+
+  <div>
+    <amp-img src="https://unsplash.it/400/200"
+	     width="200"
+	     [width]="myImageDimension.width"
+	     height="100"
+	     [height]="myImageDimension.height">
+    </amp-img>
+    <button on="tap:AMP.setState({
+		myImageDimension: {
+		width: 400,
+		height: 200
+		}
+		})">
+      Change size
+    </button>
+  </div>
+
+  <div>
+    <select on="change:AMP.setState({ option: event.value })">
+      <option value="0">No selection</option>
+      <option value="1">Option 1</option>
+      <option value="2">Option 2</option>
+    </select>
+    <div hidden
+	 [hidden]="option != 1">
+      Option 1
+    </div>
+    <div hidden
+	 [hidden]="option != 2">
+      Option 2
+    </div>
+  </div>
+
+  <!-- initialize state -->
+  <div>
+    <amp-state id="myText">
+      <script type="application/json">
+	"World"
+      </script>
+    </amp-state>
+    <div>1. Hello <span [text]="undefinedText">World</span></div>
+    <div>2. Hello <span [text]="myText">World</span></div>
+    <button on="tap:AMP.setState({ myText: 'AMP' })">Change state</button>
+  </div>
+
+  <!-- remote state -->
+  <!-- empty AMP.setState() triggers all amp-bind's to evaluate -->
+  <div>
+    <amp-state id="myRemoteState"
+	       src="/static/samples/json/websites.json"></amp-state>
+    <amp-list layout="fixed-height"
+	      height="0"
+	      [height]="18 * myRemoteState.items.length"
+	      [src]="myRemoteState.items"
+	      binding="no">
+      <template type="amp-mustache">
+	<div><a href="{{url}}">{{title}}</a></div>
+      </template>
+    </amp-list>
+    <button on="tap:AMP.setState({})">Show websites</button>
+  </div>
+
+  <!-- refresh one state -->
+  <div>
+    <amp-state id="currentTime"
+	       src="/documentation/examples/api/time"></amp-state>
+    <button on="tap:currentTime.refresh">
+      Refresh
+    </button>
+    <div [text]="currentTime.time"></div>
+  </div>
+
+  <!-- push state -->
+  <!-- browsser's back button -->
+  <div>
+    <amp-state id="count">
+      <script type="application/json">
+	1
+      </script>
+    </amp-state>
+    <div>Item <span [text]="count">1</span></div>
+    <button on="tap:AMP.pushState({ count: count + 1 })">Increase count</button>
+  </div>
+
+  <!-- debounce input events -->
+  <div>
+    <amp-state id="name">
+      <script type="application/json">
+	"?"
+      </script>
+    </amp-state>
+    <input id="name-input"
+      placeholder="Enter a name"
+      on="input-throttled:AMP.setState({ name: event.value })">
+    <div>Hello <span [text]="name">?</span></div>
+  </div>
+
+#+END_SRC
+
+**** amp-bind-macro
+#+BEGIN_SRC html
+  <div>
+    <amp-bind-macro id="circleArea"
+		    arguments="radius"
+		    expression="3.14 * radius * radius" />
+    <input type="number"
+	   min="0"
+	   max="100"
+	   value="0"
+	   on="input-throttled:AMP.setState({ radius: event.value })">
+    <div>
+      The circle has an area of <span [text]="circleArea(radius)">0</span>.
+    </div>
+  </div>
+#+END_SRC
+
+*** ~amp-carousel~ <<<amp:amp-carousel>>>
+- Basics
+  #+BEGIN_SRC html
+    <script async custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js"></script>
+
+    <amp-carousel height="300"
+      layout="fixed-height"
+      type="carousel">
+      <amp-img src="/static/samples/img/image1.jpg"
+	width="400"
+	height="300"
+	alt="a sample image"></amp-img>
+      <amp-img src="/static/samples/img/image2.jpg"
+	width="400"
+	height="300"
+	alt="another sample image"></amp-img>
+      <amp-img src="/static/samples/img/image3.jpg"
+	width="400"
+	height="300"
+	alt="and another sample image"></amp-img>
+    </amp-carousel>
+  #+END_SRC
+- Child can be a lot of things :: https://amp.dev/documentation/examples/multimedia-animations/image_galleries_with_amp-carousel/
+- Attributes
+   - type ::
+      - carousel
+      - slides :: may use ~autoplay~ at d:5000 milliseconds, use ~delay~ to override
+	 - Style buttons by targeting ~.amp-carousel-button-prev~ and ~.amp-carousel-button-next~
+
+*** ~amp-video~ <<<amp:amp-video>>>
+- Basics
+  #+BEGIN_SRC html
+    <script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
+
+    <amp-video width="480"
+      height="270"
+      src="/static/samples/video/tokyo.mp4"
+      poster="/static/samples/img/tokyo.jpg"
+      layout="responsive"
+      controls>
+      <div fallback>
+	<p>Your browser doesn't support HTML5 video.</p>
+      </div>
+      <source type="video/mp4"
+	src="/static/samples/video/tokyo.mp4">
+      <source type="video/webm"
+	src="/static/samples/video/tokyo.webm">
+    </amp-video>
+  #+END_SRC
+
+*** Actions and Events <<<amp:event>>>
+- Basics :: https://amp.dev/documentation/guides-and-tutorials/learn/amp-actions-and-events/
+  #+BEGIN_SRC html
+    <input id="name-input"
+	   placeholder="Enter a name"
+	   on="input-throttled:AMP.setState({ name: event.value })">
+  #+END_SRC
+- Syntax :: ~eventName:targetId[.methodName[(arg1=value, arg2=value)]]~
+   - eventName
+      - multiple events :: ~on="submit-success:lightbox1;submit-error:lightbox2"~
+      - multiple events for one action :: ~on="tap:target1.actionA,target2.actionB"~
+   - targetId :: refer to amp:event:target
+   - methodName :: is also called action
+   - value :: could be
+      - unquoted :: ~simple-value~
+      - quoted :: ~"string value"~ or ~'string value'~
+      - bool :: ~true~ ~false~
+      - numbers :: ~11~ ~1.1~
+      - event data :: ~event.someDataVariableName~
+- all elements events
+   - tap
+   - hide
+   - show
+   - toggleVisibility
+   - toggleClass(class=STRING, force=BOOLEAN)
+   - scrollTo(duration=INTEGER, position=STRING)
+   - focus
+- input events
+   - input-throttled :: same as ~change~ but at most once every 100ms
+
+**** Special targets <<<amp:event:target>>>
+- Can be DOM id of an element
+- https://amp.dev/documentation/guides-and-tutorials/learn/amp-actions-and-events/#special-targets
 
 *** amp-analytics <<<amp:amp-analytics>>>
 https://amp.dev/documentation/components/amp-analytics/
@@ -25632,7 +25883,55 @@ https://amp.dev/documentation/components/amp-analytics/
       - ~config~ :: 
 
 *** AMPHTML ads
+- https://amp.dev/documentation/guides-and-tutorials/start/create_amphtml_ad/create_shell/?format=ads
+- AMP Ads Examples :: https://amp.dev/documentation/examples/?format=ads
 - Can be served on both AMP pages (via Ad Manager AMPHTML ad tag) and non-AMP pages (via Google Publisher Tag)
+- Allowed AMP extensions and builtins
+   - amp:amp-accordion
+   - amp:amp-ad-exit
+   - amp:amp-analytics
+   - amp:amp-anim
+   - amp:amp-animation
+   - amp:amp-audio
+   - amp:amp-bind
+   - amp:amp-carousel
+   - amp:amp-fit-text
+   - amp:amp-font
+   - amp:amp-form
+   - amp:amp-img
+   - amp:amp-layout
+   - amp:amp-lightbox
+   - amp:amp-mraid
+   - amp:amp-mustache
+   - amp:amp-pixel
+   - amp:amp-position-observer
+   - amp:amp-social-share
+   - amp:amp-video
+
+#+BEGIN_SRC html
+  <!doctype html>
+  <html ⚡4ads>
+  <head>
+      <meta charset="utf-8">
+      <title>My amphtml ad</title>
+      <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+      <!-- AMPHTML ads do not require a <link rel="canonical"> tag. -->
+
+      <!-- runtime -->
+      <script async src="https://cdn.ampproject.org/amp4ads-v0.js"></script>
+
+      <!-- boilerplate -->
+      <!-- rationale: hide body until AMP runtime is ready and then unhides -->
+
+      <style amp4ads-boilerplate>body{visibility:hidden}</style>
+
+      <!-- creative CSS is limited to 20KB -->
+      <style amp-custom></style>
+  </head>
+  <body>
+  </body>
+  </html>
+#+END_SRC
 
 * JavaScript
 ** Loading Sequence <<<js:defer>>> <<<js:async>>>
