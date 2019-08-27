@@ -17419,27 +17419,24 @@ Represents an angle in gradians. One full circle is 400grad. Examples: 0grad, 10
 http://ds-overdesign.com/transform/matrix3d.html
 
 ** Link
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   // In order
   a:link {} /* Unvisited and normal */
   a:visited {}
   a:hover {}
   a:active {}
-#+END_EXAMPLE
+#+END_SRC
 
-** Insert CSS File
+** Insert CSS File <<<css:js insert>>>
 #+BEGIN_SRC js
-  var cssId = 'myCss';  // you could encode the css path itself to generate id..
-  if (!document.getElementById(cssId)) {
-      var head  = document.getElementsByTagName('head')[0];
-      var link  = document.createElement('link');
-      link.id   = cssId;
-      link.rel  = 'stylesheet';
-      link.type = 'text/css';
-      link.href = 'http://website.com/css/stylesheet.css';
-      link.media = 'all';
-      head.appendChild(link);
-  }
+  ['//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-darkness/jquery-ui.css',
+   '/wp-content/themes/xxx/css/interstitial.css'].forEach(function (src) {
+       var _css = document.createElement("link");
+       _css.rel = 'stylesheet';
+       _css.type = 'text/css';
+       _css.href = src;
+       document.head.appendChild(_css);
+   });
 #+END_SRC
 
 ** Text
@@ -26039,53 +26036,42 @@ async="false" is needed.
 #+END_SRC
 
 ** External Script, document.write <<<js:external script>>>
-Loading external script use this
-
-#+BEGIN_SRC js
-  (function () {
-    var nodeScript = document.createElement('script');
-    nodeScript.type = 'text/javascript';
-    nodeScript.src = 'http://otherdomain.com/a.js';
-    var node = document.getElementById('interstitial');
-    node.appendChild(node);
-
-    // Add to <head>
-    // var node = document.getElementsByTagName('script')[0];
-    // node.parentNode.insertBefore(gads, node);
-  })();
-#+END_SRC
-
-~document.write~ inside external script (asynchronously loaded) cannot modify DOM 
-You will need to use these to modify the DOM. Refer to Element Object
-- ~.appendChild()~
-- ~.insertBefore()~
-- ~.innerHTML = 'html'~ :: equivalent to jQuery ~.html('html')~
-
-Refer to tool:html:document.write
-
-Example
-https://support.jwplayer.com/customer/portal/articles/1406723#fndtn-method-1
-
-- Default JW player embed is single-line embed :: ~<script src="//content.jwplatform.com/players/MEDIAID-PLAYERID.js"> </script>~
-
-If this is async loaded, the player will not show because it has document.write
-
-Instead, load this in <head>
-<script src="//content.jwplatform.com/libraries/PLAYERID.js"> </script>
-
-And a container :: <div id="myElement"></div>
-Then dynamically load this
-#+BEGIN_SRC html
-  <script type="text/javaScript">
-    var playerInstance = jwplayer("myElement");
-    playerInstance.setup({
-    file: "//content.jwplatform.com/videos/MEDIAID-TEMPLATEID.mp4"
-    mediaid: "xxxxYYYY"
+- Loading external script use this
+  #+BEGIN_SRC js
+    [ 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js','/sites/all/themes/abc/js/interstitial.js'
+    ].forEach(function(src) {
+	var script = document.createElement('script');
+	script.src = src;
+	script.async = false;
+	document.head.appendChild(script);
     });
-  </script>
-#+END_SRC
+  #+END_SRC
+- Load CSS files :: refer to css:js insert
+- ~document.write~ inside external script (asynchronously loaded) cannot modify DOM. Use these to modify the DOM. Refer to Element Object
+   - ~.appendChild()~
+   - ~.insertBefore()~
+     #+BEGIN_SRC js
+       var t = document.getElementById("childElement");
 
-Where TEMPLATEID is the Source file name for a video content in JW UI (under Sources).
+       t.parentNode.insertBefore(newNode, t);
+     #+END_SRC
+   - ~.innerHTML = 'html'~ :: equivalent to jQuery ~.html('html')~
+   - Refer to tool:html:document.write
+   - Example :: https://support.jwplayer.com/customer/portal/articles/1406723#fndtn-method-1
+      - Default JW player embed is single-line embed :: ~<script src="//content.jwplatform.com/players/MEDIAID-PLAYERID.js"> </script>~
+      - If this is async loaded, the player will not show because it has ~document.write~
+      - Instead, load this in ~<head>~ :: ~<script src="//content.jwplatform.com/libraries/PLAYERID.js"> </script>~
+	 - And a container :: ~<div id="myElement"></div>~
+	 - Then dynamically load this :: ~TEMPLATEID~ is the Source file name for a video content in JW UI (under Sources).
+	   #+BEGIN_SRC html
+	     <script type="text/javaScript">
+	       var playerInstance = jwplayer("myElement");
+	       playerInstance.setup({
+	       file: "//content.jwplatform.com/videos/MEDIAID-TEMPLATEID.mp4"
+	       mediaid: "xxxxYYYY"
+	       });
+	     </script>
+           #+END_SRC
 
 ** Initialization <<<js:Initialization>>>
 Always initialize variables at the top including vars in loops
@@ -28389,11 +28375,10 @@ Refer to bootstrap:responsive helpers
 #+END_SRC
 
 ** CSS Media Viewport Size <<<js:viewport size>>>
-window.innerWidth is width including scrollbars
-document.body.clientWidth is width excluding scrollbars
-
-=var w = Math.max(window.innerWidth || 0, document.body.clientWidth)=
-=var h = Math.max(window.innerHeight || 0, document.body.clientHeight)=
+- ~var w = Math.max(window.innerWidth || 0, document.body.clientWidth)~
+- ~var h = Math.max(window.innerHeight || 0, document.body.clientHeight)~
+- ~window.innerWidth~ :: width including scrollbars
+- ~document.body.clientWidth~ :: width excluding scrollbars
 
 ** Use Cases
 *** Click to anchor
@@ -59648,17 +59633,11 @@ Run this .sql file:
   </body>
 #+END_SRC
 
-** Metrics
-- Active View eligible impressions :: Total number of impressions that were eligible to measure viewability. An imp. is eligible if (a) the ad's creative has an Active View enabled tag, and (b) the imp. is counted with a downloaded pingback
-- Active View measurable impressions :: Impressions that were measurable by Active View out of the total number of eligible impressions. This value should generally be close to 100%; however, even when an ad tag has Active View enabled, some factors may prevent the tag from capturing data. For example, an impression that is rendering in a cross-domain iframe may not be measurable.
-- Active View viewable impressions :: Number of impressions on the site that were viewable out of all measurable impressions. A display ad is counted as viewable if at least 50% of its area was displayed on screen for at least one second (the minimum criteria according to IAB measurement standards). For in-stream video ads, 50% of its area must be displayed for at least two seconds.
-
 ** Why async is required
-Video companion requires async
-pubService.refresh requires async
-POST request requires async. GET request with larger than 2048 bytes not supported.
-
-However, it's better to use sync mode for rich media creative unless the creative is in friendly frames
+- Video companion requires async
+- ~pubService.refresh~ requires async
+- POST request requires async. GET request with larger than 2048 bytes not supported
+- However, it's better to use sync mode for rich media creative unless the creative is in friendly frames
 
 ** Competition Calculation
 - List of candidate line items
@@ -59797,9 +59776,9 @@ If you don't have control on HTML, you can:
       - Note :: ~ad~ request does not return anything. Use ~adx~ request
 
 ** Responsive
-Add a size to the ad unit /networkid/adunitname
-You can specify one or more sizes for a line item that uses this ad unit.
-And upload each creative and specify the size. You can have creative bigger than the size you specify.
+- Add a size to the ad unit /networkid/adunitname
+- Specify one or more sizes for a line item that uses this ad unit
+- Upload each creative and specify the size. You can have creative bigger than the size you specify
 
 #+BEGIN_SRC js
   googletag.cmd.push(function() {
@@ -59850,667 +59829,697 @@ And upload each creative and specify the size. You can have creative bigger than
 - In preview, this view macro returns empty but that's normal. It has value when the creative is served.
 - Sometimes you need to have DFP inserted the macros in third party code mode, and then use that in Custom Code.
 
-** Creative Type: Third Party Code - Video
-- Video is hosted on third party server
-- Video player size often doesn't match the ad unit size e.g. big box
+** Creative types
+*** Creative Type: Third Party Code - Video
+ - Video is hosted on third party server
+ - Video player size often doesn't match the ad unit size e.g. big box
 
-#+BEGIN_SRC html
-  <!-- JW script tag -->
-  <script src="//content.jwplatform.com/players/MEDIAID-PLAYERID.js?v=%%CACHEBUSTER%%"></script>
+ #+BEGIN_SRC html
+   <!-- JW script tag -->
+   <script src="//content.jwplatform.com/players/MEDIAID-PLAYERID.js?v=%%CACHEBUSTER%%"></script>
 
-  <!-- JW iframe tag -->
-  <div style="position:relative; padding-bottom:56.25%; overflow:hidden;"><iframe src="https://cdn.jwplayer.com/players/MEDIAID-PLAYERID.html?v=%%CACHEBUSTER%%" width="100%" height="100%" frameborder="0" scrolling="auto" allowfullscreen style="position:absolute;"></iframe></div>
+   <!-- JW iframe tag -->
+   <div style="position:relative; padding-bottom:56.25%; overflow:hidden;"><iframe src="https://cdn.jwplayer.com/players/MEDIAID-PLAYERID.html?v=%%CACHEBUSTER%%" width="100%" height="100%" frameborder="0" scrolling="auto" allowfullscreen style="position:absolute;"></iframe></div>
 
-  <!-- Viewbix -->
-  <iframe width="300" height="250" 
-  src="http://www.viewbix.com/frame/1234-567-890?w=300&h=250&ord=%%CACHEBUSTER%%" 
-  frameborder="0" scrolling="no" allowTransparency="true"></iframe>
-#+END_SRC
+   <!-- Viewbix -->
+   <iframe width="300" height="250" 
+   src="http://www.viewbix.com/frame/1234-567-890?w=300&h=250&ord=%%CACHEBUSTER%%" 
+   frameborder="0" scrolling="no" allowTransparency="true"></iframe>
+ #+END_SRC
 
-** Creative Type: HTML5
-Upload zip file or single html file
+*** Creative Type: HTML5
+ Upload zip file or single html file
 
-** Creative Type: DoubleClick Tag, DCM Tag
-DCM, previously known as DFA (for advertisers), is DoubleClick Campaign Manager, part of the DoubleClick Marketing Solutions.
+*** Creative Type: DoubleClick Tag, DCM Tag
+ DCM, previously known as DFA (for advertisers), is DoubleClick Campaign Manager, part of the DoubleClick Marketing Solutions.
 
-[[https://support.google.com/dcm/partner/answer/2826636][DCM placement tags]]
+ [[https://support.google.com/dcm/partner/answer/2826636][DCM placement tags]]
 
-Always use Internal redirect tag for DFP. Sometimes this tag is not given by agency, you will need to convert it to this type.
-Ins tag is recommended for ad servers other than DFP because it has active view capability.
+ Always use Internal redirect tag for DFP. Sometimes this tag is not given by agency, you will need to convert it to this type.
+ Ins tag is recommended for ad servers other than DFP because it has active view capability.
 
-ddm/jump tag (redirect to final destination) has to be loaded with ddm/ad tag.
+ ddm/jump tag (redirect to final destination) has to be loaded with ddm/ad tag.
 
-Other tags like ddm/trackimp, ddm/trackclk, ddm/clk don't have to be loaded with ddm/ad tag.
+ Other tags like ddm/trackimp, ddm/trackclk, ddm/clk don't have to be loaded with ddm/ad tag.
 
-*** Standard tags (ddm/jump, ddm/ad)
-#+BEGIN_EXAMPLE
-  <A HREF="https://ad.doubleclick.net/ddm/jump/Nxxxx.site-keyname/Byyyyyyy.Pzzzz;sz=widthxheight;kw=[keyword];ord=[timestamp]?">
+**** Standard tags (ddm/jump, ddm/ad)
+ #+BEGIN_EXAMPLE
+   <A HREF="https://ad.doubleclick.net/ddm/jump/Nxxxx.site-keyname/Byyyyyyy.Pzzzz;sz=widthxheight;kw=[keyword];ord=[timestamp]?">
    
-  <IMG SRC="https://ad.doubleclick.net/ddm/ad/Nxxxx.site-keyname/Byyyyyyy.Pzzzz;sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I?" BORDER=0 WIDTH=X HEIGHT=Y ALT="Click Here"></A>
-#+END_EXAMPLE
+   <IMG SRC="https://ad.doubleclick.net/ddm/ad/Nxxxx.site-keyname/Byyyyyyy.Pzzzz;sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I?" BORDER=0 WIDTH=X HEIGHT=Y ALT="Click Here"></A>
+ #+END_EXAMPLE
 
-Nxxx: DCM account id
-Byyyy: DCM campaign ID
-.Pzzzz: DCM placement ID
-dc_lat=N: key-value pair for mobile app to pass if the user has enabled "Limit Ad Tracking"
-dc_rdid=Czzz: key-value pair for mobile app to pass resettable device identifiers in the form of IDFA for iOS or advertising ID (AdID) for Android
-tag_for_child_directed_treatment=I: key-value pair for mobile app to pass info about if a request may come from a user under the age of 13
+ Nxxx: DCM account id
+ Byyyy: DCM campaign ID
+ .Pzzzz: DCM placement ID
+ dc_lat=N: key-value pair for mobile app to pass if the user has enabled "Limit Ad Tracking"
+ dc_rdid=Czzz: key-value pair for mobile app to pass resettable device identifiers in the form of IDFA for iOS or advertising ID (AdID) for Android
+ tag_for_child_directed_treatment=I: key-value pair for mobile app to pass info about if a request may come from a user under the age of 13
 
-*** iframe/javascript tags  (ddm/adi, ddm/adj)
-#+BEGIN_SRC html
-  <IFRAME SRC=""https://ad.doubleclick.net/ddm/adi/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" WIDTH=300 HEIGHT=250 MARGINWIDTH=0 MARGINHEIGHT=0 HSPACE=0 VSPACE=0 FRAMEBORDER=0 SCROLLING=no BORDERCOLOR='#000000'>
-    <SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;abr=!ie;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
-    </SCRIPT>
-    <NOSCRIPT>
-      <A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp]?"">
-	<IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789/B10762433.143897886;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
-    </NOSCRIPT>
-  </IFRAME>
-#+END_SRC
+**** iframe/javascript tags  (ddm/adi, ddm/adj)
+ #+BEGIN_SRC html
+   <IFRAME SRC=""https://ad.doubleclick.net/ddm/adi/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" WIDTH=300 HEIGHT=250 MARGINWIDTH=0 MARGINHEIGHT=0 HSPACE=0 VSPACE=0 FRAMEBORDER=0 SCROLLING=no BORDERCOLOR='#000000'>
+     <SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;abr=!ie;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
+     </SCRIPT>
+     <NOSCRIPT>
+       <A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp]?"">
+	 <IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789/B10762433.143897886;abr=!ie4;abr=!ie5;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
+     </NOSCRIPT>
+   </IFRAME>
+ #+END_SRC
 
-*** javascript (ddm/adj)
-#+BEGIN_EXAMPLE
-  <SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
-  </SCRIPT>
-  <NOSCRIPT>
-  <A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp]?"">
-  <IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
-  </NOSCRIPT>
-#+END_EXAMPLE
+**** javascript (ddm/adj)
+ #+BEGIN_EXAMPLE
+   <SCRIPT language='JavaScript1.1' SRC=""https://ad.doubleclick.net/ddm/adj/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"">
+   </SCRIPT>
+   <NOSCRIPT>
+   <A HREF=""https://ad.doubleclick.net/ddm/jump/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp]?"">
+   <IMG SRC=""https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=300x250;ord=[timestamp];dc_lat=;dc_rdid=;tag_for_child_directed_treatment=?"" BORDER=0 WIDTH=300 HEIGHT=250 ALT=""Advertisement""></A>
+   </NOSCRIPT>
+ #+END_EXAMPLE
 
-*** Pre-fetch tags (ddm/pfadx)
-#+BEGIN_EXAMPLE
-  # VAST 2.0
-  https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml
+**** Pre-fetch tags (ddm/pfadx)
+ #+BEGIN_EXAMPLE
+   # VAST 2.0
+   https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml
 
-  # VAST 3.0
-  https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml;dc_vast=3
+   # VAST 3.0
+   https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml;dc_vast=3
 
-  # VAST 4.0
-  https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml;dc_vast=4
-#+END_EXAMPLE
+   # VAST 4.0
+   https://ad.doubleclick.net/ddm/pfadx/Nxxxx.site-keyname/Byyyyyyy;kw=[keyword]; sz=widthxheight;ord=[timestamp];dc_lat=N;dc_rdid=Czzzz;tag_for_child_directed_treatment=I;dcmt=text/xml;dc_vast=4
+ #+END_EXAMPLE
 
-*** Click tracker (ddm/clk)
-#+BEGIN_EXAMPLE
-  https://ad.doubleclick.net/ddm/clk/[ad ID];[placement ID];[verifier]?[click-through URL]
-#+END_EXAMPLE
+**** Click tracker (ddm/clk)
+ #+BEGIN_EXAMPLE
+   https://ad.doubleclick.net/ddm/clk/[ad ID];[placement ID];[verifier]?[click-through URL]
+ #+END_EXAMPLE
 
-*** Internal redirect tag
-https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=320x548
+**** Internal redirect tag
+ https://ad.doubleclick.net/ddm/ad/N1234.123456yoursite.com/B1234567.123456789;sz=320x548
 
-#+BEGIN_EXAMPLE
-  # Image URL
-  https://ad.doubleclick.net/ddm/ad/Nxxxx.site-keyname/Byyyyyyy.n;sz=widthxheight;dc_expa=URL
+ #+BEGIN_EXAMPLE
+   # Image URL
+   https://ad.doubleclick.net/ddm/ad/Nxxxx.site-keyname/Byyyyyyy.n;sz=widthxheight;dc_expa=URL
 
-  # Click-through URL
-  https://ad.doubleclick.net/ddm/jump/Nxxxx.site-keyname/Byyyyyyy.n;sz=widthxheight
-#+END_EXAMPLE
+   # Click-through URL
+   https://ad.doubleclick.net/ddm/jump/Nxxxx.site-keyname/Byyyyyyy.n;sz=widthxheight
+ #+END_EXAMPLE
 
-dc_expa: Ping an encoded URL in order to track real-time expansions of rich media display expanding creatives.
+ dc_expa: Ping an encoded URL in order to track real-time expansions of rich media display expanding creatives.
 
-Grab the attribute data-dcm-placement value from either iframe or Ins tag and also the size
-#+BEGIN_EXAMPLE
-  https://ad.doubleclick.net/ddm/ad/[data-dcm-placement];sz=widthxheight
-#+END_EXAMPLE
+ Grab the attribute data-dcm-placement value from either iframe or Ins tag and also the size
+ #+BEGIN_EXAMPLE
+   https://ad.doubleclick.net/ddm/ad/[data-dcm-placement];sz=widthxheight
+ #+END_EXAMPLE
 
-*** Ins tag
-In DFP, always use internal redirect tag. May also deploy DCM tag as a custom creative by adding DFP macros. [[https://support.google.com/dfp_premium/answer/1656861?hl%3Den&ref_topic%3D28160][Instructions]]
+**** Ins tag
+ In DFP, always use internal redirect tag. May also deploy DCM tag as a custom creative by adding DFP macros. [[https://support.google.com/dfp_premium/answer/1656861?hl%3Den&ref_topic%3D28160][Instructions]]
 
-#+BEGIN_EXAMPLE
-  Iframe
-  <ins class='dcmads' style='display:inline-block;width:300px;height:250px'
-      data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
-      data-dcm-rendering-mode='script'
-      data-dcm-https-only
-      data-dcm-resettable-device-id=''
-      data-dcm-app-id=''>
-    <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-  </ins>
+ #+BEGIN_EXAMPLE
+   Iframe
+   <ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+       data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
+       data-dcm-rendering-mode='script'
+       data-dcm-https-only
+       data-dcm-resettable-device-id=''
+       data-dcm-app-id=''>
+     <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+   </ins>
 
-  Javascript
-  <ins class='dcmads' style='display:inline-block;width:300px;height:250px'
-      data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
-      data-dcm-rendering-mode='script'
-      data-dcm-https-only
-      data-dcm-resettable-device-id=''
-      data-dcm-app-id=''>
-    <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-  </ins>
-#+END_EXAMPLE
+   Javascript
+   <ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+       data-dcm-placement='N1234.123456yoursite.com/B1234567.123456789'
+       data-dcm-rendering-mode='script'
+       data-dcm-https-only
+       data-dcm-resettable-device-id=''
+       data-dcm-app-id=''>
+     <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+   </ins>
+ #+END_EXAMPLE
 
-** Wallpaper, Site Skin
-On DFP
-#+BEGIN_SRC html
-  <script type="text/javascript">
-    (function() {
-    'use strict';
-    parent.jQuery(document).ready(function() {
-    var backgroundAdwidth = 480; // TODO: find out the background image width
-    var backgroundAdheight = 860; // TODO: find out the background image height
-    var backgroundAdLeftImage = '%%VIEW_URL_UNESC%%%%FILE:JPG1%%';
-    var backgroundAdRightImage = '%%VIEW_URL_UNESC%%%%FILE:JPG2%%';
-    var backgroundAdLinkLeft = '%%CLICK_URL_UNESC%%%%DEST_URL%%';
-    var backgroundAdLinkRight = backgroundAdLinkLeft;
-    var backgroundAdMainContentDivWidth = 996;
-    var backgroundAdExtraTopSpace = 100; // Set to 0 if you don't want extra top space
-    parent.jQuery('body').prepend('<div id="background-ad-right"></div><div id="background-ad-left"></div>');
-    var jsLink1 = "<script type='text/javascript'>" +
-      "var backgroundAdwidth = " + backgroundAdwidth + ";" +
-      "var backgroundAdheight = " + backgroundAdheight +";" +
-      "var backgroundAdMainContentDivWidth = " + backgroundAdMainContentDivWidth + ";" +
-      "var backgroundAdExtraTopSpace = " + backgroundAdExtraTopSpace + ";" +
-      "</scr" + "ipt>";
-  parent.jQuery('head').append(jsLink1);
-  var jsLink2 = parent.jQuery("<script type='text/javascript' src='http://yours.com/js/backgroundskinad.js'>");
-    parent.jQuery('head').append(jsLink2);
-    var cssLink = parent.jQuery("<link rel='stylesheet' href='http://yours.com/css/media-w1200-w992.css'>");
-    parent.jQuery('head').append(cssLink);
-    parent.jQuery('#background-ad-left, #background-ad-right').css({
-    'position': 'fixed',
-    'z-index': '1',
-    'cursor': 'pointer',
-    'height': backgroundAdheight
-    });
-    parent.jQuery('#background-ad-left').css({
-    'background': 'url(' + backgroundAdLeftImage + ') no-repeat right top'
-    });
-    parent.jQuery('#background-ad-right').css({
-    'background': 'url(' + backgroundAdRightImage + ') no-repeat left top'
-    });
-    parent.jQuery('#background-ad-left').click(function() {
-    window.open(backgroundAdLinkLeft);
-    });
-    parent.jQuery('#background-ad-right').click(function() {
-    window.open(backgroundAdLinkRight);
-    });
-    });
-    })();
-  </script>
-#+END_SRC
-
-On Web Server - backgroundskinad.js
+** Examples
+*** Dynamic load new containers
 #+BEGIN_SRC js
-  jQuery(document).ready(function($) {
-    var backgroundAdMainContentDivWidth = 996;
-    var backgroundAdExtraTopSpace = 0;
-    function setBackgroundAdPositionX() {
-      var adPosition = new Array();
-      var viewportWidth = $(window).width();
-      var leftSpace = (viewportWidth-backgroundAdMainContentDivWidth)/2;
-      if (leftSpace > 0) {
-	if (leftSpace <= backgroundAdwidth) {
-	  adPosition['adWidthRealtime'] = leftSpace;
-	  adPosition['adHorizontalSpacing'] = 0;
-	} else {
-	  adPosition['adWidthRealtime'] = backgroundAdwidth;
-	  adPosition['adHorizontalSpacing'] = leftSpace - backgroundAdwidth;
-	}
-      }
-      else {
-	adPosition['adWidthRealtime'] = 0;
-	adPosition['adHorizontalSpacing'] = 0;
-      }
-
-      $('#background-ad-left').css({
-	'left': adPosition['adHorizontalSpacing'],
-	'width': adPosition['adWidthRealtime']
-      });
-
-      $('#background-ad-right').css({
-	'right': adPosition['adHorizontalSpacing'],
-	'width': adPosition['adWidthRealtime']
-      });
-      return adPosition;
-    }
-
-    function setBackgroundAdPositionY() {
-      var topspace = backgroundAdExtraTopSpace - $(window).scrollTop();
-      // nav HTML element height
-      if ($('#newcom-header-masthead').length && $('#newcom-header-masthead').height()) {
-	topspace += $('#newcom-header-masthead').height();
-      }
-      topspace = (topspace > 0) ? topspace : 0;
-      $('#background-ad-left, #background-ad-right').css('top', topspace + 'px');
-    }
-
-    function wallpaperFixViewport() {
-      $('.cover-slogan, .cover-logo').addClass("m-clear");
-      $('#newcom-single-left').toggleClass("col-md-9 col-md-8");
-      $('#newcom-single-right').toggleClass("col-md-3 col-md-4");
-      $('#newcom-page-news-middle').toggleClass("col-md-7 col-md-6");
-      $('#newcom-page-news-right').toggleClass("col-md-3 col-md-4");
-      $('#newcom-taxonomy-videoseries-middle').toggleClass("col-md-7 col-md-6");
-      $('#newcom-content-sidebar-page-left').toggleClass("col-md-9 col-md-8");
-      $('#newcom-content-sidebar-page-right').toggleClass("col-md-3 col-md-4");
-      $('#newcom-page-middle').toggleClass("col-md-7 col-md-6");
-      $('#newcom-page-right').toggleClass("col-md-3 col-md-4");
-      $('#newcom-search-middle').toggleClass("col-md-7 col-md-6");
-      $('#newcom-search-right').toggleClass("col-md-3 col-md-4");
-
-      $('div.row div.col-md-8 div.row div.col-md-3 div.well').toggleClass("pa-sm");
-
-      $('#div-gpt-placeholder-1, #div-gpt-placeholder-2').toggleClass('center-block');
-
-      // Enlarge column of a parent if it has a child
-      var videoDiv = $( "#yourspecialchild" ).parent( ".the-content" ).parent( ".col-md-9" );
-      if (videoDiv.length) {
-	videoDiv.toggleClass("col-md-9 col-md-12");
-	// Move
-	var titleDiv = videoDiv.prev();
-	if (titleDiv.length) {
-	  titleDiv.toggleClass("col-md-3 col-md-12");
-	  titleDiv.insertAfter(videoDiv);
-	}
-      }
-
-    }
-
-    function setBackgroundMobile() {
-      if (typeof backgroundAdMobile300x90 !== 'undefined' && backgroundAdMobile300x90) {
-	var ad = jQuery('<a href="' + backgroundAdLink +'" target="_blank"></a>').append(jQuery('<img />',{
-	  width: 300,
-	  height: 90,
-	  src: backgroundAdMobile300x90
-	}));
-
-	if (jQuery("#background-ad-mobile").length) {
-	  jQuery("#background-ad-mobile").append(ad);
-	}
-	else {
-	  var subpages = '#wrapper div.row div.col-md-8';
-	  if (jQuery(subpages).length) {
-	    var html = jQuery('<div id="background-ad-mobile"></div>').append(ad);
-	    jQuery(subpages).first().prepend(html);
-	  }
-	}
-      }
-    }
-
-    $(window).load(function() {
-      wallpaperFixViewport();
-  //  setBackgroundMobile();
-      setBackgroundAdPositionX();
-      setBackgroundAdPositionY();
-      $("#div-gpt-placeholder-0-oop").hide();
-    });
-
-    $(window).resize(function() {setBackgroundAdPositionX();});
-    $(window).scroll(function() {setBackgroundAdPositionY();});
-
-  });
-#+END_SRC
-
-media-w1200-w992.css
-#+BEGIN_SRC css
-  @media (min-width:1200px){
-    .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12{
-      width:auto;
-      float:none;
-    }
-
-    .container{
-      width:990px
-    }
-
-    .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11{
-      float:left
-    }
-
-    .col-md-12{
-      width:100%
-    }
-
-    .col-md-11{
-      width:91.66666666666666%
-    }
-
-    .col-md-10{
-      width:83.33333333333334%
-    }
-
-    .col-md-9{
-      width:75%
-    }
-
-    .col-md-8{
-      width:66.66666666666666%
-    }
-
-    .col-md-7{
-      width:58.333333333333336%
-    }
-
-    .col-md-6{
-      width:50%
-    }
-
-    .col-md-5{
-      width:41.66666666666667%
-    }
-
-    .col-md-4{
-      width:33.33333333333333%
-    }
-
-    .col-md-3{
-      width:25%
-    }
-
-    .col-md-2{
-      width:16.666666666666664%
-    }
-
-    .col-md-1{
-      width:8.333333333333332%
-    }
-
-    .col-md-pull-12{
-      right:100%
-    }
-
-    .col-md-pull-11{
-      right:91.66666666666666%
-    }
-
-    .col-md-pull-10{
-      right:83.33333333333334%
-    }
-
-    .col-md-pull-9{
-      right:75%
-    }
-
-    .col-md-pull-8{
-      right:66.66666666666666%
-    }
-
-    .col-md-pull-7{
-      right:58.333333333333336%
-    }
-
-    .col-md-pull-6{
-      right:50%
-    }
-
-    .col-md-pull-5{
-      right:41.66666666666667%
-    }
-
-    .col-md-pull-4{
-      right:33.33333333333333%
-    }
-
-    .col-md-pull-3{
-      right:25%
-    }
-
-    .col-md-pull-2{
-      right:16.666666666666664%
-    }
-
-    .col-md-pull-1{
-      right:8.333333333333332%
-    }
-
-    .col-md-push-12{
-      left:100%
-    }
-
-    .col-md-push-11{
-      left:91.66666666666666%
-    }
-
-    .col-md-push-10{
-      left:83.33333333333334%
-    }
-
-    .col-md-push-9{
-      left:75%
-    }
-
-    .col-md-push-8{
-      left:66.66666666666666%
-    }
-
-    .col-md-push-7{
-      left:58.333333333333336%
-    }
-
-    .col-md-push-6{
-      left:50%
-    }
-
-    .col-md-push-5{
-      left:41.66666666666667%
-    }
-
-    .col-md-push-4{
-      left:33.33333333333333%
-    }
-
-    .col-md-push-3{
-      left:25%
-    }
-
-    .col-md-push-2{
-      left:16.666666666666664%
-    }
-
-    .col-md-push-1{
-      left:8.333333333333332%
-    }
-
-    .col-md-offset-12{
-      margin-left:100%
-    }
-
-    .col-md-offset-11{
-      margin-left:91.66666666666666%
-    }
-
-    .col-md-offset-10{
-      margin-left:83.33333333333334%
-    }
-
-    .col-md-offset-9{
-      margin-left:75%
-    }
-
-    .col-md-offset-8{
-      margin-left:66.66666666666666%
-    }
-
-    .col-md-offset-7{
-      margin-left:58.333333333333336%
-    }
-
-    .col-md-offset-6{
-      margin-left:50%
-    }
-
-    .col-md-offset-5{
-      margin-left:41.66666666666667%
-    }
-
-    .col-md-offset-4{
-      margin-left:33.33333333333333%
-    }
-
-    .col-md-offset-3{
-      margin-left:25%
-    }
-
-    .col-md-offset-2{
-      margin-left:16.666666666666664%
-    }
-
-    .col-md-offset-1{
-      margin-left:8.333333333333332%
-    }
-  }
-#+END_SRC
-
-** Interstitial Ad
-Load third party code into 1x1 floating ad unit. Insert DFP macro as a third party code first. Refer to dfp:third party code
-
-#+BEGIN_SRC js
-  // Outside of the div
-  var dfpSlots = {}; // non single request mode
-
   googletag.cmd.push(function() {
-   // non single request mode
-   dfpSlots.floating = googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads()); 
+      var n = 'div-id-my-slot-name'; // slot name
+      var s = googletag.defineSlot('/95740733/float_comp_1', [300, 250], n).addService(googletag.pubads()); // slot
+      googletag.display(n);
+    
+      // if previously in header, before enableServices, disableInitialLoad() is used
+    
+      // googletag.pubads().disableInitialLoad();
+      // googletag.enableServices();
 
-   // single request mode
-   // googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads());
+      // then follow first .display and refresh
+      // googletag.pubads().refresh([s]);
 
-   googletag.pubads().addEventListener('slotRenderEnded', function (event) {
-     if (event.slot.getAdUnitPath() === '/123456/floating') {
-       document.getElementById('interstitial').style.display = 'none';
+  };
+#+END_SRC
+
+*** Wallpaper, Site Skin
+ On DFP
+ #+BEGIN_SRC html
+   <script type="text/javascript">
+     (function() {
+     'use strict';
+     parent.jQuery(document).ready(function() {
+     var backgroundAdwidth = 480; // TODO: find out the background image width
+     var backgroundAdheight = 860; // TODO: find out the background image height
+     var backgroundAdLeftImage = '%%VIEW_URL_UNESC%%%%FILE:JPG1%%';
+     var backgroundAdRightImage = '%%VIEW_URL_UNESC%%%%FILE:JPG2%%';
+     var backgroundAdLinkLeft = '%%CLICK_URL_UNESC%%%%DEST_URL%%';
+     var backgroundAdLinkRight = backgroundAdLinkLeft;
+     var backgroundAdMainContentDivWidth = 996;
+     var backgroundAdExtraTopSpace = 100; // Set to 0 if you don't want extra top space
+     parent.jQuery('body').prepend('<div id="background-ad-right"></div><div id="background-ad-left"></div>');
+     var jsLink1 = "<script type='text/javascript'>" +
+       "var backgroundAdwidth = " + backgroundAdwidth + ";" +
+       "var backgroundAdheight = " + backgroundAdheight +";" +
+       "var backgroundAdMainContentDivWidth = " + backgroundAdMainContentDivWidth + ";" +
+       "var backgroundAdExtraTopSpace = " + backgroundAdExtraTopSpace + ";" +
+       "</scr" + "ipt>";
+   parent.jQuery('head').append(jsLink1);
+   var jsLink2 = parent.jQuery("<script type='text/javascript' src='http://yours.com/js/backgroundskinad.js'>");
+     parent.jQuery('head').append(jsLink2);
+     var cssLink = parent.jQuery("<link rel='stylesheet' href='http://yours.com/css/media-w1200-w992.css'>");
+     parent.jQuery('head').append(cssLink);
+     parent.jQuery('#background-ad-left, #background-ad-right').css({
+     'position': 'fixed',
+     'z-index': '1',
+     'cursor': 'pointer',
+     'height': backgroundAdheight
+     });
+     parent.jQuery('#background-ad-left').css({
+     'background': 'url(' + backgroundAdLeftImage + ') no-repeat right top'
+     });
+     parent.jQuery('#background-ad-right').css({
+     'background': 'url(' + backgroundAdRightImage + ') no-repeat left top'
+     });
+     parent.jQuery('#background-ad-left').click(function() {
+     window.open(backgroundAdLinkLeft);
+     });
+     parent.jQuery('#background-ad-right').click(function() {
+     window.open(backgroundAdLinkRight);
+     });
+     });
+     })();
+   </script>
+ #+END_SRC
+
+ On Web Server - backgroundskinad.js
+ #+BEGIN_SRC js
+   jQuery(document).ready(function($) {
+     var backgroundAdMainContentDivWidth = 996;
+     var backgroundAdExtraTopSpace = 0;
+     function setBackgroundAdPositionX() {
+       var adPosition = new Array();
+       var viewportWidth = $(window).width();
+       var leftSpace = (viewportWidth-backgroundAdMainContentDivWidth)/2;
+       if (leftSpace > 0) {
+	 if (leftSpace <= backgroundAdwidth) {
+	   adPosition['adWidthRealtime'] = leftSpace;
+	   adPosition['adHorizontalSpacing'] = 0;
+	 } else {
+	   adPosition['adWidthRealtime'] = backgroundAdwidth;
+	   adPosition['adHorizontalSpacing'] = leftSpace - backgroundAdwidth;
+	 }
+       }
+       else {
+	 adPosition['adWidthRealtime'] = 0;
+	 adPosition['adHorizontalSpacing'] = 0;
+       }
+
+       $('#background-ad-left').css({
+	 'left': adPosition['adHorizontalSpacing'],
+	 'width': adPosition['adWidthRealtime']
+       });
+
+       $('#background-ad-right').css({
+	 'right': adPosition['adHorizontalSpacing'],
+	 'width': adPosition['adWidthRealtime']
+       });
+       return adPosition;
      }
+
+     function setBackgroundAdPositionY() {
+       var topspace = backgroundAdExtraTopSpace - $(window).scrollTop();
+       // nav HTML element height
+       if ($('#newcom-header-masthead').length && $('#newcom-header-masthead').height()) {
+	 topspace += $('#newcom-header-masthead').height();
+       }
+       topspace = (topspace > 0) ? topspace : 0;
+       $('#background-ad-left, #background-ad-right').css('top', topspace + 'px');
+     }
+
+     function wallpaperFixViewport() {
+       $('.cover-slogan, .cover-logo').addClass("m-clear");
+       $('#newcom-single-left').toggleClass("col-md-9 col-md-8");
+       $('#newcom-single-right').toggleClass("col-md-3 col-md-4");
+       $('#newcom-page-news-middle').toggleClass("col-md-7 col-md-6");
+       $('#newcom-page-news-right').toggleClass("col-md-3 col-md-4");
+       $('#newcom-taxonomy-videoseries-middle').toggleClass("col-md-7 col-md-6");
+       $('#newcom-content-sidebar-page-left').toggleClass("col-md-9 col-md-8");
+       $('#newcom-content-sidebar-page-right').toggleClass("col-md-3 col-md-4");
+       $('#newcom-page-middle').toggleClass("col-md-7 col-md-6");
+       $('#newcom-page-right').toggleClass("col-md-3 col-md-4");
+       $('#newcom-search-middle').toggleClass("col-md-7 col-md-6");
+       $('#newcom-search-right').toggleClass("col-md-3 col-md-4");
+
+       $('div.row div.col-md-8 div.row div.col-md-3 div.well').toggleClass("pa-sm");
+
+       $('#div-gpt-placeholder-1, #div-gpt-placeholder-2').toggleClass('center-block');
+
+       // Enlarge column of a parent if it has a child
+       var videoDiv = $( "#yourspecialchild" ).parent( ".the-content" ).parent( ".col-md-9" );
+       if (videoDiv.length) {
+	 videoDiv.toggleClass("col-md-9 col-md-12");
+	 // Move
+	 var titleDiv = videoDiv.prev();
+	 if (titleDiv.length) {
+	   titleDiv.toggleClass("col-md-3 col-md-12");
+	   titleDiv.insertAfter(videoDiv);
+	 }
+       }
+
+     }
+
+     function setBackgroundMobile() {
+       if (typeof backgroundAdMobile300x90 !== 'undefined' && backgroundAdMobile300x90) {
+	 var ad = jQuery('<a href="' + backgroundAdLink +'" target="_blank"></a>').append(jQuery('<img />',{
+	   width: 300,
+	   height: 90,
+	   src: backgroundAdMobile300x90
+	 }));
+
+	 if (jQuery("#background-ad-mobile").length) {
+	   jQuery("#background-ad-mobile").append(ad);
+	 }
+	 else {
+	   var subpages = '#wrapper div.row div.col-md-8';
+	   if (jQuery(subpages).length) {
+	     var html = jQuery('<div id="background-ad-mobile"></div>').append(ad);
+	     jQuery(subpages).first().prepend(html);
+	   }
+	 }
+       }
+     }
+
+     $(window).load(function() {
+       wallpaperFixViewport();
+   //  setBackgroundMobile();
+       setBackgroundAdPositionX();
+       setBackgroundAdPositionY();
+       $("#div-gpt-placeholder-0-oop").hide();
+     });
+
+     $(window).resize(function() {setBackgroundAdPositionX();});
+     $(window).scroll(function() {setBackgroundAdPositionY();});
+
    });
+ #+END_SRC
 
-  });
-#+END_SRC
+ media-w1200-w992.css
+ #+BEGIN_SRC css
+   @media (min-width:1200px){
+     .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12{
+       width:auto;
+       float:none;
+     }
 
-#+BEGIN_SRC html
-  <div id="interstitial">
-    <script type="text/javascript">
-      googletag.cmd.push(function() { googletag.display("interstitial"); });
-    </script>
-  </div>
-#+END_SRC
+     .container{
+       width:990px
+     }
 
-- On DFP, Custom Code :: postMessage to website to create jQuery UI dialog and later receives a message to create content inside the iframe
-#+BEGIN_SRC html
-  <script type="text/javascript">
-    (function() {
-      'use strict';
-      var temp = '%%VIEW_URL_UNESC%%'; // Custom Code requires VIEW_URL_UNESC or VIEW_URL_ESC macro..
-      window.onload = function() {
-	function receiveMessage(e) {
-	  if (e.data == 'load_interstitial_ad') {
-	    var html = '<div style="width:640px;height:480px;">' +
-		'<script src="insert third party code"'+'>'+'</'+'script>'+
-		'<noscript>' +
-		'<a href="insert_third_party_code" target="_blank"><img src="insert_third_party_code" border="0" width="640" height="480"></a>'+
-		'</noscript>'+ 
-	      '</div>';
-	    document.write(html);
-	  }
-	}
-	window.addEventListener('message', receiveMessage);
-	var sendData = {action:"dfp_load_interstitial_ad", width:"640", height:"480"};
-	parent.postMessage(sendData,'*');
-      }
-    })();
-  </script>
-#+END_SRC
+     .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11{
+       float:left
+     }
 
-- On website :: once received message from iframe, load internal script and only load it once
-#+BEGIN_SRC js
-  var dfpInterstitial = {};
-  dfpInterstitial.loadCount=0;
+     .col-md-12{
+       width:100%
+     }
 
-  function newcomReceiveMessage(e) {
-    if (e.data == 'dfp_load_interstitial_ad' && dfpInterstitial.loadCount == 0) {
-      dfpInterstitial.loadCount++;
-      dfpInterstitial.width =e.data.width;
-      dfpInterstitial.height =e.data.height;
-      // var cssLink = parent.jQuery("<link rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-lightness/jquery-ui.css'>");
-      // jQuery('head').append(cssLink);
+     .col-md-11{
+       width:91.66666666666666%
+     }
 
-      ['//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-darkness/jquery-ui.css',
-       '/wp-content/themes/xxx/css/interstitial.css'].forEach(function (src) {
-	var _css = document.createElement("link");
-	_css.rel = 'stylesheet';
-	_css.type = 'text/css';
-	_css.href = src;
-	document.head.appendChild(_css);
-      });
+     .col-md-10{
+       width:83.33333333333334%
+     }
 
-      [ 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js','/sites/all/themes/abc/js/interstitial.js'
-      ].forEach(function(src) {
-	var script = document.createElement('script');
-	script.src = src;
-	script.async = false;
-	document.head.appendChild(script);
-      });
-      // var jsLink = jQuery("<script type='text/javascript' src='http://yourwebsite.io/interstitial.js'>");
-      // jQuery('head').append(jsLink);
-    }
-  }
-  window.addEventListener('message', newcomReceiveMessage, false);
-#+END_SRC
+     .col-md-9{
+       width:75%
+     }
 
-On website, interstitial.js :: make ad unit div as a dialog using jQuery UI. jqueryui:dialog
-jQuery UI Dialog runs script inside the container twice. The script is setup in DFP which only posts or receives message.
-Even though the same message is posted twice but the dfpInterstitialCount ensures this javascript only runs once.
-#+BEGIN_SRC js
-  jQuery(function(){
-    var targetDialog = '#interstitial'; // TODO
-    var iframeId = jQuery(targetDialog).find('iframe').get(0).id;
-    var adWidth = dfpInterstitial.width;
-    var adHeight = dfpInterstitial.height;
+     .col-md-8{
+       width:66.66666666666666%
+     }
 
-    jQuery(targetDialog).dialog({
-      width: 'auto',
-      height: 'auto',
-      resizable: false,
-      draggable: false,
-      closeOnEscape: true,
-      modal: true,
-      create: function (event, ui) {
-	jQuery("#ui-dialog-title-dialog").hide();
-	jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
-	jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
-	jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
+     .col-md-7{
+       width:58.333333333333336%
+     }
 
-	// In Single Request Mode (initial load), every time .display() is called, the div will refilled with new ad
-	// In Non-Single-request mode (after initial load), you need to do .refresh(). 
-	if (typeof dfpSlots !== "undefined" && typeof dfpSlots.floating !== "undefined") {
-	  googletag.cmd.push(function() {
-	    googletag.pubads().refresh([dfpSlots.floating]);
-	  });
-	}
-	jQuery(targetDialog).find('iframe').width(adWidth);
-	jQuery(targetDialog).find('iframe').height(adHeight);
-      },
-      open: function() {
-	jQuery('.ui-widget-overlay').addClass('custom-overlay');
-	jQuery(this).closest(".ui-dialog")
-	  .find(".ui-dialog-titlebar-close")
-	  .removeClass("ui-dialog-titlebar-close")
-	  .html("<span class='ui-button-icon-primary ui-icon ui-icon-closethick'></span>");
-	jQuery(".ui-dialog-titlebar button").css({"border":"none"});
-	jQuery('.ui-widget-overlay').bind('click',function(){
-	  jQuery(targetDialog).dialog('close');
-	})
-      },
-      close: function() {
-	jQuery('.ui-widget-overlay').removeClass('custom-overlay');
-      }
-    });
+     .col-md-6{
+       width:50%
+     }
 
-    setTimeout(function () {
-      jQuery(targetDialog).show();
-      var receiver = document.getElementById(iframeId).contentWindow;
-      receiver.postMessage('load_interstitial_ad', '*');
-    }, 3000);
+     .col-md-5{
+       width:41.66666666666667%
+     }
 
-  });
-#+END_SRC
+     .col-md-4{
+       width:33.33333333333333%
+     }
 
-/wp-content/themes/xxx/css/interstitial.css
-#+BEGIN_SRC css
-  .ui-widget-overlay.custom-overlay {
-    background-color: black;
-    background-image: none;
-    opacity: 0.7;
-  }
-#+END_SRC
+     .col-md-3{
+       width:25%
+     }
 
-Interstitial as JW Player is a bit complicated. [[https://gist.github.com/levonlee/1e162c34af377d04364295d027a33c96][Gist]]
+     .col-md-2{
+       width:16.666666666666664%
+     }
+
+     .col-md-1{
+       width:8.333333333333332%
+     }
+
+     .col-md-pull-12{
+       right:100%
+     }
+
+     .col-md-pull-11{
+       right:91.66666666666666%
+     }
+
+     .col-md-pull-10{
+       right:83.33333333333334%
+     }
+
+     .col-md-pull-9{
+       right:75%
+     }
+
+     .col-md-pull-8{
+       right:66.66666666666666%
+     }
+
+     .col-md-pull-7{
+       right:58.333333333333336%
+     }
+
+     .col-md-pull-6{
+       right:50%
+     }
+
+     .col-md-pull-5{
+       right:41.66666666666667%
+     }
+
+     .col-md-pull-4{
+       right:33.33333333333333%
+     }
+
+     .col-md-pull-3{
+       right:25%
+     }
+
+     .col-md-pull-2{
+       right:16.666666666666664%
+     }
+
+     .col-md-pull-1{
+       right:8.333333333333332%
+     }
+
+     .col-md-push-12{
+       left:100%
+     }
+
+     .col-md-push-11{
+       left:91.66666666666666%
+     }
+
+     .col-md-push-10{
+       left:83.33333333333334%
+     }
+
+     .col-md-push-9{
+       left:75%
+     }
+
+     .col-md-push-8{
+       left:66.66666666666666%
+     }
+
+     .col-md-push-7{
+       left:58.333333333333336%
+     }
+
+     .col-md-push-6{
+       left:50%
+     }
+
+     .col-md-push-5{
+       left:41.66666666666667%
+     }
+
+     .col-md-push-4{
+       left:33.33333333333333%
+     }
+
+     .col-md-push-3{
+       left:25%
+     }
+
+     .col-md-push-2{
+       left:16.666666666666664%
+     }
+
+     .col-md-push-1{
+       left:8.333333333333332%
+     }
+
+     .col-md-offset-12{
+       margin-left:100%
+     }
+
+     .col-md-offset-11{
+       margin-left:91.66666666666666%
+     }
+
+     .col-md-offset-10{
+       margin-left:83.33333333333334%
+     }
+
+     .col-md-offset-9{
+       margin-left:75%
+     }
+
+     .col-md-offset-8{
+       margin-left:66.66666666666666%
+     }
+
+     .col-md-offset-7{
+       margin-left:58.333333333333336%
+     }
+
+     .col-md-offset-6{
+       margin-left:50%
+     }
+
+     .col-md-offset-5{
+       margin-left:41.66666666666667%
+     }
+
+     .col-md-offset-4{
+       margin-left:33.33333333333333%
+     }
+
+     .col-md-offset-3{
+       margin-left:25%
+     }
+
+     .col-md-offset-2{
+       margin-left:16.666666666666664%
+     }
+
+     .col-md-offset-1{
+       margin-left:8.333333333333332%
+     }
+   }
+ #+END_SRC
+
+*** Interstitial Ad
+ - Interstitial as JW Player is a bit complicated :: [[https://gist.github.com/levonlee/1e162c34af377d04364295d027a33c96][Gist]]
+ - Load third party code into 1x1 floating ad unit. Insert DFP macro as a third party code first. Refer to dfp:third party code
+ - On website
+   #+BEGIN_SRC js
+     // Outside of the div
+     var dfpSlots = {}; // non single request mode
+
+     googletag.cmd.push(function() {
+	 // non single request mode
+	 dfpSlots.floating = googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads()); 
+
+	 // single request mode
+	 // googletag.defineOutOfPageSlot('/123456/floating', 'interstitial').addService(googletag.pubads());
+
+	 googletag.pubads().addEventListener('slotRenderEnded', function (event) {
+	     if (event.slot.getAdUnitPath() === '/123456/floating') {
+		 document.getElementById('interstitial').style.display = 'none';
+	     }
+	 });
+
+	 // ...
+
+	 googletag.pubads().enableSingleRequest();
+
+	 // Disable initial load, we will use refresh() to fetch ads.
+	 // Calling this function means that display() calls just
+	 // register the slot as ready, but do not fetch ads for it.
+	 // googletag.pubads().disableInitialLoad();
+
+	 googletag.enableServices();
+    
+     });
+   #+END_SRC
+   #+BEGIN_SRC html
+     <div id="interstitial">
+       <script type="text/javascript">
+	 googletag.cmd.push(function() { googletag.display("interstitial"); });
+       </script>
+     </div>
+   #+END_SRC
+ - On DFP, Custom Creative Type
+   postMessage to website to create jQuery UI dialog and later receives a message to create content inside the iframe
+   #+BEGIN_SRC html
+     <script type="text/javascript">
+       (function() {
+	 'use strict';
+	 var temp = '%%VIEW_URL_UNESC%%'; // Custom Code requires VIEW_URL_UNESC or VIEW_URL_ESC macro..
+	 window.onload = function() {
+	   function receiveMessage(e) {
+	     if (e.data == 'load_interstitial_ad') {
+	       var html = '<div style="width:640px;height:480px;">' +
+		   '<script src="insert third party code"'+'>'+'</'+'script>'+
+		   '<noscript>' +
+		   '<a href="insert_third_party_code" target="_blank"><img src="insert_third_party_code" border="0" width="640" height="480"></a>'+
+		   '</noscript>'+ 
+		 '</div>';
+	       document.write(html);
+	     }
+	   }
+	   window.addEventListener('message', receiveMessage);
+	   var sendData = {action:"dfp_load_interstitial_ad", width:"640", height:"480"};
+	   parent.postMessage(sendData,'*');
+	 }
+       })();
+     </script>
+   #+END_SRC
+ - On website
+   Once received message from iframe, load internal script and only load it once
+   #+BEGIN_SRC js
+     var dfpInterstitial = {};
+     dfpInterstitial.loadCount=0;
+
+     function newcomReceiveMessage(e) {
+       if (e.data == 'dfp_load_interstitial_ad' && dfpInterstitial.loadCount == 0) {
+	 dfpInterstitial.loadCount++;
+	 dfpInterstitial.width =e.data.width;
+	 dfpInterstitial.height =e.data.height;
+	 // var cssLink = parent.jQuery("<link rel='stylesheet' href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-lightness/jquery-ui.css'>");
+	 // jQuery('head').append(cssLink);
+
+	 ['//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-darkness/jquery-ui.css',
+	  '/wp-content/themes/xxx/css/interstitial.css'].forEach(function (src) {
+	   var _css = document.createElement("link");
+	   _css.rel = 'stylesheet';
+	   _css.type = 'text/css';
+	   _css.href = src;
+	   document.head.appendChild(_css);
+	 });
+
+	 [ 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js','/sites/all/themes/abc/js/interstitial.js'
+	 ].forEach(function(src) {
+	   var script = document.createElement('script');
+	   script.src = src;
+	   script.async = false;
+	   document.head.appendChild(script);
+	 });
+	 // var jsLink = jQuery("<script type='text/javascript' src='http://yourwebsite.io/interstitial.js'>");
+	 // jQuery('head').append(jsLink);
+       }
+     }
+     window.addEventListener('message', newcomReceiveMessage, false);
+   #+END_SRC
+ - On website, interstitial.js
+   Make ad unit div as a dialog using jQuery UI. jqueryui:dialog
+   jQuery UI Dialog runs script inside the container twice. The script is setup in DFP which only posts or receives message
+   Even though the same message is posted twice but ~dfpInterstitialCount~ ensures this js only runs once
+   #+NAME: interstitial.js
+   #+BEGIN_SRC js
+     jQuery(function(){
+       var targetDialog = '#interstitial'; // TODO
+       var iframeId = jQuery(targetDialog).find('iframe').get(0).id;
+       var adWidth = dfpInterstitial.width;
+       var adHeight = dfpInterstitial.height;
+
+       jQuery(targetDialog).dialog({
+	 width: 'auto',
+	 height: 'auto',
+	 resizable: false,
+	 draggable: false,
+	 closeOnEscape: true,
+	 modal: true,
+	 create: function (event, ui) {
+	   jQuery("#ui-dialog-title-dialog").hide();
+	   jQuery(".ui-widget-content").css({"background-color":"transparent","background":"transparent","border":"none"});
+	   jQuery(".ui-dialog-titlebar").css({"background-color":"transparent","background":"transparent","border":"none"});
+	   jQuery(".ui-dialog-titlebar").removeClass('ui-widget-header');
+
+	   // In Single Request Mode (initial load), every time .display() is called, the div will be refilled with new ad
+	   // In Non-Single-request mode (after initial load), need to do .refresh()
+	   if (typeof dfpSlots !== "undefined" && typeof dfpSlots.floating !== "undefined") {
+	     googletag.cmd.push(function() {
+	       googletag.pubads().refresh([dfpSlots.floating]);
+	     });
+	   }
+	   jQuery(targetDialog).find('iframe').width(adWidth);
+	   jQuery(targetDialog).find('iframe').height(adHeight);
+	 },
+	 open: function() {
+	   jQuery('.ui-widget-overlay').addClass('custom-overlay');
+	   jQuery(this).closest(".ui-dialog")
+	     .find(".ui-dialog-titlebar-close")
+	     .removeClass("ui-dialog-titlebar-close")
+	     .html("<span class='ui-button-icon-primary ui-icon ui-icon-closethick'></span>");
+	   jQuery(".ui-dialog-titlebar button").css({"border":"none"});
+	   jQuery('.ui-widget-overlay').bind('click',function(){
+	     jQuery(targetDialog).dialog('close');
+	   })
+	 },
+	 close: function() {
+	   jQuery('.ui-widget-overlay').removeClass('custom-overlay');
+	 }
+       });
+
+       setTimeout(function () {
+	 jQuery(targetDialog).show();
+	 var receiver = document.getElementById(iframeId).contentWindow;
+	 receiver.postMessage('load_interstitial_ad', '*');
+       }, 3000);
+
+     });
+   #+END_SRC
+
+   #+NAME: wp-content/themes/xxx/css/interstitial.css
+   #+BEGIN_SRC css
+     .ui-widget-overlay.custom-overlay {
+       background-color: black;
+       background-image: none;
+       opacity: 0.7;
+     }
+   #+END_SRC
 
 ** Pre-roll or Linear Video Ad
 - The ad unit should have a Video (VAST) size: 640x360v
@@ -60637,20 +60646,6 @@ Situation 2
 1. Passback ad tag makes a call to DFP to serve an ad matching the specified targeting criteria
 2. DFP server returns an ad that matches the passback ad tag targeting criteria
 
-** Downloaded impression
-- Active View eligible impressions :: if creative has Active View enabled and the impression is counted with a downloaded pingback
-- Active View measurable impressions :: close to 100% of above. A fail factor may be cross-domain iframe rendering
-- Active View viewable impressions :: >= 50% area is displayed for >= 1 second. In-stream video: 50% for 2 seconds 
-- Ad server impressions :: counted after the ad is downloaded in the user's device. Doesn't require the ad content be fully loaded. Exclude from Ad Exchange and AdSense. Takes 30 mins for new ones to be recorded and displayed
-- Ad server downloaded impressions :: Discontinued. Counted after the ad has started to load on the website. Doesn't require the ad content be fully loaded
-- DFP provides a ~System Query~ called ~Downloaded Impressions~ to compare with the old impression counting
-- Also now a new metric called ~Request Type~ to divide:
-   - Goolge Publisher Tag
-   - Video Tag
-   - GPT Simple URL
-   - GPT Light
-   - Amp Ad Tag
-
 ** Anti AdBlocker
 https://gist.github.com/levonlee/da658dd8d6c91f093fc90aeca4653ae7
 
@@ -60686,6 +60681,20 @@ The request will end up in 2 places
 
 Add filter key-value contains ~a=xyz~
 - Filter out b=ijk
+
+*** Downloaded impression
+ - Active View eligible impressions :: if creative has Active View enabled and the impression is counted with a downloaded pingback
+ - Active View measurable impressions :: close to 100% of above. A fail factor may be cross-domain iframe rendering
+ - Active View viewable impressions :: >= 50% area is displayed for >= 1 second. In-stream video: 50% for 2 seconds 
+ - Ad server impressions :: counted after the ad is downloaded in the user's device. Doesn't require the ad content be fully loaded. Exclude from Ad Exchange and AdSense. Takes 30 mins for new ones to be recorded and displayed
+ - Ad server downloaded impressions :: Discontinued. Counted after the ad has started to load on the website. Doesn't require the ad content be fully loaded
+ - DFP provides a ~System Query~ called ~Downloaded Impressions~ to compare with the old impression counting
+ - Also now a new metric called ~Request Type~ to divide:
+    - Goolge Publisher Tag
+    - Video Tag
+    - GPT Simple URL
+    - GPT Light
+    - Amp Ad Tag
 
 ** Check available inventory - Forecasting
 - Works only for Priority:Standard and Priority:Sponsorship (guaranteed line items) line items
@@ -62034,6 +62043,7 @@ Tags
 **** [[https://chrome.google.com/webstore/detail/chropath/ljngjbnaijcbncmcnjfhigebomdlkcjo?hl=en][ChroPath]]
 Find XPath or CSS selector for an element. Go to DevTools
 
+**** [[https://chrome.google.com/webstore/detail/nimbus-screenshot-screen/bpconcjcammlapcogcnnelfmaeghhagj][Nimbus Screenshot & Screen Video Recorder]] <<<chrome:extension:nimbus-screenshot-screen>>>
 *** Network
 **** Filter Post Requests
 method:POST
@@ -62449,6 +62459,12 @@ The batch files are referring to bitcoin mining website..
 Ctrl+Alt+Del > Task Manager to stop Update_Windows.exe, then delete Update_Windows.exe, debug.exe, debug.bat, dll.bat
 
 *** PowerSehll
+**** Active directory
+#+BEGIN_SRC sh
+  # see if a user `matt` is locked out
+  Get-ADUser matt -Properties * | Select-Object LockedOut
+#+END_SRC
+
 **** Get-Command - gcm
 Get manual of a command e.g. Select-String
 #+BEGIN_EXAMPLE
@@ -63345,13 +63361,16 @@ Click Download to download the latest FFmpeg.exe
 Under Sources, hit Refresh until you see the right Audio source.
 Then go back to UI, Capture > Screen recording
 
+*** OBS Studio linux:app:obs-studio
+*** chrome:extension:nimbus-screenshot-screen
+*** ffmpeg
 Convert a gif to mp4
 #+BEGIN_SRC sh
   ffmpeg.exe -i animated.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" video.mp4
 #+END_SRC
 
-- -pix_fmt yuv420p :: MP4 store pixels in different formats and this is the max compatible across all browsers.
-- -vf :: MP4 videos using H.264 need to have a dimensions that are divisible by 2.
+- -pix_fmt yuv420p :: MP4 store pixels in different formats and this is the max compatible across all browsers
+- -vf :: MP4 videos using H.264 need to have a dimensions that are divisible by 2
 
 #+BEGIN_SRC html
   <img src="video.gif" alt="" width="400" height="300" />
@@ -63362,7 +63381,6 @@ Convert a gif to mp4
   </video>
 #+END_SRC
 
-*** OBS Studio linux:app:obs-studio
 ** Sketch Diagrams
 - https://bubbl.us/
 - Mock up website sitemap :: https://writemaps.com
