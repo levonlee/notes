@@ -8680,6 +8680,131 @@ Event based
  #+END_SRC
 
 *** Option API <<<wp:api:option>>>
+*** Dependency API <<<wp:api:dependency>>>
+**** Files
+~wp-includes/~
+- class.wp-dependencies.php
+- class-wp-dependency.php
+- class.wp-scripts.php
+- functions.wp-scripts.php
+- class.wp-styles.php
+- functions.wp-styles.php
+
+**** wp_localize_script <<<wp:f:wp_localize_script>>>
+ - Must be called after the script has been registered using ~wp_register_script()~ or ~wp_enqueue_script()~
+ - Use to define variables as an object
+
+ #+BEGIN_SRC php
+   // register a script that may be loaded using wp_enqueue_script()
+   // wp_register_script( 'unique_handle', 'path/to/myscript.js' );
+   // later
+   // wp_enqueue_script( 'unique_handle' );
+
+   // or you enque directly wp:f:wp_enqueue_script
+   wp_enqueue_script( 'unique_handle', get_theme_file_uri( '/path/to/myscript.js' ) );
+
+   // Pass vars in $translation_array to file path/to/myscript.js (registered using handle `unique_handle`)
+   $translation_array = array(
+     'some_string' => 'hello';
+     'a_value' => '10'
+   );
+   wp_localize_script( 'unique_handle', 'object_name', $translation_array );
+   wp_enqueue_script( 'unique_handle' );
+ #+END_SRC
+
+In the enqueued javascript file ~path/to/myscript.js~
+ #+BEGIN_SRC js
+   console.log( object_name.some_string ); // default all values are strings
+   parseInt( object_name.some_int, 10 ); // pass parameter as int
+ #+END_SRC
+
+ If you just want to define pass PHP variables and don't want to create empty js files
+ #+BEGIN_SRC php
+   wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+ #+END_SRC
+
+ #+BEGIN_SRC php
+   wp_enqueue_script( 'twentyseventeen-skip-link-focus-fix', get_theme_file_uri( '/assets/js/skip-link-focus-fix.js' ), array(), '1.0', true );
+   wp_localize_script( 'twentyseventeen-skip-link-focus-fix', 'twentyseventeenScreenReaderText', $twentyseventeen_l10n );
+ #+END_SRC
+
+**** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
+ - Used in wp:action:wp_enqueue_scripts
+ - Use wp:filter:style_loader_src
+
+ #+BEGIN_SRC php
+   wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
+
+   wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
+   wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
+ #+END_SRC
+
+ When a script is added with dependency on jQuery, jQuery is auto loaded by wp. Change jQuery
+ #+BEGIN_SRC php
+   wp_deregister_script('jquery');
+   wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js', array(), null, true);
+   wp_enqueue_script('my-custom-script', get_template_directory_uri() .'/js/my-custom-script.js', array('jquery'), null, true);
+ #+END_SRC
+
+ If there's script depends on jquery and it's loaded in header, even though jquery is set to load in footer, jquery will be loaded in header.
+**** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
+ - Used in wp:action:wp_enqueue_scripts
+ - Use wp:filter:script_loader_src
+ -  Syntax :: *~wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )~*
+ - $deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on
+   - Default value: array()
+ - $ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added
+   - Default value: false
+ - $media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'
+   - Default value: 'all'
+
+ #+BEGIN_SRC php
+   function wpb_add_google_fonts() {
+	   wp_enqueue_style( 'wpb-google-fonts', 'http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,700,300', false ); 
+   }
+ 
+   add_action( 'wp_enqueue_scripts', 'wpb_add_google_fonts' );
+ #+END_SRC
+
+ Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
+
+ #+BEGIN_SRC php
+   // Load the main stylesheet
+	   wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
+
+   /**
+    ,* Load our IE-only stylesheet for all versions of IE:
+    ,* <!--[if IE]> ... <![endif]-->
+    ,*/
+   wp_enqueue_style( 'my-theme-ie', get_stylesheet_directory_uri() . "/css/ie.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-ie', 'conditional', 'IE' );
+
+   /**
+    ,* Load our IE version-specific stylesheet:
+    ,* <!--[if IE 7]> ... <![endif]-->
+    ,*/
+   wp_enqueue_style( 'my-theme-ie7', get_stylesheet_directory_uri() . "/css/ie7.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-ie7', 'conditional', 'IE 7' );
+
+   /**
+    ,* Load our IE specific stylesheet for a range of older versions:
+    ,* <!--[if lt IE 9]> ... <![endif]-->
+    ,* <!--[if lte IE 8]> ... <![endif]-->
+    ,* NOTE: You can use the 'less than' or the 'less than or equal to' syntax here interchangeably.
+    ,*/
+   wp_enqueue_style( 'my-theme-old-ie', get_stylesheet_directory_uri() . "/css/old-ie.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-old-ie', 'conditional', 'lt IE 9' );
+
+   /**
+    ,* Load our IE specific stylesheet for a range of newer versions:
+    ,* <!--[if gt IE 8]> ... <![endif]-->
+    ,* <!--[if gte IE 9]> ... <![endif]-->
+    ,* NOTE: You can use the 'greater than' or the 'greater than or equal to' syntax here interchangeably.
+    ,*/
+   wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-ie.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
+ #+END_SRC
+
 *** add_meta_box <<<wp:f:add_meta_box>>>
 Used in
 - wp:action:add_meta_boxes
@@ -9821,121 +9946,6 @@ Avoid to use it. To alter main query parameters before it's made, use wp:action:
 #+END_SRC
 
 *** update_post_meta <<<wp:f:update_post_meta>>>
-*** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
-- Used in wp:action:wp_enqueue_scripts
-- Use wp:filter:script_loader_src
--  Syntax :: *~wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )~*
-- $deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on
-  - Default value: array()
-- $ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added
-  - Default value: false
-- $media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'
-  - Default value: 'all'
-
-#+BEGIN_SRC php
-  function wpb_add_google_fonts() {
-	  wp_enqueue_style( 'wpb-google-fonts', 'http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,700,300', false ); 
-  }
- 
-  add_action( 'wp_enqueue_scripts', 'wpb_add_google_fonts' );
-#+END_SRC
-
-Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
-
-#+BEGIN_SRC php
-  // Load the main stylesheet
-	  wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
-
-  /**
-   ,* Load our IE-only stylesheet for all versions of IE:
-   ,* <!--[if IE]> ... <![endif]-->
-   ,*/
-  wp_enqueue_style( 'my-theme-ie', get_stylesheet_directory_uri() . "/css/ie.css", array( 'my-theme' ) );
-  wp_style_add_data( 'my-theme-ie', 'conditional', 'IE' );
-
-  /**
-   ,* Load our IE version-specific stylesheet:
-   ,* <!--[if IE 7]> ... <![endif]-->
-   ,*/
-  wp_enqueue_style( 'my-theme-ie7', get_stylesheet_directory_uri() . "/css/ie7.css", array( 'my-theme' ) );
-  wp_style_add_data( 'my-theme-ie7', 'conditional', 'IE 7' );
-
-  /**
-   ,* Load our IE specific stylesheet for a range of older versions:
-   ,* <!--[if lt IE 9]> ... <![endif]-->
-   ,* <!--[if lte IE 8]> ... <![endif]-->
-   ,* NOTE: You can use the 'less than' or the 'less than or equal to' syntax here interchangeably.
-   ,*/
-  wp_enqueue_style( 'my-theme-old-ie', get_stylesheet_directory_uri() . "/css/old-ie.css", array( 'my-theme' ) );
-  wp_style_add_data( 'my-theme-old-ie', 'conditional', 'lt IE 9' );
-
-  /**
-   ,* Load our IE specific stylesheet for a range of newer versions:
-   ,* <!--[if gt IE 8]> ... <![endif]-->
-   ,* <!--[if gte IE 9]> ... <![endif]-->
-   ,* NOTE: You can use the 'greater than' or the 'greater than or equal to' syntax here interchangeably.
-   ,*/
-  wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-ie.css", array( 'my-theme' ) );
-  wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
-#+END_SRC
-
-*** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
-- Used in wp:action:wp_enqueue_scripts
-- Use wp:filter:style_loader_src
-
-#+BEGIN_SRC php
-  wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
-
-  wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
-  wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
-#+END_SRC
-
-When a script is added with dependency on jQuery, jQuery is auto loaded by wp. Change jQuery
-#+BEGIN_SRC php
-  wp_deregister_script('jquery');
-  wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js', array(), null, true);
-  wp_enqueue_script('my-custom-script', get_template_directory_uri() .'/js/my-custom-script.js', array('jquery'), null, true);
-#+END_SRC
-
-If there's script depends on jquery and it's loaded in header, even though jquery is set to load in footer, jquery will be loaded in header.
-
-*** wp_localize_script <<<wp:f:wp_localize_script>>>
-- Must be called after the script has been registered using ~wp_register_script()~ or ~wp_enqueue_script()~
-- Use to define variables as an object
-
-#+BEGIN_SRC php
-  // register a script that may be loaded using wp_enqueue_script()
-  // wp_register_script( 'unique_handle', 'path/to/myscript.js' );
-  // later
-  // wp_enqueue_script( 'unique_handle' );
-
-  // or you enque directly wp:f:wp_enqueue_script
-  wp_enqueue_script( 'unique_handle', get_theme_file_uri( '/path/to/myscript.js' ) );
-
-  // Pass vars in $translation_array to file path/to/myscript.js (registered using handle `unique_handle`)
-  $translation_array = array(
-    'some_string' => 'hello';
-    'a_value' => '10'
-  );
-  wp_localize_script( 'unique_handle', 'object_name', $translation_array );
-  wp_enqueue_script( 'unique_handle' );
-#+END_SRC
-
-Then you can use it in the enqueued javascript file ~path/to/myscript.js~
-#+BEGIN_SRC js
-  console.log( object_name.some_string ); // default all values are strings
-  parseInt( object_name.some_int, 10 ); // pass parameter as int
-#+END_SRC
-
-If you just want to define pass PHP variables and don't want to create empty js files
-#+BEGIN_EXAMPLE
-  wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-  wp_enqueue_script( 'twentyseventeen-skip-link-focus-fix', get_theme_file_uri( '/assets/js/skip-link-focus-fix.js' ), array(), '1.0', true );
-  wp_localize_script( 'twentyseventeen-skip-link-focus-fix', 'twentyseventeenScreenReaderText', $twentyseventeen_l10n );
-#+END_EXAMPLE
 
 ** URL, Current URL, and slug <<<wp:current url>>>
 Current URL on your website
@@ -16499,12 +16509,20 @@ index.php
 	 - require_wp_db()
 	    - wp-db.php
 	 - wp-includes/default-filters.php
+	 - L10n library
+	    - wp-includes/l10n.php
+	    - wp-includes/class-wp-locale.php
+	    - wp-includes/class-wp-locale-switcher.php
 	 - wp-includes/capabilities.php (User capabilites API)
-	 - wp-includes/query.php :: wp:api:query 
+	 - wp-includes/query.php :: wp:api:query
 	 - wp-includes/general-template.php
+	 - wp-includes/script-loader.php :: wp:api:dependency
 	 - Load mu-plugins
+	    - wp:action:mu_plugin_loaded
+	    - wp:action:muplugins_loaded
 	 - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
 	 - Load active plugins
+	    - wp:action:plugin_loaded
 	 - Load pluggable functions :: wp:pluggable
 	 - ~do_action( 'plugins_loaded' )~ :: wp:action:plugins_loaded
 	 - Initialize objects
