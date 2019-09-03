@@ -28556,6 +28556,303 @@ Refer to bootstrap:responsive helpers
    });
  #+END_SRC
 
+** TypeScript
+- Playground :: https://www.typescriptlang.org/play/index.html
+- Basics
+  #+BEGIN_SRC sh
+    npm install -g typescript
+    # compile a file to greeter.js
+    tsc greeter.ts
+  #+END_SRC
+  #+BEGIN_SRC js
+    function greeter(person: string) {
+	return "Hello, " + person;
+    }
+
+    let user = "Jane User";
+
+    document.body.textContent = greeter(user);
+  #+END_SRC
+  #+BEGIN_SRC js
+  interface Person {
+      firstName: string;
+      lastName: string;
+  }
+
+  function greeter(person: Person) {
+      return "Hello, " + person.firstName + " " + person.lastName;
+  }
+
+  let user = { firstName: "Jane", lastName: "User" };
+
+  document.body.textContent = greeter(user);
+  #+END_SRC
+  #+BEGIN_SRC js
+    class Student {
+	fullName: string;
+	constructor(public firstName: string, public middleInitial: string, public lastName: string) {
+	    this.fullName = firstName + " " + middleInitial + " " + lastName;
+	}
+    }
+
+    interface Person {
+	firstName: string;
+	lastName: string;
+    }
+
+    function greeter(person: Person) {
+	return "Hello, " + person.firstName + " " + person.lastName;
+    }
+
+    let user = new Student("Jane", "M.", "User");
+
+    document.body.textContent = greeter(user);
+  #+END_SRC
+
+*** Gulp
+#+BEGIN_SRC sh
+  npm init
+  npm install -g gulp-cli
+  npm i -D typescript gulp@4.0.0 gulp-typescript
+
+  # add files
+  gulp
+  node dist/main.js
+#+END_SRC
+
+#+NAME ./gulpfile.js
+#+BEGIN_SRC js
+  var gulp = require('gulp');
+  var ts = require('gulp-typescript');
+  var tsProject = ts.createProject('tsconfig.json');
+
+  gulp.task('default', function () {
+      return tsProject.src()
+	  .pipe(tsProject())
+	  .js.pipe(gulp.dest('dist'));
+  });
+#+END_SRC
+
+#+NAME src/greet.ts
+#+BEGIN_SRC js
+  export function sayHello(name: string) {
+      return `Hello from ${name}`;
+  }
+#+END_SRC
+
+#+NAME src/main.ts
+#+BEGIN_SRC js
+  import { sayHello } from './greet';
+
+  console.log(sayHello('TypeScript'));
+#+END_SRC
+
+#+NAME ./tsconfig.json
+#+BEGIN_SRC json
+  {
+      "files": [
+	  "src/main.ts",
+	  "src/greet.ts"
+      ],
+      "compilerOptions": {
+	  "noImplicitAny": true,
+	  "target": "es5"
+      }
+  }
+#+END_SRC
+
+- With Browserify :: ~npm i -D browserify tsify vinyl-source-stream~
+   - tsify is a Browserify plugin :: gives access to TypeScript compiler
+   - viny-source-stream :: adapt the file output of Browserify to Gulp format called vinyl
+   - Example
+     #+NAME ./src/index.html
+     #+BEGIN_SRC html
+       <!DOCTYPE html>
+       <html>
+	   <head>
+	       <meta charset="UTF-8" />
+	       <title>Hello World!</title>
+	   </head>
+	   <body>
+	       <p id="greeting">Loading ...</p>
+	       <script src="bundle.js"></script>
+	   </body>
+       </html>
+     #+END_SRC
+
+     #+NAME ./src/main.ts
+     #+BEGIN_SRC js
+       import { sayHello } from './greet';
+
+       function showHello(divName: string, name: string) {
+	   const elt = document.getElementById(divName);
+	   elt.innerText = sayHello(name);
+       }
+
+       showHello('greeting', 'TypeScript');
+     #+END_SRC
+
+     #+NAME gulpfile.js
+     #+BEGIN_SRC js
+       var gulp = require('gulp');
+       var browserify = require('browserify');
+       var source = require('vinyl-source-stream');
+       var tsify = require('tsify');
+       var paths = {
+	   pages: ['src/*.html']
+       };
+
+       gulp.task('copy-html', function () {
+	   return gulp.src(paths.pages)
+	       .pipe(gulp.dest('dist'));
+       });
+
+       gulp.task('default', gulp.series(gulp.parallel('copy-html'), function () {
+	   return browserify({
+	       basedir: '.',
+	       debug: true,
+	       entries: ['src/main.ts'],
+	       cache: {},
+	       packageCache: {}
+	   })
+	   .plugin(tsify)
+	   .bundle()
+	   .pipe(source('bundle.js'))
+	   .pipe(gulp.dest('dist'));
+       }));
+     #+END_SRC
+- With Watchify
+  ~npm i -D watchify fancy-log~
+  #+NAME ./gulpfile.js
+  #+BEGIN_SRC js
+    var gulp = require('gulp');
+    var browserify = require('browserify');
+    var source = require('vinyl-source-stream');
+    var watchify = require('watchify');
+    var tsify = require('tsify');
+    var fancy_log = require('fancy-log');
+    var paths = {
+	pages: ['src/*.html']
+    };
+
+    var watchedBrowserify = watchify(browserify({
+	basedir: '.',
+	debug: true,
+	entries: ['src/main.ts'],
+	cache: {},
+	packageCache: {}
+    }).plugin(tsify));
+
+    gulp.task('copy-html', function () {
+	return gulp.src(paths.pages)
+	    .pipe(gulp.dest('dist'));
+    });
+
+    function bundle() {
+	return watchedBrowserify
+	    .bundle()
+	    .on('error', fancy_log)
+	    .pipe(source('bundle.js'))
+	    .pipe(gulp.dest('dist'));
+    }
+
+    gulp.task('default', gulp.series(gulp.parallel('copy-html'), bundle));
+    watchedBrowserify.on('update', bundle);
+    watchedBrowserify.on('log', fancy_log);
+  #+END_SRC
+- With Uglify
+  ~npm i -D gulp-uglify vinyl-buffer gulp-sourcemaps~
+  #+NAME ./gulpfile.js
+  #+BEGIN_SRC js
+    var gulp = require('gulp');
+    var browserify = require('browserify');
+    var source = require('vinyl-source-stream');
+    var tsify = require('tsify');
+    var uglify = require('gulp-uglify');
+    var sourcemaps = require('gulp-sourcemaps');
+    var buffer = require('vinyl-buffer');
+    var paths = {
+	pages: ['src/*.html']
+    };
+
+    gulp.task('copy-html', function () {
+	return gulp.src(paths.pages)
+	    .pipe(gulp.dest('dist'));
+    });
+
+    gulp.task('default', gulp.series(gulp.parallel('copy-html'), function () {
+	return browserify({
+	    basedir: '.',
+	    debug: true,
+	    entries: ['src/main.ts'],
+	    cache: {},
+	    packageCache: {}
+	})
+	.plugin(tsify)
+	.bundle()
+	.pipe(source('bundle.js'))
+	.pipe(buffer()) // new
+	.pipe(sourcemaps.init({loadMaps: true})) // new
+	.pipe(uglify()) // new
+	.pipe(sourcemaps.write('./')) // new
+	.pipe(gulp.dest('dist'));
+    }));
+  #+END_SRC
+- With Babel
+  ~npm i -D babelify@8 babel-core babel-preset-es2015 vinyl-buffer gulp-sourcemaps~
+  Change TypeScript to output ES2015 as target. Later Babel will produce ES5 from it.
+  #+NAME tsconfig.json
+  #+BEGIN_SRC json
+    {
+	"files": [
+	    "src/main.ts"
+	],
+	"compilerOptions": {
+	    "noImplicitAny": true,
+	    "target": "es2015"
+	}
+    }
+  #+END_SRC
+  
+  #+NAME ./gulpfile.js
+  #+BEGIN_SRC js
+    var gulp = require('gulp');
+    var browserify = require('browserify');
+    var source = require('vinyl-source-stream');
+    var tsify = require('tsify');
+    var sourcemaps = require('gulp-sourcemaps');
+    var buffer = require('vinyl-buffer');
+    var paths = {
+	pages: ['src/*.html']
+    };
+
+    gulp.task('copy-html', function () {
+	return gulp.src(paths.pages)
+	    .pipe(gulp.dest('dist'));
+    });
+
+    gulp.task('default', gulp.series(gulp.parallel('copy-html'), function () {
+	return browserify({
+	    basedir: '.',
+	    debug: true,
+	    entries: ['src/main.ts'],
+	    cache: {},
+	    packageCache: {}
+	})
+	.plugin(tsify) // output is files of es2015 standard
+	.transform('babelify', {
+	    presets: ['es2015'],
+	    extensions: ['.ts']
+	}) // new. Modify Babelify setting: add .ts extension for file processing
+	.bundle()
+	.pipe(source('bundle.js'))
+	.pipe(buffer()) // new
+	.pipe(sourcemaps.init({loadMaps: true})) // new
+	.pipe(sourcemaps.write('./')) // new
+	.pipe(gulp.dest('dist'));
+    }));
+  #+END_SRC
+
 ** Use Cases
 *** Click to anchor
 Changes the hash in URL and then go to the element
@@ -28844,7 +29141,7 @@ https://gist.github.com/Craga89/2829457
       }
     })
   #+END_SRC
-- Vue.component registers a component globally. Make a component available only in the scope of another instance/component by registering it with ~components~ instance option
+- ~Vue.component~ registers a component globally. Make a component available only in the scope of another instance/component by registering it with ~components~ instance option
   #+BEGIN_SRC js
     var Child = {
       template: '<div>A custom component!</div>'
@@ -28857,7 +29154,7 @@ https://gist.github.com/Craga89/2829457
       }
     })
    #+END_SRC
-- Component name better to have all lowercase and must contain a hyphen
+- Component name :: all lowercase and must contain a hyphen
    - Although these can be used in string templates
      #+BEGIN_SRC js
       components: {
@@ -29091,17 +29388,19 @@ https://gist.github.com/Craga89/2829457
  vue:event:component
 
 **** DOM template
- In non-string templates, camelCased prop names need to use their kebab-case equivalents
- Refer to see what vue:string template is.
- #+BEGIN_EXAMPLE
-   Vue.component('child', {
-     // camelCase in JavaScript
-     props: ['myMessage'],
-     template: '<span>{{ myMessage }}</span>'
-   })
-   <!-- kebab-case in HTML -->
-   <child my-message="hello!"></child>
- #+END_EXAMPLE
+- In non-string templates, camelCased prop names need to use their kebab-case equivalents
+- Refer to see what vue:string template is
+  #+BEGIN_SRC js
+    Vue.component('child', {
+      // camelCase in JavaScript
+      props: ['myMessage'],
+      template: '<span>{{ myMessage }}</span>'
+    })
+  #+END_SRC
+  #+BEGIN_SRC html
+    <!-- kebab-case in HTML -->
+    <child my-message="hello!"></child>
+  #+END_SRC
 
 **** Except class and style :: parent attributes overwrite child component
  Child component bs-date-input has this template
@@ -29270,32 +29569,34 @@ https://gist.github.com/Craga89/2829457
  #+END_EXAMPLE
 
 **** Dynamic component, v-bind:is, <component>, <keep-alive>
- #+BEGIN_EXAMPLE
-   var vm = new Vue({
-     el: '#example',
-     data: {
-       currentView: 'home'
-     },
-     components: {
-       home: { /* ... */ },
-       posts: { /* ... */ },
-       archive: { /* ... */ }
-     }
-   })
+#+BEGIN_SRC js
+  var vm = new Vue({
+    el: '#example',
+    data: {
+      currentView: 'home'
+    },
+    components: {
+      home: { /* ... */ },
+      posts: { /* ... */ },
+      archive: { /* ... */ }
+    }
+  })
+#+END_SRC
+#+BEGIN_SRC html
+  <component v-bind:is="currentView">
+    <!-- component changes when vm.currentView changes! -->
+  </component>
+#+END_SRC
 
-   <component v-bind:is="currentView">
-     <!-- component changes when vm.currentView changes! -->
-   </component>
- #+END_EXAMPLE
 
- If <transition> is used, wrap <keep-alive> inside <transition>
- #+BEGIN_EXAMPLE
-   <keep-alive>
-     <component :is="currentView">
-       <!-- inactive components will be cached! -->
-     </component>
-   </keep-alive>
- #+END_EXAMPLE
+If ~<transition>~ is used, wrap ~<keep-alive>~ inside ~<transition>~
+#+BEGIN_SRC html
+  <keep-alive>
+    <component :is="currentView">
+      <!-- inactive components will be cached! -->
+    </component>
+  </keep-alive>
+#+END_SRC
 
 **** Get Child Component One Time
  $refs are only populated after the component has been rendered and it is not reactive.
@@ -29420,49 +29721,51 @@ https://gist.github.com/Craga89/2829457
    }
  #+END_EXAMPLE
 
-**** inline-template
- It makes the inner content as the component's template. Don't use it.
- #+BEGIN_EXAMPLE
-   <my-component inline-template>
-     <div>
-       <p>These are compiled as the component's own template.</p>
-       <p>Not parent's transclusion content.</p>
-     </div>
-   </my-component>
- #+END_EXAMPLE
+**** inline-template <<<vue:inline-template>>>
+It makes the inner content as the component's template. Don't use it
+#+BEGIN_SRC html
+  <my-component inline-template>
+    <div>
+      <p>These are compiled as the component's own template.</p>
+      <p>Not parent's transclusion content.</p>
+    </div>
+  </my-component>
+#+END_SRC
 
-**** X-Templates
- Don't use.
- #+BEGIN_EXAMPLE
-   <script type="text/x-template" id="hello-world-template">
-     <p>Hello hello hello</p>
-   </script>
-   Vue.component('hello-world', {
-     template: '#hello-world-template'
-   })
- #+END_EXAMPLE
-
-*** Template Syntax
-**** String template vs DOM template
-String template <<<vue:string template>>>
+**** X-Templates <<<vue:x-template>>>
+Don't use
+#+BEGIN_SRC html
+  <script type="text/x-template" id="hello-world-template">
+    <p>Hello hello hello</p>
+  </script>
+#+END_SRC
 #+BEGIN_SRC js
-  Vue.component('my-component', {
-    template: '<p>This is a String template, it iss passed as a string to the component.</p>'
+  Vue.component('hello-world', {
+    template: '#hello-world-template'
   })
 #+END_SRC
 
-DOM template
-#+BEGIN_SRC html
-  <body>
-    <div id="app"> <!-- your App is runnning in this div --->
-      <my-component></my-component>
-    </div>
+*** Template Syntax
+**** String template vs DOM template
+- String template <<<vue:string template>>>
+  #+BEGIN_SRC js
+    Vue.component('my-component', {
+      template: '<p>This is a String template, it iss passed as a string to the component.</p>'
+    })
+  #+END_SRC
+- DOM template
+  #+BEGIN_SRC html
+    <body>
+      <div id="app"> <!-- your App is runnning in this div --->
+	<my-component></my-component>
+      </div>
 
-    <template id="template-for-my-component">
-      {{ message }}
-    </template>
-  </body>
-#+END_SRC
+      <template id="template-for-my-component">
+	{{ message }}
+      </template>
+    </body>
+  #+END_SRC
+- vue:x-template
 
 **** ~v-once~ on text or element
 one-time interpolations and remain cached
@@ -29820,7 +30123,7 @@ Array
    </div>
  #+END_EXAMPLE
 
-***** v-for on <template>
+***** v-for on ~<template>~
  #+BEGIN_SRC html
  <ul>
    <template v-for="item in items">
@@ -31368,7 +31671,7 @@ Use render function (reactive)
 
 *** Mixins
 **** Local vs Global
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC js
    // define a mixin object
    var myMixin = {
      created: function () {
@@ -31385,25 +31688,25 @@ Use render function (reactive)
      mixins: [myMixin]
    })
    var component = new Component() // => "hello from mixin!"
- #+END_EXAMPLE
+ #+END_SRC
 
- Global mixin
- #+BEGIN_EXAMPLE
-   // inject a handler for `myOption` custom option
-   Vue.mixin({
-     created: function () {
-       var myOption = this.$options.myOption
-       if (myOption) {
-         console.log(myOption)
-       }
-     }
-   })
-   new Vue({
-     myOption: 'hello!'
-   })
-   // => "hello!"
- #+END_EXAMPLE
- Use global mixins sparsely and carefully, because it affects every single Vue instance created, including third party components. In most cases, you should only use it for custom option handling like demonstrated in the example above. It’s also a good idea to ship them as Plugins to avoid duplicate application.
+- Global mixin
+   - Use global mixins sparsely and carefully, because it affects every single Vue instance created, including third party components. In most cases, you should only use it for custom option handling like demonstrated in the example above. It’s also a good idea to ship them as Plugins to avoid duplicate application
+     #+BEGIN_SRC js
+       // inject a handler for `myOption` custom option
+       Vue.mixin({
+	 created: function () {
+	   var myOption = this.$options.myOption
+	   if (myOption) {
+	     console.log(myOption)
+	   }
+	 }
+       })
+       new Vue({
+	 myOption: 'hello!'
+       })
+       // => "hello!"
+     #+END_SRC
 
 **** Merge option with hook functions 
  mixin will be called before the component's own hooks.
@@ -31584,7 +31887,7 @@ Use render function (reactive)
  - Add some Vue instance methods by attaching them to Vue.prototype.
  - A library that provides an API of its own, while at the same time injecting some combination of the above. e.g. vue-router
 
- Official Vue.js plugins such as vue-router automatically calls Vue.use() if vue is available as a global variable.
+ Official Vue.js plugins such as ~vue-router~ automatically calls ~Vue.use()~ if vue is available as a global variable.
 
  #+BEGIN_EXAMPLE
    MyPlugin.install = function (Vue, options) {
@@ -33267,16 +33570,120 @@ Use render function (reactive)
    </script>
  #+END_EXAMPLE
 
+*** ~vue-cli~ <<<vue:vue-cli>>>
+**** Basics
+#+BEGIN_SRC sh
+  # If vue-cli is previously installed, uninstall it first
+  # npm install -g vue-cli
+  # npm uninstall vue-cli -g
+  # or
+  # yarn global remove vue-cli
+
+  # @vue/cli requires NPM 8.11
+  npm install -g @vue/cli
+  # yarn global add @vue/cli
+
+  # check version. Should be 3.x
+  vue --version
+
+  # create a project in a new dir
+  vue create hello-world
+
+  # create a project inside a dir
+  vue create .
+
+  # Default preset: babel and ESLint
+  # Manual select features for preset. Then a JSON file `~/.vuerc` is created to store the preset
+
+  vue create --help
+
+  vue ui
+
+  # install a Vue CLI plugin. This resolves @vue/eslint to the full pkg name @vue/cli-plugin-eslint, install it from npm and invokes its generator
+  vue adde eslint
+
+  # same as above
+  vue add cli-plugin-eslint
+#+END_SRC
+
+**** Services
+- ~@vue/cli-service~ is installed :: ~vue-cli-service~
+- ~scripts~ in ~package.json~
+   - serve :: ~vue-cli-service serve~ 
+
+**** Typescript
+- Manual select preset :: Babel, TypeScript, CSS Pre-processors, Linter / Formatter
+- Use class-style component syntax :: Yes
+  Classic Vue Syntax vs Class-Style Component Syntax
+  ~data~ is a function vs ~data.message~ is a property
+  Computed properties become getter
+  #+NAME Classic Vue Syntax
+  #+BEGIN_SRC js
+    import Vue, { VNode } from 'vue'
+
+    export const HelloComponent = Vue.extend({
+	data () {
+	    return {
+		message: 'Hello',
+	    }
+	},
+	methods: {
+	    greet (): string {
+		return this.message + ' world';
+	    }
+	},
+	computed: {
+	    greeting(): string {
+		return this.greet() + '!';
+	    }
+	},
+	render (createElement): VNode {
+	    return createElement('div', this.greeting);
+	}
+    });
+  #+END_SRC
+
+  #+NAME Class-Style Component Syntax
+  #+BEGIN_SRC js
+    import Vue from 'vue'
+    import Component from 'vue-class-component'
+
+    @Component({
+	template: '<div></div>'
+    })
+    export default class HelloComponent extends Vue {
+	message: string = 'Hello'
+	greet(): string {
+	    return this.message + ' world';
+	}
+	get greeting() {
+	    return this.greet() + '!';
+	}
+    }
+  #+END_SRC
+- Use Babel alongside TypeScript for auto-detected polyfills? Yes (default)
+- Pick a CSS pre-processer (PostCSS, Autoprefixer and CSS Modules are supported by default) :: Sass/SCSS (with node-sass)
+- Pick a linter / formatter config :: TSLint
+- Pick additional lint features :: Lint on save
+- Where do you prefer placing config for Babel, PostCSS, ESLint, etc.? :: In dedicated config files. Want to separate them instead of cluttering ~package.json~
+   - tslint.json
+   - tsconfig.json
+   - postcss.config.js
+   - babel.config.js
+- Directories
+   - public
+   - src
+      - main.ts :: runs first
+
 *** Dev - Webpack Template
 **** Basics
- Install node module vue-cli
- #+BEGIN_EXAMPLE
-   npm install -g vue-cli
+- Install node module vue:vue-cli
+ #+BEGIN_SRC sh
    vue init webpack my-project
    cd my-project
    npm install
    npm run dev
- #+END_EXAMPLE
+ #+END_SRC
 
  Other template can be used
 
@@ -38100,10 +38507,10 @@ console.log(process.argv);
 
 ** Modules, Packages, Frameworks
 *** Get version
-- ~npm list~ for locally installed packages
-- ~npm list -g~ for globally installed packages
+- ~npm list~ :: locally installed packages
+- ~npm list -g~ :: globally installed packages
 - ~npm list -g | grep gulp~ :: to see if a package is installed globally
-- ~npm list -g --depth=0~ global installed packages at first level
+- ~npm list -g --depth=0~ :: global installed packages at first level
 - ~npm list express~
 - ~npm ls -depth 0~ :: including devDependencies
 - ~npm ls -dev~ :: devDependencies only
@@ -38116,15 +38523,10 @@ console.log(process.argv);
   - beta :: optional
   - future :: optional
   - next :: usually is set to a beta version to be the next version
-
-Backup and remove the node_modules and run ~npm install mjml@next~
-
+- Backup and remove the node_modules and run ~npm install mjml@next~
 - Update npm :: ~sudo npm i -g npm~
-
-- ~npm i -D~ :: ~npm install --save-dev gulp-imagemin~
-
-Npm website for a package gulp-sourcemaps
-https://www.npmjs.com/package/gulp-sourcemaps
+- ~npm i -D~ :: equivalent to ~npm install --save-dev gulp-imagemin~
+- Npm website for a package ~gulp-sourcemaps~ :: https://www.npmjs.com/package/gulp-sourcemaps
 
 *** Update Package
 - ~npm outdated -l~ :: Show if there're updates for locally installed packages based on package.json in ~--long~ format
@@ -38190,11 +38592,11 @@ You will make sure to list any angular's peerDependencies into your app's devDep
 #+END_SRC
 
 *** npx <<<npm:npx>>>
-Run <command> either from a local ./node_modules/.bin, or from a central cache, installing any packages needed in order for <command> to run.
-
-By default, npx will check whether <command> exists in $PATH, or in the local project binaries, and execute that. If <command> is not found, it will be installed prior to execution.
+- Run ~<command>~ either from a local ~./node_modules/.bin/<command>~, or from a central cache, installing any packages needed in order for ~<command>~ to run
+- By default, it will check whether ~<command>~ exists in ~$PATH~, or in the local project binaries, and execute that. If ~<command>~ is not found, it will be installed prior to execution
 
 #+BEGIN_SRC sh
+  # should already be installed
   npm i -g npx
 
   # usage
