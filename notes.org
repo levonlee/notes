@@ -8020,1935 +8020,6 @@ Create a bash script wrapper for already started processes
   exec /usr/local/bin/wp2 "$@" --allow-root
 #+END_SRC
 
-** Template Tags <<<wp:template tags>>>
-- ~wp-includes/xxx-template.php~
-- ~wp-includes/feed.php~
-- https://codex.wordpress.org/Template_Tags
-
-*** post-thumbnail-template.php <<<wp:t:thumbnail>>>
-- ~has_post_thumbnail( $post = null)~ :: return bool
-- ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~ :: get thumbnail id
-- ~get_the_post_thumbnail_*()~ :: can specify which post
-   - *~wp_get_attachment_image_src~* is called
-   - *~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~* :: return html with img attributes
-      - srcset :: ~wp_calculate_image_srcset~
-      - sizes :: ~wp_calculate_image_sizes~
-   - ~get_the_post_thumbnail_url( $post = null, $size = 'post-thumbnail' )~ :: string|false
-   - ~get_the_post_thumbnail_caption( $post = null )~ :: 
-- ~the_post_thumbnail_*~ :: echo instead of return. calls ~get_the_post_thumbnail_*~
-   - *~the_post_thumbnail( $size, $attr = '' )~* :: ~echo get_the_post_thumbnail( null, $size, $attr )~
-      - e.g. ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
-   - ~the_post_thumbnail_url( $size )~ :: echo url
-   - ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
-- ~wp_get_attachment_image_*()~ :: *~wp_get_attachment_image_src~* is called
-   - ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is ~$thumb[0]~
-      - wp:filter:wp_get_attachment_image_src
-   - ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
-      - ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
-   - ~wp_get_attachment_image_srcset( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~srcset~ attrbiute value string or false
-   - ~wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~sizes~ attribute value string or false
-      - wp:filter:wp_calculate_image_sizes
-- ~wp_get_attachment_*()~ ::
-   - ~wp_get_attachment_caption( $post_id = 0 )~ :: ~$post_id~ default is global $post. Usually it's the attachment ID
-   - ~wp_get_attachment_metadata( $attachment_id = 0, $unfiltered = false )~ :: array or false
-   - ~wp_get_attachment_url( $attachment_id = 0)~ ::
-   - ~wp_get_attachment_thumb_file( $post_id = 0 )~ ::
-   - ~wp_get_attachment_thumb_url( $post_id = 0)~ ::
-- Get alt :: ~$alt = get_post_meta( get_post_thumbnail_id(), '_wp_attachment_image_alt', true);~
-- Refer to wp:f:add_image_size
-   - NOTICE :: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes in HTML to achieve the purpose.
-   - 'post-thumbnail' :: default
-   - array(100, 100) :: Grab the biggest size in width and height image file possible.
-   - array(100, 9999) :: Grab the biggest size in width and height image file possible.
-- Resize an image file on the fly using fly-dynamic-image-resizer
-
-*** post-template.php <<<wp:t:post>>>
-- Only ~get_the_*( $post )~ can pass a different post or post id to return values. Use ~esc_html_e()~ to echo
-   - ~get_the_guid( $post = 0)~
-   - ~get_the_title( $post = 0 )~ :: <<<wp:f:get_the_title>>>
-      - ~if (! is_admin() )~ 
-	 - wp:filter:protected_title_format :: add ~Protected:~
-	 - wp:filter:private_title_format :: add ~Private:~
-      - ~$post->post_title~ :: wp:filter:the_title
-   - ~get_the_content( $more_link_text = null, $strip_teaser = false, $post = null )~
-   - ~get_the_excerpt( $post = null )~
-   - ~get_the_password_form( $post = 0 )~
-- ~get_the_ID()~ :: ID of current item or false
-   - ~the_ID()~ :: echo
-- ~the_*()~ always uses the ~global $post~ to echo
-   - ~the_title( $before = '', $after = '', $echo = true )~ :: return or echo ~$before . get_the_title() . $after~
-   - ~the_title_attribute( string|array $args = '' )~ :: similar to above but tags are stripped and escaped for HTML attributes
-     #+BEGIN_SRC php
-       $defaults = [
-	       'before' => '',
-	       'after' => '',
-	       'echo' => true,
-	       'post' => get_post(),
-       ];
-     #+END_SRC
-   - ~the_content( $more_link_text = null, $strip_teaser = false)~ :: use wp:filter:the_content
-   - ~the_excerpt()~
-      - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
-- HTML classes for a post :: ~get_post_class()~
-   - e.g. ~post-123 myposttype type-myposttype status-publish has-post-thumbnail~
-   - filter ~post_class($classes, $class, $post->ID)~
-- List child pages/posts :: ~wp_list_pages( $args = '' )~
-   - $args
-      - post_type :: default ~page~. For CPT, ~wp_list_pages( array('post_type' => 'articles' ) )~
-      - echo :: default 1, to echo. Set 0 to return html string
-      - title_li :: default ~__( 'Pages' )~. Add a ~<li>~ as title before any child post elements
-      - child_of :: default 0 (return child posts of any parent posts). specify the parent post ID
-      - sort_column :: default ~'menu_order, post_title'~
-
-*** category-template.php <<<wp:t:category>>>
-- Refer to wp:post
-- ~the_terms~ :: display taxonomy terms in a list
-- List child terms :: ~wp_list_categories( $args = '')~
-  - taxonomy :: default 'category'. For custom taxonomy, ~wp_list_categories( [ 'taxonomy' => 'mycats' ] )~
-  - child_of :: default 0. Specify the parent term id
-
-*** general-template <<<wp:t:general>>>
-- wp:f:get_sidebar
-
-#+BEGIN_SRC php
-  // In template
-  <?php wp_head(); ?>
-
-  // In plugin
-  add_action('wp_head', 'lili_wphead_dfp');
-  function lili_wphead_dfp() {
-   // add inline script to header
-   $o = "<script>...</script>";
-   echo $o;
-  }
-
-  // Load with dependancy (jQuery is loaded)
-  function lili_wphead_dfp() {
-   if ( wp_script_is( 'jquery', 'done' ) ) {
-  ?>
-  <script type="text/javascript">
-  // jQuery code 
-  </script>
-  <?php
-   }
-  }
-#+END_SRC
-
-*** author-template.php
-*** bookmark_template.php
-*** comment-template.php
-- ~wp_list_comments( $args = array(), $comments = null)~ :: list comments in ~comments.php~ template. Use wp:filter:wp_list_comments_args
-- ~comment_form( $args = array(), $post_id = null)~ :: outputs comment form <<<wp:f:comment_form>>> 
-
-*** link-template.php
-- ~get_permalink( int|WP_Post $post = 0, bool $leavename = false)~ :: get full permalink for current post or post ID
-   - $post :: optional, default ~global $post~
-   - $leavename :: whether to keep post/page name
-   - return string|false :: 
-   - Applied filters ::
-      - wp:filter:page_link
-      - wp:filter:post_link
-- ~the_permalink( int|WP_Post $post = 0 )~ :: print escaped ~get_permalink~
-   - Applied filters :: wp:filters:the_permalink
-- ~edit_post_link( $text = null, $before = '', $after = '', $id = 0, $class = 'post-edit-link' )~ :: print edit post link
-   - ~edit_post_link( __( '<span class="small">(Edit)</span>', 'genesis' ) );~
-
-*** media-template.php
-*** nav-menu-template.php
-*** feed.php
-- ~the_title_rss()~ :: echo ~get_the_title_rss()~ <<<wp:f:the_title_rss>>>
-- ~get_the_title_rss()~
-   - ~get_the_title()~ : wp:f:get_the_title
-   - wp:filter:the_title_rss
-
-** Functions
-*** Formatting ~wp-includes/formatting.php~
-**** ~wp_strip_all_tags( $string, $remove_breaks = false )~
- #+BEGIN_SRC php
-   function wp_strip_all_tags($string, $remove_breaks = false) {
-     $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
-     $string = strip_tags($string);
-
-     if ( $remove_breaks )
-       $string = preg_replace('/[\r\n\t ]+/', ' ', $string);
-
-     return trim( $string );
-   }
- #+END_SRC
-
-**** ~wp_trim_words( $text, $num_words = 55, $more = null )~ <<<wp:ellipsis>>>
- - Strip HTML and PHP tags and truncate string in words
-
- #+BEGIN_SRC php
-   function wp_trim_words( $text, $num_words = 55, $more = null ) {
-     if ( null === $more ) {
-       $more = __( '&hellip;' );
-     }
-
-     $original_text = $text;
-     $text = wp_strip_all_tags( $text );
-
-     /*
-      ,* translators: If your word count is based on single characters (e.g. East Asian characters),
-      ,* enter 'characters_excluding_spaces' or 'characters_including_spaces'. Otherwise, enter 'words'.
-      ,* Do not translate into your own language.
-      ,*/
-     if ( strpos( _x( 'words', 'Word count type. Do not translate!' ), 'characters' ) === 0 && preg_match( '/^utf\-?8$/i', get_option( 'blog_charset' ) ) ) {
-       $text = trim( preg_replace( "/[\n\r\t ]+/", ' ', $text ), ' ' );
-       preg_match_all( '/./u', $text, $words_array );
-       $words_array = array_slice( $words_array[0], 0, $num_words + 1 );
-       $sep = '';
-     } else {
-       $words_array = preg_split( "/[\n\r\t ]+/", $text, $num_words + 1, PREG_SPLIT_NO_EMPTY );
-       $sep = ' ';
-     }
-
-     if ( count( $words_array ) > $num_words ) {
-       array_pop( $words_array );
-       $text = implode( $sep, $words_array );
-       $text = $text . $more;
-     } else {
-       $text = implode( $sep, $words_array );
-     }
-
-     /**
-      ,* Filters the text content after words have been trimmed.
-      ,*
-      ,* @since 3.3.0
-      ,*
-      ,* @param string $text          The trimmed text.
-      ,* @param int    $num_words     The number of words to trim the text to. Default 55.
-      ,* @param string $more          An optional string to append to the end of the trimmed text, e.g. &hellip;.
-      ,* @param string $original_text The text before it was trimmed.
-      ,*/
-     return apply_filters( 'wp_trim_words', $text, $num_words, $more, $original_text );
-   }
- #+END_SRC
-
-*** Translate <<<wp:translate>>>
-Use tool:Poedit
-
-**** Translate Functions
-- ~wp-includes/l10n.php~
-- $text :: can't be a variable. And use single quotes instead of ~""~
-- Use ~sprintf~ (return) or ~printf()~ (echo) for subsitutions. The msgid is ~"You have chosen the %s theme"~
-
-***** Sample
-#+BEGIN_SRC php
-  echo sprintf( __( 'You have chosen the %s theme.' ) , the_color() );
-
-  printf( __( 'You have chosen the %s theme.' ) , the_color() );
-
-  echo __('some text', 'textdomain'); // return
-  // 'textdomain' is optional but it has to be a string not a variable! Default it's 'default'
-
-  // _e() is the same as __() but echoes
-
-  // Plural or single
-  // _n( $single, $plural, $number, $domain = 'default' )
-  echo _n('There is a comment', 'There are comments', get_comments_number());
-
-  _nx( $single, $plural, $number, $context, $domain = 'default' );
-
-  // Context
-  echo _x('post a link', 'A link to the post', 'my-text-domain');
-  // 'A link to the post' matches msgctxt "A link to the post" in .po file.
-
-  // _ex is the same as _x but echoes
-
-  // return value for an HTML attribute 
-  printf( esc_attr__( 'View all posts filed under %1$s', 'my-text-domain' ), get_cat_name( 32 ) );
-
-  // echo value for an HTML attribute
-  esc_attr_e( $text, $domain = 'default' );
-
-  esc_attr_x( $text, $context, $domain = 'default' );
-
-  // return value for HTML output
-  esc_html__( $text, $domain = 'default' );
-
-  esc_html_e( $text, $domain = 'default' );
-
-  esc_html_x( $text, $context, $domain = 'default' );
-#+END_SRC
-
-**** Setup, .po and .mo files
-Load textdomain in child theme which overwrites the textdomain defined in parent theme
-Do this in theme functions.php
-#+BEGIN_SRC php
-  function smart_mag_child_theme_locale() {
-    $_r = load_child_theme_textdomain( 'textdomain-name', get_stylesheet_directory() . '/languages' );
-    // textdomain-name can be defined in parent theme or a new textdomain
-    // if textdomain-name has been defined earlier, then this will overwrite
-
-    // Check if textdomain inclusion is successful
-    //if ( $_r ) var_dump( 'success!' );
-
-    if ( is_admin() ) {
-      // load another textdomain
-    }
-  }
-  add_action( 'after_setup_theme', 'smart_mag_child_theme_locale' );
-#+END_SRC
-
-Usually translate-ready theme will provide a .pot file which is a template file for .po and .mo files.
-Open .pot in tool:Poedit, generate a new translation. What Poedit saves is 2 files: .po and .mo.
-
-Open .po file later, make changes and save to overwrite .po and .mo files. File .pot is no longer needed.
-
-Catalog > Properties > Translation properties
-Specifiy the language
-Plural Forms by default is
-#+BEGIN_EXAMPLE
-  nplurals=2; plural=n != 1;
-#+END_EXAMPLE
-
-Might need to specify the path in code for .po file. '.' means the current path.
-#+BEGIN_EXAMPLE
-  "X-Poedit-SearchPath-0: .\n"
-#+END_EXAMPLE
-
-Catalog > Properties > Sources keywords contain all the Wordpress translation functions
-
-#+BEGIN_EXAMPLE
-  __
-  _e
-  _n:1,2
-  _x:1,2c
-  _ex:1,2c
-#+END_EXAMPLE
-
-=:1,2= indicates the function has 2 parts. =2c= means the 2nd argument is a context/comment.
-
-tool:Poedit can help you change most of the fields except that it can't specify context msgctxt.
-
-For those situations, directly edit .po and open .po in Poedit and save to get the .mo file.
-
-Some examples
-
-Comments :: ~#. Author of the plugin/theme~ Due to emacs, ~;; #.~ is ~#.~ in the following examples
-Reference :: ~#: woocommerce/loop/orderby.php:23~ Due to emacs, ~;; #:~ is ~#:~ in the following examples
-
-Concatenate multiple lines
-#+BEGIN_EXAMPLE
-  #: 404.php:18
-  msgid ""
-  "We're sorry, but we can't find the page you were looking for. It's probably "
-  "some thing we've done wrong but now we know about it and we'll try to fix "
-  "it. In the meantime, try one of these options:"
-  msgstr ""
-#+END_EXAMPLE
-
-sprintf and printf subsitutions
-#+BEGIN_EXAMPLE
-  #: archive.php:101
-  msgid "Yearly Archives: %s"
-  msgstr ""
-#+END_EXAMPLE
-
-Context
-#+BEGIN_EXAMPLE
-  #: bbpress/auth-modal.php:69
-  msgctxt "bbPress"
-  msgid "Favorites"
-  msgstr ""
-#+END_EXAMPLE
-
-Complex context
-#+BEGIN_EXAMPLE
-  #: comments.php:53
-  msgid ""
-  "Logged in as <a href=\"%1$s\">%2$s</a>. <a href=\"%3$s\" title=\"Log out of "
-  "this account\">Log out?</a>"
-  msgstr ""
-#+END_EXAMPLE
-
-Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
-Settings > General > Site Lanuage to match fr_CA
-
-*** Pluggable functions <<<wp:pluggable>>>
-- These functions can be defined in plugins. If all active plugins don't define any of these functions, WP will define them
-- ~wp-includes/pluggable.php~
-
-**** ~wp_get_current_user()~ <<<wp:f:wp_get_current_user>>>
-- Set wp:global:current_user if it's not set. If not logged in, set to 0
-  #+BEGIN_SRC php
-    $current_user = wp_get_current_user();
-    if ( 0 == $current_user->ID ) {
-	// Not logged in.
-    } else {
-	// Logged in.
-    }
-  #+END_SRC
-- Also return wp:user
-
-**** ~wp_mail()~ <<<wp:f:wp_mail>>>
-
-#+BEGIN_SRC php
-  wp_mail( $to, $subject, $message, $headers = '', $attachments = array() )
-#+END_SRC
-*** Shortcode API <<<wp:api:shortcode>>>
-- ~wp-includes/shortcodes.php~
-
-**** add_shortcode <<<wp:f:add_shortcode>>>
-  #+BEGIN_SRC php
-    // [bar-tag foo="foo-value"]
-
-    // Use underscore instead of hyphen e.g. bar_tag
-    function bartag_func( $atts, $content, $tag ) {
-      $a = shortcode_atts( array(
-	'class' => 'something', // default value
-	'attr_2' => 'something else', // 2nd attribute
-      ), $atts );
-
-      // get current post
-      // global $post; $post->ID
-
-      // Use return not echo
-      return '<span class="'.esc_attr($a['class']).'">'
-	     .$content
-	     // or
-	     // .do_shortcode($content)
-	     ."foo = {$a['foo']}"
-	     .'</span>';
-
-    /*
-    ob_start();
-    ?> <HTML> <here> ... <?php
-    return ob_get_clean();
-    ,*/
-
-    /*
-    ob_start();
-    get_template_part( 'template-parts/form/contact-us');
-    return ob_get_clean();
-    ,*/
-
-    }
-    add_shortcode( 'bar-tag', 'bartag_func' );
-
-    // In order to run shortcode in Widgets, add this
-    add_filter('widget_text','do_shortcode');
-    // wp:filter:widget_text
-  #+END_SRC
-
-  Pass array to shortcode attribute
-  #+BEGIN_SRC php
-    $data = [
-	[],[],[]
-    ];
-
-    var_dump(serialize($data));
-
-    // use single quotes
-    // [your-shortcode data='serialized-string']
-
-    function your_shortcode_cb() {
-	// ...
-	$data = unserialize($a['data']);
-    }
-  #+END_SRC
-
-**** shortcode_unautop <<<wp:f:shortcode_unautop>>>
- - Used in wp:filter:the_content
- - Ensure shortcodes are not wrapped in ~<p>...</p>~
- - Refer to
-    - wp:filter:the_content
-    - wp:filter:tiny_mce_before_init
-
- #+BEGIN_SRC php
-   add_filter( 'the_content', 'shortcode_unautop'  );
- #+END_SRC
-
-*** Plugin API <<<wp:api:plugin>>>
-- https://codex.wordpress.org/Plugin_API
-
-**** add_filter, apply_filters, apply_filters_ref_array <<<wp:add_filter>>>
-Syntax, remove_filter
-- Modify internal data / function returned
-- For example, WP_Query gets internal settings for building a query
-   - You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
-   - so that you only change the internal setting for that query building without affecting other usage
-
-#+BEGIN_SRC php
-  add_filter( 
-   'tagname', 
-   'lili_funct',
-    10, // int. Priority, lower number sooner
-    2, // int. Accepted args, default is 1! Be careful
-  );
-
-  apply_filters( 'tagname', $result, $var1);
-
-  // callback should take 2 variables
-  function lili_funct($result, $var1) {
-   $new = $result . 'abc';
-   return $new;
-  }
-
-  remove_filter(
-    'tagname',
-    'lili_funct',
-    10 // priority, must match the add_filter priority, default is 10
-  );
-#+END_SRC
-
-#+BEGIN_SRC php
-  function remove_filter_the_title() {
-	  remove_filter('the_title', 'before_post_title', 10);
-  }
-  add_action( 'wp_head', 'remove_filter_the_title', 1 );
-
-  function add_filter_the_title() {
-	  add_filter('the_title', 'before_post_title', 10, 2);
-  }
-  add_action( 'wp_head', 'add_filter_the_title', 3 );
-#+END_SRC
-
-Class method
-#+BEGIN_SRC php
-  // Static class method
-  add_filter( 'media_upload_newtab', array( 'My_Class', 'media_upload_callback' ) );
-
-  // Instance method
-  add_filter( 'media_upload_newtab', array( $this, 'media_upload_callback' ) );
-
-  // Anonymous function
-  add_filter( 'the_title', function( $title ) { return '<strong>' . $title . '</strong>'; } );
-#+END_SRC
-
-**** add_action, do_action, do_action_ref_array <<<wp:add_action>>>
-Event based
-#+BEGIN_SRC php
-  add_action( string $tag,
-    string $function_name,
-    int $priority = 10,
-    int $accepted_args = 1 // number of args the function accepts
-  );
-
-  // add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
-
-  // child theme
-  add_action( 'abc', 'xyz' );
-  // parent theme
-  add_action( 'abc', 'abc' );
-
-  // xyz and abc will run in order
-  do_action( 'abc' );
-
-  // child theme
-  remove_action( 'abc', 'ijk' );
-
-  // parent theme
-  add_action( 'abc', 'ijk');
-
-  // ijk is added and then removed, so ijk will not run
-  do_action( 'abc' );
-#+END_SRC
-
-***** Action sequence <<<wp:action:loading sequence>>>
-- https://codex.wordpress.org/Plugin_API/Action_Reference
-- http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
-- ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
-  - ~WP_Customize_Widgets->customize_register~
-
-*** Query API <<<wp:api:query>>>
- - wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
- - ~query_posts( $query )~ wp:f:query_posts
-
-**** Conditional Tags <<<wp:conditional tags>>>
-  - [[https://codex.wordpress.org/Conditional_Tags][These]] call ~global $wp_query~ wp:wp_query:m:is_* 
-     - Usually the wp:query:main
-
-***** ~is_page( int|string|array $page = '' )~
-  #+BEGIN_SRC php
-    is_page(); // any page
-    is_page(42);
-    is_page( 'mypageslug' );
-    is_page( array(42, 'about-me', 'Page title' ) ); // either one of those id, slug or title
-    is_page( array(42, 54, 6) );
-  #+END_SRC
-
-***** ~is_page_template( string|array $template = '' )~
-  #+BEGIN_SRC php
-    is_page_template(); // any page template
-    is_page_template( 'about.php' ); // another template 'page-templates/about.php'
-  #+END_SRC
-
-***** ~is_single( int|string|array $post = '' )~
-  - works for any post type except attachments and pages
-  - $post :: Post ID, title, slug or array of such (one of the specified) 
-
-***** ~is_singular( string|array $post_types = '' )~
-  - $post_types :: Whether the query is for an existing single post of any post type. Or if $post_types is specified, additionally check if the query is for one of the Post Types specified
-
-  #+BEGIN_SRC php
-    is_singular();
-    is_singular( 'article' );
-    is_singular( array( 'newspaper', 'book' ) );
-  #+END_SRC
-
-***** ~is_admin_bar_showing()~
-  - wp:admin:toolbar
-
-*** Theme functions
-- ~wp-includes/theme.php~
-
-**** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
- - ~get_template_directory()~ :: the filesystem path of the current parent theme
- - ~get_template_directory_uri~ :: URI e.g. protocol://domain of the current parent theme
- - ~get_stylesheet_directory()~ :: the filesystem path of the current child theme
- - ~get_stylesheet_directory_uri~ :: URI of the stylesheet directory. grab child and then parent theme.
- - ~get_stylesheet_uri~ :: URI of style.css
-
- #+BEGIN_SRC php
-   include( get_template_directory() . '/includes/myfile.php');
-   wp_enqueue_script( 'twentyfifteen-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20141010', true );
- #+END_SRC
-
-**** get_theme_mod <<<wp:f:get_theme_mod>>>
-#+BEGIN_SRC php
-  get_theme_mod( $name, $default = false )
-#+END_SRC
-- Calls wp:f:get_theme_mods and gets wp:options:theme_mods_{theme_slug}
-- Returns wp:filter:theme_mod_{theme_slug}
-
-*** General Template functions
-- ~wp-includes/general-template.php~
-**** get_header, get_footer, get_sidebar, get_search_form, comments_template
-- <<<wp:f:get_header>>> :: ~get_header( $name = null )~
-- <<<wp:f:get_footer>>> :: ~get_footer( $name = null )~
-- <<<wp:f:get_sidebar>>> :: ~get_sidebar( $name = null )~ Refer to wp:f:dynamic_sidebar
-   - ~$templates[] = "sidebar-{$name}.php"; $templates[] = 'sidebar.php';~
-   - ~locate_template( $templates, true );~
-- <<<wp:f:get_search_form>>> :: ~get_search_form( $args = array() )~
-- <<<wp:f:comments_template>>>
-- These functions are to load template files
-   - System default load paths :: ~wp-includes/theme-compat/header.php, footer.php, sidebar.php~
-      - ~header-{name}.php~
-      - ~footer-{name}.php~
-      - ~sidebar-{name}.php~
-      - ~{slug}-{name}.php~
-      - ~searchform.php~
-      - ~comment.php~
-
-       #+BEGIN_SRC php
-	 // 404.php sample
-
-	 <?php get_header( $name ); 
-	 //get_template_part( $slug, $name );
-	 get_template_part( 'nav' );
-	 ?>
-	 <h2>Error - 404 - Not Found</h2>
-	 <?php
-	 get_sidebar();
-	 get_footer( $name );
-	 ?>
-       #+END_SRC
-
-*** Comment Template functions
-**** comments_template <<<wp:f:comments_template>>>
-- Default loads ~wp-includes/theme-compat/comments.php~
-
-#+BEGIN_SRC php
-  comments_template( $file = '/comments.php', $separate_comments = false )
-#+END_SRC
-
-*** Widget API
-**** dynamic_sidebar vs get_sidebar <<<wp:f:dynamic_sidebar>>>
-- Refer to wp:f:get_sidebar :: ~get_sidebar~ looks for a template file which should have ~dynamic_sidebar('sidebar-slug')~
-
-*** Transients API - ~set_transient~ vs ~wp_cache_set~ <<<wp:cache>>>
- WordPress cache API in database.
- =DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')=
-
- WP object cache stores objects and primitives but not in a persistent manner by default. This means caching happens in memory and it only lives for the request's lifetime cycle (e.g. one pageload). Redis plugin can make it persistent.
-
- https://codex.wordpress.org/Class_Reference/WP_Object_Cache
-
- Transient API saves variables, arrays, objects tied with an expiration date on db and has persistent object caching. However when cached objects expire, they remain on db which needs to be pruned every once in a while.
-
- WP detects if persistent object cache, if so, bypass Transients API and route to WP object cache.
-
- #+BEGIN_SRC php
-   // wp_cache_get( int|string $key, string $group = '', bool $force = false, bool $found = null )
-   // wp_cache_set( int|string $key, mixed $data, string $group = '', int $expire )
-   $result = wp_cache_get( 'my_result', 'my-group' );
-   if ( false === $result ) {
-	   $result = $wpdb->get_results( $query );
-	   wp_cache_set( 'my_result', $result, 'my-group', 600 ); // expire after 5 mins
-   } 
-   // Do something with $result;
- #+END_SRC
-
-*** Option API <<<wp:api:option>>>
-*** Dependency API <<<wp:api:dependency>>>
-**** Files
-~wp-includes/~
-- class.wp-dependencies.php
-- class-wp-dependency.php
-- class.wp-scripts.php
-- functions.wp-scripts.php
-- class.wp-styles.php
-- functions.wp-styles.php
-
-**** wp_localize_script <<<wp:f:wp_localize_script>>>
- - Must be called after the script has been registered using ~wp_register_script()~ or ~wp_enqueue_script()~
- - Use to define variables as an object
-
- #+BEGIN_SRC php
-   // register a script that may be loaded using wp_enqueue_script()
-   // wp_register_script( 'unique_handle', 'path/to/myscript.js' );
-   // later
-   // wp_enqueue_script( 'unique_handle' );
-
-   // or you enque directly wp:f:wp_enqueue_script
-   wp_enqueue_script( 'unique_handle', get_theme_file_uri( '/path/to/myscript.js' ) );
-
-   // Pass vars in $translation_array to file path/to/myscript.js (registered using handle `unique_handle`)
-   $translation_array = array(
-     'some_string' => 'hello';
-     'a_value' => '10'
-   );
-   wp_localize_script( 'unique_handle', 'object_name', $translation_array );
-   wp_enqueue_script( 'unique_handle' );
- #+END_SRC
-
-In the enqueued javascript file ~path/to/myscript.js~
- #+BEGIN_SRC js
-   console.log( object_name.some_string ); // default all values are strings
-   parseInt( object_name.some_int, 10 ); // pass parameter as int
- #+END_SRC
-
- If you just want to define pass PHP variables and don't want to create empty js files
- #+BEGIN_SRC php
-   wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
- #+END_SRC
-
- #+BEGIN_SRC php
-   wp_enqueue_script( 'twentyseventeen-skip-link-focus-fix', get_theme_file_uri( '/assets/js/skip-link-focus-fix.js' ), array(), '1.0', true );
-   wp_localize_script( 'twentyseventeen-skip-link-focus-fix', 'twentyseventeenScreenReaderText', $twentyseventeen_l10n );
- #+END_SRC
-
-**** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
- - Used in wp:action:wp_enqueue_scripts
- - Use wp:filter:style_loader_src
-
- #+BEGIN_SRC php
-   wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
-
-   wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
-   wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
- #+END_SRC
-
- When a script is added with dependency on jQuery, jQuery is auto loaded by wp. Change jQuery
- #+BEGIN_SRC php
-   wp_deregister_script('jquery');
-   wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js', array(), null, true);
-   wp_enqueue_script('my-custom-script', get_template_directory_uri() .'/js/my-custom-script.js', array('jquery'), null, true);
- #+END_SRC
-
- If there's script depends on jquery and it's loaded in header, even though jquery is set to load in footer, jquery will be loaded in header.
-**** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
- - Used in wp:action:wp_enqueue_scripts
- - Use wp:filter:script_loader_src
- -  Syntax :: *~wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )~*
- - $deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on
-   - Default value: array()
- - $ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added
-   - Default value: false
- - $media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'
-   - Default value: 'all'
-
- #+BEGIN_SRC php
-   function wpb_add_google_fonts() {
-	   wp_enqueue_style( 'wpb-google-fonts', 'http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,700,300', false ); 
-   }
- 
-   add_action( 'wp_enqueue_scripts', 'wpb_add_google_fonts' );
- #+END_SRC
-
- Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
-
- #+BEGIN_SRC php
-   // Load the main stylesheet
-	   wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
-
-   /**
-    ,* Load our IE-only stylesheet for all versions of IE:
-    ,* <!--[if IE]> ... <![endif]-->
-    ,*/
-   wp_enqueue_style( 'my-theme-ie', get_stylesheet_directory_uri() . "/css/ie.css", array( 'my-theme' ) );
-   wp_style_add_data( 'my-theme-ie', 'conditional', 'IE' );
-
-   /**
-    ,* Load our IE version-specific stylesheet:
-    ,* <!--[if IE 7]> ... <![endif]-->
-    ,*/
-   wp_enqueue_style( 'my-theme-ie7', get_stylesheet_directory_uri() . "/css/ie7.css", array( 'my-theme' ) );
-   wp_style_add_data( 'my-theme-ie7', 'conditional', 'IE 7' );
-
-   /**
-    ,* Load our IE specific stylesheet for a range of older versions:
-    ,* <!--[if lt IE 9]> ... <![endif]-->
-    ,* <!--[if lte IE 8]> ... <![endif]-->
-    ,* NOTE: You can use the 'less than' or the 'less than or equal to' syntax here interchangeably.
-    ,*/
-   wp_enqueue_style( 'my-theme-old-ie', get_stylesheet_directory_uri() . "/css/old-ie.css", array( 'my-theme' ) );
-   wp_style_add_data( 'my-theme-old-ie', 'conditional', 'lt IE 9' );
-
-   /**
-    ,* Load our IE specific stylesheet for a range of newer versions:
-    ,* <!--[if gt IE 8]> ... <![endif]-->
-    ,* <!--[if gte IE 9]> ... <![endif]-->
-    ,* NOTE: You can use the 'greater than' or the 'greater than or equal to' syntax here interchangeably.
-    ,*/
-   wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-ie.css", array( 'my-theme' ) );
-   wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
- #+END_SRC
-
-*** add_meta_box <<<wp:f:add_meta_box>>>
-Used in
-- wp:action:add_meta_boxes
-- context
-  - advanced :: default
-  - side ::
-  - normal ::
-- Priority
-  - default :: default
-  - high :: right after title
-  - low
-
-#+BEGIN_SRC php
-  /*
-   ,* @param string                 $id            Meta box ID (used in the 'id' attribute for the meta box).
-   ,* @param string                 $title         Title of the meta box.
-   ,* @param callable               $callback      Function that fills the box with the desired content.
-   ,*                                              The function should echo its output.
-   ,* @param string|array|WP_Screen $screen        Optional. The screen or screens on which to show the box
-   ,*                                              (such as a post type, 'link', or 'comment'). Accepts a single
-   ,*                                              screen ID, WP_Screen object, or array of screen IDs. Default
-   ,*                                              is the current screen.  If you have used add_menu_page() or
-   ,*                                              add_submenu_page() to create a new screen (and hence screen_id),
-   ,*                                              make sure your menu slug conforms to the limits of sanitize_key()
-   ,*                                              otherwise the 'screen' menu may not correctly render on your page.
-   ,* @param string                 $context       Optional. The context within the screen where the boxes
-   ,*                                              should display. Available contexts vary from screen to
-   ,*                                              screen. Post edit screen contexts include 'normal', 'side',
-   ,*                                              and 'advanced'. Comments screen contexts include 'normal'
-   ,*                                              and 'side'. Menus meta boxes (accordion sections) all use
-   ,*                                              the 'side' context. Global default is 'advanced'.
-   ,* @param string                 $priority      Optional. The priority within the context where the boxes
-   ,*                                              should show ('high', 'low'). Default 'default'.
-   ,* @param array                  $callback_args Optional. Data that should be set as the $args property
-   ,*                                              of the box array (which is the second parameter passed
-   ,*  
-   ,*                                              to your callback). Default null.
-   ,*/
-  function add_meta_box( $id, $title, $callback, $screen = null, $context = 'advanced', $priority = 'default', $callback_args = null ) {
-
-  }
-#+END_SRC
-
-*** get_bloginfo, bloginfo, Site tagline, Sitetitle
-retrieves info about the current site
-https://developer.wordpress.org/reference/functions/get_bloginfo/
-
-#+BEGIN_EXAMPLE
-  <img src="<?php bloginfo('template_url'); ?>/assets/images/a.jpg" alt="" />
-#+END_EXAMPLE
-
-version :: '4.9.4'
-
-*** get_post <<<wp:f:get_post>>>
-~get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )~
-
-Default is ~global $post~
-Return wp:post object
-
-*** get_post_meta, get_metadata <<<wp:f:get_post_meta>>> <<<wp:f:get_metadata>>>
-~get_post_meta( int $post_id, string $key = '', bool $single = false )~
-~get_metadata( string $meta_type, int $object_id, string $meta_key = '', bool $single = false )~
-
-~get_post_meta~ is a wrapper of ~get_metadata~ and specify the object type is a ~post~
-
-- ~$key~ :: default to return data for all keys
-- ~$single~ :: wheter to return single value. return array if it's false
-
-Return post thumbnail alt text
-#+BEGIN_SRC php
-  // return post thumbnail alt text
-  $thumb_id = get_post_thumbnail_id(get_the_ID());
-  $alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
-  if( $alt ):
-      echo $alt;
-  endif;
-
-  // return a post metadata
-  $meta = get_post_meta(get_the_ID());
-  echo $meta['header-title'][0];
-#+END_SRC
-
-*** get_posts <<<wp:f:get_posts>>>
-#+BEGIN_SRC php
-  // Syntax :: get_posts( $args = null )
-  // new WP_Query(); is created
-  $args = array(
-	  'post_type'      => 'speaker',
-	  'posts_per_page' => -1,
-  );
-  $r = get_posts($args);
-
-  // run loop
-
-  // reset global $post
-  wp_reset_postdata();
-#+END_SRC
-
-*** get_the_author_meta <<<wp:f:get_the_author_meta>>>
-- Syntax
-  #+BEGIN_SRC php
-    get_the_author_meta( string $field = '', int|false $user_id = false )
-  #+END_SRC
-- $field :: can be
-   - display_name
-- $user_id :: default false to get the current post's user. Can be ~$post->post_author~
-
-*** get_taxonomies <<<wp:f:get_taxonomies>>>
-#+BEGIN_SRC php
-  get_taxonomies( $args = array(), $output = 'names', $operator = 'and' ) {}
-
-  // @return string[]|WP_Taxonomy[] An array of taxonomy names or objects.
-  $return = [
-	  'category' => 'category',
-	  'post_tag' => 'post_tag',
-	  'custom_taxonomy_name' => 'custom_taxonomy_name',
-	  // ...
-  ];
-#+END_SRC
-
-*** wp_get_post_terms($post_id, $tax, $args)
-- Retrieve terms for a post :: ~wp_get_post_terms( $post_id = 0, $taxonomy = 'post_tag', $args = array() )~
-  - ~$taxonomy~ :: default only return terms that are tags
-  - ~$post_id~ :: default current post if it's in a loop
-  - ~$args~ :: default ~$args = array('orderby' => 'name', 'order' => 'ASC', 'fields' => 'all');~
-  - Return :: an array of taxonomy terms as objects, empty array or WP_Error
-- Get the slugs of the terms under taxonomy ~publication~ :: ~wp_get_post_terms( $post_id, 'publication', ['field' => 'slugs'] )~
-
-Sample
-#+BEGIN_SRC php
-  Array
-  (
-      [0] => WP_Term Object
-	  (
-	      [term_id] => 145
-	      [name] => Example Category
-	      [slug] => example-cat
-	      [term_group] => 0
-	      [term_taxonomy_id] => 145
-	      [taxonomy] => adcpt_categories
-	      [description] => 
-	      [parent] => 0
-	      [count] => 2
-	      [filter] => raw
-	  )
-
-  )
-#+END_SRC
-
-Return all terms for a post
-#+BEGIN_SRC php
-  global $post;
-  $tax = get_taxonomies();
-  $terms = wp_get_post_terms($post->ID, $tax);
-#+END_SRC
-
-*** wp_editor <<<wp:f:wp_editor>>>
-Render an editor for field in a page in the typical fashion used in Posts and Pages.
-[[https://codex.wordpress.org/Function_Reference/wp_editor][Doc]]
-
-May be used in wp:action:edit_page_form wp:action:edit_form_advanced
-Use wp:f:update_post_meta in wp:action:save_post for storing the new field
-
-*** wp_parse_args( $args, $defaults ) <<<wp:f:wp_parse_args>>>
-Merge user defined arguments into defaults array.
-
-*** antispambot <<<wp:f:antispambot>>>
-Encode email address to hex
-
-#+BEGIN_SRC php
-  function hide_email_addresses_sc($atts, $content = null) {
-	  // $atts['var1'], the following just sets a default if var1 attribute is not defined in shortcode
-	  $emailaddress_fields = shortcode_atts(array(
-		  'id' => '',
-		  'email' => ''
-	  ),$atts);
-	  $userid = $emailaddress_fields['id'];
-	  $e_mail = $emailaddress_fields['email'];
-	  if ($userid !=='' && $e_mail =='') {
-		  $emailaddress = get_the_author_meta('user_email',$userid);
-		  return '<a href="mailto:'.antispambot($emailaddress).'">'.antispambot($emailaddress).'</a>';
-	  }
-	  if ($userid =='' && $e_mail !=='') {
-		  return '<a href="mailto:'.antispambot($e_mail).'">'.antispambot($e_mail).'</a>';
-	  }
-	  else {
-		  return '';
-	  }
-  }
-  add_shortcode('hide-email','hide_email_addresses_sc');
-#+END_SRC
-
-*** add_theme_support, remove_theme_support, current_theme_supports <<<wp:f:add_theme_support>>>
-<<<wp:f:current_theme_supports>>> <<<wp:f:add_theme_support:post-thumbnails>>>
-- Either in theme's ~functions.php~ or added in wp:action:after_setup_theme because it has to be loaded early
-- [[https://codex.wordpress.org/Theme_Features][All theme support features]]
-- Some features e.g. ~html5~ use ~array_merge~
-- Other and custom features just take the latest call values as the feature
-
-#+BEGIN_SRC php
-  add_theme_support( 'post-thumbnails' );
-
-  // refer to wp:f:add_image_size
-
-  add_theme_support( 'automatic-feed-links' );
-  // adds
-  //<link rel="alternate" type="application/rss+xml" title="Website Name Feed" href="http://myweb.io/feed/" />
-  //<link rel="alternate" type="application/rss+xml" title="Website Name Comments Feed" href="http://myweb.io/comments/feed/" />
-  // If it's a page, add one more
-  // <link rel="alternate" type="application/rss+xml" title="Website Name Page Name Comments Feed" href="http://myweb.io/2016/07/20/page-name/feed/" />
-
-  add_theme_support( 'title-tag' ); // wp will provide <title> not hard coded in template file using wp_title()
-
-  add_theme_support( 'html5', array(
-    'search-form',
-    'comment-form',
-    'comment-list',
-    'gallery',
-    'caption',
-  ) );
-  // use the default html5 markup instead of the default html4 file
-
-  add_theme_support( 'post-formats', array(
-    'aside',
-    'image',
-    'video',
-    'quote',
-    'link',
-    'gallery',
-    'audio',
-  ) );
-  // wp provides a list of formats for admin users to choose to display a post
-  // refer to wp:f:has_post_format
-
-  add_theme_support( 'custom-logo', array(
-		  'width'       => 250,
-		  'height'      => 250,
-		  'flex-width'  => true,
-  ) );
-  // provide a place to upload theme logo in wp-admin
-  // https://developer.wordpress.org/themes/functionality/custom-logo/
-  // refer to wp:custom logo:display
-
-  add_theme_support( 'customize-selective-refresh-widgets' );
-  // https://make.wordpress.org/core/2016/03/22/implementing-selective-refresh-support-for-widgets/
-
-  add_theme_support( 'starter-content', $starter_content );
-  // https://make.wordpress.org/core/2016/11/30/starter-content-for-themes-in-4-7/
-
-  //add_theme_support( 'custom-background' ); // simple enable
-  $defaults = array(
-	  'default-color'          => '',
-	  'default-image'          => '',
-	  'default-repeat'         => 'repeat',
-	  'default-position-x'     => 'left',
-	  'default-position-y'     => 'top',
-	  'default-size'           => 'auto',
-	  'default-attachment'     => 'scroll',
-	  'wp-head-callback'       => '_custom_background_cb',
-	  'admin-head-callback'    => '',
-	  'admin-preview-callback' => ''
-  );
-  add_theme_support( 'custom-background', $defaults );
-  // https://codex.wordpress.org/Custom_Backgrounds
-#+END_SRC
-
-*** add_image_size <<<wp:f:add_image_size>>>
-- Use wp:action:after_setup_theme
-- ~add_image_size( string $name, int $width, int $height, bool|array $crop = false )~
-- Every newly uploaded image will have image files with all defined image sizes
-- ~$crop~ can be
-  - false :: will be scaled
-  - true :: will be cropped to the specified dimensions using center positions
-  - ~array( $x_crop_position, $y_crop_position )~ :: will be cropped to the specified dimensions within the defined crop area
-    - $x_crop_position :: 'left', 'center' or 'right'
-    - $y_crop_position :: 'top', 'center' or 'bottom'
-- If the original image (e.g. featured image) is smaller than the thumbnail image size, by default, neither it's set to crop to scale, the result thumbnail will take the original image without scaling up
-- Refer to wp:filter:image_size_names_choose
-
-#+BEGIN_SRC php
-  function lili_theme_setup() {
-   add_image_size('lili-w700', 700, 9999); // fixed width, unlimited height
-   add_image_size('lili-w700h600', 700, 600, true); // crop in exact dimension 
-  }
-#+END_SRC
-
-Force to scale up the thumbnail if original image is smaller than the thumbnail size, and maintain ratio
-- Does not seem to work for scale (non-croppable) image sizes last time I tried.. Ratio is not maintained for scaling image sizes
-
-#+BEGIN_SRC php
-  function alx_thumbnail_upscale( $default, $orig_w, $orig_h, $new_w, $new_h, $crop ){
-    // comment the line below to enable upscale for both scale and crop
-	  if ( !$crop ) return null; // let the wordpress default function handle automatic scale
-
-	  $aspect_ratio = $orig_w / $orig_h;
-	  $size_ratio = max($new_w / $orig_w, $new_h / $orig_h);
-
-	  $crop_w = round($new_w / $size_ratio);
-	  $crop_h = round($new_h / $size_ratio);
-
-	  $s_x = floor( ($orig_w - $crop_w) / 2 );
-	  $s_y = floor( ($orig_h - $crop_h) / 2 );
-
-	  return array( 0, 0, (int) $s_x, (int) $s_y, (int) $new_w, (int) $new_h, (int) $crop_w, (int) $crop_h );
-  }
-  add_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
-#+END_SRC
-
-#+BEGIN_SRC php
-  // after this call, my-image-size-style-name thumbnail should be ready
-  // by default, wp does not scale up if the original file is smaller than the requested thumbnail image size
-  // regardless of the add_image_size setting
-  // Original my-image-size-style-name setting: add_image_size( 'my-image-size-style-name', 340, 200, true );
-  regenerateImageSizeIfOneIsMissing( get_post_thumbnail_id( $post->ID ), 'my-image-size-style-name' );
-  $image = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'my-image-size-style-name' );
-
-  // regenerate all image sizes for an attachment (e.g. featured image) if the specified image size does not exist
-  function regenerateImageSizeIfOneIsMissing( $attachment_id, $check_image_size, $enforce_enlarge = false ) {
-	  global $_wp_additional_image_sizes;
-
-	  // stop if no file id is provided or the image size is not defined
-	  if ( ! $attachment_id || ! isset( $_wp_additional_image_sizes[ $check_image_size ] ) ) {
-		  return false;
-	  }
-	  //print_r($attachment_id);
-	  //print '<pre>';	print_r( $_wp_additional_image_sizes );	print '</pre>';
-
-	  $metadata = wp_get_attachment_metadata( $attachment_id );
-	  if ( ! ( isset( $metadata['sizes'] ) && isset( $metadata['sizes'][ $check_image_size ] ) ) ) {
-		  //printf('Image size "%s" does not exist, regenerate all image sizes for this attachment', $check_image_size);
-
-		  $fullsizepath = get_attached_file( $attachment_id );
-
-		  if ( false === $fullsizepath || ! file_exists( $fullsizepath ) ) {
-			  // stop if there is no full file or it does not exist
-			  return false;
-		  }
-
-		  if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
-			  require_once( ABSPATH . 'wp-admin/includes/image.php' );
-		  }
-
-		  $r = false;
-
-		  // By default, wp does not scale up if the original file is smaller than the requested thumbnail image size
-		  // regardless of the add_image_size setting
-		  if ($enforce_enlarge) {
-			  add_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
-		  }
-
-		  // regenerate all image sizes and metadata
-		  $regenerated_metadata = wp_generate_attachment_metadata( $attachment_id, $fullsizepath );
-
-		  // merge original metadata
-		  $regenerated_metadata['sizes'] = array_merge( $metadata['sizes'], $regenerated_metadata['sizes'] );
-		  //echo 'original metadata'; print_r($metadata);
-		  //echo 'regenerated metadata'; print_r($regenerated_metadata);
-
-		  // update metadata
-		  if ( wp_update_attachment_metadata( $attachment_id, $regenerated_metadata ) ) {
-			  $r = true;
-			  //print 'regenerate metadata result successful';
-		  } else {
-			  //print 'regenerate metadata result not successful';
-		  }
-
-		  // remove filter so that wp is back to default for thumbnail resizing
-		  if ($enforce_enlarge) {
-			  remove_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
-		  }
-
-		  return $r;
-
-	  } else {
-		  //printf('Image size "%s" exists, regeneration is not needed', $check_image_size);
-		  //  print_r($metadata['sizes'][$check_image_size]);
-	  }
-  }
-#+END_SRC
-
-*** add_management_page
-wp:action:admin_menu
-Add sub menu to Tools admin menu
-
-add_management_page(
- 'Page title', // string
- 'Menu title', // string
- 'manage_options', // string. Capability that is required.
- 'menu_slug', // string
- 'callbackFunct', // string or array($this, 'options_page')
-);
-
-*** add_post_type_support <<<wp:f:add_post_type_support>>>
-- ~add_post_type_support( string $post_type, string|array $supports);~
-- ~remove_post_type_support( string $post_type, string $supports )~
-- Detect if a post type supports :: ~post_type_supports( string $post_type, string $feature )~
-
-- $post_type :: string
-- $supports :: string/array
-  - title
-  - editor :: content
-  - author
-  - thumbnail :: current theme must support Post Thumbnails
-  - excerpt
-  - trackbacks
-  - custom-fields :: wp:Custom_Fields. Don't have to add 'custom-fields' in order to use wp:plugin:acf
-  - comments
-  - revisions
-  - page-attributes :: menu order, hierarchical must be true
-  - post-formats :: add post formats
-
-#+BEGIN_SRC php
-  add_action('init', 'lili_custom_post_type');
-  function lili_custom_post_type() {
-    $labels = [
-      // array, wp:register_post_type:labels
-    ];
-
-    $args = [
-      'label' => 'Plural Name', // string. required.
-      'labels' => $labels,
-      'description' => '', // string, optional
-      'public' => false,
-      /* Default. bool.
-       ,*       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
-       ,* true:               false,               true,              true, true
-       ,* false:               true,              false,             false, false
-       ,*/
-      'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
-      'publicly_queryable' => true, // optional. take 'public' value.
-      /* ?post_type={post_type_key},
-       ,* ?{post_type_key}={single_post_slug},
-       ,* ?{post_type_query_var}={single_post_slug}
-       ,*/
-      'show_ui' => true, // optional. bool. default take 'public' value.
-      'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
-      'show_in_menu' => true, // optional, bool or string. default inherits show_ui
-      // false :: do not display in admin menu
-      // true :: display as a top level menu
-      // 'some string' :: display as a submenu of a menu 'some string'
-      'show_in_admin_bar' => true, // optional, bool, default inherits show_in_
-      'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
-
-    ];
-
-    register_post_type('movies', $args );
-
-  }
-#+END_SRC
-
-Use wp:action:pre_get_posts to enable query for this new post type
-
-*** add_rewrite_rule, add_rewrite_tag  
-- <<<wp:f:add_rewrite_rule>>>
-   - Need to flush :: Settings > Permalinks > click Save Changes without any changes to add into wp:options:rewrite_rules
-   - Add a rewrite rule that transforms a URL structure to a set of query vars
-   - Use with wp:f:add_rewrite_tag 
-   - wp:action:init
-   - ~add_rewrite_rule( string $regex, string|array $query, string $after = 'bottom' )~
-      - $query :: ~$matches[]~ to retrieve the values of a matched URL, capture group data starts at 1, not 0
-      - $after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first
-   - Sample
-     #+BEGIN_SRC php
-       function custom_rewrite_basic() {
-	 add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
-       }
-       add_action('init', 'custom_rewrite_basic');
-     #+END_SRC
-- <<<wp:f:add_rewrite_tag>>>
-   - add a query var wp:filter:query_vars
-   - Sample
-     #+BEGIN_SRC php
-       function custom_rewrite_tag() {
-	 add_rewrite_tag('%food%', '([^&]+)');
-	 add_rewrite_tag('%variety%', '([^&]+)');
-       }
-       add_action('init', 'custom_rewrite_tag', 10, 0);
-
-       function custom_rewrite_rule() {
-	 add_rewrite_rule('^nutrition/([^/]*)/([^/]*)/?','index.php?page_id=12&food=$matches[1]&variety=$matches[2]','top');
-       }
-       add_action('init', 'custom_rewrite_rule', 10, 0);
-     #+END_SRC
-
-Create a page called Nutrition with page id 12 and use a custom template ~my-custom-template.php~
-#+BEGIN_SRC php
-  /**
-   ,* Template Name: Nutritional Information
-   ,*/
-  get_header(); 
-
-  global $wp_query;
-  echo 'Food : ' . $wp_query->query_vars['food'];
-  echo '<br />';
-  echo 'Variety : ' . $wp_query->query_vars['variety'];
-  // ... more ...
-  get_footer();
-#+END_SRC
-
-*** add_editor_style
-Used in wp:action:admin_init wp:action:after_setup_theme
-
-Add stylesheets for TinyMCE
-add_editor_style( array|string $stylesheet = 'editor-style.css' )
-Stylesheet name or array thereof, relative to theme root
-This function automatically adds another stylesheet with -rtl prefix, e.g. editor-style-rtl.css. If that file doesn’t exist, it is removed before adding the stylesheet(s) to TinyMCE. If an array of stylesheets is passed to add_editor_style(), RTL is only added for the first stylesheet.
-
-Since version 3.4 the TinyMCE body has .rtl CSS class. It is a better option to use that class and add any RTL styles to the main stylesheet.
-
-#+BEGIN_EXAMPLE
-  add_editor_style( array( 'assets/css/editor-style.css', twentyseventeen_fonts_url() ) );
-#+END_EXAMPLE
-
-*** ~__return_*()~
-- ~__return_true()~
-- ~__return_false()~
-- ~__return_empty_array()~
-- ~__return_null()~
-- ~__return_empty_string()~
-
-*** has_post_format <<<wp:f:has_post_format>>>
-In template
-#+BEGIN_SRC php
-  if ( has_post_format( 'aside' )) {
-    // code to display the aside format post here
-  } else if (has_post_format('gallery')) {
-	  // stuff to display the gallery format post here
-  } else if (has_post_format('link')) {
-	  // stuff to display the link format post here
-  }else {
-	  // code to display the normal format post here
-  }
-#+END_SRC
-
-*** has_custom_logo, get_custom_logo, the_custom_logo <<<wp:custom logo:display>>>
-get_custom_logo returns markup
-the_custom_logo displays markup
-
-#+BEGIN_SRC php
-  $custom_logo_id = get_theme_mod( 'custom_logo' );
-  $logo = wp_get_attachment_image_src( $custom_logo_id , 'full' );
-  if ( has_custom_logo() ) {
-	  echo '<img src="'. esc_url( $logo[0] ) .'">';
-  } else {
-	  echo '<h1>'. get_bloginfo( 'name' ) .'</h1>';
-  }
-#+END_SRC
-
-*** remove_meta_box <<<wp:f:remove_meta_box>>>
-#+BEGIN_SRC php
-  remove_meta_box( $id, $page, $context)
-#+END_SRC
-
-- Return 
-- $id :: string
-  - authordiv
-  - categorydiv
-  - comemntstatusdiv
-  - commentsdiv
-  - formatdiv
-  - pageparentdiv
-  - postcustom
-  - postexcerpt
-  - postimagediv
-  - revisionsdiv
-  - slugdiv
-  - submitdiv
-  - tagsdiv-post_tag
-  - tagsdiv-{$tax-name}
-  - {$tax-name}div
-  - trackbacksdiv
-  - ...
-- $page :: string. Type of screen
-  - post
-  - page
-  - attachment
-  - link
-  - dashboard
-  - any custom post type e.g. 'my-product'
-- $context :: string. 'normal', 'advanced', or 'side'
-  - Post edit screen :: normal, side and advanced
-  - Comments screen :: normal and side
-  - Menu meta boxes :: side
-- Return nothing
-
-*** get_template_part, get_theme_file_uri, get_theme_file_path <<<wp:f:get_template_part>>>
-- ~get_template_part( string $slug, string $name = null )~ :: ~require~ file ~{slug.php}~ or ~{slug}-{name}.php~
-     #+BEGIN_SRC php
-       <?php get_template_part( 'template-parts/header/header', 'image' ); ?>
-       // require( 'path-to-theme/template-parts/header/header-image.php' );
-     #+END_SRC
-   - Call ~locate_template~
-      - Call ~load_template~
-   - Pass variables to template
-     #+BEGIN_SRC php
-       // parent
-       $args = ['...'];
-       set_query_var( 'my_query_args', $args );
-
-       get_template_part('template-parts/test');
-
-       // test.php
-       $query = new WP_Query( $my_query_args );
-     #+END_SRC
-
-
-- <<<wp:f:get_theme_file_uri>>> :: ~get_theme_file_uri~ checks for file existance and returns URL.
-#+BEGIN_SRC php
-  wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
-#+END_SRC
-
-Get from child theme first js/my-scripts.js. Fall back to parent theme.
-
-<<<wp:f:get_theme_file_path>>> returns the path in filesystem so that you can use filemtime
-#+BEGIN_SRC php
-  wp_enqueue_script(
-      'my-script',
-      get_theme_file_uri( 'js/my-script.js' ),
-      array(),
-      filemtime( get_theme_file_path( 'js/my-script.js' ) )
-  );
-#+END_SRC
-
-*** get_theme_root, get_theme_root_uri
-#+BEGIN_SRC php
-  $theme_root = get_theme_root();
-  $files_array = glob("$theme_root/*", GLOB_ONLYDIR);
-  echo "There are " . count($files_array) . " subdirectories in the " . $theme_root . " directory"; 
-  // There are 5 subdirectories in the /home/user/public_html/wp-content/themes directory.
-
-  echo get_theme_root_uri();
-  // http://www.wordpress.org/wp-content/themes
-#+END_SRC
-
-*** wp_upload_dir
-Return an array to describe location of wp upload directory
-
-#+BEGIN_SRC php
-  array (
-      'path' => '/var/www/html/wp-content/uploads/2018/09', // next upload will go to this path
-      'url' => 'http://localhost:32006/wp-content/uploads/2018/09', // next upload 
-      'subdir' => '/2018/09', 
-      'basedir' => '/var/www/html/wp-content/uploads',
-      'baseurl' => 'http://localhost:32006/wp-content/uploads',
-      'error' => false
-  )
-#+END_SRC
-
-*** get_the_excerpt, the_excerpt
-- Use
-   - wp:filter:excerpt_length 
-   - wp:filter:excerpt_more
-- ~the_excerpt()~ echoes current post and it calls ~get_the_excerpt( $post = null )~
-- If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text
-- When used outside a loop, refer to wp:loop:outside
-
-*** wp_remote_get, wp_remote_post, wp_remote_head, wp_remote_request
-#+BEGIN_EXAMPLE
-  $response = wp_remote_get( 'http://www.example.com/index.html' );
-  // url has to include protocal e.g. http://
-  if ( is_array( $response ) ) {
-    $header = $response['headers']; // array of http header lines
-    $body = $response['body']; // use the content
-  }
-
-  wp_remote_get( 'http://www.example.com/index.php?action=foo', array( 'timeout' => 120, 'httpversion' => '1.1' ) );
-#+END_EXAMPLE
-
-Methods to work with $response
-- wp_remote_retrieve_body() - Retrieves just the body from the response.
-- wp_remote_retrieve_header() - Gives you a single HTTP header based on name from the response.
-- wp_remote_retrieve_headers() - Returns all of the HTTP headers in an array for processing.
-- wp_remote_retrieve_response_code() - Gives you the number for the HTTP response. This should be 200, but could be 4xx or even 3xx on failure.
-- wp_remote_retrieve_response_message() - Returns the response message based on the response code.
-
-Default options
-#+BEGIN_EXAMPLE
-  global $wp_version;
-  $args = array(
-      'timeout'     => 5, // seconds
-      'redirection' => 5, // how many times
-      'httpversion' => '1.0',
-      'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
-      'blocking'    => true, // php will stop until the request is processed. false to just ping but wp_remote_get will return false
-      'headers'     => array(),
-      'cookies'     => array(),
-      'body'        => null,
-      'compress'    => false,
-      'decompress'  => true,
-      'sslverify'   => true,
-      'stream'      => false,
-      'filename'    => null
-  ); 
-#+END_EXAMPLE
-
-*** register_post_type <<<wp:f:register_post_type>>> <<<wp:add cpt>>>
-- https://codex.wordpress.org/Function_Reference/register_post_type
-- Plugins use this function
-   - wp:plugin:custom-post-type-ui
-   - wp:plugin:acf
-- Called actions
-   - wp:action:registered_post_type
-- Called functions
-   - wp:f:add_rewrite_rule
-   - wp:f:add_rewrite_tag
-- wp:action:pre_get_posts
-- Refresh Permalink from UI or ~flush_rewrite_rules()~ in plugin/theme activation and deactivation hooks
-- Do not call before wp:action:init
-- ~register_post_type( string $post_type, array|string $args = array() )~
-   - $post_type :: string. < 20 characters. All lowercase and no space
-   - $args :: array of arguments
-      - query_var :: default true to use ~$post_type~ as public query_var <<<wp:f:register_post_type:query_var>>>
-
-#+BEGIN_SRC php
-  add_action('init', 'lili_custom_post_type');
-  function lili_custom_post_type() {
-    $labels = [
-      // array, wp:register_post_type:labels
-    ];
-
-    $args = [
-      'label' => 'Plural Name', // string, optional, default labels['name']
-      'labels' => $labels,
-      'description' => '', // string, optional
-
-      'public' => false,
-      /* Default false
-       ,*       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
-       ,* true:               false,               true,              true, true
-       ,* false:               true,              false,             false, false
-       ,*/
-
-      'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
-
-      'publicly_queryable' => true, // optional. take 'public' value.
-      /* ?post_type={post_type_key},
-       ,* ?{post_type_key}={single_post_slug},
-       ,* ?{post_type_query_var}={single_post_slug}
-       ,*/
-
-      // 'query_var' => true, // bool|string d:true to use $post_type. Set to false means the post type cannot be loaded at /?{query_var}={single_post_slug}. It has no effect when public_queryable is false
-
-      'show_ui' => true, // optional. bool. default take 'public' value.
-      'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
-      'show_in_menu' => true, // optional, bool or string. default inherits show_ui
-      // false :: do not display in admin menu
-      // true :: display as a top level menu
-      // 'some string' :: display as a submenu of a menu 'some string'
-      'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
-
-      'supports' => ['title', 'editor'], 
-      // optional. array/bool. wp:f:add_post_type_support
-      // 'custom-fields' :: don't have to add in order to use wp:plugin:acf
-      // 'title', 'editor' (content) this is the default
-      // 'author','excerpt', 'trackbacks',
-      // 'thumbnail' (featured image, current theme must also support post-thumbnails)
-      // 'comments' (also will see comment count balloon on edit screen)
-      // 'revisions' (will store revisions)
-      // 'page-attributes' (menu order, hierarchical must be true to show Parent option)
-      // 'post-formats' add post formats, see Post Formats
-
-      // 'hierarchical' => true
-      // default false, when true 'supports' should contain 'page-attributes'  
-
-      'has_archive' => false, // d:false
-
-		  'rewrite' => [
-			  'slug' => 'movies', // d:$post_type
-			  'with_front' => true, // d:true should the permalink strucutre to be prepended with the front base
-			  'feeds' => false, // d:$has_archive should a feed permalink structure be built
-			  'pages' => true, // d:true should the permalink structure provide for pagination
-			  'ep_mask' => EP_PERMALINK, // don't know what it is..
-		  ], // bool|array d:true and use $post_type as slug
-
-    ];
-
-    register_post_type('movies', $args);
-
-  }
-
-  add_action( 'pre_get_posts', 'lili_pre_get_posts' );
-  // Should not call this in template because in template the $query is already run
-  function lili_pre_get_posts( $query ) {
-    if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
-      $query->set( 'post_type', array( 'post', 'movies' ) );
-    }
-    // this function should return nothing.
-  }
-#+END_SRC
-
-Get Custom Post Types
-#+BEGIN_SRC php
-  $cpts = get_post_types( array(
-	  'public'   => true,
-	  '_builtin' => false,
-  ));
-#+END_SRC
-
-**** labels <<<wp:register_post_type:labels>>>
-
-#+BEGIN_EXAMPLE
-  'labels' => array(
-    'name' => __( 'Jobs' ),
-    'singular_name' => __( 'Job' )
-  )
-#+END_EXAMPLE
-
-**** menu_icon
-optional, default null > posts icon
-'dashicons-video-alt' (Uses the video icon from [[https://developer.wordpress.org/resource/dashicons/][Dashicons]])
-'get_template_directory_uri() . "/images/cutom-posttype-icon.png"' (Use a image located in the current theme)
-'data:image/svg+xml;base64,' . base64_encode( "<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 459 459"> <path fill="black" d="POINTS"/></svg>" )' (directly embedding a svg with 'fill="black"' will allow correct colors.)
-
-*** register_post_status <<<wp:f:register_post_status>>>
-- Register post status
-- Do not use before wp:action:init
-- add to wp:global:wp_post_statuses
-- Built-in post statuses ~_builtin~
-   - publish :: public
-   - future :: protected
-   - draft :: protected
-   - pending :: protected
-   - private :: private
-   - trash :: internal
-   - auto-draft :: internal
-   - inherit :: internal Used with child post such as Attachments (e.g. featured image) and Revisions
-   - request-pending :: internal
-   - request-confirmed :: internal
-   - request-failed :: internal
-   - request-completed :: internal
-- Extra post statuses
-   - wp:plugin:acf :: acf-disabled
-- ~register_post_status( string $post_status, array|string $args = array() )~
-   - $args
-     #+BEGIN_SRC php
-       $args = [
-	       'label' => 'Post status name for translation', // bool|string d:$post_status
-	       'label_count' => '', // bool|array d:none text to display on admin screen e.g. _n_noop( 'Unread <span class="count">(%s)</span>', 'Unread <span class="count">(%s)</span>' )
-	       'exclude_from_search' => false, // bool d:$internal whether to exclude posts with this post status
-	       'internal' => false, // bool d:false whether the status is for internal use only
-	       'public' => false, // bool whether posts of this status should be shown in the front end of the site
-	       // '_builtin' => false, // bool d:false core-use only
-	       'protected' => false, // bool d:false whether posts with this status should be protected
-	       'private' => false, // bool d:false whether posts with this status should be private
-	       'publicly_queryable' => false, // bool d:$public whether posts with this status should be publicly-queryable
-	       'show_in_admin_all_list' => false, // bool d:$internal whether to include posts in the edit listing for their post type
-	       'show_in_admin_status_list'=> false, // bool d:$internal show in the list of statuses with post counts at the top of the edit listings e.g. All (12) | Published (9) | My Custom Status (2)
-       ];
-     #+END_SRC
-
-#+BEGIN_SRC php
-  function my_custom_post_status(){
-	  register_post_status( 'unread', array(
-		  'label'                     => _x( 'Unread', 'post' ),
-		  'public'                    => true,
-		  'exclude_from_search'       => false,
-		  'show_in_admin_all_list'    => true,
-		  'show_in_admin_status_list' => true,
-		  'label_count'               => _n_noop( 'Unread <span class="count">(%s)</span>', 'Unread <span class="count">(%s)</span>' ),
-	  ) );
-  }
-  add_action( 'init', 'my_custom_post_status' );
-#+END_SRC
-
-*** register_nav_menus, register_nav_menu, wp_nav_menu
-<<<wp:f:register_nav_menus>>> used in wp:action:init or wp:action:after_setup_theme
-[[https://codex.wordpress.org/Function_Reference/register_nav_menus][Register custom nav menus]]
-This is to create a theme location or navigation menu. Each theme location can have one menu created from wp-admin.
-Menu created from wp-admin can associate with multiple theme locations.
-The following registers 3 theme locations.
-Other translation plugins like Polylang can create theme locations for each extra language based on the already defined theme locations.
-
-#+BEGIN_SRC php
-  function register_my_menus() {
-    register_nav_menus(
-      array(
-	'main-menu' => __('Main Menu'),
-	'about-menu' => __('About Menu'),
-	'services-menu' => __('Services Menu')
-      )
-    );
-  }
-#+END_SRC
-
-Display in template
-- https://developer.wordpress.org/reference/functions/wp_nav_menu/
-- wp:filter:wp_nav_menu_args
-  - container :: 'div' use what to wrap the menu, bool can be used
-  - menu_class :: 'menu', css class, e.g. 'class-1 class-2'
-  - fallback_cb :: false call a cb function if menu doesn't exist e.g. 'WP_Bootstrap_Navwalker::fallback'
-  - walker :: object e.g. ~new WP_Bootstrap_Navwalker()~
-- wp:filter:pre_wp_nav_menu :: short-circuit
-- wp:filter:wp_nav_menu_container_allowedtags
-- wp:filter:wp_nav_menu_objects
-- wp:filter:wp_nav_menu_items
-- wp:filter:wp_nav_menu_$menu->slug_items
-- wp:filter:wp_nav_menu :: filter output
-
-#+BEGIN_SRC php
-  // already echo
-  wp_nav_menu( array( 'theme_location' => 'header-menu' ) );
-#+END_SRC
-
-*** register_sidebar <<<wp:f:register_sidebar>>>
-Create a sidebar (widget area) where widget instances can be assigned to in wp admin UI.
-
-- Display sidebar 
-  - wp:f:dynamic_sidebar 
-  - wp:f:get_sidebar
-
-#+BEGIN_SRC php
-  add_action( 'widgets_init', 'theme_slug_widgets_init' );
-  function theme_slug_widgets_init() {
-      register_sidebar( array(
-	  'name' => __( 'Main Sidebar', 'theme-slug' ),
-	  'id' => 'sidebar-1',
-	  'description' => __( 'Widgets in this area will be shown on all posts and pages.', 'theme-slug' ),
-	  'class' => 'tal', // prepend so CSS result for WP Admin page becomes 'sidebar-tal', (default: empty)
-	  'before_widget' => '<li id="%1$s" class="widget %2$s">',
-	  'after_widget'  => '</li>',
-	  'before_title'  => '<h2 class="widgettitle">',
-	  'after_title'   => '</h2>',
-      ) );
-  }
-#+END_SRC
-
-*** register_widget <<<wp:f:register_widget>>> 
-Used in wp:action:widgets_init
-System widgets ~wp-includes/widgets/class-wp-widget-*.php~ and they're registered at wp-includes/widgets.php
-
-#+BEGIN_SRC php
-  <?php
-  // Register and load the widget
-  function wpb_load_widget() {
-    register_widget( 'wpb_widget' );
-  }
-
-  add_action( 'widgets_init', 'wpb_load_widget' );
-
-  // Creating the widget 
-  class wpb_widget extends WP_Widget {
-
-    function __construct() {
-      // PHP 5.x
-      //$this->WP_Widget( 'dokan-category-menu', 'Dokan: Product Category', $widget_ops );
-
-      parent::__construct(
-
-      // Base ID of your widget
-	'wpb_widget',
-
-	// Widget name will appear in UI
-	__( 'WPBeginner Widget', 'wpb_widget_domain' ),
-
-	// Widget description
-	[ 'description' => __( 'Sample widget based on WPBeginner Tutorial', 'wpb_widget_domain' ), ]
-      );
-    }
-
-    // Creating widget front-end
-
-    public function widget( $args, $instance ) {
-      $title = apply_filters( 'widget_title', $instance['title'] );
-
-      // before and after widget arguments are defined by themes
-      echo $args['before_widget'];
-      if ( ! empty( $title ) ) {
-	echo $args['before_title'] . $title . $args['after_title'];
-      }
-
-      // This is where you run the code and display the output
-      echo __( 'Hello, World!', 'wpb_widget_domain' );
-      echo $args['after_widget'];
-    }
-
-    // Widget Backend 
-    public function form( $instance ) {
-      if ( isset( $instance['title'] ) ) {
-	$title = $instance['title'];
-      } else {
-	$title = __( 'New title', 'wpb_widget_domain' );
-      }
-      // Widget admin form
-      ?>
-      <p>
-	<label
-	  for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title:' ); ?></label>
-	<input class="widefat"
-	       id="<?php echo $this->get_field_id( 'title' ); ?>"
-	       name="<?php echo $this->get_field_name( 'title' ); ?>"
-	       type="text" value="<?php echo esc_attr( $title ); ?>"/>
-      </p>
-      <?php
-    }
-
-    // Updating widget replacing old instances with new
-    public function update( $new_instance, $old_instance ) {
-      $instance          = [];
-      $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
-
-      return $instance;
-    }
-  } // Class wpb_widget ends here
-
-
-  class MyNewWidget extends WP_Widget {
-
-	  function __construct() {
-		  // Instantiate the parent object
-
-	  }
-
-	  function widget( $args, $instance ) {
-		  // Widget output
-	  }
-
-	  function update( $new_instance, $old_instance ) {
-		  // Save widget options
-	  }
-
-	  function form( $instance ) {
-		  // Output admin widget options form
-	  }
-  }
-
-  function myplugin_register_widgets() {
-	  register_widget( 'MyNewWidget' );
-  }
-
-  add_action( 'widgets_init', 'myplugin_register_widgets' );
-#+END_SRC
-
-*** wpautop <<<wp:f:wpautop>>> 
-- Used in
-  - wp:filter:the_content
-  - wp:filter:the_excerpt
-- Change double line-breaks in text into ~<p>...</p>~
-
-Turn off wpautop for specific pages
-#+BEGIN_SRC php
-  function remove_p_on_pages() {
-      if ( is_page() ) {
-	  remove_filter( 'the_content', 'wpautop' );
-	  remove_filter( 'the_excerpt', 'wpautop' );
-
-      }
-  }
-  add_action( 'wp_head', 'remove_p_on_pages' );
-#+END_SRC
-
-*** show_admin_bar <<<wp:f:show_admin_bar>>>
-Use it in functions.php or wp:filter:show_admin_bar
-#+BEGIN_SRC php
-  if ( ! current_user_can( 'manage_options' ) ) {
-      show_admin_bar( false );
-  }
-#+END_SRC
-
-*** wp_get_image_editor
-wp_get_image_editor( string $path, array $args = array() )
-Returns WP_Error or [[https://developer.wordpress.org/reference/classes/wp_image_editor/][WP_Image_Editor]]
-#+BEGIN_EXAMPLE
-  function image_resize( $file, $max_w, $max_h, $crop = false, $suffix = null, $dest_path = null, $jpeg_quality = 90 ) {
-      _deprecated_function( __FUNCTION__, '3.5.0', 'wp_get_image_editor()' );
-   
-      $editor = wp_get_image_editor( $file );
-      if ( is_wp_error( $editor ) )
-          return $editor;
-      $editor->set_quality( $jpeg_quality );
-   
-      $resized = $editor->resize( $max_w, $max_h, $crop );
-      if ( is_wp_error( $resized ) )
-          return $resized;
-   
-      $dest_file = $editor->generate_filename( $suffix, $dest_path );
-      $saved = $editor->save( $dest_file );
-   
-      if ( is_wp_error( $saved ) )
-          return $saved;
-   
-      return $dest_file;
-  }
-#+END_EXAMPLE
-
-*** wp_reset_postdata <<<wp:f:wp_reset_postdata>>>
-- Use it when custom query ~new WP_Query()~ is defined and used
-- After ~global $post~ is modified by wp:query:secondary, reset it to the original that was set by wp:query:main
-
-#+BEGIN_SRC php
-  <?php
-  // example args
-  $args = array( 'posts_per_page' => 3 );
-
-  // the query
-  $the_query = new WP_Query( $args );
-  ?>
-
-  <?php if ( $the_query->have_posts() ) : ?>
-
-	  <!-- start of the loop -->
-	  <?php while ( $the_query->have_posts() ) : $the_query->the_post(); ?>
-		  <?php the_title(); ?>
-		  <?php the_excerpt(); ?>
-	  <?php endwhile; ?><!-- end of the loop -->
-
-	  <!-- put pagination functions here -->
-	  <?php wp_reset_postdata(); ?>
-
-  <?php else:  ?>
-
-  <p><?php _e( 'Sorry, no posts matched your criteria.' ); ?></p>
-
-  <?php endif; ?>
-#+END_SRC
-
-*** wp_reset_query <<<wp:f:wp_reset_query>>>
-- Should be called after ~query_posts()~
-- ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query'];~ and ~wp_reset_postdata()~
-
-Avoid to use it. To alter main query parameters before it's made, use wp:action:pre_get_posts
-#+BEGIN_SRC php
-  $args = array ( 'post_parent' => 5 );
-  query_posts( $args );
-
-  if ( have_posts() ):
-      while ( have_posts() ) :
-	  the_post();
-
-	  // Do stuff with the post content.
-	  the_title();
-	  the_permalink(); // Etc.
-
-      endwhile;
-  else:
-      // Insert any content or load a template for no posts found.
-  endif;
-
-  wp_reset_query();
-#+END_SRC
-
-*** update_post_meta <<<wp:f:update_post_meta>>>
-
 ** URL, Current URL, and slug <<<wp:current url>>>
 Current URL on your website
 <<<php:parse_url>>>
@@ -10088,187 +8159,6 @@ Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 *** Create Custom Fields for Custom Post Type
 Use wp:plugin:acf
-
-** Taxonomy API ~wp-includes/taxonomy.php~ <<<wp:api:taxonomy>>>
-*** ~get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' )~
-- Return WP_Term|array|false
-- Get term by slug :: ~get_term_by( 'slug', 'my-term-slug', 'taxonomy-of-the-term' )~
-- Get current term :: ~get_term_by( 'slug', get_query_var( 'term' ), get_query_var( 'taxonomy' ) )~
-- ~$field~ could be :: slug, name, id or term_taxonomy_id
-- $output could be :: OBJECT, ARRAY_A, ARRAY_N
-
-*** ~register_taxonomy( string $taxonomy, array|string $object_type, array|string $args = array() )~ <<<wp:f:register_taxonomy>>>
-- https://codex.wordpress.org/Function_Reference/register_taxonomy
-- Do not call before wp:action:init
-- Parameters
-   - $taxonomy :: tax slug <= 32 characters
-   - $object_type :: e.g. post type slug
-   - $args
-      - query_var :: d:$taxonomy <<<wp:f:register_taxonomy:query_var>>>
-      - update_count_callback :: <<<wp:f:register_taxonomy:update_count_callback>>>
-	 - d:'' :: affect wp:f:wp_update_term_count_now
-- wp:global:wp_taxonomies
-- ~do_action( 'registered_taxonomy', $taxonomy, $object_type, (array) $taxonomy_object )~ :: wp:action:registered_taxonomy
-
-#+BEGIN_SRC php
-  add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
- 
-  //create a custom taxonomy name it topics for your posts
- 
-  function create_topics_hierarchical_taxonomy() {
- 
-  // Add new taxonomy, make it hierarchical like categories
-  //first do the translations part for GUI
- 
-    $labels = array(
-      'name' => _x( 'Topics', 'taxonomy general name' ),
-      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
-      'search_items' =>  __( 'Search Topics' ),
-      'all_items' => __( 'All Topics' ),
-      'parent_item' => __( 'Parent Topic' ),
-      'parent_item_colon' => __( 'Parent Topic:' ),
-      'edit_item' => __( 'Edit Topic' ), 
-      'update_item' => __( 'Update Topic' ),
-      'add_new_item' => __( 'Add New Topic' ),
-      'new_item_name' => __( 'New Topic Name' ),
-      'menu_name' => __( 'Topics' ),
-    );    
- 
-  // Now register the taxonomy
- 
-    register_taxonomy('topics',array('post'), array(
-      'hierarchical' => true,
-      'labels' => $labels,
-      'show_ui' => true,
-      'show_admin_column' => true,
-      'query_var' => true,
-      'rewrite' => array( 'slug' => 'topic' ),
-    ));
- 
-  }
-#+END_SRC
-
-Non-hierarchical taxonomy
-#+BEGIN_SRC php
-  add_action( 'init', 'create_topics_nonhierarchical_taxonomy', 0 );
- 
-  function create_topics_nonhierarchical_taxonomy() {
- 
-  // Labels part for the GUI
- 
-    $labels = array(
-      'name' => _x( 'Topics', 'taxonomy general name' ),
-      'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
-      'search_items' =>  __( 'Search Topics' ),
-      'popular_items' => __( 'Popular Topics' ),
-      'all_items' => __( 'All Topics' ),
-      'parent_item' => null,
-      'parent_item_colon' => null,
-      'edit_item' => __( 'Edit Topic' ), 
-      'update_item' => __( 'Update Topic' ),
-      'add_new_item' => __( 'Add New Topic' ),
-      'new_item_name' => __( 'New Topic Name' ),
-      'separate_items_with_commas' => __( 'Separate topics with commas' ),
-      'add_or_remove_items' => __( 'Add or remove topics' ),
-      'choose_from_most_used' => __( 'Choose from the most used topics' ),
-      'menu_name' => __( 'Topics' ),
-    ); 
- 
-  // Now register the non-hierarchical taxonomy like tag
- 
-    register_taxonomy('topics','post',array(
-      'hierarchical' => false,
-      'labels' => $labels,
-      'show_ui' => true,
-      'show_admin_column' => true,
-      'update_count_callback' => '_update_post_term_count',
-      'query_var' => true,
-      'rewrite' => array( 'slug' => 'topic' ),
-    ));
-  }
-#+END_SRC
-
-*** ~wp_update_term_count_now( array $terms, string $taxonomy )~ <<<wp:f:wp_update_term_count_now>>>
-- $terms :: array of term_taxonomy_id
-- return true :: when complete
-- It's only called when
-   - a post's post status is updated (update count for the post's associated terms)
-   - a tax is added or removed (update count for that tax only)
-   - Not cleared when cache is cleared and has to be run manually to update count
-- ~call_user_func( $taxonomy->update_count_callback, $terms, $taxonomy )~ :: if wp:f:register_taxonomy:update_count_callback is defined
-- ~_update_post_term_count( $terms, $taxonomy )~ :: if there's any attached post types that exist, get total count of publish posts of attached post types
-   - wp:action:edit_term_taxonomy
-   - Update wp:db:wp_term_taxonomy:count
-   - wp:action:edited_term_taxonomy
-- ~_update_generic_term_count( $terms, $taxonomy )~ :: if there's no attached post type that exists, get total count of anything from wp:db:wp_term_relationships
-
-*** <<<wp:action:registered_taxonomy>>>
-- Add action before wp:f:register_taxonomy is called
-
-*** Add a sortable column to taxonomy edit page
-- Taxonomy :: sponsor_type
-- Refer to wp:api:plugin for adding a column to custom post type
-- Filter ~manage_${taxonomy}_custom_column~ :: wp:api:plugin:filter:manage_{taxonomy}_custom_column
-
-#+BEGIN_SRC php
-  <?php
-  add_filter( 'manage_edit-sponsor_type_columns', function ( $columns ) {
-	  $columns['my_term_id']             = __( 'Term ID' ); // add a column
-	  $columns['sponsorship_type_order'] = __( 'Order' ); // add a column
-	  //
-	  // to see existing columns, wp-admin/edit-tags.php?taxonomy=sponsor_type
-	  //var_dump('hello'); var_dump($columns);
-	  //unset( $columns['cpt-shows'] );                 // Don't allow sort by a column
-	  return $columns;
-  } );
-
-  // populate values in column Order
-  add_filter( 'manage_sponsor_type_custom_column', function ( $value, $column_name, $term_id ) {
-	  $term  = get_term( $term_id, 'sponsor_type' );
-	  $order = get_field( 'sponsorship_type_order', $term );
-	  switch ( $column_name ) {
-		  case 'sponsorship_type_order':
-			  $value = $order;
-			  break;
-		  default:
-			  break;
-	  }
-
-	  return $value;
-  }, 10, 3 );
-
-  // make the column sortable
-  add_filter( 'manage_edit-sponsor_type_sortable_columns', function ( $columns ) {
-	  // see existing sortable columns
-	  //var_dump('hello'); var_dump($columns);
-
-	  $columns['sponsorship_type_order'] = 'custom_order'; // don't use order or orderby as the url parameter name
-
-	  return $columns;
-  } );
-
-  // add sort mechanism
-  add_filter( 'terms_clauses', function ( $pieces, $taxonomies, $args ) {
-	  global $pagenow;
-	  if ( ! is_admin() ) {
-		  return $pieces;
-	  }
-	  if ( is_admin() && $pagenow == 'edit-tags.php' && $taxonomies[0] == 'sponsor_type' &&
-	       ( ! isset( $_GET['orderby'] ) || $_GET['orderby'] == 'custom_order' )
-	  ) {
-		  // to further customize the sorting. By default, using the populated value to sort is good enough
-		  // e.g. If orderby is not set, add some default from wp_options
-		  // $pieces['join']   .= " INNER JOIN wp_options AS opt ON opt.option_name = concat('issue_',t.term_id,'_issue_date')";
-		  // $pieces['orderby'] = "ORDER BY opt.option_value";
-		  // $pieces['order']   = isset($_GET['order']) ? $_GET['order'] : "DESC";
-	  }
-
-	  return $pieces;
-  }, 10, 3 );
-#+END_SRC
-
-** Rewrite API <<<wp:wp_rewrite>>>
-- wp:options:rewrite_rules
 
 ** WP_Query The Loop <<<wp:The_Loop>>> <<<wp:query:main>>>
 - The main query/loop is based on the URL request and is processed before templates are loaded
@@ -11092,6 +8982,2059 @@ Select the posts that have checkbox enligne checked.
   </item>  
   <?php endwhile; ?>
 #+END_SRC
+
+** Functions
+*** Plugin API ~wp-includes/plugin.php~ <<<wp:api:plugin>>>
+- https://codex.wordpress.org/Plugin_API
+
+**** add_filter, apply_filters, apply_filters_ref_array <<<wp:add_filter>>>
+Syntax, remove_filter
+- Modify internal data / function returned
+- For example, WP_Query gets internal settings for building a query
+   - You can temporary add_filter to change the internal settings, then build a WP_Query, later remove_filter 
+   - so that you only change the internal setting for that query building without affecting other usage
+
+#+BEGIN_SRC php
+  add_filter( 
+   'tagname', 
+   'lili_funct',
+    10, // int. Priority, lower number sooner
+    2, // int. Accepted args, default is 1! Be careful
+  );
+
+  apply_filters( 'tagname', $result, $var1);
+
+  // callback should take 2 variables
+  function lili_funct($result, $var1) {
+   $new = $result . 'abc';
+   return $new;
+  }
+
+  remove_filter(
+    'tagname',
+    'lili_funct',
+    10 // priority, must match the add_filter priority, default is 10
+  );
+#+END_SRC
+
+#+BEGIN_SRC php
+  function remove_filter_the_title() {
+	  remove_filter('the_title', 'before_post_title', 10);
+  }
+  add_action( 'wp_head', 'remove_filter_the_title', 1 );
+
+  function add_filter_the_title() {
+	  add_filter('the_title', 'before_post_title', 10, 2);
+  }
+  add_action( 'wp_head', 'add_filter_the_title', 3 );
+#+END_SRC
+
+Class method
+#+BEGIN_SRC php
+  // Static class method
+  add_filter( 'media_upload_newtab', array( 'My_Class', 'media_upload_callback' ) );
+
+  // Instance method
+  add_filter( 'media_upload_newtab', array( $this, 'media_upload_callback' ) );
+
+  // Anonymous function
+  add_filter( 'the_title', function( $title ) { return '<strong>' . $title . '</strong>'; } );
+#+END_SRC
+
+**** add_action, do_action, do_action_ref_array <<<wp:add_action>>>
+Event based
+#+BEGIN_SRC php
+  add_action( string $tag,
+    string $function_name,
+    int $priority = 10,
+    int $accepted_args = 1 // number of args the function accepts
+  );
+
+  // add_action( 'atag' is called by do_action( 'atag' or do_action_ref_array( 'atag'
+
+  // child theme
+  add_action( 'abc', 'xyz' );
+  // parent theme
+  add_action( 'abc', 'abc' );
+
+  // xyz and abc will run in order
+  do_action( 'abc' );
+
+  // child theme
+  remove_action( 'abc', 'ijk' );
+
+  // parent theme
+  add_action( 'abc', 'ijk');
+
+  // ijk is added and then removed, so ijk will not run
+  do_action( 'abc' );
+#+END_SRC
+
+***** Action sequence <<<wp:action:loading sequence>>>
+- https://codex.wordpress.org/Plugin_API/Action_Reference
+- http://lance.bio/2017/10/11/wordpress-hooks-and-filters-order-of-precedence/
+- ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
+  - ~WP_Customize_Widgets->customize_register~
+
+*** Transients API - ~set_transient~ vs ~wp_cache_set~ <<<wp:cache>>>
+ WordPress cache API in database.
+ ~DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')~
+
+ WP object cache stores objects and primitives but not in a persistent manner by default. This means caching happens in memory and it only lives for the request's lifetime cycle (e.g. one pageload). Redis plugin can make it persistent.
+
+ https://codex.wordpress.org/Class_Reference/WP_Object_Cache
+
+ Transient API saves variables, arrays, objects tied with an expiration date on db and has persistent object caching. However when cached objects expire, they remain on db which needs to be pruned every once in a while.
+
+ WP detects if persistent object cache, if so, bypass Transients API and route to WP object cache.
+
+ #+BEGIN_SRC php
+   // wp_cache_get( int|string $key, string $group = '', bool $force = false, bool $found = null )
+   // wp_cache_set( int|string $key, mixed $data, string $group = '', int $expire )
+   $result = wp_cache_get( 'my_result', 'my-group' );
+   if ( false === $result ) {
+	   $result = $wpdb->get_results( $query );
+	   wp_cache_set( 'my_result', $result, 'my-group', 600 ); // expire after 5 mins
+   } 
+   // Do something with $result;
+ #+END_SRC
+*** Formatting ~wp-includes/formatting.php~
+**** ~wp_strip_all_tags( $string, $remove_breaks = false )~
+ #+BEGIN_SRC php
+   function wp_strip_all_tags($string, $remove_breaks = false) {
+     $string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
+     $string = strip_tags($string);
+
+     if ( $remove_breaks )
+       $string = preg_replace('/[\r\n\t ]+/', ' ', $string);
+
+     return trim( $string );
+   }
+ #+END_SRC
+
+**** ~wp_trim_words( $text, $num_words = 55, $more = null )~ <<<wp:ellipsis>>>
+ - Strip HTML and PHP tags and truncate string in words
+
+ #+BEGIN_SRC php
+   function wp_trim_words( $text, $num_words = 55, $more = null ) {
+     if ( null === $more ) {
+       $more = __( '&hellip;' );
+     }
+
+     $original_text = $text;
+     $text = wp_strip_all_tags( $text );
+
+     /*
+      ,* translators: If your word count is based on single characters (e.g. East Asian characters),
+      ,* enter 'characters_excluding_spaces' or 'characters_including_spaces'. Otherwise, enter 'words'.
+      ,* Do not translate into your own language.
+      ,*/
+     if ( strpos( _x( 'words', 'Word count type. Do not translate!' ), 'characters' ) === 0 && preg_match( '/^utf\-?8$/i', get_option( 'blog_charset' ) ) ) {
+       $text = trim( preg_replace( "/[\n\r\t ]+/", ' ', $text ), ' ' );
+       preg_match_all( '/./u', $text, $words_array );
+       $words_array = array_slice( $words_array[0], 0, $num_words + 1 );
+       $sep = '';
+     } else {
+       $words_array = preg_split( "/[\n\r\t ]+/", $text, $num_words + 1, PREG_SPLIT_NO_EMPTY );
+       $sep = ' ';
+     }
+
+     if ( count( $words_array ) > $num_words ) {
+       array_pop( $words_array );
+       $text = implode( $sep, $words_array );
+       $text = $text . $more;
+     } else {
+       $text = implode( $sep, $words_array );
+     }
+
+     /**
+      ,* Filters the text content after words have been trimmed.
+      ,*
+      ,* @since 3.3.0
+      ,*
+      ,* @param string $text          The trimmed text.
+      ,* @param int    $num_words     The number of words to trim the text to. Default 55.
+      ,* @param string $more          An optional string to append to the end of the trimmed text, e.g. &hellip;.
+      ,* @param string $original_text The text before it was trimmed.
+      ,*/
+     return apply_filters( 'wp_trim_words', $text, $num_words, $more, $original_text );
+   }
+ #+END_SRC
+
+**** ~antispambot( $email_address, $hex_encoding = 0 ) : string~ <<<wp:f:antispambot>>>
+- Encode email address to hex
+  #+BEGIN_SRC php
+   function hide_email_addresses_sc($atts, $content = null) {
+	   // $atts['var1'], the following just sets a default if var1 attribute is not defined in shortcode
+	   $emailaddress_fields = shortcode_atts(array(
+		   'id' => '',
+		   'email' => ''
+	   ),$atts);
+	   $userid = $emailaddress_fields['id'];
+	   $e_mail = $emailaddress_fields['email'];
+	   if ($userid !=='' && $e_mail =='') {
+		   $emailaddress = get_the_author_meta('user_email',$userid);
+		   return '<a href="mailto:'.antispambot($emailaddress).'">'.antispambot($emailaddress).'</a>';
+	   }
+	   if ($userid =='' && $e_mail !=='') {
+		   return '<a href="mailto:'.antispambot($e_mail).'">'.antispambot($e_mail).'</a>';
+	   }
+	   else {
+		   return '';
+	   }
+   }
+   add_shortcode('hide-email','hide_email_addresses_sc');
+  #+END_SRC
+
+**** ~wpautop( $pee, $br = true ) : string~ <<<wp:f:wpautop>>>
+ - Used in
+   - wp:filter:the_content
+   - wp:filter:the_excerpt
+ - Change double line-breaks in text into ~<p>...</p>~
+
+ Turn off wpautop for specific pages
+ #+BEGIN_SRC php
+   function remove_p_on_pages() {
+       if ( is_page() ) {
+	   remove_filter( 'the_content', 'wpautop' );
+	   remove_filter( 'the_excerpt', 'wpautop' );
+
+       }
+   }
+   add_action( 'wp_head', 'remove_p_on_pages' );
+ #+END_SRC
+
+*** Main API ~wp-includes/functions.php~ <<<wp:api:main>>>
+**** Option API <<<wp:api:option>>>
+
+**** ~wp_parse_args( $args, $defaults = '' )~ <<<wp:f:wp_parse_args>>>
+Merge user defined arguments into defaults array
+
+**** ~__return_*()~
+ - ~__return_true()~
+ - ~__return_false()~
+ - ~__return_empty_array()~
+ - ~__return_null()~
+ - ~__return_empty_string()~
+
+**** wp_upload_dir
+ Return an array to describe location of wp upload directory
+
+ #+BEGIN_SRC php
+   array (
+       'path' => '/var/www/html/wp-content/uploads/2018/09', // next upload will go to this path
+       'url' => 'http://localhost:32006/wp-content/uploads/2018/09', // next upload 
+       'subdir' => '/2018/09', 
+       'basedir' => '/var/www/html/wp-content/uploads',
+       'baseurl' => 'http://localhost:32006/wp-content/uploads',
+       'error' => false
+   )
+ #+END_SRC
+
+*** Translate <<<wp:translate>>>
+Use tool:Poedit
+
+**** Translate Functions ~wp-includes/l10n.php~
+- $text :: can't be a variable. And use single quotes instead of ~""~
+- Use ~sprintf~ (return) or ~printf()~ (echo) for subsitutions. The msgid is ~"You have chosen the %s theme"~
+
+***** Sample
+#+BEGIN_SRC php
+  echo sprintf( __( 'You have chosen the %s theme.' ) , the_color() );
+
+  printf( __( 'You have chosen the %s theme.' ) , the_color() );
+
+  echo __('some text', 'textdomain'); // return
+  // 'textdomain' is optional but it has to be a string not a variable! Default it's 'default'
+
+  // _e() is the same as __() but echoes
+
+  // Plural or single
+  // _n( $single, $plural, $number, $domain = 'default' )
+  echo _n('There is a comment', 'There are comments', get_comments_number());
+
+  _nx( $single, $plural, $number, $context, $domain = 'default' );
+
+  // Context
+  echo _x('post a link', 'A link to the post', 'my-text-domain');
+  // 'A link to the post' matches msgctxt "A link to the post" in .po file.
+
+  // _ex is the same as _x but echoes
+
+  // return value for an HTML attribute 
+  printf( esc_attr__( 'View all posts filed under %1$s', 'my-text-domain' ), get_cat_name( 32 ) );
+
+  // echo value for an HTML attribute
+  esc_attr_e( $text, $domain = 'default' );
+
+  esc_attr_x( $text, $context, $domain = 'default' );
+
+  // return value for HTML output
+  esc_html__( $text, $domain = 'default' );
+
+  esc_html_e( $text, $domain = 'default' );
+
+  esc_html_x( $text, $context, $domain = 'default' );
+#+END_SRC
+
+**** Setup, .po and .mo files
+Load textdomain in child theme which overwrites the textdomain defined in parent theme
+Do this in theme functions.php
+#+BEGIN_SRC php
+  function smart_mag_child_theme_locale() {
+    $_r = load_child_theme_textdomain( 'textdomain-name', get_stylesheet_directory() . '/languages' );
+    // textdomain-name can be defined in parent theme or a new textdomain
+    // if textdomain-name has been defined earlier, then this will overwrite
+
+    // Check if textdomain inclusion is successful
+    //if ( $_r ) var_dump( 'success!' );
+
+    if ( is_admin() ) {
+      // load another textdomain
+    }
+  }
+  add_action( 'after_setup_theme', 'smart_mag_child_theme_locale' );
+#+END_SRC
+
+Usually translate-ready theme will provide a .pot file which is a template file for .po and .mo files.
+Open .pot in tool:Poedit, generate a new translation. What Poedit saves is 2 files: .po and .mo.
+
+Open .po file later, make changes and save to overwrite .po and .mo files. File .pot is no longer needed.
+
+Catalog > Properties > Translation properties
+Specifiy the language
+Plural Forms by default is
+#+BEGIN_EXAMPLE
+  nplurals=2; plural=n != 1;
+#+END_EXAMPLE
+
+Might need to specify the path in code for .po file. '.' means the current path.
+#+BEGIN_EXAMPLE
+  "X-Poedit-SearchPath-0: .\n"
+#+END_EXAMPLE
+
+Catalog > Properties > Sources keywords contain all the Wordpress translation functions
+
+#+BEGIN_EXAMPLE
+  __
+  _e
+  _n:1,2
+  _x:1,2c
+  _ex:1,2c
+#+END_EXAMPLE
+
+=:1,2= indicates the function has 2 parts. =2c= means the 2nd argument is a context/comment.
+
+tool:Poedit can help you change most of the fields except that it can't specify context msgctxt.
+
+For those situations, directly edit .po and open .po in Poedit and save to get the .mo file.
+
+Some examples
+
+Comments :: ~#. Author of the plugin/theme~ Due to emacs, ~;; #.~ is ~#.~ in the following examples
+Reference :: ~#: woocommerce/loop/orderby.php:23~ Due to emacs, ~;; #:~ is ~#:~ in the following examples
+
+Concatenate multiple lines
+#+BEGIN_EXAMPLE
+  #: 404.php:18
+  msgid ""
+  "We're sorry, but we can't find the page you were looking for. It's probably "
+  "some thing we've done wrong but now we know about it and we'll try to fix "
+  "it. In the meantime, try one of these options:"
+  msgstr ""
+#+END_EXAMPLE
+
+sprintf and printf subsitutions
+#+BEGIN_EXAMPLE
+  #: archive.php:101
+  msgid "Yearly Archives: %s"
+  msgstr ""
+#+END_EXAMPLE
+
+Context
+#+BEGIN_EXAMPLE
+  #: bbpress/auth-modal.php:69
+  msgctxt "bbPress"
+  msgid "Favorites"
+  msgstr ""
+#+END_EXAMPLE
+
+Complex context
+#+BEGIN_EXAMPLE
+  #: comments.php:53
+  msgid ""
+  "Logged in as <a href=\"%1$s\">%2$s</a>. <a href=\"%3$s\" title=\"Log out of "
+  "this account\">Log out?</a>"
+  msgstr ""
+#+END_EXAMPLE
+
+Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
+Settings > General > Site Lanuage to match fr_CA
+
+*** Query API <<<wp:api:query>>>
+ - wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
+ - ~query_posts( $query )~ wp:f:query_posts
+
+**** Conditional Tags <<<wp:conditional tags>>>
+  - [[https://codex.wordpress.org/Conditional_Tags][These]] call ~global $wp_query~ wp:wp_query:m:is_* 
+     - Usually the wp:query:main
+
+***** ~is_page( int|string|array $page = '' )~
+  #+BEGIN_SRC php
+    is_page(); // any page
+    is_page(42);
+    is_page( 'mypageslug' );
+    is_page( array(42, 'about-me', 'Page title' ) ); // either one of those id, slug or title
+    is_page( array(42, 54, 6) );
+  #+END_SRC
+
+***** ~is_page_template( string|array $template = '' )~
+  #+BEGIN_SRC php
+    is_page_template(); // any page template
+    is_page_template( 'about.php' ); // another template 'page-templates/about.php'
+  #+END_SRC
+
+***** ~is_single( int|string|array $post = '' )~
+  - works for any post type except attachments and pages
+  - $post :: Post ID, title, slug or array of such (one of the specified) 
+
+***** ~is_singular( string|array $post_types = '' )~
+  - $post_types :: Whether the query is for an existing single post of any post type. Or if $post_types is specified, additionally check if the query is for one of the Post Types specified
+
+  #+BEGIN_SRC php
+    is_singular();
+    is_singular( 'article' );
+    is_singular( array( 'newspaper', 'book' ) );
+  #+END_SRC
+
+***** ~is_admin_bar_showing()~
+  - wp:admin:toolbar
+
+**** wp_reset_postdata <<<wp:f:wp_reset_postdata>>>
+ - Use it when custom query ~new WP_Query()~ is defined and used
+ - After ~global $post~ is modified by wp:query:secondary, reset it to the original that was set by wp:query:main
+
+ #+BEGIN_SRC php
+   <?php
+   // example args
+   $args = array( 'posts_per_page' => 3 );
+
+   // the query
+   $the_query = new WP_Query( $args );
+   ?>
+
+   <?php if ( $the_query->have_posts() ) : ?>
+
+	   <!-- start of the loop -->
+	   <?php while ( $the_query->have_posts() ) : $the_query->the_post(); ?>
+		   <?php the_title(); ?>
+		   <?php the_excerpt(); ?>
+	   <?php endwhile; ?><!-- end of the loop -->
+
+	   <!-- put pagination functions here -->
+	   <?php wp_reset_postdata(); ?>
+
+   <?php else:  ?>
+
+   <p><?php _e( 'Sorry, no posts matched your criteria.' ); ?></p>
+
+   <?php endif; ?>
+ #+END_SRC
+
+**** wp_reset_query <<<wp:f:wp_reset_query>>>
+ - Should be called after ~query_posts()~
+ - ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query'];~ and ~wp_reset_postdata()~
+
+ Avoid to use it. To alter main query parameters before it's made, use wp:action:pre_get_posts
+ #+BEGIN_SRC php
+   $args = array ( 'post_parent' => 5 );
+   query_posts( $args );
+
+   if ( have_posts() ):
+       while ( have_posts() ) :
+	   the_post();
+
+	   // Do stuff with the post content.
+	   the_title();
+	   the_permalink(); // Etc.
+
+       endwhile;
+   else:
+       // Insert any content or load a template for no posts found.
+   endif;
+
+   wp_reset_query();
+ #+END_SRC
+
+*** Theme functions ~wp-includes/theme.php~
+**** get_template_directory, get_template_directory_uri, get_stylesheet_directory_uri, get_stylesheet_uri
+ - ~get_template_directory()~ :: the filesystem path of the current parent theme
+ - ~get_template_directory_uri~ :: URI e.g. protocol://domain of the current parent theme
+ - ~get_stylesheet_directory()~ :: the filesystem path of the current child theme
+ - ~get_stylesheet_directory_uri~ :: URI of the stylesheet directory. grab child and then parent theme.
+ - ~get_stylesheet_uri~ :: URI of style.css
+
+ #+BEGIN_SRC php
+   include( get_template_directory() . '/includes/myfile.php');
+   wp_enqueue_script( 'twentyfifteen-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20141010', true );
+ #+END_SRC
+
+**** get_theme_mod <<<wp:f:get_theme_mod>>>
+#+BEGIN_SRC php
+  get_theme_mod( $name, $default = false )
+#+END_SRC
+- Calls wp:f:get_theme_mods and gets wp:options:theme_mods_{theme_slug}
+- Returns wp:filter:theme_mod_{theme_slug}
+
+**** add_theme_support, remove_theme_support, current_theme_supports <<<wp:f:add_theme_support>>>
+ <<<wp:f:current_theme_supports>>> <<<wp:f:add_theme_support:post-thumbnails>>>
+ - Either in theme's ~functions.php~ or added in wp:action:after_setup_theme because it has to be loaded early
+ - [[https://codex.wordpress.org/Theme_Features][All theme support features]]
+ - Some features e.g. ~html5~ use ~array_merge~
+ - Other and custom features just take the latest call values as the feature
+
+ #+BEGIN_SRC php
+   add_theme_support( 'post-thumbnails' );
+
+   // refer to wp:f:add_image_size
+
+   add_theme_support( 'automatic-feed-links' );
+   // adds
+   //<link rel="alternate" type="application/rss+xml" title="Website Name Feed" href="http://myweb.io/feed/" />
+   //<link rel="alternate" type="application/rss+xml" title="Website Name Comments Feed" href="http://myweb.io/comments/feed/" />
+   // If it's a page, add one more
+   // <link rel="alternate" type="application/rss+xml" title="Website Name Page Name Comments Feed" href="http://myweb.io/2016/07/20/page-name/feed/" />
+
+   add_theme_support( 'title-tag' ); // wp will provide <title> not hard coded in template file using wp_title()
+
+   add_theme_support( 'html5', array(
+     'search-form',
+     'comment-form',
+     'comment-list',
+     'gallery',
+     'caption',
+   ) );
+   // use the default html5 markup instead of the default html4 file
+
+   add_theme_support( 'post-formats', array(
+     'aside',
+     'image',
+     'video',
+     'quote',
+     'link',
+     'gallery',
+     'audio',
+   ) );
+   // wp provides a list of formats for admin users to choose to display a post
+   // refer to wp:f:has_post_format
+
+   add_theme_support( 'custom-logo', array(
+		   'width'       => 250,
+		   'height'      => 250,
+		   'flex-width'  => true,
+   ) );
+   // provide a place to upload theme logo in wp-admin
+   // https://developer.wordpress.org/themes/functionality/custom-logo/
+   // refer to wp:custom logo:display
+
+   add_theme_support( 'customize-selective-refresh-widgets' );
+   // https://make.wordpress.org/core/2016/03/22/implementing-selective-refresh-support-for-widgets/
+
+   add_theme_support( 'starter-content', $starter_content );
+   // https://make.wordpress.org/core/2016/11/30/starter-content-for-themes-in-4-7/
+
+   //add_theme_support( 'custom-background' ); // simple enable
+   $defaults = array(
+	   'default-color'          => '',
+	   'default-image'          => '',
+	   'default-repeat'         => 'repeat',
+	   'default-position-x'     => 'left',
+	   'default-position-y'     => 'top',
+	   'default-size'           => 'auto',
+	   'default-attachment'     => 'scroll',
+	   'wp-head-callback'       => '_custom_background_cb',
+	   'admin-head-callback'    => '',
+	   'admin-preview-callback' => ''
+   );
+   add_theme_support( 'custom-background', $defaults );
+   // https://codex.wordpress.org/Custom_Backgrounds
+ #+END_SRC
+
+**** ~add_editor_style( array|string $stylesheet = 'editor-style.css' )~
+ - Used in
+    - wp:action:admin_init
+    - wp:action:after_setup_theme
+ - Add stylesheets for TinyMCE
+ - Stylesheet name or array thereof, relative to theme root
+ - This function automatically adds another stylesheet with -rtl prefix, e.g. editor-style-rtl.css. If that file doesn’t exist, it is removed before adding the stylesheet(s) to TinyMCE. If an array of stylesheets is passed to add_editor_style(), RTL is only added for the first stylesheet.
+ - Since version 3.4 the TinyMCE body has .rtl CSS class. It's a better option to use that class and add any RTL styles to the main stylesheet
+
+ #+BEGIN_SRC php
+   add_editor_style( array( 'assets/css/editor-style.css', twentyseventeen_fonts_url() ) );
+ #+END_SRC
+
+**** get_theme_root, get_theme_root_uri
+ #+BEGIN_SRC php
+   $theme_root = get_theme_root();
+   $files_array = glob("$theme_root/*", GLOB_ONLYDIR);
+   echo "There are " . count($files_array) . " subdirectories in the " . $theme_root . " directory"; 
+   // There are 5 subdirectories in the /home/user/public_html/wp-content/themes directory.
+
+   echo get_theme_root_uri();
+   // http://www.wordpress.org/wp-content/themes
+ #+END_SRC
+
+*** Template Tags <<<wp:template tags>>>
+- ~wp-includes/xxx-template.php~
+- ~wp-includes/feed.php~
+- https://codex.wordpress.org/Template_Tags
+
+**** post-thumbnail-template.php <<<wp:t:thumbnail>>>
+ - ~has_post_thumbnail( $post = null)~ :: return bool
+ - ~get_post_thumbnail_id( $post = null, $size = 'post-thumbnail', $attr = '' );~ :: get thumbnail id
+ - ~get_the_post_thumbnail_*()~ :: can specify which post
+    - *~wp_get_attachment_image_src~* is called
+    - *~get_the_post_thumbnail( $post = null, $size = 'post-thumbnail', $attr = '' )~* :: return html with img attributes
+       - srcset :: ~wp_calculate_image_srcset~
+       - sizes :: ~wp_calculate_image_sizes~
+    - ~get_the_post_thumbnail_url( $post = null, $size = 'post-thumbnail' )~ :: string|false
+    - ~get_the_post_thumbnail_caption( $post = null )~ :: 
+ - ~the_post_thumbnail_*~ :: echo instead of return. calls ~get_the_post_thumbnail_*~
+    - *~the_post_thumbnail( $size, $attr = '' )~* :: ~echo get_the_post_thumbnail( null, $size, $attr )~
+       - e.g. ~the_post_thumbnail( 'medium-large', array( 'class' => 'my-class') )~
+    - ~the_post_thumbnail_url( $size )~ :: echo url
+    - ~the_post_thumbnail_caption( $post = null )~ :: echo thumbnail caption
+ - ~wp_get_attachment_image_*()~ :: *~wp_get_attachment_image_src~* is called
+    - ~wp_get_attachment_image_src( $attachment_id, string|array $size = 'thumbnail', $icon = false )~ :: just like ~the_post_thumbnail~ but returns an array [url, width, height, is_intermediate]. url is ~$thumb[0]~
+       - wp:filter:wp_get_attachment_image_src
+    - ~wp_get_attachment_image( $attachment_id, string|array $size = 'thumbnail', $icon = false, string|array $attr = '' )~ :: return HTML img element or empty string on failure
+       - ~wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false )~ :: return string|false Attachment URL or false if no image is available
+    - ~wp_get_attachment_image_srcset( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~srcset~ attrbiute value string or false
+    - ~wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $image_meta = null )~ :: ~sizes~ attribute value string or false
+       - wp:filter:wp_calculate_image_sizes
+ - ~wp_get_attachment_*()~ ::
+    - ~wp_get_attachment_caption( $post_id = 0 )~ :: ~$post_id~ default is global $post. Usually it's the attachment ID
+    - ~wp_get_attachment_metadata( $attachment_id = 0, $unfiltered = false )~ :: array or false
+    - ~wp_get_attachment_url( $attachment_id = 0)~ ::
+    - ~wp_get_attachment_thumb_file( $post_id = 0 )~ ::
+    - ~wp_get_attachment_thumb_url( $post_id = 0)~ ::
+ - Get alt :: ~$alt = get_post_meta( get_post_thumbnail_id(), '_wp_attachment_image_alt', true);~
+ - Refer to wp:f:add_image_size
+    - NOTICE :: If the thumbnail has no physical file that has corresponding size, the_post_thumbnail_url will get the original image file, the_post_thumbnail will use the original file with in src and apply width/height attributes in HTML to achieve the purpose.
+    - 'post-thumbnail' :: default
+    - array(100, 100) :: Grab the biggest size in width and height image file possible.
+    - array(100, 9999) :: Grab the biggest size in width and height image file possible.
+ - Resize an image file on the fly using fly-dynamic-image-resizer
+
+**** post-template.php <<<wp:t:post>>>
+ - Only ~get_the_*( $post )~ can pass a different post or post id to return values. Use ~esc_html_e()~ to echo
+    - ~get_the_guid( $post = 0)~
+    - ~get_the_title( $post = 0 )~ :: <<<wp:f:get_the_title>>>
+       - ~if (! is_admin() )~ 
+	  - wp:filter:protected_title_format :: add ~Protected:~
+	  - wp:filter:private_title_format :: add ~Private:~
+       - ~$post->post_title~ :: wp:filter:the_title
+    - ~get_the_content( $more_link_text = null, $strip_teaser = false, $post = null )~
+    - ~get_the_excerpt( $post = null )~
+    - ~get_the_password_form( $post = 0 )~
+ - ~get_the_ID()~ :: ID of current item or false
+    - ~the_ID()~ :: echo
+ - ~the_*()~ always uses the ~global $post~ to echo
+    - ~the_title( $before = '', $after = '', $echo = true )~ :: return or echo ~$before . get_the_title() . $after~
+    - ~the_title_attribute( string|array $args = '' )~ :: similar to above but tags are stripped and escaped for HTML attributes
+      #+BEGIN_SRC php
+	$defaults = [
+		'before' => '',
+		'after' => '',
+		'echo' => true,
+		'post' => get_post(),
+	];
+      #+END_SRC
+    - ~the_content( $more_link_text = null, $strip_teaser = false)~ :: use wp:filter:the_content
+    - ~the_excerpt()~
+       - When another post/post id is passed on :: ~$excerpt = apply_filters('the_excerpt', get_post_field('post_excerpt', $item->id));~
+ - HTML classes for a post :: ~get_post_class()~
+    - e.g. ~post-123 myposttype type-myposttype status-publish has-post-thumbnail~
+    - filter ~post_class($classes, $class, $post->ID)~
+ - List child pages/posts :: ~wp_list_pages( $args = '' )~
+    - $args
+       - post_type :: default ~page~. For CPT, ~wp_list_pages( array('post_type' => 'articles' ) )~
+       - echo :: default 1, to echo. Set 0 to return html string
+       - title_li :: default ~__( 'Pages' )~. Add a ~<li>~ as title before any child post elements
+       - child_of :: default 0 (return child posts of any parent posts). specify the parent post ID
+       - sort_column :: default ~'menu_order, post_title'~
+
+***** get_the_excerpt, the_excerpt
+  - Use
+     - wp:filter:excerpt_length 
+     - wp:filter:excerpt_more
+  - ~the_excerpt()~ echoes current post and it calls ~get_the_excerpt( $post = null )~
+  - If no excerpt is set in UI, it pulls the first 55 words. If it's set, it displays the whole manually set text
+  - When used outside a loop, refer to wp:loop:outside
+
+**** category-template.php <<<wp:t:category>>>
+ - Refer to wp:post
+ - ~the_terms~ :: display taxonomy terms in a list
+ - List child terms :: ~wp_list_categories( $args = '')~
+   - taxonomy :: default 'category'. For custom taxonomy, ~wp_list_categories( [ 'taxonomy' => 'mycats' ] )~
+   - child_of :: default 0. Specify the parent term id
+
+**** general-template <<<wp:t:general>>>
+ - wp:f:get_sidebar
+
+ #+BEGIN_SRC php
+   // In template
+   <?php wp_head(); ?>
+
+   // In plugin
+   add_action('wp_head', 'lili_wphead_dfp');
+   function lili_wphead_dfp() {
+    // add inline script to header
+    $o = "<script>...</script>";
+    echo $o;
+   }
+
+   // Load with dependancy (jQuery is loaded)
+   function lili_wphead_dfp() {
+    if ( wp_script_is( 'jquery', 'done' ) ) {
+   ?>
+   <script type="text/javascript">
+   // jQuery code 
+   </script>
+   <?php
+    }
+   }
+ #+END_SRC
+
+***** get_header, get_footer, get_sidebar, get_search_form, comments_template
+   - <<<wp:f:get_header>>> :: ~get_header( $name = null )~
+   - <<<wp:f:get_footer>>> :: ~get_footer( $name = null )~
+   - <<<wp:f:get_sidebar>>> :: ~get_sidebar( $name = null )~ Refer to wp:f:dynamic_sidebar
+      - ~$templates[] = "sidebar-{$name}.php"; $templates[] = 'sidebar.php';~
+      - ~locate_template( $templates, true );~
+   - <<<wp:f:get_search_form>>> :: ~get_search_form( $args = array() )~
+   - wp:f:comments_template
+   - These functions are to load template files
+      - System default load paths :: ~wp-includes/theme-compat/header.php, footer.php, sidebar.php~
+	 - ~header-{name}.php~
+	 - ~footer-{name}.php~
+	 - ~sidebar-{name}.php~
+	 - ~{slug}-{name}.php~
+	 - ~searchform.php~
+	 - ~comment.php~
+***** ~get_template_part( string $slug, string $name = null )~ :: <<<wp:f:get_template_part>>>
+   - ~require~ file ~{slug.php}~ or ~{slug}-{name}.php~
+     #+BEGIN_SRC php
+       <?php get_template_part( 'template-parts/header/header', 'image' ); ?>
+       // require( 'path-to-theme/template-parts/header/header-image.php' );
+     #+END_SRC
+   - Call ~locate_template~
+      - Call ~load_template~
+   - wp:action:get_template_part_{$slug}
+   - Pass variables to template
+     #+BEGIN_SRC php
+       // parent
+       $args = ['...'];
+       set_query_var( 'my_query_args', $args );
+
+       get_template_part('template-parts/test');
+
+       // test.php
+       $query = new WP_Query( $my_query_args );
+     #+END_SRC
+- ~get_bloginfo( $show = '', $filter = 'raw' )~ :: retrieves info about the current site
+   - https://developer.wordpress.org/reference/functions/get_bloginfo/
+     #+BEGIN_SRC php
+      <img src="<?php bloginfo('template_url'); ?>/assets/images/a.jpg" alt="" />
+     #+END_SRC
+   - ~$filter~
+      - version :: '4.9.4'
+      - template_url :: URL of active theme's directory
+      - url or wpurl ::  Site address URL Settings > General
+- ~bloginfo( $show ='' )~ :: ~echo get_bloginfo( $show, 'display' )~
+
+***** wp_editor <<<wp:f:wp_editor>>>
+ - Render an editor for field in a page in the typical fashion used in Posts and Pages :: [[https://codex.wordpress.org/Function_Reference/wp_editor][Doc]]
+ - May be used in
+    - wp:action:edit_page_form
+    - wp:action:edit_form_advanced
+ - Use wp:f:update_post_meta in wp:action:save_post for storing the new field
+
+***** has_custom_logo, get_custom_logo, the_custom_logo <<<wp:custom logo:display>>>
+  get_custom_logo returns markup
+  the_custom_logo displays markup
+
+  #+BEGIN_SRC php
+    $custom_logo_id = get_theme_mod( 'custom_logo' );
+    $logo = wp_get_attachment_image_src( $custom_logo_id , 'full' );
+    if ( has_custom_logo() ) {
+	    echo '<img src="'. esc_url( $logo[0] ) .'">';
+    } else {
+	    echo '<h1>'. get_bloginfo( 'name' ) .'</h1>';
+    }
+  #+END_SRC
+
+**** author-template.php
+***** ~get_the_author_meta( string $field = '', int|false $user_id = false ) : string~ <<<wp:f:get_the_author_meta>>>
+ - $field :: can be
+    - display_name
+ - $user_id :: default false to get the current post's user. Can be ~$post->post_author~
+
+**** bookmark_template.php
+**** comment-template.php
+- ~wp_list_comments( $args = array(), $comments = null)~ :: <<<wp:f:wp_list_comments>>>
+   - List comments in ~comments.php~ template. Use wp:filter:wp_list_comments_args
+- ~comment_form( $args = array(), $post_id = null)~ :: outputs comment form <<<wp:f:comment_form>>>
+- ~comments_template( $file = '/comments.php', $separate_comments = false )~ :: <<<wp:f:comments_template>>>
+   - Default loads ~wp-includes/theme-compat/comments.php~
+
+**** link-template.php
+- ~get_permalink( int|WP_Post $post = 0, bool $leavename = false)~ :: get full permalink for current post or post ID
+   - $post :: optional, default ~global $post~
+   - $leavename :: whether to keep post/page name
+   - return string|false :: 
+   - Applied filters
+      - wp:filter:page_link
+      - wp:filter:post_link
+- ~the_permalink( int|WP_Post $post = 0 )~ :: print escaped ~get_permalink~
+   - Applied filters :: wp:filters:the_permalink
+- ~edit_post_link( $text = null, $before = '', $after = '', $id = 0, $class = 'post-edit-link' )~ :: print edit post link
+   - ~edit_post_link( __( '<span class="small">(Edit)</span>', 'genesis' ) );~
+- ~get_theme_file_uri( $file = '' )~ :: <<<wp:f:get_theme_file_uri>>>
+   - Check for file existance and returns URL. Get from child theme first js/my-scripts.js. Fall back to parent theme
+     #+BEGIN_SRC php
+       wp_enqueue_script( 'my-script', get_theme_file_uri( 'js/my-script.js' ) );
+     #+END_SRC
+- ~get_theme_file_path( $file = '' )~ :: <<<wp:f:get_theme_file_path>>>
+   - Return the path in filesystem so that you can use ~filemtime~
+     #+BEGIN_SRC php
+       wp_enqueue_script(
+	   'my-script',
+	   get_theme_file_uri( 'js/my-script.js' ),
+	   array(),
+	   filemtime( get_theme_file_path( 'js/my-script.js' ) )
+       );
+     #+END_SRC
+
+**** media-template.php
+**** nav-menu-template.php
+**** feed.php
+ - ~the_title_rss()~ :: echo ~get_the_title_rss()~ <<<wp:f:the_title_rss>>>
+ - ~get_the_title_rss()~
+    - ~get_the_title()~ : wp:f:get_the_title
+    - wp:filter:the_title_rss
+
+*** Post API ~wp-includes/post.php~ <<<wp:api:post>>>
+**** ~get_post( int|WP_Post|null $post = null, string $output = OBJECT, string $filter = 'raw' )~ <<<wp:f:get_post>>>
+- Default is ~global $post~
+- Return wp:post object
+**** ~get_metadata( string $meta_type, int $object_id, string $meta_key = '', bool $single = false )~ <<<wp:f:get_metadata>>>
+- ~$meta_key~ :: default to return data for all keys
+- ~$single~ :: wheter to return single value. return array if it's false
+- e.g. Return post thumbnail alt text
+  #+BEGIN_SRC php
+    // return post thumbnail alt text
+    $thumb_id = get_post_thumbnail_id(get_the_ID());
+    $alt = get_post_meta($thumb_id, '_wp_attachment_image_alt', true);
+    if( $alt ):
+	echo $alt;
+    endif;
+
+    // return a post metadata
+    $meta = get_post_meta(get_the_ID());
+    echo $meta['header-title'][0];
+  #+END_SRC
+
+**** ~get_post_meta( int $post_id, string $key = '', bool $single = false )~ <<<wp:f:get_post_meta>>> 
+- ~return get_metadata( 'post', $post_id, $key, $single );~ :: refer to wp:f:get_metadata
+
+**** ~get_posts( $args = null ) : WP_Post[]|int[]~ <<<wp:f:get_posts>>>
+ #+BEGIN_SRC php
+   // new WP_Query(); is created
+   $args = array(
+	   'post_type'      => 'speaker',
+	   'posts_per_page' => -1,
+   );
+   $r = get_posts($args);
+
+   // run loop
+
+   // reset global $post
+   wp_reset_postdata();
+ #+END_SRC
+
+**** ~wp_get_post_terms( $post_id = 0, $taxonomy = 'post_tag', $args = array() ) : WP_Term[]|WP_Error~ <<<wp:f:wp_get_post_terms>>>
+- Retrieve terms for a post
+  - ~$taxonomy~ :: default only return terms that are tags
+  - ~$post_id~ :: default current post if it's in a loop
+  - ~$args~ :: default ~$args = array('orderby' => 'name', 'order' => 'ASC', 'fields' => 'all');~
+  - Return :: an array of taxonomy terms as objects, empty array or WP_Error
+- Get the slugs of the terms under taxonomy ~publication~ :: ~wp_get_post_terms( $post_id, 'publication', ['field' => 'slugs'] )~
+- Sample
+  #+BEGIN_SRC php
+    Array
+    (
+	[0] => WP_Term Object
+	    (
+		[term_id] => 145
+		[name] => Example Category
+		[slug] => example-cat
+		[term_group] => 0
+		[term_taxonomy_id] => 145
+		[taxonomy] => adcpt_categories
+		[description] => 
+		[parent] => 0
+		[count] => 2
+		[filter] => raw
+	    )
+
+    )
+  #+END_SRC
+  Return all terms for a post
+  #+BEGIN_SRC php
+    global $post;
+    $tax = get_taxonomies();
+    $terms = wp_get_post_terms($post->ID, $tax);
+  #+END_SRC
+
+**** ~add_post_type_support( string $post_type, string|array $supports)~ <<<wp:f:add_post_type_support>>>
+- ~remove_post_type_support( string $post_type, string $supports )~
+- Detect if a post type supports :: ~post_type_supports( string $post_type, string $feature )~
+- $post_type :: string
+- $supports :: string/array
+  - title
+  - editor :: content
+  - author
+  - thumbnail :: current theme must support Post Thumbnails
+  - excerpt
+  - trackbacks
+  - custom-fields :: wp:Custom_Fields. Don't have to add 'custom-fields' in order to use wp:plugin:acf
+  - comments
+  - revisions
+  - page-attributes :: menu order, hierarchical must be true
+  - post-formats :: add post formats
+
+ #+BEGIN_SRC php
+   add_action('init', 'lili_custom_post_type');
+   function lili_custom_post_type() {
+     $labels = [
+       // array, wp:register_post_type:labels
+     ];
+
+     $args = [
+       'label' => 'Plural Name', // string. required.
+       'labels' => $labels,
+       'description' => '', // string, optional
+       'public' => false,
+       /* Default. bool.
+	,*       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
+	,* true:               false,               true,              true, true
+	,* false:               true,              false,             false, false
+	,*/
+       'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+       'publicly_queryable' => true, // optional. take 'public' value.
+       /* ?post_type={post_type_key},
+	,* ?{post_type_key}={single_post_slug},
+	,* ?{post_type_query_var}={single_post_slug}
+	,*/
+       'show_ui' => true, // optional. bool. default take 'public' value.
+       'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
+       'show_in_menu' => true, // optional, bool or string. default inherits show_ui
+       // false :: do not display in admin menu
+       // true :: display as a top level menu
+       // 'some string' :: display as a submenu of a menu 'some string'
+       'show_in_admin_bar' => true, // optional, bool, default inherits show_in_
+       'supports' => ['title', 'editor'], // optional. array/bool. wp:f:add_post_type_support
+
+     ];
+
+     register_post_type('movies', $args );
+
+   }
+ #+END_SRC
+
+ Use wp:action:pre_get_posts to enable query for this new post type
+
+**** register_post_type <<<wp:f:register_post_type>>> <<<wp:add cpt>>>
+ - https://codex.wordpress.org/Function_Reference/register_post_type
+ - Plugins use this function
+    - wp:plugin:custom-post-type-ui
+    - wp:plugin:acf
+ - Called actions
+    - wp:action:registered_post_type
+ - Called functions
+    - wp:f:add_rewrite_rule
+    - wp:f:add_rewrite_tag
+ - wp:action:pre_get_posts
+ - Refresh Permalink from UI or ~flush_rewrite_rules()~ in plugin/theme activation and deactivation hooks
+ - Do not call before wp:action:init
+ - ~register_post_type( string $post_type, array|string $args = array() )~
+    - $post_type :: string. < 20 characters. All lowercase and no space
+    - $args :: array of arguments
+       - query_var :: default true to use ~$post_type~ as public query_var <<<wp:f:register_post_type:query_var>>>
+
+ #+BEGIN_SRC php
+   add_action('init', 'lili_custom_post_type');
+   function lili_custom_post_type() {
+     $labels = [
+       // array, wp:register_post_type:labels
+     ];
+
+     $args = [
+       'label' => 'Plural Name', // string, optional, default labels['name']
+       'labels' => $labels,
+       'description' => '', // string, optional
+
+       'public' => false,
+       /* Default false
+	,*       exclude_from_search, publicly_queryable, show_in_nav_menus, show_ui
+	,* true:               false,               true,              true, true
+	,* false:               true,              false,             false, false
+	,*/
+
+       'exclude_from_search' => false, // default. optional. 'site/?s=search-term'
+
+       'publicly_queryable' => true, // optional. take 'public' value.
+       /* ?post_type={post_type_key},
+	,* ?{post_type_key}={single_post_slug},
+	,* ?{post_type_query_var}={single_post_slug}
+	,*/
+
+       // 'query_var' => true, // bool|string d:true to use $post_type. Set to false means the post type cannot be loaded at /?{query_var}={single_post_slug}. It has no effect when public_queryable is false
+
+       'show_ui' => true, // optional. bool. default take 'public' value.
+       'show_in_nav_menus' => true, // optional. bool. inherits 'public' value.
+       'show_in_menu' => true, // optional, bool or string. default inherits show_ui
+       // false :: do not display in admin menu
+       // true :: display as a top level menu
+       // 'some string' :: display as a submenu of a menu 'some string'
+       'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
+
+       'supports' => ['title', 'editor'], 
+       // optional. array/bool. wp:f:add_post_type_support
+       // 'custom-fields' :: don't have to add in order to use wp:plugin:acf
+       // 'title', 'editor' (content) this is the default
+       // 'author','excerpt', 'trackbacks',
+       // 'thumbnail' (featured image, current theme must also support post-thumbnails)
+       // 'comments' (also will see comment count balloon on edit screen)
+       // 'revisions' (will store revisions)
+       // 'page-attributes' (menu order, hierarchical must be true to show Parent option)
+       // 'post-formats' add post formats, see Post Formats
+
+       // 'hierarchical' => true
+       // default false, when true 'supports' should contain 'page-attributes'  
+
+       'has_archive' => false, // d:false
+
+		   'rewrite' => [
+			   'slug' => 'movies', // d:$post_type
+			   'with_front' => true, // d:true should the permalink strucutre to be prepended with the front base
+			   'feeds' => false, // d:$has_archive should a feed permalink structure be built
+			   'pages' => true, // d:true should the permalink structure provide for pagination
+			   'ep_mask' => EP_PERMALINK, // don't know what it is..
+		   ], // bool|array d:true and use $post_type as slug
+
+     ];
+
+     register_post_type('movies', $args);
+
+   }
+
+   add_action( 'pre_get_posts', 'lili_pre_get_posts' );
+   // Should not call this in template because in template the $query is already run
+   function lili_pre_get_posts( $query ) {
+     if ( ! is_page() && ! is_home() && $query->is_main_query() ) {
+       $query->set( 'post_type', array( 'post', 'movies' ) );
+     }
+     // this function should return nothing.
+   }
+ #+END_SRC
+
+ Get Custom Post Types
+ #+BEGIN_SRC php
+   $cpts = get_post_types( array(
+	   'public'   => true,
+	   '_builtin' => false,
+   ));
+ #+END_SRC
+
+***** labels <<<wp:register_post_type:labels>>>
+
+ #+BEGIN_EXAMPLE
+   'labels' => array(
+     'name' => __( 'Jobs' ),
+     'singular_name' => __( 'Job' )
+   )
+ #+END_EXAMPLE
+
+***** menu_icon
+ optional, default null > posts icon
+ 'dashicons-video-alt' (Uses the video icon from [[https://developer.wordpress.org/resource/dashicons/][Dashicons]])
+ 'get_template_directory_uri() . "/images/cutom-posttype-icon.png"' (Use a image located in the current theme)
+ 'data:image/svg+xml;base64,' . base64_encode( "<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 459 459"> <path fill="black" d="POINTS"/></svg>" )' (directly embedding a svg with 'fill="black"' will allow correct colors.)
+
+**** register_post_status <<<wp:f:register_post_status>>>
+ - Register post status
+ - Do not use before wp:action:init
+ - add to wp:global:wp_post_statuses
+ - Built-in post statuses ~_builtin~
+    - publish :: public
+    - future :: protected
+    - draft :: protected
+    - pending :: protected
+    - private :: private
+    - trash :: internal
+    - auto-draft :: internal
+    - inherit :: internal Used with child post such as Attachments (e.g. featured image) and Revisions
+    - request-pending :: internal
+    - request-confirmed :: internal
+    - request-failed :: internal
+    - request-completed :: internal
+ - Extra post statuses
+    - wp:plugin:acf :: acf-disabled
+ - ~register_post_status( string $post_status, array|string $args = array() )~
+    - $args
+      #+BEGIN_SRC php
+	$args = [
+		'label' => 'Post status name for translation', // bool|string d:$post_status
+		'label_count' => '', // bool|array d:none text to display on admin screen e.g. _n_noop( 'Unread <span class="count">(%s)</span>', 'Unread <span class="count">(%s)</span>' )
+		'exclude_from_search' => false, // bool d:$internal whether to exclude posts with this post status
+		'internal' => false, // bool d:false whether the status is for internal use only
+		'public' => false, // bool whether posts of this status should be shown in the front end of the site
+		// '_builtin' => false, // bool d:false core-use only
+		'protected' => false, // bool d:false whether posts with this status should be protected
+		'private' => false, // bool d:false whether posts with this status should be private
+		'publicly_queryable' => false, // bool d:$public whether posts with this status should be publicly-queryable
+		'show_in_admin_all_list' => false, // bool d:$internal whether to include posts in the edit listing for their post type
+		'show_in_admin_status_list'=> false, // bool d:$internal show in the list of statuses with post counts at the top of the edit listings e.g. All (12) | Published (9) | My Custom Status (2)
+	];
+      #+END_SRC
+
+ #+BEGIN_SRC php
+   function my_custom_post_status(){
+	   register_post_status( 'unread', array(
+		   'label'                     => _x( 'Unread', 'post' ),
+		   'public'                    => true,
+		   'exclude_from_search'       => false,
+		   'show_in_admin_all_list'    => true,
+		   'show_in_admin_status_list' => true,
+		   'label_count'               => _n_noop( 'Unread <span class="count">(%s)</span>', 'Unread <span class="count">(%s)</span>' ),
+	   ) );
+   }
+   add_action( 'init', 'my_custom_post_status' );
+ #+END_SRC
+
+**** update_post_meta <<<wp:f:update_post_meta>>>
+
+*** Post Formats ~wp-includes/post-formats.php~
+**** has_post_format <<<wp:f:has_post_format>>>
+ In template
+ #+BEGIN_SRC php
+   if ( has_post_format( 'aside' )) {
+     // code to display the aside format post here
+   } else if (has_post_format('gallery')) {
+	   // stuff to display the gallery format post here
+   } else if (has_post_format('link')) {
+	   // stuff to display the link format post here
+   }else {
+	   // code to display the normal format post here
+   }
+ #+END_SRC
+
+*** Rewrite API <<<wp:api:rewrite>>>
+- wp:options:rewrite_rules
+
+**** add_rewrite_rule, add_rewrite_tag
+ - <<<wp:f:add_rewrite_rule>>>
+    - Need to flush :: Settings > Permalinks > click Save Changes without any changes to add into wp:options:rewrite_rules
+    - Add a rewrite rule that transforms a URL structure to a set of query vars
+    - Use with wp:f:add_rewrite_tag 
+    - wp:action:init
+    - ~add_rewrite_rule( string $regex, string|array $query, string $after = 'bottom' )~
+       - $query :: ~$matches[]~ to retrieve the values of a matched URL, capture group data starts at 1, not 0
+       - $after :: This can either be 'top' or 'bottom'. 'top' will take precedence over WordPress's existing rules, where 'bottom' will check all other rules match first
+    - Sample
+      #+BEGIN_SRC php
+	function custom_rewrite_basic() {
+	  add_rewrite_rule('^leaf/([0-9]+)/?', 'index.php?page_id=$matches[1]', 'top');
+	}
+	add_action('init', 'custom_rewrite_basic');
+      #+END_SRC
+ - <<<wp:f:add_rewrite_tag>>>
+    - add a query var wp:filter:query_vars
+    - Sample
+      #+BEGIN_SRC php
+	function custom_rewrite_tag() {
+	  add_rewrite_tag('%food%', '([^&]+)');
+	  add_rewrite_tag('%variety%', '([^&]+)');
+	}
+	add_action('init', 'custom_rewrite_tag', 10, 0);
+
+	function custom_rewrite_rule() {
+	  add_rewrite_rule('^nutrition/([^/]*)/([^/]*)/?','index.php?page_id=12&food=$matches[1]&variety=$matches[2]','top');
+	}
+	add_action('init', 'custom_rewrite_rule', 10, 0);
+      #+END_SRC
+
+ Create a page called Nutrition with page id 12 and use a custom template ~my-custom-template.php~
+ #+BEGIN_SRC php
+   /**
+    ,* Template Name: Nutritional Information
+    ,*/
+   get_header(); 
+
+   global $wp_query;
+   echo 'Food : ' . $wp_query->query_vars['food'];
+   echo '<br />';
+   echo 'Variety : ' . $wp_query->query_vars['variety'];
+   // ... more ...
+   get_footer();
+ #+END_SRC
+
+*** Dependency API ~wp-includes/script-loader.php~ <<<wp:api:dependency>>>
+**** wp_localize_script <<<wp:f:wp_localize_script>>>
+ - Must be called after the script has been registered using ~wp_register_script()~ or ~wp_enqueue_script()~
+ - Use to define variables as an object
+
+ #+BEGIN_SRC php
+   // register a script that may be loaded using wp_enqueue_script()
+   // wp_register_script( 'unique_handle', 'path/to/myscript.js' );
+   // later
+   // wp_enqueue_script( 'unique_handle' );
+
+   // or you enque directly wp:f:wp_enqueue_script
+   wp_enqueue_script( 'unique_handle', get_theme_file_uri( '/path/to/myscript.js' ) );
+
+   // Pass vars in $translation_array to file path/to/myscript.js (registered using handle `unique_handle`)
+   $translation_array = array(
+     'some_string' => 'hello';
+     'a_value' => '10'
+   );
+   wp_localize_script( 'unique_handle', 'object_name', $translation_array );
+   wp_enqueue_script( 'unique_handle' );
+ #+END_SRC
+
+In the enqueued javascript file ~path/to/myscript.js~
+ #+BEGIN_SRC js
+   console.log( object_name.some_string ); // default all values are strings
+   parseInt( object_name.some_int, 10 ); // pass parameter as int
+ #+END_SRC
+
+ If you just want to define pass PHP variables and don't want to create empty js files
+ #+BEGIN_SRC php
+   wp_localize_script( 'jquery', 'mynamesapce', array('ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+ #+END_SRC
+
+ #+BEGIN_SRC php
+   wp_enqueue_script( 'twentyseventeen-skip-link-focus-fix', get_theme_file_uri( '/assets/js/skip-link-focus-fix.js' ), array(), '1.0', true );
+   wp_localize_script( 'twentyseventeen-skip-link-focus-fix', 'twentyseventeenScreenReaderText', $twentyseventeen_l10n );
+ #+END_SRC
+
+**** wp_enqueue_script, wp_script_add_data <<<wp:f:wp_enqueue_script>>>
+ - Used in wp:action:wp_enqueue_scripts
+ - Use wp:filter:style_loader_src
+
+ #+BEGIN_SRC php
+   wp_enqueue_script( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, bool $in_footer = false )
+
+   wp_enqueue_script( 'html5', get_theme_file_uri( '/assets/js/html5.js' ), array(), '3.7.3' );
+   wp_script_add_data( 'html5', 'conditional', 'lt IE 9' );
+ #+END_SRC
+
+ When a script is added with dependency on jQuery, jQuery is auto loaded by wp. Change jQuery
+ #+BEGIN_SRC php
+   wp_deregister_script('jquery');
+   wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js', array(), null, true);
+   wp_enqueue_script('my-custom-script', get_template_directory_uri() .'/js/my-custom-script.js', array('jquery'), null, true);
+ #+END_SRC
+
+ If there's script depends on jquery and it's loaded in header, even though jquery is set to load in footer, jquery will be loaded in header.
+**** wp_enqueue_style, wp_style_add_data <<<wp:f:wp_enqueue_style>>> <<<wp:f:wp_style_add_data>>>
+ - Used in wp:action:wp_enqueue_scripts
+ - Use wp:filter:script_loader_src
+ -  Syntax :: *~wp_enqueue_style( string $handle, string $src = '', array $deps = array(), string|bool|null $ver = false, string $media = 'all' )~*
+ - $deps :: (array) (Optional) An array of registered stylesheet handles this stylesheet depends on
+   - Default value: array()
+ - $ver :: (string|bool|null) (Optional) String specifying stylesheet version number, if it has one, which is added to the URL as a query string for cache busting purposes. If version is set to false, a version number is automatically added equal to current installed WordPress version. If set to null, no version is added
+   - Default value: false
+ - $media :: (string) (Optional) The media for which this stylesheet has been defined. Accepts media types like 'all', 'print' and 'screen', or media queries like '(orientation: portrait)' and '(max-width: 640px)'
+   - Default value: 'all'
+
+ #+BEGIN_SRC php
+   function wpb_add_google_fonts() {
+	   wp_enqueue_style( 'wpb-google-fonts', 'http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,700,300', false ); 
+   }
+ 
+   add_action( 'wp_enqueue_scripts', 'wpb_add_google_fonts' );
+ #+END_SRC
+
+ Conditional statements are removed from IE 10 or IE 11. Refer to css:font-face
+
+ #+BEGIN_SRC php
+   // Load the main stylesheet
+	   wp_enqueue_style( 'my-theme', get_stylesheet_uri() );
+
+   /**
+    ,* Load our IE-only stylesheet for all versions of IE:
+    ,* <!--[if IE]> ... <![endif]-->
+    ,*/
+   wp_enqueue_style( 'my-theme-ie', get_stylesheet_directory_uri() . "/css/ie.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-ie', 'conditional', 'IE' );
+
+   /**
+    ,* Load our IE version-specific stylesheet:
+    ,* <!--[if IE 7]> ... <![endif]-->
+    ,*/
+   wp_enqueue_style( 'my-theme-ie7', get_stylesheet_directory_uri() . "/css/ie7.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-ie7', 'conditional', 'IE 7' );
+
+   /**
+    ,* Load our IE specific stylesheet for a range of older versions:
+    ,* <!--[if lt IE 9]> ... <![endif]-->
+    ,* <!--[if lte IE 8]> ... <![endif]-->
+    ,* NOTE: You can use the 'less than' or the 'less than or equal to' syntax here interchangeably.
+    ,*/
+   wp_enqueue_style( 'my-theme-old-ie', get_stylesheet_directory_uri() . "/css/old-ie.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-old-ie', 'conditional', 'lt IE 9' );
+
+   /**
+    ,* Load our IE specific stylesheet for a range of newer versions:
+    ,* <!--[if gt IE 8]> ... <![endif]-->
+    ,* <!--[if gte IE 9]> ... <![endif]-->
+    ,* NOTE: You can use the 'greater than' or the 'greater than or equal to' syntax here interchangeably.
+    ,*/
+   wp_enqueue_style( 'my-theme-new-ie', get_stylesheet_directory_uri() . "/css/new-ie.css", array( 'my-theme' ) );
+   wp_style_add_data( 'my-theme-ie', 'conditional', 'gt IE 8' );
+ #+END_SRC
+
+*** Taxonomy API ~wp-includes/taxonomy.php~ <<<wp:api:taxonomy>>>
+**** ~get_term_by( $field, $value, $taxonomy = '', $output = OBJECT, $filter = 'raw' )~
+ - Return WP_Term|array|false
+ - Get term by slug :: ~get_term_by( 'slug', 'my-term-slug', 'taxonomy-of-the-term' )~
+ - Get current term :: ~get_term_by( 'slug', get_query_var( 'term' ), get_query_var( 'taxonomy' ) )~
+ - ~$field~ could be :: slug, name, id or term_taxonomy_id
+ - $output could be :: OBJECT, ARRAY_A, ARRAY_N
+
+**** ~register_taxonomy( string $taxonomy, array|string $object_type, array|string $args = array() )~ <<<wp:f:register_taxonomy>>>
+ - https://codex.wordpress.org/Function_Reference/register_taxonomy
+ - Do not call before wp:action:init
+ - Parameters
+    - $taxonomy :: tax slug <= 32 characters
+    - $object_type :: e.g. post type slug
+    - $args
+       - query_var :: d:$taxonomy <<<wp:f:register_taxonomy:query_var>>>
+       - update_count_callback :: <<<wp:f:register_taxonomy:update_count_callback>>>
+	  - d:'' :: affect wp:f:wp_update_term_count_now
+ - wp:global:wp_taxonomies
+ - ~do_action( 'registered_taxonomy', $taxonomy, $object_type, (array) $taxonomy_object )~ :: wp:action:registered_taxonomy
+
+ #+BEGIN_SRC php
+   add_action( 'init', 'create_topics_hierarchical_taxonomy', 0 );
+ 
+   //create a custom taxonomy name it topics for your posts
+ 
+   function create_topics_hierarchical_taxonomy() {
+ 
+   // Add new taxonomy, make it hierarchical like categories
+   //first do the translations part for GUI
+ 
+     $labels = array(
+       'name' => _x( 'Topics', 'taxonomy general name' ),
+       'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
+       'search_items' =>  __( 'Search Topics' ),
+       'all_items' => __( 'All Topics' ),
+       'parent_item' => __( 'Parent Topic' ),
+       'parent_item_colon' => __( 'Parent Topic:' ),
+       'edit_item' => __( 'Edit Topic' ), 
+       'update_item' => __( 'Update Topic' ),
+       'add_new_item' => __( 'Add New Topic' ),
+       'new_item_name' => __( 'New Topic Name' ),
+       'menu_name' => __( 'Topics' ),
+     );    
+ 
+   // Now register the taxonomy
+ 
+     register_taxonomy('topics',array('post'), array(
+       'hierarchical' => true,
+       'labels' => $labels,
+       'show_ui' => true,
+       'show_admin_column' => true,
+       'query_var' => true,
+       'rewrite' => array( 'slug' => 'topic' ),
+     ));
+ 
+   }
+ #+END_SRC
+
+ Non-hierarchical taxonomy
+ #+BEGIN_SRC php
+   add_action( 'init', 'create_topics_nonhierarchical_taxonomy', 0 );
+ 
+   function create_topics_nonhierarchical_taxonomy() {
+ 
+   // Labels part for the GUI
+ 
+     $labels = array(
+       'name' => _x( 'Topics', 'taxonomy general name' ),
+       'singular_name' => _x( 'Topic', 'taxonomy singular name' ),
+       'search_items' =>  __( 'Search Topics' ),
+       'popular_items' => __( 'Popular Topics' ),
+       'all_items' => __( 'All Topics' ),
+       'parent_item' => null,
+       'parent_item_colon' => null,
+       'edit_item' => __( 'Edit Topic' ), 
+       'update_item' => __( 'Update Topic' ),
+       'add_new_item' => __( 'Add New Topic' ),
+       'new_item_name' => __( 'New Topic Name' ),
+       'separate_items_with_commas' => __( 'Separate topics with commas' ),
+       'add_or_remove_items' => __( 'Add or remove topics' ),
+       'choose_from_most_used' => __( 'Choose from the most used topics' ),
+       'menu_name' => __( 'Topics' ),
+     ); 
+ 
+   // Now register the non-hierarchical taxonomy like tag
+ 
+     register_taxonomy('topics','post',array(
+       'hierarchical' => false,
+       'labels' => $labels,
+       'show_ui' => true,
+       'show_admin_column' => true,
+       'update_count_callback' => '_update_post_term_count',
+       'query_var' => true,
+       'rewrite' => array( 'slug' => 'topic' ),
+     ));
+   }
+ #+END_SRC
+
+**** ~wp_update_term_count_now( array $terms, string $taxonomy )~ <<<wp:f:wp_update_term_count_now>>>
+ - $terms :: array of term_taxonomy_id
+ - return true :: when complete
+ - It's only called when
+    - a post's post status is updated (update count for the post's associated terms)
+    - a tax is added or removed (update count for that tax only)
+    - Not cleared when cache is cleared and has to be run manually to update count
+ - ~call_user_func( $taxonomy->update_count_callback, $terms, $taxonomy )~ :: if wp:f:register_taxonomy:update_count_callback is defined
+ - ~_update_post_term_count( $terms, $taxonomy )~ :: if there's any attached post types that exist, get total count of publish posts of attached post types
+    - wp:action:edit_term_taxonomy
+    - Update wp:db:wp_term_taxonomy:count
+    - wp:action:edited_term_taxonomy
+ - ~_update_generic_term_count( $terms, $taxonomy )~ :: if there's no attached post type that exists, get total count of anything from wp:db:wp_term_relationships
+
+**** <<<wp:action:registered_taxonomy>>>
+ - Add action before wp:f:register_taxonomy is called
+
+**** Add a sortable column to taxonomy edit page
+ - Taxonomy :: sponsor_type
+ - Refer to wp:api:plugin for adding a column to custom post type
+ - Filter ~manage_${taxonomy}_custom_column~ :: wp:api:plugin:filter:manage_{taxonomy}_custom_column
+
+ #+BEGIN_SRC php
+   <?php
+   add_filter( 'manage_edit-sponsor_type_columns', function ( $columns ) {
+	   $columns['my_term_id']             = __( 'Term ID' ); // add a column
+	   $columns['sponsorship_type_order'] = __( 'Order' ); // add a column
+	   //
+	   // to see existing columns, wp-admin/edit-tags.php?taxonomy=sponsor_type
+	   //var_dump('hello'); var_dump($columns);
+	   //unset( $columns['cpt-shows'] );                 // Don't allow sort by a column
+	   return $columns;
+   } );
+
+   // populate values in column Order
+   add_filter( 'manage_sponsor_type_custom_column', function ( $value, $column_name, $term_id ) {
+	   $term  = get_term( $term_id, 'sponsor_type' );
+	   $order = get_field( 'sponsorship_type_order', $term );
+	   switch ( $column_name ) {
+		   case 'sponsorship_type_order':
+			   $value = $order;
+			   break;
+		   default:
+			   break;
+	   }
+
+	   return $value;
+   }, 10, 3 );
+
+   // make the column sortable
+   add_filter( 'manage_edit-sponsor_type_sortable_columns', function ( $columns ) {
+	   // see existing sortable columns
+	   //var_dump('hello'); var_dump($columns);
+
+	   $columns['sponsorship_type_order'] = 'custom_order'; // don't use order or orderby as the url parameter name
+
+	   return $columns;
+   } );
+
+   // add sort mechanism
+   add_filter( 'terms_clauses', function ( $pieces, $taxonomies, $args ) {
+	   global $pagenow;
+	   if ( ! is_admin() ) {
+		   return $pieces;
+	   }
+	   if ( is_admin() && $pagenow == 'edit-tags.php' && $taxonomies[0] == 'sponsor_type' &&
+		( ! isset( $_GET['orderby'] ) || $_GET['orderby'] == 'custom_order' )
+	   ) {
+		   // to further customize the sorting. By default, using the populated value to sort is good enough
+		   // e.g. If orderby is not set, add some default from wp_options
+		   // $pieces['join']   .= " INNER JOIN wp_options AS opt ON opt.option_name = concat('issue_',t.term_id,'_issue_date')";
+		   // $pieces['orderby'] = "ORDER BY opt.option_value";
+		   // $pieces['order']   = isset($_GET['order']) ? $_GET['order'] : "DESC";
+	   }
+
+	   return $pieces;
+   }, 10, 3 );
+ #+END_SRC
+
+**** ~get_taxonomies( $args = array(), $output = 'names', $operator = 'and' ) : string[]|WP_Taxonomy[]~ <<<wp:f:get_taxonomies>>>
+#+BEGIN_SRC php
+  // @return string[]|WP_Taxonomy[] An array of taxonomy names or objects.
+  $return = [
+	  'category' => 'category',
+	  'post_tag' => 'post_tag',
+	  'custom_taxonomy_name' => 'custom_taxonomy_name',
+	  // ...
+  ];
+#+END_SRC
+
+*** Shortcode API ~wp-includes/shortcodes.php~ <<<wp:api:shortcode>>>
+**** add_shortcode <<<wp:f:add_shortcode>>>
+  #+BEGIN_SRC php
+    // [bar-tag foo="foo-value"]
+
+    // Use underscore instead of hyphen e.g. bar_tag
+    function bartag_func( $atts, $content, $tag ) {
+      $a = shortcode_atts( array(
+	'class' => 'something', // default value
+	'attr_2' => 'something else', // 2nd attribute
+      ), $atts );
+
+      // get current post
+      // global $post; $post->ID
+
+      // Use return not echo
+      return '<span class="'.esc_attr($a['class']).'">'
+	     .$content
+	     // or
+	     // .do_shortcode($content)
+	     ."foo = {$a['foo']}"
+	     .'</span>';
+
+    /*
+    ob_start();
+    ?> <HTML> <here> ... <?php
+    return ob_get_clean();
+    ,*/
+
+    /*
+    ob_start();
+    get_template_part( 'template-parts/form/contact-us');
+    return ob_get_clean();
+    ,*/
+
+    }
+    add_shortcode( 'bar-tag', 'bartag_func' );
+
+    // In order to run shortcode in Widgets, add this
+    add_filter('widget_text','do_shortcode');
+    // wp:filter:widget_text
+  #+END_SRC
+
+  Pass array to shortcode attribute
+  #+BEGIN_SRC php
+    $data = [
+	[],[],[]
+    ];
+
+    var_dump(serialize($data));
+
+    // use single quotes
+    // [your-shortcode data='serialized-string']
+
+    function your_shortcode_cb() {
+	// ...
+	$data = unserialize($a['data']);
+    }
+  #+END_SRC
+
+**** shortcode_unautop <<<wp:f:shortcode_unautop>>>
+ - Used in wp:filter:the_content
+ - Ensure shortcodes are not wrapped in ~<p>...</p>~
+ - Refer to
+    - wp:filter:the_content
+    - wp:filter:tiny_mce_before_init
+
+ #+BEGIN_SRC php
+   add_filter( 'the_content', 'shortcode_unautop'  );
+ #+END_SRC
+
+*** Media API ~wp-includes/media.php~ <<<wp:api:media>>>
+**** add_image_size <<<wp:f:add_image_size>>>
+- Use wp:action:after_setup_theme
+- ~add_image_size( string $name, int $width, int $height, bool|array $crop = false )~
+- Every newly uploaded image will have image files with all defined image sizes
+- ~$crop~ can be
+  - false :: will be scaled
+  - true :: will be cropped to the specified dimensions using center positions
+  - ~array( $x_crop_position, $y_crop_position )~ :: will be cropped to the specified dimensions within the defined crop area
+    - $x_crop_position :: 'left', 'center' or 'right'
+    - $y_crop_position :: 'top', 'center' or 'bottom'
+- If the original image (e.g. featured image) is smaller than the thumbnail image size, by default, neither it's set to crop to scale, the result thumbnail will take the original image without scaling up
+- Refer to wp:filter:image_size_names_choose
+
+ #+BEGIN_SRC php
+   function lili_theme_setup() {
+    add_image_size('lili-w700', 700, 9999); // fixed width, unlimited height
+    add_image_size('lili-w700h600', 700, 600, true); // crop in exact dimension 
+   }
+ #+END_SRC
+
+ Force to scale up the thumbnail if original image is smaller than the thumbnail size, and maintain ratio
+ - Does not seem to work for scale (non-croppable) image sizes last time I tried.. Ratio is not maintained for scaling image sizes
+
+ #+BEGIN_SRC php
+   function alx_thumbnail_upscale( $default, $orig_w, $orig_h, $new_w, $new_h, $crop ){
+     // comment the line below to enable upscale for both scale and crop
+	   if ( !$crop ) return null; // let the wordpress default function handle automatic scale
+
+	   $aspect_ratio = $orig_w / $orig_h;
+	   $size_ratio = max($new_w / $orig_w, $new_h / $orig_h);
+
+	   $crop_w = round($new_w / $size_ratio);
+	   $crop_h = round($new_h / $size_ratio);
+
+	   $s_x = floor( ($orig_w - $crop_w) / 2 );
+	   $s_y = floor( ($orig_h - $crop_h) / 2 );
+
+	   return array( 0, 0, (int) $s_x, (int) $s_y, (int) $new_w, (int) $new_h, (int) $crop_w, (int) $crop_h );
+   }
+   add_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+ #+END_SRC
+
+ #+BEGIN_SRC php
+   // after this call, my-image-size-style-name thumbnail should be ready
+   // by default, wp does not scale up if the original file is smaller than the requested thumbnail image size
+   // regardless of the add_image_size setting
+   // Original my-image-size-style-name setting: add_image_size( 'my-image-size-style-name', 340, 200, true );
+   regenerateImageSizeIfOneIsMissing( get_post_thumbnail_id( $post->ID ), 'my-image-size-style-name' );
+   $image = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'my-image-size-style-name' );
+
+   // regenerate all image sizes for an attachment (e.g. featured image) if the specified image size does not exist
+   function regenerateImageSizeIfOneIsMissing( $attachment_id, $check_image_size, $enforce_enlarge = false ) {
+	   global $_wp_additional_image_sizes;
+
+	   // stop if no file id is provided or the image size is not defined
+	   if ( ! $attachment_id || ! isset( $_wp_additional_image_sizes[ $check_image_size ] ) ) {
+		   return false;
+	   }
+	   //print_r($attachment_id);
+	   //print '<pre>';	print_r( $_wp_additional_image_sizes );	print '</pre>';
+
+	   $metadata = wp_get_attachment_metadata( $attachment_id );
+	   if ( ! ( isset( $metadata['sizes'] ) && isset( $metadata['sizes'][ $check_image_size ] ) ) ) {
+		   //printf('Image size "%s" does not exist, regenerate all image sizes for this attachment', $check_image_size);
+
+		   $fullsizepath = get_attached_file( $attachment_id );
+
+		   if ( false === $fullsizepath || ! file_exists( $fullsizepath ) ) {
+			   // stop if there is no full file or it does not exist
+			   return false;
+		   }
+
+		   if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			   require_once( ABSPATH . 'wp-admin/includes/image.php' );
+		   }
+
+		   $r = false;
+
+		   // By default, wp does not scale up if the original file is smaller than the requested thumbnail image size
+		   // regardless of the add_image_size setting
+		   if ($enforce_enlarge) {
+			   add_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+		   }
+
+		   // regenerate all image sizes and metadata
+		   $regenerated_metadata = wp_generate_attachment_metadata( $attachment_id, $fullsizepath );
+
+		   // merge original metadata
+		   $regenerated_metadata['sizes'] = array_merge( $metadata['sizes'], $regenerated_metadata['sizes'] );
+		   //echo 'original metadata'; print_r($metadata);
+		   //echo 'regenerated metadata'; print_r($regenerated_metadata);
+
+		   // update metadata
+		   if ( wp_update_attachment_metadata( $attachment_id, $regenerated_metadata ) ) {
+			   $r = true;
+			   //print 'regenerate metadata result successful';
+		   } else {
+			   //print 'regenerate metadata result not successful';
+		   }
+
+		   // remove filter so that wp is back to default for thumbnail resizing
+		   if ($enforce_enlarge) {
+			   remove_filter( 'image_resize_dimensions', 'alx_thumbnail_upscale', 10, 6 );
+		   }
+
+		   return $r;
+
+	   } else {
+		   //printf('Image size "%s" exists, regeneration is not needed', $check_image_size);
+		   //  print_r($metadata['sizes'][$check_image_size]);
+	   }
+   }
+ #+END_SRC
+
+**** ~wp_get_image_editor( string $path, array $args = array() ) : WP_Image_Editor|WP_Error~
+- Returns WP_Error or [[https://developer.wordpress.org/reference/classes/wp_image_editor/][WP_Image_Editor]]
+  #+BEGIN_SRC php
+    function image_resize( $file, $max_w, $max_h, $crop = false, $suffix = null, $dest_path = null, $jpeg_quality = 90 ) {
+	_deprecated_function( __FUNCTION__, '3.5.0', 'wp_get_image_editor()' );
+
+	$editor = wp_get_image_editor( $file );
+	if ( is_wp_error( $editor ) )
+	    return $editor;
+	$editor->set_quality( $jpeg_quality );
+
+	$resized = $editor->resize( $max_w, $max_h, $crop );
+	if ( is_wp_error( $resized ) )
+	    return $resized;
+
+	$dest_file = $editor->generate_filename( $suffix, $dest_path );
+	$saved = $editor->save( $dest_file );
+
+	if ( is_wp_error( $saved ) )
+	    return $saved;
+
+	return $dest_file;
+    }
+  #+END_SRC
+
+*** HTTP Request API ~wp-includes/httpl.php~ <<<wp:api:http request>>>
+**** wp_remote_get, wp_remote_post, wp_remote_head, wp_remote_request
+ #+BEGIN_SRC php
+   $response = wp_remote_get( 'http://www.example.com/index.html' );
+   // url has to include protocal e.g. http://
+   if ( is_array( $response ) ) {
+     $header = $response['headers']; // array of http header lines
+     $body = $response['body']; // use the content
+   }
+
+   wp_remote_get( 'http://www.example.com/index.php?action=foo', array( 'timeout' => 120, 'httpversion' => '1.1' ) );
+ #+END_SRC
+
+ Methods to work with $response
+ - wp_remote_retrieve_body() - Retrieves just the body from the response.
+ - wp_remote_retrieve_header() - Gives you a single HTTP header based on name from the response.
+ - wp_remote_retrieve_headers() - Returns all of the HTTP headers in an array for processing.
+ - wp_remote_retrieve_response_code() - Gives you the number for the HTTP response. This should be 200, but could be 4xx or even 3xx on failure.
+ - wp_remote_retrieve_response_message() - Returns the response message based on the response code.
+
+ Default options
+ #+BEGIN_SRC php
+   global $wp_version;
+   $args = array(
+       'timeout'     => 5, // seconds
+       'redirection' => 5, // how many times
+       'httpversion' => '1.0',
+       'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
+       'blocking'    => true, // php will stop until the request is processed. false to just ping but wp_remote_get will return false
+       'headers'     => array(),
+       'cookies'     => array(),
+       'body'        => null,
+       'compress'    => false,
+       'decompress'  => true,
+       'sslverify'   => true,
+       'stream'      => false,
+       'filename'    => null
+   ); 
+ #+END_SRC
+*** Widget API ~wp-includes/widgets.php~ <<<wp:api:widgets>>>
+**** dynamic_sidebar vs get_sidebar <<<wp:f:dynamic_sidebar>>>
+- Refer to wp:f:get_sidebar :: ~get_sidebar~ looks for a template file which should have ~dynamic_sidebar('sidebar-slug')~
+
+**** register_sidebar <<<wp:f:register_sidebar>>>
+ Create a sidebar (widget area) where widget instances can be assigned to in wp admin UI.
+
+ - Display sidebar 
+   - wp:f:dynamic_sidebar 
+   - wp:f:get_sidebar
+
+ #+BEGIN_SRC php
+   add_action( 'widgets_init', 'theme_slug_widgets_init' );
+   function theme_slug_widgets_init() {
+       register_sidebar( array(
+	   'name' => __( 'Main Sidebar', 'theme-slug' ),
+	   'id' => 'sidebar-1',
+	   'description' => __( 'Widgets in this area will be shown on all posts and pages.', 'theme-slug' ),
+	   'class' => 'tal', // prepend so CSS result for WP Admin page becomes 'sidebar-tal', (default: empty)
+	   'before_widget' => '<li id="%1$s" class="widget %2$s">',
+	   'after_widget'  => '</li>',
+	   'before_title'  => '<h2 class="widgettitle">',
+	   'after_title'   => '</h2>',
+       ) );
+   }
+ #+END_SRC
+
+**** register_widget <<<wp:f:register_widget>>> 
+ Used in wp:action:widgets_init
+ System widgets ~wp-includes/widgets/class-wp-widget-*.php~ and they're registered at wp-includes/widgets.php
+
+ #+BEGIN_SRC php
+   <?php
+   // Register and load the widget
+   function wpb_load_widget() {
+     register_widget( 'wpb_widget' );
+   }
+
+   add_action( 'widgets_init', 'wpb_load_widget' );
+
+   // Creating the widget 
+   class wpb_widget extends WP_Widget {
+
+     function __construct() {
+       // PHP 5.x
+       //$this->WP_Widget( 'dokan-category-menu', 'Dokan: Product Category', $widget_ops );
+
+       parent::__construct(
+
+       // Base ID of your widget
+	 'wpb_widget',
+
+	 // Widget name will appear in UI
+	 __( 'WPBeginner Widget', 'wpb_widget_domain' ),
+
+	 // Widget description
+	 [ 'description' => __( 'Sample widget based on WPBeginner Tutorial', 'wpb_widget_domain' ), ]
+       );
+     }
+
+     // Creating widget front-end
+
+     public function widget( $args, $instance ) {
+       $title = apply_filters( 'widget_title', $instance['title'] );
+
+       // before and after widget arguments are defined by themes
+       echo $args['before_widget'];
+       if ( ! empty( $title ) ) {
+	 echo $args['before_title'] . $title . $args['after_title'];
+       }
+
+       // This is where you run the code and display the output
+       echo __( 'Hello, World!', 'wpb_widget_domain' );
+       echo $args['after_widget'];
+     }
+
+     // Widget Backend 
+     public function form( $instance ) {
+       if ( isset( $instance['title'] ) ) {
+	 $title = $instance['title'];
+       } else {
+	 $title = __( 'New title', 'wpb_widget_domain' );
+       }
+       // Widget admin form
+       ?>
+       <p>
+	 <label
+	   for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title:' ); ?></label>
+	 <input class="widefat"
+		id="<?php echo $this->get_field_id( 'title' ); ?>"
+		name="<?php echo $this->get_field_name( 'title' ); ?>"
+		type="text" value="<?php echo esc_attr( $title ); ?>"/>
+       </p>
+       <?php
+     }
+
+     // Updating widget replacing old instances with new
+     public function update( $new_instance, $old_instance ) {
+       $instance          = [];
+       $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+
+       return $instance;
+     }
+   } // Class wpb_widget ends here
+
+
+   class MyNewWidget extends WP_Widget {
+
+	   function __construct() {
+		   // Instantiate the parent object
+
+	   }
+
+	   function widget( $args, $instance ) {
+		   // Widget output
+	   }
+
+	   function update( $new_instance, $old_instance ) {
+		   // Save widget options
+	   }
+
+	   function form( $instance ) {
+		   // Output admin widget options form
+	   }
+   }
+
+   function myplugin_register_widgets() {
+	   register_widget( 'MyNewWidget' );
+   }
+
+   add_action( 'widgets_init', 'myplugin_register_widgets' );
+ #+END_SRC
+*** Navigation Menu Functions ~wp-includes/nav-menu.php,nav-menu-template.php~
+**** register_nav_menus, register_nav_menu, wp_nav_menu
+ <<<wp:f:register_nav_menus>>> used in wp:action:init or wp:action:after_setup_theme
+ [[https://codex.wordpress.org/Function_Reference/register_nav_menus][Register custom nav menus]]
+ This is to create a theme location or navigation menu. Each theme location can have one menu created from wp-admin.
+ Menu created from wp-admin can associate with multiple theme locations.
+ The following registers 3 theme locations.
+ Other translation plugins like Polylang can create theme locations for each extra language based on the already defined theme locations.
+
+ #+BEGIN_SRC php
+   function register_my_menus() {
+     register_nav_menus(
+       array(
+	 'main-menu' => __('Main Menu'),
+	 'about-menu' => __('About Menu'),
+	 'services-menu' => __('Services Menu')
+       )
+     );
+   }
+ #+END_SRC
+
+ Display in template
+ - https://developer.wordpress.org/reference/functions/wp_nav_menu/
+ - wp:filter:wp_nav_menu_args
+   - container :: 'div' use what to wrap the menu, bool can be used
+   - menu_class :: 'menu', css class, e.g. 'class-1 class-2'
+   - fallback_cb :: false call a cb function if menu doesn't exist e.g. 'WP_Bootstrap_Navwalker::fallback'
+   - walker :: object e.g. ~new WP_Bootstrap_Navwalker()~
+ - wp:filter:pre_wp_nav_menu :: short-circuit
+ - wp:filter:wp_nav_menu_container_allowedtags
+ - wp:filter:wp_nav_menu_objects
+ - wp:filter:wp_nav_menu_items
+ - wp:filter:wp_nav_menu_$menu->slug_items
+ - wp:filter:wp_nav_menu :: filter output
+
+ #+BEGIN_SRC php
+   // already echo
+   wp_nav_menu( array( 'theme_location' => 'header-menu' ) );
+ #+END_SRC
+*** Toolbar API ~wp-includes/admin-bar.php~ <<<wp:api:toolbar>>>
+**** show_admin_bar <<<wp:f:show_admin_bar>>>
+ Use it in functions.php or wp:filter:show_admin_bar
+ #+BEGIN_SRC php
+   if ( ! current_user_can( 'manage_options' ) ) {
+       show_admin_bar( false );
+   }
+ #+END_SRC
+*** Pluggable functions ~wp-includes/pluggable.php~ <<<wp:pluggable>>>
+- These functions can be defined in plugins. If all active plugins don't define any of these functions, WP will define them
+
+**** ~wp_get_current_user()~ <<<wp:f:wp_get_current_user>>>
+- Set wp:global:current_user if it's not set. If not logged in, set to 0
+  #+BEGIN_SRC php
+    $current_user = wp_get_current_user();
+    if ( 0 == $current_user->ID ) {
+	// Not logged in.
+    } else {
+	// Logged in.
+    }
+  #+END_SRC
+- Also return wp:user
+
+**** ~wp_mail()~ <<<wp:f:wp_mail>>>
+
+#+BEGIN_SRC php
+  wp_mail( $to, $subject, $message, $headers = '', $attachments = array() )
+#+END_SRC
+
+*** Administration API ~wp-admin/includes/admin.php~ <<<wp:api:core admin>>>
+- Administration Plugin API ~wp-admin/includes/plugin.php~ <<<wp:api:admin:plugin>>>
+**** ~add_meta_box( $id, $title, $callback, $screen = null, $context = 'advanced', $priority = 'default', $callback_args = null )~ <<<wp:f:add_meta_box>>>
+- Used in wp:action:add_meta_boxes
+ - context
+   - advanced :: default
+   - side ::
+   - normal ::
+ - Priority
+   - default :: default
+   - high :: right after title
+   - low
+
+ #+BEGIN_SRC php
+   /*
+    ,* @param string                 $id            Meta box ID (used in the 'id' attribute for the meta box).
+    ,* @param string                 $title         Title of the meta box.
+    ,* @param callable               $callback      Function that fills the box with the desired content.
+    ,*                                              The function should echo its output.
+    ,* @param string|array|WP_Screen $screen        Optional. The screen or screens on which to show the box
+    ,*                                              (such as a post type, 'link', or 'comment'). Accepts a single
+    ,*                                              screen ID, WP_Screen object, or array of screen IDs. Default
+    ,*                                              is the current screen.  If you have used add_menu_page() or
+    ,*                                              add_submenu_page() to create a new screen (and hence screen_id),
+    ,*                                              make sure your menu slug conforms to the limits of sanitize_key()
+    ,*                                              otherwise the 'screen' menu may not correctly render on your page.
+    ,* @param string                 $context       Optional. The context within the screen where the boxes
+    ,*                                              should display. Available contexts vary from screen to
+    ,*                                              screen. Post edit screen contexts include 'normal', 'side',
+    ,*                                              and 'advanced'. Comments screen contexts include 'normal'
+    ,*                                              and 'side'. Menus meta boxes (accordion sections) all use
+    ,*                                              the 'side' context. Global default is 'advanced'.
+    ,* @param string                 $priority      Optional. The priority within the context where the boxes
+    ,*                                              should show ('high', 'low'). Default 'default'.
+    ,* @param array                  $callback_args Optional. Data that should be set as the $args property
+    ,*                                              of the box array (which is the second parameter passed
+    ,*  
+    ,*                                              to your callback). Default null.
+    ,*/
+   function add_meta_box( $id, $title, $callback, $screen = null, $context = 'advanced', $priority = 'default', $callback_args = null ) {
+
+   }
+ #+END_SRC
+
+**** ~remove_meta_box( $id, $page, $context)~ <<<wp:f:remove_meta_box>>>
+ - Return 
+ - $id :: string
+   - authordiv
+   - categorydiv
+   - comemntstatusdiv
+   - commentsdiv
+   - formatdiv
+   - pageparentdiv
+   - postcustom
+   - postexcerpt
+   - postimagediv
+   - revisionsdiv
+   - slugdiv
+   - submitdiv
+   - tagsdiv-post_tag
+   - tagsdiv-{$tax-name}
+   - {$tax-name}div
+   - trackbacksdiv
+   - ...
+ - $page :: string. Type of screen
+   - post
+   - page
+   - attachment
+   - link
+   - dashboard
+   - any custom post type e.g. 'my-product'
+ - $context :: string. 'normal', 'advanced', or 'side'
+   - Post edit screen :: normal, side and advanced
+   - Comments screen :: normal and side
+   - Menu meta boxes :: side
+ - Return nothing
+
+**** ~add_management_page( $page_title, $menu_title, $capability, $menu_slug, $function = '' )~
+ - Add sub menu to Tools admin menu
+ - Used in wp:action:admin_menu
+   #+BEGIN_SRC php
+     add_management_page(
+      'Page title', // string
+      'Menu title', // string
+      'manage_options', // string. Capability that is required.
+      'menu_slug', // string
+      'callbackFunct', // string or array($this, 'options_page')
+     );
+   #+END_SRC
 
 ** Default filters and actions <<<wp:default filters>>>
 - ~wp-includes/default-filters.php~
@@ -12084,20 +12027,16 @@ Remove emoji javascript and style
 #+END_SRC
 
 *** add_meta_boxes, add_meta_boxes_{post_type} <<<wp:action:add_meta_boxes>>>
-lili_add_meta_boxes($post_type, $post) takes 2 arguments, no return. 
-lili_add_meta_boxes_{post_type}($post) takes 1 argument, no return.
-
-Use
-- wp:f:add_meta_box
-- wp:f:remove_meta_box 
+- ~lili_add_meta_boxes($post_type, $post)~ takes 2 arguments, no return
+- ~lili_add_meta_boxes_{post_type}($post)~ takes 1 argument, no return
+- Use
+   - wp:f:add_meta_box
+   - wp:f:remove_meta_box 
 - or modify ~global $wp_meta_boxes~
-
-~$wp_meta_boxes['post-type']['normal']['core']['postexcerpt']['title'] = 'Your title';~
-
-You can change the title, callback (complete change to another function) and different context. 
-The callback most likely outputs a label, form field and some description.
-
-You can either completely change the callback or use wp:filter:gettext to change the translation
+- ~$wp_meta_boxes['post-type']['normal']['core']['postexcerpt']['title'] = 'Your title';~
+- You can change the title, callback (complete change to another function) and different context. 
+- The callback most likely outputs a label, form field and some description.
+- You can either completely change the callback or use wp:filter:gettext to change the translation
 
 *** edit_page_form <<<wp:action:edit_page_form>>>
 Fires after 'normal' context meta boxes have been output for the 'page' post type.
@@ -12449,12 +12388,12 @@ if single.php and archive.php don't exist, wp looks for index.php
 *** Pagination <<<wp:theme:pagination>>>
 https://developer.wordpress.org/themes/functionality/pagination/
 
-- the_post_pagination( $args = array() ) :: ~echo get_the_posts_pagination( $args )~
-- paginate_links( string|array $args = '' ) :: old version of ~the_post_pagination~
+- ~the_post_pagination( $args = array() )~ :: ~echo get_the_posts_pagination( $args )~
+- ~paginate_links( string|array $args = '' )~ :: old version of ~the_post_pagination~
 - get_the_posts_pagination() :: wp:f:get_the_posts_pagination. Calls ~paginate_links~
 - posts_nav_link() :: 
-- next_posts_link() :: ~echo get_next_posts_link()~
-- previous_posts_link() :: ~echo get_previous_posts_link()~
+- ~next_posts_link()~ :: ~echo get_next_posts_link()~
+- ~previous_posts_link()~ :: ~echo get_previous_posts_link()~
 
 #+BEGIN_SRC php
   <?php if ( have_posts() ) : ?>
@@ -16484,105 +16423,120 @@ Add an extra field in response
 #+END_SRC
 
 ** Life Cycle
-- Refer to wp:action:loading sequence
-- https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
-- http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
-
-index.php
-- WP_USE_THEMES = true
-- wp-blog-header.php
-   - wp-load.php wp:global:wpdb
-      - wp-config.php
-      - wp-settings.php
-	 - wp-includes/load.php (all functions)
-	 - wp-includes/default-constants.php (all func.)
-	 - wp-includes/plugin.php :: wp:api:plugin
-	 - wp-includes/compat.php (functions)
-	 - wp-includes/class-wp-list-util.php
-	 - wp-includes/formatting.php
-	 - wp-includes/functions.php :: wp main API wp:f:wp
-	    - wp-includes/option.php :: wp:api:option
-	 - wp-includes/class-wp-matchesmapregex.php
-	 - wp-includes/class-wp.php (wp environment setup class)
-	 - wp-includes/class-wp-error.php (Error API)
-	 - wp-includes/pomo/mo.php (class for working with MO files)
-	    - translations.php
-	    - streams.php
-	 - require_wp_db()
-	    - wp-db.php
-	 - wp-includes/default-filters.php
-	 - L10n library
-	    - wp-includes/l10n.php
-	    - wp-includes/class-wp-locale.php
-	    - wp-includes/class-wp-locale-switcher.php
-	 - wp-includes/capabilities.php (User capabilites API)
-	 - wp-includes/query.php :: wp:api:query
-	 - wp-includes/general-template.php
-	 - wp-includes/script-loader.php :: wp:api:dependency
-	 - Load mu-plugins
-	    - wp:action:mu_plugin_loaded
-	    - wp:action:muplugins_loaded
-	 - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
-	 - Load active plugins
-	    - wp:action:plugin_loaded
-	 - Load pluggable functions :: wp:pluggable
-	 - ~do_action( 'plugins_loaded' )~ :: wp:action:plugins_loaded
-	 - Initialize objects
-	    - ~$GLOBALS['wp_the_query'] = new WP_Query();~
-	    - ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query']~
-	    - ~$GLOBALS['wp_rewrite'] = new WP_Rewrite();~
-	 - ~do_action( 'setup_theme' )~ ::
-	 - Load the active theme :: functions.php
-	 - wp:action:after_setup_theme
-	 - ~do_action( 'init' )~
-	 - ~do_action( 'wp_loaded' )~
-   - ~wp( $query_vars = '' );~ :: ~$wp->main( $query_vars )~ class-wp.php
-      - ~$wp->init()~ :: ~wp_get_current_user()~
-      - ~$wp->parse_request( $extra_query_vars = '' )~ :: <<<wp:wp:m:parse_request>>>
-	 - wp:filter:do_parse_request :: short circuit
-	 - wp:filter:query_vars :: ~apply_filters( 'query_vars', $this->public_query_vars )~
-	 - Parse and assign values for each public_query_vars as ~$wpvar~.
-	    - Set ~$wp->query_vars[ $wpvar ]~ to value in highest order:
-	       - ~$wp->extra_query_vars[ $wpvar ]~
-	       - ~$_POST[ $wpvar ]~
-	       - ~$_GET[ $wpvar ]~
-	       - ~$perma_query_vars~ from wp_rewrite match
-	    - If ~$wpvar~ is a publicly_queryable wp:f:register_post_type:query_var, add query vars
-	       - 'post_type' :: post type slug
-	       - 'name' :: ~$wp->query_vars[ $wpvar ]~
-	 - Sanitize taxonomy and post type query vars
-	 - Parse private_query_vars from $extra_query_vars
-	 - wp:filter:request :: ~apply_filters( 'request', $this->query_vars )~
-	 - wp:action:parse_request :: ~do_action_ref_array( 'parse_request', array( &$this ) )~
-      - ~$wp->send_headers()~
-	 - wp:action:send_headers :: ~do_action_ref_array( 'send_headers', array( &$this ) );~
-      - ~$wp->query_posts()~
-	 - ~$wp->build_query_string();~
-	    - wp:filter:query_string :: ~apply_filters( 'query_string', $this->query_string )~
-	 - ~$wp_the_query->query( $this->query_vars )~ :: wp:wp_query:m:query
-      - ~handle_404()~ ::
-      - ~register_globals()~ ::
-      - wp:action:wp :: 
-   - wp-includes/template-loader.php
-      - wp:action:template_redirect
-      - wp:action:do_robots
-      - wp:filter:template_include
-
-Request /wp-admin/admin-ajax.php
-/wp-load.php 
-/wp-config.php
-/wp-settings.php (core files, active plugins and themes and the REST API)
-/wp-admin/admin.php
-/wp-admin/includes/ajax-actions.php
-(wp:action:admin_init)
-
-Request REST API
+- Basics
+   - Refer to wp:action:loading sequence
+   - https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
+   - http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
 - index.php
-  - wp-blog-header.php (Environment and Template)
-    - wp-load.php
-      - wp-config.php
-      - wp-settings.php (which loads most core files, all active plugins and themes, and the REST API)
-(doesn't load admin_init, ~/wp-admin/*.*~)
+   - WP_USE_THEMES = true
+   - wp-blog-header.php
+      - wp-load.php <<<wp:wp-load.php>>>
+	 - wp:global:wpdb 
+	 - wp-config.php
+	 - wp-settings.php
+	    - wp-includes/load.php
+	    - wp-includes/default-constants.php
+	    - wp-includes/plugin.php :: wp:api:plugin
+	    - wp-includes/compat.php (functions)
+	    - wp-includes/class-wp-list-util.php
+	    - wp-includes/formatting.php
+	    - wp-includes/functions.php :: wp:api:main
+	       - wp-includes/option.php :: wp:api:option
+	    - wp-includes/class-wp-matchesmapregex.php
+	    - wp-includes/class-wp.php (wp environment setup class)
+	    - wp-includes/class-wp-error.php (Error API)
+	    - wp-includes/pomo/mo.php (class for working with MO files)
+	       - translations.php
+	       - streams.php
+	    - require_wp_db()
+	       - wp-db.php
+	    - wp-includes/default-filters.php
+	    - L10n library
+	       - wp-includes/l10n.php
+	       - wp-includes/class-wp-locale.php
+	       - wp-includes/class-wp-locale-switcher.php
+	    - wp-includes/capabilities.php (User capabilites API)
+	    - wp-includes/query.php :: wp:api:query
+	    - wp-includes/template.php :: template loading functions
+	    - wp-includes/general-template.php
+	    - wp-includes/post.php :: wp:api:post
+	    - wp-includes/rewrite.php :: wp:api:rewrite
+	    - wp-includes/script-loader.php :: wp:api:dependency
+	    - wp-includes/taxonomy.php :: Core Taxonomy API wp:api:taxonomy
+	    - wp-includes/shortcodes.php :: wp:api:shortcode
+	    - wp-includes/media.php :: wp:api:media
+	    - wp-includes/http.php :: wp:api:http request
+	    - wp-includes/widgets.php :: wp:api:widgets
+	    - wp-includes/nav-menu.php
+	    - wp-includes/admin-bar.php :: wp:api:toolbar
+	    - Load mu-plugins
+	       - wp:action:mu_plugin_loaded
+	       - wp:action:muplugins_loaded
+	    - Create initial taxonomies and post types :: wp:f:register_taxonomy  wp:f:register_post_type
+	    - Load active plugins
+	       - wp:action:plugin_loaded
+	    - Load pluggable functions :: wp:pluggable
+	    - ~do_action( 'plugins_loaded' )~ :: wp:action:plugins_loaded
+	    - Initialize objects
+	       - ~$GLOBALS['wp_the_query'] = new WP_Query();~
+	       - ~$GLOBALS['wp_query'] = $GLOBALS['wp_the_query']~
+	       - ~$GLOBALS['wp_rewrite'] = new WP_Rewrite();~
+	    - ~do_action( 'setup_theme' )~ ::
+	    - Load the active theme :: functions.php
+	    - wp:action:after_setup_theme
+	    - ~do_action( 'init' )~
+	    - ~do_action( 'wp_loaded' )~
+      - ~wp( $query_vars = '' );~ :: ~$wp->main( $query_vars )~ class-wp.php
+	 - ~$wp->init()~ :: ~wp_get_current_user()~
+	 - ~$wp->parse_request( $extra_query_vars = '' )~ :: <<<wp:wp:m:parse_request>>>
+	    - wp:filter:do_parse_request :: short circuit
+	    - wp:filter:query_vars :: ~apply_filters( 'query_vars', $this->public_query_vars )~
+	    - Parse and assign values for each public_query_vars as ~$wpvar~.
+	       - Set ~$wp->query_vars[ $wpvar ]~ to value in highest order:
+		  - ~$wp->extra_query_vars[ $wpvar ]~
+		  - ~$_POST[ $wpvar ]~
+		  - ~$_GET[ $wpvar ]~
+		  - ~$perma_query_vars~ from wp_rewrite match
+	       - If ~$wpvar~ is a publicly_queryable wp:f:register_post_type:query_var, add query vars
+		  - 'post_type' :: post type slug
+		  - 'name' :: ~$wp->query_vars[ $wpvar ]~
+	    - Sanitize taxonomy and post type query vars
+	    - Parse private_query_vars from $extra_query_vars
+	    - wp:filter:request :: ~apply_filters( 'request', $this->query_vars )~
+	    - wp:action:parse_request :: ~do_action_ref_array( 'parse_request', array( &$this ) )~
+	 - ~$wp->send_headers()~
+	    - wp:action:send_headers :: ~do_action_ref_array( 'send_headers', array( &$this ) );~
+	 - ~$wp->query_posts()~
+	    - ~$wp->build_query_string();~
+	       - wp:filter:query_string :: ~apply_filters( 'query_string', $this->query_string )~
+	    - ~$wp_the_query->query( $this->query_vars )~ :: wp:wp_query:m:query
+	 - ~handle_404()~ ::
+	 - ~register_globals()~ ::
+	 - wp:action:wp :: 
+      - wp-includes/template-loader.php
+	 - wp:action:template_redirect
+	 - wp:action:do_robots
+	 - wp:filter:template_include
+- wp-admin/index.php
+   - wp-admin/admin.php
+      - wp:wp-load.php
+      - wp-admin/includes/admin.php :: Core Administration API wp:api:core admin
+   - wp-admin/includes/dashboard.php
+   - wp-admin/admin-header.php
+   - wp-admin/admin-footer.php
+- Request wp-admin/admin-ajax.php
+   - /wp-load.php 
+   - /wp-config.php
+   - /wp-settings.php (core files, active plugins and themes and the REST API)
+   - /wp-admin/admin.php
+   - /wp-admin/includes/ajax-actions.php
+      - wp:action:admin_init
+- Request REST API
+   - index.php
+      - wp-blog-header.php (Environment and Template)
+	 - wp-load.php
+	    - wp-config.php
+	    - wp-settings.php (which loads most core files, all active plugins and themes, and the REST API) (doesn't load admin_init, ~/wp-admin/*.*~)
 
 ** PHP 7
 Notice: The called constructor method for WP_Widget is deprecated since version 4.3.0! Use __construct() instead. in /path-to/wp-includes/functions.php on line 3457
