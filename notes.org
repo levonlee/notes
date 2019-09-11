@@ -423,9 +423,9 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 [[https://www.w3.org/WAI/ER/IG/ert/iso639.htm][ISO 639 3-letter codes]]
 
 ** Date
-*** Date function <<<php:f:date>>>
-- ~date ( string $format [, int $timestamp = time() ] ) : string~
+*** ~date( string $format [, int $timestamp = time() ] ) : string~ <<<php:f:date>>>
 - [[http://php.net/manual/en/function.date.php][Date formats]]
+- wp:post:post_date_gmt uses ~'Y-m-d\TH:i:sP'~ :: ~2019-07-16T13:46:16+00:00~
 
 #+BEGIN_SRC php
   // Y => 1999
@@ -8078,11 +8078,12 @@ Current URL on your website
 #+END_SRC
 
 - https://developer.wordpress.org/reference/classes/wp_post/
+- wp:db:wp_posts
 - ID :: int
 - post_title :: string
 - post_type :: string
-- post_date :: publication date, string ~2019-07-16 09:46:16~
-- post_date_gmt :: pub date, string ~2019-07-16 09:46:16~
+- post_date :: pub date, string ~2019-07-16 09:46:16~
+- post_date_gmt :: pub date, string ~2019-07-16 09:46:16~ <<<wp:post:post_date_gmt>>>
    - Convert to MySQL date, WP function :: ~mysql2date( DATE_W3C, $post->post_date_gmt, false )~ is string ~2019-07-16T13:46:16+00:00~
 - Template methods are in category-template.php wp:t:category
 
@@ -13286,11 +13287,11 @@ wp:filter:template_include
 ** Database <<<wp:db>>>
 [[https://codex.wordpress.org/Database_Description][Database Description]]
 
-*** wp_posts
+*** wp_posts <<<wp:db:wp_posts>>>
 - ID :: bigint(20)
 - post_author :: bigint(20)
 - post_date :: datetime
-- post_date_gmt :: datetime
+- post_date_gmt :: datetime. Refer to wp:post:post_date_gmt
 - post_content :: longtext
 - post_title :: text
 - post_excerpt :: text
@@ -27933,9 +27934,8 @@ QUnit
 
 ** Worker
 *** Web Worker
-Workers are in external files which don't have access to DOM (objects like window, document and parent) and completely separate from the webpage.
-
-Use a Web Worker for heavy computation on the client. Use a Service Worker for offline capabilities like intercepting network requests, as well as other fun stuff like push notifications and synchronization of content in the background.
+- Workers are in external files which don't have access to DOM (objects like window, document and parent) and completely separate from the webpage
+- Use a Web Worker for heavy computation on the client. Use a Service Worker for offline capabilities like intercepting network requests, as well as other fun stuff like push notifications and synchronization of content in the background.
 
 #+BEGIN_SRC js
   var w;
@@ -27961,13 +27961,13 @@ Use a Web Worker for heavy computation on the client. Use a Service Worker for o
   timedCount();
 #+END_SRC
 
-*** Service Worker
+*** Service Worker <<<js:serviceworker>>>
 **** Basics
-https://developers.google.com/web/fundamentals/primers/service-workers/
-Support status :: https://jakearchibald.github.io/isserviceworkerready/ IE11 is not supported
-HTTPS or localhost
-It can do push notifications and background sync and periodic sync or geofencing in the future. It is a Javascript Web Worker
-ES6 can be used to write sw
+- https://developers.google.com/web/fundamentals/primers/service-workers/
+- Support status :: https://jakearchibald.github.io/isserviceworkerready/ IE11 is not supported
+- HTTPS or localhost
+- It can do push notifications and background sync and periodic sync or geofencing in the future. It is a Javascript Web Worker
+- ES6 can be used to write sw
 
 #+BEGIN_EXAMPLE
   if ('serviceWorker' in navigator) {
@@ -28358,7 +28358,7 @@ Refer to bootstrap:responsive helpers
 - ~document.body.clientWidth~ :: width excluding scrollbars
 
 ** ECMAScript
-- ~ES5~ :: 1999 or 2011
+- ~ES5~ :: 1999 or 2011. Fully supported since Chrome 41
 - ~ES6~ is ~ES2015~ :: 6 stands for 6th edition. 2015 is the year <<<js:es6>>>
 - ~ES7-2016~, ~ES8-2017~, ~ES9-2018~, ~ES10-2019~
 
@@ -43055,6 +43055,9 @@ https://analytics.google.com/analytics/academy/
 - A URL Property will be automatically created if a GA account is given access. You still need to manually link Search Console from GA
 - Review all previous messages :: https://www.google.com/webmasters/tools/message-list
 - https://support.google.com/webmasters/
+- Initial HTML is crawled and indexed, and later on JavaScript is run (rendering) and a second-wave of indexing happens
+   - Second-wave could take several days
+   - Rendering is stateless. Renderer does not have :: js:serviceworker, local & session storage, IndexedDB, Web SQL, Cookies, Cache API
 
 *** Performance - Search Results Report
 - Total Stats :: https://support.google.com/webmasters/answer/7042828
