@@ -49533,19 +49533,14 @@ To park a domain means to make the domain as idle. Nameservers will be set to De
 Another instance is when you park multiple domains abc.net, abc.info to the main domain abc.com
 
 ** DNS History, IP location, Website Hosting Finder
-https://securitytrails.com/dns-trails
-
-See all DNS records :: https://www.ultratools.com/tools/dnsLookup
-
-Lookup domain registrar and nameservers use whois :: https://mxtoolbox.com/Whois.aspx
-
-Find IP location :: https://www.iplocation.net/
-
-DNS propagation :: https://www.whatsmydns.net/
-
-Find hosting of a website
-- https://ca.hostadvice.com/tools/whois/
-- https://www.hostingchecker.com
+- DNS history :: https://securitytrails.com/dns-trails
+- See all DNS records :: https://www.ultratools.com/tools/dnsLookup
+- Lookup domain registrar and nameservers use whois :: https://mxtoolbox.com/Whois.aspx
+- Find IP location :: https://www.iplocation.net/
+- DNS propagation :: https://www.whatsmydns.net/
+- Find hosting of a website
+   - https://ca.hostadvice.com/tools/whois/
+   - https://www.hostingchecker.com
 
 ** AXFR and Find subdomains
 Without DNS Zone file export, it's almost impossible to find all subdomains and their DNS records. The following can be used:
@@ -55613,26 +55608,36 @@ access_log
 - Context :: http, server, location, if in location, limit_except
 
 ** Let's Encrypt SSL <<<nginx:ssl>>> <<<letsencrypt:certbot>>>
-On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to renew certificate.
-
-~certbot~ is ~letsencrypt~ in older version or ~certbot-auto~ in an alternate installation method.
-
-Authenticator plugins use ~certonly~ command to obtain a certificate to ~/etc/letsencrypt~ directory
-e.g. Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
-
-Install plugins use ~install~ command to install a certificate :: modify webserver config
-
-Authenticator (-a) and installer (-i) plugins can be combined
-#+BEGIN_EXAMPLE
-  certbot run -a webroot -i apache -w /var/www/html -d example.com
-#+END_EXAMPLE
-
+- On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to obtain, install and renew certificate
+- install certificate :: means to modify webserver config e.g. Nginx ~/etc/nginx/sites-available/mywebsite.conf~
+- obtain certificate :: means to get and store certificates to ~/etc/letsencrypt~ directory
+   - all live certificates :: ~/etc/letsencrypt/live/example.com/fullchain.pem~
+- ~certbot~ :: used to be ~letsencrypt~ in older version or ~certbot-auto~ in an alternate installation method
+   - Syntax ~certbot [SUBCOMMAND] [options] [-d DOMAIN] [-d DOMAIN] ...~
+   - Commands
+      - ~run~ :: obtain and install
+      - ~certonly~ :: obtain or renew a certificate
+      - ~renew~
+	 - Dry run to renew all certificates :: ~certbot renew --dry-run~
+      - ~certificates~
+	 - Check all certificates status :: ~certbot certificates~ 
+   - Options
+      - ~--webroot -w MYWEBROOT_PATH~ :: letsencrypt:certbot:webroot
+      - ~-n~ :: non-interactive
+      - ~--agree-tos~ :: agree to ACME server's Subscriber Agreement
+      - ~--force-renewal~, ~--renew-by-default~ :: If a cert exists, renew it regardless of whether it's near expiry
+      - ~--dry-run~ :: dry run
+      - A plugin can be an authenticator and/or an installer. Use options to specify which plugin to use
+	 - ~-a~, ~--authenticator~
+	 - ~-i~, ~--installer~
+	   Different plugins can be combined
+	   #+BEGIN_SRC sh
+	     certbot run -a webroot -i apache -w /var/www/html -d example.com
+           #+END_SRC
 - renewal config files for each domain :: ~/etc/letsencrypt/renewal/mydomain.com.conf~
 - Global config :: ~/etc/letsencrypt/cli.ini~ (usually empty)
 - Log :: /var/log/letsencrypt
 - Cron file ~/etc/cron.d/certbot~ :: it runs ~certbot -q renew~ so renewal config file is very important for each domain
-- Check all certificates status :: ~certbot certificates~
-- Dry run to renew all certificates :: ~certbot renew --dry-run~
 
 *** Challenges
 - http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
@@ -55721,10 +55726,9 @@ Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbo
 
 Dry run ~sudo certbot renew --dry-run~, expect no error.
 
-*** certbot manual plugin
-An authenticator plugin that obtains a certificate by giving you instructions to perform domain validation yourself. Additionally allows you to specify scripts to automate the validation task in a customized way. hooks can be specified
-
-http-01, dns-01 or tls-sni-01 challenge
+*** manual plugin
+- authenticator only :: obtain a certificate by giving you instructions to perform domain validation yourself. Additionally allows you to specify scripts to automate the validation task in a customized way. hooks can be specified
+- Challenge types :: http-01, dns-01 or tls-sni-01
 
 Example usage for HTTP-01:
 #+BEGIN_EXAMPLE
@@ -55852,21 +55856,17 @@ renew_hook = systemctl reload rabbitmq
 
 sudo certbot renew --dry-run
 
-*** certbot webroot plugin
-An authenticator plugin that obtains certificate and write to an existing webroot without webserver config mod. http-01 challenge.
+*** webroot plugin ~--webroot~ ~-w~ <<<letsencrypt:certbot:webroot>>>
+- authenticator only :: obtain certificate and write to an existing webroot without webserver config mod
+- Challenge types :: http-01
+- ~-w~ :: alias ~--webroot-path MYWEBROOT_PATH~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   certbot certonly --webroot -w /var/www/example/ -d www.example.com -d example.com -w /var/www/other -d other.example.net -d another.other.example.net
-#+END_EXAMPLE
+#+END_SRC
 
-*** certbot manage and renew certificates
-certbot [SUBCOMMAND] [options] [-d DOMAIN] [-d DOMAIN] ...
-
-Subcommand:
-- (default) run ::   Obtain & install a certificate in your current webserver
-- certonly      ::   Obtain or renew a certificate, but do not install it
-
-/etc/letsencrypt/archive and /etc/letsencrypt/keys contain all previous keys and certificates, while /etc/letsencrypt/live symlinks to the latest versions.
+*** manage and renew certificates
+~/etc/letsencrypt/archive~ and ~/etc/letsencrypt/keys~ contain all previous keys and certificates, while ~/etc/letsencrypt/live~ symlinks to the latest versions.
 
 #+BEGIN_SRC sh
   # check status for all certificates
@@ -55893,31 +55893,6 @@ Subcommand:
   # If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
   certbot renew --deploy-hook /path/to/deploy-hook-script
 #+END_SRC
-
-#+BEGIN_EXAMPLE
-  certbot certificates
-  certbot certonly --cert-name example.com
-
-  # Update an existing certificate with a new certificate that contains all old domains and new domains
-  # Use -d to specify all existing and new domains.
-  certbot --expand -d existing.com,example.com,newdomain.com
-
-  # remove some domains from an exisiting certificate. before it contains example.com and www.example.com
-  certbot certonly --cert-name example.com -d example.com
-
-  # overwrites all domains for an existing certificate
-  certbot certonly --cert-name example.com -d example.org,www.example.org
-
-  # revoke
-  certbot revoke --cert-path /etc/letsencrypt/live/CERTNAME/cert.pem
-
-  # renew any existing certificates that expire in less than 30 days.
-  # --pre-hook and --post-hook hooks run before and after every renewal attempt.
-  certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
-
-  # If you want your hook to run only after a successful renewal, use --deploy-hook in a command like this.
-  certbot renew --deploy-hook /path/to/deploy-hook-script
-#+END_EXAMPLE
 
 **** Hooks 
 #+BEGIN_EXAMPLE
@@ -55997,8 +55972,8 @@ Sample /etc/letsencrypt/renewal/mydomain.com.conf
   }
 #+END_SRC
 
-certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
-global config :: /etc/letsencrypt/cli.ini
+- certbot renewal config file :: /etc/letsencrypt/renewal/mydomain.com.conf
+- global config :: /etc/letsencrypt/cli.ini
 
 *** Windows IIS
 - IIS 8 on Windows Server 2012 or IIS 8.5 on Windows Server 2012 R2.
@@ -56104,13 +56079,13 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
 
   chown www-data:www-data /var/www/_letsencrypt
 
-  # comment out all ssl_* directives
+  # comment out all ssl_* directives - add `#;` in front
   sed -i -r 's/(listen .*443)/\1;#/g; s/(ssl_(certificate|certificate_key|trusted_certificate) )/#;#\1/g' /etc/nginx/sites-available/myweb.ca.conf
 
   # create cert only
-  certbot certonly --webroot -d myweb.ca -d www.myweb.ca --email ssl@myweb.ca -w /var/www/_letsencrypt -n --agree-tos --force-renewal
+  certbot certonly --webroot -d myweb.ca -d www.myweb.ca --email ssl@myweb.ca -w /var/www/_letsencrypt -n --agree-tos --force-renewal --dry-run
 
-  # add back ssl_* directives
+  # add back ssl_* directives - remove `#;` in front
   sed -i -r 's/#?;#//g' /etc/nginx/sites-available/myweb.ca.conf
 #+END_SRC
 
@@ -56127,76 +56102,79 @@ Context:	http, server, location, limit_except
 
 ** Redirect a website to another website
 *** HTTPS to HTTPS redirect
-Redirect https://mywebsite.com to https://mywebsite2.ca. Both websites are not hosted on this Nginx server.
+- Redirect https://mywebsite.com to https://mywebsite2.ca. Both websites are not hosted on this Nginx server
+- ~/etc/nginx/sites-available/mywebsite.com.conf~
+  #+BEGIN_SRC nginx
+    server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
 
-/etc/nginx/sites-available/mywebsite.com.conf
-#+BEGIN_SRC nginx
-  server {
-	  listen 443 ssl http2;
-	  listen [::]:443 ssl http2;
+	server_name mywebsite.com www.mywebsite.com;
+	set $base /var/www/mywebsite.com;
+	root $base/public;
 
-	  server_name mywebsite.com www.mywebsite.com;
-	  set $base /var/www/mywebsite.com;
-	  root $base/public;
+	# SSL
+	ssl_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/mywebsite.com/privkey.pem;
+	ssl_trusted_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
 
-	  # SSL
-	  ssl_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
-	  ssl_certificate_key /etc/letsencrypt/live/mywebsite.com/privkey.pem;
-	  ssl_trusted_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+	# index.php fallback
+	# remove comment after certificate is installed
+    
+	#location / {
+	#	return 302 https://www.mywebsite2.ca;
+	#}
 
-	  # index.php fallback
-	  location / {
-		  return 302 https://www.mywebsite2.ca;
-	  }
+    }
 
-  }
+    # non-www, subdomains redirect
+    server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
 
-  # non-www, subdomains redirect
-  server {
-	  listen 443 ssl http2;
-	  listen [::]:443 ssl http2;
+	server_name .mywebsite.com;
 
-	  server_name .mywebsite.com;
+	# SSL
+	ssl_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/mywebsite.com/privkey.pem;
+	ssl_trusted_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
 
-	  # SSL
-	  ssl_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
-	  ssl_certificate_key /etc/letsencrypt/live/mywebsite.com/privkey.pem;
-	  ssl_trusted_certificate /etc/letsencrypt/live/mywebsite.com/fullchain.pem;
+	return 302 https://www.mywebsite2.ca;
+    }
 
-	  return 302 https://www.mywebsite2.ca;
-  }
+    # HTTP redirect
+    server {
+	listen 80;
+	listen [::]:80;
 
-  # HTTP redirect
-  server {
-	  listen 80;
-	  listen [::]:80;
+	server_name .mywebsite.com;
 
-	  server_name .mywebsite.com;
+	include nginxconfig.io/letsencrypt.conf;
 
-	  include nginxconfig.io/letsencrypt.conf;
+	location / {
+	    return 302 https://www.mywebsite2.ca;
+	}
+    }
+  #+END_SRC
+- Create an index.html ~/var/www/mywebsite.com/public/index.html~
+- Change DNS ~A @~ and ~CNAME www or A www~ record for ~mywebsite.com~ to point to Nginx
+   - Go to ~http://mywebsite.com~ and ~http://www.mywebsite.com~, Nginx Welcome page should show
+   - DNS is propagated!
+- Run
+  #+BEGIN_SRC sh
+    ln -s /etc/nginx/sites-available/mywebsite.com.conf /etc/nginx/sites-enabled/mywebsite.com.conf
 
-	  location / {
-		  return 302 https://www.mywebsite2.ca;
-	  }
-  }
-#+END_SRC
+    sed -i -r 's/(listen .*443)/\1;#/g; s/(ssl_(certificate|certificate_key|trusted_certificate) )/#;#\1/g' /etc/nginx/sites-available/mywebsite.com.conf
 
-Create an index.html ~/var/www/mywebsite.com/public/index.html~
-#+BEGIN_SRC sh
-  ln -s /etc/nginx/sites-available/mywebsite.com.conf /etc/nginx/sites-enabled/mywebsite.com.conf
+    systemctl reload nginx
 
-  sed -i -r 's/(listen .*443)/\1;#/g; s/(ssl_(certificate|certificate_key|trusted_certificate) )/#;#\1/g' /etc/nginx/sites-available/mywebsite.com.conf
+    # dry run to review errors
+    certbot certonly --webroot -d mywebsite.com -d www.mywebsite.com --email ssl@gmail.com -w /var/www/_letsencrypt -n --agree-tos --force-renewal --dry-run
 
-  systemctl reload nginx
+    sed -i -r 's/#?;#//g' /etc/nginx/sites-available/mywebsite.com.conf
 
-  # wait until A/AAAA DNS records are propagated
-
-  certbot certonly --webroot -d mywebsite.com -d www.mywebsite.com --email ssl@gmail.com -w /var/www/_letsencrypt -n --agree-tos --force-renewal
-
-  sed -i -r 's/#?;#//g' /etc/nginx/sites-available/mywebsite.com.conf
-
-  systemctl reload nginx
-#+END_SRC
+    systemctl reload nginx
+ #+END_SRC
 
 *** HTTP to HTTPS redirect
 #+BEGIN_SRC nginx
