@@ -13370,9 +13370,32 @@ Get terms for posts
    - slug :: varchar(200)
    - term_group :: int
 *** wp_term_relationships <<<wp:db:wp_term_relationships>>>
-   - object_id :: int, (e.g. ID in wp_posts), 0
-   - term_taxonomy_id :: int, 0
-   - term_order :: int, 0
+- object_id :: int, (e.g. ID in wp_posts), 0
+- term_taxonomy_id :: int, 0
+- term_order :: int, 0
+
+#+NAME Return posts that don't have certain terms
+#+BEGIN_SRC sql
+  SELECT p.ID as post_id,
+	 p.post_title,
+	 p.post_type,
+	 p.post_status,
+	 CONCAT('https://www.a.ca/wp-admin/post.php?action=edit&post=' , p.ID)
+  FROM wp_posts p
+  WHERE 1 = 1
+    AND p.post_type IN ('vendors')
+    -- AND p.post_status IN ('publish', 'draft')
+    AND NOT EXISTS(
+	  SELECT *
+	  FROM wp_term_relationships tr
+		   INNER JOIN wp_terms t ON t.term_id = tr.term_taxonomy_id
+		   INNER JOIN wp_term_taxonomy tt ON tt.term_id = t.term_id
+	  WHERE tr.object_id = p.ID
+	    AND tt.taxonomy = 'vendor_city'
+	    AND t.slug IN ('slug1', 'slug2')
+      )
+  ORDER BY p.post_date DESC
+#+END_SRC
 
 *** wp_term_taxonomy <<<wp:db:wp_term_taxonomy>>>
 - term_taxonomy_id :: bigint(20)
@@ -13430,7 +13453,7 @@ Get all meta keys and values for a post
 #+END_SRC
 
 **** meta_key Media files
-- _wp_attached_file :: ~2009/11/a.jpg~ ~2014/02/a.pdf~ combine with wp_options:option_name's upload_path
+- _wp_attached_file :: ~2009/11/a.jpg~ ~2014/02/a.pdf~ combine with wp:db:wp_options:upload_path <<<wp:db:wp_postmeta:_wp_attached_file>>>
 - _wp_attachment_image_alt :: string
 - _wp_page_template :: 'default'
 - _thumbnail_id :: int, this is the featured image post id (123) of parent post (122)
@@ -13439,71 +13462,70 @@ Get all meta keys and values for a post
    - Featured image post 123 has post_type as attachment
 - _edit_last :: int
 - _edit_lock :: '1429297291:41' '1269611136'
+- _wp_attachement_backup_sizes
+  #+BEGIN_SRC php
+    Array
+    (
+	[full-orig] => Array
+	    (
+		[width] => 1024
+		[height] => 768
+		[file] => Tree.jpg
+	    )
 
-_wp_attachement_backup_sizes
-#+BEGIN_SRC php
-  Array
-  (
-      [full-orig] => Array
-	  (
-	      [width] => 1024
-	      [height] => 768
-	      [file] => Tree.jpg
-	  )
+	[full-1317235120383] => Array
+	    (
+		[width] => 316
+		[height] => 237
+		[file] => Tree-e1317235110739.jpg
+	    )
 
-      [full-1317235120383] => Array
-	  (
-	      [width] => 316
-	      [height] => 237
-	      [file] => Tree-e1317235110739.jpg
-	  )
-
-  )
-#+END_SRC
-
+    )
+  #+END_SRC
 - ~_wp_attachment_metadata~ :: serialized string. Only images have non-empty array. It contains all wp:f:add_image_size for a featured image
-#+BEGIN_SRC php
-  Array
-  (
-      [width] => 100
-      [height] => 100
-      [hwstring_small] => height='96' width='96'
-      [file] => 2009/11/competitiveedge_091109_tease.jpg
-      [sizes] => Array
-	  (
-	      [thumbnail] => Array
-		  (
-		      [file] => competitiveedge_091109_tease-100x60.jpg
-		      [width] => 100
-		      [height] => 60
-		  )
+     #+BEGIN_SRC php
+       Array
+       (
+	   [width] => 100
+	   [height] => 100
+	   [hwstring_small] => height='96' width='96'
+	   [file] => 2009/11/competitiveedge_091109_tease.jpg
+	   [sizes] => Array
+	       (
+		   [thumbnail] => Array
+		       (
+			   [file] => competitiveedge_091109_tease-100x60.jpg
+			   [width] => 100
+			   [height] => 60
+		       )
 
-	  )
+	       )
 
-      [image_meta] => Array
-	  (
-	      [aperture] => 0
-	      [credit] => 
-	      [camera] => 
-	      [caption] => 
-	      [created_timestamp] => 0
-	      [copyright] => 
-	      [focal_length] => 0
-	      [iso] => 0
-	      [shutter_speed] => 0
-	      [title] => 
-	  )
+	   [image_meta] => Array
+	       (
+		   [aperture] => 0
+		   [credit] => 
+		   [camera] => 
+		   [caption] => 
+		   [created_timestamp] => 0
+		   [copyright] => 
+		   [focal_length] => 0
+		   [iso] => 0
+		   [shutter_speed] => 0
+		   [title] => 
+	       )
 
-  )
-#+END_SRC
+       )
+     #+END_SRC
 
 *** wp_options <<<wp:db:wp_options>>>
 - Refer to wp:options
 - option_id *PK* :: bigint(20) unsigned
 - option_name :: varchar(191) d:''
-  - upload_path :: wp-content/uploads <<<wp:db:wp_options:upload_path>>>
-  - rewrite_rules :: <<<wp:db:wp_options:rewrite_rules>>>
-  - active_plugins :: array of plugins' php files loaded in order <<<wp:db:wp_options:active_plugins>>>
+   - upload_path :: ~wp-content/uploads~ <<<wp:db:wp_options:upload_path>>>
+   - rewrite_rules :: <<<wp:db:wp_options:rewrite_rules>>>
+   - active_plugins :: array of plugins' php files loaded in order <<<wp:db:wp_options:active_plugins>>>
+   - siteurl :: ~https://www.a.ca~ <<<wp:db:wp_options:siteurl>>>
 - option_value :: longtext
 - autoload :: varchar(20) d:'yes'
 
@@ -14034,22 +14056,44 @@ wp_options table keep track of recently_edited files that are edited on WP-admin
 *** wp-migrate-db-pro, wp-migrate-db-pro-media-files
 Non-free plugin. Install them in both source and destination websites.
 
-*** wp-all-import-pro, wp-all-export-pro <<<wp:plugin:wp-all-export-pro>>> <<<wp:plugin:wp-all-import-pro>>>
+*** wp-all-import-pro, wp-all-export-pro
+**** Basics
 - License is for plugin update only :: Both plugins (WP All Import, WP All Export) do not require a license to use
 - Create a brand new wp site, use wp cli to import .sql file and install Export-pro
 - Export-pro to export parent posts to .csv or .xml
 - Install Import-pro to import parent posts
 
-Export-pro exports one post type at a time or build a WP_Query
+**** Export-pro <<<wp:plugin:wp-all-export-pro>>>
+- Exports one post type at a time or build a WP_Query
 - Filter options :: ~status=publish parent=0~ first
-- Usually All Standard Fields + All Media Fields + All Taxonomies Fields + All Other + last All Custom Fields
-- Image field is wp:db:wp_postmeta:_wp_attached_file if it's an image
-- Attachment field is files that are other than images :: wp:db:wp_options:siteurl + wp:db:wp_options:upload_path + wp:db:wp_postmeta:_wp_attached_file
-- csv can split records into files while xml cannot
-- Export files are saved under wp:db:wp_options:upload_path + wpallexport/exports/hashed_code for each export job
-  - linux:find:newest modified files
+- Usually include all fields
+   - Standard
+      - ID
+      - Title
+      - Content
+      - Excerpt
+      - Date
+      - Post Type
+      - Permalink
+   - Media
+      - Images :: wp:db:wp_postmeta:_wp_attached_file if it's an image
+	 - URL :: wp:db:wp_options:siteurl + wp:db:wp_options:upload_path + wp:db:wp_postmeta:_wp_attached_file
+	 - Filename
+	 - Path
+	 - ID
+	 - Title
+	 - Caption
+	 - Description
+	 - Alt Text
+	 - Featured
+      - Attachments :: files that are other than images
+	 - URL :: wp:db:wp_options:siteurl + wp:db:wp_options:upload_path + wp:db:wp_postmeta:_wp_attached_file
+   - Custom
+- CSV vs XML :: csv can split records into files while xml cannot
+- Export files are saved under wp:db:wp_options:upload_path + ~wpallexport/exports/hashed_code~ for each export job
+   - linux:find:newest modified files
 
-Import-pro
+**** Import-pro <<<wp:plugin:wp-all-import-pro>>>
 - Images :: import them to Media Library and modify the image urls inside body content after posts are imported
    - ~wp-content/uploads/wpallimport/files~
 - Taxonomy
@@ -14097,10 +14141,10 @@ Cron script
   curl -L "https://li-dev-proj.pantheonsite.io/wp-cron.php?import_key=...&import_id=..&action=processing" -o /home/li/c/project/cs-devops/import.log
 #+END_SRC
 
-Import Settings
+***** Import Settings
 [[file:images/wp-all-import-Import-options.png]]
 
-Import Options
+***** Import Options
 [[file:images/wp-all-import-Import-settings.png]]
 
 *** wordpress-importer
@@ -23811,6 +23855,7 @@ Gmail Web and Gmail iOS and Android apps.
 *** CSS and HTML Support across Devices <<<email:css:support>>>
 - https://www.campaignmonitor.com/css/
 - https://templates.mailchimp.com/resources/email-client-css-support/
+- https://www.caniemail.com
 - Gmail Web doesn't support ~<style>~ in ~<body>~ but supports ~<style>~ in ~<head>~
 - Gmail removes support for CSS attribute selectors
 - ~<link>~ within ~<head>~ or ~<body>~ :: not supported in
@@ -58824,10 +58869,8 @@ Do this
 Remember if the outter query has LIMIT, then it will overwrite any subquery's LIMIT
 
 *** EXISTS
-If only checking existance in other tables but not returning any data from other tables, always use `EXISTS` or `NOT EXISTS`
-
-The following returns nodes that have field_dealer = 101615 and field_ad_status = active but not returning any fields from 
-tables field_data_*.
+- If only checking existance in other tables but not returning any data from other tables, always use ~EXISTS~ or ~NOT EXISTS~
+- The following returns nodes that have ~field_dealer = 101615~ and ~field_ad_status = active~ but not returning any fields from tables ~field_data_*~
 
 #+BEGIN_SRC sql
   SELECT count(*) FROM node AS n
@@ -61828,6 +61871,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
    - includeLanguages :: ~{ "vue-html": "html", "mjml": "mjml" }~
 - Editor
    - editor.showFoldingControls :: always
+   - editor.wordWrap :: ~on~
 
 ** Emacs
 *** Install & Configuration
