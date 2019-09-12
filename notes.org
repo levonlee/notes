@@ -7908,7 +7908,7 @@ https://developer.wordpress.org/cli/commands/db/export/
   wp db query 'SELECT id FROM wp_posts WHERE post_content LIKE \"%trans.gif%\" AND post_type NOT IN ('revision')'
 #+END_SRC
 
-*** search-replace <<<wp-cli:search-replace>>> 
+*** search-replace <<<wp-cli:search-replace>>>
 - Used in image:tatemz/wp-cli
 - https://developer.wordpress.org/cli/commands/search-replace/
 
@@ -7982,6 +7982,9 @@ It doesn't work on Pantheon's Terminus
 #+END_SRC
 
 *** config list
+*** embed <<<wp-cli:embed>>>
+- Refer to wp:api:oembed
+
 *** Common Issues
 [[https://make.wordpress.org/cli/handbook/common-issues][All common issues]]
 
@@ -10567,6 +10570,13 @@ In the enqueued javascript file ~path/to/myscript.js~
  #+BEGIN_SRC php
    add_filter( 'the_content', 'shortcode_unautop'  );
  #+END_SRC
+
+*** OEmbed API ~wp-includes/embed.php~ <<<wp:api:oembed>>>
+**** Basics
+- Shortcode ~[embed width="560" height="315"]https://youtu.be/abc[/embed]~
+   - Whitelist of sources :: https://wordpress.org/support/article/embeds/
+- Embeds that aren't associated with a post will be cached in oembed_cache post type
+- Embeds that are associated with a post is stored in the post's metadata
 
 *** Media API ~wp-includes/media.php~ <<<wp:api:media>>>
 **** add_image_size <<<wp:f:add_image_size>>>
@@ -13307,7 +13317,7 @@ wp:filter:template_include
 - guid :: varchar(255)
 - menu_order :: int(11)
 - post_type :: varchar(20) d:'post'
-   - Core :: post, page, attachment, nav_menu_item, revision
+   - Core :: post, page, attachment, nav_menu_item, revision, oembed_cache wp:api:oembed
    - Custom post type slug 
 - post_mime_type :: vchar 100 blank for non media posts. e.g. image/jpeg
 - comment_status :: varchar(20) d:'open'
@@ -13318,13 +13328,14 @@ Number of posts per Year, Month
 #+BEGIN_SRC sql
   SELECT YEAR(p.post_date)  AS year
        , MONTH(p.post_date) AS month
+       , post_type
        , count(*)
        -- ,p.ID, p.post_title, p.post_type, p.post_status
   FROM wp_posts p
   WHERE 0 = 0
-    AND p.post_type NOT IN ('attachment', 'revision', 'nav_menu_item', 'wp-types-group')
+    AND p.post_type NOT IN ('attachment', 'revision', 'nav_menu_item', 'oembed_cache')
     AND p.post_status = 'publish'
-  GROUP BY year, month
+  GROUP BY year, month, post_type
   ORDER BY year DESC, month DESC,
 	   post_date DESC
   -- LIMIT 100
@@ -13337,6 +13348,7 @@ Get terms for posts
        ,tr.term_order
        ,tt.term_taxonomy_id, tt.taxonomy as taxonomy, tt.parent
       ,p.ID as post_id, p.post_title, p.post_type, p.post_status
+      -- , count(*)
   FROM wp_posts p
 	   INNER JOIN wp_term_relationships tr ON tr.object_id = p.ID
 	   INNER JOIN wp_terms t ON t.term_id = tr.term_taxonomy_id
@@ -13348,6 +13360,7 @@ Get terms for posts
     -- AND ( t.slug LIKE 'TTNA' OR t.name LIKE 'TTNA' )
     -- AND t.slug LIKE 'GCKC'
     -- AND p.ID = '144571'
+  -- GROUP BY t.term_id
   ORDER BY p.post_date DESC
 #+END_SRC
 
@@ -13963,10 +13976,15 @@ Get first row or random row
 **** Add a field group
 https://www.advancedcustomfields.com/resources/register-fields-via-php/
 
-*** Types :: Toolset Types <<<wp:plugin:types>>>
+*** Types - Toolset Types <<<wp:plugin:types>>>
 - WP Types is different! Use <<<types_render_field>>>
+- Database
+   - wp-types-group
+   - wp-types-term-group
+   - wp-types-user-group
 - Custom field name is ~wpcf-fieldname_in_toolset_ui~ :: underscores can be ~-~ based on how field is named in the plugin
    - Same name in ~meta_key~ in ~wp_postmeta~ :: if field is set to not-show on wp-admin, ~_~ is appended
+- Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 #+BEGIN_SRC php
   $newsletters = types_render_field('newsletters', array('output'=>'raw'));
@@ -13995,8 +14013,6 @@ https://www.advancedcustomfields.com/resources/register-fields-via-php/
    ,*/
   // For Image field.
 #+END_SRC
-
-Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 **** Release
 - WP 3.7+
@@ -14401,7 +14417,8 @@ Because in themes
 - Maybe useful to set ~Automatically close comments on articles older than 0 days~
 
 *** disable-embeds <<<wp:plugin:disable-embeds>>>
-Disable embed, oEmbed and remove wp-embed.js https://kinsta.com/knowledgebase/disable-embeds-wordpress/
+- Disable embed, oEmbed and remove ~wp-embed.min.js~ :: https://kinsta.com/knowledgebase/disable-embeds-wordpress/
+- Refer to wp:api:oembed
 
 *** all-in-one-event-calendar
 Create a content type Event
@@ -14615,6 +14632,9 @@ https://docs.gravityforms.com/wp-config-options/
 #+BEGIN_SRC php
   define( 'GF_LICENSE_KEY', 'YOUR-LICENSE-KEY-HERE' );
 #+END_SRC
+
+**** Database
+- wp_gf_form :: forms
 
 **** TS: ~jQuery is not found~
 Gravity Forms by default will write an inline JavaScript call to jQuery on every form you add to a page.  This will throw an error if you’re loading jQuery in the footer of your site (which you should be doing).
@@ -16424,10 +16444,7 @@ Add an extra field in response
 #+END_SRC
 
 ** Life Cycle
-- Basics
-   - Refer to wp:action:loading sequence
-   - https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
-   - http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
+*** ~index.php~
 - index.php
    - WP_USE_THEMES = true
    - wp-blog-header.php
@@ -16465,6 +16482,7 @@ Add an extra field in response
 	    - wp-includes/script-loader.php :: wp:api:dependency
 	    - wp-includes/taxonomy.php :: Core Taxonomy API wp:api:taxonomy
 	    - wp-includes/shortcodes.php :: wp:api:shortcode
+	    - wp-includes/embed.php :: wp:api:oembed
 	    - wp-includes/media.php :: wp:api:media
 	    - wp-includes/http.php :: wp:api:http request
 	    - wp-includes/widgets.php :: wp:api:widgets
@@ -16518,6 +16536,7 @@ Add an extra field in response
 	 - wp:action:template_redirect
 	 - wp:action:do_robots
 	 - wp:filter:template_include
+*** ~wp-admin/index.php~
 - wp-admin/index.php
    - wp-admin/admin.php
       - wp:wp-load.php
@@ -16525,6 +16544,7 @@ Add an extra field in response
    - wp-admin/includes/dashboard.php
    - wp-admin/admin-header.php
    - wp-admin/admin-footer.php
+*** ~wp-admin/admin-ajax.php~
 - Request wp-admin/admin-ajax.php
    - /wp-load.php 
    - /wp-config.php
@@ -16532,12 +16552,17 @@ Add an extra field in response
    - /wp-admin/admin.php
    - /wp-admin/includes/ajax-actions.php
       - wp:action:admin_init
+*** Request REST API
 - Request REST API
    - index.php
       - wp-blog-header.php (Environment and Template)
 	 - wp-load.php
 	    - wp-config.php
 	    - wp-settings.php (which loads most core files, all active plugins and themes, and the REST API) (doesn't load admin_init, ~/wp-admin/*.*~)
+*** Basics
+- Refer to wp:action:loading sequence
+- https://wordpress.stackexchange.com/questions/71406/is-there-a-flowchart-for-wordpress-loading-sequence
+- http://www.wpbeginner.com/wp-tutorials/how-wordpress-actually-works-behind-the-scenes-infographic/
 
 ** PHP 7
 Notice: The called constructor method for WP_Widget is deprecated since version 4.3.0! Use __construct() instead. in /path-to/wp-includes/functions.php on line 3457
@@ -61916,7 +61941,8 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 *** Basics
 - Help :: C-h
 - See all help options :: ~C-h ?~
-- Find shortcut by command (where-is) :: ~C-h w~
+- Find shortcut by command ~where-is~ :: ~C-h w~
+- Find command by shortcut ~describe-key~ :: ~C-h k~
 - Description of a function :: ~C-h f~
 - Get variable value :: ~C-h v~
 
@@ -62031,10 +62057,10 @@ File
 - C-u TAB :: Global tree fold/unfold
 - C-u C-u C-u TAB :: Show all
 - C-c C-n :: Next heading
-- C-c C-p :: Previous heading
-- C-c C-f :: Next heading same level
-- C-c C-b :: Previous heading same level
-- C-c C-u :: Backward to higher level heading
+- ~C-c C-p~ :: Previous heading *Go to parent heading if triggered in the content of the heading*
+- ~C-c C-f~ :: Next heading same level
+- ~C-c C-b~ :: Previous heading same level
+- ~C-c C-u~ :: Backward to higher level heading ~outline-up-heading~
 - M-S-<right> :: Increase heading level of an item and its child items
 - M-S-<left> :: Same as above but decrease
 - M-<right>/<left> :: Decrease/increase level of a parent item only
