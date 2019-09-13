@@ -18177,33 +18177,29 @@ Target IE 10 and IE 11
   }
 #+END_EXAMPLE
 
-** @media
-~@media not|only /mediatype/ and (/media feature/) {}~
-
-~<link rel="stylesheet" media="mediatype and|not|only (media feature)" href="style.css">~
-
+** @media <<<css:@media>>>
 *** Syntax
-not /mediatype/
-only /mediatype/
+- ~@media not|only /mediatype/ and (/media feature/) {}~
+- ~<link rel="stylesheet" media="mediatype and|not|only (media feature)" href="style.css">~
+- Media type :: <<<css:@media:type>>>
+   - Possible types :: all, print, screen, speech
+   - ~not /mediatype/~ ~only /mediatype/~
+   - They can be nested with ~OR~ (separated by comma) but not ~and~
+     #+BEGIN_SRC css
+       /* This works */
+       @media screen and (min-width:200px), not print and (min-width:300px) {}
 
-Each media feature, key:value or key, must be wrapped in ()
-Some media feature doesn't have a value.
-
-=not /mediatype/= and =only /mediatype/= can be chained with OR (separated by comma) but not =and=
-#+BEGIN_EXAMPLE
-  // This works
-  @media screen and (min-width:200px), not print and (min-width:300px) {}
-
-  // This syntax is wrong
-  @media screen and (min-width:200px) and not print and (min-width:300px) {}
-#+END_EXAMPLE
-
-Note :: =not /mediatype/= is different from =not(/mediafeature/)=
-
-Nested media queries (@media inside another @media) is supported on all browsers except IE11 and below.
+       /* This syntax is wrong */
+       @media screen and (min-width:200px) and not print and (min-width:300px) {}
+     #+END_SRC
+   - Nested media queries (using commas) is supported on all browsers except IE11-
+   - Note :: ~not /mediatype/~ is different from ~not (/mediafeature/)~
+- Media feature
+   - Each media feature, ~key:value~ or ~key~ (Some media feature doesn't have a value)
+   - must be wrapped in ~()~
 
 *** Testing
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var mql = window.matchMedia("(orientation: portrait)");
   // window.addListener(handlerOrientationChange);
   handlerOrientationChange(mql);
@@ -18216,17 +18212,7 @@ Nested media queries (@media inside another @media) is supported on all browsers
     console.log('media query does not match');
    }
   }
-#+END_EXAMPLE
-
-*** Media Types <<<css:@media:type>>>
-all, print, screen, speech
-
-#+BEGIN_EXAMPLE
-  @media screen and (max-width: 1000px) and (min-width: 700px) {}
-  // Use comma for OR
-  @media screen and (max-width: 699px) and (min-width: 520px), (min-width: 1151px) {}
-#+END_EXAMPLE
-
+#+END_SRC
 
 *** Features <<<css:@media:features>>>
 min-width, max-width and:
@@ -18241,92 +18227,28 @@ min-width, max-width and:
 | pointer       | no       | fine (mouse, drawying stylus), coarse (finger), none (not a pointing device) |
 | hover         | no       | none (finger), hover (can have hover state)                                  |
 
-pointer and hover always refer to the primary device while any-pointer and any-hover refers to any if exists.
-any-hover has on-demand which means mobile services can emulate hovering when the user performs a long tap.
-
-Don't use min/max-device-width as it refers to the screen size not the viewport size
+- ~pointer~ and ~hover~ always refer to the primary device while ~any-pointer~ and ~any-hover~ refer to any if exists
+- ~any-hover~ has ~on-demand~ which means mobile services can emulate hovering when the user performs a long tap
+- Don't use ~min/max-device-width~ as it refers to the screen size not the viewport size
 
 *** Responsive Design
-Progressive Method :: start from mobile layout, add content to bigger screen size
-#+BEGIN_EXAMPLE
-  /* {
-   box-sizing: border-box;
-  }
-  .row:after {
-   content: "";
-   clear:both;
-   display:block;
-  }
-  [class*="col-"] {
-   float: left;
-   padding: 15px;
-   width: 100%;
-  }
-  @media only screen and (min-width: 600px) {
-      .col-s-1 {width: 8.33%;}
-      .col-s-2 {width: 16.66%;}
-      .col-s-3 {width: 25%;}
-      .col-s-4 {width: 33.33%;}
-      .col-s-5 {width: 41.66%;}
-      .col-s-6 {width: 50%;}
-      .col-s-7 {width: 58.33%;}
-      .col-s-8 {width: 66.66%;}
-      .col-s-9 {width: 75%;}
-      .col-s-10 {width: 83.33%;}
-      .col-s-11 {width: 91.66%;}
-      .col-s-12 {width: 100%;}
-  }
-  @media only screen and (min-width: 768px) {
-      .col-1 {width: 8.33%;}
-      .col-2 {width: 16.66%;}
-      .col-3 {width: 25%;}
-      .col-4 {width: 33.33%;}
-      .col-5 {width: 41.66%;}
-      .col-6 {width: 50%;}
-      .col-7 {width: 58.33%;}
-      .col-8 {width: 66.66%;}
-      .col-9 {width: 75%;}
-      .col-10 {width: 83.33%;}
-      .col-11 {width: 91.66%;}
-      .col-12 {width: 100%;}
-  }
-
-  <div class="row">
-   <div class="col-3 col-s-3 menu">
-    <ul>
-     <li>Menu 1</li>
-     <li>Menu 2</li>
-     <li>Menu 3</li>
-   </div>
-   
-   <div class="col-6 col-s-9">
-    long content...
-   </div>
-
-   <div class="col-3 col-s-12">
-    right sidebar...
-   </div>
-  </div>
-#+END_EXAMPLE
-
-Graceful Method :: start from desktop layout, remove content to smaller screen size
-
 **** Mostly Fluid
 https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/mostly-fluid.html
-#+BEGIN_EXAMPLE
-      <div class="container" role="main">
-        <div class="c1">
-        </div>
-        <div class="c2">
-        </div>
-        <div class="c3">
-        </div>
-        <div class="c4">
-        </div>
-        <div class="c5">
-        </div>
-      </div>
-
+#+BEGIN_SRC html
+  <div class="container" role="main">
+    <div class="c1">
+    </div>
+    <div class="c2">
+    </div>
+    <div class="c3">
+    </div>
+    <div class="c4">
+    </div>
+    <div class="c5">
+    </div>
+  </div>
+#+END_SRC
+#+BEGIN_SRC css
   .container {
     display: -webkit-flex;
     display: flex;
@@ -18363,17 +18285,18 @@ https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/resp
       margin-right: auto;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Column Drop
 https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/column-drop.html
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="container" role="main">
     <div class="c1"></div>
-      <div class="c2"></div>
-      <div class="c3"></div>
+    <div class="c2"></div>
+    <div class="c3"></div>
   </div>
-
+#+END_SRC
+#+BEGIN_SRC css
   .container {
     display: -webkit-flex;
     display: flex;
@@ -18415,11 +18338,11 @@ https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/resp
       width: 20%;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Layout shifter
 https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/layout-shifter.html
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="container" role="main">
     <div class="c1"></div>
     <div class="c4">
@@ -18427,7 +18350,8 @@ https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/resp
       <div class="c3"></div>
     </div>
   </div>
-
+#+END_SRC
+#+BEGIN_SRC css
   .container {
     display: -webkit-flex;
     display: flex;
@@ -18457,11 +18381,11 @@ https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/resp
       margin-right: auto;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 **** Off canvas
 https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/responsive/off-canvas.html
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="container" role="main">
     <div class="c1" id="leftDrawer">
     </div>
@@ -18471,7 +18395,8 @@ https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/resp
     <div class="c3" id="rightDrawer">
     </div>
   </div>
-
+#+END_SRC
+#+BEGIN_SRC css
   body {
     overflow-x: hidden;
   }
@@ -18560,7 +18485,7 @@ https://googlesamples.github.io/web-fundamentals/fundamentals/design-and-ux/resp
       transform: translate(0,0);
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Viewport sizes of device
 - Refer to tool:device metrics
@@ -22676,75 +22601,73 @@ CSS fallback
 #+END_SRC
 
 *** video <<<html:video>>>
-MP4 is the most compatible video format. Uses H.264 video codec and AAC audio codec.
-WebM is Google for HTML5. Uses VP8 video codec and Vorbis audio codec. Doesn't support in iOS, Safari nor old IE.
-FLV is Flash only. Uses H.263 video codec and MP3 audio codec.
+- MP4 is the most compatible video format. Uses H.264 video codec and AAC audio codec
+- WebM is Google for HTML5. Uses VP8 video codec and Vorbis audio codec. Doesn't support in iOS, Safari nor old IE
+- FLV is Flash only. Uses H.263 video codec and MP3 audio codec
 
-autoplay is turned off on iOS mobile < v10
-#+BEGIN_SRC html
-  <video autoplay muted loop id="myVideo">
-    <source src="rain.mp4" type="video/mp4">
-  </video>
-#+END_SRC
+**** ~autoplay~ attribute
+- It's turned off on iOS mobile < v10
+  #+BEGIN_SRC html
+    <video autoplay muted loop id="myVideo">
+      <source src="rain.mp4" type="video/mp4">
+    </video>
+  #+END_SRC
 
-**** Attribute preload
-- metadata :: dimensions, track list, duration
-- auto :: load entire video. Setting to auto is not guaranteed as some browsers force it to be metadata or none.
-- none
+**** ~preload~ attribute <<<html:video:preload>>>
+- ~<video id="video" preload="metadata" src="file.mp4" controls></video>~
+   - ~preload~ options
+      - metadata :: dimensions, track list, duration
+      - auto :: load entire video. Setting to auto is not guaranteed as some browsers force it to be metadata or none.
+      - none
+   - Video resource starts to be fetched after ~DOMContentLoaded~ and ~window.load~ event will be fired when the entire resource is completely fetched
+   - https://developers.google.com/web/fundamentals/media/fast-playback-with-video-preload
+- Instead of using ~<video preload="">~, we can use html:link:rel:preload
+   - Preload full small media files < 5mb
+     #+BEGIN_SRC html
+       <link rel="preload" as="video" href="https://cdn.com/small-file.mp4">
 
-Video resource starts to be fetched after DOMContentLoaded and window.load event will be fired when the entire resource is completely fetched.
+       <video id="video" controls></video>
 
-https://developers.google.com/web/fundamentals/media/fast-playback-with-video-preload
-Use html:link:rel:preload
-<<<html:preload video>>>
+       <script>
+	 // Later on, after some condition has been met, set video source to the
+	 // preloaded video URL.
+	 video.src = 'https://cdn.com/small-file.mp4';
+	 video.play().then(_ => {
+	   // If preloaded video URL was already cached, playback started immediately.
+	 });
+       </script>
+     #+END_SRC
+   - Preload the first segment use [[https://developers.google.com/web/fundamentals/media/mse/basics][Media Source Extensions JavaScript API]]
+     #+BEGIN_SRC html
+       <link rel="preload" as="fetch" href="https://cdn.com/file_1.webm">
 
-Preload full small media files < 5mb
-#+BEGIN_SRC html
-  <link rel="preload" as="video" href="https://cdn.com/small-file.mp4">
+       <video id="video" controls></video>
 
-  <video id="video" controls></video>
+       <script>
+	 const mediaSource = new MediaSource();
+	 video.src = URL.createObjectURL(mediaSource);
+	 mediaSource.addEventListener('sourceopen', sourceOpen, { once: true });
 
-  <script>
-    // Later on, after some condition has been met, set video source to the
-    // preloaded video URL.
-    video.src = 'https://cdn.com/small-file.mp4';
-    video.play().then(_ => {
-      // If preloaded video URL was already cached, playback started immediately.
-    });
-  </script>
-#+END_SRC
+	 function sourceOpen() {
+	   URL.revokeObjectURL(video.src);
+	   const sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp09.00.10.08"');
 
-Preload the first segment use [[https://developers.google.com/web/fundamentals/media/mse/basics][Media Source Extensions JavaScript API]]
-#+BEGIN_SRC html
-  <link rel="preload" as="fetch" href="https://cdn.com/file_1.webm">
-
-  <video id="video" controls></video>
-
-  <script>
-    const mediaSource = new MediaSource();
-    video.src = URL.createObjectURL(mediaSource);
-    mediaSource.addEventListener('sourceopen', sourceOpen, { once: true });
-
-    function sourceOpen() {
-      URL.revokeObjectURL(video.src);
-      const sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp09.00.10.08"');
-
-      // If video is preloaded already, fetch will return immediately a response
-      // from the browser cache (memory cache). Otherwise, it will perform a
-      // regular network fetch.
-      fetch('https://cdn.com/file_1.webm')
-      .then(response => response.arrayBuffer())
-      .then(data => {
-	// Append the data into the new sourceBuffer.
-	sourceBuffer.appendBuffer(data);
-	// TODO: Fetch file_2.webm when user starts playing video.
-      })
-      .catch(error => {
-	// TODO: Show "Video is not available" message to user.
-      });
-    }
-  </script>
-#+END_SRC
+	   // If video is preloaded already, fetch will return immediately a response
+	   // from the browser cache (memory cache). Otherwise, it will perform a
+	   // regular network fetch.
+	   fetch('https://cdn.com/file_1.webm')
+	   .then(response => response.arrayBuffer())
+	   .then(data => {
+	     // Append the data into the new sourceBuffer.
+	     sourceBuffer.appendBuffer(data);
+	     // TODO: Fetch file_2.webm when user starts playing video.
+	   })
+	   .catch(error => {
+	     // TODO: Show "Video is not available" message to user.
+	   });
+	 }
+       </script>
+     #+END_SRC
 
 ** Meta
 *** Meta Refresh (redirect)
@@ -25075,132 +24998,127 @@ window.open('tel:+11231231234');
 ** Link <<<html:link>>>
 - Also can be set in HTML response header as Link. Refer to header:link
 
-*** rel="preload" <<<html:link:rel:preload>>>
-Not supported in IE11-, Edge, Safari 11-, iOS Safari 11.2-
+*** ~media="print"~ <<<html:link:media>>>
+- Refer to css:@media :: ~<link rel="stylesheet" href="print.css" media="print">~
 
-- Resources loaded via <link rel="preload"> are stored locally in the browser, and are effectively inert until they’re referenced in the DOM, JavaScript, or CSS.
-- Does not block window.onload event. 
-- To load late-discovered critical resources which will be loaded very soon at current request.
-- Compliant with Content-Security-Policy and http header Accept
+*** ~rel="preload"~ <<<html:link:rel:preload>>>
+- Not supported in IE11-, Edge, Safari 11-, iOS Safari 11.2-
+   - Unsupported browsers will just ignore
+- Resources loaded via ~<link rel="preload">~ are stored locally in the browser, and are effectively inert until they're referenced in the DOM, JavaScript, or CSS
+- Does not block ~window.onload~ event
+- To load late-discovered critical resources which will be loaded very soon at current request
+- Compliant with ~Content-Security-Policy~ and http header ~Accept~
+- Preload script
+  #+BEGIN_SRC html
+    <link rel="preload" href="used-later.js" as="script" type="text/javascript" />
 
-#+BEGIN_SRC html
-  <link rel="preload" href="used-later.js" as="script">
-  <!-- ...other HTML... -->
-  <script>
-    // Later on, after some condition has been met, we run the preloaded
-    // JavaScript by inserting a <script> tag into the DOM.
-    var usedLaterScript = document.createElement('script');
-    usedLaterScript.src = 'used-later.js';    
-    document.body.appendChild(usedLaterScript)
-  </script>
-#+END_SRC
+    <!-- json -->
+    <link rel="preload" href="/graphql/query?id=12345" as="fetch" type="application/json" />
 
-as="script" refers to consumer tag <script>
+    <!-- ...other HTML... -->
+    <script>
+      // Later on, after some condition has been met, we run the preloaded
+      // JavaScript by inserting a <script> tag into the DOM.
+      var usedLaterScript = document.createElement('script');
+      usedLaterScript.src = 'used-later.js';    
+      document.body.appendChild(usedLaterScript)
+    </script>
+  #+END_SRC
+- Preload image :: ~<link rel="preload" as="image" href="logo.jpg"/>~
+- Preload font
+   - ~<link rel="preload" href="font.woff2" as="font" type="font/woff2" crossorigin>~
+   - Font needs ~crossorigin~ even it's on the same origin. ~type~ is also needed
+   - All browsers that support preloading also support WOFF2, so ~font/woff2~ is the format that you should preload
+   - preload won't have the ability to ~@font-face local()~, so the font will be always downloaded
+- Preload video :: html:video:preload
+- If you don't want to preload a resource at page load but want to preload it before it's used
+  #+BEGIN_SRC js
+    var preload = document.createElement("link");
+    link.href = "myscript.js";
+    link.rel = "preload";
+    link.as = "script";
+    document.head.appendChild(link);
 
-If as is not defined, it's equivalent to XHR request with low priority.
-
-<link rel="preload" as="image" href="logo.jpg"/>
-
-Preload font
-- Font needs crossorigin even it's on the same origin. type is also needed.
-- <link rel="preload" href="font.woff2" as="font" type="font/woff2" crossorigin>
-- Not all browsers support <link rel="preload">, and in those browsers, <link rel="preload"> will just be ignored. But every browser that supports preloading also supports WOFF2, so that's always the format that you should preload.
-- preload won't have the ability to @font-face local(), so the font will be always downloaded
-
-Refer to html:preload video
-
-If you don't want to preload a resource at page load but want to preload it before it's used:
-#+BEGIN_SRC js
-  var preload = document.createElement("link");
-  link.href = "myscript.js";
-  link.rel = "preload";
-  link.as = "script";
-  document.head.appendChild(link);
-
-  // later
-  var script = document.createElement("script");
-  script.src = "myscript.js";
-  document.body.appendChild(script);
-#+END_SRC
-
-Preload with onload, do something when resource is downloaded which is different from window.onload
-#+BEGIN_SRC html
-  <link rel="preload" as="style" href="async_style.css" onload="this.rel='stylesheet'">
-
-  <script>
-  var asyncScriptOnLoad = function() {
-    var script = document.createElement('script');
-    script.src = this.href;
+    // later
+    var script = document.createElement("script");
+    script.src = "myscript.js";
     document.body.appendChild(script);
-  };
-  </script>
+  #+END_SRC
+- ~onload~ event :: do something when resource is downloaded which is different from ~window.onload~
+  #+BEGIN_SRC html
+    <link rel="preload" as="style" href="async_style.css" onload="this.rel='stylesheet'">
 
-  <link rel="preload" as="script" href="async_script.js"
-  onload="asyncScriptOnLoad();">
-#+END_SRC
+    <script>
+    var asyncScriptOnLoad = function() {
+      var script = document.createElement('script');
+      script.src = this.href;
+      document.body.appendChild(script);
+    };
+    </script>
 
-Preload with media (responsive loading)
-#+BEGIN_SRC html
-  <link rel="preload" as="image" href="map.png" media="(max-width: 600px)">
-  <link rel="preload" as="script" href="map.js" media="(min-width: 601px)">
-#+END_SRC
+    <link rel="preload" as="script" href="async_script.js"
+    onload="asyncScriptOnLoad();">
+  #+END_SRC
+- Detect if ~<link rel="preload">~ is supported
+  #+BEGIN_SRC js
+    const preloadSupported = () => {
+      const link = document.createElement('link');
+      const relList = link.relList;
+      if (!relList || !relList.supports)
+	return false;
+      return relList.supports('preload');
+    };
+  #+END_SRC
+- HTTP/2 Server Push can push resources to browser before browser sends the request for them. Which means Push can send resources before HTML even started to be sent to the browser. Resources have to be on the same origin
 
-Detect if ~<link rel="preload">~ is supported
-#+BEGIN_SRC js
-  const preloadSupported = () => {
-    const link = document.createElement('link');
-    const relList = link.relList;
-    if (!relList || !relList.supports)
-      return false;
-    return relList.supports('preload');
-  };
-#+END_SRC
-
-HTTP/2 Server Push can push resources to browser before browser sends the request for them. Which means Push can send resources before HTML even started to be sent to the browser. Resources have to be on the same origin.
-
-Preload can be used for all origins.
-
-*** rel="prefetch"
-- Has better browser support
+*** ~rel="prefetch"~
+- Has better browser support than ~rel="preload"~
 - Download non-critical resources earlier
 - Prefetch non-recursively fetches the top level resource not the child resources
+- Downloads the same css 2 times
+  #+BEGIN_SRC html
+    <link rel="prefetch" href="optional.css">
+    <link rel="stylesheet" href="optional.css">
+  #+END_SRC
 
-Downloads the same css 2 times
-#+BEGIN_SRC html
-  <link rel="prefetch" href="optional.css">
-  <link rel="stylesheet" href="optional.css">
-#+END_SRC
+*** ~rel="dns-prefetch"~
+- ~rel="preconnect"~ has less browser support and it's a superset of dns-prefetch
+  #+BEGIN_SRC html
+    <link rel="dns-prefetch" href="http://www.spreadfirefox.com/">
+    <link rel="dns-prefetch" href="//www.spreadfirefox.com">
+  #+END_SRC
 
+*** preload vs prefetch and Network Prioritisation
 - Network Prioritisation :: https://medium.com/reloading/preload-prefetch-and-priorities-in-chrome-776165961bbf
 - Priority shown in DevTools:
   - Highest :: layout-blocking
-    - CSS inside <head> :: match
+    - CSS inside ~<head>~ :: match
     - Font
     - XHR (sync)
-    - <link rel=preload as=style>
+    - ~<link rel=preload as=style>~
   - High :: load in layout-blocking phase
-    - <script> inside <head> :: requested before any non-preloaded images
-    - <link rel=preload as=script>
-    - <link rel=preload as=font>
+    - ~<script>~ inside ~<head>~ :: requested before any non-preloaded images
+    - ~<link rel=preload as=script>~
+    - ~<link rel=preload as=font>~
     - Import
     - Image (in viewport)
-    - <link rel=preload> with no as will behave as XHR
+    - ~<link rel=preload>~ with no as will behave as XHR
     - XSL
     - XHR/fetch* (async)
   - Medium :: Load one-at-a-time in layout-blocking phase
-    - <script> :: requested after any non-preloaded images
+    - ~<script>~ :: requested after any non-preloaded images
     - Favicon
   - Low :: Load one-at-a-time in layout-blocking phase
-    - <script async>
-    - <script defer>
-    - Injected <script>
+    - ~<script async>~
+    - ~<script defer>~
+    - Injected ~<script>~
     - Image
-    - <link rel=preload as="image">
+    - ~<link rel=preload as="image">~
     - Media
     - SVG
   - Lowest :: Load one-at-a-time for layout-blocking phase. after current page is done loading and there's bandwidth available
     - CSS :: mismatch
-    - <link rel="prefetch">
+    - ~<link rel="prefetch">~
 
 *** ~rel="canonical"~ and ~rel="alternate"~ <<<html:link:rel:canonical>>> <<<html:link:rel:alternate>>>
 - A canonical URL is the URL of the page that Google thinks is most representative from a set of duplicate pages
@@ -25228,14 +25146,6 @@ Downloads the same css 2 times
       </url>
   </urlset>
 #+END_SRC
-
-*** rel="dns-prefetch"
-#+BEGIN_EXAMPLE
-  <link rel="dns-prefetch" href="http://www.spreadfirefox.com/">
-  <link rel="dns-prefetch" href="//www.spreadfirefox.com">
-#+END_EXAMPLE
-
-rel="preconnect" has less browser support and it's a superset of dns-prefetch
 
 *** ~rel="manifest.json"~ <<<html:link:rel:manifest>>>
 - Required by Crhome to show the Add to Home Screen prompt
@@ -25287,13 +25197,7 @@ rel="preconnect" has less browser support and it's a superset of dns-prefetch
   }
 #+END_SRC
 
-*** Stylesheet for a media
-#+BEGIN_EXAMPLE
-  <link rel="stylesheet" href="print.css" media="print">
-#+END_EXAMPLE
-Or use css:@media:type
-
-*** rel="icon" rel="apple-touch-startup-image" rel="apple-touch-icon"
+*** ~rel="icon"~ ~rel="apple-touch-startup-image"~ ~rel="apple-touch-icon"~
 Refer to html:address bar
 https://developers.google.com/web/fundamentals/design-and-ux/browser-customization/
 
