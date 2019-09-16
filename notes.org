@@ -443,23 +443,21 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 #+END_SRC
 
 *** Create a custom date
-**** mktime return Unix timestamp <<<php:f:mktime>>>
+**** ~mktime~ return Unix timestamp <<<php:f:mktime>>>
 #+BEGIN_SRC php
   // hour, min, sec, month, day, year, $is_dst(daylight saving, 0 or 1)
   $_u_time = mktime(11,0,0,11,22,2016);
 #+END_SRC
 
-**** String to Time - return Unix timestamp <<<php:f:strtotime>>>
+**** ~strtotime( string $time [, int $now = time() ] ) : int~ String to Time - return Unix timestamp <<<php:f:strtotime>>>
 #+BEGIN_SRC php
-  // strtotime ( string $time [, int $now = time() ] ) : int
-
   $_u_time = strtotime('2016-11-01');
   // 20190228 format also works
 
   // ISO date string. Refer to js:time:iso
   $_u_time = strtotime('2011-10-05T14:48:00.000Z');
 
-  //Compare
+  // Compare
   if($start > $end) {}
 
   // difference in seconds
@@ -13443,7 +13441,7 @@ Get all meta keys and values for a post
 #+END_SRC
 
 #+BEGIN_SRC sql
-  SELECT p.post_type, p.ID, CAST(pm.meta_value AS Date)
+  SELECT p.post_type, p.ID, pm.meta_key, CAST(pm.meta_value AS Date)
   FROM wp_posts p
 	 INNER JOIN wp_postmeta pm ON pm.post_id = p.id
   WHERE 1=1
@@ -14088,7 +14086,31 @@ Non-free plugin. Install them in both source and destination websites.
 	 - Featured
       - Attachments :: files that are other than images
 	 - URL :: wp:db:wp_options:siteurl + wp:db:wp_options:upload_path + wp:db:wp_postmeta:_wp_attached_file
+	 - Filename
+	 - Path
+	 - ID
+	 - Title
+	 - Caption
+	 - Description
+	 - Alt Text 
+   - Taxonomies
    - Custom
+   - Other
+      - Status
+      - Author ID
+      - Author Username
+      - Author Email
+      - Author First Name
+      - Author Last Name
+      - Slug
+      - Format
+      - Template
+      - Parent
+      - Parent Slug
+      - Order
+      - Comment Status
+      - Ping Status
+      - Post Modified Date
 - CSV vs XML :: csv can split records into files while xml cannot
 - Export files are saved under wp:db:wp_options:upload_path + ~wpallexport/exports/hashed_code~ for each export job
    - linux:find:newest modified files
@@ -26228,20 +26250,9 @@ This provides you more debugging info
 #+END_SRC
 
 ** Types, typeof, constructor
-*** All types, typeof, constructor
-| String    | js:String                                     |
-| Number    | NaN is number. js:Number                      |
-| Boolean   | true or false. Not FALSE/TRUE                 |
-| Object    | js:Array, js:Date, js:Object, null, js:RegExp |
-|           | js:Math, js:Error                             |
-| Function  | a special type of object js:Function          |
-| Symbol    | new in Edition 6                              |
-|           |                                               |
-| undefined | undefined or has not been assigned a value    |
-| null      | a special type of object                      |
-
 *** Number <<<js:Number>>>
 - Used :: js:Math
+- ~NaN~ :: is number
 
 #+BEGIN_SRC js
   var foo = "55";
@@ -26252,6 +26263,11 @@ This provides you more debugging info
   } 
 #+END_SRC
 
+*** Boolean <<<js:boolean>>>
+- ~true~ or ~false~. NOT ~TRUE~ not ~FALSE~
+
+*** ~undefined~ - undefined or has not been assigned a value
+*** ~null~ - a special type of object
 *** String <<<js:String>>>
 #+BEGIN_SRC js
   s.length;
@@ -26274,9 +26290,12 @@ This provides you more debugging info
   // Don't use string1 == string2
   // Use below for comparing UTF8
   if ( string1.toUpperCase() === string2.toUpperCase() ) {}
+
+  // Since js:es6
+  console.log(`This is ${myVar} times easier!`);
 #+END_SRC
 
-Padding 0's to left
+#+NAME Padding 0's to left
 #+BEGIN_SRC js
   function padLeft(nr, n, str){
     return Array(n-String(nr).length+1).join(str||'0')+nr;
@@ -26470,17 +26489,20 @@ Compare current date with a future date
 #+END_SRC
 
 *** Math <<<js:Math>>>
-Math.PI
-Math.abs(-101);
-Math.ceil(101.01); // 102
-Math.floor(101.01); // 101
-Math.round(101.01);
-Math.pow(10, 2); // 100
-parseInt("10"); // 10
+#+BEGIN_SRC js
+  Math.PI
+  Math.abs(-101);
+  Math.ceil(101.01); // 102
+  Math.floor(101.01); // 101
+  Math.round(101.01);
+  Math.pow(10, 2); // 100
+  parseInt("10"); // 10
 
-var itemCost = 9.99 * 1.075; // 10.73925
-itemCost.toFixed(2); // 10.74
-*** RegExp 
+  var itemCost = 9.99 * 1.075; // 10.73925
+  itemCost.toFixed(2); // 10.74
+#+END_SRC
+
+*** RegExp
 **** search(), replace(), match()
 #+BEGIN_SRC js
   var s = "Visit W3Schools!";
@@ -26594,6 +26616,7 @@ Match one tag only
 #+END_EXAMPLE
 
 *** Function <<<js:Function>>>
+- A special type of object
 - Refer to js:hoisting
 
 **** arguments
@@ -26693,6 +26716,27 @@ prototype object's default properties and methods
 Because protype object can be cloned and modified, that brings one OOP characteristic: js:inheritance
 
 Also, if any prototype property is modified in the upper chain, the lower chain and its instantiated objects will be modified, too!
+
+*** Symbol <<<js:symbol>>>
+- Available since js:es6
+- A symbol value is created by invoking function Symbol, which dynamically produces an anonymous, unique value
+
+#+BEGIN_SRC js
+  // here are two symbols with the same description,
+  let Sym1 = Symbol("Sym");
+  let Sym2 = Symbol("Sym");
+  
+  console.log(Sym1 == Sym2); // returns "false"
+  // Symbols are guaranteed to be unique.
+  // Even if we create many symbols with the same description,
+  // they are different values.
+
+  alert(Sym1); // TypeError: Cannot convert a Symbol value to a string
+
+  alert(Sym1.toString()); // now it works
+
+  alert(Sym1.description); // Sym
+#+END_SRC
 
 *** Type Conversion
 Javascript conversion is automatic. 
@@ -26940,10 +26984,12 @@ Current URL <<<js:window.location>>>
 #+BEGIN_SRC js
   console.log(window.location.href); // whole URL
 
+  // in an iFrame, get the parent window url: window.parent.location
+
   // window.location.href === window.location.toString() === 'http://abc.com/xyz/ijk.php?m=123#def'
 
   // window.location.href = window.location.protocol + "//" 
-  // + window.location.host (abc.com)
+  // + window.location.hostname (abc.com)
   // + window.location.pathname (/xyz/ijk.php, if homepage, '/')
   // + window.location.search (?m=123)
   // +  window.location.hash; (#def)
@@ -28260,10 +28306,10 @@ Update cache before showing a notification
 
 ** iFrame
 *** Communication Between Children Window and Parent Window
-A parent window can have multiple iframes and iframes are loaded from other domain.
+- A parent window can have multiple iframes and iframes are loaded from other domain
 
-#+BEGIN_EXAMPLE
-  // Post message from iFrame to parent Window
+#+NAME Post message from iFrame to parent Window
+#+BEGIN_SRC js
   // In iframe
   parent.postMessage('the message','*');
   // or window.top.postMessage
@@ -28274,10 +28320,10 @@ A parent window can have multiple iframes and iframes are loaded from other doma
    console.log(event.data);
   }
   window.addEventListener("message", receiveMessage, false);
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
-  // Post message from parent window to iFrame
+#+NAME Post message from parent window to iFrame
+#+BEGIN_SRC js
   // In parent window
   window.onload = function() {
     var receiver = document.getElementById("#iFrameID").contentWindow;
@@ -28292,7 +28338,7 @@ A parent window can have multiple iframes and iframes are loaded from other doma
     }
     window.addEventListener('message', receiveMessage);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Dynamic iframe height
 This code requires the iframe domain is same origin.
