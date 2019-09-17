@@ -13383,10 +13383,11 @@ Get terms for posts
 #+END_SRC
 
 *** wp_terms
-   - term_id :: int, auto_increment
-   - name :: varchar(200)
-   - slug :: varchar(200)
-   - term_group :: int
+- term_id :: int, auto_increment
+- name :: varchar(200)
+- slug :: varchar(200)
+- term_group :: int
+
 *** wp_term_relationships <<<wp:db:wp_term_relationships>>>
 - object_id :: int, (e.g. ID in wp_posts), 0
 - term_taxonomy_id :: int, 0
@@ -13434,7 +13435,7 @@ Get terms for posts
 - post_id :: bigint 20
 - meta_key :: vchar(255) if custom field has prefix ~_~, It means the field is private and does not display on Post Edit page on wp-admin
    - wp:plugin:acf key ~custom_order~ with value from wp-admin and ~_custom_order~ with value ~field_ALPHANUMERICRANDOM~ which refers table ~wp_posts~ with ~post_name = 'field_ALPHANUMERICRANDOM'~
-   - ~_wp_page_template~ :: wp:custom page template e.g. ~page-news.php~
+   - ~_wp_page_template~ :: wp:custom page template e.g. ~page-news.php~ ~default~
 	#+BEGIN_SRC sql
 	  SELECT
 	      pm.meta_value, COUNT(*)
@@ -13449,11 +13450,13 @@ Get terms for posts
 	  GROUP BY pm.meta_value
 	  ORDER BY p.post_date DESC
 	#+END_SRC
+   - ~_edit_lock~ :: ~unix_timestamp:userid~ e.g. ~1566567414:38~
+   - ~_edit_last~ :: ~userid~ e.g. ~38~
 - meta_value :: longtext string or php serialized string
 
 #+NAME Get all meta keys and values for a post
 #+BEGIN_SRC sql
-  SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value
+  SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value, pm.meta_id
   FROM wp_posts p
 	   INNER JOIN wp_postmeta pm ON pm.post_id = p.id
   WHERE 1=1
@@ -13462,7 +13465,7 @@ Get terms for posts
 
 #+NAME Get all posts with a meta key
 #+BEGIN_SRC sql
-  SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value
+  SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value, pm.meta_id
   -- ,CAST(pm.meta_value AS Date)
   FROM wp_posts p
 	 INNER JOIN wp_postmeta pm ON pm.post_id = p.id
@@ -13476,13 +13479,10 @@ Get terms for posts
 **** meta_key Media files
 - _wp_attached_file :: ~2009/11/a.jpg~ ~2014/02/a.pdf~ combine with wp:db:wp_options:upload_path <<<wp:db:wp_postmeta:_wp_attached_file>>>
 - _wp_attachment_image_alt :: string
-- _wp_page_template :: 'default'
 - _thumbnail_id :: int, this is the featured image post id (123) of parent post (122)
    - Featured image post 123 with post_parent = the real parent post (122)
    - Featured image post 123 also has these meta keys and values described here
    - Featured image post 123 has post_type as attachment
-- _edit_last :: int
-- _edit_lock :: '1429297291:41' '1269611136'
 - _wp_attachement_backup_sizes
   #+BEGIN_SRC php
     Array
@@ -14022,11 +14022,16 @@ https://www.advancedcustomfields.com/resources/register-fields-via-php/
 *** Types - Toolset Types <<<wp:plugin:types>>>
 - WP Types is different! Use <<<types_render_field>>>
 - Database
-   - wp-types-group
-   - wp-types-term-group
-   - wp-types-user-group
+   - Post types
+      - wp-types-group :: custom field group
+      - wp-types-term-group :: custom taxonomy group
+      - wp-types-user-group :: custom user field group
 - Custom field name is ~wpcf-fieldname_in_toolset_ui~ :: underscores can be ~-~ based on how field is named in the plugin
-   - Same name in ~meta_key~ in ~wp_postmeta~ :: if field is set to not-show on wp-admin, ~_~ is appended
+   - Same name in ~meta_key~ in ~wp_postmeta~
+      - if field is set to not-show on wp-admin, ~_~ is appended
+      - Real value is stored as ~_wpcf-fieldname_in_toolset_ui~
+      - A multi-value field also has a field ~_wpcf_fieldname_in_toolset_ui-sort-order~
+	 - The value of field ~wpcf_fieldname_in_toolset_ui~ is ~''~ if the field has no value
 - Refer to WP Types Custom Field Checkbox and WP Meta Query
 
 #+BEGIN_SRC php
@@ -41827,7 +41832,12 @@ Widget shows png image converted to jpg with 85% quality and black background co
    - html:og
 
 ** YouTube
+:PROPERTIES:
+:CUSTOM_ID: youtube
+:END:
+
 - Link to subscribe :: ~https://www.youtube.com/channel/YOURHASEDCHANNELID?sub_confirmation=1~
+- Recommended upload encoding settings :: https://support.google.com/youtube/answer/1722171?hl=en&ref_topic=2888648 <<<youtube:encoding>>>
 
 ** Buffer.com
 - [[https://buffer.com/pricing][Pricing]]
@@ -62068,7 +62078,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - M-<RET> or C-<RET> :: insert heading
 
 **** Drawer
-C-c C-x d :: Create a drawer
+- C-c C-x d :: Create a drawer
 
 :MYDRAWER: 
 This is inside the drawer
@@ -62888,7 +62898,7 @@ Get manual of a command e.g. Select-String
 #+END_EXAMPLE
 
 **** Search text in files
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   Get-ChildItem -Path "C:\path" -recurse | Select-String -Pattern "find me" | group path | select -Unique name
 
   # dir is an alias of Get-ChildItem, sls is an alias of Select-String
@@ -62907,7 +62917,7 @@ Get manual of a command e.g. Select-String
   dir ".\" -recurse -Exclude *jpg, *jpeg, *png, *pdf, *.mp4, *.ogv, *.webm, *pdf, *.png, *.svg, *.otf, *.eot, *.woff, *.ttf | ?{ $_.FullName -NotLike "C:\fullpath\.git\*" -and $_.FullName -NotLike "C:\fullpath\abc\*" } | sls "<body>" | group path | select -unique name
 
   # test dir without sls first to make sure you have the right "where" clause
-#+END_EXAMPLE
+#+END_SRC
 
 **** Create script file
 create C:\test.ps1
@@ -63784,22 +63794,21 @@ Then go back to UI, Capture > Screen recording
 *** OBS Studio linux:app:obs-studio
 *** chrome:extension:nimbus-screenshot-screen
 *** ffmpeg
-Convert a gif to mp4
-#+BEGIN_SRC sh
-  ffmpeg.exe -i animated.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" video.mp4
-#+END_SRC
+- Convert a gif to mp4
+   - ~-pix_fmt yuv420p~ :: MP4 store pixels in different formats and this is the max compatible across all browsers
+   - ~-vf~ :: MP4 videos using H.264 need to have a dimensions that are divisible by 2
+     #+BEGIN_SRC sh
+       ffmpeg.exe -i animated.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" video.mp4
+     #+END_SRC
+     #+BEGIN_SRC html
+       <img src="video.gif" alt="" width="400" height="300" />
 
-- -pix_fmt yuv420p :: MP4 store pixels in different formats and this is the max compatible across all browsers
-- -vf :: MP4 videos using H.264 need to have a dimensions that are divisible by 2
-
-#+BEGIN_SRC html
-  <img src="video.gif" alt="" width="400" height="300" />
-
-  <video autoplay="autoplay" loop="loop" width="400" height="300">
-    <source src="video.mp4" type="video/mp4" />
-    <img src="video.gif" width="400" height="300" />
-  </video>
-#+END_SRC
+       <video autoplay="autoplay" loop="loop" width="400" height="300">
+	 <source src="video.mp4" type="video/mp4" />
+	 <img src="video.gif" width="400" height="300" />
+       </video>
+     #+END_SRC
+- Refer to youtube:encoding
 
 ** Sketch Diagrams
 - https://bubbl.us/
