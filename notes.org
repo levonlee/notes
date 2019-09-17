@@ -8927,64 +8927,6 @@ Select the posts that have checkbox enligne checked.
   ORDER BY CAST(mt1.meta_value AS CHAR) ASC, CAST(wp_postmeta.meta_value AS CHAR) ASC
 #+END_SRC
 
-** RSS <<<wp:rss>>> <<<wp:feed>>>
-- wp:f:get_template_part includes any template in child theme
-
-#+BEGIN_SRC php
-  function lili_RSS() {
-	  add_feed('lili-editorial', 'lili_editorial_RSS');
-  }
-  add_action('init', 'lili_RSS');
-
-  function lili_editorial_RSS() {
-	  get_template_part('rss','feedname');
-	  // rss is slug and feedname is an extra name
-	  // Search in order
-	  // /themes/child/rss-feedname.php
-	  // /themes/parent/rss-feedname.php
-	  // /themes/child/rss.php
-	  // /themes/parent/rss.php
-
-	  // the feed url is http://you.com/feed/lili-editorial which is the feed name defined in add_feed
-  }
-#+END_SRC
-
-- Default template :: ~/wp-includes/feed-rss2.php~
-- Functions to use in The Loop :: ~/wp-includes/feed.php~
-
-#+BEGIN_SRC php
-  <?php
-  $args = array(
-	  'post_type' => array('blog'), // e.g. any
-	  'tag' => 'editors-choice',
-	  'orderby' => 'date', // Default. e.g. title
-	  'order' => 'DESC', // Default. e.g. ASC
-  );
-  ?>
-  query_posts($args);
-  <?php while (have_posts()) : the_post(); ?>
-  <item>
-    <title><?php the_title_rss(); ?></title>
-    <?php if (has_post_thumbnail($post->ID)) : ?>
-    <?php
-      $image = wp_get_attachment_image_src(
-      get_post_thumbnail_id( $post->ID ),
-      'thumbnail'
-      );
-    ?>
-    <feature_image><?php echo $image[0]; ?></feature_image>
-    <?php endif; ?>
-    <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000',
-				  get_post_time('Y-m-d H:i:s', true),
-				  false); ?></pubDate>
-    <?php // Text Version ?>
-    <excerpt><![CDATA[<<?php echo get_the_exerpt(); ?>]]></excerpt>
-    <excerpt_html><![CDATA[<<?php echo the_exerpt_rss(); ?>]]></excerpt_html>
-    <?php echo the_category_rss('rss2'); // categories and tags ?>
-  </item>  
-  <?php endwhile; ?>
-#+END_SRC
-
 ** Functions
 *** Plugin API ~wp-includes/plugin.php~ <<<wp:api:plugin>>>
 - https://codex.wordpress.org/Plugin_API
@@ -9232,6 +9174,15 @@ Merge user defined arguments into defaults array
        'error' => false
    )
  #+END_SRC
+
+**** ~do_feed()~ <<<wp:f:do_feed>>>
+- ~do_feed()~
+   - Get feedname from ~get_query_var('feed')~ and do wp:action:do_feed_$feedname
+   - Default added feed actions
+      - ~do_feed_rdf()~ :: ~wp-includes/feed-rdf.php~
+      - ~do_feed_rss()~ :: ~wp-includes/feed-rss.php~
+      - ~do_feed_rss2( $for_comments )~ :: ~wp-includes/feed-rss2-comments.php~ or ~feed-rss2.php~
+      - ~do_feed_atom( $for_comments )~ :: ~wp-includes/feed-atom-comments.php~ or ~feed-atom.php~
 
 *** Translate <<<wp:translate>>>
 Use tool:Poedit
@@ -9970,7 +9921,7 @@ Settings > General > Site Lanuage to match fr_CA
  - wp:action:pre_get_posts
  - Refresh Permalink from UI or ~flush_rewrite_rules()~ in plugin/theme activation and deactivation hooks
  - Do not call before wp:action:init
- - ~register_post_type( string $post_type, array|string $args = array() )~
+ - ~register_post_type( string $post_type, array|string $args = array() ) : WP_Post_Type|WP_Error~
     - $post_type :: string. < 20 characters. All lowercase and no space
     - $args :: array of arguments
        - query_var :: default true to use ~$post_type~ as public query_var <<<wp:f:register_post_type:query_var>>>
@@ -10126,6 +10077,10 @@ Settings > General > Site Lanuage to match fr_CA
    add_action( 'init', 'my_custom_post_status' );
  #+END_SRC
 
+**** register_post_meta <<<wp:f:register_post_meta>>>
+- ~register_post_meta( $post_type, $meta_key, array $args ) : bool~
+   - ~register_meta( 'post', $meta_key, $args )~
+
 **** update_post_meta <<<wp:f:update_post_meta>>>
 
 *** Post Formats ~wp-includes/post-formats.php~
@@ -10192,6 +10147,68 @@ Settings > General > Site Lanuage to match fr_CA
    // ... more ...
    get_footer();
  #+END_SRC
+
+**** ~add_feed( string $feedname, callback $function ) : string~ <<<wp:f:add_feed>>> <<<wp:rss>>> <<<wp:feed>>>
+- Default template :: ~/wp-includes/feed-rss2.php~
+- Functions to use in The Loop (template) :: wp:api:feed
+- add action :: wp:action:do_feed_$feedname which does the callback ~$function~ at p:10
+- return the action name :: ~do_feed_$feedname~
+- Refer to wp:f:do_feed
+
+#+BEGIN_SRC php
+  function lili_RSS() {
+	  add_feed('lili-editorial', 'lili_editorial_RSS');
+  }
+  add_action('init', 'lili_RSS');
+
+  function lili_editorial_RSS() {
+	  get_template_part('rss','feedname');
+	  // rss is slug and feedname is an extra name
+	  // Search in order
+	  // /themes/child/rss-feedname.php
+	  // /themes/parent/rss-feedname.php
+	  // /themes/child/rss.php
+	  // /themes/parent/rss.php
+
+	  // the feed url is http://a.ca/feed/lili-editorial which is the feed name defined in add_feed
+  }
+#+END_SRC
+
+*** Feed API ~wp-includes/feed.php~ <<<wp:api:feed>>>
+- Refer to wp:f:add_feed
+
+#+BEGIN_SRC php
+  <?php
+  $args = array(
+	  'post_type' => array('blog'), // e.g. any
+	  'tag' => 'editors-choice',
+	  'orderby' => 'date', // Default. e.g. title
+	  'order' => 'DESC', // Default. e.g. ASC
+  );
+  ?>
+  query_posts($args);
+  <?php while (have_posts()) : the_post(); ?>
+  <item>
+    <title><?php the_title_rss(); ?></title>
+    <?php if (has_post_thumbnail($post->ID)) : ?>
+    <?php
+      $image = wp_get_attachment_image_src(
+      get_post_thumbnail_id( $post->ID ),
+      'thumbnail'
+      );
+    ?>
+    <feature_image><?php echo $image[0]; ?></feature_image>
+    <?php endif; ?>
+    <pubDate><?php echo mysql2date('D, d M Y H:i:s +0000',
+				  get_post_time('Y-m-d H:i:s', true),
+				  false); ?></pubDate>
+    <?php // Text Version ?>
+    <excerpt><![CDATA[<<?php echo get_the_exerpt(); ?>]]></excerpt>
+    <excerpt_html><![CDATA[<<?php echo the_exerpt_rss(); ?>]]></excerpt_html>
+    <?php echo the_category_rss('rss2'); // categories and tags ?>
+  </item>  
+  <?php endwhile; ?>
+#+END_SRC
 
 *** Dependency API ~wp-includes/script-loader.php~ <<<wp:api:dependency>>>
 **** wp_localize_script <<<wp:f:wp_localize_script>>>
@@ -12100,6 +12117,9 @@ Same as wp:action:edit_page_form but for all post types other than 'page'
   }
 #+END_SRC
 
+*** do_feed_$feedname <<<wp:action:do_feed_$feedname>>>
+- Refer to wp:f:do_feed and wp:f:add_feed
+
 ** FTP setting <<<wp:ftp>>>
 WordPress is usually run using Apache or Nginx user which might not have permission to write files.
 docker container map /host/path/to/html:/var/www
@@ -12280,9 +12300,9 @@ That requires parent functions.php to have
 
 *** functions.php <<<wp:theme:functions>>>
 *** Template Files
-[[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
-https://developer.wordpress.org/themes/basics/template-hierarchy/
-[[https://wphierarchy.com/][Another WordPress Template Hierarchy]]
+- [[https://codex.wordpress.org/Theme_Development#Template_Files][All Template Files]]
+- https://developer.wordpress.org/themes/basics/template-hierarchy/
+- [[https://wphierarchy.com/][Another WordPress Template Hierarchy]]
 
 single.php
 single-{post-type}.php
@@ -13431,7 +13451,7 @@ Get terms for posts
 	#+END_SRC
 - meta_value :: longtext string or php serialized string
 
-Get all meta keys and values for a post
+#+NAME Get all meta keys and values for a post
 #+BEGIN_SRC sql
   SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value
   FROM wp_posts p
@@ -13440,14 +13460,17 @@ Get all meta keys and values for a post
     AND p.ID = '123'
 #+END_SRC
 
+#+NAME Get all posts with a meta key
 #+BEGIN_SRC sql
-  SELECT p.post_type, p.ID, pm.meta_key, CAST(pm.meta_value AS Date)
+  SELECT p.post_type, p.ID, pm.meta_key, pm.meta_value
+  -- ,CAST(pm.meta_value AS Date)
   FROM wp_posts p
 	 INNER JOIN wp_postmeta pm ON pm.post_id = p.id
   WHERE 1=1
   --  AND p.post_type = 'agenda'
     AND p.post_status = 'publish'
     AND pm.meta_key LIKE '%agenda_date%'
+  ORDER BY p.post_date DESC
 #+END_SRC
 
 **** meta_key Media files
@@ -14519,7 +14542,8 @@ https://wordpress.org/plugins/all-in-one-event-calendar/
 **** Shortcodes & Merge Tags
 https://docs.gravityforms.com/shortcodes/
 
-***** ~[gravityform id="1"]~
+***** ~[gravityform id="1"]~ <<<wp:plugin:gravity forms:sc:gravityform>>>
+- Same as wp:plugin:gravity_forms:f:gravity_form
 #+BEGIN_SRC html
   [gravityform id="1" title="false" description="false"]
   [gravityform id=1 field_values='parameter_name1=value1&parameter_name2=value2']
@@ -14565,10 +14589,13 @@ Populate submitted field values in notification emails, post content templates a
 https://docs.gravityforms.com/merge-tags/
 
 **** Functions
-***** ~gravity_form~ :: Display a form in template files
-#+BEGIN_SRC php
-  gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
-#+END_SRC
+***** ~gravity_form~ <<<wp:plugin:gravity_forms:f:gravity_form>>>
+- Display a form in template files
+- Same as wp:plugin:gravity forms:sc:gravityform
+- Refer to wp:plugin:gravity forms:filter:gform_field_value_$parameter_name
+  #+BEGIN_SRC php
+    gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
+  #+END_SRC
 
 ***** ~gravity_form_enqueue_scripts~
 - Placement :: before ~wp_head()~ is called
@@ -14580,7 +14607,7 @@ https://docs.gravityforms.com/merge-tags/
 **** Hooks and actions
 https://docs.gravityforms.com/category/extending-gravity-forms/hooks/actions/
 
-***** ~gform_field_value_$parameter_name~
+***** ~gform_field_value_$parameter_name~ <<<wp:plugin:gravity forms:filter:gform_field_value_$parameter_name>>>
 Populate any field with parameter ~your_parameter~ with the result of the function ~my_custom_population_function~
 #+BEGIN_SRC php
   add_filter( 'gform_field_value_your_parameter', 'my_custom_population_function' );
@@ -16545,6 +16572,7 @@ Add an extra field in response
 	    - wp-includes/general-template.php
 	    - wp-includes/post.php :: wp:api:post
 	    - wp-includes/rewrite.php :: wp:api:rewrite
+	    - wp-includes/feed.php :: wp:api:feed
 	    - wp-includes/script-loader.php :: wp:api:dependency
 	    - wp-includes/taxonomy.php :: Core Taxonomy API wp:api:taxonomy
 	    - wp-includes/shortcodes.php :: wp:api:shortcode
@@ -51632,43 +51660,43 @@ pattern
 ** image:goaccess <<<docker:image:goaccess>>>
 - Don't follow the provided instructions.. :: https://github.com/allinurl/goaccess#docker
 - Follow mine
+  #+BEGIN_SRC sh
+    git clone https://github.com/allinurl/goaccess.git goaccess && cd $_
 
-#+BEGIN_SRC sh
-  git clone https://github.com/allinurl/goaccess.git goaccess && cd $_
+    docker build . -t allinurl/goaccess
 
-  docker build . -t allinurl/goaccess
+    mkdir -p /home/li/goaccess/{data,html,log}
 
-  mkdir -p /home/li/goaccess/{data,html,log}
+    # create config file
+    nano /home/li/goaccess/data/goaccess.conf
 
-  # create config file
-  nano /home/li/goaccess/data/goaccess.conf
+    # restart container after config file is changed
+    docker restart goaccess
 
-  # restart container after config file is changed
-  docker restart goaccess
+    docker run --restart=always -d -p 7890:7890 \
+      -v "/home/li/goaccess/data:/srv/data"     \
+      -v "/home/li/goaccess/html:/srv/report"   \
+      -v "/home/li/goaccess/log:/srv/logs"      \
+      --name=goaccess allinurl/goaccess         \
+      --no-global-config --config-file=/srv/data/goaccess.conf \
+	       --log-file=/srv/logs/access.log
 
-  docker run --restart=always -d -p 7890:7890 \
-    -v "/home/li/goaccess/data:/srv/data"     \
-    -v "/home/li/goaccess/html:/srv/report"   \
-    -v "/home/li/goaccess/log:/srv/logs"      \
-    --name=goaccess allinurl/goaccess         \
-    --no-global-config --config-file=/srv/data/goaccess.conf \
-	     --log-file=/srv/logs/access.log
+    # entrypoint is `/bin/goaccess`
+    # default conf file is in the Alpine container :: /etc/goaccess
+    # so must use --config-file to override
+    # use --log-file to dynamically point to the log you want to analyze
 
-  # entrypoint is `/bin/goaccess`
-  # default conf file is in the Alpine container :: /etc/goaccess
-  # so must use --config-file to override
-  # use --log-file to dynamically point to the log you want to analyze
+    # generated HTML report is under /srv/goaccess/html/index.html
+    # open it locally on host machine will have a real-time updated one! Because the webpage uses WebSocket
 
-  # generated HTML report is under /srv/goaccess/html/index.html
-  # open it locally on host machine will have a real-time updated one! Because the webpage uses WebSocket
-
-  # completely remove
-  docker stop goaccess
-  docker rm goaccess
-  docker rmi allinurl/goaccess
-#+END_SRC
+    # completely remove
+    docker stop goaccess
+    docker rm goaccess
+    docker rmi allinurl/goaccess
+  #+END_SRC
 
 *** Config goaccess.conf
+- https://pantheon.io/docs/nginx-access-log
 - Modify the default :: https://raw.githubusercontent.com/allinurl/goaccess/master/config/goaccess.conf
 - Log format :: https://goaccess.io/man#custom-log
    - Use a script file to convert nginx:d:log_format to goaccess format. For example
@@ -57808,8 +57836,11 @@ In this case, you can:
 #+END_SRC
 
 ** Logs
-https://pantheon.io/docs/logs/
-https://pantheon.io/docs/php-errors/
+- https://pantheon.io/docs/logs/
+- https://pantheon.io/docs/php-errors/
+- Log files directory :: ~/logs~
+- nginx-access.log :: up to 60 days. Use docker:image:goaccess
+- nginx-error.log :: 1MB
 
 ** Nginx <<<pantheon:nginx>>>
 - https://github.com/pantheon-systems/nginx
@@ -61999,7 +62030,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 
 *** Region (selection)
 - ~C-space~ :: start region, then move cursor
-- ~C-x h~ :: copy all in buffer
+- ~C-x h~ :: copy all in buffer, select all
 - ~C-g~ :: quit selection
 
 *** Copy & Paste
