@@ -9324,6 +9324,37 @@ Complex context
 Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
 Settings > General > Site Lanuage to match fr_CA
 
+*** User Role & Capabilities API <<<wp:api:role-capabilities>>>
+:PROPERTIES:
+:CUSTOM_ID: wp-api-role-capabilities
+:END:
+
+**** ~add_role( string $role, string $display_name, $capabilities = array() ) : WP_Role|null~ <<<wp:f:add_role>>>
+#+BEGIN_SRC php
+  $result = add_role(
+	  'basic_contributor',
+	  __( 'Basic Contributor' ),
+	  array(
+		  'read'         => true,  // true allows this capability
+		  'edit_posts'   => true,
+		  'delete_posts' => false, // Use false to explicitly deny
+	  )
+  );
+
+  if ( null !== $result ) {
+	  echo 'Yay! New role created!';
+  }
+  else {
+	  echo 'Oh... the basic_contributor role already exists.';
+  }
+
+  // Create a new role when a plugin is activated
+  function add_roles_on_plugin_activation() {
+	  add_role( 'custom_role', 'Custom Subscriber', array( 'read' => true, 'edit_posts' => true ) );
+  }
+  register_activation_hook( __FILE__, 'add_roles_on_plugin_activation' );
+#+END_SRC
+
 *** Query API <<<wp:api:query>>>
  - wrapper of ~glboal $wp_query~ e.g. ~is_*~ functions
  - ~query_posts( $query )~ wp:f:query_posts
@@ -16571,7 +16602,7 @@ Add an extra field in response
 	       - wp-includes/l10n.php
 	       - wp-includes/class-wp-locale.php
 	       - wp-includes/class-wp-locale-switcher.php
-	    - wp-includes/capabilities.php (User capabilites API)
+	    - wp-includes/capabilities.php :: wp:api:role-capabilities
 	    - wp-includes/query.php :: wp:api:query
 	    - wp-includes/template.php :: template loading functions
 	    - wp-includes/general-template.php
@@ -63131,6 +63162,11 @@ Open cmd run as admin and run: =msiexec /i "the path"=
 
 ** Office 365
 *** Exchange Online
+**** Exchange Admin Center ~admin.exchange.microsoft.com~
+- Recipients
+   - Mailboxes :: does not include distribution list
+      - UserMailbox, SharedMailbox
+
 **** OWA
 ***** Search
 https://support.office.com/en-us/article/search-mail-and-people-in-outlook-com-88108edf-028e-4306-b87e-7400bbb40aa7
