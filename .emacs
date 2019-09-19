@@ -49,6 +49,7 @@ There are two things you can do about this warning:
    [default default default italic underline success warning error])
  '(column-number-mode t)
  '(custom-enabled-themes (quote (misterioso)))
+ '(org-adapt-indentation nil)
  '(org-confirm-babel-evaluate nil)
  '(org-export-with-sub-superscripts (quote {}))
  '(package-selected-packages

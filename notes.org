@@ -41015,8 +41015,8 @@ Promise is native, refer to nodejs:bluebird
 #+END_EXAMPLE
 
 *** bluebird <<<nodejs:bluebird>>>
-#+BEGIN_EXAMPLE
-  npm install bluebird
+#+BEGIN_SRC js
+  // npm install bluebird
 
   var fs = require('fs');
   var Promise = require('bluebird');
@@ -41033,7 +41033,7 @@ Promise is native, refer to nodejs:bluebird
     .catch(function(e) {
       console.error("unable to read file");
     });
-#+END_EXAMPLE
+#+END_SRC
 
 *** node-dev, nodemon, reload
 node-dev restart automatically when there's a change
@@ -47915,89 +47915,87 @@ https://askubuntu.com/a/430944/481813
   touch {apple,banna,cherry,durian}_{01..100}{w..d}
 #+END_SRC
 
-*** File Descriptors
-File descriptors. First 3 are reserved.
-| 0 | STDIN  | Standard input         |
-| 1 | STDOUT | Standard output (echo) |
-| 2 | STDERR | Standard error         |
+*** File Descriptors, Redirection Operator
+- File descriptors
+   - First 3 are reserved
+   - 0 :: ~STDIN~ Standard input
+   - 1 :: ~STDOUT~ Standard output e.g. echo
+   - 2 :: ~STDERR~ Standard error
+   - Up to 9 open file descriptors can be used at a time
+     #+BEGIN_SRC bash
+       # Open a custom file descriptor to a file
+       exec 3>customLog
+       echo "This goes to file descriptor 3" >&3
 
-#+BEGIN_SRC bash
-  # Redirect stdout, creates if not exist or overwrites a file
-  ls -al goodfile > stdoutlogfile
-  # same as 2>, 3> etc.
+       # Open a custom file descriptor and redirects to STDOUT
+       exec 4>&1
 
-  # Redirect stdout, creates if not exist or appends to a file
-  ls -al goodfile >> stdoutlogfile
-  # same as &>>, 2>>, 3>> etc.
+       # If you want to change the reserved file descriptors. Always backup and change back
+       exec 5>&1
+       exec 6>&2
 
-  # Redirect stderr
-  ls -al badfile 2> errorlogfile
+       # Backup STDIN is a little different
+       exec 7<&0
+     #+END_SRC
+- Redirection operator
+  #+BEGIN_SRC sh
+    # Redirect stdout, creates if not exist or overwrites a file
+    ls -al goodfile > stdoutlogfile
+    # same as 2>, 3> etc.
 
-  # Redirect stdout and stderr to different files
-  ls -al goodfile badfile 2> errorlogfile 1> normalOutput
+    # Redirect stdout, creates if not exist or appends to a file
+    ls -al goodfile >> stdoutlogfile
+    # same as &>>, 2>>, 3>> etc.
 
-  # Redirect stdout and stderr to the same file
-  ls -al goodfile badfile &> errorAndOutput
+    # Redirect stderr
+    ls -al badfile 2> errorlogfile
 
-  # suppress stdout and stderr
-  ls -al goodfile badfile &> /dev/null
-#+END_SRC
+    # Redirect stdout and stderr to different files
+    ls -al goodfile badfile 2> errorlogfile 1> normalOutput
 
-<<<bash:tee>>>
+    # Redirect stdout and stderr to the same file
+    ls -al goodfile badfile &> errorAndOutput
 
-#+BEGIN_SRC bash
-  # Redirect stdout of a commannd to a file and display stdout
-  date | tee testfile
+    # suppress stdout and stderr
+    ls -al goodfile badfile &> /dev/null
+  #+END_SRC
+- <<<bash:tee>>>
+  #+BEGIN_SRC bash
+    # Redirect stdout of a commannd to a file and display stdout
+    date | tee testfile
 
-  # tee can be used to bypass pagination (press q to quit)
-  man ls | tee
+    # tee can be used to bypass pagination (press q to quit)
+    man ls | tee
 
-  # Redirect stdout to a file and pass stdout to another command as stdin
-  date | tee testfile | less
+    # Redirect stdout to a file and pass stdout to another command as stdin
+    date | tee testfile | less
 
-  # Capture stdout of a command to a variable
-  output=$(date)
+    # Capture stdout of a command to a variable
+    output=$(date)
 
-  # Capture stdout and stderr of a command to a variable
-  output=$(command_which_has_stdout_and_stderr 2>&1)
+    # Capture stdout and stderr of a command to a variable
+    output=$(command_which_has_stdout_and_stderr 2>&1)
 
-  # Redirect stdout of a command to one or multiple files and save stdout to a variable
-  # a file must be behind a tee command
-  # By default tee overwrites the file. Use -a to append to the end
-  $output = $(date | tee -a testfile1 testfile2)
+    # Redirect stdout of a command to one or multiple files and save stdout to a variable
+    # a file must be behind a tee command
+    # By default tee overwrites the file. Use -a to append to the end
+    $output = $(date | tee -a testfile1 testfile2)
 
-  # Redirect stdout to a variable and display to terminal in real time (not to stdout!)
-  # Works on Ubuntu and RedHat
-  $output = $(date | tee /dev/tty)
+    # Redirect stdout to a variable and display to terminal in real time (not to stdout!)
+    # Works on Ubuntu and RedHat
+    $output = $(date | tee /dev/tty)
 
-  # Redirect one file descriptor (M, default 1) to another file descriptor (N) M>&N
-  # Redirect a manually made error 
-  echo "This is an error" >&2
+    # Redirect one file descriptor (M, default 1) to another file descriptor (N) M>&N
+    # Redirect a manually made error 
+    echo "This is an error" >&2
 
-  # Change a file descriptor to a file
-  exec 2>errorLogFile
-  echo "This is STDOUT and STDOUT is not changed to a file yet"
-  exec 1>stdOutFile
-  echo "This doesn't display as STDOUT is redirected to a file"
-  echo "This is an error and in errorLogFile" >&2
-#+END_SRC
-
-Up to 9 open file descriptors can be used at a time.
-#+BEGIN_SRC bash
-  # Open a custom file descriptor to a file
-  exec 3>customLog
-  echo "This goes to file descriptor 3" >&3
-
-  # Open a custom file descriptor and redirects to STDOUT
-  exec 4>&1
-
-  # If you want to change the reserved file descriptors. Always backup and change back
-  exec 5>&1
-  exec 6>&2
-
-  # Backup STDIN is a little different
-  exec 7<&0
-#+END_SRC
+    # Change a file descriptor to a file
+    exec 2>errorLogFile
+    echo "This is STDOUT and STDOUT is not changed to a file yet"
+    exec 1>stdOutFile
+    echo "This doesn't display as STDOUT is redirected to a file"
+    echo "This is an error and in errorLogFile" >&2
+  #+END_SRC
 
 *** declare <<<bash:declare>>>
 #+BEGIN_SRC sh
@@ -48161,8 +48159,8 @@ Up to 9 open file descriptors can be used at a time.
   echo ${#MYMAP[@]}  # Number of keys in an associative array
 #+END_SRC
 
-*** echo and print
-#+BEGIN_SRC bash
+*** ~echo~, ~print~
+#+BEGIN_SRC sh
   # without quotes, need to escape special characters
   echo $o, world \(planet\)!
 
@@ -48181,19 +48179,57 @@ Up to 9 open file descriptors can be used at a time.
   printf '%s\n%s\n' "$line1" "$line2"
 #+END_SRC
 
+*** Here document, here string <<<bash:heredoc>>>
+:PROPERTIES:
+:CUSTOM_ID: bash-here-document
+:END:
+- The following is equivalent to ~some-interactive-script < command-file~
+  #+BEGIN_SRC sh
+    some-interactive-script <<EOF
+    command #1
+    $varName
+    EOF
+  #+END_SRC
+- ~<<-EOF~ :: suppress leading tabs in the document body
+- ~<<'EOF'~ :: don't expand variables/command
+- Store as a variable
+  #+BEGIN_SRC sh
+    read -r -d '' VAR <<EOM
+    This is line 1.
+    This is line 2.
+    Line 3.
+    EOM
+
+    echo "$VAR"
+  #+END_SRC
+- http://tldp.org/LDP/abs/html/here-docs.html
+- Here string
+   - ~some-interactive-script <<<$myCommand~ or ~some-interactive-script <<<"$myCommand"~
+      - ~wc -w <<< "This is a test."~
+      - ~grep "nor" <<<$var >/dev/null && echo "Found" || echo "Not found"~ equivalent to
+	~echo $var | grep -q "nor"  && echo "Found" || echo "Not found"~
+
 *** Read command output line by line <<<bash:read>>>
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   multiple_commands_output=""
   output=$(drush command output contains multiple lines);
 
   # more examples
   output=$(docker stats --no-stream --format "{{.Name}}: {{.CPUPerc}}")
 
+  # a file
+  inputfile="/path/to/txt/file"
+
   count=1
   while IFS=$'\n' read -r line; do
     echo "Line number $count: $line"
-    count=$[ $count + 1 ] 
-  done <<< "$output"
+    count=$[ $count + 1 ]
+
+    # refer to bash:heredoc
+  done <<<"$output"
+
+  # for a file
+  # done <"$inputfile"
 
   multiple_commands_output="$multiple_commands_output""$output"$'\n'
 
@@ -48201,18 +48237,6 @@ Up to 9 open file descriptors can be used at a time.
   # newline character is \n
   # read -r :: to ignore all backslashes
 #+END_SRC
-
-*** Multiple lines of text
-Store as a variable
-#+BEGIN_EXAMPLE
-  read -r -d '' VAR << EOM
-  This is line 1.
-  This is line 2.
-  Line 3.
-  EOM
-
-  echo "$VAR"
-#+END_EXAMPLE
 
 *** Date format <<<bash:date>>>
 - ~date +%F~ :: YYYY-MM-DD
@@ -48255,7 +48279,7 @@ Use bash:array to pass argument name and value
 #+END_SRC
 
 *** String Operators
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   # A string is delimited by :
   # Get the last element
   foo=1:2:3:4:5
@@ -48300,16 +48324,15 @@ Not floating-point values
 |                  |             |
 
 *** Bash: shell variable with default value
-./yourcustom.sh var1 var2
+- ~./yourcustom.sh var1 var2~
+  #+BEGIN_SRC sh
+    this_var1=$1
+    this_var2=${10}
 
-#+BEGIN_EXAMPLE
-  this_var1=$1
-  this_var2=${10}
-
-  # maximum 11 variables
-  this_var3=${3:-"_"}
-  # if var3 is not provided, then default is string _
-#+END_EXAMPLE
+    # maximum 11 variables
+    this_var3=${3:-"_"}
+    # if var3 is not provided, then default is string _
+  #+END_SRC
 
 *** if <<<bash:if>>>
 - Exit code zero then ~conditions~ is true
@@ -58846,27 +58869,30 @@ Update Joined Tables
   WHERE a.val > 10 AND c.val > 10
 #+END_SRC
 
-*** LIMIT in Sub Query
-Can't directly use LIMIT in sub query
-This doesn't work
-#+BEGIN_SRC sql
-  SELECT *
-  FROM wp_posts
-  WHERE wp_posts.ID IN (
-  SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts')
-  LIMIT 5)
-#+END_SRC
+*** ~LIMIT~, ~OFFSET~ <<<mysql:limit>>>
+:PROPERTIES:
+:CUSTOM_ID: mysql-limit
+:END:
 
-Do this
-#+BEGIN_SRC sql
-  SELECT *
-  FROM wp_posts
-  WHERE wp_posts.ID IN (
-  SELECT * FROM (SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts') LIMIT 5) AS sq1
-  )
-#+END_SRC
-
-Remember if the outter query has LIMIT, then it will overwrite any subquery's LIMIT
+- ~LIMIT {[offset,] row_count | row_count OFFSET offset}~
+- Can't directly use ~LIMIT~ in sub query
+  This doesn't work
+  #+BEGIN_SRC sql
+    SELECT *
+    FROM wp_posts
+    WHERE wp_posts.ID IN (
+    SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts')
+    LIMIT 5)
+  #+END_SRC
+  Do this
+  #+BEGIN_SRC sql
+    SELECT *
+    FROM wp_posts
+    WHERE wp_posts.ID IN (
+    SELECT * FROM (SELECT p2.ID FROM wp_posts p2 WHERE p2.post_type IN ('posts') LIMIT 5) AS sq1
+    )
+  #+END_SRC
+- Notice :: if the outter query has ~LIMIT~, then it will overwrite any subquery's ~LIMIT~
 
 *** EXISTS
 - If only checking existance in other tables but not returning any data from other tables, always use ~EXISTS~ or ~NOT EXISTS~
@@ -58929,8 +58955,14 @@ Remember if the outter query has LIMIT, then it will overwrite any subquery's LI
   ORDER BY id
 #+END_SRC
 
-*** CASE, IF(), IFNULL(), NULLIF()
-https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
+*** ~CASE~, ~IF(expr1,expr2,expr3)~, ~IFNULL(expr1,expr2)~, ~NULLIF(expr1,expr2)~
+:PROPERTIES:
+:CUSTOM_ID: mysql-control-flow-functions
+:END:
+
+- https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html
+- ~CASE value WHEN [compare_value] THEN result [WHEN [compare_value] THEN result ...] [ELSE result] END~
+- ~CASE WHEN [condition] THEN result [WHEN [condition] THEN result ...] [ELSE result] END~
 
 #+BEGIN_SRC sql
   SELECT IF(1>2,2,3); -- 3
@@ -62055,6 +62087,8 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 | M->              | Move to end of buffer                      |
 | C-n              | Go to next line                            |
 | C-p              | Move to previous line                      |
+| C-f              | forward like ~<right>~                     |
+| C-b              | backward like ~<left>~                     |
 | C-v              | Page down                                  |
 | M-v              | Page up                                    |
 | M-b              | Move backward one word                     |
@@ -62106,7 +62140,13 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - C-x n s :: Work on one section
 - C-x n w :: Back to outline
 - C-c C-j :: jump to different heading. C-g to exit and return to the current position. up/down to move headline, ~/~ sparse-tree search
-- M-<RET> or C-<RET> :: insert heading
+- ~M-<RET>~ or ~C-<RET>~ :: insert heading
+
+**** Property
+:PROPERTIES:
+:CUSTOM_ID: emacs-property
+:END:
+- Set ~CUSTOM_ID~ property for a headline :: ~C-c C-x p~ ~CUSTOM_ID~
 
 **** Drawer
 - C-c C-x d :: Create a drawer
