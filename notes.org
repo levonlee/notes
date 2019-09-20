@@ -12540,7 +12540,16 @@ wp:action:widgets_init
 Refer to wp:template tags and wp:t:general
 
 *** Good themes
-[[https://themeforest.net/item/newspapaer/5489609][Newspaper]]
+- [[https://themeforest.net/item/newspapaer/5489609][Newspaper]]
+- [[https://www.appthemes.com/themes/jobroller/][JobRoller]]
+   - [[https://docs.appthemes.com/jobroller/getting-started-with-jobroller/][Doc]], [[https://docs.appthemes.com/jobroller/][all articles]]
+   - Post Types
+      - job_listing
+	 - Tax: job_cat, job_type, job_tag, job_salary
+      - resume
+	 - Tax: resume_category, resume_job_type, resume_languages, resume_specialities, resume_groups
+      - pricing-plan
+      - custom-form
 
 ** Genesis Framework <<<wp:genesis>>>
 :PROPERTIES:
@@ -13358,6 +13367,10 @@ Same page request custom cache
 wp:filter:template_include
 
 ** Database <<<wp:db>>>
+:PROPERTIES:
+:CUSTOM_ID: wp-db
+:END:
+
 [[https://codex.wordpress.org/Database_Description][Database Description]]
 
 *** wp_posts <<<wp:db:wp_posts>>>
@@ -13387,18 +13400,23 @@ wp:filter:template_include
 - comment_count :: bigint(20)
 - post_password :: varchar(20) d:''
 
-Number of posts per Year, Month
+#+NAME Number of posts per Post Type, Year, Month
 #+BEGIN_SRC sql
-  SELECT YEAR(p.post_date)  AS year
-       , MONTH(p.post_date) AS month
-       , post_type
-       , count(*)
+  SELECT
+    -- YEAR(p.post_date)  AS year,
+    -- MONTH(p.post_date) AS month,
+       post_type,
+       count(*),
        -- ,p.ID, p.post_title, p.post_type, p.post_status
+       1
   FROM wp_posts p
   WHERE 0 = 0
     AND p.post_type NOT IN ('attachment', 'revision', 'nav_menu_item', 'oembed_cache')
-    AND p.post_status = 'publish'
-  GROUP BY year, month, post_type
+    -- AND p.post_status = 'publish'
+  GROUP BY
+    -- YEAR(p.post_date),
+    -- MONTH(p.post_date),
+    post_type
   ORDER BY year DESC, month DESC,
 	   post_date DESC
   -- LIMIT 100
@@ -13407,23 +13425,26 @@ Number of posts per Year, Month
 Get terms for posts
 #+BEGIN_SRC sql
   SELECT
-	 t.term_id, t.name as term_name, t.slug as term_slug, t.term_group
-       ,tr.term_order
-       ,tt.term_taxonomy_id, tt.taxonomy as taxonomy, tt.parent
-      ,p.ID as post_id, p.post_title, p.post_type, p.post_status
-      -- , count(*)
+	 t.term_id, t.name as term_name, t.slug as term_slug, t.term_group,
+	 tr.term_order,
+	 tt.term_taxonomy_id, tt.taxonomy as taxonomy, tt.parent,
+	 p.ID as post_id, p.post_title, p.post_type, p.post_status,
+      -- count(*),
+	 1
   FROM wp_posts p
 	   INNER JOIN wp_term_relationships tr ON tr.object_id = p.ID
 	   INNER JOIN wp_terms t ON t.term_id = tr.term_taxonomy_id
 	   INNER JOIN wp_term_taxonomy tt ON tt.term_id = t.term_id
   WHERE 1 = 1
-    AND p.post_type NOT IN ('attachment', 'revision', 'nav_menu_item', 'wp-types-group')
+    AND p.post_type NOT IN ('attachment', 'revision', 'nav_menu_item', 'oembed_cache', 'wp-types-group')
     AND p.post_status = 'publish'
     -- AND tt.taxonomy = 'post_tag'
     -- AND ( t.slug LIKE 'TTNA' OR t.name LIKE 'TTNA' )
     -- AND t.slug LIKE 'GCKC'
     -- AND p.ID = '144571'
-  -- GROUP BY t.term_id
+  -- GROUP BY t.term_id,
+	   -- tt.taxonomy,
+	   -- 1
   ORDER BY p.post_date DESC
 #+END_SRC
 
