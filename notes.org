@@ -13627,6 +13627,12 @@ Get terms for posts
 - [[https://developer.wordpress.org/plugins/wordpress-org/how-your-readme-txt-works/][readme.txt]]
 - Use wp:action:activated_plugin to change plugin loading order
 
+*** wp-redis <<<wp:plugin:wp-redis>>>
+- https://wordpress.org/plugins/wp-redis/#installation
+- For Pantheon, install object-cache.php to wp-content/object-cache.php with a symlink or by copying the file
+- For sites not running on Pantheon, edit wp-config.php to add cache e.g. Redis credentials
+   - Refer to lando:service:cache
+
 *** Classic Editor <<<wp:plugin:classic-editor>>>
 *** Simply Show Hooks <<<wp:plugin:simply-show-hooks>>>
 *** WPML <<<wp:plugin:sitepress-multilingual-cms>>>
@@ -47232,48 +47238,45 @@ Internal network Class B :: 172.16.0.1 - 172.16.255.254 (172.16.0.0/16, total ho
 Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total hosts: 254)
 
 *** Port <<<network:port>>>
-If a port is in use ~telnet localhost 9000~, if it's connected, it's in use.
-List all ports in use: =netstat -lp= or =netstat -nlp= to list in numeric form.
-Search a port =netstat -nlp | grep 8000=
+- If a port is in use ~telnet localhost 9000~, if it's connected, it's in use
+   - It's better to use ~telnet IP_address port_number~ in an external computer to connect to a port to check if it's in use
+- ~netstat~ <<<linux:netstat>>>
+   - List all ports in use ~netstat -lp~ or ~netstat -nlp~ to list in numeric form
+   - Search a port ~netstat -nlp | grep 8000~
+   - In Windows, to see if a port is being used in a local computer
+     #+BEGIN_SRC sh
+       netstat -an | find "8080"
 
-netstat options
-- l :: show only listening sockets
-- p :: show PID and name of the program to which each socket belongs.
-- n :: show numerical addresses instead of symbolic host, port or user names
-- t :: tcp
-- u :: udp
+       # From outside, just telnet host port (or telnet host:port on Unix systems) to see if the connection is refused, accepted, or timeouts
+     #+END_SRC
+   - netstat options
+      - l :: show only listening sockets
+      - p :: show PID and name of the program to which each socket belongs
+      - n :: show numerical addresses instead of symbolic host, port or user names
+      - t :: tcp
+      - u :: udp
+- ~lsof~ <<<linux:lsof>>>
+   - List all command files (open files) that are using an Internet address (-i)
+      - ~lsof -Pi~
+   - - Filter any address of port 80 :: ~lsof -i :80~
+   - Options
+      - ~-P~ is to print port number
+   - Full format :: ~[46][protocol][@hostname|hostaddr][:service|port]~
+      - 4 or 6 for IPv4 or IPv6
+- Kill processes that use the port
+  #+BEGIN_SRC sh
+    # this can also list PID's that use the port
+    fuser 443/tcp -v
 
-List all command files (open files) that are using an Internet address (-i)
-~-P~ is to print port number
-~lsof -Pi~
-
-- Filter any address of port 80 :: ~lsof -i :80~
-- Full format :: ~[46][protocol][@hostname|hostaddr][:service|port]~
-   - 4 or 6 for IPv4 or IPv6
-
-It's better to use telnet IP_address port_number in an external computer to connect to a port to check if it's in use.
-
-#+BEGIN_SRC sh
-  # this can also list PID's that use the port
-  fuser 443/tcp -v
-
-  # and kill
-  fuser -k 443/tcp
-#+END_SRC
-
-If process keeps coming back, consider find the parent process and kill it.
-
-In Windows, to see if a port is being used in a local computer
-#+BEGIN_SRC sh
-  netstat -an | find "8080"
-
-  # From outside, just telnet host port (or telnet host:port on Unix systems) to see if the connection is refused, accepted, or timeouts
-#+END_SRC
-
-Use open ports that are in the range of 1024-49151.
-0-1023 are well known ports
-1024-65535 are registered ports
-49152-65535 are dynamic ports and should not be prescribed to a protocol (e.g. random)
+    # and kill
+    fuser -k 443/tcp
+  #+END_SRC
+  If process keeps coming back, consider find the parent process and kill it
+- Port range
+   - Use open ports that are in the range of 1024-49151
+      - 0-1023 are well known ports
+      - 1024-65535 are registered ports
+      - 49152-65535 are dynamic ports and should not be prescribed to a protocol (e.g. random)
 
 *** Wireless network adapters ~iwconfig~
 
@@ -50457,7 +50460,7 @@ Then in a service, specify the ip
 
 **** Resources
 [[https://docs.docker.com/compose/compose-file/compose-file-v2/#cpu-and-other-resources][compose file v2]]
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   cpu_count: 2
   cpu_percent: 50
   cpus: 0.5
@@ -50485,7 +50488,7 @@ Then in a service, specify the ip
   shm_size: 64M
   stdin_open: true
   tty: true
-#+END_EXAMPLE
+#+END_SRC
 
 compose file v3
 #+BEGIN_SRC yaml
@@ -52215,51 +52218,50 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
 All subdomains of ~lndo.site~ will be DNS publicly resolved to ~localhost/127.0.0.1~ which requires no local ~/etc/hosts~ config.
 
 ** Recipe: WordPress
-#+BEGIN_SRC shell
+#+BEGIN_SRC sh
   cd /path/to/project
   lando init
   lando start
   lando wp core download
 #+END_SRC
 
-Lando creates database container with:
-- user: wordpress
-- password: wordpress
-- database: wordpress
+- Lando creates database container with
+   - user: wordpress
+   - password: wordpress
+   - database: wordpress
+- Sample yaml
+  #+BEGIN_SRC yaml
+    name: scef
+    recipe: wordpress
+    config:
+      webroot: .
+      php: '7.0' # default '7.2'
+      via: nginx # default apache
 
-#+BEGIN_SRC yaml
-  name: scef
-  recipe: wordpress
-  config:
-    webroot: .
-    php: '7.0' # default '7.2'
-    via: nginx # default apache
+    # add redis
+    services:
+      cache:
+	type: redis:2.8 # may just be redis
+	persist: true 
+  #+END_SRC
+- For Redis, add the following in wp-config.php according to ~lando info~ for plugin [[https://wordpress.org/plugins/wp-redis/#installation][wp-redis]] <<<lando:service:cache>>>
+  #+BEGIN_SRC php
+    $redis_server = array(
+	'host'     => 'cache',
+	'port'     => 6379,
+	//'auth'     => '12345',
+	'database' => 0, // Optionally use a specific numeric Redis database. Default is 0.
+    );
+  #+END_SRC
+- Commands
+  #+BEGIN_SRC sh
+    # drop into a MySQL Shell
+    lando mysql
+    lando db-import <file>
 
-  # add redis
-  services:
-    cache:
-      type: redis:2.8 # may just be redis
-      persist: true 
-#+END_SRC
-
-For Redis, add the following in wp-config.php according to ~lando info~ for plugin [[https://wordpress.org/plugins/wp-redis/#installation][wp-redis]]
-#+BEGIN_SRC php
-  $redis_server = array(
-      'host'     => 'cache',
-      'port'     => 6379,
-      //'auth'     => '12345',
-      'database' => 0, // Optionally use a specific numeric Redis database. Default is 0.
-  );
-#+END_SRC
-
-#+BEGIN_SRC sh
-  # drop into a MySQL Shell
-  lando mysql
-  lando db-import <file>
-
-  # run php commands
-  lando php
-#+END_SRC
+    # run php commands
+    lando php
+  #+END_SRC
 
 ** Recipe: Pantheon
 - https://docs.devwithlando.io/tutorials/pantheon.html
@@ -58099,9 +58101,9 @@ Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
   }
 #+END_SRC
 
-Install Redis locally https://redis.io/download
-Use Redis Connection Info from Dashboard
-#+BEGIN_SRC bash
+- Install Redis locally https://redis.io/download
+- Use Redis Connection Info from Dashboard
+#+BEGIN_SRC sh
   redis> keys *
    1) "pantheon-rediscache_menu:links:management:tree-data:en:27cbcc1096e9daf2c319c2c"
    2) "pantheon-rediscache:features_module_info"
@@ -58138,21 +58140,59 @@ Use Redis Connection Info from Dashboard
 #+END_SRC
 
 *** Install Redis on Ubuntu
-Install PECL https://github.com/phpredis/phpredis
+- Install PECL https://github.com/phpredis/phpredis
+- https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04
+- ~/etc/redis/redis.conf~
+   - After changing, ~sudo systemctl restart redis~
+   - By default, Redis is only accessible from localhost. Without binding, Redis can allow connections from anywhere
+      - ~bind 127.0.0.1 ::1~
+      - To check ~sudo netstat -lnp | grep redis~
+   - Require password
+      - ~requirepass abcXXX~
+      - In command line to enter password ~auth abcXXX~
+   - Restrict commands
+      - All Redis commands https://redis.io/commands
+      - ~rename-command FLUSHDB ""~
+      - ~rename-command SHUTDOWN SHUTDOWN_MYOWNSUFFIX~
+   - Unix socket
+      - default ~unixsocket /var/run/redis/redis-server.sock~
+   - Log file
+      - default ~logfile /var/log/redis/redis-server.log~
+#+BEGIN_SRC sh
+  sudo apt install redis-server
 
-https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-redis-on-ubuntu-16-04
+  sudo nano /etc/redis/redis.conf
+  # change `supervised` value frome `no` to `systemd`
 
-#+BEGIN_SRC bash
+  sudo systemctl restart redis.service
+
+  # checkd status
+  sudo systemctl status redis
+
+  # disable auto start when boot
+  # sudo systemctl disable redis
+
   sudo systemctl start redis
   sudo systemctl status redis
   sudo systemctl restart redis
 
-  # enable Redis to start at boot
+  # region For Ubuntu 14.04
+  #enable Redis to start at boot
   # output :: Created symlink from /etc/systemd/system/multi-user.target.wants/redis.service to /etc/systemd/system/redis.service.
-  sudo systemctl enable redis
+  # sudo systemctl enable redis
+  # endregion
 
   # connect to redis
   redis-cli
+
+  ping
+  # output: PONG
+
+  set test "It's working!"
+  # output: OK
+
+  get test
+  # output: "It's working!"
 
   # exit CLI
   exit
