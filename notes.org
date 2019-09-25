@@ -1,5 +1,7 @@
 #+TITLE: My Notes
 #+OPTIONS: H:4
+#+OPTIONS: auto-id:t
+#+OPTIONS: num:nil
 #+SETUPFILE: theme-readtheorg.setup
 #+STARTUP: overview
 #+STARTUP: align
@@ -58,7 +60,7 @@ And then
 - PHP_INI_ALL :: Entry can be set anywhere
 
 **** Directive Value
-Value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ${foo})
+Value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ~${foo}~)
 
 Expression
 Expressions in the INI file are limited to bitwise operators and parentheses:
@@ -3403,7 +3405,7 @@ For fields there is no general recipe, although these hints should catch most ca
 
 Care that your index contains all needed fields or create them when import errors bug you.
 Look for lines that look like this:
-$handler->display->display_options['fields']['field_FOO']['table'] = 'TABLE'
+~$handler->display->display_options['fields']['field_FOO']['table'] = 'TABLE'~
 If TABLE is 'views', don't change.
 If TABLE is 'node' (or your base table) or 'field_data_FOO', change to 'search_api_index_<name_of_your_index>'
 
@@ -5925,7 +5927,7 @@ Get a field value of an entity (node)
 - List all fields using ~$_wrapper->getPropertyInfo();~
 - Get a specific field ~$_wrapper->field_name->value();~ or ~->raw();~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // Unified way of getting $node->title, $user->name, ...
   $wrapper->label(); or $wrapper->title->value();
 
@@ -5981,28 +5983,28 @@ Get a field value of an entity (node)
   // Taxonomy in select list
   For taxonomy term field which can be multiple values, you still need to specify the index
   `$term = $_wrapper->field_taxonomy_a[0]->value();` // this might be wrong..
-#+END_EXAMPLE
+#+END_SRC
 
 Multiple Tax Terms
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $a = $wrapper->$field->value();
   if (isset($a)) {
     echo $a[0]->name;
     echo $a[0]->tid;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Single Tax Term
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $a = $wrapper->$field->value();
   if (isset($a)) {
     echo $a->name;
     echo $a->tid;
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Multiple Files
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $a = $wrapper->$field->value();
   if (isset($a)) {
     $r=$a;
@@ -6014,7 +6016,7 @@ Multiple Files
     echo $r[0]['uri'];
     echo $r[1]['uri'];
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Term id of the first value of a multiple value field ~$tid = $_wrapper->field_taxonomy_a[0]->raw();~
 For taxonomy term field which can only have one value:
@@ -6032,7 +6034,7 @@ Change a term for a single tax field $_w->field_tax_1->set(42); $_w->save();
 A required field can't be unset. Refer to d7:db:delete required field
 Unset a term for a single tax field unset($_w->field_tax_1)
 Unset a term for a multi tax field 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   foreach($wrapper->field_foobar as $delta => $item)  {
     if ($item->nid->value() == $my_id) {
       unset($wrapper->field_foobar[$delta]);
@@ -6040,24 +6042,24 @@ Unset a term for a multi tax field
       break;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 Set empty value for tax term field
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $wrapper->field_example_multiple->set();
   $wrapper->field_example_multiple = array();
   $wrapper->field_example_multiple = NULL;
-#+END_EXAMPLE
+#+END_SRC
 
 Loop
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   foreach ($_wrapper->field_industry as $taxonomy_wrapper) {
     $industry = $taxonomy_wrapper->tid->value();
   }
-#+END_EXAMPLE
+#+END_SRC
 
 A list of text
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // All values in a list text as an array
   $wrapper->field_list_text->value();
 
@@ -6067,14 +6069,14 @@ A list of text
     // list text, delta is 0, 1
     // List text value $term_wrapper->value();
   }
-#+END_EXAMPLE
+#+END_SRC
 
 If the list of text field only allows one value, then the value is
 ~$w->field_list_text->value();~ The same as getting a text field
 
 // Entity reference in select list
-Single value. Tid is $tid = $wrapper->field_list_entity->raw();
-Check empty `if (isset($tid)) { echo $wrapper->field_list_entity->value()->title}`
+Single value. Tid is ~$tid = $wrapper->field_list_entity->raw();~
+Check empty ~if (isset($tid)) { echo $wrapper->field_list_entity->value()->title}~
 Multiple values.
 
 https://www.drupal.org/documentation/entity-metadata-wrappers
@@ -12053,7 +12055,7 @@ Refer to wp:php:redirect
    - default ~wp_footer~ actions :: ~wp_print_footer_scripts~ p:20 and ~wp_admin_bar_render~ p:1000
 - ~get_footer~ action is called at the beginning of the ~get_footer();~ function, which will include ~footer.php~ file later
 
-If a parameter is passed, footer-[$name].php is also included and you can play around $name in the get_footer hook like this
+If a parameter is passed, ~footer-[$name].php~ is also included and you can play around $name in the get_footer hook like this
 #+BEGIN_SRC php
   <?php
   function themeslug_footer_hook( $name ) {
@@ -12292,7 +12294,10 @@ functions.php
   // same my_action
 #+END_SRC
 
-** Theme
+** Theme <<<wp:theme>>>
+:PROPERTIES:
+:CUSTOM_ID: wp-theme
+:END:
 *** child theme
 https://codex.wordpress.org/Child_Themes
 wp-content/themes/parent-theme-name-child
@@ -12539,17 +12544,20 @@ wp:action:widgets_init
 *** Functions used in template
 Refer to wp:template tags and wp:t:general
 
-*** Good themes
+*** Previous themes
+:PROPERTIES:
+:CUSTOM_ID: wp-theme-previous
+:END:
 - [[https://themeforest.net/item/newspapaer/5489609][Newspaper]]
 - [[https://www.appthemes.com/themes/jobroller/][JobRoller]]
-   - [[https://docs.appthemes.com/jobroller/getting-started-with-jobroller/][Doc]], [[https://docs.appthemes.com/jobroller/][all articles]]
-   - Post Types
-      - job_listing
-	 - Tax: job_cat, job_type, job_tag, job_salary
-      - resume
-	 - Tax: resume_category, resume_job_type, resume_languages, resume_specialities, resume_groups
-      - pricing-plan
-      - custom-form
+  - [[https://docs.appthemes.com/jobroller/getting-started-with-jobroller/][Doc]], [[https://docs.appthemes.com/jobroller/][all articles]]
+  - Post Types
+    - job_listing
+      - Tax: job_cat, job_type, job_tag, job_salary
+    - resume
+      - Tax: resume_category, resume_job_type, resume_languages, resume_specialities, resume_groups
+    - pricing-plan
+    - custom-form
 
 ** Genesis Framework <<<wp:genesis>>>
 :PROPERTIES:
@@ -15010,7 +15018,7 @@ Get default from shortcode attributes
 #+END_EXAMPLE
 
 ***** hidden fields
-id:foo, 
+~id:foo~, 
 #+BEGIN_EXAMPLE
   [hidden your-text class:y2008 class:m01 class:d01]
   [hidden your-email default:user_email "example@example.com"]
@@ -18290,12 +18298,12 @@ Target IE 11 only
 #+END_EXAMPLE
 
 Target IE 10 and IE 11
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   @media all and (-ms-high-contrast:none) {
     .foo { color: green } /* IE10 */
     ,*::-ms-backdrop, .foo { color: red } /* IE11 */
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** @media <<<css:@media>>>
 *** Syntax
@@ -20159,9 +20167,9 @@ Just change the font size to enlarge/shrink the button. Or width, line-height an
   }
 #+END_EXAMPLE
 
-*** Swap image in @media
+*** Swap image in ~@media~
 css
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .flex-r-w-fs-center-mq-r-w-sa-center {
     display:flex;
     flex-flow:row wrap;
@@ -20215,9 +20223,9 @@ css
     }
 
   }
-#+END_EXAMPLE
+#+END_SRC
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="footer-logos flex-r-w-fs-center-mq-r-w-sa-center">
     <div>
       <div class="cs-items cs-i-1">
@@ -20240,7 +20248,7 @@ css
       </div>
     </div>
   </div>
-#+END_EXAMPLE
+#+END_SRC
 
 *** Hightlight element when the hash and id of element match
 #+BEGIN_EXAMPLE
@@ -20381,7 +20389,7 @@ Switched from Helvetica Neue, Helvetica and Arial to:
 - <ins> same as <u> underline
 - <em>, <i> and <var> look the same 
 - add .initialism to cap and make font size 90% <abbr title="full term">HTML</abbr>
-- add .blockquote-reverse to <blockquote><p>...</p><footer>...</footer></blockquote> 
+- add .blockquote-reverse to ~<blockquote><p>...</p><footer>...</footer></blockquote>~
 
 *** Vertical Align
 - Only applies to inline, inline-block, inline-table and table cell
@@ -20936,7 +20944,7 @@ Used in bs:panel bs:list group
 
 Contextual classes: panel-success, ...
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="panel panel-default">
 
     <div class="panel-heading">
@@ -20954,7 +20962,7 @@ Contextual classes: panel-success, ...
     </div>
 
   </div>
-#+END_EXAMPLE
+#+END_SRC
 
 .panel-collapse
 - Expand and collapse a panel bs:collapse
@@ -21037,7 +21045,7 @@ Contextual classes: panel-success, ...
 *** Card, Card Group, Card Deck (BS4) <<<bs:card>>>
 Panel is replaced by Card in BS4
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <!-- add .card-inverse to make text color white.
        contextual classes :: card-primary, info, etc.
        outline color :: card-outline-primary, info, etc.
@@ -21097,7 +21105,7 @@ Panel is replaced by Card in BS4
     <h3 class="card-footer">2 days ago</h3>
 
   </div>
-#+END_EXAMPLE
+#+END_SRC
 
 Card Group
 - wrap all .card inside div.card-group
@@ -26943,13 +26951,13 @@ To make a method non enumerable
 
 ** JSONP, JSON
 *** JSONP
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <script type="text/javascript" src="http://b.com/returnjsondata?callback=mycallback"></script>
 
   Where b.com/returnjsondata returns a json object. 
   And the whole <script> in yourwebsite.com will become 
   mycallback({foo:'bar'});
-#+END_EXAMPLE
+#+END_SRC
 
 *** JSON
 JSON object names require double quotes.
@@ -27615,7 +27623,7 @@ An observable is like a promise, but it calls some code every time a new value b
 IE 10 and above supports worker.
 Workers are independent and separated from parent window. 
 Don't try to access or modify parent window DOM. Do it indirectly.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var w;
 
   if (typeof(Worker) !== "undefined") {
@@ -27694,7 +27702,7 @@ Don't try to access or modify parent window DOM. Do it indirectly.
     port.postMessage(workerResult);
    }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** XMLHttpRequest <<<XMLHttpRequest>>>
 #+BEGIN_SRC js
@@ -29533,7 +29541,7 @@ https://gist.github.com/Craga89/2829457
 
 ***** Multiple slots
  app-layout component with template
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC html
    <div class="container">
      <header>
        <slot name="header"></slot>
@@ -29545,20 +29553,20 @@ https://gist.github.com/Craga89/2829457
        <slot name="footer"></slot>
      </footer>
    </div>
- #+END_EXAMPLE
+ #+END_SRC
 
  Parent
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC html
    <app-layout>
      <h1 slot="header">Here might be a page title</h1>
      <p>A paragraph for the main content.</p>
      <p>And another one.</p>
      <p slot="footer">Here's some contact info</p>
    </app-layout>
- #+END_EXAMPLE
+ #+END_SRC
 
  Result
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC html
    <div class="container">
      <header>
        <h1>Here might be a page title</h1>
@@ -29571,7 +29579,7 @@ https://gist.github.com/Craga89/2829457
        <p>Here's some contact info</p>
      </footer>
    </div>
- #+END_EXAMPLE
+ #+END_SRC
 
 ***** Scoped slot
  From parent, create a temporary variable with an alias name which holds the props object passed from the child (props.text defined in child)
@@ -31904,7 +31912,7 @@ Use render function (reactive)
    - oldValue :: The previous value, only available in update and componentUpdated. It is available whether or not the value has changed.
    - expression :: The expression of the binding as a string. For example in v-my-directive="1 + 1", the expression would be "1 + 1".
    - arg :: The argument passed to the directive, if any. For example in v-my-directive:foo, the arg would be "foo".
-   - modifiers :: An object containing modifiers, if any. For example in v-my-directive.foo.bar, the modifiers object would be { foo: true, bar: true }.
+   - modifiers :: An object containing modifiers, if any. For example in v-my-directive.foo.bar, the modifiers object would be ~{ foo: true, bar: true }~
  - vnode :: The virtual node produced by Vue’s compiler. See the VNode API for full details.
  - oldVnode :: The previous virtual node, only available in the update and componentUpdated hooks.
 
@@ -32238,26 +32246,25 @@ Use render function (reactive)
  #+END_EXAMPLE
 
 **** Route object, $route, this.$route, option:scrollBehavior <<<vue:router:route>>>
- https://router.vuejs.org/en/api/route-object.html
- $route => this.$route, router.match(location)
- #+BEGIN_EXAMPLE
-   router.beforeEach((to, from, next) => {
-     // `to` and `from` are both route objects
-   })
-
-   const router = new VueRouter({
-     scrollBehavior (to, from, savedPosition) {
+- https://router.vuejs.org/en/api/route-object.html
+- ~$route => this.$route, router.match(location)~
+   #+BEGIN_SRC js
+     router.beforeEach((to, from, next) => {
        // `to` and `from` are both route objects
-     }
-   })
- #+END_EXAMPLE
+     })
 
- $route.path :: absolute path e.g. /foo/bar
- $route.params :: {} or key/value pairs of dynamic segments and star segments
- $route.query :: {} or key/vale pairs of the query string /foo?user=1 $route.query.user == 1
- $route.hash :: empty string or anything with #.
- $route.fullPath :: string query and hash
- $route.matched :: e.g. /foo/bar, then .matched is an array of objects in parent to child order.
+     const router = new VueRouter({
+       scrollBehavior (to, from, savedPosition) {
+	 // `to` and `from` are both route objects
+       }
+     })
+  #+END_SRC
+- $route.path :: absolute path e.g. /foo/bar
+- $route.params :: {} or key/value pairs of dynamic segments and star segments
+- $route.query :: {} or key/vale pairs of the query string /foo?user=1 $route.query.user == 1
+- $route.hash :: empty string or anything with #
+- $route.fullPath :: string query and hash
+- $route.matched :: e.g. /foo/bar, then .matched is an array of objects in parent to child order.
 
 **** option:scrollBehavior
  #+BEGIN_EXAMPLE
@@ -51694,7 +51701,7 @@ Where Catalina is the engine name and 127.0.0.1 is the Host name.
 
 ~http://127.0.0.1/legacy_js/abc.js~ points to ~/root/vd/legacy_js/abc.js~
 
-If it's foo#bar.xml then ~http://127.0.0.1/foo/bar/abc.js~
+If it's ~foo#bar.xml~ then ~http://127.0.0.1/foo/bar/abc.js~
 
 Method 2 is not tested for multiple hosts usage...
 
@@ -61743,9 +61750,12 @@ For Scratch, right click on the file in Edit window and change language to ES6
 Hide all active tool windows and leave the Editor Tabs open. Can toggle.
 
 *** Regex Find
-Find function name that contains ~_node_~
-- ~function[\s+].*_node~
-- End with ~_node_~ :: ~function[\s+].*_node\(~
+- Find function name that contains ~_node_~
+   - ~function[\s+].*_node~
+- Function names that end with ~_node_~
+   - ~function[\s+].*_node\(~
+- Multiple lines
+   - ~:PROPERTIES:\n:ID:.*\n:END:\n~
 
 *** XPath
 You need to make the xml file part of a project to use Evaluate XPath... (right click) 
@@ -62119,15 +62129,21 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 
 *** Basics
 - Help :: C-h
+   - Exit Help buffer :: ~C-x 1~
    - See all help options :: ~C-h ?~
    - Find shortcut by command ~where-is~ :: ~C-h w~
    - Find command by shortcut ~describe-key~ :: ~C-h k~
    - Description of a function :: ~C-h f~
    - Get variable value :: ~C-h v~
+      - Normal hooks :: hook names end with ~-hook~
+      - Abnormal hooks :: end in ~-functions~
 - File
-   - C-x C-s :: save file, save current buffer
-   - C-x C-c :: quit Emacs
-   - C-x C-f :: open file, create file
+   - ~C-x C-s~ :: save file, save current buffer
+   - ~C-x C-c~ :: quit Emacs
+   - ~C-x C-f~ :: open file, create file
+- [[https://orgmode.org/org.html][Org Mode full Doc]]
+   - [[https://orgmode.org/worg/doc.html][Org Mode hooks, commands and options]]
+   - [[https://code.orgmode.org/bzg/org-mode/src/master][Org Mode source code]]
 
 #+NAME: tab:emacs-basics
 |                  |                                            |
@@ -62190,11 +62206,11 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 |------------------+--------------------------------------------|
 
 *** Windows
-- Remove current window :: C-x 0
-- Remove a help window or close all other window :: C-x 1
-- Split horizontally :: C-x 2
-- Split vertically :: C-x 3
-- Move to other window :: C-x o
+- Remove current window :: ~C-x 0~
+- Remove a help window or close all other window :: ~C-x 1~
+- Split horizontally :: ~C-x 2~
+- Split vertically :: ~C-x 3~
+- Move to other window :: ~C-x o~
 
 *** Region - selection
 - ~C-space~ :: start region, then move cursor
@@ -62236,26 +62252,96 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 
 *** Headline <<<emacs:headline>>>
 - ~C-u TAB~ :: Global tree fold/unfold
+   - ~C-u C-u C-u TAB~ :: Show all
 - ~S-<TAB>~ :: In table, go to previous cell. In other places, global fold/unfold
-- ~C-u C-u C-u TAB~ :: Show all
 - ~C-c C-n~ :: Next heading
 - ~C-c C-p~ :: Previous heading *Go to parent heading if triggered in the content of the heading*
 - ~C-c C-f~ :: Next heading same level
 - ~C-c C-b~ :: Previous heading same level
 - ~C-c C-u~ :: Backward to higher level heading ~outline-up-heading~
-- M-S-<right> :: Increase heading level of an item and its child items
-- M-S-<left> :: Same as above but decrease
-- M-<right>/<left> :: Decrease/increase level of a parent item only
+- ~M-<RET>~ or ~C-<RET>~ :: insert heading
+- ~M-<right>/<left>~ :: Decrease/increase level of a parent item only
+   - ~M-S-<right>~ :: Increase heading level of an item and its child items
+   - ~M-S-<left>~ :: Same as above but decrease
+- ~C-c *~ :: turn a list into heading/headline, ~C-c -~ to turn a heading into list
 - C-x n s :: Work on one section
 - C-x n w :: Back to outline
-- C-c C-j :: jump to different heading. C-g to exit and return to the current position. up/down to move headline, ~/~ sparse-tree search
-- ~M-<RET>~ or ~C-<RET>~ :: insert heading
+- ~C-c C-j~ :: jump to different heading. ~C-g~ to exit and return to the current position. up/down to move headline, ~/~ sparse-tree search
 
 **** Property
 :PROPERTIES:
 :CUSTOM_ID: emacs-property
 :END:
 - Set ~CUSTOM_ID~ property for a headline :: ~C-c C-x p~ ~CUSTOM_ID~
+- I tried the following to remove random HTML id's and add anchor for headlines using ~CUSTOM_ID~, but I failed. It creates performance issue
+  #+BEGIN_SRC lisp
+    (require 'org-id)
+    ;; (setq org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
+
+    ;; WARNING! Overwrite core function.
+    (defun org-id-new (&optional prefix)
+      "Create a new globally unique ID.
+
+    An ID consists of two parts separated by a colon:
+    - a prefix
+    - a unique part that will be created according to `org-id-method'.
+
+    PREFIX can specify the prefix, the default is given by the variable
+    `org-id-prefix'.  However, if PREFIX is the symbol `none', don't use any
+    prefix even if `org-id-prefix' specifies one.
+
+    So a typical ID could look like \"Org-4nd91V40HI\"."
+      (let* ((prefix (if (eq prefix 'none)
+			 ""
+		       (concat (or prefix org-id-prefix) "-")))
+	     unique)
+	(if (equal prefix "-") (setq prefix ""))
+	(cond
+	 ((memq org-id-method '(uuidgen uuid))
+	  (setq unique (org-trim (shell-command-to-string org-id-uuid-program)))
+	  (unless (org-uuidgen-p unique)
+	    (setq unique (org-id-uuid))))
+	 ((eq org-id-method 'org)
+	  (let* ((etime (org-reverse-string (org-id-time-to-b36)))
+		 (postfix (if org-id-include-domain
+			      (progn
+				(require 'message)
+				(concat "@" (message-make-fqdn))))))
+	    (setq unique (concat etime postfix))))
+	 (t (error "Invalid `org-id-method'")))
+	(concat prefix unique)))
+
+    (defun eos/org-custom-id-get (&optional pom create prefix)
+      "Get the CUSTOM_ID property of the entry at point-or-marker POM.
+       If POM is nil, refer to the entry at point. If the entry does
+       not have an CUSTOM_ID, the function returns nil. However, when
+       CREATE is non nil, create a CUSTOM_ID if none is present
+       already. PREFIX will be passed through to `org-id-new'. In any
+       case, the CUSTOM_ID of the entry is returned."
+      (interactive)
+      (org-with-point-at pom
+	(let ((id (org-entry-get nil "CUSTOM_ID")))
+	  (cond
+	   ((and id (stringp id) (string-match "\\S-" id))
+	    id)
+	   (create
+	    (setq id (org-id-new (concat prefix "h")))
+	    (org-entry-put pom "CUSTOM_ID" id)
+	    (org-id-add-location id (buffer-file-name (buffer-base-buffer)))
+	    id)))))
+
+    (defun eos/org-add-ids-to-headlines-in-file ()
+      "Add CUSTOM_ID properties to all headlines in the current
+       file which do not already have one. Only adds ids if the
+       `auto-id' option is set to `t' in the file somewhere. ie,
+       ,#+OPTIONS: auto-id:t"
+      (interactive)
+      (save-excursion
+	(widen)
+	(goto-char (point-min))
+	(when (re-search-forward "^#\\+OPTIONS:.*auto-id:t" (point-max) t)
+	  (org-map-entries (lambda () (eos/org-custom-id-get (point) 'create))))))
+  #+END_SRC
 
 **** Drawer
 - C-c C-x d :: Create a drawer
@@ -62310,12 +62396,12 @@ Insert a tab character =Ctrl+q tab=
 #+BEGIN_EXAMPLE
   ,** TODO
 #+END_EXAMPLE
-S-left/right :: Cycle through *TODO*, *DONE* and empty.
+- ~S-left/right~ :: Cycle through *TODO*, *DONE* and empty
 
 *** Sparse Tree, Search
-C-c / r :: Search regex, C-c C-c to quit.
-M-g M-n :: Next match
-M-g M-p :: Previous match
+- ~C-c / r~ :: Search regex, ~C-c C-c~ to quit
+- ~M-g M-n~ :: Next match
+- ~M-g M-p~ :: Previous match
 
 *** Link <<<emacs:link>>>
 - [[http://orgmode.org/manual/Link-format.html#Link-format][Here's description of the link]]
