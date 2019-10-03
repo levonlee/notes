@@ -53901,9 +53901,12 @@ It strips the DWARF tables needed for debugging, but keeps the annotations neede
 
 Then use linux:upx to further compress it.
 
-** Project <<<project:golang>>>
-*** Github Webhook
-main.go
+** Project
+*** GitHub Webhook <<<go:github-webhook>>>
+:PROPERTIES:
+:CUSTOM_ID: go-github-webhook
+:END:
+#+NAME main.go
 #+BEGIN_EXAMPLE
   package main
 
@@ -54058,14 +54061,14 @@ main.go
   }
 #+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo docker run -it --rm --name testgo -v /home/newcom/digitalocean/docker/newcomgo:/go golang:1.8 /bin/bash -I
-  ;; # Inside Golang
+  # Inside Golang
   go build main.go
 
-  ;; # Go to project folder
+  # Go to project folder
   ./main
-#+END_EXAMPLE
+#+END_SRC
 
 ** To Learn
 Concurrency in Go
@@ -56364,6 +56367,8 @@ To see any requests that violate which rules in which .conf file, tail the apach
 * Git
 ** Show config
 #+BEGIN_SRC sh
+  # 3 levels: system > global (user) > local
+
   # List all active config for the current folder
   git config --list
 
@@ -56834,61 +56839,56 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
 #+END_SRC
 
 ** Commit History
-=git log --graph=
-=git log -3= Last 3 commits
-=git log --grep=<pattern>= Search commit message
-
+- ~git log --graph~
+- ~git log -3~ :: Last 3 commits
+- ~git log --grep=<pattern>~ :: Search commit message
 - ~%s~ :: subject (commit message)
+- Show commits for multiple repos between start/end dates
+  #+BEGIN_SRC bash
+    #!/bin/bash
 
-Show commits for multiple repos between start/end dates:
-#+BEGIN_SRC bash
-  #!/bin/bash
+    TMPLOG=/mnt/e/project-logs.csv
+    touch $TMPLOG
+    echo "" > $TMPLOG
+    gitrepos=( '/mnt/e/li/repo1' '/mnt/e/li/repo2' )
 
-  TMPLOG=/mnt/e/project-logs.csv
-  touch $TMPLOG
-  echo "" > $TMPLOG
-  gitrepos=( '/mnt/e/li/repo1' '/mnt/e/li/repo2' )
-
-  for i in "${gitrepos[@]}"; do
-     if [ -d $i ] && [ -d $i/.git ]; then
-	cd $i
-	git log --since='last 2 months' --pretty=format:"$i,%ai,%s" >> $TMPLOG
-	# After and including May 1, 2018
-	# git log --after='2018-5-1'
-	echo "" >> $TMPLOG
-	cd ..
-     fi;
-  done
-#+END_SRC
-
+    for i in "${gitrepos[@]}"; do
+       if [ -d $i ] && [ -d $i/.git ]; then
+	  cd $i
+	  git log --since='last 2 months' --pretty=format:"$i,%ai,%s" >> $TMPLOG
+	  # After and including May 1, 2018
+	  # git log --after='2018-5-1'
+	  echo "" >> $TMPLOG
+	  cd ..
+       fi;
+    done
+  #+END_SRC
 - Show commits of a specific branch :: ~git log origin/master~
-
 - Show an author's commits (email can also be used) :: ~git log --author="Li Li" --before="2018-12-01" --after="2018-11-01"~
 - Show an author's commits of a specifc branch :: ~git log origin/master --author="Li Li"~
 - Show an auhtor's commits by number of files changed, insertion and deletion :: ~git log --author="Li Li" --oneline --shortstat~
 - Show an author's commits by lines added/deleted for each file :: ~git log --author="Li Li" --pretty=tformat: --numstat~
 - Exclude sub folders and files or include
-#+BEGIN_SRC bash
-  # -- <path> :: limit commit history by path
-  git log -- . ":(exclude)subfolder"
+  #+BEGIN_SRC sh
+    # -- <path> :: limit commit history by path
+    git log -- . ":(exclude)subfolder"
 
-  # case-insensitive
-  git log -- . ":(exclude,icase)wp-content/plugins"
+    # case-insensitive
+    git log -- . ":(exclude,icase)wp-content/plugins"
 
-  # exclude multiple
-  git log -- . ":(exclude,icase)wp-content/plugins" ":(exclude,icase).idea"
+    # exclude multiple
+    git log -- . ":(exclude,icase)wp-content/plugins" ":(exclude,icase).idea"
 
-  # include only
-  git log -- ":(icase)wp-content/themes" ":(icase)wp-content/plugins"
+    # include only
+    git log -- ":(icase)wp-content/themes" ":(icase)wp-content/plugins"
 
-  # include and exclude
-  git log -- ":(icase)wp-content/themes" ":(exclude,icase)wp-content/themes/abc"
-#+END_SRC
-
+    # include and exclude
+    git log -- ":(icase)wp-content/themes" ":(exclude,icase)wp-content/themes/abc"
+  #+END_SRC
 - Show an author's commits by total lines added/deleted
-#+BEGIN_SRC sh
-  git log --author="Li Li" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
-#+END_SRC
+  #+BEGIN_SRC sh
+    git log --author="Li Li" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
+  #+END_SRC
 
 ** Head Detached Mode, checkout previous commit
 At the current branch master, find hash of the old commit that you want to revert back to and checkout
@@ -57062,33 +57062,27 @@ If the files are important, you can use Git in ~Bash on Windows~, it will checko
 
 It's better to fix the file names on Linux, commit and push and work on local.. 
 
-** Credential Manager, Multiple Github accounts and https
-You manage 2 Github accounts.
-~git clone~ does not require credentials for https
-When you push to the remote which is under Github account A, Windows asks you for credentials
-After that, your credentials for account A is stored under Windows Credential Store Panel (WCSP).
-You can add account A to an account B's repository as a collaborator.
-Any push will be made by account A.
-
-You have to delete 2 Github credentials from WCSP and then push commits to account B's repository and then use account B's credential if you want to completely switch account.
-
-If you want to switch between multiple Github accounts frequently, use SSH instead of https
-
-SSH might be blocked in public internet networks though.
-
+** Credential Manager, Multiple GitHub accounts and https
+- You manage 2 GitHub accounts
+- ~git clone~ does not require credentials for https
+- When push to the remote which is under GitHub account A, Windows asks for credentials
+   - After that, credentials for A is stored under Windows Credential Store Panel (WCSP)
+- You can add A to any repo as a collaborator
+   - Any push will be made by account A
+- You have to delete 2 GitHub credentials from WCSP and then push commits to account B's repo and then use account B's credential if you want to completely switch account
+- If you want to switch between multiple GitHub accounts frequently, use SSH instead of https
+   - SSH might be blocked in public internet networks though
 - May change credential helper from manager to wincred :: ~git config --global crendential.helper wincred~
-
-Or you can disable Credential Manager and turn off OpenSSH popup (directly type password in shell). But you need to type in password for all https repo. Run in PowerShell with admin
-#+BEGIN_SRC sh
-  git config --system --unset credential.helper
-  git config --edit --global
-#+END_SRC
-
-Insert
-#+BEGIN_EXAMPLE
+- On Windows, disable Credential Manager and turn off OpenSSH popup to directly type password in shell. Still need to type in password for all https repo. Run in PowerShell with admin
+  #+BEGIN_SRC sh
+    git config --system --unset credential.helper
+    git config --edit --global
+  #+END_SRC
+  Insert to global =~/.gitconfig=
+  #+BEGIN_SRC conf
   [core]
       askpass =
-#+END_EXAMPLE
+  #+END_SRC
 
 ** Clone to an empty folder
 #+BEGIN_EXAMPLE
@@ -57174,31 +57168,30 @@ Doesn't include directories. Only files
 ~git ls-files | wc -l~
 
 ** GitHub Push to New Repo with local repo
-Create a new repo on Github.com without creating any .gitignore, README nor license
-On local, git init, add .gitignore, git add . and check if files are ignored, git commit -m "1st commit"
-
-Add a remote
-~git remote add origin ssh_or_github_https_link_with_.git_at_the_end~
-
-List all remotes ~git remote -v~
-Remove a remote 'origin' ~git remote rm origin~
-
-Local branch is not set to sync with remote until you do the first push with '-u'
+- Create a new repo on Github without creating any ~.gitignore~, ~README~ nor ~license~
+- On local, ~git init~, add ~.gitignore~, ~git add .~ and check if files are ignored, ~git commit -m "1st commit"~
+- Add a remote
+   - ~git remote add origin ssh_or_github_https_link_with_.git_at_the_end~
+- List all remotes ~git remote -v~
+- Remove a remote 'origin' ~git remote rm origin~
+- Local branch is not set to sync with remote until you do the first push with ~'-u'~
 ~git push -u origin master~
 
 Finally check ~cat .git/config~ to see if local branch "master" has setup a remote
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   [branch "master"]
-          remote = origin
-          merge = refs/heads/master
-#+END_EXAMPLE
+	  remote = origin
+	  merge = refs/heads/master
+#+END_SRC
 
 You may encounter 403 Forbidden and HTTP request failed errors. Try to use SSH or modify the HTTPS url
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
+  # Change HTTPS remote URL in `.git/config` to this
   https://[GITHUB_USERNAME]@github.com/[GITHUB_USERNAME]/[REPO_NAME].git
-  Instead of the original
+
+  # Because some network blocks the default HTTPS URL
   https://github.com/[GITHUB_USERNAME]/[REPO_NAME].git
-#+END_EXAMPLE
+#+END_SRC
 
 ** Add a remote, remove a remote and its branches, change upstream
 #+BEGIN_SRC sh
@@ -57312,22 +57305,34 @@ Method 2: Add another remote github
   // git submodule add https://github.com/chaconinc/DbConnector dbconnector
 #+END_EXAMPLE
 
-** Github API
-REST API v3 :: https://developer.github.com/v3/
+** GitHub
+:PROPERTIES:
+:CUSTOM_ID: github
+:END:
+*** API
+:PROPERTIES:
+:CUSTOM_ID: github-api
+:END:
+- REST API v3 :: https://developer.github.com/v3/
+- Get repo size
+  #+BEGIN_SRC sh
+    # for public repo, auth is not required
+    curl https://api.github.com/repos/:owner/:reponame | grep size
 
-Get repo size
-#+BEGIN_EXAMPLE
-  # for public repo, auth is not required
-  curl https://api.github.com/repos/:owner/:reponame | grep size
+    # for private repo
+    curl -u ownername:password https://api.github.com/repos/:owner/:reponame | grep size
 
-  # for private repo
-  curl -u ownername:password https://api.github.com/repos/:owner/:reponame | grep size
+    # sort repos of user:alibaba by number of stars
+    https://github.com/search?q=user%3Aalibaba+&s=stars&type=Repositories
+  #+END_SRC
+- Webhook
+   - Can be set on any repo or on an organization
+   - Refer to go:github-webhook
 
-  // sort repos of user:alibaba by number of stars
-  https://github.com/search?q=user%3Aalibaba+&s=stars&type=Repositories
-#+END_EXAMPLE
-
-** Github Pages
+*** Pages
+:PROPERTIES:
+:CUSTOM_ID: github-pages
+:END:
 You can add /docs folder to your repository on master and enable GitHub Pages in the repository setting
 Or you can create an orphan branch called gh-pages
 
@@ -57344,7 +57349,7 @@ Project website is https://levonlee.github.io/reponame or a domain docs.abc.com 
 
 For User or Organization Site, create repo levonlee.github.io and add index.html and push to repo
 
-*** SVG, View HTML
+**** SVG, View HTML
 http://rawgit.com/
 
 Image files other than SVG can be served directly from GitHub using Raw Repo Path.
@@ -57369,48 +57374,114 @@ RawGit is down.. Use raw.githack.com
 - https://raw.githack.com/levonlee/cssSandbox/master/svg/index.html
 - For production, use the website :: https://raw.githack.com/
 
-*** Markdown
+**** Markdown
 =![Alt text](http://url/to/img.png)=
 
-** SSH Key Fingerprint
-On GitHub, it shows the fingerprint for a public key you upload. To see which private/public key on your local machine matches the finger print
-#+BEGIN_SRC sh
-  # GitHub uses MD5
-  # Same finger print for private and public keys
-  ssh-keygen -E md5 -lf id_rsa
-  ssh-keygen -E md5 -lf id_rsa.pub
+*** Plan - Individual vs Team vs Enterprise
+- Convert an Individual Plan (IP) e.g. Pro to an organization with Team Plan (TP) or Enterprise Plan (EP), after conversion
+   - Username of the original plan (OP) cannot be changed and will be carried on to TP
+   - Email of OP cannot be used to login. Use assigned owner (other GitHub account) to manage the converted TP
+   - Collaborators of all repos before IP to TP/EP conversion become members
+- IP can be a member/owner of any number of organizations
+- EP is created to manage policy and billing for multiple organizations
+- Organization
+   - Billing :: Charged by count of members and OC for private repo
+   - Webhook can be set on an organization
+   - [[https://help.github.com/en/articles/permission-levels-for-an-organization][Organization Permissions]]
+      - Owners are Members
+	 - Admin permissions for all repos and manage billing
+	 - Approve or deny when a member requests OAuthe App access to org resources
+	    - Organization > Settings > Third-party access
+      - Members
+	 - Create repo, teams, project boards
+	 - Can be made a team maintainer
+	 - Can be converted to *outside collaborators (OC)* and OC can never create repos nor the following mentioned
+	 - Member prvileges :: Org > Settings > Member privileges
+	    - Base permissions :: every member has one of these permission levels for all org repos
+	       - None :: clone and pull public repos
+	       - Read :: clone and pull all repos
+	       - Write :: clone, pull and push all repos
+	       - Admin :: clone, pull, push and add new collaborators to all repos
+	    - Repo creation :: a member who creates a repo will have Admin *Repo Permission Level*
+	       - Public and private repos
+	       - Private
+	       - Disabled
+      - Billing Managers :: view and edit billing
+      - Outside Collaborator (OC) :: OC is not a member and if he's assigned to a private repo, it will count as one seat in billing
+	 - Can't
+	    - Create repo
+	    - Create teams
+	    - See all org members and teams
+	    - @mention any visible team
+	    - Be a team maintainer
+	 - Can have all Repo Permissions
+      - GitHub Apps managers
+	 - Assign specific people to manage all GitHub Apps or just one
+   - Team ::
+      - Team > Repositories 
+	 - Assign repos for members in a team to manage, with *Repo Permission Levels*
+      - Team > Teams > Nested teams
+	 - Child team can have only one parent team and it inherits the parent's access permissions
+	    - Members in child team will receive notifications when the parent team is @mentioned
+      - Team > Members
+	 - Maintainer :: can add and remove team members and create child teams
+      - Team Pages
+      - Team > Settings
+	 - Team Visibility
+	    - Visible :: can be viewed and @mentioned by every Org member
+	    - Secret :: only visible to members on the team and Org Owners
+	       - Can't have child teams and Can't be a child team
+	       - Good for external partners or clients
+   - Repo Permission Levels ::
+      - Permissions can be given to members, OC and teams
+	 - Read - can pull
+	 - Triage (beta) :: manage issues and pull requests without write access
+	 - Write - can push
+	 - Maintain (beta) :: manage repo without access to sensitive actions e.g. managing security or deleting a repo
+	 - Admin
+	    - Repo Admins and Org Owners can set up ~CODEOWNERS~ file to choose code owners of a repo
+	       - The file assigns the code owners for a single branch
+		  - Can be in repo root, ~docs/~ or ~.github/~
+	       - https://help.github.com/en/articles/about-code-owners
+   - A member's permission
+      - The highest given in 3 categories :: Read, Write and Admin
+      - Permissions can be given in *Team*, *Organization Permissions* and *Repo Permission Levels*
 
-  # -E :: hash algorithm. Default is sha256
-  # -f :: specify a file
-  # -l :: Show fingerprint of specified public key file. Private RSA1 keys are also supported. For RSA and DSA keys, it tries to find the matching public key and prints its fingerprint
-#+END_SRC
+** SSH Key Fingerprint
+- On GitHub, it shows the fingerprint for a public key you upload. To see which private/public key on your local machine matches the finger print
+  #+BEGIN_SRC sh
+    # GitHub uses MD5
+    # Same finger print for private and public keys
+    ssh-keygen -E md5 -lf id_rsa
+    ssh-keygen -E md5 -lf id_rsa.pub
+
+    # -E :: hash algorithm. Default is sha256
+    # -f :: specify a file
+    # -l :: Show fingerprint of specified public key file. Private RSA1 keys are also supported. For RSA and DSA keys, it tries to find the matching public key and prints its fingerprint
+  #+END_SRC
+- Deploy Keys can be set up for a repo rather than using keys on user account level. Usually use that to pull from repo but write perm can be assigned to push
 
 ** Troubleshooting
-*** unable to create thread: Resource temporarily unavailable
+*** ~unable to create thread: Resource temporarily unavailable~
 It could stop you from pushing to remote repo
 Try using ssh server instead.
 
-*** warning: suboptimal pack - out of memory
-This may happen in shared hosting with limited resources..
-#+BEGIN_EXAMPLE
-  Counting objects: 2422, done.
-  Delta compression using up to 48 threads.
-  warning: suboptimal pack - out of memory
-  fatal: inflate: out of memory52/2395)
-  error: failed to push some refs to 'user@host:directory/repo-name.git'
-#+END_EXAMPLE
-
-Pay attention to the Delta compression using 48 threads. Change it to only 1 thread
-#+BEGIN_EXAMPLE
-  git config --global pack.threads 1
-#+END_EXAMPLE
-
-fatal: unable to create threaded lstat
-#+BEGIN_EXAMPLE
-  git config core.preloadIndex false
-  # or
-  # git config --global core.preloadIndex false
-#+END_EXAMPLE
+*** ~warning: suboptimal pack - out of memory~
+- This may happen in shared hosting with limited resources..
+  #+BEGIN_EXAMPLE
+    Counting objects: 2422, done.
+    Delta compression using up to 48 threads.
+    warning: suboptimal pack - out of memory
+    fatal: inflate: out of memory52/2395)
+    error: failed to push some refs to 'user@host:directory/repo-name.git'
+  #+END_EXAMPLE
+- Pay attention to the Delta compression using 48 threads. Change it to only 1 thread :: ~git config --global pack.threads 1~
+- ~fatal: unable to create threaded lstat~
+  #+BEGIN_SRC sh
+    git config core.preloadIndex false
+    # or
+    # git config --global core.preloadIndex false
+  #+END_SRC
 
 * BitBucket
 ** Basic
@@ -58440,6 +58511,7 @@ STANDARD_IA (infrequent class): Retrieval fee. Real-time retrieval. Good for lar
 GLACIER: Retrieval fee. Retrieval time is hours.
 REDUCED_REDUNDANCY: less durability and availability. Best for storing thumbnail images.
 
+** CodePipeline <<<aws:codepipeline>>>
 * Database
 ** Basics
 *** Parent vs child
@@ -60382,7 +60454,7 @@ If you don't have control on HTML, you can:
        }
      #+END_SRC
      WordPress example: wp:filter:template_include
-     Gist: https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
+     GitHub Gist: https://gist.github.com/levonlee/888f5f5b0a33acebe2b20ecbbff3b106
 - Base URL :: ~https://securepubads.g.doubleclick.net/gampad/[request-type]?[parameters]~
    - Before :: ~https://pubads.g.doubleclick.net/gampad/[request-type]?[parameters]~ or ~http://~
    - Request Type
@@ -65569,7 +65641,7 @@ Web Symbols
 ** TODO http://grow.io/
 ** TODO https://www.ontario.ca/page/digital-government https://medium.com/ontariodigital
 ** TODO Learn New Relic One
-** DONE Chase Payment
+** TODO Learn https://langserver.org
 ** DONE Lynda [[https://www.behance.net/][Behance.net]]
 ** DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
 ** DONE Lynda Adobe Illustrator Essential
