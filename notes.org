@@ -44987,17 +44987,18 @@ whereis commandname :: only searches certain directories but return path and als
       - ~-p~ :: processor type ~x86_64~
       - ~-i~ :: hardware platform ~x86_64~
       - -o :: operating system ~GNU/Linux~
-- ~lsb_release -a~
-  Ubuntu only.
-  #+BEGIN_EXAMPLE
-    No LSB modules are available.
-    Distributor ID: Ubuntu
-    Description:    Ubuntu 16.04.3 LTS
-    Release:        16.04
-    Codename:       xenial
-  #+END_EXAMPLE
-   - lsb_release can be changed by ~apt-get dist-upgrade~. After running it, it shows ~16.04.04~ using kernal ~4.4.0-116-generic~
-   - When Ubuntu is first installed as ~16.04.0~, kernal ~generic 4.4~ is installed and kernal ~4.4.0-x~ will always be used when 16.04.0 is upgraded to ~16.04.x~
+- ~lsb_release~ :: Ubuntu only <<<linux:lsb_release>>>
+   - ~lsb_release -a~ All info:
+     #+BEGIN_EXAMPLE
+       No LSB modules are available.
+       Distributor ID: Ubuntu
+       Description:    Ubuntu 16.04.3 LTS
+       Release:        16.04
+       Codename:       xenial
+     #+END_EXAMPLE
+   - ~lsb_release -sc~ :: Ubuntu release e.g. bionic
+   - Output can be changed by ~apt-get dist-upgrade~. After running it, it shows ~16.04.04~ using kernal ~4.4.0-116-generic~
+   - When Ubuntu is first installed as ~16.04.0~, kernal ~generic 4.4~ is installed and kernal ~4.4.0-x~ will always be used when ~16.04.0~ is upgraded to ~16.04.x~
    - It looks like if generic kernal version is installed at the first place, it will stay at that version until special action to replace the generic kernal
 - ~cat /etc/*release~ :: Linux distro
 - ~cat /etc/issue~
@@ -47575,25 +47576,54 @@ Most of devices: =lshal=
   sudo lspci -vvv -d 10de:0640
 #+END_SRC
 
-** Package & Repository
-=cat /etc/apt/sources.list=
+** Package, Repository
+- A software repo, also called *package source*, is a network server, local directory or CD/DVD
+   - What software packages (versions, who package them) are available for download
+- Debian
+   - All repo :: ~cat /etc/apt/sources.list~ and all files in ~/etc/apt/sources.list.d/~
+      - Format
+	 - Examples
+	    - ~deb http://site.example.com/debian distribution component1 component2 component3~
+	       - ~deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable~
+	    - ~deb-src http://site.example.com/debian distribution component1 component2 component3~
+	 - Archive type
+	    - ~deb~ :: contains binary packages (pre-compiled)
+	    - ~deb-src~ :: packages in source code, Debian control file (.dsc) and the diff.gz containing the changes needed for packaging the program
+	 - ~distribution~ could be either
+	    - the release code name / alias e.g. ~bionic~
+	    - the release class e.g. ~stable~, ~testing~
+	 - ~component~ :: only include certain component(s)
+	 - Command to repo <<<linux:add-apt-repository>>>
+	   #+BEGIN_SRC bash
+	     sudo add-apt-repository \
+		  "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+		       $(lsb_release -sc) \
+		       stable"
+	   #+END_SRC
+	 - Repo URL
+	    - ~https://download.docker.com/linux/ubuntu~ file system structure
+	       - File ~./dist/bionic/Release~ is copied to local when first time repo is registered
+		  - File ~./dist/bionic/InRelease~
+		  - ~sudo apt update~ compares local ~Release~ file with remote ~InRelease~ to check architectures, components, label, origin and suite (distribution)
+		     - To avoid checking, ~sudo apt-get --allow-releaseinfo-change update~. *Not recommended*
+			- Or remove the repo and add it back again. Refer to linux:ubuntu:ppa. *Not recommended*
+	       - Files under ~./dist/bionic/stable/~ actual files
+   - Ubuntu
+      - Repos / Components
+	 - Main :: free and open-source software supported by Ubuntu team
+	 - Universe :: free and open-source software maintained by Ubuntu community
+	 - Backports :: newest version of pkg
+	 - Multiverse :: not free pkg (software restricted by copyright or legal issues)
+	 - Restricted :: proprietary hardware drivers etc
+	 - Canonical Partners :: software pkgs by Ubuntu for their partners
+   - Sometimes ~archive.ubunut.com~ doesn't respond.. change it to ~us.archive.ubuntu.com~
+     #+BEGIN_SRC sh
+       sed -i 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
 
-Ubuntu Repositories
-- Main :: free and open-source software supported by Ubuntu team
-- Universe :: free and open-source software maintained by Ubuntu community
-- Backports :: newest version of pkg
-- Multiverse :: not free pkg (software restricted by copyright or legal issues)
-- Restricted :: proprietary hardware drivers etc
-- Canonical Partners :: software pkgs by Ubuntu for their partners 
-
-Sometimes ~archive.ubunut.com~ doesn't respond.. change it to ~us.archive.ubuntu.com~
-#+BEGIN_SRC sh
-  sed -i 's/archive\.ubuntu\.com/us\.archive\.ubuntu\.com/' /etc/apt/sources.list
-
-  # for EOL, change list
-  sed -i 's/archive\.ubuntu\.com/old-releases\.ubuntu\.com/g' /etc/apt/sources.list
-  sed -i 's/security\.ubuntu\.com/old-releases\.ubuntu\.com/g' /etc/apt/sources.list
-#+END_SRC
+       # for EOL, change list
+       sed -i 's/archive\.ubuntu\.com/old-releases\.ubuntu\.com/g' /etc/apt/sources.list
+       sed -i 's/security\.ubuntu\.com/old-releases\.ubuntu\.com/g' /etc/apt/sources.list
+     #+END_SRC
 
 *** Package Management
 **** Debian only =yum=
@@ -49429,17 +49459,14 @@ http://c-nergy.be/products.html
 - ~gnome-tweak-tool~
   - ~sudo add-apt-repository universe~ ~sudo apt install gnome-tweak-tool~
   - Open ~Tweaks~ app
-
 - ~sudo apt install gnome-shell-extensions~ :: prepare to install extensions that come with the package repo
   - Log back in and go to Tweak Tool > Extensions
-
 - GDebi
   - By default, Ubuntu Software Center does not install dependencies when app .deb is installed
   - ~sudo apt install gdebi~
   - e.g. download deb from Chrome and in Files app, right click > Properties > Open with GDebi Package Installer, close
   - ~sudo gdebi google-chrome-stable_current_amd64.deb~
   - To remove a package installed from gdebi, ~apt~ and ~dpkg~ commands using ~purge~ option as shown: ~sudo apt purge google-chrome-stable~ ~sudo apt-get purge teamviewer~ ~sudo dpkg -purge teamviewer~
-
 - Snap
   - Snap is built-in in Ubuntu 18.04
   - Apps installed by Snap are almost independent. Different versions of the same app can co-exist
@@ -49550,22 +49577,18 @@ TS: Cannot connect to "Your Connection Name" No such file or directory. Verify y
   - Remove only the outdated packages ~sudo apt autoclean --dry-run~
   - Clean it entirely ~sudo apt clean --dry-run~
 
-** Ubuntu Personal Package Archive PPA
-Add a LibreOffice package from PPA to Software Sources
-~sudo add-apt-repository ppa:libreoffice/ppa~, then ~sudo apt-get update~
-Remove the package source
-~sudo add-apt-repository --remove ppa:libreoffice/ppa~, ~apt-get update~
-
-Remove it and downgrade back to previous version before using PPA
-~sudo apt-get install ppa-purge~, ~sudo ppa-purge ppa:libreoffice/ppa~
+** Ubuntu Personal Package Archive - PPA <<<linux:ubuntu:ppa>>>
+- Add a LibreOffice package from PPA to Software Sources :: ~sudo add-apt-repository ppa:libreoffice/ppa~, then ~sudo apt-get update~
+- Remove the package source :: ~sudo add-apt-repository --remove ppa:libreoffice/ppa~, ~apt-get update~
+- Remove it and downgrade back to previous version before using PPA :: ~sudo apt-get install ppa-purge~, ~sudo ppa-purge ppa:libreoffice/ppa~
 
 ** Production Server Setup
-linux:user :: Add a normal user, add the user to sudo group
-linux:ssh :: Add ssh public key to the new user's .ssh folder
-linux:ssh:disallow_root :: Disallow SSH in as root
-linux:sudo:nopassword :: require no password for non-root users with sudo privilige/group
-linux:firewall :: configure firewall, open ports
-linux:timezone :: setup timezone and sync time
+- linux:user :: Add a normal user, add the user to sudo group
+- linux:ssh :: Add ssh public key to the new user's .ssh folder
+- linux:ssh:disallow_root :: Disallow SSH in as root
+- linux:sudo:nopassword :: require no password for non-root users with sudo privilige/group
+- linux:firewall :: configure firewall, open ports
+- linux:timezone :: setup timezone and sync time
 
 * Domain Server, DNS Server, SSL/https
 Refer to linux:dns
