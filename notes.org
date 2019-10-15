@@ -42022,6 +42022,46 @@ Widget shows png image converted to jpg with 85% quality and black background co
 - Validator :: https://cards-dev.twitter.com/validator
 - Content is cached by Twitter for 7 days after a link to your page with card markdup has been published in a tweet
 
+*** TweetDeck <<<twitter:tweetdeck>>>
+- https://tweetdeck.twitter.com
+   - https://help.twitter.com/en/using-twitter/tweetdeck-teams
+- Account ~@abc~ is created by ~abc@gmail.com~, ~abc@gmail.com~ is the owner, one account has only one owner
+   - May use ~a.bc@gmail.com~ to create another Twitter account, emails will also send to ~abc@gmail.com~
+   - Owner :: can link other Twitter accounts as admin or contributor
+      - Manage password, phone number and login verification settings
+   - Admin :: can link other accounts as admin or contributor, but Owner has to authorize
+      - Tweet, Retweet, DM, like, etc., schedule Tweets, create lists and build collections
+   - Contributor :: permissions like Admin but can't link other Twitter accounts
+- Downside :: Everyone invited to TweetDeck Team has to use TweetDeck to post/use Twitter
+
+*** Twitter Ads
+- Objective
+   - Awarenes: promote Tweets and maximize reach
+   - Engagement: promote Tweets and get more Retweets, likes and replies
+   - Followers: promote account
+   - Website clicks and App installs
+- Audience
+   - Geographic
+   - Followers of a notable account
+   - Human interests
+- Bidding
+   - Auto bidding
+   - Pay for interaction: new follower, a click on your website
+- Budget: no minimum, daily budget
+- Creative
+   - Call-to-actions
+- Twitter Ads Manager: ads.twitter.com
+   - User management
+      - Access Levels
+	 - Account administrator (AA)
+	    - Can create AA and AM
+	 - Ad Manager (AM)
+	    - Can't create users
+	 - Creative manager
+	 - Campaign analyst
+	 - Organic analyst: analytics.twitter.com
+	 - Partner audience manager
+
 ** Facebook
 *** Facebook for developers
 - https://developers.facebook.com/
@@ -43300,13 +43340,19 @@ https://support.google.com/analytics/topic/3455490
 
 *** Transfer a property
 - Move Property :: https://support.google.com/analytics/answer/6370521
-- Have ~Manage Users~ and ~Edit~ permissions on both the source and destination accounts
+- Have ~Manage Users~ and ~Edit~ permissions on both the source and destination accounts (GA account level)
 - Property ID does not change
 - Permissions
    - Replace existing property and view permissions with permissions of the destination account :: the property and its views will inherit perms from the destination account
    - Keep existing property and view permissions :: Source account perms will be copied to destination account. Users who have account-level access in the source account will have property-level access in the destination account
 - Can't move a property if
-   - The source account and the destination account are not in the same google:marketing platform organization. Use google:marketing platform to move a GA account from one organization to another
+   - The source account and the destination account are not in the same google:marketing platform organization
+      - It's easy to transfer a whole GA account (called product account) from one org to another on google:marketing platform
+	 - Administration > Click on 3 dots on source org, *move accounts from this org to another*
+	 - Required permissions
+	    - Source org: Org admin and Billing admin
+	    - Destination org: Billing admin
+      - If the source org can't add you as an Org admin or Billing admin, then you should consider to unlink the GA account from source org and then link it to destination org after
    - The service level for the property is set to 360 and the account link to the organization has not been verified
    - The property is linked to Google Ad Manager (only GA 360 can link GAM)
       - Unlink and relink after the account transfer
@@ -49658,33 +49704,21 @@ Refer to linux:dns
 
 ** DNS records: A AAAA ANAME CNAME TXT ALIAS URL
 - Hostname :: a sub domain. e.g. ~www~ ~@~
-
 - ~A~ records :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
-
 - ~AAAA~ records :: same as A records but they are IPv6. Nowadays, both AAAA and A are needed
-
 - ~ANAME~ :: It's like ~CNAME~. Name (from source domain) could be @. The value has to be another (target) apex domain. DNS resolves the target fully qualified domain name (FQDN) to an IP or multiple and also synthesize A records of the domain that points to the IP(s) of the FQDN. Since the target FQDN's IP is returned on the first lookup, it's faster than ALIAS record.
-
-- ~CNAME~ records :: point another subdomain (hostname) to an A record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in CNAME on the left hand side.
-
-- ~ALIAS~ records :: same as CNAME but it can coexist with other records on that name. It resolves the target domain to one or more A records. ALIAS's name can be (from source domain) anything, the value can be (target) any other external domain.
-
-- ~URL~ records :: redirect the name to the target name using HTTP 301 status code.
-
+- ~CNAME~ records :: point another subdomain (hostname) to an ~A~ record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in ~CNAME~ on the left hand side.
+- ~ALIAS~ records :: same as ~CNAME~ but it can coexist with other records on that name. It resolves the target domain to one or more A records. ALIAS's name can be (from source domain) anything, the value can be (target) any other external domain.
+- ~URL~ records :: redirect the name to the target name using HTTP 301 status code
+   - It redirects the name to a destination. The ~URL~ record is simple and effective way to apply a redirect for a name to another name, e.g. to redirect ~www.example.com~ to ~example.com~
 - ~TXT~ record :: Google Search Console may add TXT @ google-site-verification=[code] TTL 1 Hour to verify site ownership.
-
-The ~A~, ~CNAME~, ~ALIAS~ records causes a name to resolve to an IP. Vice-versa, the ~URL~ record redirects the name to a destination. The ~URL~ record is simple and effective way to apply a redirect for a name to another name, e.g. to redirect www.example.com to example.com
-
-The ~A~ name must resolve to an IP, the ~CNAME~ and ~ALIAS~ record must point to a name.
-
-The general rule is:
-
-- use an A record if you manage what IP addresses are assigned to a particular machine or if the IP are fixed (this is the most common case)
-- use a CNAME record if you want to alias a name to another name, and you don't need other records (such as MX records for emails) for the same name
-- use an ALIAS record if you are trying to alias the root domain (apex zone) or if you need other records for the same name
-- use the URL record if you want the name to redirect (change address) instead of resolving to a destination.
-
-On bare/apex domain, usually A, ALIAS or ANAME record can be used. Only DNS Made Easy supports ANAME and DNSimple and others support ALIAS. ANAME and ALIAS are not industry standards.
+- ~A~, ~CNAME~, ~ALIAS~ records :: ~A~ name must resolve to an IP, the ~CNAME~ and ~ALIAS~ record must point to a name
+- General rule
+   - use an A record if you manage what IP addresses are assigned to a particular machine or if the IP are fixed (this is the most common case)
+   - use a CNAME record if you want to alias a name to another name, and you don't need other records (such as MX records for emails) for the same name
+   - use an ALIAS record if you are trying to alias the root domain (apex zone) or if you need other records for the same name
+   - use the URL record if you want the name to redirect (change address) instead of resolving to a destination.
+- On bare/apex domain, usually A, ALIAS or ANAME record can be used. Only DNS Made Easy supports ANAME and DNSimple and others support ALIAS. ANAME and ALIAS are not industry standards
 
 ** MX record <<<dns:mx>>>
 - HOSTNAME :: e.g. use @ for barebone
@@ -49848,12 +49882,11 @@ You don't need to first create a subdomain and then create Addon domain. It will
 Source domain can be a subdomain e.g. s1.abc.com, change A record for s1.abc.com at GoDaddy to point to the destination's server IP. 
 
 ** Park domain
-To park a domain means to make the domain as idle. Nameservers will be set to Default for example in GoDaddy.
-
-Another instance is when you park multiple domains abc.net, abc.info to the main domain abc.com
+- To park a domain means to make the domain as idle. Nameservers will be set to Default e.g. in GoDaddy
+- To park multiple domains ~abc.net~, ~abc.info~ to the main domain ~abc.com~
 
 ** GoDaddy
-- Delegate Access
+- Delegate Access <<<godaddy:delegate access>>>
    - Source GoDaddy account ~s@a.ca~ gives limited access to another GoDaddy account ~d@a.ca~
       - Source account > Account Settings > Delegate Access > choose to send to ~b@a.ca~
       - The person clicks an invite in mailbox ~b@a.ca~, then logs on to ~d@a.ca~. Then GoDaddy account ~d@a.ca~ can access GoDaddy account ~s@a.ca~
@@ -61940,7 +61973,7 @@ Help > Default Keymap Reference
 *** Installation and 64 bit
 - Just install the new version and it will guide you to uninstall and keep the settings.
 - For activation, choose License server, address is http://idea.lanyus.com/ 
-   - Used before :: http://idea.qinxi1992.cn/
+   - Used before :: https://www.cnblogs.com/oucbl/p/11664610.html, http://idea.qinxi1992.cn/
    - From 2019.1.2 :: Just ~0.0.0.0 https://account.jetbrains.com:443~ in ~/etc/hosts~ and linux:dns:flush
    - Before :: ~0.0.0.0 account.jetbrains.com~ ~0.0.0.0 www.jetbrains.com~ in ~/etc/hosts~
 - Help > Check for Update > Change setting to don't auto check update
