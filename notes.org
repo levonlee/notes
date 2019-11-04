@@ -50063,34 +50063,24 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 ~dig @ns1.DomainSOA.com x.com axfr~
 
 ** AutoSSL in WHM/cPanel <<<autossl:whm>>>
-WHM and cPanel provides free SSL certificates for VPS and Dedicated server users.
-http://www.inmotionhosting.com/support/edu/whm/creating-and-managing-accounts/using-auto-ssl
-
-It uses SHA256 TLS v1 and expires every 90 days. TLS v1 must be disabled for eCommerce site by June 30, 2018. For non-eCommerce site, it's ok.
-
-AutoSSL requires Domain Control Validation (DCV) - the domain has to have ns or A records point to the server that AutoSSL is generated. Otherwise, it will not do anything, not even creating .well-known folder.
-
-First is to enable AutoSSL for WHM users. AutoSSL will check all root domains under the user account.
-
-If you enable a user and the user has 1 root domain and several addon domains and subdomains, all will have SSL.
-
-AutoSSL will include certificates for www. domains. e.g. www.yourrootdomain.com, www.yoursub.yourrootdomain.com 
-yoursub.yourrootdomain.com was set up by you and you didn't setup www.yoursub.yourrootdomain.com
-
-Use hosting nameservers in domain registrar. Log in WHM as root. Go to Manage AutoSSL.
-- Providers :: cPanel (powered by Comodo)
-- Options :: Check all options.
-  - "Allow AutoSSL to replace invalid or expiring non-AutoSSL certificates" :: enable this to allow AutoSSL to replace certs that the AutoSSL system did not issue e.g. you import purchased cert. Enable this will overwrite the imported cert with AutoSSL certificates.
-- Manage Users :: Enable AutoSSL for relevant users
-- Click on Run AutoSSL for All Users
-- Check Logs
-
-SSL certificates should be now installed.
-
-Check each domain SSL certificate using cPanel. SSL/TLS > Certificates (CRT)
-http://www.inmotionhosting.com/support/website/cpanel/add-delete-autossl-cpanel
-
-A directory .well-known will be created in sub website directory if the parent website directory has AutoSSL
+- WHM and cPanel provides free SSL certificates for VPS and Dedicated server users
+   - http://www.inmotionhosting.com/support/edu/whm/creating-and-managing-accounts/using-auto-ssl
+- It uses SHA256 TLS v1 and expires every 90 days. TLS v1 must be disabled for eCommerce site by June 30, 2018. For non-eCommerce site, it's ok
+- AutoSSL requires Domain Control Validation (DCV) - the domain has to have NS or A records point to the server that AutoSSL is generated. Otherwise, it will not do anything, not even creating ~.well-known~ folder
+- First is to enable AutoSSL for WHM users. AutoSSL will check all root domains under the user account
+- If you enable a user and the user has 1 root domain and several addon domains and subdomains, all will have SSL
+- AutoSSL will include certificates for www. domains. e.g. www.yourrootdomain.com, www.yoursub.yourrootdomain.com
+- yoursub.yourrootdomain.com was set up by you and you didn't setup www.yoursub.yourrootdomain.com
+- Use hosting nameservers in domain registrar. Log in WHM as root. Go to Manage AutoSSL.
+   - Providers :: cPanel (powered by Comodo)
+   - Options :: Check all options.
+   - "Allow AutoSSL to replace invalid or expiring non-AutoSSL certificates" :: enable this to allow AutoSSL to replace certs that the AutoSSL system did not issue e.g. you import purchased cert. Enable this will overwrite the imported cert with AutoSSL certificates.
+   - Manage Users :: Enable AutoSSL for relevant users
+   - Click on Run AutoSSL for All Users
+   - Check Logs
+- SSL certificates should be now installed
+- Check each domain SSL certificate using cPanel. SSL/TLS > Certificates (CRT) :: http://www.inmotionhosting.com/support/website/cpanel/add-delete-autossl-cpanel
+- A directory ~.well-known~ will be created in sub website directory if the parent website directory has AutoSSL
 
 ** Install SSL <<<linux:ssl>>>
 - File .crt :: certificate starts with ~--BEGIN CERTIFICATE--~, file extension can be .pem, .crt
@@ -56150,13 +56140,11 @@ access_log
 - Cron file ~/etc/cron.d/certbot~ :: it runs ~certbot -q renew~ so renewal config file is very important for each domain
 
 *** Challenges
-- http challenge (port 80) :: requires to place a file with specific name and content in your-website-root/.well-known/acme-challenge/ directoy
-
+- http challenge (port 80) :: requires to place a file with specific name and content in ~your-website-root/.well-known/acme-challenge/~ directoy
 - dns (port 53 open on DNS server) :: requires to place a TXT DNS record with specific contents
-  e.g. _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
-
+   - e.g. _acme-challenge.example.com. 300 IN TXT "gfj9Xq...Rg85nM"
 - tls-sni (port 443) :: prepares a self-signed SSL certificate with the challenge validation encoded into a subjectAlternatNames entry. Config your SSL server to present this challenge SSL certificate to the ACME server using SNI.
-  - nginx and apache plugins use this type
+   - nginx and apache plugins use this type
 
 *** certbot nginx apache plugins
 They are authenticator and install plugins. tls-sni-01 challenge
@@ -56246,7 +56234,7 @@ Example usage for HTTP-01:
 #+END_EXAMPLE
 
 authenticator.sh
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC bash
   #!/bin/bash
   dir=/path/to/web-root/.well-known/acme-challenge
   mkdir -p $dir
@@ -56254,12 +56242,12 @@ authenticator.sh
   test -f $filename || touch $filename
   echo $CERTBOT_VALIDATION > $filename
   chown -R www-data:www-data $filename
-#+END_EXAMPLE
+#+END_SRC
 
 cleanup.sh
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   rm -f /var/www/htdocs/.well-known/acme-challenge/$CERTBOT_TOKEN
-#+END_EXAMPLE
+#+END_SRC
 
 Environment vars available to hooks
 - CERTBOT_DOMAIN :: The domain being authenticated
@@ -56574,10 +56562,30 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
 - https://nginxconfig.io
 - https://nginxconfig.io/?domain=myweb.ca&ssl_profile=intermediate&hsts=false&email=ssl@myweb.ca&non_www=false&wordpress
 
+#+BEGIN_SRC nginx
+  server {
+      listen 80;
+      listen [::]:80;
+
+      server_name .myweb.ca;
+
+      include nginxconfig.io/letsencrypt.conf;
+
+      # letsencrypt.conf
+      # location ^~ /.well-known/acme-challenge/ {
+      #    root /var/www/_letsencrypt;
+      # }
+
+      location / {
+	  return 301 https://www.myweb.ca$request_uri;
+      }
+
+  }
+#+END_SRC
+
 #+BEGIN_SRC sh
   nano /etc/nginx/nginx.conf
   nano  /etc/nginx/sites-available/myweb.ca.conf
-  nano /etc/nginx/nginxconfig.io/letsencrypt.conf
   nano /etc/nginx/nginxconfig.io/php_fastcgi.conf
   nano  /etc/nginx/nginxconfig.io/wordpress.conf
   nano  /etc/nginx/nginxconfig.io/general.conf
@@ -64690,6 +64698,18 @@ zimuku (Chinese Add-ons repository)
 
 ** Audio
 *** SoundCloud <<<audio:soundcloud>>>
+- Plan
+   - SoundCloud Basic (Free)
+      - 3h upload time
+   - SoundCloud Pro Unlimited (CAD $15/month)
+      - Unlimited upload time
+      - Scheduled releases
+   - Limit for all plans
+      - single sound file < 4GB and time per track < 6hr45min
+- Migration
+   - Cannot merge accounts
+   - One email address one SoundCloud account
+
 *** LibSyn
 - Public company
 - Features
