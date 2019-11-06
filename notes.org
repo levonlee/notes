@@ -3655,26 +3655,18 @@ For assigning permissions to roles, e.g. enable anonymous for Devel, you have to
 If setting is an array, you have to override the whole array. Can't override a key value.
 
 *** <<<d7:mysql:charset>>>
-Since Drupal 7.50, Drupal now supports 4 byte UTF-8 with MySQL. You will first need to run a custom drush command provided by a [[https://www.drupal.org/project/utf8mb4_convert][utf8mb4_convert module]] to convert all Drupal database, tables and fields to charset ~utf8mb4~ and collation ~utf8mb4_general_ci~. Then change the database connection settings in settings.php
-[[https://www.drupal.org/node/2754539][Drupal Doc]]
-
-The utf8mb4_convert module requires inno_large_prefix=true when MySQL server is bootup.
-Otherwise a test (->utf8mb4IsSupported) can't pass before any actions.
-To bypass the test, re-create any string index columns varchar(255) to varchar(191)
-For example:
-#+BEGIN_SRC sql
-  ALTER TABLE cache_block CHANGE cid cid VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-#+END_SRC
-
-Do this for any problematic column the module returns.
-
-For new website, changing the database connectio settings in settings.php is good enough.
-
-If MySQL server doesn't bootup with inno_large_prefix=true, all indexed columns will have max varchar(191)
-
-As a quick workaround, you can remove all php:4byte characters.
-
-Refer to mysql:charset for important info
+- Since Drupal 7.50, Drupal now supports 4 byte UTF-8 with MySQL. You will first need to run a custom drush command provided by a [[https://www.drupal.org/project/utf8mb4_convert][utf8mb4_convert module]] to convert all Drupal database, tables and fields to charset ~utf8mb4~ and collation ~utf8mb4_general_ci~. Then change the database connection settings in settings.php
+- [[https://www.drupal.org/node/2754539][Drupal Doc]]
+- The utf8mb4_convert module requires ~inno_large_prefix=true~ when MySQL server is bootup, Otherwise a test ~->utf8mb4IsSupported~ can't pass before any actions
+   - To bypass the test, re-create any string index columns ~varchar(255)~ to ~varchar(191)~
+     #+BEGIN_SRC sql
+       ALTER TABLE cache_block CHANGE cid cid VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+     #+END_SRC
+   - Do this for any problematic column the module returns
+- For new website, changing the database connectio settings in settings.php is good enough
+- If MySQL server doesn't bootup with ~inno_large_prefix=true~, all indexed columns will have max ~varchar(191)~
+- As a quick workaround, you can remove all php:4byte characters
+- Refer to mysql:charset for important info
 
 *** Show error <<<d7:show error>>>
 Refer to d7:debug
@@ -5503,7 +5495,7 @@ height => "426"
 **** ~field_data_[field_custom_term_reference]~
 - field_custom_term_referecen_tid :: int
 
-**** field_data_field_mileage_units (list_text)
+**** ~field_data_field_mileage_units~ list_text
 - entity_type *PK* *I-A* :: vchar 128 default '' NOT NULL The entity type this data is attached to
   - node
 - bundle *I-A*:: vchar 128 default '' NOT NULL The field instance bundle to which this row belongs, used when deleting a field instance
@@ -5515,7 +5507,7 @@ height => "426"
 - delta *PK* :: int 10 NOT NULL the sequence number for this data item, used for multi-value fields
 - field_mileage_units_value *I-A* :: vchar 255 NULL
 
-**** field_data_field_contributor (entity reference)
+**** ~field_data_field_contributor~ entity reference
 - field_contributor_target_id :: int
 
 **** taxonomy_term_data
@@ -18317,16 +18309,15 @@ Edge and IE only works for <img> element
 #+END_SRC
 
 *** ~font-display~
-Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs.
-Internet Explorer has 0 timeout and use fallback immediately and swap later if font is available.
-Safari always wait for the font to be downloaded.
-
-font-display :: Not supported in IE, Edge and iOS < 11.4
-- auto :: use user-agent's default. Most user-agents use block
-- block :: After 3 seconds if the font is not loaded use a invisible text and swap to the downloaded font with infinite swap period
-- swap :: browser draws text immediately with a fallback and swap to it after it's loaded.
-- fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
-- optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
+- Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs
+- IE has 0 timeout and use fallback immediately and swap later if font is available
+- Safari always wait for the font to be downloaded
+- font-display :: Not supported in IE, Edge and iOS < 11.4
+   - auto :: use user-agent's default. Most user-agents use block
+   - block :: After 3 seconds if the font is not loaded use a invisible text and swap to the downloaded font with infinite swap period
+   - swap :: browser draws text immediately with a fallback and swap to it after it's loaded.
+   - fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
+   - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
 
 #+BEGIN_SRC css
   @font-face {
@@ -18344,12 +18335,11 @@ font-display :: Not supported in IE, Edge and iOS < 11.4
 #+END_SRC
 
 *** Font Loading API
-https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/webfont-optimization
-https://medium.com/@matuzo/getting-started-with-css-font-loading-e24e7ffaa791
+- https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/webfont-optimization
+- https://medium.com/@matuzo/getting-started-with-css-font-loading-e24e7ffaa791
+- Not supported in IE and Edge
 
-Not supported in IE and Edge
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var font = new FontFace("Awesome Font", "url(/fonts/awesome.woff2)", {
     style: 'normal', unicodeRange: 'U+000-5FF', weight: '400'
   });
@@ -18387,7 +18377,7 @@ Not supported in IE and Edge
   document.fonts.ready.then((fontFaceSet) => {
     console.log(document.fonts.size, 'FontFaces loaded.');
   });
-#+END_EXAMPLE
+#+END_SRC
 
 *** Bootstrap 3
 #+BEGIN_EXAMPLE
@@ -18402,15 +18392,14 @@ Not supported in IE and Edge
   }
 #+END_EXAMPLE
 
-*** Google Font :: ~local()~ ~unicode-range~
+*** Google Font ~local()~ ~unicode-range~
 - Example ~<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">~
-- ~local('Font Name')~ :: if user agent has the font, then the font will not be downloaded
-
+- ~local('Font Name')~ :: if user agent has the font, then the font will not be downloaded <<<css:font-face:local>>>
+   - Refer to html:link:rel:preload:font
 - ~unicode-range~ :: ranges are separated by comma
    - Sigle codepoint :: ~U+416~
    - Interval range :: start and end e.g. ~U+400-4ff~
    - Wildcard range :: ~?~ is any hexadecimal digit e.g. ~U+4??~
-
 - Browser limitation :: benefit of loading variants of the same font
    - Can't make a bold font lighter
    - Can't make an oblique (italic) font "straight"
@@ -22522,8 +22511,8 @@ Method
 |               | with the mouseout event to find the element the cursor just entered              |
 
 **** KeyboardEvent Object
-Keyboard code (KC) - actual key on keyboard (always lowercase)
-Unicode Character code (UCC) - result Unicode character (Shift + w = W, return the character code of W)
+- Keyboard code (KC) :: actual key on keyboard (always lowercase)
+- Unicode Character code (UCC) :: result Unicode character (~Shift + w = W~, return the character code of ~W~)
 
 | altKey   | whether alt is pressed                         |
 | ctrlKey  |                                                |
@@ -22537,8 +22526,7 @@ Unicode Character code (UCC) - result Unicode character (Shift + w = W, return t
 |          | 2 - right (CTRL), 3 - numpad                   |
 |          |                                                |
 
-If you want to return UCC for all events cross all browsers use this:
-var x = event.charCode || event.keyCode;
+- If you want to return UCC for all events cross all browsers use this ~var x = event.charCode || event.keyCode;~
 
 **** HashChangeEvent Object
 newURL :: the URL after the hash has been changed
@@ -25437,11 +25425,11 @@ window.open('tel:+11231231234');
     </script>
   #+END_SRC
 - Preload image :: ~<link rel="preload" as="image" href="logo.jpg"/>~
-- Preload font
+- Preload font :: <<<html:link:rel:preload:font>>>
    - ~<link rel="preload" href="font.woff2" as="font" type="font/woff2" crossorigin>~
    - Font needs ~crossorigin~ even it's on the same origin. ~type~ is also needed
    - All browsers that support preloading also support WOFF2, so ~font/woff2~ is the format that you should preload
-   - preload won't have the ability to ~@font-face local()~, so the font will be always downloaded
+   - preload won't have the ability to css:font-face:local, so the font will be always downloaded
 - Preload video :: html:video:preload
 - If you don't want to preload a resource at page load but want to preload it before it's used
   #+BEGIN_SRC js
@@ -37235,20 +37223,20 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
  ngFor :: refer to ng:pipe
 
  ngSwitch
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC html
    <div [ngSwitch]="hero?.emotion">
      <happy-hero    *ngSwitchCase="'happy'"    [hero]="hero"></happy-hero>
      <sad-hero      *ngSwitchCase="'sad'"      [hero]="hero"></sad-hero>
      <confused-hero *ngSwitchCase="'confused'" [hero]="hero"></confused-hero>
      <unknown-hero  *ngSwitchDefault           [hero]="hero"></unknown-hero>
    </div>
- #+END_EXAMPLE
+ #+END_SRC
 
  Only one structural directive can be applied to one host element
 
  ~<ng-container>~
  This is almost works like ~<template>~
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC html
    <p>
      I turned the corner
      <span *ngIf="hero">
@@ -37256,10 +37244,10 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
      </span>
      and continued on my way.
    </p>
- #+END_EXAMPLE
+ #+END_SRC
 
- In <select>, before we do and dropdown is empty because a browser won't display an <option> within a <span>.
- #+BEGIN_EXAMPLE
+ In ~<select>~, before we do and dropdown is empty because a browser won't display an ~<option>~ within a ~<span>~
+ #+BEGIN_SRC html
    <div>
      Pick your favorite hero
      (<label><input type="checkbox" checked (change)="showSad = !showSad">show sad</label>)
@@ -37271,9 +37259,9 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
        </span>
      </span>
    </select>
- #+END_EXAMPLE
+ #+END_SRC
 
- #+BEGIN_EXAMPLE
+ #+BEGIN_SRC html
    <div>
      Pick your favorite hero
      (<label><input type="checkbox" checked (change)="showSad = !showSad">show sad</label>)
@@ -37285,7 +37273,7 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
        </ng-container>
      </ng-container>
    </select>
- #+END_EXAMPLE
+ #+END_SRC
 
 ***** Attribute directives (builtin) ~ngClass~ ~ngStyle~
 
@@ -43575,6 +43563,13 @@ https://analytics.google.com/analytics/academy/
   - Create 3 views :: All website data, external traffic only, test view
   - For external traffice only view, enable Bot Filtering - Exclude all hits from known bots and spiders
   - Duplicate External Traffic Only view as Test View
+
+** Quantcast
+- AI driven, audience insight from all websites use Quantcast. e.g.
+   - What sites a reader visited
+   - Keywords searched
+   - Purchase habits
+- The database is called Quantcast Intelligence Cloud (QIC) powered by Q engine
 
 ** Google Optimize <<<google:optimize>>>
 - Optimize vs Optimize 360 :: https://www.google.com/analytics/optimize/compare/
@@ -51471,27 +51466,23 @@ ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
 
 *** Load configs
 - Startup config :: ~/etc/mysql/my.cnf~ and any ~.cnf~ files under ~/etc/mysql/conf.d~ 
-Mount host directory to /etc/mysql/conf.d in container using ~-v~ in docker run
-
-Instead of loading custom conf.d directory, tags (--tag-name) can be used adjust the configs
-
-For container that couldn't have more than 128M memory, use innodb-buffer-pool-size to scale it down.
-#+BEGIN_EXAMPLE
-  docker run --name my-mysql-container \
-    -e MYSQL_ROOT_PASSWORD=my-secret-pw \
-    -d mysql:5.7.9 \
-    --character-set-server=utf8mb4 \
-    --collation-server=utf8mb4_unicode_ci
-    --innodb-buffer-pool-size=50M
-#+END_EXAMPLE
-
-In docker-compose.yml
-#+BEGIN_EXAMPLE
-  command:
-    mysqld --innodb-buffer-pool-size=50M
-#+END_EXAMPLE
-
-More mysql:config
+- Mount host directory to ~/etc/mysql/conf.d~ in container using ~-v~ in docker run
+- Instead of loading custom ~conf.d~ directory, tags ~--tag-name~ can be used adjust the configs
+- For container that couldn't have more than 128M memory, use ~innodb-buffer-pool-size~ to scale it down
+  #+BEGIN_SRC sh
+    docker run --name my-mysql-container \
+      -e MYSQL_ROOT_PASSWORD=my-secret-pw \
+      -d mysql:5.7.9 \
+      --character-set-server=utf8mb4 \
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=50M
+  #+END_SRC
+  In docker-compose.yml
+  #+BEGIN_SRC yaml
+    command:
+      mysqld --innodb-buffer-pool-size=50M
+  #+END_SRC
+- More mysql:config
 
 *** Environment vars
 -e :: set environment vars. None of these will have effect if the container is started with a data dir that already contains a db.
@@ -60108,9 +60099,8 @@ All together
 #+END_SRC
 
 *** TS: Unknown collation: utf8mb4_unicode_520_ci <<<mysql:unknown collation>>>
-Error encountered when importing .sql in phpMyAdmin ~#1273 - Unknown collation: 'utf8mb4_unicode_520_ci'~
-
-Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf8mb4_unicode_ci/g' file.sql~
+- Error encountered when importing .sql in phpMyAdmin ~#1273 - Unknown collation: 'utf8mb4_unicode_520_ci'~
+   - Replace collation and upload .sql again :: ~sed -i 's/utf8mb4_unicode_520_ci/utf8mb4_unicode_ci/g' file.sql~
 
 ** MariaDB
 *** Install
@@ -60343,21 +60333,18 @@ and then insert a string at the start position
 #+END_EXAMPLE
 
 *** Export as CSV - BCP <<<mssql:bcp>>>
-bcp.exe is in 
-C:\Program Files\Microsoft SQL Server\90\Tools\Binn\
+- bcp.exe is in ~C:\Program Files\Microsoft SQL Server\90\Tools\Binn\~
+- Options
+  #+BEGIN_SRC sh
+    bcp "Select * from fullDatabasename.dbo.tableName" queryout "c:\aFolder\aFile.csv" -c -t"\",\"" -r"\"\n\"" -T
+  #+END_SRC
+   - c :: Ascii
+   - t :: field terminator. Comma
+   - r :: row terminator. New line ~"\n"~
+   - T :: trusted connection
+- Table name in full :: DEDP225.[dev.todaystrucking].dbo.[tblDocument]
 
-#+BEGIN_EXAMPLE
-  bcp "Select * from fullDatabasename.dbo.tableName" queryout "c:\aFolder\aFile.csv" -c -t"\",\"" -r"\"\n\"" -T
-#+END_EXAMPLE
-
-Table name in full :: DEDP225.[dev.todaystrucking].dbo.[tblDocument]
-
-| c | Ascii                            |
-| t | field terminator. Comma          |
-| r | row terminator. New line :: "\n" |
-| T | trusted connection               |
-
-**** Escape % if bcp is in batch file
+**** Escape ~%~ if bcp is in batch file
 #+BEGIN_EXAMPLE
   bcp "SELECT * FROM aTable WHERE email LIKE '%%@%%.%%'"
 #+END_EXAMPLE
@@ -60396,10 +60383,10 @@ Insert a new line at the end of the header file.
 - Combine 2 files :: ~copy /b c:\header.csv+c:\folder\file.csv c:\export.csv~
 
 *** Export as XML
-By default, it's UTF-8 encoded. datetime will be automatically converted to XML format.
-If value is NULL, the xml node will not be generated.
-By default, MSSQL will add =<CR><LF>= into the Unicode XML data stream every 2033 characters.
-Use bcp with option -r to add no new line.
+- By default, it's UTF-8 encoded. datetime will be automatically converted to XML format
+- If value is NULL, the xml node will not be generated
+- By default, MSSQL will add ~<CR><LF>~ into the Unicode XML data stream every 2033 characters
+- Use mssql:bcp with option -r to add no new line
 
 **** Query
 #+BEGIN_SRC sql
@@ -63463,67 +63450,47 @@ http://emailclientmarketshare.com/
 
 ** Windows
 *** Win Shortcuts
-https://support.microsoft.com/en-ie/help/12445/windows-keyboard-shortcuts
-
-Win + Space : switch input language and keyboard layout
-
-Win + Home : minimize all windows except the active one
-
-Win + Shift + Up : stretch active window to top while maintaining width
-Win + Shift + Left/Right : move active window to next monitor
-
-Win + number : open the app # pinned to the taskbar. If the app is already running, switch to that app
-Win + Shift + number : same as above but open a new instance
-Win + Ctrl + Shift + number : same as above but open a new instance as Administrator 
-Win + Ctrl + number : switch to the last active window of the app pinned to the taskbar
-Win + Alt + number : same as above but open the Jump List
-
-Win + T : cycle through apps on taskbar
-
-Win + , : temp peak at desktop
-
-Win + Pause : display System Properties
-Win + i : open Windows Settings or go back to the current Windows Settings
-
-Win + U : enlarge text on display, enable night light mode
-
-Win + P : presentation (change monitors)
-
-Win + K : Connect to other devices on network
-
-Win + C : Open Cortana in listening mode. Off by default. Start > Settings > Cortana and turn on "Let Cortana listen for my commands when I press the Windows logo key + C"
-
-Ctrl + R vs F5 : refresh
-
-Alt + Left/Right : Go back/forward
-
-Alt + Up : Go up one folder level in File Explorer
-F3 : search in File Explorer
-
-F6 : cycle through screen elements in a window or desktop
-F10 : activate Menu in active app
-
-Alt + Enter : display properties for the selected item (right click menu)
-Alt + Spacebar : open shortcut menu like Close, Maximize, Minimize the active app
-
-Shift + F10 : display shortcut menu for the selected item
-
-Alt + Esc : cycle through apps in the order in which they were opened
-
-Ctrl + F4 vs Alt + F4 : close current document while the latter closes the whole app
-
-Ctrl + D vs Shift + delete : delete and move it to recycle bin vs permanent delete
-
-Ctrl + Y vs Ctrl + Z : Redo and undo
-
-Win + . : display Emoji
-Ctrl + Left/Right : move cursor to the start or end of the next word
-Ctrl + Up/Down : move cursor to the prev/next paragraph
-
-Ctrl + arrow keys : resize Start menu when it's open
-
-Remote Desktop Connection
-- Swtich between host and remote :: ~C-M-Break~ then use ~M-Tab~ as usual to switch between apps on host
+- https://support.microsoft.com/en-ie/help/12445/windows-keyboard-shortcuts
+- Win + Space :: switch input language and keyboard layout
+- Win + Home :: minimize all windows except the active one
+- Win + Shift + Up :: stretch active window to top while maintaining width
+- Win + Shift + Left/Right :: move active window to next monitor
+- App switching
+   - Win + number :: open the app # pinned to the taskbar. If the app is already running, switch to that app
+   - Win + Shift + number :: same as above but open a new instance
+   - Win + Ctrl + Shift + number :: same as above but open a new instance as Administrator 
+   - Win + Ctrl + number :: switch to the last active window of the app pinned to the taskbar
+   - Win + Alt + number :: same as above but open the Jump List
+   - Win + T :: cycle through apps on taskbar
+   - ~Alt + Esc~ :: cycle through apps in the order in which they were opened
+- ~Win + ,~ :: temp peak at desktop
+- ~Win + Pause~ :: display System Properties
+- ~Win + i~ :: open Windows Settings or go back to the current Windows Settings
+- ~Win + U~ :: enlarge text on display, enable night light mode
+- ~Win + P~ : presentation (change monitors)
+- ~Win + K~ :: Connect to other devices on network
+- ~Win + C~ :: Open Cortana in listening mode. Off by default. Start > Settings > Cortana and turn on "Let Cortana listen for my commands when I press the Windows logo key + C"
+- File Explorer
+   - ~Ctrl + R~ vs ~F5~ :: refresh
+   - ~Alt + Left/Right~ :: Go back/forward
+   - ~Alt + Up~ :: Go up one folder level in File Explorer
+   - ~F3~ :: search in File Explorer
+   - ~Alt + Enter~ :: display properties for the selected item (right click menu)
+   - ~Shift + F10~ :: display shortcut menu for the selected item
+   - ~Ctrl + D~ vs ~Shift + delete~ :: delete and move it to recycle bin vs permanent delete
+- Inside a window or app
+   - F6 :: cycle through screen elements in a window or desktop
+   - F10 :: activate Menu in active app
+   - ~Alt + Spacebar~ :: open shortcut menu like Close, Maximize, Minimize the active app
+   - ~Ctrl + F4~ vs ~Alt + F4~ :: close current document while the latter closes the whole app
+   - ~Ctrl + Y~ vs ~Ctrl + Z~ :: Redo and undo
+- Typing
+   - ~Win + .~ :: display Emoji
+   - ~Ctrl + Left/Right~ :: move cursor to the start or end of the next word
+   - ~Ctrl + Up/Down~ :: move cursor to the prev/next paragraph
+- ~Ctrl + arrow keys~ :: resize Start menu when it's open
+- Remote Desktop Connection
+   - Swtich between host and remote :: ~C-M-Break~ then use ~M-Tab~ as usual to switch between apps on host
 
 *** Win 7
 Install KB3138612 and KB3145739 to boost Windows Update
@@ -65244,6 +65211,13 @@ Node.js, Dockerfile
     --data '{"personalizations": [{"to": [{"email": "recipient@example.com"}]}],"from": {"email": "sendeexampexample@example.com"},"subject":"Hello, World!","content": [{"type": "text/plain","value": "Heya!"}], "send_at" : UNIX_TIMESTAMP_HERE}'
 #+END_SRC
 
+*** Dialog Insight
+- HQ in Montreal
+- Clients
+   - Desjardins, L'Occitane, Estée Lauder, Metro, Transat, TD, Cascades, La Presse, CAA, Cossette and Ricardo Media
+- Web Services, API
+   - API log :: https://app.dialoginsight.com/WebServices/
+
 *** DMARC, SPF, DKIM <<<dns:dmarc>>>
 - DMARC :: Domain-based Message Authentication, Reporting, and Conformance
 - DMARC serves as a method of authentication for your brand, alongside Sender Policy Framework (SPF) and DomainKeys Identified Mail (DKIM)
@@ -65855,6 +65829,21 @@ Shades
 Only different in brightness.
 
 Use Mobile App: Adobe Capture to capture colors.
+
+** Digital Edition
+*** Issuu
+*** Pugpig
+- Clients
+   - GQ, Scientific America, The Economist, The Sun
+
+** Publication Production
+*** ppi Media
+- Clients
+   - New York Times
+*** AdFlow Systems GmbH
+- German
+- Clients
+   - Montreal newspapers
 
 ** HR
 - Use Radar chart or spider chart to compare candidates
