@@ -2644,57 +2644,48 @@ Device tect, browser detect :: [[https://github.com/serbanghita/Mobile-Detect][G
 https://www.drupal.org/node/970492
 
 ** Update Core
-pantheon:drupal:core
+- pantheon:drupal:core
+- For Windows, you may need to stop and do the file changes and then start again. Restart IIS
+  #+BEGIN_SRC sh
+    iisreset -stop
+    iisreset -start
 
-For Windows, you may need to stop and do the file changes and then start again. Restart IIS
-#+BEGIN_SRC sh
-  iisreset -stop
-  iisreset -start
-
-  # this stops and starts
-  iisreset
-#+END_SRC
-
-https://www.drupal.org/docs/7/updating-your-drupal-site/how-to-update-drupal-core
-Summary
-- Make backup
-- Download and Extract
-- Set website on maintenance mode
-- Delete all files and folders 
-  - don't delete folder ~/sites~ 
-  - delete folders ~/profiles/minimal~ ~/profiles/standard~ ~/profiles/testing~
-  - delete folders ~/includes~ ~/misc~ ~/modules~ ~/scripts~ ~/themes~
-  - reapply ~.htaccess~ ~robots.txt~ ~web.config~ ~settings.php~
-  - reapply any modified files and folders
-- Some updates don't include settings.php. If it includes, replace the old one in /sites/default/ with the new one and apply your previous changes
-- replace favicon.ico
-- Login as user 1 and run update.php
-
-- If you are unable to access update.php do the following: (allow update.php to be run when not logged in as admin)
-  - Open settings.php with a text editor.
-  - Find the line that says: ~$update_free_access = FALSE;~ Change it into: ~$update_free_access = TRUE;~
-  - Try again to run update.php.
-  - Once the update is done, $update_free_access must be reverted to FALSE.
-  - In a multi-site installation, run update.php again for each site.
-
-- Navigate to Administration > Configuration > Development > Performance and clear all cache
-- Admin > Reports > Status to Verify everything is working as expected.
-- Ensure that $update_free_access is FALSE in settings.php.
-- Disable maintenance mode
-
-https://www.drupal.org/project/module_missing_message_fixer to overcome these errors
-
-#+BEGIN_EXAMPLE
-  The following module is missing from the file system: MODULE NAME. In order to fix this, put the module back in its original location. For more information, see the documentation page.
-#+END_EXAMPLE
-
-Or
-
-#+BEGIN_EXAMPLE
-  User warning: The following module is missing from the file system: MODULE NAME. In order to fix this, put the module back in its original location. For more information, see the the documentation page. in _drupal_trigger_error_with_delayed_logging()
-#+END_EXAMPLE
-
-In order to check available updates for core and modules, module Update Manager needs to be enabled.
+    # this stops and starts
+    iisreset
+  #+END_SRC
+- https://www.drupal.org/docs/7/updating-your-drupal-site/how-to-update-drupal-core
+- Summary
+   - Make backup
+   - Download and Extract
+   - Set website on maintenance mode
+   - Delete all files and folders 
+      - don't delete folder ~/sites~ 
+      - delete folders ~/profiles/minimal~ ~/profiles/standard~ ~/profiles/testing~
+      - delete folders ~/includes~ ~/misc~ ~/modules~ ~/scripts~ ~/themes~
+      - reapply ~.htaccess~ ~robots.txt~ ~web.config~ ~settings.php~
+      - reapply any modified files and folders
+   - Some updates don't include settings.php. If it includes, replace the old one in /sites/default/ with the new one and apply your previous changes
+   - replace favicon.ico
+   - Login as user 1 and run update.php
+   - If you are unable to access update.php do the following: (allow update.php to be run when not logged in as admin)
+      - Open settings.php with a text editor.
+      - Find the line that says: ~$update_free_access = FALSE;~ Change it into: ~$update_free_access = TRUE;~
+      - Try again to run update.php.
+      - Once the update is done, $update_free_access must be reverted to FALSE.
+      - In a multi-site installation, run update.php again for each site.
+   - Navigate to Administration > Configuration > Development > Performance and clear all cache
+   - Admin > Reports > Status to Verify everything is working as expected.
+   - Ensure that $update_free_access is FALSE in settings.php.
+   - Disable maintenance mode
+- https://www.drupal.org/project/module_missing_message_fixer to overcome these errors
+  #+BEGIN_EXAMPLE
+    The following module is missing from the file system: MODULE NAME. In order to fix this, put the module back in its original location. For more information, see the documentation page.
+  #+END_EXAMPLE
+  Or
+  #+BEGIN_EXAMPLE
+    User warning: The following module is missing from the file system: MODULE NAME. In order to fix this, put the module back in its original location. For more information, see the the documentation page. in _drupal_trigger_error_with_delayed_logging()
+  #+END_EXAMPLE
+- In order to check available updates for core and modules, module Update Manager needs to be enabled
 
 *** 7.x
 Legend
@@ -54723,15 +54714,11 @@ Convert the Identityfile to .ppk with SSH-2-RSA with 2048 bits and save it to th
 Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ in Ubuntu
 
 ** Config loading <<<apache:config>>>
-apt-get update; apt-get install apache2
-
-Refer to apache:config:main file
-
-Refer to image:php:apache to get configs
-
-Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for HTTPD_ROOT and SERVER_CONFIG_FILE
-
-Show parsed vhost settings and run settings :: ~apache2ctl -S~
+- ~apt-get update; apt-get install apache2~
+- Refer to apache:config:main file
+- Refer to image:php:apache to get configs
+- Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for ~HTTPD_ROOT~ and ~SERVER_CONFIG_FILE~
+- Show parsed vhost settings and run settings :: ~apache2ctl -S~
 
 #+BEGIN_SRC apache
   VirtualHost configuration:
@@ -54754,10 +54741,9 @@ Show parsed vhost settings and run settings :: ~apache2ctl -S~
 #+END_SRC
 
 *** Loaded Modules
-Show all loaded modules :: ~apache2ctl -M~
-Sample loaded modules from image:php:apache
-
-You can also ~ls -al /etc/apache2/mods-enabled~
+- Show all loaded modules :: ~apache2ctl -M~
+- Sample loaded modules from image:php:apache
+- You can also ~ls -al /etc/apache2/mods-enabled~
 
 autoindex deflate expires filter mime rewrite setenvif mpm_prefork 
 
@@ -54840,17 +54826,20 @@ Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache s
 ~apache2ctl restart~ or ~service apache2 restart~ or ~/etc/init.d/apache2 restart~ or ~service httpd restart~
 
 ** Modules
-Available modules /etc/apache2/mods-available
-Enabled modules   /etc/apache2/mods-enabled
+- Available modules :: ~/etc/apache2/mods-available~
+- Enabled modules :: ~/etc/apache2/mods-enabled~
+- Terms used to describe modules
+   - Status
+      - Base :: they're compiled and loaded into the server by default
 
 Command line enable modules
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   a2enmod remoteip
   # some modules need to load config. If don't specify, then the following modules don't need a3enconf
 
   a2enconf remoteip
   # apache:restart
-#+END_EXAMPLE
+#+END_SRC
 
 *** remoteip
 https://github.com/wichon/docker-php-maxmind-geoip/blob/master/Dockerfile
@@ -55140,17 +55129,17 @@ Redirect www.abc.com to abc.com
 
 *** mod_autoindex
 If the URI matches a directory but doesn't specify an index file e.g. index.html, by default Apache returns the index of that directory. Don't do that!
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <IfModule mod_autoindex.c>
       Options -Indexes
   </IfModule>
-#+END_EXAMPLE
+#+END_SRC
 
 *** mod_mime
 **** AddType TypesConfig <<<apache:mod_mime:addtype>>>
-Context: all
+- Context: all
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   AddType media-type extension [extension] ...
 
   AddType image/webp .webp
@@ -55158,7 +55147,7 @@ Context: all
   AddType font/woff2 woff2
 
   AddType image/jpeg jpeg jpg jpe
-#+END_EXAMPLE
+#+END_SRC
 
 /etc/apache2/mods-available/mime.conf loads MIME types using TypesConfig /etc/mime.types
 
@@ -55169,11 +55158,20 @@ Context: all
 **** AddEncoding
 AddEncoding encoding extension [extension] ...
 extension may or may not have leading dot. This doesn't encode the file but rather sets the response header Content-Type. See apache:mod_filter:addoutputfilterbytype
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <IfModule mod_mime.c>
     AddEncoding gzip svgz
   </IfModule>
-#+END_EXAMPLE
+#+END_SRC
+
+*** mod_dir
+**** DirectoryIndex
+#+BEGIN_SRC apache
+  DirectoryIndex index.html index.txt  /cgi-bin/index.pl
+
+  # http://example.com/docs/index.html
+  # could cause the CGI script /cgi-bin/index.pl to be executed if neither index.html or index.txt existed in a directory.
+#+END_SRC
 
 *** mod_filter
 **** AddOutputFilterByType <<<apache:mod_filter:addoutputfilterbytype>>>
@@ -55197,25 +55195,23 @@ https://httpd.apache.org/docs/2.4/mod/mod_alias.html
 **** Redirect <<<apache:mode_alias:Redirect>>>
 
 ** Directive Context <<<apache:directive context>>>
-server config ::This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers. It is not allowed in .htaccess files at all.
-
-virtual host :: This context means that the directive may appear inside <VirtualHost> containers in the server configuration files.
-
-directory :: A directive marked as being valid in this context may be used inside <Directory>, <Location>, <Files>, <If>, and <Proxy> containers in the server configuration files, subject to the restrictions outlined in Configuration Sections.
-
-.htaccess :: If a directive is valid in this context, it means that it can appear inside per-directory .htaccess files. It may not be processed, though depending upon the overrides currently active.
+- server config :: This means that the directive may be used in the server configuration files (e.g., httpd.conf), but not within any <VirtualHost> or <Directory> containers
+   - Not allowed in .htaccess files at all.
+- virtual host :: This context means that the directive may appear inside <VirtualHost> containers in the server configuration files
+- directory :: A directive marked as being valid in this context may be used inside <Directory>, <Location>, <Files>, <If>, and <Proxy> containers in the server configuration files, subject to the restrictions outlined in Configuration Sections.
+- ~.htaccess~ :: If a directive is valid in this context, it means that it can appear inside per-directory .htaccess files. It may not be processed, though depending upon the overrides currently active.
 
 ** Core Directives
 These can be used in all apache:directive context. However, some directive setting needs to happen in a different context.
 https://httpd.apache.org/docs/2.4/mod/core.html
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   ErrorDocument 404 /404.html
 
   # This setting prevents Apache from returning a 404 error as the result
   # of a rewrite when the directory with the same name does not exist.
   Options -MultiViews
-#+END_EXAMPLE
+#+END_SRC
 
 *** AllowOverride <<<apache:core:allowoverride>>>
 AllowOverride All|None|directive-type [directive-type] ...
