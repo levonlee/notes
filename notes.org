@@ -43561,13 +43561,6 @@ https://analytics.google.com/analytics/academy/
   - For external traffice only view, enable Bot Filtering - Exclude all hits from known bots and spiders
   - Duplicate External Traffic Only view as Test View
 
-** Quantcast
-- AI driven, audience insight from all websites use Quantcast. e.g.
-   - What sites a reader visited
-   - Keywords searched
-   - Purchase habits
-- The database is called Quantcast Intelligence Cloud (QIC) powered by Q engine
-
 ** Google Optimize <<<google:optimize>>>
 - Optimize vs Optimize 360 :: https://www.google.com/analytics/optimize/compare/
    - Free version can only have one container in one account (container is like property in GA). Container ID is like ~GTM-XXXXX~
@@ -44673,7 +44666,16 @@ Create Custom Dimension ~Page Terms~, hit type Hit. Say Index number is 1
    - google:optimize
    - google:surveys
    - google:gtm
-   - Enterprise
+   - Enterprise includes 2 other DSP products
+      - DSP :: Demand Side Platform provides advertisers features for buying ad placements online in real time
+	 - Audience targeting
+	 - Advertiser Campaign Management products that can manage ads across display, mobile, social, search and video advertising channels
+	 - Integrate with ad exchanges which serve as a marketplace for ad inventory
+	 - On the Publisher side, it's Supply Side Platform (SSP) :: publishers use SSPs to sell ad inventory in ad exchanges
+	    - Such as google:gam
+	 - Some DSPs can integrate directly with SSPs to foster direct buys
+      - ATD :: Adgency Trading Desk
+	 - Bigger than DSP :: ATDs hire software developers, account managers and data analysts who work for the agency's advertising clients. ATDs can use multiple DSPs. Advertisers using the services of an ATD don't get direct access to the available media inventory
       - Display & Video 360
       - Search Ads 360
 
@@ -44770,13 +44772,12 @@ Retargeting:
 - people have been on a competitor site
 
 ** Competitive Marketing
-https://www.wordstream.com/blog/ws/2016/05/16/competitive-advertising
-
-- Using Facebook Ad, you can target people with interests in our competitor’s company name
-- Use YouTube campaigns, you can target people with searches for our competitor’s videos on YouTube
-- Use Gmail campaigns, you can target people with interests in our competitor’s company name and its products. E.g. target people who are interested in Sephora
-- Use Display campaigns, you can target people with visits to AND interests in a specific domain. This is new but it is different from remarketing audience. But it’s powerful enough!
-- Use Twitter Ads, you can download a competitor’s followers and setup Twitter Ads to target those followers.
+- https://www.wordstream.com/blog/ws/2016/05/16/competitive-advertising
+   - Using Facebook Ad, you can target people with interests in our competitor’s company name
+   - Use YouTube campaigns, you can target people with searches for our competitor’s videos on YouTube
+   - Use Gmail campaigns, you can target people with interests in our competitor’s company name and its products. E.g. target people who are interested in Sephora
+   - Use Display campaigns, you can target people with visits to AND interests in a specific domain. This is new but it is different from remarketing audience. But it’s powerful enough!
+   - Use Twitter Ads, you can download a competitor’s followers and setup Twitter Ads to target those followers.
 
 ** Optimize Images
 https://moz.com/ugc/10-tips-for-optimizing-your-images-for-search
@@ -45157,14 +45158,6 @@ More specific types e.g. Article,  Blog, Book, Comment, Game, Map, Movie, Websit
 	 - Validate XML
    - Assign Labels to Source
       - Create sections for a Source
-
-** Market Research
-https://www.comscore.com/
-30M Canadian Digital Audience, 11M Tablet, 18M Smartphone, 28M Desktop - 2017
-Computer usage peaks at 7-8AM and all devices usage peak at 5-8PM - 2017
-Mobile app usage is 86% compared to Mobile Web is 16% - 2017
-Total time spent for all internet across devices: Desktop:38%, Smartphone App:38%
-Total time spent for social media acrss devices: Desktop:21%, Smartphone App:50%
 
 ** Privacy Policy
 https://www.digitalocean.com/legal/privacy/
@@ -56735,12 +56728,12 @@ Add user agent. This only works for cURL GET request.
 #+END_EXAMPLE
 
 To see any requests that violate which rules in which .conf file, tail the apache log
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   tail -f /usr/local/apache/logs/error_log | grep ModSecurity | grep my-host-url.com
 
-  // to see which .conf files are loaded by the module, InMotion hosting
+  # to see which .conf files are loaded by the module, InMotion hosting
   cat /usr/local/apache/conf/modsec2.user.conf
-#+END_EXAMPLE
+#+END_SRC
 
 * Git
 ** Show config
@@ -58788,7 +58781,39 @@ Copy from remote to local <<<aws:scp>>>
 If port is not 22, it has to be specified ~-P 2222~.
 If the default private key doesn't work, use =-i ~/.ssh/your_private_key_file=
 
-** Amazon Linux AMI
+** EC2 <<<aws:ec2>>>
+- Pricing
+   - On-Demand
+      - Linux stances are charged by second while other instances are charged by a full hour
+   - Spot instances
+   - Reserved instances
+   - Burstable Performance Instances vs Fixed Performance Instances
+      - BPI
+	 - One CPU credit is equal to one vCPU running at 100% utilization for one minute
+	    - When actual vCPU usage is above baseline CPU usage in any period, CPU credit is used otherwise it is earned
+	    - An instance can hold a max of CPU Credits in 24-hour period
+	       - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-credits-baseline-concepts.html
+	    - When credits are used up, the instance cannot be bursted. Use Unlimited mode for bursting instances without credit limit
+	       - Use aws:trusted advisor to check if instance limit is reached
+	 - T3, T2
+      - FPI
+	 - M5, C5, R5
+   - Unlimited mode for Burstable Performance Instances
+      - Can by toggled at any time for a running or stopped instance
+      - T3 and T3a instances are launched as unlimited by default. T2 are launched as standard by default
+      - Average vCPU usage is above baseline CPU usage in any 24-hour period, a flat additional rate per vCPU-hour is applied
+	 - $0.05 per vCPU-Hour for Linux, RHEL and SLES
+	 - $0.096 per vCPU-Hour for Windows and Windows with SQL Web
+	 - This flat rate is the same for all instance sizes, for On-Demand and Reserved instances and across all regions
+- Instance types
+   - https://aws.amazon.com/ec2/instance-types/
+   - T3 :: Third generation. low cost burstable general-purpose. Designed for apps with moderate CPU usage that experience temp spikes in use
+   - T2 :: Second generation
+- Region and Availability Zone (AZ)
+   - Each region is independent. Region has AZ's. Each AZ is isolated but the AZ in a Region are connected through low-latency links
+
+*** Amazon Linux AMI
+- Linux image for use on EC2. Compatible in all EC2 instance types
 - Image T2 micro
    #+BEGIN_SRC sh
      yum install php-mysql php-devel
@@ -58811,8 +58836,42 @@ If the default private key doesn't work, use =-i ~/.ssh/your_private_key_file=
    - Restart MySQL :: ~service mysqld restart~
 
 *** Update an instance
-Simply create a screen session and run ~sudo yum update~ and 'y'
-Reboot the instance.
+Simply create a screen session and run ~sudo yum update~ and 'y'. Reboot the instance.
+
+** RDS - Relational Database Service <<<aws:rds>>>
+- Instance type
+   - https://aws.amazon.com/rds/instance-types/
+   - Standard instances
+      - db.t3.x
+      - db.t2.x
+      - db.m5.x
+      - db.m4.x
+   - Memory Optimized instances
+      - db.r5.x
+      - db.r4.x
+      - db.x1e.x
+      - db.x1.x
+      - db.z1d.x
+- Db storage options
+   - aws:ebs
+      - General SSD
+      - Provisioned IOPS SSD
+      - Magnetic
+   - Aurora
+      - MySQL and PostgreSQL- compatible db that is 5 times faster than standard MySQL
+      - Distributed, fault-tolerant, self-healing that auto-scales up to 64TB per db instance
+	 - point-in-time recovery
+	 - continuous backup to S3
+	 - replication across 3 Availability Zones
+
+** EBS - Elastic Block Store <<<aws:ebs>>>
+- Volume types
+   - General Purpose SSD
+      - db
+   - Provisioned IOPS SSD
+      - low-latency for I/O intensive db workloads
+   - Magnetic
+      - low cost per gigabyte for backwards compatibility
 
 ** ACM Certificate Manager <<<aws:acm>>>
 - Request a certificate :: e.g. for ~media.a.com~
@@ -58888,6 +58947,15 @@ STANDARD:
 STANDARD_IA (infrequent class): Retrieval fee. Real-time retrieval. Good for larger objects (>128kb).
 GLACIER: Retrieval fee. Retrieval time is hours.
 REDUCED_REDUNDANCY: less durability and availability. Best for storing thumbnail images.
+
+** Trusted Advisor <<<aws:trusted advisor>>>
+- Real time guidance to help provision AWS resources
+- Checks
+   - Cost Optimization
+   - Performance
+   - Security
+   - Fault Tolerance
+   - Service Limits
 
 ** CodePipeline <<<aws:codepipeline>>>
 * Database
@@ -64651,6 +64719,27 @@ Then go back to UI, Capture > Screen recording
 - Migration
    - Looks like there's no way to migrate a sub account (its videos, playlists, players, stats) to another master account
 
+*** Telaria
+- Video Management Platform (VMP)
+   - Video advertising
+- Outstream :: previously called SlimCut
+   - Features :: https://outstream.telaria.com/
+      - Formats
+	 - Carousel, Image + Copy, Vertical Video, Outstream, Video + Copy, Leave Behind, Footer Banner
+   - Cost
+      - Direct sales on desktop/tablet
+	 - CAD $2.5 CPM on the first 4M impressions monthly
+	 - CAD $1.5 CPM in between 4M and 15M impressions monthly
+	 - CAD $1 CPM for over 15M impressions monthly
+      - Direct sales on mobile
+	 - Addtional CAD $0.5 CPM added on top of desktop/tablet
+      - Third party tags on desktop/tablet
+	 - CAD $2.5 CPM on the first 4M imp monthly
+	 - CAD $1.5 CPM in between 4M and 15M imp monthly
+	 - CAD $1 CPM for over 15M imp monthly
+      - Third party tags on mobile
+	 - Addtional CAD $0.5 CPM added on top of desktop/tablet
+
 *** YouTube Download
 http://www.clipconverter.cc
 
@@ -65429,6 +65518,7 @@ https://developer.moneris.com/More/Testing/Penny%20Value%20Simulator
 - MasterCard :: 5454545454545454
 
 ** Market Research <<<market research:firm>>>
+- Refer to market research:service
 - Forrester
 - Gartner
 - https://vividata.ca/
@@ -65878,7 +65968,8 @@ Use Mobile App: Adobe Capture to capture colors.
 - Clients
    - Montreal newspapers
 
-*** Market research
+*** Market research <<<market research:service>>>
+- Refer to market research:firm
 - Cision
    - Earned media management software and services
       - Distribute content: print, radio, television, web and social media
@@ -65887,6 +65978,18 @@ Use Mobile App: Adobe Capture to capture colors.
       - Digital media monitoring and analytics
 	 - Target key influencer
 	 - Measure impacts
+- ComScore :: https://www.comscore.com/
+   - 30M Canadian Digital Audience, 11M Tablet, 18M Smartphone, 28M Desktop - 2017
+   - Computer usage peaks at 7-8AM and all devices usage peak at 5-8PM - 2017
+   - Mobile app usage is 86% compared to Mobile Web is 16% - 2017
+   - Total time spent for all internet across devices: Desktop:38%, Smartphone App:38%
+   - Total time spent for social media acrss devices: Desktop:21%, Smartphone App:50%
+- Quantcast
+   - AI driven, audience insight from all websites use Quantcast. e.g.
+      - What sites a reader visited
+      - Keywords searched
+      - Purchase habits
+   - The database is called Quantcast Intelligence Cloud (QIC) powered by Q engine
 
 ** HR
 - Use Radar chart or spider chart to compare candidates
