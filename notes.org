@@ -47724,28 +47724,22 @@ Install Source Code Pro
   sudo fc-cache -fv
 #+END_SRC
 
-** Timezone, NTP
-<<<linux:timezone>>>
-Set timezone first ~sudo dpkg-reconfigure tzdata~
-
-Make sure Network Time Protocol daemon (NTP) is installed ~which ntpd~
-Install ~sudo apt-get update~ ~sudo apt-get install ntp~
-Do a sync 
-~sudo service ntp stop~ 
-~sudo ntpd -gq~
-~sudo service ntp start~
-
-Port 123 has to be open (but I think the default ufw setting is ok)
-
-For Debian/Ubuntu, /etc/timezone file stores the timezone. Default :: Etc/UTC
-
-All timezones are stored in /usr/share/zoneinfo/$TZ
-
-For Toronto, it's /usr/share/zoneinfo/America/Toronto file but it's a link to Montreal file.
-
-Make this link to /etc/localtime and then change the timezone
-
-Refer to docker:timezone
+** Timezone, NTP <<<linux:timezone>>>
+- Set timezone first :: ~sudo dpkg-reconfigure tzdata~
+- Make sure Network Time Protocol daemon (NTP) is installed ~which ntpd~
+   - Install ~sudo apt-get update~ ~sudo apt-get install ntp~
+   - Do a sync
+     #+BEGIN_SRC sh
+       sudo service ntp stop
+       sudo ntpd -gq
+       sudo service ntp start
+     #+END_SRC
+- Port 123 has to be open (but I think the default ufw setting is ok)
+- For Debian/Ubuntu, ~/etc/timezone~ file stores the timezone. Default is ~Etc/UTC~
+- All timezones are stored in ~/usr/share/zoneinfo/$TZ~
+- For Toronto, it's ~/usr/share/zoneinfo/America/Toronto~ file but it's a link to Montreal file
+- Make this link to ~/etc/localtime~ and then change the timezone
+- Refer to docker:timezone
 
 ** Hardware
 PCI devices: =lspci=
@@ -64138,7 +64132,7 @@ Put Reflexil AIO dll to Reflector's Addins folder C:\Program Files (x86)\Red Gat
 
 After edit, right click on the Object Browser > Reflexil > Save as
 
-** Jira, YouTrack
+** Project Management
 *** Jira
 **** Agile
 Project manager's meeting responsibilities
@@ -64298,7 +64292,11 @@ Reports: Control Chart, Cumulative Flow Diagram
    - 300-400+: $0.83
 - Buy more users for more storage: 1 user = 1 gb
 
-**** Default field
+**** Project
+- An issue can only have 1 project
+   - Try to link another issue in other project. Another issue needs to be created in the other project
+
+**** Default fields
 ***** State
 - Settings > Custom Fields Settings > Fields List > State
    - See which values are considered as Resolved, others are Unresolved
@@ -64313,6 +64311,25 @@ Reports: Control Chart, Cumulative Flow Diagram
    - ~Assignee: li , tom~ :: include Li and Tom
    - ~Assignee: -li~ :: exclude Li
    - ~Assignee: -li , -tom~ :: exclude Li and Tom
+   - ~Assignee: me, Unassigned~ :: me or unassigned
+
+***** Spent Time
+- Require Time Tracking is enabled in project
+- Search
+   - ~Spent time: 1h .. 2h~
+   - ~Spent time: 8h1m .. *~ or ~Spent time: 8h .. * , - 8h~ :: greater than 1 day
+   - ~Spent time: ?~ :: empty value
+
+**** Attribute-based Search
+- https://www.jetbrains.com/help/youtrack/incloud/attribute-based-search.html
+- Check default fields for individual search query
+- ~project~
+   - ~project: {Ad Ops}~
+   - ~project: {Ad Ops} , Project-2~
+- ~created~
+   - ~created: 2018-03-10 .. 2018-03-13~ :: from a date to another date
+   - ~created: * .. 2018-03-10~ :: on or before a date
+   - ~created: 2019-01-01 .. *~ :: on or after a date
 
 **** Reports
 - Time Report :: https://www.jetbrains.com/help/youtrack/standalone/Time-Report.html
@@ -64330,6 +64347,12 @@ Reports: Control Chart, Cumulative Flow Diagram
    - Per
       - e.g. per user (work author), issue or work item
 - Issues per project
+   - Useful reports
+      - Spent time percentage by project
+	 - Projects :: include relevant projects
+	 - Issue filter :: ~created: 2018-11-01 .. *~
+	 - Presentation :: Pie chart
+	 - Show totals for :: Spent time
 
 **** Mailbox Integration
 - Filter messages by patterns
@@ -66112,23 +66135,26 @@ TeamViewer.exe、TeamViewer_Service.exe、TeamViewer_Desktop.exe
 http://www.zdfans.com/6351.html
 
 ** Font
-- WOFF :: supported in Edge and modern browsers. For web, always include WOFF (Web Open Font Format), then TTF then OTF. WOFF is good for SEO
+- WOFF :: supported in Edge and modern browsers. For web, always include WOFF (Web Open Font Format) > TTF > OTF
+   - It's good for SEO
+   - It has TrueType Hinting and OpenType Features
 - EOT :: IE 11 and less
 - OTF or TTF :: For local computers, install OTF (OpenType Font) over TTF (TrueType Font)
-  - OTF is newer and based on TTF but it's much smaller
-  - TTF rendered in different devices has non-equal pixels
+   - OTF is newer and based on TTF but it's much smaller
+      - OpenType Features
+	 - https://helpx.adobe.com/fonts/using/use-open-type-features.html
+	 - CSS syntax :: https://helpx.adobe.com/fonts/using/open-type-syntax.html
+   - TTF rendered in different devices has non-equal pixels
+      - TrueType Hinting :: Adobe Fonts and Adobe Edge Web Fonts provides it for better rastering on pixel-based digital device
 - Refer to css:font-face
 
 *** Abbreviations Foundary
-https://www.extensis.com/blog/fonts/abbreviations-font-names/
+- https://www.extensis.com/blog/fonts/abbreviations-font-names/
+- Foundry name :: usually in the form of one or two letters at the beginning or end of the name (LT, MT, A, BT, FB, URW). “Foundries” are the companies that create fonts, a term going back to the days of metal type
+- Language designation :: comes at the end of a name (Cyr, Grk, CE). Generally this only applies to older fonts where a separate font was issued for different languages. In most cases, newer fonts put all the languages in a single font
+- Font size as intended in print :: (Text, Display, Poster/Caption, Small Text, Regular, Subhead, Display)
 
-Foundry name: usually in the form of one or two letters at the beginning or end of the name (LT, MT, A, BT, FB, URW). “Foundries” are the companies that create fonts, a term going back to the days of metal type.
-
-Language designation: comes at the end of a name (Cyr, Grk, CE). Generally this only applies to older fonts where a separate font was issued for different languages. In most cases, newer fonts put all the languages in a single font.
-
-Font size as intended in print: (Text, Display, Poster/Caption, Small Text, Regular, Subhead, Display).
-
-*** Not a valid font file Windows
+*** TS: Not a valid font file Windows
 Turn off firewall or try font converter to convert the font and then install
 
 *** Line height
@@ -66177,37 +66203,75 @@ p {
     line-height: calc(((var(--line-height) * var(--capital-height)) - var(--valign)) * 1px);
 }
 
+*** Open source alternative, identify font
+- http://alternatype.net/
+- Identify font :: https://www.whatfontis.com/
+
 *** [[https://docs.microsoft.com/en-us/typography/font-list/][Windows Font List]]
 *** [[http://iosfonts.com/][iOS Font List]]
-*** FontForge
-http://fontforge.github.io/en-US/
 
-Element > Font Info > General to get Em Size
+*** Extensis
+https://www.extensis.com/support Download Universal Type Client (6.1.5) not Universal Type Server 6 Core Client
+*** Adobe Fonts former Adobe TypeKit (AF)
+- https://fonts.adobe.com/about
+- Pricing
+   - Complete library of fonts is included with
+      - Creative Cloud All Apps subscription
+      - Creative Cloud any single-application subscription
+      - Each seat of a Creative Cloud team subscription
+      - the Photography Plan
+   - Some or full font library is included in some educational licensing programs
+- Font Pack
+   - Showcase a group of fonts, then you can select individual font to fav, add, activate
+- Activate a font to use on desktop apps with a sub plan
+- Web project
+   - No limits on pageviews and domains for any web projects
+   - Character set or subset
+      - Default :: English, French, German, Italian, Portuguese and Spanish
+      - All Characters
+      - Dynamic Subsetting :: required for East Asian web font
 
-Element > Font Info > OS/2 to get 
+*** Adobe Edge Web Fonts (AEWF)
+- https://edgewebfonts.adobe.com/
+   - Free!
+- Adobe contributes to Google Fonts as well :: Source Sans Pro and Source Code Pro
 
-- Win Ascent, Win Descent for Windows
-- H Head Ascent, H Head Descent for Mac OS
-- Capital Height
-- X Height
-- Typo Line Gap and H Head Line Gap
-
-*** Social Media Icons wp:plugin:simple-social-icons
 *** Google Font (GF)
 - Can be downloaded and installed on Desktop as .ttf and for website .woff or .woff2
 - Multiple fonts :: ~https://fonts.googleapis.com/css?family=Tangerine|Inconsolata|Droid+Sans~
 - Multiple styles/wegihts (,) :: ~https://fonts.googleapis.com/css?family=Tangerine:bold,bolditalic|Inconsolata:italic|Droid+Sans~
 - ~http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic~
-
-Subset / scripts, Latin subset is always included if available and need not be specified
-#+BEGIN_SRC html
-  <link rel="stylesheet"
-	href="https://fonts.googleapis.com/css?family=Roboto+Mono&subset=greek">
-#+END_SRC
-
+- Subset / scripts, Latin subset is always included if available and need not be specified
+  #+BEGIN_SRC html
+    <link rel="stylesheet"
+	  href="https://fonts.googleapis.com/css?family=Roboto+Mono&subset=greek">
+  #+END_SRC
 - text with url encoded value :: ~https://fonts.googleapis.com/css?family=Inconsolata&text=Hello%20World~
 - Font [[https://developers.google.com/fonts/docs/getting_started#enabling_font_effects_beta][effect]] :: ~https://fonts.googleapis.com/css?family=Rancho&effect=shadow-multiple~
   - ~font-effect-~ class prefix :: ~<div class="font-effect-shadow-multiple">This is a font effect!<div>~
+
+*** FontForge
+- http://fontforge.github.io/en-US/
+- Element > Font Info > General to get Em Size
+- Element > Font Info > OS/2 to get 
+   - Win Ascent, Win Descent for Windows
+   - H Head Ascent, H Head Descent for Mac OS
+   - Capital Height
+   - X Height
+   - Typo Line Gap and H Head Line Gap
+
+*** Social Media Icons wp:plugin:simple-social-icons
+
+*** Monospace
+- https://medium.com/@caulfieldOwen/programming-fonts-a-visual-guide-567fc210d2c6
+
+**** Monoid
+https://github.com/JB-Dmitry/monoid
+
+**** Hasklig
+https://github.com/i-tu/Hasklig extends Source Code Pro
+
+**** Source Code Pro
 
 *** Material Font, GF
 #+BEGIN_SRC html
@@ -66251,20 +66315,6 @@ Recommended sizing and color setting
 
   <i class="material-icons orange600">face</i>
 #+END_SRC
-
-*** Open source alternative, identify font
-http://alternatype.net/
-
-Identify font: https://www.whatfontis.com/
-
-*** Extensis
-https://www.extensis.com/support Download Universal Type Client (6.1.5) not Universal Type Server 6 Core Client
-
-*** Monoid
-https://github.com/JB-Dmitry/monoid
-
-*** Hasklig
-https://github.com/i-tu/Hasklig Extend Source Code Pro
 
 *** Poppin, GF
 *** Museo, GF
@@ -66369,3 +66419,34 @@ Web Symbols
 ** DONE Lynda [[https://www.behance.net/][Behance.net]]
 ** DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
 
+** Work
+- TN Menu
+- Explore and find Matthew 2019-08
+- First Meeting with Matthew 2019-09-05
+- Review Matthew's Statement of Work and payment 2019-09-10
+- Design Kickoff Meeting with Matthew 2019-09-17
+- Review Site Structure and Atomic Web Design Meeting with Matthew 2019-09-24
+- Design Review Meeting #1
+   - 2019-10-08 Review wireframing with Matthew
+   - 2019-10-09 Internal review for all pages
+- InVision: https://projects.invisionapp.com/d/main/default/?origin=v7#/projects/prototypes/18634296
+   - 2019-10-09
+   - Review wireframing for all pages
+      - Homepage
+      - Main Nav
+      - Wallpaper (content container width on desktop is 80%). For 1450px viewport, wallpaper image on each side is 145px which should be enough
+      - News and other category pages
+      - Digital Edition page and in footer
+- Testing follow up on 2019-11-20
+   - Notify Matthew and Patrick that the website has a lot of missing functions. Sehui has logged a lot on Jira. Ask if it's a concern and ask for a phone call to track up
+- Testing Touch Base meeting on 2019-11-21
+   - Before the meeting, clarify design details with Sehui
+   - Pointed out issues to Matthew and Patrick
+      - Li will
+	 - follow up with Adobe Fonts
+	 - Main nav menu :: what articles go into each main nav menu item
+	 - What videos on top of Careers archive page
+	 - Featured image resizing
+      - Patrick will
+	 - Add url fields to Glutenberg block's Title
+	 - Add url fields to in-article Glutenberg Block's Sidebar List's child item's title
