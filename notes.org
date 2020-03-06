@@ -251,6 +251,30 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
   - 22527 :: E_ALL & ~E_DEPRECATED
 
 ** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
+** Protocols
+*** ~php://~
+- ~php://stdin~ :: read only
+- ~php://stdout~ :: write-only
+
+#+BEGIN_SRC php
+  $fptr = fopen(getenv("OUTPUT_PATH"), "w");
+
+  $stdin = fopen("php://stdin", "r");
+
+  fscanf($stdin, "%d\n", $ar_count); // total number of different numbers
+
+  fscanf($stdin, "%[^\n]", $ar_temp); // numbers separated by space
+
+  $ar = array_map('intval', preg_split('/ /', $ar_temp, -1, PREG_SPLIT_NO_EMPTY));
+
+  $result = simpleArraySum($ar);
+
+  fwrite($fptr, $result . "\n");
+
+  fclose($stdin);
+  fclose($fptr);
+#+END_SRC
+
 ** $_SERVER <<<php:$_SERVER>>>
 [[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
 
@@ -544,6 +568,9 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   $foo = $bar ?? 'something';
   $foo = isset($bar) ? $bar : 'something';
 #+END_SRC
+
+** Spaceship Operator
+- ~$a <=> $b~ :: returns -1 ($a less than $b), 0 or 1
 
 ** Multibyte <<<php:multibyte>>>
 - All functions :: https://www.php.net/manual/en/ref.mbstring.php
@@ -1771,16 +1798,39 @@ RestJson.php
 #+END_SRC
 
 *** Interface
-Specify what methods must be implemented but not how
-A class can implement multiple interfaces
-Use ~final~ in parent class to prevent child class from overriding the method/property
+- Only 2 things an interface can do
+   - Define public method stubs or public methods signatures without bodies
+      - Specify what methods must be implemented but not how
+	#+BEGIN_SRC php
+	  class CustomerQuery implements CustomerQueryInterface {
+	    public function whereId($id) {
+	      // do something to get Customer by $id
+	    }
 
-#+BEGIN_SRC php
-  final public function load() {}
-#+END_SRC
+	    public function whereType($type) {
+	      // do something to get Customer by $type
+	    }
+	  }
+	#+END_SRC
+      - A class can implement multiple interfaces
+      - Use ~final~ in parent class to prevent child class from overriding the method/property
+	#+BEGIN_SRC php
+	  final public function load() {}
+        #+END_SRC
+   - Extend another interface and extend only one interface (class)
+     #+BEGIN_SRC php
+       interface QueryInterface {
+	 public function whereId($id);
+       }
+
+       interface CustomerQueryInterface extends QueryInterface {
+	 public function whereType($type);
+       }
+     #+END_SRC
+- ~CustomQueryInterface~ (CQI) is an interface building on top of ~QueryInterface~, any implementation of CQI can be passed as dependency injection to constructor of another class
 
 *** Interface vs Abstract Class
-- Interfaces  can have no state or implementation
+- Interfaces can have no state or implementation
 - a class that implements an interface must provide an implementation of all the methods of the interface
 - abstract classes may contain state (data members) and/or implementation (methods)
 - abstract classes can be inherited without implementing the abstract methods
@@ -2155,29 +2205,50 @@ Create objects without specifying class
 #+END_SRC
 
 **** Dependency Injection
-#+BEGIN_SRC php
-  class StoreService {
-      private $geolocationService;
+- Dependencies are given rather than creating them. So instead of
+  #+BEGIN_SRC php
+    class CustomersController {
+      private $customerQuery;
 
-      public function __construct(GeolocationService $geolocationService) {
-	  $this->geolocationService = $geolocationService;
+      public function __construct() {
+	$this->customerQuery = new CustomerQuery();
       }
+    }
+  #+END_SRC
+  We use this, where ~$customerQuery~ is an instance of ~CustomerQueryInterface~
+  #+BEGIN_SRC php
+    class CustomersController {
+      private $customerQuery;
 
-      public function getStoreCoordinates($store) {
-	  return $this->geolocationService->getCoordinatesFromAddress($store->getAddress());
+      public function __construct(CustomerQueryInterface $customerQuery) {
+	$this->customerQuery = $customerQuery;
       }
-  }
-#+END_SRC
+    }
+  #+END_SRC
+- Example
+  #+BEGIN_SRC php
+    class StoreService {
+	private $geolocationService;
 
-#+BEGIN_SRC php
-  interface GeolocationService {
-	  public function getCoordinatesFromAddress($address);
-  }
+	public function __construct(GeolocationService $geolocationService) {
+	    $this->geolocationService = $geolocationService;
+	}
 
-  class GoogleMaps implements GeolocationService { }
+	public function getStoreCoordinates($store) {
+	    return $this->geolocationService->getCoordinatesFromAddress($store->getAddress());
+	}
+    }
+  #+END_SRC
+  
+  #+BEGIN_SRC php
+    interface GeolocationService {
+	    public function getCoordinatesFromAddress($address);
+    }
 
-  class OpenStreetMap implements GeolocationService { }
-#+END_SRC
+    class GoogleMaps implements GeolocationService { }
+
+    class OpenStreetMap implements GeolocationService { }
+  #+END_SRC
 
 **** Decorator
 Class Book has 3 methods: getAuthor, getTitle, getAuthorAndTitle
@@ -26447,7 +26518,7 @@ These values are considered as false
   - You can only ~let~ declare the same variable once in the same block
   - The same variable can be ~let~ declaired inside a subblock and it will have new scope but not overwrite the upper scope variable
   - ~let~ declared variable must be declared before it is used or referenced
-- Limitation about var
+- Limitation about ~var~
   - Use ~let~ in a loop, the variable can be re-binded for each iteration
   - while ~var~ in a loop, only the final assigned value is passed unless a closure is used
 
@@ -26574,8 +26645,8 @@ This provides you more debugging info
 
 ** Types, typeof, constructor
 *** Number <<<js:Number>>>
-- Used :: js:Math
-- ~NaN~ :: is number
+- Used in :: js:Math
+- ~IsNaN~ :: true if it is not a number
 
 #+BEGIN_SRC js
   var foo = "55";
@@ -26583,7 +26654,12 @@ This provides you more debugging info
   if (!isNaN(myNumber)) {
     console.log("It is a number");
     // foo is a number
-  } 
+  }
+
+  console.log( Number.parseFloat(x).toFixed(2) ); // round up sometimes not working using toFixed..
+
+  let decimals = 2;
+  console.log( Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals) ); // use this to round
 #+END_SRC
 
 *** Boolean <<<js:boolean>>>
@@ -27107,12 +27183,18 @@ Always provide a base number :: parseInt("10", 10); // decimal base
 #+END_SRC
 
 *** for...in <<<js:for...in>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var myObj = {};
   for (var prop in myObj) {
    console.log(myObj[prop]);
   }
-#+END_EXAMPLE
+
+  let myArray = ["a","b","c"];
+  for (let key in myArray) {
+      let value = myArray[key];
+      console.log("key: %o, value: %o", key, value);
+  }
+#+END_SRC
 
 *** for...of <<<js:for...of>>>
 js:for...in interates over all enumerable properties of an object.
@@ -27125,21 +27207,16 @@ for (let value of iterable) {
 }
 
 *** forEach <<<js:forEach>>>
-
-array.forEach(callback[, thisArg])
-
-thisArg :: Pass a variable outside of .forEach() and change it inside .forEach() using /this/
-
-callback :: 3 arguments
-- currentValue
-- index
-- array
-
-Return :: undefined. So .forEach() is not chainable
-
-Elements appended after the call to forEach() begins will not be visited.
-The value of element is changed before forEach() visits, it will reflect the change.
-Elements removed before being visited will not be visited.
+- ~array.forEach(callback[, thisArg])~
+   - thisArg :: Pass a variable outside of .forEach() and change it inside .forEach() using /this/
+   - callback :: 3 arguments
+      - currentValue
+      - index
+      - array
+   - Return :: undefined. So ~.forEach()~ is not chainable
+- Elements appended after the call to forEach() begins will not be visited
+- The value of element is changed before forEach() visits, it will reflect the change
+- Elements removed before being visited will not be visited
 
 *** break and continue
 =break= without a label reference, can only jump out of a loop or a switch
@@ -66416,37 +66493,32 @@ Web Symbols
 ** TODO https://www.ontario.ca/page/digital-government https://medium.com/ontariodigital
 ** TODO Learn New Relic One
 ** TODO Learn https://langserver.org
+** TODO Learn GraphQL, GQL API
+** TODO Learn SOAP API
+** TODO Learn Rust to develop API, Restful Microservices
+** TODO Spring MVC
 ** DONE Lynda [[https://www.behance.net/][Behance.net]]
 ** DONE Lynda Illustrator CC for Web Design: Core Concepts, Aesthetics, Image Optimization, Wireframing, SVG
 
-** Work
-- TN Menu
-- Explore and find Matthew 2019-08
-- First Meeting with Matthew 2019-09-05
-- Review Matthew's Statement of Work and payment 2019-09-10
-- Design Kickoff Meeting with Matthew 2019-09-17
-- Review Site Structure and Atomic Web Design Meeting with Matthew 2019-09-24
-- Design Review Meeting #1
-   - 2019-10-08 Review wireframing with Matthew
-   - 2019-10-09 Internal review for all pages
-- InVision: https://projects.invisionapp.com/d/main/default/?origin=v7#/projects/prototypes/18634296
-   - 2019-10-09
-   - Review wireframing for all pages
-      - Homepage
-      - Main Nav
-      - Wallpaper (content container width on desktop is 80%). For 1450px viewport, wallpaper image on each side is 145px which should be enough
-      - News and other category pages
-      - Digital Edition page and in footer
-- Testing follow up on 2019-11-20
-   - Notify Matthew and Patrick that the website has a lot of missing functions. Sehui has logged a lot on Jira. Ask if it's a concern and ask for a phone call to track up
-- Testing Touch Base meeting on 2019-11-21
-   - Before the meeting, clarify design details with Sehui
-   - Pointed out issues to Matthew and Patrick
-      - Li will
-	 - follow up with Adobe Fonts
-	 - Main nav menu :: what articles go into each main nav menu item
-	 - What videos on top of Careers archive page
-	 - Featured image resizing
-      - Patrick will
-	 - Add url fields to Glutenberg block's Title
-	 - Add url fields to in-article Glutenberg Block's Sidebar List's child item's title
+** TODO Semantic-UI.com, Slick JS, Typed.js
+* Random
+- People
+   - How many web developers? Are they responsible for all websites and enewsletters?
+   - In-house Ad Ops?
+   - Who will I be working with?
+- Process
+   - Who will give me orders and who should I deliver my work to?
+   - Any milestone I should meet? Busy time in a year
+- Product
+   - websites, enewsletters, any products designed or made specifically for clients? e.g. brochure or website
+   - What products will I be responsible for?
+   - Do you have some goals that you want to achieve for short term and long term?
+   - Key Intelligence
+      - Is it a system?
+   - What do you expect from me?
+- Melissa Young Sing
+   - e-commerce website. Improve user experience
+   - A role between Product Manager and Development Team. Documentation
+   - Build an AdOps team
+- JS: object vs array
+- js implicit parameter
