@@ -26457,7 +26457,7 @@ These values are considered as false
 *** Hoisting <<<js:hoisting>>>
 - Refer to js:Function
 - Variables defined outside of any functions are Global
-- Only function can create local scope. Without using var to declare variables, those variables are global
+- Only function can create local scope. Without using var to declare variables, those variables are global. This is called function-level scoping while PHP has block-level scoping, where new scope can be defined in block
 
 #+BEGIN_SRC js
   myFunction();
@@ -26513,39 +26513,49 @@ These values are considered as false
 - A variable is defined by ~var~ then this variable is available to the closest function scope
 - Always js:Initialization for variables declared by ~var~
 - ~let~ and ~const~ are /block-scoped/
-  - ~let~ declares a variable which is available to the block it is enclosed in
-  - A block can be a switch, for, or if statement which has one pair of ~{}~
-  - You can only ~let~ declare the same variable once in the same block
-  - The same variable can be ~let~ declaired inside a subblock and it will have new scope but not overwrite the upper scope variable
-  - ~let~ declared variable must be declared before it is used or referenced
+   - ~let~ declares a variable which is available to the block it is enclosed in
+   - A block can be a switch, for, or if statement which has one pair of ~{}~
+   - You can only ~let~ declare the same variable once in the same block
+   - The same variable can be ~let~ declaired inside a subblock and it will have new scope but not overwrite the upper scope variable
+   - ~let~ declared variable must be declared before it is used or referenced
 - Limitation about ~var~
-  - Use ~let~ in a loop, the variable can be re-binded for each iteration
-  - while ~var~ in a loop, only the final assigned value is passed unless a closure is used
+   - Use ~let~ in a loop, the variable can be re-binded for each iteration
+   - while ~var~ in a loop, only the final assigned value is passed unless a closure is used
+     #+BEGIN_SRC js
+       for (var i = 1; i <= 5; i++) {
+	 setTimeout(
+	   function() {
+	     console.log(i);
+	   }, 1000*i);
+	 // 5 5 5 5 5
 
-#+BEGIN_SRC js
-  for (var i = 1; i <= 5; i++) {
-    setTimeout(
-      function() {
-	console.log(i);
-      }, 1000*i);
-    // 5 5 5 5 5
-
-    setTimeout(
-      function(x) {
-	return function () {
-	  console.log(x);
-	};
-      }(i)
-    , 1000*i);
-    // 1 2 3 4 5
-  }
-#+END_SRC
-
+	 setTimeout(
+	   function(x) {
+	     return function () {
+	       console.log(x);
+	     };
+	   }(i)
+	 , 1000*i);
+	 // 1 2 3 4 5
+       }
+     #+END_SRC
 - ~const~ is the same as ~let~ but it's read only. Uppercase naming
-- The same ~const~ variable name can be redeclared to different value in sub block
-- If ~const~ is an array or object, its child element or key/value is not protected by default
-- Which means you can push to ~const~ arry or modify key/value
-- ~const~ in the same block cannot be changed or redeclared or redeclared by ~let~ or ~var~
+   - The same ~const~ variable name can be redeclared to different value in sub block
+   - If ~const~ is an array or object, its child element or key/value is not protected by default
+   - Which means you can push to ~const~ arry or modify key/value
+   - ~const~ in the same block cannot be changed or redeclared or redeclared by ~let~ or ~var~
+   - ~const~ can be used in ~for..of~ loop but not the imperative ~for~ loop
+     #+BEGIN_SRC js
+       let scores = [75, 80, 95];
+       for (const score of scores) {
+	   console.log(score);
+       }
+
+       // the next is wrong
+       for (const i = 0; i < scores.length; i++) { // TypeError
+	   console.log(scores[i]);
+       }
+     #+END_SRC
 
 ** Closure, Javascript Singleton
 *** Syntax, When to use closure?
@@ -26737,11 +26747,30 @@ This provides you more debugging info
   a.unshift("Z"); // add to the beginning of array. return new length
 #+END_SRC
 
-**** array.concat() - merge
+**** array.concat() - merge without removing dups
 #+BEGIN_SRC js
   var a = new Array("P", "C", "S");
   var b = new Array(31,29,34);
   a = a.concat(b); // Join arrays P, C, S, 31, 29, 34
+
+  // remove dup
+  function removeDuplicate(arr){
+    var exists ={},
+	outArr = [], 
+	elm;
+
+    for(var i =0; i<arr.length; i++){
+      elm = arr[i];
+      if(!exists[elm]){
+	outArr.push(elm);
+	exists[elm] = true;
+     }
+    }
+    return outArr;
+  }
+
+  // e.g. removeDuplicate([1,3,3,3,1,5,6,7,8,1]);
+  // = [1, 3, 5, 6, 7, 8]
 #+END_SRC
 
 **** array.slice()
@@ -26786,38 +26815,47 @@ This provides you more debugging info
   var reverse = a.reverse(); // S, C, P
 #+END_SRC
 
-**** array loop: for, array.forEach() 
-for (var i = 0; i < fruits.length; i++) {
- fruits[i];
-}
+**** array loop: for, array.forEach()
+#+BEGIN_SRC js
+  for (var i = 0; i < fruits.length; i++) {
+   fruits[i];
+  }
+#+END_SRC
 
 js:forEach
-fruits.forEach(function(i) {
- console.log(i);
-});
+#+BEGIN_SRC js
+  fruits.forEach(function(i) {
+   console.log(i);
+  });
+#+END_SRC
 
 **** array.map(), array.filter() 
-Do something while each item is iterated, join returned values into an array.
-var result = a.map(function(i) { return i.toUpperCase(); }); // result is an array
-console.log(a); // a is not affected!
+- Do something while each item is iterated, join returned values into an array
 
-a = a.filter(function(i) { 
-   if ( true then remove condition ) { 
-    return false; 
-   }
-   else {
-    return true; // keep
-   }
-});
+#+BEGIN_SRC js
+  var result = a.map(function(i) { return i.toUpperCase(); }); // result is a new array
+  console.log(a); // a is not affected!
+
+  a = a.filter(function(i) { 
+     if ( true then remove condition ) { 
+      return false; 
+     }
+     else {
+      return true; // keep
+     }
+  });
+#+END_SRC
 
 **** array.every(), array.some()
 a.every(function(i) { return i[0] === "a"; }); // return true only if all returns are true
 a.some(function(i)  { return i[0] === "a"; }); // return true if at least one return is true
 
 **** array.reduce()
+- The reduce() method executes a reducer function (that you provide) on each element of the array, resulting in a single output value
+- ~arr.reduce(callback( accumulator, currentValue[, index[, array]] )[, initialValue])~
 #+BEGIN_SRC js
   var sum = [0, 1, 2, 3].reduce(
-   function(a,b) { return a=b; },
+   function(a,b) { return a + b; },
    0
   );
   // sum is integer 6
@@ -38644,6 +38682,29 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 
 ***** Directive selectors (lower camel case)
 
+** React
+- chrome:extension:react-developer-tools
+
+#+BEGIN_SRC sh
+  sudo npm i -g create-react-app
+
+  # cd to your new project's parent folder
+  cd myProjects
+
+  create-react-app lake-app
+  cd lake-app
+  npm i
+  npm start
+
+  # build a production inside the "build" folder 
+  npm run build
+
+  # then you can serve the prod code. First install "serve" as a static server
+  sudo npm i -g serve
+
+  serve -s build
+#+END_SRC
+
 * NodeJS
 ** Install on Ubuntu
 #+BEGIN_SRC sh
@@ -38741,7 +38802,7 @@ Modules installed globally usually have an executable command for direct use. If
   # Install npm package to ./node_modules
   npm install express
 
-  # install without arguments will install dependencies including devDependencies.
+  # install without arguments will install dependencies including devDependencies
   npm install
 
   # with flag or when NODE_ENV is set to production, it will not install devDependencies
@@ -62090,7 +62151,19 @@ change to version 1.1 or get rid of the characters
    - Code organization :: e.g. grouping a code into units along with the state that is modified by the code
    - Style of syntax and grammar
 - Imperative programming
+   - Imperative programs spend lines of code describing the specific steps used to achieve the desired results — the flow control: How to do things
 - Declarative programming
+   - Declarative programs abstract the flow control process, and instead spend lines of code describing the data flow: What to do. The how gets abstracted away
+   - To minimize or eliminate side effects
+   - One example is functional programming (FP)
+      - FP is the process of building software by composing pure functions, avoiding shared state, mutable data, and side-effects
+      - Functional code tends to be more concise, more predictable, and easier to test than imperative or object oriented code
+	 - An immutable object is an object that can’t be modified after it’s created. Conversely, a mutable object is any object which can be modified after it’s created. 
+      - Pure vs impure functions. A pure function must satisfy both of:
+	 - Referential transparency :: the function always gives the same return value for the same arguments. This means that the function cannot depend on any mutable state
+	    - Function composition :: ~a(b(c(x)))~
+	 - Side-effect freee :: the function cannnot cause any side effects which may include I/O (console.log), modifyng a mutable object, reassigning a variable, etc.
+	    - Triggering any external process
 
 ** Side Effect
 An operation, function or expression is said to have a side effect if it modifies some state variable values outside its local environment, that is to say has an observable effect besides returning a value (the main effect) to the invoker of the operation
@@ -63297,6 +63370,9 @@ Expand the Events and RC on handler to Reveal function in source.
 Find XPath or CSS selector for an element. Go to DevTools
 
 **** [[https://chrome.google.com/webstore/detail/nimbus-screenshot-screen/bpconcjcammlapcogcnnelfmaeghhagj][Nimbus Screenshot & Screen Video Recorder]] <<<chrome:extension:nimbus-screenshot-screen>>>
+**** React Developer Tools <<<chrome:extension:react-developer-tools>>>
+- DevTools > tabs at top Components and Profiler
+
 *** Network
 **** Filter Post Requests
 method:POST
