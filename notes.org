@@ -16417,10 +16417,11 @@ This is for server that couldn't fire a DELETE HTTP request
 A POST to /wp-json/wp/v2/posts/42?_method=DELETE would be translated to a DELETE to the wp/v2/posts/42 route.
 
 Similarly, the following POST request would become a DELETE:
-
-POST /wp-json/wp/v2/posts/42 HTTP/1.1
-Host: example.com
-X-HTTP-Method-Override: DELETE
+#+BEGIN_EXAMPLE
+  POST /wp-json/wp/v2/posts/42 HTTP/1.1
+  Host: example.com
+  X-HTTP-Method-Override: DELETE
+#+END_EXAMPLE
 
 **** _envelope
 Some servers, clients, and proxies do not support accessing the full response data. The API supports passing an _envelope parameter, which sends all response data in the body, including headers and status code.
@@ -16451,6 +16452,9 @@ GET to wp/v2/users/me?_envelope:
   }
 #+END_EXAMPLE
 
+**** _embed
+- Refer to wp:rest:posts:embed
+
 *** Pagination and Ordering
 - ~?page=~
 - ~?per_page=~ :: default 10, possible from 1 to 100
@@ -16460,11 +16464,12 @@ GET to wp/v2/users/me?_envelope:
   - By default, there's no rand! (random order)
   - Refer to wp:rest:hook:rest_*_collection_params for adding rand
 
-Response Header fields
+*** Response Header fields
 - ~X-WP-TOTAL~ :: total number of records
 - ~X-WP-TotalPages~
 
 *** Endpoints
+- To see all endoints :: ~Method:OPTIONS http://mysite.io/wp-json/wp-v2/~
 **** Plugin rest-filter
 Use https://github.com/wp-api/rest-filter to build more complex queries
 
@@ -16472,23 +16477,25 @@ Term slug of taxonomy news-category
 ~wp-json/wp/v2/news?per_page=5&filter[news-category]=news-abc~
 
 **** Custom Post Types and Taxonomies
-Make sure both post type and taxonomy has ~show_in_rest=true~
-By post type ~news~ and have term id 1234 in taxonomy ~news-category~
-~wp-json/wp/v2/news?per_page=5&news-category=1234~
-
-Multiple terms
-~wp-json/wp/v2/news?per_page=5&news-category=1234,4567~
-
-Multiple terms in multiple taxonomies
-~wp-json/wp/v2/news?per_page=5&news-category=1234,4567&abc-category=789,123~
-
-Core cannot query term slug
+- Make sure both post type and taxonomy has ~show_in_rest=true~ in wp:f:register_post_type~ and wp:f:register_taxonomy
+   - ~rest_base~ :: change the base url of REST API route
+   - ~rest_controller_class~ :: Default is ~WP_REST_Posts_Controller~ 
+- Core cannot query term slug
+- By post type ~news~ and have term id 1234 in taxonomy ~news-category~ :: ~wp-json/wp/v2/news?per_page=5&news-category=1234~
+- Multiple terms
+   - ~wp-json/wp/v2/news?per_page=5&news-category=1234,4567~
+- Multiple terms in multiple taxonomies
+   - ~wp-json/wp/v2/news?per_page=5&news-category=1234,4567&abc-category=789,123~
 
 **** posts
-https://developer.wordpress.org/rest-api/reference/posts/
+- https://developer.wordpress.org/rest-api/reference/posts/
+- key
+   - ~_links~ :: has ~self~, ~collection~, ~about~ and ~author~, which are REST API links to the associated items of that post
+      - <<<wp:rest:posts:embed>>> Some keys like ~author~ has ~embeddable~ equals true, which means URL parameter ~_embed=true~ can be used so that the post will include full post of author under ~_embedded~ 
 
 **** Custom endpoint
-https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-endpoints/
+- https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-endpoints/
+- https://v2.wp-api.org/extending/modifying
 
 ***** Simple way
 #+BEGIN_SRC php
@@ -16795,43 +16802,43 @@ I think REST response is object cache. When using with Pantheon Advanced Page Ca
 
 *** Hooks
 **** ~rest_api_init~
-Add an extra field in response
-#+BEGIN_SRC php
-  add_action( 'rest_api_init', 'll_rest_api_add_fields' );
-  function ll_rest_api_add_fields() {
-      //Add featured image
-	  register_rest_field(
-		  array('product'), // Where to add the field (Here, blog posts. Could be an array)
-		  'featured_image_src', // Name of new field (You can call this anything)
-		  array(
-			  'get_callback'    => function( $object, $field_name, $request ) {
-				  $feat_img_array = wp_get_attachment_image_src(
-					  $object['featured_media'], // Image attachment ID
-					  'thumbnail',  // Size.  Ex. "thumbnail", "large", "full", etc..
-					  true // Whether the image should be treated as an icon.
-				  );
-				  return $feat_img_array[0];
-	      },
-			  'update_callback' => null,
-			  'schema'          => null,
-		  )
-	  );
+- ~register_rest_field~ :: Add an extra field in response
+  #+BEGIN_SRC php
+    add_action( 'rest_api_init', 'll_rest_api_add_fields' );
+    function ll_rest_api_add_fields() {
+	//Add featured image
+	    register_rest_field(
+		    array('product'), // Where to add the field (Here, blog posts. Could be an array)
+		    'featured_image_src', // Name of new field (You can call this anything)
+		    array(
+			    'get_callback'    => function( $object, $field_name, $request ) {
+				    $feat_img_array = wp_get_attachment_image_src(
+					    $object['featured_media'], // Image attachment ID
+					    'thumbnail',  // Size.  Ex. "thumbnail", "large", "full", etc..
+					    true // Whether the image should be treated as an icon.
+				    );
+				    return $feat_img_array[0];
+		},
+			    'update_callback' => null,
+			    'schema'          => null,
+		    )
+	    );
 
-	  // add some custom fields
-	  register_rest_field( 'product', 'post_meta_fields', array(
-		  'get_callback' => function( $post ) {
-			  $fields = [
-				  'image'              => get_field( 'product_image' )['url'],
-				  'product_categories' => (array) wp_get_post_terms( $post['id'], 'product_category' ),
-				  'company'            => (string) get_field( 'company_name', $post['id'] ),
-				  'booth'              => (string) get_field( 'booth_number', $post['id'] ),
-			  ];
+	    // add some custom fields
+	    register_rest_field( 'product', 'post_meta_fields', array(
+		    'get_callback' => function( $post ) {
+			    $fields = [
+				    'image'              => get_field( 'product_image' )['url'],
+				    'product_categories' => (array) wp_get_post_terms( $post['id'], 'product_category' ),
+				    'company'            => (string) get_field( 'company_name', $post['id'] ),
+				    'booth'              => (string) get_field( 'booth_number', $post['id'] ),
+			    ];
 
-			  return $fields;
-		  },
-	  ) );
-  }
-#+END_SRC
+			    return $fields;
+		    },
+	    ) );
+    }
+  #+END_SRC
 
 **** ~rest_{$this->post_type}_collection_params~ <<<wp:rest:hook:rest_*_collection_params>>>
 - Register custom collection parameters ~$_GET['yourparam']~
@@ -16846,6 +16853,51 @@ Add an extra field in response
 	  return $params;
   }
 #+END_SRC
+
+*** Basic Auth
+- https://github.com/WP-API/Basic-Auth
+   - Enable WP API to authenticate using ~Authorization: Basci base64HasedOfUsername:Password~. To submit request from client:
+     #+BEGIN_SRC sh
+       curl --user admin:password https://example.com/wp-json/
+     #+END_SRC
+     #+BEGIN_SRC php
+       $args = array(
+	       'headers' => array(
+		       'Authorization' => 'Basic ' . base64_encode( $username . ':' . $password ),
+	       ),
+       );
+     #+END_SRC
+
+*** Nonce
+#+BEGIN_SRC js
+  $.ajax({
+      url: WPsettings.root + 'wp/v2/posts/' + WPsettings.current_ID,
+      method: 'POST',
+      beforeSend: function(xhr) {
+	  xhr.setRequestHeader( 'X-WP-Nonce', WPsettings.nonce);
+      },
+      data: {
+	  'title': newTitle
+      }
+  })
+#+END_SRC
+
+*** JWT - JSON Web Token
+- Plugin :: https://en-ca.wordpress.org/plugins/jwt-authentication-for-wp-rest-api/
+   - Add auth endpoints
+      - POST /wp-json/jwt-auth/v1/token with raw JSON in body ~{ "username": "", "password": "" }~
+	 - Token is retrieved. Then in subsequent requests include this header ~Authorization: Bearer $token~
+   - Need to add to wp-config.php
+     #+BEGIN_SRC php
+       define('JWT_AUTH_SECRET_KEY', 'your-top-secret-key');
+       define('JWT_AUTH_CORS_ENABLE', true);
+     #+END_SRC
+   - Enable HTTP Authroization header, e.g. Apache
+     #+BEGIN_SRC apache
+       RewriteEngine on
+       RewriteCond %{HTTP:Authorization} ^(.*)
+       RewriteRule ^(.*) - [E=HTTP_AUTHORIZATION:%1]
+     #+END_SRC
 
 ** Life Cycle
 *** ~index.php~
@@ -22864,7 +22916,7 @@ In order to test img with srcset and sizes, you need to open InCognito and resiz
 
 #+BEGIN_SRC html
   <img
-    src="examples/images/fallback.jpg"
+    src="examples/images/fallback-smallest-size.jpg"
     sizes="(min-width: 40em) 80vw, 100vw"
     srcset="examples/images/medium.jpg 375w,
 	    examples/images/large.jpg 480w,
@@ -23155,6 +23207,7 @@ A non-negative integer of seconds that the object (response) has been in a proxy
    - max-age=<seconds> :: refer to header:expires If max-age is set in Cache-Control and Etag is set, then after max-age, client sends a request with If-None-Match: <etag-value> to server and if the Etag response doesn't change, server will return 304 Not Modified response and client will not download the file. The cache serves the same file for another max-age before checking Etag again
    - ~post-check=0, pre-check=0~ :: (Discouraged) Old IE does not cache and always ask from server
 - Common usage
+   - ~Cache-Control: no-cache, max-age=315360000~ :: serve the cache for 1 year but if server version has updated, download from server 
    - ~public, max-age=2592000~ :: Tells the ~external~ caching system e.g. Varnish not to make a call to the web server for this request until the max-age <<<header:cache-control:public max-age>>>
    - ~no-cache, must-revalidate, post-check=0, pre-check=0~ :: no cache and always ask from server
    - ~max-age=0~ :: Chrome adds this in request when you enter the URL or hit refresh. This tells the cache server to serve the cache whenever possible. Whether or not the cache system serves the cache depends on the cache server. e.g. Varnish still serves the cache when it's possible
@@ -26383,30 +26436,24 @@ https://amp.dev/documentation/components/amp-analytics/
 
 * JavaScript
 ** Loading Sequence <<<js:defer>>> <<<js:async>>>
-Refer to html:event:DOMContentLoaded
-<script> tags without any attributes are downloaded together and executed immediately in order
-
-- defer :: Works when src is defined. Download together, execute in order and defer execution until before DOMContentLoaded
-- async :: Works when src is defined. Download together, execute in any order as soon as they're downloaded and DOMContentLoaded does not have to wait for the execution. If async scripts are downloaded and executed before DCL, it will still block HTML parsing.
-- async="false" :: Works when src is defined. Download together, execute in order as soon as all are downloaded
-
-async is useful when the script files are not dependent on other files and do not have any dependencies themselves. Use it when you don't care exactly at which point the file is executed.
-
-By default, all dynamically added scripts are async.
-
-For example, if you want to load 2 javascript files and execute them in order but after they are all downloaded:
-async="false" is needed.
-
-#+BEGIN_SRC js
-  [ '1.js',
-    '2.js'
-  ].forEach(function(src) {
-    var script = document.createElement('script');
-    script.src = src;
-    script.async = false;
-    document.head.appendChild(script);
-  });
-#+END_SRC
+- Refer to html:event:DOMContentLoaded
+- <script> tags without any attributes are downloaded together and executed immediately in order
+- defer :: Works when src is defined. Download together, execute in order and defer execution until before ~DOMContentLoaded~. The download and execute process do not block HTML parsing
+- async :: Works when src is defined. Download together, execute in any order as soon as they're downloaded and ~DOMContentLoaded~ does not have to wait for the execution. The download process does not stop HTML passing, but the execution process does. If async scripts are downloaded and executed before DCL, it will still block HTML parsing.
+   - async="false" :: Works when src is defined. Download together, execute in order as soon as all are downloaded
+   - async is useful when the script files are not dependent on other files and do not have any dependencies themselves. Use it when you don't care exactly at which point the file is executed.
+   - By default, all dynamically added scripts are async.
+   - For example, if you want to load 2 javascript files and execute them in order but after they are all downloaded, then ~async="false"~ is needed
+     #+BEGIN_SRC js
+       [ '1.js',
+	 '2.js'
+       ].forEach(function(src) {
+	 var script = document.createElement('script');
+	 script.src = src;
+	 script.async = false;
+	 document.head.appendChild(script);
+       });
+     #+END_SRC
 
 ** External Script, ~document.write~ <<<js:external script>>>
 - Loading external script use this
@@ -27299,20 +27346,21 @@ To make a method non enumerable
 #+END_SRC
 
 *** JSON
-JSON object names require double quotes.
-String are wrapped in double quotes.
-Boolean is true or false.
-null can be used.
-MIME type: application/json
-
-var obj = JSON.parse(jsonString); // parse a json string
+- JSON object names require double quotes
+- String are wrapped in double quotes
+- Boolean is ~true~ or ~false~
+- ~null~ can be used
+- MIME type: application/json
+- Parse a JSON string :: ~var obj = JSON.parse(jsonString);~
+- Get value of a special key :: ~obj._embedded['wp:featuredmedia'][0]~
 
 **** Deep Keys
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
+  // see if test.level1.level2.level3 key exists
   var r1 = (((test || {}).level1 || {}).level2 || {}).level3;
   if (typeof r1 !== 'undefined') {
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** DOM Manipulation
 *** If an element exists
@@ -34480,73 +34528,73 @@ Use render function (reactive)
  #+END_SRC
 
 *** Ajax
- $.get(url[, data] [, success], [, dataType] )
- $.post(url[, data] [, success], [, dataType] )
- #+BEGIN_EXAMPLE
-   $.ajax({
-    method: 'POST', // Default: GET
-   // Prior to 1.9.0, use type instead of method
-    url: "some.php", // Default current page
-    data: { name: "a", location: "Boston" } // Data send to server. Converted as URL parameters
-   // if data is not key/value pairs, change processData to false
-    processData: true, 
-   // If data is not key/value pairs (object), say it's a DOMDocument, change it to false
+- ~$.get(url[, data] [, success], [, dataType] )~
+- ~$.post(url[, data] [, success], [, dataType] )~
+#+BEGIN_SRC js
+  $.ajax({
+   method: 'POST', // Default: GET
+  // Prior to 1.9.0, use type instead of method
+   url: "some.php", // Default current page
+   data: { name: "a", location: "Boston" } // Data send to server. Converted as URL parameters
+  // if data is not key/value pairs, change processData to false
+   processData: true, 
+  // If data is not key/value pairs (object), say it's a DOMDocument, change it to false
 
-    contentType: 'applicaton/x-www-form-urlencoded;charset=UTF-8', // Default. MIME type
+   contentType: 'applicaton/x-www-form-urlencoded;charset=UTF-8', // Default. MIME type
 
-    dataType: "json", // Default is not setting anything. MIME type of response
-   // > v1.5, this option can convert response to the MIME types you want
-   // "json xml" :: first it will try to convert to json. if failed, convert ot xml
-   // "script" :: the response is javascript, and it will be run afer it's received.
+   dataType: "json", // Default is not setting anything. MIME type of response
+  // > v1.5, this option can convert response to the MIME types you want
+  // "json xml" :: first it will try to convert to json. if failed, convert ot xml
+  // "script" :: the response is javascript, and it will be run afer it's received.
 
-   // cross domain should be automatically handled
-   // crossDomain: default false for same-domain requests, true for cross-domain requests
+  // cross domain should be automatically handled
+  // crossDomain: default false for same-domain requests, true for cross-domain requests
 
-    context: document.body, // provide context for callbacks. If not set, this referrence
-   // in callbacks is the Ajax request settings
+   context: document.body, // provide context for callbacks. If not set, this referrence
+  // in callbacks is the Ajax request settings
 
-    cache: true, // You can only change cache for HEAD and GET requests.
-   
-    headers: {}, // Default. Add (or add to overwrite) request header
+   cache: true, // You can only change cache for HEAD and GET requests.
 
-   // Callback options
-    beforeSend: function(jqXHR, settings) {
-     // Modify jqXHR object before it is sent.
-     // e.g. request header
-     // For receiving binary string (image or any binary data)
-     // jqXHR.overrideMimeType("text/plain; charset=x-user-defined");
-    },
-    error: function(jqXHR, textStatus, errorThrown) {
-     // if request fails.
-    },
-    dataFilter: function( data, type) {
-     // raw response data
-     // dataType option
-     // You should sanitize the data here so to match the dataType option
-    },
-    success: function( data, textStatus, jqXHR ) {
-    }, 
-    complete: function( jqXHR, textStatus) {}
+   headers: {}, // Default. Add (or add to overwrite) request header
 
-   })
-   /* Promise callbacks: .done, .fail, .always. In those callbacks, 
-   `this` reference is the `context` in the request. If `context` was not set, `this` 
-   will be the Ajax setting.
-   You can add multiple promise callbacks.
-   ,*/
-   .done(function(data, textStatus, jqXHRmsg) {
-   // .success() will be deprecated in v3.0
+  // Callback options
+   beforeSend: function(jqXHR, settings) {
+    // Modify jqXHR object before it is sent.
+    // e.g. request header
+    // For receiving binary string (image or any binary data)
+    // jqXHR.overrideMimeType("text/plain; charset=x-user-defined");
+   },
+   error: function(jqXHR, textStatus, errorThrown) {
+    // if request fails.
+   },
+   dataFilter: function( data, type) {
+    // raw response data
+    // dataType option
+    // You should sanitize the data here so to match the dataType option
+   },
+   success: function( data, textStatus, jqXHR ) {
+   }, 
+   complete: function( jqXHR, textStatus) {}
+
+  })
+  /* Promise callbacks: .done, .fail, .always. In those callbacks, 
+  `this` reference is the `context` in the request. If `context` was not set, `this` 
+  will be the Ajax setting.
+  You can add multiple promise callbacks.
+  ,*/
+  .done(function(data, textStatus, jqXHRmsg) {
+  // .success() will be deprecated in v3.0
 
 
-   })
-   .fail(function(jqXHR, textStatus, errorThrown) {
-   // .error() will be deprecated in v3.0
-   })
-   .always(function(data|jqXHR, textStatus, jqXHR|errorThrown) {
-   // .complete() will be dprecated in v3.0
+  })
+  .fail(function(jqXHR, textStatus, errorThrown) {
+  // .error() will be deprecated in v3.0
+  })
+  .always(function(data|jqXHR, textStatus, jqXHR|errorThrown) {
+  // .complete() will be dprecated in v3.0
 
-   });
- #+END_EXAMPLE
+  });
+#+END_SRC
 
 *** <<<jQuery Selectors>>>, Loop through found elements
  You can use all CSS Selectors
@@ -34602,25 +34650,25 @@ Use render function (reactive)
    $first = $all.first(); 
  #+END_EXAMPLE
 
-*** Pass $(this) to javascript function
- $(this) is jQuery object, but this is a normal this
- #+BEGIN_EXAMPLE
-   function doFunc(obj) {
-     obj.className = 'hello'; // className is a normal javascript function
-   }
-   $('li').each(function() {
-     doFunc(this);
-   });
+*** Pass ~$(this)~ to javascript function
+- ~$(this)~ is jQuery object, but this is a normal this
+#+BEGIN_SRC js
+  function doFunc(obj) {
+    obj.className = 'hello'; // className is a normal javascript function
+  }
+  $('li').each(function() {
+    doFunc(this);
+  });
 
-   // or
-   function handler(event) {
-     var target = $(event.target);
-     if (target.is("li")) {
-       target.children().toggle();
-     }
-   }
-   $("ul").click(handler).find("ul").hide();
- #+END_EXAMPLE
+  // or
+  function handler(event) {
+    var target = $(event.target);
+    if (target.is("li")) {
+      target.children().toggle();
+    }
+  }
+  $("ul").click(handler).find("ul").hide();
+#+END_SRC
 
 *** General click to element
  Any elements with attribute data-target="goto1" with id #goto1
@@ -63028,31 +63076,22 @@ This is inside the drawer
 
 *** Code Block
 - Create a code block :: ~<e~ and ~Tab~
-- Inside a code block :: ~C-c + '~ to go to a new major-mode edit buffer to edit the code, ~C-x C-s~ saves the buffer and updates the contents of the Org buffer. ~C-c + '~ again to exit.
+- Inside a code block :: ~C-c + '~ to go to a new major-mode edit buffer to edit the code, ~C-x C-s~ saves the buffer and updates the contents of the Org buffer. ~C-c + '~ again to exit
+- Inline code block
+  #+BEGIN_EXAMPLE
+    src_<language>[<header arguments>]{<body>}
 
-Inline code block
-#+BEGIN_EXAMPLE
-  src_<language>[<header arguments>]{<body>}
+    src_sh{echo "hello"}
 
-  src_sh{echo "hello"}
+    src_html[:exports code]{<el></el>}
 
-  src_html[:exports code]{<el></el>}
-
-  src_haskell[:exports both]{fac 5}
-#+END_EXAMPLE
-
+    src_haskell[:exports both]{fac 5}
+  #+END_EXAMPLE
 - [[https://orgmode.org/worg/org-contrib/babel/languages.html][All languages]] :: html xml css sass js makefile java sh sql sqlite ruby python perl C C++ matlab org dns
-
-Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mode~ to ~*-mode.el~ files
-
-#+BEGIN_SRC sh
-  #!/bin/bash
-  echo html
-#+END_SRC
-
-When in ~*-mode~ edit buffer:
-- emacs:m-x:delete-trailing-whitespace
-- emacs:m-x:indent-region
+- Find modes on [[https://github.com/emacs-mirror/emacs/find/master][GitHub]] ~-mode~ to ~*-mode.el~ files
+- When in ~*-mode~ edit buffer:
+   - emacs:m-x:delete-trailing-whitespace
+   - emacs:m-x:indent-region
 
 *** Export to HTML
 ~C-c C-e h h~
@@ -63369,8 +63408,11 @@ https://developer.chrome.com/devtools/docs/blackboxing
 *** Extension
 **** Google Tag Assistant <<<chrome:google tag assistant>>>
 **** [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
-Fire GET and POST requests.
-For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
+- REST Client app
+- Fire GET and POST requests.
+- For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
+- Set up an Environment which you can define key-value pairs which can be used in e.g. request url
+   - e.g. ~GET {{base_url}}/wp-json/wp/v2/posts/~
 
 **** [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
 Chrome's default save page as HTML has some limitations such as not all images are downloaded.
@@ -64868,6 +64910,9 @@ Right below <body>
 WCAG 2.0 level AA requires a contrast ratio of 4.5:1 for normal text and 3:1 for large text. Level AAA requires a contrast ratio of 7:1 for normal text and 4.5:1 for large text.
 https://webaim.org/resources/contrastchecker/
 http://leaverou.github.io/contrast-ratio/
+
+** RESTful API
+- https://reqres.in
 
 ** Screencast + Audio, FFmpeg
 *** ShareX
