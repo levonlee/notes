@@ -17821,7 +17821,7 @@ transition: /transition-property/ /transition-duration/ /transition-timing-funct
 #+END_EXAMPLE
 
 *** Transform <<<css:transform>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   div:hover {
     width: 300px;
     height: 300px;
@@ -17833,7 +17833,7 @@ transition: /transition-property/ /transition-duration/ /transition-timing-funct
   }
   /* You can turn off all transform */
   /* transform: none; */
-#+END_EXAMPLE
+#+END_SRC
 
 2D transforms
 - translate() :: translate(tx) is equivalent to translate(tx, ty) as ty is 0 by default. Default is translate(0,0)
@@ -18001,12 +18001,14 @@ https://css-tricks.com/fitting-text-to-a-container/
     <ul></ul>
   #+END_SRC
 - ~a[target]~ :: <a>'s with target attribute
-  - ~a[target=_blank]~
+   - ~a[target=_blank]~
 - ~a[title~=flower]~ :: containing a word or followed by a hypen (not match flowers)
 - ~a[lang|=en]~ :: starting with a word or followed by a hyphen (en, en-us)
 - ~div[class^="test"]~ :: starting with (anything)
 - ~div[class$="test"]~ :: ending with (anything)
 - ~a[href*="w3schools"]~ :: containing
+- ~div[id="c1"], div[id="c2"]~ :: id should be c1 or c2
+- ~div[id^="c1"][lang^="en-"]~ :: id starts with c1 AND lang starts with en-
 - ~:root~
   #+BEGIN_SRC css
     :root {
@@ -18020,6 +18022,8 @@ https://css-tricks.com/fitting-text-to-a-container/
 - ~a:hover~
 - ~a:link~ :: ~div:link~ may be possible when div has href attribute
 - ~a:visited~
+- ~p:even~ ~p:odd~ ::*jQuery only*
+- ~p:first~ ~p:last~ 
 - ~p::after~ :: ~<img>~ can't have pseudo element
 - ~p::before~
 - ~p::first-letter~
@@ -18038,10 +18042,15 @@ https://css-tricks.com/fitting-text-to-a-container/
 - ~p:empty~ :: has no children including text nodes
 - ~div:not(p)~ :: all children elements except <p>'s
 - ~div:not(.aClass)~ :: all div elements except the ones with class aClass
+- ~p:eq(2)~ :: *jQuery only* index at 2, starting from 0
+- ~p:gt(2)~ ~p:lt(2)~ :: *jQuery only* index greater than 2 
+- ~p:contains('abc')~ :: *jQuery only* contains abc text
+- ~p:parent~ :: *jQuery only* Select p elements which are parents (has some children or text node)
+- ~div:has(p[class=a])~ :: *jQuery only* select div which has ~p.a~  
 - ~p:first-child~ :: <p>'s are the first child of any elements
 - ~p:last-child~
-- ~p:nth-child(2)~
-- ~p:nth-child(7n-1)~
+- ~p:nth-child(2)~ :: start with 1
+- ~p:nth-child(7n-1)~ :: n starts with 1
 - ~tr:nth-child(even)~
 - ~tr:nth-child(odd)~
 - ~p:nth-last-child(2)~
@@ -18947,52 +18956,47 @@ Mobile first
 #+END_SRC
 
 ** @keyframes <<<css:animation>>>
-IE10+, iOS 6.1+, Android 4.4.4+
+- IE10+, iOS 6.1+, Android 4.4.4+
+- ~animation: /name/ /duration/ /timing-function/ /delay/ /iteration-count/ /direction/ /fill-mode/ /play-state/;~
+- Spinner made in FontAwesome :: ~<i class="fa fa-repeat fa-spin"></i>~
+  #+BEGIN_SRC css
+    @keyframes fa-spin {
+     0%   { transform: rotate(0deg); }
+     100% { transform: rotate(359deg); } 
+    }
+    .fa-spin {
+     animation: fa-spin 2s linear 3s infinite alternate;
+    /* 
+      2s - duration
+      3s - delay :: delay before start, once started, the delay has no effect.
+      infinite - animation-iteration-count
+      alternate - animation-direction
 
-animation: /name/ /duration/ /timing-function/ /delay/ /iteration-count/ /direction/ /fill-mode/ /play-state/;
-
-#+BEGIN_EXAMPLE
-  @keyframes fa-spin {
-   0%   { transform: rotate(0deg); }
-   100% { transform: rotate(359deg); } 
-  }
-  .fa-spin {
-   animation: fa-spin 2s linear 3s infinite alternate;
-  /* 
-    2s - duration
-    3s - delay :: delay before start, once started, the delay has no effect.
-    infinite - animation-iteration-count
-    alternate - animation-direction
-
-    animation-fill-mode:
-      none (default, after animation ends, styles go back to before start) | 
-      forwards (after animation ends, styles got applied) | 
-      backwards (before animation starts and during delay, apply styles defined in the 1 iteration, e.g. from and to ) | 
-      both;
-  ,*/
-  }
-  .fa-repeat:before {
-    content: "\f01e";
-  }
-  <i class="fa fa-repeat fa-spin"></i>
-  // Spinner made in FontAwesome 
-#+END_EXAMPLE
-
-Javascript starts keyframes animation
-#+BEGIN_EXAMPLE
-  <div id="myDIV" onclick="startAnimation()">Click to start animation</div>
-  var x = document.getElementById("myDIV");
-  function startAnimation() {
-   x.style.animation = "fa-spin 2s liner 3s infinite alternate"; // Standard
-  }
-#+END_EXAMPLE 
-
-Javascript animation event listners
-#+BEGIN_EXAMPLE
-  x.addEventListner("animationstart", func1);
-  x.addEventListner("animationiteration", func2);
-  x.addEventListner("animationend", func3);
-#+END_EXAMPLE
+      animation-fill-mode:
+	none (default, after animation ends, styles go back to before start) | 
+	forwards (after animation ends, styles got applied) | 
+	backwards (before animation starts and during delay, apply styles defined in the 1 iteration, e.g. from and to ) | 
+	both;
+    ,*/
+    }
+    .fa-repeat:before {
+      content: "\f01e";
+    }
+  #+END_SRC
+- Javascript starts keyframes animation
+  ~<div id="myDIV" onclick="startAnimation()">Click to start animation</div>~
+  #+BEGIN_SRC js
+    var x = document.getElementById("myDIV");
+    function startAnimation() {
+     x.style.animation = "fa-spin 2s liner 3s infinite alternate"; // Standard
+    }
+  #+END_SRC
+- Javascript animation event listners
+  #+BEGIN_SRC js
+    x.addEventListner("animationstart", func1);
+    x.addEventListner("animationiteration", func2);
+    x.addEventListner("animationend", func3);
+  #+END_SRC
 
 ** @import
 #+BEGIN_SRC css
@@ -34454,25 +34458,27 @@ Use render function (reactive)
  #+END_EXAMPLE
 
 ** jQuery
-*** Version, Closure, document ready
- #+BEGIN_EXAMPLE
-   jQuery.fn.jquery
- #+END_EXAMPLE
+- http://youmightnotneedjquery.com/
 
- Closure
- #+BEGIN_EXAMPLE
+*** Version, Closure, document ready
+#+BEGIN_SRC js
+  jQuery.fn.jquery
+#+END_SRC
+
+- Closure
+#+BEGIN_SRC js
    (function($){
      // can do something like 
      $.fn.function_name = function(x){};
    })(jQuery);
- #+END_EXAMPLE
+#+END_SRC
 
- Document ready shorthand
- #+BEGIN_SRC js
-   $(function(){
+- Document ready shorthand
+#+BEGIN_SRC js
+  $(function(){
 
-   });
- #+END_SRC
+  });
+#+END_SRC
 
  #+BEGIN_SRC html
    <script src="other_lib.js"></script>
@@ -34499,7 +34505,7 @@ Use render function (reactive)
  #+END_SRC
 
 **** jQuery.noConflict
- Return control of $ back to the other library with a call to $.noConflict(). Old references of $ are saved during jQuery initialization; noConflict() simply restores them.
+Return control of $ back to the other library with a call to $.noConflict(). Old references of $ are saved during jQuery initialization; noConflict() simply restores them.
 
  #+BEGIN_SRC js
    var j = jQuery.noConflict(); // different alias
