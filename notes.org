@@ -27212,14 +27212,14 @@ Because protype object can be cloned and modified, that brings one OOP character
 Also, if any prototype property is modified in the upper chain, the lower chain and its instantiated objects will be modified, too!
 
 *** Symbol <<<js:symbol>>>
-- Available since js:es6
+- Since js:es6
 - A symbol value is created by invoking function Symbol, which dynamically produces an anonymous, unique value
 
 #+BEGIN_SRC js
   // here are two symbols with the same description,
   let Sym1 = Symbol("Sym");
   let Sym2 = Symbol("Sym");
-  
+
   console.log(Sym1 == Sym2); // returns "false"
   // Symbols are guaranteed to be unique.
   // Even if we create many symbols with the same description,
@@ -27230,7 +27230,51 @@ Also, if any prototype property is modified in the upper chain, the lower chain 
   alert(Sym1.toString()); // now it works
 
   alert(Sym1.description); // Sym
+
+  const id = Symbol();
+  const courseInfo = {
+    title: "ES6",
+    topics: ["babel", "syntax", "functions", "classes"],
+    id: "js-course"
+  };
+
+  courseInfo[id] = 41284;
+  console.log(courseInfo); // courseInfo has a unique key `Symbol()` which is non-representable, the value of that key is 41284 
 #+END_SRC
+
+- Symbol can be used to extract an object's iterator function
+  #+BEGIN_SRC js
+    var title = 'ES6';
+    console.log(typeof title[Symbol.iterator]);
+
+    var iterateIt = title[Symbol.iterator]();
+    console.log(iterateIt.next());
+    console.log(iterateIt.next());
+    console.log(iterateIt.next());
+    console.log(iterateIt.next());
+
+    function tableReady(arr) {
+      var nextIndex = 0;
+      return {
+	next() {
+	  if(nextIndex < arr.length) {
+	    return {value: arr.shift(), done: false}
+	  } else {
+	    return {done: true}
+	  }
+	}
+      }
+    }
+
+    var waitingList = ['Sarah', 'Heather', 'Anna', 'Meagan'];
+    var iterateList = tableReady(waitingList);
+
+    console.log(`${iterateList.next().value}, your table is ready`);
+    console.log(`${iterateList.next().value}, your table is ready`);
+    console.log(`${iterateList.next().value}, your table is ready`);
+    console.log(`${iterateList.next().value}, your table is ready`);
+    console.log(`Is this finished? ${iterateList.next().done}`);
+  #+END_SRC
 
 *** Type Conversion
 Javascript conversion is automatic. 
@@ -27292,14 +27336,37 @@ Always provide a base number :: parseInt("10", 10); // decimal base
 #+END_SRC
 
 *** for...of <<<js:for...of>>>
-js:for...in interates over all enumerable properties of an object.
-While for...of iterates over elements of any collection that has a [Symbo.iterator] property.
+- js:for...in interates over all enumerable properties of an object while js:for...of iterates over elements of any collection that has a ~[Symbo.iterator]~ property
+   - js:for...of interates over iterable objects :: Array, Map, Set, String, TypedArray, arguments but not objects!
 
-for...of interates over iterable objects :: Array, Map, Set, String, TypedArray, arguments but not objects!
+#+BEGIN_SRC js
+  for (let value of iterable) {
+      console.log(value);
+  }
 
-for (let value of iterable) {
- console.log(value);
-}
+  // loop Map or Set
+  var topics = new Map();
+  topics.set('HTML', '/class/html');
+  topics.set('CSS', '/class/css');
+  topics.set('JavaScript', '/class/javascript');
+  topics.set('Node', '/class/node');
+
+  for (let topic of topics) {
+      console.log(topic); // ['HTML', '/class/html']
+  }
+
+  for (let topic of topics.keys()) {
+      console.log(topic, "is the course name"); // 'HTML'
+  }
+
+  for (let topic of topics.values()) {
+      console.log("The course description can be found at", topic); // '/class/html'
+  }
+
+  for (let course of topics.entries()) {
+      console.log(course); // ['HTML', '/class/html']
+  }
+#+END_SRC
 
 *** forEach <<<js:forEach>>>
 - ~array.forEach(callback[, thisArg])~
@@ -27747,7 +27814,7 @@ Parasitic inheritance is about the _was-a-but-now's-a_ relationship.
 Refer to: Add "method" in Function class, Add "inherits" in Function class
 
 **** Example
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   function Parenizor(v) {
   // enclose v with ( and )
    this.setValue(v);
@@ -27801,7 +27868,7 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 
   console.log(zParenizor instanceof ZParenizor); // true
   console.log(zParenizor instanceof Parenizor); // true
-#+END_EXAMPLE
+#+END_SRC
 
 ** OOP Pattern
 
@@ -27873,137 +27940,136 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 #+END_SRC
 
 ** Promise
-Promise is now native in all browsers including Edge except IE.
+- Promise is now native in all browsers including Edge except IE
+- IE polyfill https://github.com/stefanpenner/es6-promise
+  #+BEGIN_SRC html
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+  #+END_SRC
+- Example
+  #+BEGIN_SRC js
+    function get(url) {
+      // You should wrap all code into return
+      return new Promise(function (resolve, reject) {
+	// run resolve or reject function to resolve or reject a promise
+	var req = new XMLHttpRequest();
+	req.open('GET', url); // it can be set to async
 
-IE polyfill https://github.com/stefanpenner/es6-promise
-#+BEGIN_EXAMPLE
-  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
-#+END_EXAMPLE
+	req.onload = function () {
+	  if (req.status == 200) {
+	    resolve(req.response);
+	  }
+	  else {
+	    reject(Error(req.statusText));
+	  }
+	};
 
-#+BEGIN_SRC js
-  function get(url) {
-    // You should wrap all code into return
-    return new Promise(function (resolve, reject) {
-      // run resolve or reject function to resolve or reject a promise
-      var req = new XMLHttpRequest();
-      req.open('GET', url); // it can be set to async
+	req.onerror = function () {
+	  reject(Error("Network Error"));
+	}
 
-      req.onload = function () {
-        if (req.status == 200) {
-          resolve(req.response);
-        }
-        else {
-          reject(Error(req.statusText));
-        }
-      };
+      });
+    }
 
-      req.onerror = function () {
-        reject(Error("Network Error"));
-      }
+    get('story.json')
+      .then(function (response) {
+	console.log('Success!', response);
+	// transform a value to the next .then
+	// just return the value, you may modify it
+	// The returned value has to be a non-promise
+	return JSON.parse(response);
+      }, function (error) {
+	console.log('Failed!', error);
+	return error;
+      })
+      .then(function (response) {
+	console.log('JSON!', response);
+      });
 
-    });
-  }
-
-  get('story.json')
-    .then(function (response) {
-      console.log('Success!', response);
-      // transform a value to the next .then
-      // just return the value, you may modify it
-      // The returned value has to be a non-promise
-      return JSON.parse(response);
-    }, function (error) {
-      console.log('Failed!', error);
-      return error;
-    })
-    .then(function (response) {
+    // If a 'then' just returns a value when it's resolved, use a shortform
+    get('story.json').then(JSON.parse).then(function(response) {
       console.log('JSON!', response);
     });
 
-  // If a 'then' just returns a value when it's resolved, use a shortform
-  get('story.json').then(JSON.parse).then(function(response) {
-    console.log('JSON!', response);
-  });
+    // In 'then', you can return a promise
+    // a promise.then is a promise
 
-  // In 'then', you can return a promise
-  // a promise.then is a promise
+    function getJSON(url) {
+      return get(url).then(JSON.parse);
+    }
 
-  function getJSON(url) {
-    return get(url).then(JSON.parse);
-  }
-
-  getJSON('story.json').then(function(story) {
-    return getJSON(story.chapterUrls[0]);
-  }).then(function(chapter1) {
-    console.log('Got Chapter 1', chapter1);
-  });
-
-  // Store the result of a promise and reuse it
-  var storyPromise;
-
-  function getChapter(i) {
-    storyPromise = storyPromise || getJSON('story.json');
-
-    return storyPromise.then(function(story) {
-      return getJSON(story.chapterUrls[i]);
+    getJSON('story.json').then(function(story) {
+      return getJSON(story.chapterUrls[0]);
+    }).then(function(chapter1) {
+      console.log('Got Chapter 1', chapter1);
     });
-  }
 
-  getChapter(0).then(function(chapter) {
-    console.log(chapter);
-    return getChapter(1);
-  }).then(function(chapter) {
-    console.log(chapter);
-  });
+    // Store the result of a promise and reuse it
+    var storyPromise;
 
-  // .catch(function(e) { ... }) equals to
-  // .then(undefined, function(e) { ... })
+    function getChapter(i) {
+      storyPromise = storyPromise || getJSON('story.json');
 
-  // Dynamically chained .then()
-  // Start with a resolved promise: Promise.resolve('initialValue')
-  // a reject promise: Promise.reject('initialValue')
-  getJSON('story.json')
-    .then(function(story) {
-      // addHTMLToPage(story.heading);
-      return story.chapterUrls.reduce(function(sequence, chapterUrl) {
-        return sequence
-          .then(function() { return getJSON(chapterUrl); })
-          .then(function(chapter) { /* addHtmlToPage(chapter.html); */ });
-      }, Promise.resolve());
-    })
-    .then(function() { /* addTextToPage("All done"); */ })
-    .catch(function(err) { /* addTextToPage("broken" + err.message); */ })
-    .then(function() { /* document.querySelector('.spinner').style.display='none'; */ });
+      return storyPromise.then(function(story) {
+	return getJSON(story.chapterUrls[i]);
+      });
+    }
 
-  // Start a set of promises in parallel and create a promise that fulfils when all are fulfilled
-  getJSON('story.json')
-    .then(function(story) {
-      // addHTMLToPage(story.heading);
-      return Promise.all(
-        story.chapterUrls.map(getJSON)
-      ); // not a callback. It's an array of Promises (not chained)
-      // After promises are added to array as values, they are started already
+    getChapter(0).then(function(chapter) {
+      console.log(chapter);
+      return getChapter(1);
+    }).then(function(chapter) {
+      console.log(chapter);
+    });
 
-      // Start a set of promises in parallel, chain them so that we get response in order
+    // .catch(function(e) { ... }) equals to
+    // .then(undefined, function(e) { ... })
 
-      return story.chapterUrls.map(getJSON)
-        .reduce(function (sequence, chapterPromise) {
+    // Dynamically chained .then()
+    // Start with a resolved promise: Promise.resolve('initialValue')
+    // a reject promise: Promise.reject('initialValue')
+    getJSON('story.json')
+      .then(function(story) {
+	// addHTMLToPage(story.heading);
+	return story.chapterUrls.reduce(function(sequence, chapterUrl) {
+	  return sequence
+	    .then(function() { return getJSON(chapterUrl); })
+	    .then(function(chapter) { /* addHtmlToPage(chapter.html); */ });
+	}, Promise.resolve());
+      })
+      .then(function() { /* addTextToPage("All done"); */ })
+      .catch(function(err) { /* addTextToPage("broken" + err.message); */ })
+      .then(function() { /* document.querySelector('.spinner').style.display='none'; */ });
 
-          return sequence
-            .then(function () {
-              return chapterPromise;
-            })
-            .then(function (chapter) {
-              addHtmlToPage(chapter.html);
-            });
+    // Start a set of promises in parallel and create a promise that fulfils when all are fulfilled
+    getJSON('story.json')
+      .then(function(story) {
+	// addHTMLToPage(story.heading);
+	return Promise.all(
+	  story.chapterUrls.map(getJSON)
+	); // not a callback. It's an array of Promises (not chained)
+	// After promises are added to array as values, they are started already
 
-        }, Promise.resolve());
+	// Start a set of promises in parallel, chain them so that we get response in order
+
+	return story.chapterUrls.map(getJSON)
+	  .reduce(function (sequence, chapterPromise) {
+
+	    return sequence
+	      .then(function () {
+		return chapterPromise;
+	      })
+	      .then(function (chapter) {
+		addHtmlToPage(chapter.html);
+	      });
+
+	  }, Promise.resolve());
 
 
-    })
-    .then(function() { /* ... */ })
-    .catch(function(err) { /* ... */ })
-    .then(function() { /* ... */ });
-#+END_SRC
+      })
+      .then(function() { /* ... */ })
+      .catch(function(err) { /* ... */ })
+      .then(function() { /* ... */ });
+  #+END_SRC
 
 ** Observable <<<js:observable>>>
 A promise is a push mechanism that calls some code after the promise has been resolved or rejected with a single value.
@@ -28884,10 +28950,76 @@ Refer to bootstrap:responsive helpers
 - ~ES6~ is ~ES2015~ :: 6 stands for 6th edition. 2015 is the year <<<js:es6>>>
 - ~ES7-2016~, ~ES8-2017~, ~ES9-2018~, ~ES10-2019~
 
+*** Map - New Data Type (ES6)
+- js:for...of
+
+#+BEGIN_SRC js
+  var course = new Map();
+  course.set('react', {description: 'ui'});
+  course.set('jest', {description: 'testing'});
+
+  console.log(course); // course.size === course.length === 2
+  console.log(course.react); // error
+  console.log(course.get('react')); // an object {description: 'ui'}
+
+  // details is equivalent to course
+  var details = new Map([
+      ['react', {description: 'ui'}], // key/value can be any data type: [new Date(), 'today'],
+      ['jest', {description: 'testing'}]// key/value can be any data type: ['items', [1, 2]]
+  ]);
+
+  console.log(details.size);
+
+  details.forEach(function(item) {
+      console.log(item);
+  });
+#+END_SRC
+
+*** Set - New Data Type (ES6)
+- js:for...of
+
+#+BEGIN_SRC js
+  var books = new Set();
+  books.add('Pride and Prejudice');
+  books.add('War and Peace')
+      .add('Oliver Twist');
+
+  console.log(books);
+  console.log('how many books?', books.size);
+  console.log('has Oliver Twist?', books.has('Oliver Twist'));
+  books.delete('Oliver Twist');
+  console.log('has Oliver Twist still?', books.has('Oliver Twist'));
+
+  var data = [4,2,4,4,2,5,1,6,7,5,6,8,2,7];
+  var set = new Set(data); // auto dedup
+  console.log('data.length', data.length);
+  console.log('set.size', set.size);
+#+END_SRC
+
 *** Generator Function
- You can treat each yield is a stop, and later code could be started when gen.next() is called.
- You can assign variable = yield (async requests) and program like they are normal sync. Refer to last example
- Refer to nodejs:co for yielding promises
+- Treat each yield is a stop, and later code could be started when ~gen.next()~ is called
+  #+BEGIN_SRC js
+    function* eachItem(arr) {
+	for(var i=0; i< arr.length; i++) {
+	    yield arr[i];
+	}
+    }
+
+    var letters = eachItem(["a", "b", "c", "d", "e", "f", "g"]);
+
+    var abcs = setInterval(function(){
+	var letter = letters.next();
+	if(letter.done) {
+	    clearInterval(abcs);
+	    console.log("Now I know my ABC's");
+	} else {
+	    console.log(letter.value);
+	}
+    },
+			   500);
+  #+END_SRC
+- Assign variable = yield (async requests) and program like they are normal sync. Refer to last example
+- Refer to nodejs:co for yielding promises
  #+BEGIN_SRC js
    function* idMaker() {
        var index = 0;
@@ -28995,11 +29127,9 @@ Refer to bootstrap:responsive helpers
  #+END_SRC
 
 *** async/await <<<js:async/await>>>
- async function returns AsyncFunction object which is Promise.resolve. 
-
- await one and only one Promise.
-
- To wait for all promises to finish, use Promise.all
+- async function returns AsyncFunction object which is Promise.resolve 
+- await one and only one Promise
+- To wait for all promises to finish, use Promise.all
  #+BEGIN_SRC js
    function resolveAfter2Seconds(x) {
      return new Promise(resolve => {
@@ -29035,6 +29165,7 @@ Refer to bootstrap:responsive helpers
    });
  #+END_SRC
 
+*** js:for...of
 ** TypeScript
 - Playground :: https://www.typescriptlang.org/play/index.html
 - Basics
@@ -31370,7 +31501,7 @@ Use render function (reactive)
  #+BEGIN_EXAMPLE
    render: function (createElement) {
      return createElement('div',
-       Array.apply(null, { length: 20 }).map(function () {
+     Array.apply(null, { length: 20 }).map(function () {
          return createElement('p', 'hi')
        })
      )
