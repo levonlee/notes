@@ -29047,7 +29047,7 @@ Update cache before showing a notification
 
 *** Dynamic iframe height
 This code requires the iframe domain is same origin.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   <iframe id="preview_iframe" style="width:100%"
           onload="resize_iframe(this)"
           srcdoc="<?php echo str_replace('"', '&quot;', $html);?>"
@@ -29058,7 +29058,7 @@ This code requires the iframe domain is same origin.
     iframe.height= iframe.contentWindow.document.body.scrollHeight + 'px';
   }
   </script>
-#+END_EXAMPLE
+#+END_SRC
 
 *** Responsive iframe
 Refer to bootstrap:responsive helpers
@@ -29305,6 +29305,98 @@ Refer to bootstrap:responsive helpers
  #+END_SRC
 
 *** js:for...of
+*** Import, export
+- ES5 :: ~require~ and ~module.exports~
+  #+BEGIN_SRC js
+    // App.js
+    var React = require('react');
+    var Component = React.Component;
+    require('./App.css');
+    var Color = require('./Shapes'); // color component
+
+    class App extends Component {
+      render() {
+	return (
+	  <div className="App">
+	    <div className="colors">
+	      <Color name="red"/>
+	      <Color name="green"/>
+	      <Color name="blue"/>
+	    </div>
+	  </div>
+	);
+      }
+    }
+
+    module.exports = App;
+
+    // Shapes.js
+    var React = require('react');
+    var Component = React.Component;
+    class Color extends Component {
+      render() {
+	const divStyle = {
+	  backgroundColor: this.props.name,
+	  color: 'white',
+	  fontSize: '20px',
+	  height: '100px',
+	  width: '100px'
+	}
+	return (
+	  <div style={divStyle}>{this.props.name}</div>
+	)
+      }
+    }
+    module.exports = Color;
+
+
+    // Export multiple components
+    class Animal extends Component {
+      render() {
+	const divStyle = {
+	  fontSize: '20px',
+	  height: '100px',
+	  width: '100px',
+	  border: '1px solid black',
+	  borderRadius: '50%'
+	}
+	return (
+	  <div style={divStyle}>{this.props.name}</div>
+	)
+      }
+    }
+
+    module.exports = {
+      Color: Color,
+      Animal: Animal
+    }
+
+    // Multiple exports, the import needs to change, too
+
+    // App.js
+    var {Color} = require('./Shapes');
+    var {Animal} = require('./Shapes');
+  #+END_SRC
+- ES6
+  #+BEGIN_SRC js
+    //App.js
+    import React, {Component} from 'react';
+    import './App.css';
+    import {Color, Animal} from './Shapes';
+    // ...
+    // `export default` to export only one thing
+    export default App;
+
+    //Shapes.js
+    import React, {Component} from 'react';
+    export class Color extends Component {
+	//...
+    }
+    export class Animal extends Component {
+	//...
+    }
+  #+END_SRC
+
 ** TypeScript
 - Playground :: https://www.typescriptlang.org/play/index.html
 - Basics
@@ -57939,16 +58031,19 @@ Pull from remote and put changes to staged without commit (ready to commit)
 
 ** Clone a subdirectory
 Just clone examples/shopping-cart directory from branch dev
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git init <repo>
   cd <repo>
   git remote add origin https://github.com/vuejs/vuex.git
   git config core.sparsecheckout true
   echo "examples/shopping-cart/*" >> .git/info/sparse-checkout
   git pull --depth=1 origin master
-#+END_EXAMPLE
+  # Result is ~./<repo>/examples/shopping-cart~
 
-Result is ./<repo>/examples/shopping-cart
+  # Grab code only
+  git clone --depth=1 --branch=master git://someserver/somerepo dirformynewrepo
+  rm -rf ./dirformynewrepo/.git
+#+END_SRC
 
 ** Track local branch with a remote branch <<<git:upstream>>>
 #+BEGIN_EXAMPLE
