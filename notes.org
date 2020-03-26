@@ -48534,6 +48534,68 @@ Includes ssh, scp
   apt-get update && apt-get -y install openssh-client
 #+END_EXAMPLE
 
+**** supervisord <<<linux:package:supervisord>>>
+#+BEGIN_SRC sh
+  sudo apt-get install -y supervisor
+  sudo service supervisor start
+
+  # config is at /etc/supervisor/supervisord.conf
+  # [include]
+  # files = /etc/supervisor/conf.d/*.conf
+
+  # after changing or adding config files
+  supervisorctl reread
+  supervisorctl update
+
+  # all defined programs in config are run
+
+  # go to CLI prompt, C-c to type exit to get out of the supervisorctl tool
+  supervisorctl
+
+  # available commands
+  supervisor> help
+
+  supervisor> stop nodehook
+  supervisor> start nodehook
+#+END_SRC
+
+Built-in web interface
+#+BEGIN_SRC conf
+  [inet_http_server]
+  port = 9001
+  username = user # Basic auth username
+  password = pass # Basic auth password
+#+END_SRC
+
+For example, create a webhooks.conf file to monitor a process
+#+BEGIN_SRC conf
+  [program:nodehook]
+  ;; nodehook is a name we give
+
+  ;; the command to monitor
+  command=/usr/bin/node /srv/http.js
+
+  ;; change directory before running the above command
+  directory=/srv
+
+  ;; start the process when Supervisord starts (essentially on system boot)
+  autostart=true
+
+  ;; the program will be restarted if it exits unexpectedly
+  autorestart=true
+
+  startretries=3
+
+  stderr_logfile=/var/log/webhook/nodehook.err.log
+
+  stdout_logfile=/var/log/webhook/nodehook.out.log
+
+  user=www-data
+
+  ;; environment variables to pass to the process
+  environment=SECRET_PASSPHRASE='this is secret',SECRET_TWO='another secret'
+#+END_SRC
+
 **** sendmail <<<linux:sendmail>>>
 #+BEGIN_SRC sh
   apt-get install sendmail
@@ -51800,6 +51862,34 @@ image:tatemz/wp-cli
   dall: dfolder1 dfolder2
 #+END_EXAMPLE
 
+** Kubernetes - K8s
+- Docker Engine :: runtime and packaging tool that must be installed on the hosts that run Docker
+- Docker Store or Docker Hub :: online cloud service where users can store and share Docker images
+- Kubernetes :: a platform to schedule and run containers on clusters of virtual machines. It runs on bare metal, virutal machines, private datacenter and public cloud
+   - Written in Go by Google
+   - Master Node
+      - Kube API Server (communication)
+      - Scheduler (scheduling)
+	 - Monitor created Pods which do not have a Node design yet and design the Pod to run on a specific Node
+      - Cluster Manager (controllers)
+	 - Background threads that run tasks in a cluster. Carry several roles but compiled into 1 single binary
+	 - Node controller :: worker state
+	 - Replication controller :: maintain the correct number of Pods
+	 - End-Point controller :: join services and Pods together
+	 - Service account and token controllers :: handle access management
+      - etcd database :: simple distributed key value pairs which is all cluster data
+      - kubectl app :: job scheduling info, Pod details, stage info. CLI
+	 - kubeconfig file :: server info and authentication info to access Kube API Server
+   - Worker Nodes :: communicate back with Master Node
+      - kubelet process :: this agent sees if Pods have been designed to the Nodes, execute Pod containers via the container engin, mount and run Pod volume and secrets, is aware of Pod of Node states
+      - kube-proxy process :: Network Proxy and load balancer for the service, on a single Worker Node. It handles the networking routing for TCP and UDP Packets, performs connection forwarding. It might expose to the public internet
+      - Docker daemon
+	 - Pods :: a Pod is a group of containers, the smallest unit that can be scheduled as a deployment in K8s
+	    - shared storage, Linux name space, IP addresses amongst other things 
+	    - containers
+- Docker Swarm
+   - Written in Go
+
 ** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
 Parent: scratch (perfect for building base images such as debian and busybox
 
@@ -52584,7 +52674,7 @@ docker:image:lucee
 
 *** Setup Virtual Directory per Host <<<docker:image:tomcat:vd>>>
 In /usr/local/tomcat/conf/server.xml, you can see how many hosts are defined. e.g.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC xml
   <Server port="8005" shutdown="SHUTDOWN">
     <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
     <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
@@ -52621,7 +52711,7 @@ In /usr/local/tomcat/conf/server.xml, you can see how many hosts are defined. e.
     </Service>
 
   </Server>
-#+END_EXAMPLE
+#+END_SRC
 
 Method 1 is to add a <Context> tag in a <Host> in server.xml. But for me it doesn't work when multiple hosts
 need to have the same vd and it creates a lot of other problems.
@@ -52630,11 +52720,11 @@ General rule :: don't include more than 1 <Context> in each <Host> in server.xml
 
 Method 2 is to create a file legacy_js.xml under ${catalina_home}/conf/Catalina/127.0.0.1/
 Where Catalina is the engine name and 127.0.0.1 is the Host name.
-#+BEGIN_EXAMPLE
-  ;; # legacy_js.xml
+#+NAME legacy_js.xml
+#+BEGIN_SRC xml
   <?xml version='1.0' encoding='utf-8'?>
   <Context docBase="/root/vd/legacy_js/"></Context>
-#+END_EXAMPLE
+#+END_SRC
 
 ~http://127.0.0.1/legacy_js/abc.js~ points to ~/root/vd/legacy_js/abc.js~
 
