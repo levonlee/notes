@@ -19155,30 +19155,81 @@ Mobile first
 
 ** @keyframes <<<css:animation>>>
 - IE10+, iOS 6.1+, Android 4.4.4+
-- ~animation: /name/ /duration/ /timing-function/ /delay/ /iteration-count/ /direction/ /fill-mode/ /play-state/;~
+- ~animation: /animation-name/ /animation-duration/ /animation-timing-function/ /animation-delay/ /animation-iteration-count/ /animation-direction/ /animation-fill-mode/ /animation-play-state/;~
 - Spinner made in FontAwesome :: ~<i class="fa fa-repeat fa-spin"></i>~
   #+BEGIN_SRC css
     @keyframes fa-spin {
-     0%   { transform: rotate(0deg); }
-     100% { transform: rotate(359deg); } 
+     0%   { transform: rotate(0deg); } /* this is called a step */
+     100% { transform: rotate(359deg); }
+     /* 0% and 100% steps share the same CSS, you can */
+     /* 0%, 100% {} */
+     /* Some effects have high performance animation: 
+	transform: translate()
+	transform: scale()
+	transform: rotate()
+	opacity
+      ,*/
     }
     .fa-spin {
      animation: fa-spin 2s linear 3s infinite alternate;
     /* 
-      2s - duration
-      3s - delay :: delay before start, once started, the delay has no effect.
-      infinite - animation-iteration-count
-      alternate - animation-direction
+      2s :: animation-duration Xs or Xms
+      3s :: animation-delay Xs or Xms. delay before start, once started, the delay has no effect
+      infinite :: animation-iteration-count inifinite or int X
+      alternate :: animation-direction normal,alternate
+
+      animation-play-state :: paused, running
 
       animation-fill-mode:
 	none (default, after animation ends, styles go back to before start) | 
 	forwards (after animation ends, styles got applied) | 
 	backwards (before animation starts and during delay, apply styles defined in the 1 iteration, e.g. from and to ) | 
 	both;
+
+      multiple animations can be separated by comma
     ,*/
     }
     .fa-repeat:before {
       content: "\f01e";
+    }
+  #+END_SRC
+- animation-timing-function :: ease (default), ease-in, ease-out, ease-in-out, linear, step-start, step-end
+  #+BEGIN_SRC css
+    .move-me {
+      display: inline-block;
+      padding: 20px;
+      color: white;
+      position: relative;
+      margin: 0 0 10px 0;
+    }
+
+    /* jump-term :: jump-start/start, jump-end/end, jump-none, jump-both 
+       - start :: the first jump happens when the animation begins
+       - end :: the last jump happens when the animation ends
+    ,*/
+    .move-me-1 {
+      animation: move-in-steps 8s steps(4) infinite;
+    }
+    .move-me-2 {
+      animation: move-in-steps 8s steps(4, start) infinite;
+    }
+    .move-me-3 {
+      animation: move-in-steps 8s infinite;
+    }
+
+    body {
+      padding: 20px;
+    }
+
+    @keyframes move-in-steps {
+      0% {
+	left: 0;
+	background: blue;
+      }
+      100% {
+	left: 100%;
+	background: red;
+      }
     }
   #+END_SRC
 - Javascript starts keyframes animation
@@ -27825,7 +27876,6 @@ Current URL <<<js:window.location>>>
   window.open('/your-url', '_blank');
 
   // Get URL Parameter
-
   var getUrlParameter = function getUrlParameter(sParam) {
       var sPageURL = decodeURIComponent(window.location.search.substring(1)),
 	  sURLVariables = sPageURL.split('&'),
@@ -27844,6 +27894,11 @@ Current URL <<<js:window.location>>>
   // Given http://dummy.com/?technology=jquery&blog=jquerybyexample
   var tech = getUrlParameter('technology');
 
+  // Get URL Parameter from hash
+  const queryString = window.location.hash.substr(1);
+  let urlParams = new URLSearchParams(queryString); // not supported in IE
+  let newToken = urlParams.get('access_token');
+
   // Get last path
   var path = window.location.pathname;
   var lastindex = path.lastIndexOf('/');
@@ -27853,6 +27908,11 @@ Current URL <<<js:window.location>>>
       lastindex = path.lastIndexOf('/');
   }
   console.log(path.substring(lastindex + 1));
+
+  // Remove hash
+  function removeHash() { 
+      history.pushState("", document.title, window.location.pathname + window.location.search);
+  }
 #+END_SRC
 
 ** Cookie <<<js:cookie>>>
