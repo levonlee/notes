@@ -8178,23 +8178,6 @@ has_cap :: has role name or capability
   } 
 #+END_SRC
 
-** User Permissions, User Roles & User Capabilities WP_Roles <<<wp:roles>>>
-- https://codex.wordpress.org/Roles_and_Capabilities
-- manage_options :: default admin only. Many plugins use this to determine if the user can make plugin specific changes
-- edit_theme_options :: Add Admin Panel options for Appearance:
-  - Widgets
-  - Menus
-  - Customize
-  - Background
-  - Header
-#+BEGIN_SRC php
-  $role = get_role('editor');
-  $role->add_cap('edit_theme_options');
-
-  // later
-  if ( current_user_can( 'edit_theme_options' ) ) {}
-#+END_SRC
-
 ** WP Custom Fields <<<wp:Custom_Fields>>>
 *** Get Custom Fields
 Normal
@@ -9078,6 +9061,40 @@ Event based
 - ~wp~ :: (ref array) after WP object is set up <<<wp:action:wp>>>
   - ~WP_Customize_Widgets->customize_register~
 
+**** register_activation_hook <<<wp:f:register_activation_hook>>>
+- ~register_activation_hook( string $file, callable $function)~
+   - wp:add_action with name ~$file~ and add the callback function
+- ~register_deactivation_hook~
+#+BEGIN_SRC php
+  // run something after a plugin is activated
+  // usually the code is added in wp-content/plugins/myplugin/myplugin.php, but it can be anywhere
+
+  /** wp-content/plugins/myplugin/myplugin.php
+   ,* Register Task post type.
+   ,*/
+  require_once plugin_dir_path( __FILE__ ) . 'includes/posttypes.php';
+  register_activation_hook( __FILE__, 'taskbook_rewrite_flush' );
+
+  /** wp-content/plugins/myplugin/includes/posttypes.php
+   ,* Register Task post type.
+   ,*/
+  function taskbook_cpt_init() {
+	      register_post_type( 'task', $args );
+  }
+  add_action( 'init', 'taskbook_cpt_init' );
+  function taskbook_rewrite_flush() {
+      // First, we "add" the custom post type via the above written function.
+      // Note: "add" is written with quotes, as CPTs don't get added to the DB,
+      // They are only referenced in the post_type column with a post entry, 
+      // when you add a post of this CPT.
+      taskbook_cpt_init();
+ 
+      // ATTENTION: This is *only* done during plugin activation hook in this example!
+      // You should *NEVER EVER* do this on every page load!!
+      flush_rewrite_rules();
+  }
+#+END_SRC
+
 *** Transients API - ~set_transient~ vs ~wp_cache_set~ <<<wp:cache>>>
  WordPress cache API in database.
  ~DELETE FROM wp_options WHERE option_name LIKE ('%\_transient\_%')~
@@ -9382,10 +9399,67 @@ Complex context
 Poedit save fr_CA.po and fr_CA.mo files. Copy and place them into the right place and then on Wordpress
 Settings > General > Site Lanuage to match fr_CA
 
-*** User Role & Capabilities API <<<wp:api:role-capabilities>>>
+*** User Role & Capabilities API <<<wp:api:role-capabilities>>> <<<wp:roles>>>
 :PROPERTIES:
 :CUSTOM_ID: wp-api-role-capabilities
 :END:
+
+- https://codex.wordpress.org/Roles_and_Capabilities
+- Capabilities
+  #+BEGIN_SRC php
+    $role = get_role('editor'); // WP_Role
+    $role->add_cap('edit_theme_options');
+
+    // later
+    if ( current_user_can( 'edit_theme_options' ) ) {}
+  #+END_SRC
+   - manage_options :: default admin only. Many plugins use this to determine if the user can make plugin specific changes
+   - edit_theme_options :: Add Admin Panel options for Appearance:
+      - Widgets
+      - Menus
+      - Customize
+      - Background
+      - Header
+   - Post type capabilities
+     #+BEGIN_SRC php
+       'capabilities' => array(
+	 'edit_post'          => 'edit_book', 
+	 'read_post'          => 'read_book', 
+	 'delete_post'        => 'delete_book', 
+	 'edit_posts'         => 'edit_books', 
+	 'edit_others_posts'  => 'edit_others_books', 
+	 'publish_posts'      => 'publish_books',       
+	 'read_private_posts' => 'read_private_books', 
+	 'create_posts'       => 'edit_books', 
+       )
+
+       [cap] => stdClass Object
+       (
+	       // Meta capabilities
+
+	       [edit_post]		 => "edit_{$capability_type}"
+	       [read_post]		 => "read_{$capability_type}"
+	       [delete_post]		 => "delete_{$capability_type}"
+
+	       // Primitive capabilities used outside of map_meta_cap():
+
+	       [edit_posts]		 => "edit_{$capability_type}s"
+	       [edit_others_posts]	 => "edit_others_{$capability_type}s"
+	       [publish_posts]		 => "publish_{$capability_type}s"
+	       [read_private_posts]	 => "read_private_{$capability_type}s"
+
+	       // Primitive capabilities used within map_meta_cap():
+
+	       [read]                   => "read",
+	       [delete_posts]           => "delete_{$capability_type}s"
+	       [delete_private_posts]   => "delete_private_{$capability_type}s"
+	       [delete_published_posts] => "delete_published_{$capability_type}s"
+	       [delete_others_posts]    => "delete_others_{$capability_type}s"
+	       [edit_private_posts]     => "edit_private_{$capability_type}s"
+	       [edit_published_posts]   => "edit_published_{$capability_type}s"
+	       [create_posts]           => "edit_{$capability_type}s"
+       )
+     #+END_SRC
 
 **** ~add_role( string $role, string $display_name, $capabilities = array() ) : WP_Role|null~ <<<wp:f:add_role>>>
 #+BEGIN_SRC php
@@ -10009,6 +10083,7 @@ Settings > General > Site Lanuage to match fr_CA
     - wp:f:add_rewrite_tag
  - wp:action:pre_get_posts
  - Refresh Permalink from UI or ~flush_rewrite_rules()~ in plugin/theme activation and deactivation hooks
+    - wp:f:register_activation_hook
  - Do not call before wp:action:init
  - ~register_post_type( string $post_type, array|string $args = array() ) : WP_Post_Type|WP_Error~
     - $post_type :: string. < 20 characters. All lowercase and no space
@@ -10051,6 +10126,9 @@ Settings > General > Site Lanuage to match fr_CA
        // true :: display as a top level menu
        // 'some string' :: display as a submenu of a menu 'some string'
        'show_in_admin_bar' => true, // optional, bool, default inherits show_in_menu
+
+       'capability_type' => 'post', // default, for naming capabilities e.g. `edit_published_posts`
+       'map_meta_cap' => false, // default false. If you specify capability_type other than post, you should set this to true. Optionally, build map_meta_cap hooks to give further granular meta capabilities
 
        'supports' => ['title', 'editor'], 
        // optional. array/bool. wp:f:add_post_type_support
@@ -15665,6 +15743,21 @@ Search the files on your website, and the posts and comments tables of your data
 
 You need to have wp-content/plugins/exployt-scanner/hashes-4.9.6.php to match the wp version in order for the file checking to work correct
 https://github.com/philipjohn/exploit-scanner-hashes
+*** Authentication
+**** WordPress OAuth Server
+- Premium without trial https://wp-oauth.com
+- Installation
+   - Plugin > Settings > General
+      - OAuth Server Enabled
+   - Plugin > Settings > Advanced Config
+      - Authorization Code :: HTTP redirects and WP login form when authenticating
+      - Allow Implicit :: Enable
+   - Plugin > create a client
+      - Redirect URI
+      - Get the client ID
+	 - Open a InCognito Window and test the Auth :: ~http://mylocalwpauthserver:8000/oauth/authorize?client_id={xxx}&response_type=token~ it will redirect to login page, after login, it will redirect to the Redirect URI previously set
+	 - Get the Bearer token from the Redirect URI :: ~https://redirected.io/#access_token={xxx}&expires_in={yyy}&token_type=Bearer&other~
+
 *** Email
 **** sendgrid-email-delivery-simplified
 - Create API key with ~Mail Send: Full~ permission only
@@ -16774,7 +16867,12 @@ Require auth for all requests
   });
 #+END_SRC
 
-*** Internal request
+*** Current request is REST request?
+#+BEGIN_SRC php
+  if ( defined('REST_REQUEST') && REST_REQUEST) {}
+#+END_SRC
+
+*** New internal request
 #+BEGIN_SRC php
   $request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
   // Set one or more request query parameters
@@ -16782,7 +16880,7 @@ Require auth for all requests
   $response = rest_do_request( $request );
 #+END_SRC
 
-*** External request and read response
+*** New external request and read response
 #+BEGIN_SRC php
   $request = wp_remote_get( 'https://a.ca/wp-json/wp/v2/news?per_page=5' );
   if ( is_wp_error( $request ) ) {
@@ -16803,7 +16901,7 @@ I think REST response is object cache. When using with Pantheon Advanced Page Ca
 
 *** Hooks
 **** ~rest_api_init~
-- ~register_rest_field~ :: Add an extra field in response
+- ~register_rest_field()~ :: Add an extra field in response
   #+BEGIN_SRC php
     add_action( 'rest_api_init', 'll_rest_api_add_fields' );
     function ll_rest_api_add_fields() {
@@ -16840,6 +16938,23 @@ I think REST response is object cache. When using with Pantheon Advanced Page Ca
 	    ) );
     }
   #+END_SRC
+
+**** ~rest_after_insert_{post_type}~
+- Default no action is added to the hook
+- Action runs when task post is modified via REST API, Gutenberg or Post editor
+
+#+BEGIN_SRC php
+  add_action( 'rest_after_insert_task', 'taskbook_change_status', 10, 2 );
+  function taskbook_change_status( $post, $request ) {
+      $outcome = get_post_meta( $post->ID, 'taskbook_outcome', true );
+
+      if ( 0 === strlen($outcome) ) {
+	  update_post_meta( $post->ID, 'task_status', 'In progress' );
+      } else {
+	  update_post_meta( $post->ID, 'task_status', 'Completed' );
+      }
+  }
+#+END_SRC
 
 **** ~rest_{$this->post_type}_collection_params~ <<<wp:rest:hook:rest_*_collection_params>>>
 - Register custom collection parameters ~$_GET['yourparam']~
