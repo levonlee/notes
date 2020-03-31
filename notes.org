@@ -516,6 +516,8 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // http://php.net/manual/en/datetime.createfromformat.php
   $date = DateTime::createFromFormat( 'j-M-Y', '15-Feb-2009');
 
+  // return false if it is not of that format
+
   $now = new DateTime();
 
   $interval = $now->diff($a);
@@ -5766,7 +5768,7 @@ db_query is meant for simple select query. [[https://www.drupal.org/node/310075]
 https://www.drupal.org/docs/7/api/database-api/static-queries
 https://api.drupal.org/api/drupal/includes%21database%21database.inc/function/db_query/7.x
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   $query = db_query("SELECT nid, title FROM {node}");
   $records = $query->fetchAll(); // get all records into an indexed array of stdClass
   $records = $query->rowCount();
@@ -5805,10 +5807,10 @@ https://api.drupal.org/api/drupal/includes%21database%21database.inc/function/db
 
   // say first column is node id, then load all nodes
   $nodes = node_load_multiple( $nids );
-#+END_EXAMPLE
+#+END_SRC
 
 Other fetch usage
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // Fetch data from specific column from next row
   // Defaults to first column if not specified as argument
   $data = $result->fetchColumn(1); // Grabs the title from the next row
@@ -5825,7 +5827,7 @@ Other fetch usage
   $result->fetchAllKeyed(0,2); // would be nid => created
   $result->fetchAllKeyed(1,0); // would be title => nid
 
-#+END_EXAMPLE
+#+END_SRC
 
 *** db_delete
 Same syntax as db_select
@@ -17999,24 +18001,22 @@ Notice: any parents will not expand in width and height according to that absolu
 css:animation
 
 *** Transition
-transition: /transition-property/ /transition-duration/ /transition-timing-function/ /transition-delay/
+- ~transition: /transition-property/ /transition-duration/ /transition-timing-function/ /transition-delay/~
+  #+BEGIN_SRC css
+    div {
+      width: 100px;
+      height: 100px;
+      background: red;
+      transition: width 2s linear 3s, height 2s linear 3s, transform 2s linear 3s;
+    }
+  #+END_SRC
+   - transition-property :: can be 'all'
+   - transition-timing-function :: default linear
+      - ease-in :: slow start
+      - ease-out :: slow end
+      - e.g. use ease-in for div:hover and ease-out in div
+   - transition-delay :: delay n seconds before the current transition starts.
 
-- transition-property :: can be 'all'
-- transition-timing-function :: default linear
-  - ease-in :: slow start
-  - ease-out :: slow end
-  - e.g. use ease-in for div:hover and ease-out in div
-
-- transition-delay :: delay n seconds before the current transition starts.
-
-#+BEGIN_SRC css
-  div {
-    width: 100px;
-    height: 100px;
-    background: red;
-    transition: width 2s linear 3s, height 2s linear 3s, transform 2s linear 3s;
-  }
-#+END_SRC
 
 *** Transform <<<css:transform>>>
 #+BEGIN_SRC css
@@ -52107,12 +52107,12 @@ copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or
 docker-php-ext-install uses docker-php-ext-enable which adds docker-php-ext-{ext-name}.ini to /usr/local/etc/php/conf.d/
 
 If you want to get some from PHP's source, you can extract, use and delete it.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC dockerfile
   FROM php:7.0-apache
   RUN docker-php-source extract \
       # do important things \
       && docker-php-source delete
-#+END_EXAMPLE
+#+END_SRC
 
 Install PHP Core Extensions
 #+BEGIN_SRC dockerfile
@@ -52274,11 +52274,9 @@ This one is Debian and has curl
 #+END_EXAMPLE
 
 ** image:php:7 <<<image:php:7>>>
-Tag latest is 7.2.3-cli-stretch
-php:7.2.3-apache <<<image:php:7:apache>>>
-
-Installed PHP extensions
-ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
+- Tag latest is 7.2.3-cli-stretch
+- php:7.2.3-apache <<<image:php:7:apache>>>
+- Installed PHP extensions :: ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
 
 ** image:mysql:5.7.9 <<<image:mysql>>>
 - Parent :: image:debian:jessie
@@ -55274,203 +55272,189 @@ Database Drivers
 
 * Vagrant
 ** Install
-Install Oracle VM Virtualbox first
-https://www.virtualbox.org/wiki/Downloads
-VirtualBox Oracle VM VirtualBox Extension Pack is needed
-https://www.vagrantup.com/docs/virtualbox/
-VirtualBox version 5.0.x and 5.1.x are supported by Vagrant 1.x
+- Install Oracle VM Virtualbox first :: https://www.virtualbox.org/wiki/Downloads
+   - VirtualBox Oracle VM VirtualBox Extension Pack is needed :: https://www.vagrantup.com/docs/virtualbox/
+   - VirtualBox version 5.0.x and 5.1.x are supported by Vagrant 1.x
+   - Simply install the latest version of VirtualBox to upgrade
+      - If Oracle VM VirtualBox Extension Pack is previously installed, upgrading the VB core will also auto update it
+   - TS: ~Error: "VT-x/AMD-V hardware acceleration is not available"~
+      - On Windows, check if ~Hyper-V~ or ~Windows Hypervisor Platform~ is on by going to Windows Features
+	 - ~optionalfeatures.exe~ goes directly to Windows Features.
+	 - Turn it off. As Windows takes over the hardware acceleration
+	 - Then reboot and change UEFI or BIOS setting
+	    - name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration
+- Simply install the latest version to upgrade :: https://www.vagrantup.com/downloads.html
 
-Simply install the latest version of VirtualBox to upgrade
-
-Error: "VT-x/AMD-V hardware acceleration is not available"
-On Windows, check if Hyper-V is on by going to Windows Features.
-Turn it off. As Windows takes over the hardware acceleration.
-
-~optionalfeatures.exe~ goes directly to Windows Features.
-
-Then reboot and change UEFI or BIOS setting
-- name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration.
-
-Simply install the latest version to upgrade
-https://www.vagrantup.com/downloads.html
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   vagrant --version
-  ;; # 1.x
+  # 1.x
   where vagrant
 
-  ;; # download image and create Vagrantfile
+  # download image and create Vagrantfile
   vagrant init hashicorp/precise64
+
+  # Ubuntu 18.04
+  vagrant init hashicorp/bionic64
+
   vagrant up && vagrant ssh
-#+END_EXAMPLE
+#+END_SRC
 
 ** Vagrant VM, VirtualBox
-#+BEGIN_EXAMPLE
-  ;; # Status of all Vagrant VM's
+#+BEGIN_SRC sh
+  # Status of all Vagrant VM's
   vagrant global-status --prune
 
-  ;; # List all running VirtualBox VMs
-  ;; # vboxmanage.exe is not in PATH, change directory
+  # List all running VirtualBox VMs
+  # vboxmanage.exe is not in PATH, change directory
   cd /c/Program Files/Oracle/VirtualBox
   vboxmanage list runningvms
 
-  ;; # VirtualBox version
+  # VirtualBox version
   vboxmanage --version
-#+END_EXAMPLE
+#+END_SRC
 
 ** Frequent commands
-#+BEGIN_EXAMPLE
-  ;; # force to run provision
+#+BEGIN_SRC sh
+  # force to run provision
   vagrant up --provision
-  ;; # or
+  # or
   vagrant reload --provision
 
-  ;; # remove the current vagrant VM
+  # remove the current vagrant VM
   vagrant destroy -f
 
-  ;; # shut down and boot up
+  # shut down and boot up
   vagrant halt
   vagrant up
 
-  ;; # Hibernate
+  # Hibernate
   vagrant suspend
 
-  ;; # Shut down and up
+  # Shut down and up
   vagrant reload
 
-  ;; # current vagrant vm running status
+  # current vagrant vm running status
   vagrant status
 
-  ;; # Show current vagrant vm ssh config
+  # Show current vagrant vm ssh config
   vagrant ssh-config
-  ;; # Usually it's 127.0.0.1:2222, notice the port may change as vagrant will auto select port if it's in use
-#+END_EXAMPLE
+  # Usually it's 127.0.0.1:2222, notice the port may change as vagrant will auto select port if it's in use
+#+END_SRC
 
 ** Vagrantfile
 ruby language
-#+BEGIN_EXAMPLE
-  ;; # -*- mode: ruby -*-
-  ;; # vi: set ft=ruby :
+#+BEGIN_SRC ruby
+  # -*- mode: ruby -*-
+  # vi: set ft=ruby :
   ENV["LC_ALL"] = "en_US.UTF-8"
-  ;; # In case host couldn't pass locale into vagrant
+  # In case host couldn't pass locale into vagrant
 
   hostname = livagrantdev
   cpus = 2
   memory = 2048
 
   @importmysql = <<SCRIPT
-  echo "docker run -it --rm -v /vagrant/mydbdump:/tmp/mydbdump"\
-  " --link wordpressdb:wpdb mysql:5.7.9 sh -c"\
-  " 'exec mysql"\
-  ' -h"$WPDB_PORT_3306_TCP_ADDR" -P"$WPDB_PORT_3306_TCP_PORT"'\
-  ' -uroot -p"$WPDB_ENV_MYSQL_ROOT_PASSWORD"'\
-  ' wordpress < /tmp/mydbdump/pantheon_db.sql'\
-  "'" >> /home/vagrant/import_db.sh
-  chmod +x /home/vagrant/import_db.sh
+    echo "docker run -it --rm -v /vagrant/mydbdump:/tmp/mydbdump"\
+    " --link wordpressdb:wpdb mysql:5.7.9 sh -c"\
+    " 'exec mysql"\
+    ' -h"$WPDB_PORT_3306_TCP_ADDR" -P"$WPDB_PORT_3306_TCP_PORT"'\
+    ' -uroot -p"$WPDB_ENV_MYSQL_ROOT_PASSWORD"'\
+    ' wordpress < /tmp/mydbdump/pantheon_db.sql'\
+    "'" >> /home/vagrant/import_db.sh
+    chmod +x /home/vagrant/import_db.sh
   SCRIPT
 
   Vagrant.configure(2) do |config|
-  ;; # config.vm
-          config.vm.box = username/boxname
-  ;; # optional
-  ;; # config.vm.box_version = "1.1.0"
-  ;; # config.vm.box_url = "http://"
+    # config.vm
+    config.vm.box = username/boxname
+    # optional
+    # config.vm.box_version = "1.1.0"
+    # config.vm.box_url = "http://"
+    # hostname, appears when you vagrant ssh - vagrant@yourhostname
 
-  ;; # hostname, appears when you vagrant ssh - vagrant@yourhostname
-  config.vm.hostname = hostname
+    config.vm.hostname = hostname
 
-  ;; # network
-          config.vm.network "private_network", ip: "192.168.33.10"
-  ;; # VMs in the the private network (VirtualBox) can communicate
-  ;; # Give a static IP
-          config.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh"
-          config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
-  ;; # On local host (windows), 192.168.33.10:8080
+    # network
+    config.vm.network "private_network", ip: "192.168.33.10"
+    # VMs in the the private network (VirtualBox) can communicate
+    # Give a static IP
+    config.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh"
+    config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
+    # On local host (windows), 192.168.33.10:8080
 
-  ;; # Synced folder
-  ;; # default /vagrant
-  ;; # Create a root folder (readonly) in guest machine to hold Dockerfiles for docker provisioner
-  ;; # Create that folder if it doesn't exist in guest machine
-          config.vm.synced_folder "./build/docker", "/docker_builds", create: true, mount_options: ["ro"]
+    # Synced folder
+    # default /vagrant
+    # Create a root folder (readonly) in guest machine to hold Dockerfiles for docker provisioner
+    # Create that folder if it doesn't exist in guest machine
+    config.vm.synced_folder "./build/docker", "/docker_builds", create: true, mount_options: ["ro"]
 
-          config.vm.provider "virtualbox" do |vb|
-           vb.memory = memory
-           vb.cpus = cpus
-           vb.name = hostname
-           # The name appears on VirtualBox GUI
-           #  Can override any settings config.vm, config.ssh, config.winrm and config.vagrant
-          end
+    config.vm.provider "virtualbox" do |vb|
+	     vb.memory = memory
+	     vb.cpus = cpus
+	     vb.name = hostname
+	     # The name appears on VirtualBox GUI
+	     #  Can override any settings config.vm, config.ssh, config.winrm and config.vagrant
+	     end
 
-  ;; # Provision
-  ;; # Upload File using SSH user (vagrant)
-          config.vm.provision "file", source: "~/.gitconfig", destination ".gitconfig"
+    # Provision
+    # Upload File using SSH user (vagrant)
+    config.vm.provision "file", source: "~/.gitconfig", destination ".gitconfig"
 
 
-  ;; # In line Shell
-          config.vm.provision "shell", inline: @importmysql
-  ;; # Path to script file Shell
-  ;; # config.vm.provision "shell",
+    # In line Shell
+    config.vm.provision "shell", inline: @importmysql
+    # Path to script file Shell
+    # config.vm.provision "shell",
 
-  ;; # Provisioner docker - install docker on the VM and pull images!
-  config.vm.provision "install_docker", type: "docker" do |d|
-          d.pull_images "mysql:5.7.9"
-          d.pull_images "wordpress"
-  ;; # Need to create a root folder in guest machine to pull Dockerfile
-          d.build_image "/docker_builds", args: "-t li-nginx-alpine -f /docker_builds/Dockerfile.li-nginx-alpine"
-  ;; # This is the same as
-  ;; # docker build -t li-nginx-alpine -f /docker_builds/Dockerfile.li-nginx-alpine /docker_builds/
+    # Provisioner docker - install docker on the VM and pull images!
+    config.vm.provision "install_docker", type: "docker" do |d|
+	    d.pull_images "mysql:5.7.9"
+	    d.pull_images "wordpress"
+	    # Need to create a root folder in guest machine to pull Dockerfile
+	    d.build_image "/docker_builds", args: "-t li-nginx-alpine -f /docker_builds/Dockerfile.li-nginx-alpine"
+	    # This is the same as
+	    # docker build -t li-nginx-alpine -f /docker_builds/Dockerfile.li-nginx-alpine /docker_builds/
+    end
 
-  end
+    # Provisioner docker_compose: install docker_compose on the VM!
+    # Require plugin `vagrant-docker-compose`
+    config.vm.provision "docker_compose_plugin", type: "docker_compose"
 
-  ;; # Provisioner docker_compose: install docker_compose on the VM!
-  ;; # Require plugin `vagrant-docker-compose`
-  config.vm.provision "docker_compose_plugin", type: "docker_compose"
+    # config.ssh
+    # config.winrm
+    # config.vagrant
+    end
+#+END_SRC
 
-  ;; # config.ssh
-  ;; # config.winrm
-  ;; # config.vagrant
-
-  end
-#+END_EXAMPLE
-
-Do a loop
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC ruby
+#Do a loop
   (1..3).each do |i|
-          config.vm.define "node-#{i}" do |node|
-                  node.vm.provision "shell",
-                          inline: "echo hello from node #{i}"
-          end
+	  config.vm.define "node-#{i}" do |node|
+		  node.vm.provision "shell",
+			  inline: "echo hello from node #{i}"
+	  end
   end
-#+END_EXAMPLE
+#+END_SRC
 
 ** Vagrant plugin
-Install vagrant-docker-compose plugin which installs Docker Compose as a provisioner 
-~vagrant plugin install vagrant-docker-compose~
+- ~vagrant-docker-compose~ plugin enables a new provisioner Docker Compose
+   - ~vagrant plugin install vagrant-docker-compose~
+   - https://github.com/leighmcculloch/vagrant-docker-compose
+     #+BEGIN_SRC ruby
+       Vagrant.configure("2") do |config|
+	 config.vm.box = "ubuntu/trusty64"
 
-https://github.com/leighmcculloch/vagrant-docker-compose
-
-Install vagrant-vbguest which automatically installs VirtualBox Guest Additions (VBGA) on Vagrant VM.
-~vagrant plugin install vagrant-vbguest~
-
-To prevent updating VBGA when ~vagrant up~, add ~config.vbguest.auto_update = false~ in Vagrantfile. This happens when .box file has older version of vbguest while Vagrant on host has a newer version.
-
-Update all installed plugins ~vagrant plugin update~
-
-List all installed plugins ~vagrant plugin list~
-
-Uninstall a plugin ~vagrant plugin uninstall vagrant-docker-compose~
-
-After Vagrant core is upgraded, you might need to auto upgrade existing plugins ~vagrant plugin expunge --reinstall~
-
-vagrant plugin install vagrant-docker-compose
-#+BEGIN_EXAMPLE
-  Vagrant.configure("2") do |config|
-    config.vm.box = "ubuntu/trusty64"
-
-    config.vm.provision :docker
-    config.vm.provision :docker_compose
-  end
-#+END_EXAMPLE
+	 config.vm.provision :docker
+	 config.vm.provision :docker_compose
+       end
+     #+END_SRC
+- ~vagrant-vbguest~ plugin automatically installs VirtualBox Guest Additions (VBGA) on Vagrant VM
+   - Install :: ~vagrant plugin install vagrant-vbguest~
+   - To prevent updating VBGA when ~vagrant up~, add ~config.vbguest.auto_update = false~ in Vagrantfile. This happens when .box file has older version of vbguest while Vagrant on host has a newer version
+- Update all installed plugins :: ~vagrant plugin update~
+- List all installed plugins :: ~vagrant plugin list~
+- Uninstall a plugin :: ~vagrant plugin uninstall vagrant-docker-compose~
+- After Vagrant core is upgraded, you might need to auto upgrade existing plugins ~vagrant plugin expunge --reinstall~
 
 ** Box
 A VirtualBox, ~.box~ file, is a compressed box on top of which a VM can run.
@@ -55515,8 +55499,7 @@ Box has a namespace ~username/boxname~ as in ~hashicorp/precise64~
 Vagrant .box should have these qualities:
 - vagrant as a user and map /vagrant to the current folder in host
 - be able to install as the Vagrant provision plugin instructs. 
-
-The ubuntu/xenial64 has a lot of trouble with that and hence it's not a good Vagrant box to start with.
+- The ubuntu/xenial64 has a lot of trouble with that and hence it's not a good Vagrant box to start with.
 
 *** bento/ubuntu-16.04
 vagrant box add bento/ubuntu-16.04
@@ -67082,6 +67065,8 @@ Install the software and do a hardware test.
 Sign in http://microsoft.com/learning to take an exam half an hour early
 Click "Your benefits & exams" then "Start a previously scheduled online proctored exam"
 
+*** HackerRank
+*** CoderByte
 ** Work Ethics
 *** Remove Credentials
 - Windows Credential Store Panel
