@@ -51264,10 +51264,10 @@ Container id :: 123456. get this from ~docker ps -a~
 New image name :: my/ubuntu-nodejs
 
 *** Execute commands inside a running container
-Login to container with bash open :: ~docker exec -it containerName bash -I~
-Long command (pure-pw only exists in container)
+- Login to container with bash open :: ~docker exec -it containerName bash -I~
+- Long command (pure-pw only exists in container)
 ~docker exec -it containerName pure-pw useradd bob2 -f longpathto/passwd -m -u ftpuser -d /home/ftpusers/bob2~
-Run multiple commands
+- Run multiple commands
 ~docker exec -it containerName bash -c 'cd /var/log; tar -cv ./file.log'~
 
 ** Network
@@ -52068,10 +52068,11 @@ image:tatemz/wp-cli
 - Docker Swarm
    - Written in Go
 
-** image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
-Parent: scratch (perfect for building base images such as debian and busybox
+** image:debian
+- image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
+   - Parent: scratch (perfect for building base images such as debian and busybox
+- image:debian:stretch - Debian 9 <<<image:debian:stretch>>>
 
-** image:debian:stretch - Debian 9 <<<image:debian:stretch>>>
 ** image:buildpack-deps:jessie-scm
 Parent: buildpack-deps:jessie-curl
 Available: git, curl, wget, openssh-client
@@ -52081,7 +52082,7 @@ Parent: image:debian:stretch
 
 ** image:php:5.6.31-apache-jessie <<<image:php:apache>>>
 Short name: php:5.6.31-apache
-Parent: debian:jessie
+Parent: image:debian:jessie
 [[https://github.com/docker-library/php/blob/0bb4068bd639ba98631bc2999e0d20cae583ec00/5.6/jessie/apache/Dockerfile][Dockerfile]]
 
 Refer to apache:config
@@ -52277,6 +52278,18 @@ This one is Debian and has curl
 - Tag latest is 7.2.3-cli-stretch
 - php:7.2.3-apache <<<image:php:7:apache>>>
 - Installed PHP extensions :: ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
+
+** image:python <<<image:python>>>
+- ~python:3~
+   - ~python:3.8.2-buster~
+- Basics
+  #+BEGIN_SRC python
+    # Run Python Interpreter interactively
+    docker run -it --rm --name mypy python:3
+
+    #Map current folder and run hello.py
+    docker run -it --rm --name mypy -v "$PWD":/usr/src/myapp -w /usr/src/myapp python:3.8.2-buster python hello.py
+  #+END_SRC
 
 ** image:mysql:5.7.9 <<<image:mysql>>>
 - Parent :: image:debian:jessie
@@ -55307,10 +55320,10 @@ Database Drivers
   # List all running VirtualBox VMs
   # vboxmanage.exe is not in PATH, change directory
   cd /c/Program Files/Oracle/VirtualBox
-  vboxmanage list runningvms
+  ./VBoxManage.exe list runningvms
 
   # VirtualBox version
-  vboxmanage --version
+  ./VBoxManage.exe --version
 #+END_SRC
 
 ** Frequent commands
@@ -55342,7 +55355,6 @@ Database Drivers
 #+END_SRC
 
 ** Vagrantfile
-ruby language
 #+BEGIN_SRC ruby
   # -*- mode: ruby -*-
   # vi: set ft=ruby :
@@ -55436,7 +55448,7 @@ ruby language
   end
 #+END_SRC
 
-** Vagrant plugin
+** Plugin
 - ~vagrant-docker-compose~ plugin enables a new provisioner Docker Compose
    - ~vagrant plugin install vagrant-docker-compose~
    - https://github.com/leighmcculloch/vagrant-docker-compose
@@ -55454,7 +55466,10 @@ ruby language
 - Update all installed plugins :: ~vagrant plugin update~
 - List all installed plugins :: ~vagrant plugin list~
 - Uninstall a plugin :: ~vagrant plugin uninstall vagrant-docker-compose~
-- After Vagrant core is upgraded, you might need to auto upgrade existing plugins ~vagrant plugin expunge --reinstall~
+- After Vagrant core is upgraded, you might need to auto upgrade existing plugins
+   - ~vagrant plugin update vagrant-vbguest~
+   - ~vagrant plugin expunge --reinstall~
+   - ~vagrant plugin update~
 
 ** Box
 A VirtualBox, ~.box~ file, is a compressed box on top of which a VM can run.
@@ -55498,11 +55513,12 @@ Box has a namespace ~username/boxname~ as in ~hashicorp/precise64~
 
 Vagrant .box should have these qualities:
 - vagrant as a user and map /vagrant to the current folder in host
-- be able to install as the Vagrant provision plugin instructs. 
-- The ubuntu/xenial64 has a lot of trouble with that and hence it's not a good Vagrant box to start with.
+- be able to install as the Vagrant provision plugin instructs
+   - The ubuntu/xenial64 has a lot of trouble with that and hence it's not a good Vagrant box to start with
 
 *** bento/ubuntu-16.04
-vagrant box add bento/ubuntu-16.04
+~vagrant box add bento/ubuntu-16.04~
+~vagrant box add bento/ubuntu-18.04~
 
 ** Custom Box
 https://github.com/levonlee/vagrant/tree/master/wordpress
@@ -55510,16 +55526,13 @@ https://blog.engineyard.com/2014/building-a-vagrant-box
 https://scotch.io/tutorials/how-to-create-a-vagrant-base-box-from-an-existing-one
 
 ** SSH using Putty
-Download PuttyGen to accept OpenSSH key as vagrant provides.
-
-PuttyGen > Load > ~/.vagrant.d/ folder and select browse all files, select insecure_public_key
-PuttyGen > Save public key file as insecure_public_key.ppk and save it to the same folder. Close PuttyGen and go back to Putty
-Putty > Connection > SSH > Auth, browse and select that ppk file.
-Connect using Putty!
-
-Specify the username for login: Putty > Connection > Data > Auto-login username
-
-~/.vagrant.d/ is the global. Different box has ./.vagrant/ folder. Run ~vagrant ssh-config~ to identify the $HOSTNAME $PORT $LOGINNAME
+- Download PuttyGen to accept OpenSSH key as vagrant provides
+- PuttyGen > Load > =~/.vagrant.d/= folder and select browse all files, select insecure_public_key
+- PuttyGen > Save public key file as insecure_public_key.ppk and save it to the same folder. Close PuttyGen and go back to Putty
+- Putty > Connection > SSH > Auth, browse and select that ppk file.
+- Connect using Putty!
+- Specify the username for login: Putty > Connection > Data > Auto-login username
+- =~/.vagrant.d/= is the global. Different box has =./.vagrant/= folder. Run ~vagrant ssh-config~ to identify the $HOSTNAME $PORT $LOGINNAME
 Convert the Identityfile to .ppk with SSH-2-RSA with 2048 bits and save it to the same folder.
 
 * Apache
@@ -66499,6 +66512,9 @@ https://developer.moneris.com/More/Testing/Penny%20Value%20Simulator
 - https://vividata.ca/
 - https://hashtagpaid.com/ :: AI to find influencers
 - tech stack:g2
+- Direct Marketing (US and Canada)
+   - https://www.emaildatabase.marketing/
+   - https://www.infodataplace.com/
 
 ** W3C
 - Working Draft
