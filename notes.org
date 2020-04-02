@@ -4389,14 +4389,14 @@ Return an array
 
 *** 404 page
 page--404.tpl.php could be in theme folder or theme's templates folder
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function jean_preprocess_page(&$vars) {
     $header = drupal_get_http_header('status');
     if ($header == '404 Not Found') {
       $vars['theme_hook_suggestions'][] = 'page__404';
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Contributed themes
 **** Omega
@@ -6210,9 +6210,9 @@ You can local the page callback function in a different file. e.g. 'lili.pages.i
 The path is the current module path
 
 *** hook_menu: 'type'
-- MENU_CALLBACK :: A hidden internal callback. Best for return plain text in API calls.
+- MENU_CALLBACK :: A hidden internal callback. Best for return plain text in API calls
 - MENU_LOCAL_ACTION :: An action specific to the parent, usually rendered as a link
-- MENU_LOCAL_TASK :: A task specific to the parent item, usually rendered as a tab.
+- MENU_LOCAL_TASK :: A task specific to the parent item, usually rendered as a tab
 - MENU_NORMAL_ITEM :: Shown in menu and breadcrumbs
 - MENU_SUGGESTED_ITEM :: A normal menu item, hidden until enabled by an administrator
 
@@ -6241,36 +6241,37 @@ The path is the current module path
  
 *** Array to CSV
 page callback
-drupal_add_http_header('Content-Type', 'text/csv; utf-8');
-drupal_add_http_header('Content-Disposition', 'attachment;filename=csvfile.csv');
+#+BEGIN_SRC php
+  drupal_add_http_header('Content-Type', 'text/csv; utf-8');
+  drupal_add_http_header('Content-Disposition', 'attachment;filename=csvfile.csv');
 
-$fp = fopen('php://output', 'w');
-fputcsv($fp, [$year. ' Ranking of Top 100 Carriers']);
-$_columns = '#,Company,Web Site,Total,Trucks,Tractors,Trailers,O/OS,Employees';
-$_columns = explode(',',$_columns);
-fputcsv($fp, $_columns);
+  $fp = fopen('php://output', 'w');
+  fputcsv($fp, [$year. ' Ranking of Top 100 Carriers']);
+  $_columns = '#,Company,Web Site,Total,Trucks,Tractors,Trailers,O/OS,Employees';
+  $_columns = explode(',',$_columns);
+  fputcsv($fp, $_columns);
 
-foreach ($data as $d) {
-  $line   = [ ];
-  $line[] = $d->this_rank;
-  $line[] = $d->company_name;
-  $line[] = $d->web_address;
-  $line[] = $d->total_vehicles;
-  $line[] = $d->trucks;
-  $line[] = $d->tractors;
-  $line[] = $d->trailers;
-  $line[] = $d->owner_operators;
-  $line[] = $d->full_time_employees;
+  foreach ($data as $d) {
+    $line   = [ ];
+    $line[] = $d->this_rank;
+    $line[] = $d->company_name;
+    $line[] = $d->web_address;
+    $line[] = $d->total_vehicles;
+    $line[] = $d->trucks;
+    $line[] = $d->tractors;
+    $line[] = $d->trailers;
+    $line[] = $d->owner_operators;
+    $line[] = $d->full_time_employees;
 
-  fputcsv( $fp, $line );
-}
+    fputcsv( $fp, $line );
+  }
 
-fclose($fp);
-drupal_exit();
+  fclose($fp);
+  drupal_exit();
+#+END_SRC
 
 *** Json
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   function lili_menu() {
     $items['newsletter/archive/%/%'] = array(
       'title' => "",
@@ -6291,7 +6292,7 @@ drupal_exit();
     drupal_json_output($_result);
     //return 'hello';
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Taxonomy
 A node or an entity has a taxonomy term means the node has a category. Categories may have hierarchy.
@@ -19345,6 +19346,8 @@ Can't set equal width for child items when the number of child items is unknown
    flex: 0 0 50%; /* width: 50% */
    /* However, flex-basis is not guaranteed and it's based on max-width and min-width */
 
+   flex: 0 0 100%; /* use this in child item instead of width:100%, make sure parent has flex-wrap: wrap */
+
    flex: 1 0 auto; /* grow to the rest of the width, no shrink, auto */
 
    /* Override align-items in container */
@@ -19393,7 +19396,7 @@ You don't have to get height of any other rows.
 #+END_SRC
 
 *** Examples
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .flex-r-nw-sb {
     /* row nowrap space-between */
     display:flex;
@@ -19413,7 +19416,7 @@ You don't have to get height of any other rows.
     /* row nowrap space-between */
     /* same as flex-r-nw-sb but with @media query */
     display:flex;
-    
+
     flex-flow: row nowrap;
     width:100%;
   }
@@ -19423,7 +19426,7 @@ You don't have to get height of any other rows.
       flex-flow: row wrap;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 ** Equal width for unknown number of child elements
 #+BEGIN_SRC html
@@ -65079,6 +65082,13 @@ After edit, right click on the Object Browser > Reflexil > Save as
 ** Project Management
 *** Jira
 **** Agile
+- 4 Values
+   - individuals and interactions :: over processes and tools
+      - reduce multi-tasking 
+   - working software :: over comprehensive documentation
+   - customer collaboration :: contract negotiation
+   - responding to change :: over following a plan
+- 12 Principles
 - Project manager's meeting responsibilities
    - fulfills an observer role
    - watches for unresolved issues
@@ -65097,7 +65107,24 @@ After edit, right click on the Object Browser > Reflexil > Save as
    - 100% committed sponsor
    - Requirement changes are anticipated and accommodated
 - Agile team size is less than 15 people
-
+- Task board :: scrum's name. Also Kanban board
+   - Swimlanes :: User Stories, To Do, Doing, Done
+- Scrum vs Extreme Programming vs Kanban
+   - Extreme programming
+      - Embracing change vs Inspect and adapt (in Scrum)
+      - User stories
+      - Continuous integration
+      - Test-driven development
+      - 5 values
+	 - Communication
+	 - Simplicity
+	 - Feedback
+	 - Courage
+	 - Respect
+   - Kanban
+      - Lean thinking
+	 - Respect for people
+	 - continuously improve
 - Stages in Agile Life Cycle
    - Envision > Speculate > Explore > Adapt (may go back to speculate) > Close
    - Envision :: what to build, resource and team you have, values & norms
@@ -65211,8 +65238,10 @@ Define a feature by using use case
 
 **** Story
 - In an agile framework, user stories are the smallest units of work
-- User stories are sketched out by the product owner, and then the entire product team collectively determins detailed requirements
-- As a *{type of user}*, I want *{goal}* so that I *{receive benefit}*
+- User stories are sketched out by the product owner, and then the entire product team collectively determines detailed requirements
+- As a *{user role}*, I want *{goal}* so that I *{receive benefit/value}*
+   - Acceptance criteria is on the back of the card
+- Evaluate if user stories are valid or good
 
 **** Feature
 - As a Fitness Club Manager, I should be able to set up a new club member account
@@ -65230,14 +65259,14 @@ Define a feature by using use case
    - Transparency
    - Inspection
    - Adaptation
-- Values
+- 5 Values
    - Focus
    - Respect
    - Openness
    - Courage
    - Commitment
 - Roles
-   - Product Owner :: who define what will be built and the order
+   - Product Owner :: who define what will be built and the order. It's called Customer Representative in Extreme Programming
       - Owns the product backlog, can cancel a sprint
 	 - Requirements
 	 - Enhancement Requests
@@ -65248,11 +65277,26 @@ Define a feature by using use case
       - self-organized
       - Owns the sprint backlog :: a subset of product backlog
    - Scrum master
+      - coach, encourage and facilitate self-management
 - Events
-   - Sprint :: each takes 30 days or less
+   - Sprint :: It's part of the Scrum framework. each takes 30 days or less
       - sprint planning
+	 - first day of sprint
+	 - planning all sprint work
+	    - talk about new backlog items
+	    - discuss all backlog items
+	    - write tasks for each story
+	       - Tasking each story
+		  - Tasks or steps to take to meet acceptance criteria (AC)
+		  - Time-based estimate for each task
+	       - Add stories into Sprint Backlog for this sprint
+	       - Scrum master asks people to verbalize their commitments
+	    - plan the coming sprint, plus 2 more sprints
+	 - less than 2 hours
       - Daily Scrum
-      - Sprint review :: with other stakeholders after sprint ends
+      - Sprint review
+	 - listen feedback from other stakeholders after a sprint ends
+	 - less than 2 hours
       - Sprint retrospective :: after sprint ends
 - Artifacts
    - Product Backlog
