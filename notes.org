@@ -9,14 +9,56 @@
 #+TODO: TODO IN-PROGRESS WAITING DONE
 
 * PHP
+** Installation
+*** Debian
+- [[https://www.php.net/supported-versions.php][Supported versions]]
+
+Install multiple versions of PHP
+#+BEGIN_SRC sh
+  # install an apt repo which allows you to switch PHP versions
+  sudo apt install software-properties-common
+  sudo add-apt-repository ppa:ondrej/php
+
+  sudo apt-get update
+
+  # install PHP for Apache (and install everything?)
+  sudo apt install php7.3
+
+  # install PHP for Nginx
+  sudo apt install php7.3-fpm
+
+  # install a specific module, use tab
+  sudo apt install php7.3-cli
+
+  # install multiple modules
+  sudo apt install php7.3-cli php7.3-xml php7.3-mysql
+
+  # after install, php-fpm services should be auto started
+  sudo systemctl status php7.3-fpm
+
+  # change PHP version on Apache
+  a2dismod php7.0 ; a2enmod php5.6 ; service apache2 restart
+
+  # check PHP version
+  php -v
+
+  # see what alternatives of PHP
+  update-alternatives --config php
+
+  # set default PHP version
+  sudo update-alternatives --set php /usr/bin/php7.3
+
+  # get location of php.ini, usually `/etc/php/7.3/cli/php.ini`
+  php -i | grep "Loaded Configuration File"
+#+END_SRC
+
 ** Configuration <<<php:config>>>
 *** Basics
 - Get php configuration files location :: ~php --ini~
 - CLI ~php -i~ :: equivalent to ~phpinfo()~
 - Get loaded extensions :: ~php -r "print_r(get_loaded_extensions());"~
 - Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
-
-Changing php.ini requires restarting apache
+- Changing php.ini requires restarting apache
 
 **** PHP Version
 
@@ -290,6 +332,14 @@ SERVER_SIGNATURE
 - HTTP_HOST :: see below
 - REQUEST_TIME
 - REQUEST_URI :: ~/abc/xyz.html?abc=xyz~ without hash. Raw value is encoded. Use ~urldecode~
+- REQUEST_METHOD
+  #+BEGIN_SRC php
+    $method = $_SERVER['REQUEST_METHOD'];
+    if ('PUT' === $method) {		
+	    parse_str(file_get_contents('php://input'), $_PUT);
+	    var_dump($_PUT); //$_PUT contains put fields 
+    }
+  #+END_SRC
 - REMOTE_ADDR
 - REMOTE_HOST :: 
    - relies on reverse DNS lookups and may hence be spoofed by DNS attacks against server (at that time you have bigger problems anyway)
@@ -2632,22 +2682,58 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
   ,*/
 #+END_SRC
 
-** RESTful
-GET /tickets - Retrieves a list of tickets
-GET /tickets/12 - Retrieves a specific ticket
-POST /tickets - Creates a new ticket
-PUT /tickets/12 - Updates ticket #12
-PATCH /tickets/12 - Partially updates ticket #12
-DELETE /tickets/12 - Deletes ticket #12
+** Composer <<<php:composer>>>
+*** Install
+**** Ubuntu
+#+BEGIN_SRC sh
+  # download installer, run it using PHP and put the resulted executable as in /usr/local/bin/composer
+  curl -sS -L https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-Read Put request
-#+BEGIN_SRC php
-  $method = $_SERVER['REQUEST_METHOD'];
-  if ('PUT' === $method) {
-      parse_str(file_get_contents('php://input'), $_PUT);
-      var_dump($_PUT); //$_PUT contains put fields 
-  }
+  composer --version
 #+END_SRC
+
+*** Basics
+- ~composer require abc/xyz~ :: downloads the latest version to current folder ~./vendor/composer/abc/xyz/*.*~ and add to ~require~ in ~composer.json~
+   - ~composer require abc/xyz:0.3.*~ :: specify a range of versions
+   - To use this package in PHP file :: ~require 'vendor/autoload.php'; use Abc\Xyz\component1;~
+- Whether packages are installed locally or globally, it will use the user's directory =~/.composer=. If current user is not root, don't run composer with sudo
+- ~composer global require "abc/xyz"~ :: global package is installed under =~/.composer/vendor/bin=, make sure it is in PATH e.g. ~PATH="/myusername/.composer/vendor/bin:$PATH"~
+- composer.json
+   - ~composer init~ :: initialize proj and create composer.json
+   - ~composer install~ :: install packages based on ~composer.json~
+   - ~require~
+      - ~"abc/packagename": "0.3.*"~
+      - ="abc/packagename": "~1.2~"= :: ~1.2 eq. to >=1.2 <2.0.0, ~1.2.3 is eq. to >=1.2.3 <1.3.0
+      - ^1.2.3 is eq. to >=1.2.3 < 2.0.0
+   - ~require-dev~
+      - added by ~composer require --dev~
+- ~composer outdated~
+- ~composer update~ or ~composer update abc/pkgname~
+- ~composer show~ :: show installed packages
+- ~composer remove [vendor/package]~
+- ~.gitignore~ :: ~/vendor/~
+
+*** Packages
+- PHP Package Repo :: https://packagist.org/
+
+**** squizlabs/php_codesniffer
+- Prefer to require it as local dev
+- Install this package so that any other phpcs coding standards are installed through composer will be configured correctly so that php_codesniffer can use/refer to them
+   - dealerdirect/phpcodesniffer-composer-installer
+- Install other coding standards
+   - wp-coding-standards/wpcs
+   - phpcompatibility/php-compatibility
+- Sample
+  #+BEGIN_SRC json
+    {
+	"require-dev": {	
+	    "php": ">=7.0",
+	    "dealerdirect/phpcodesniffer-composer-installer": "^0.4",
+	    "wp-coding-standards/wpcs": "^2",
+	    "phpcompatibility/php-compatibility": "^9"
+	},
+    }
+  #+END_SRC
 
 ** Libraries
 *** mPDF
@@ -16495,6 +16581,15 @@ Inspired by plugin [[https://wordpress.org/plugins/ssl-insecure-content-fixer/][
 ** REST API <<<wp:rest>>>
 https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
 
+*** RESTful
+- GET /tickets :: Retrieves a list of tickets
+- OPTIONS /tickets :: see any parameters and fields can be used for endpoint ~tickets~
+- GET /tickets/12 :: Retrieves a specific ticket
+- POST /tickets :: Creates a new ticket
+- PUT /tickets/12 :: Updates ticket #12
+- PATCH /tickets/12 :: Partially updates ticket #12
+- DELETE /tickets/12 :: Deletes ticket #12
+
 *** Global parameters
 https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/
 **** _jsonp
@@ -27072,28 +27167,6 @@ This provides you more debugging info
 #+END_SRC
 
 *** Array <<<js:array>>>
-**** Basics
-#+BEGIN_SRC js
-  var a = new Array();
-  a[0] = "Paul";
-  a = ["P", "C", "S"]; // never put comma at the end of array
-  a[a.length-1] // last element
-  a[a.length]= "Z"; // append to last
-#+END_SRC
-
-**** If variable is array
-#+BEGIN_SRC js
-  console.log(Array.isArray(fruits)); // true or false
-  console.log(fruits instanceof Array) // true or false
-#+END_SRC
-
-**** If array contains a string
-#+BEGIN_SRC js
-  var fruits=['banana','apple'];
-  fruits.indexOf('banana'); // 0
-  fruits.indexOf('abc'); // -1
-#+END_SRC
-
 **** array.pop(), array.shift(), array.push(), array.unshift()
 #+BEGIN_SRC js
   a.pop(); // remove last element
@@ -27132,20 +27205,6 @@ This provides you more debugging info
 
 **** array.slice()
 ~var slice = a.slice(1,2); // C, S~
-
-**** array.splice(), remove a value from array if exists
-#+BEGIN_SRC js
-  var removed = a.splice(0,1,"Z","B"); // ["P"]
-  // First delete 1 element at index 0 and then add element Z and B 
-  // return the ones that are removed
-
-  Remove a value from array if it exists
-  var index = myArray.indexOf(item);
-  if (index !== -1) {
-   myArray.splice(index, 1);
-  }
-#+END_SRC
-
 **** array.join(), array.toString(), array.valueOf()
 #+BEGIN_SRC js
   var join = a.join(","); // "P,C,S"
@@ -27155,7 +27214,7 @@ This provides you more debugging info
 
 **** array.sort(), array.reverse()
 #+BEGIN_SRC js
-  var sort = a.sort(); // sort as strings. case sensitive: C, P, S
+  var sort = a.sort(); // sort as strings. case sensitive: C, P, S. Mutable
   function numericSort(anArray) {
    anArray.sort(function(a,b) {
     return a - b; // ascending order
@@ -29576,6 +29635,9 @@ Refer to bootstrap:responsive helpers
 - Basics
   #+BEGIN_SRC sh
     npm install -g typescript
+
+    tsc --version
+
     # compile a file to greeter.js
     tsc greeter.ts
   #+END_SRC
@@ -48679,15 +48741,11 @@ Find which package owns a file =dpkg -S /etc/crontab=
 **** ~apt-get~ ~apt-cache~ Ubuntu
 - Since Ubuntu 16.04, ~apt~ is introduced and it's a subset of ~apt-get~ and ~apt-cache~
 - Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
-
-It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network.
-Add a line ~nameserver 8.8.8.8~ to /etc/resolv.conf
-This way the /etc/resolv.conf is not persisted. You can also config DNS in Docker daemon.
-#+BEGIN_SRC dockerfile
-  RUN echo "nameserver 10.1.1.1" >> /etc/resolv.conf && \
-      your-other-commands
-#+END_SRC
-
+   - It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network. Add a line ~nameserver 8.8.8.8~ to ~/etc/resolv.conf~. This way the ~/etc/resolv.conf~ is not persisted. You can also config DNS in Docker daemon
+     #+BEGIN_SRC dockerfile
+       RUN echo "nameserver 10.1.1.1" >> /etc/resolv.conf && \
+	   your-other-commands
+     #+END_SRC
 - Install or upgrade a package :: ~apt-get install openssh-client~
 - Simulate what would happen if you upgrade/install a package (press ~n~ to cancel) :: ~apt-get -s install openssh-client~
 - Upgrade all installed packages :: ~apt-get upgrade~
@@ -48696,7 +48754,8 @@ This way the /etc/resolv.conf is not persisted. You can also config DNS in Docke
 - See all installed packages :: ~apt list --installed~
   - For Ubuntu lower than 14.04, use ~dpkg -l~ to list all installed packages on Ubuntu
 - To see if a package is installed :: ~apt list -a --installed openssh-client~
-- Return info of a package before it's installed :: ~apt-cache show shutter~ or ~apt list -a ffmpeg~ (it shows installed if it's installed)
+- Return info of a package before it's installed
+- ~apt show php~ or ~apt-cache show php~ or ~apt list -a --installed php~ (shows installed if it's installed)
 - Search package by regex name (return name and description only) :: ~apt-cache search php~
 - Search packages with name starting php (return names only) :: ~apt-cache pkgnames php5~
 - All packages' names (return names only) :: ~apt-cache pkgnames~
@@ -50849,11 +50908,14 @@ Source domain can be a subdomain e.g. s1.abc.com, change A record for s1.abc.com
 - To park a domain means to make the domain as idle. Nameservers will be set to Default e.g. in GoDaddy
 - To park multiple domains ~abc.net~, ~abc.info~ to the main domain ~abc.com~
 
-** GoDaddy
-- Delegate Access <<<godaddy:delegate access>>>
-   - Source GoDaddy account ~s@a.ca~ gives limited access to another GoDaddy account ~d@a.ca~
-      - Source account > Account Settings > Delegate Access > choose to send to ~b@a.ca~
-      - The person clicks an invite in mailbox ~b@a.ca~, then logs on to ~d@a.ca~. Then GoDaddy account ~d@a.ca~ can access GoDaddy account ~s@a.ca~
+** Domain Registrars and Tools
+- GoDaddy
+   - Delegate Access <<<godaddy:delegate access>>>
+      - Source GoDaddy account ~s@a.ca~ gives limited access to another GoDaddy account ~d@a.ca~
+	 - Source account > Account Settings > Delegate Access > choose to send to ~b@a.ca~
+	 - The person clicks an invite in mailbox ~b@a.ca~, then logs on to ~d@a.ca~. Then GoDaddy account ~d@a.ca~ can access GoDaddy account ~s@a.ca~
+- Hover.com
+- namemesh.com :: search for the right domain using your words
 
 ** DNS History, IP location, Website Hosting Finder
 - DNS history :: https://securitytrails.com/dns-trails
@@ -58150,15 +58212,15 @@ However, if there're more than 1 folder
 ~wp-content/uploads/~ only ignore /wp-content/uploads.
 Use ~**/wp-content/uploads/~ to ignore any folder that has path ~wp-content/uploads~
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   /main/**/bin/
-#+END_EXAMPLE
+#+END_SRC
 
 Negate
 An optional prefix ! which negates the pattern; any matching file excluded by a previous pattern will become included again. If a negated pattern matches, this will override lower precedence patterns sources.
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   # Ignore everything
-    
+
   ,*
 
   # But don't ignore these files...
@@ -58170,15 +58232,15 @@ An optional prefix ! which negates the pattern; any matching file excluded by a 
   # ...even if they are in subdirectories. (don't ignore first level subdirectories)
   # without this line, script.pl will only be included in the root directory
   !*/
-#+END_EXAMPLE
+#+END_SRC
 
 If you want to ignore a folder but don't ignore a file, create .gitignore in that folder
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   ,*
   !.gitignore
   !*.sql
   !*/
-#+END_EXAMPLE
+#+END_SRC
 
 Escape square brackets
 #+BEGIN_EXAMPLE
@@ -63341,6 +63403,7 @@ Setup SDK, which is c:\go
 Turn off the plugin:Makefile support and enable this plugin
 
 **** Python
+**** JS GraphQL
 *** Docker support
 In Docker for Windows > Settings > General
 Choose Expose daemon on tcp://localhost:2375 without TLS
@@ -63397,13 +63460,13 @@ Settings > Languages & Frameworks > PHP
   - =~/.lando/services/config/pantheon= or Windows ~C:\Users\li\.lando\services\config\pantheon~
   - Or other recipe ~C:\Users\li\.lando\services\config\drupal8~
   - The point is to load ~prepend.php~ which defines global vars related to environments
-
 - Enable PhpStorm to listen for XDebug connections, then load the local website, accept the Incoming Connection from XDebug
 - Settings > Languages & Frameworks > PHP > Servers will show the newly accepted connection as a server. Make sure the following is correct
   - host: appserver, port: 80, debugger: XDebug
   - project files: ~your-local-directory-of-the-project~, absolute path on server: ~/app~ (very important)
   - include path: ~C:\Users\li\.lando\services\config\pantheon~, absolute path on server: ~/srv/includes~
 
+**** For Vagrant
 *** Troubleshoot
 **** TS: Reset Index
 File | Invalidate Caches and restart IDE
@@ -63433,6 +63496,10 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 **** Live Server
 **** Live Share
 **** Python extension for Visual Studio Code <<<vs:code:ext:my-python.python>>>
+**** ESLint
+**** phpcs
+**** stylelint
+**** Prettier -  Code formatter
 *** Shortcuts
 - Search all files in an open folder :: ~C-S-f~
 - Focus on Editor Group 1 :: ~C-1~ ~View: Focus First Editor Group~
@@ -65582,7 +65649,7 @@ You want to point the root domain to antoher server. Assuming root domain origin
 - Change smtp.yourdomain.com CNAME yourdomain.com to CNAME mail.yourdomain.com
 - Change yourdomain.com MX yourdomain.com to mail.yourdomain.com 
 
-** Hosting Comparison
+** Web Hosting Comparison
 hosting:pantheon is good for hosting one website
 
 Charged by monthly pageviews
@@ -67444,6 +67511,8 @@ Web Symbols
       - PhotoDune: photo stock
       - 3DOcean
 
+*** PodBean
+*** Castos.com
 * TODOs
 ** TODO Inspectlet.com
 ** TODO QUnit
