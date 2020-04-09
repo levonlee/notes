@@ -21,7 +21,7 @@ Install multiple versions of PHP
 
   sudo apt-get update
 
-  # install PHP for Apache (and install everything?)
+  # install PHP for Apache (install Apache and everything?)
   sudo apt install php7.3
 
   # install PHP for Nginx
@@ -39881,7 +39881,7 @@ You will make sure to list any angular's peerDependencies into your app's devDep
   // %% > percent sign '%'
 #+END_SRC
 
-*** lodash
+*** lodash <<<nodejs:lodash>>>
 #+BEGIN_SRC sh
   # npm i -g npm
   npm i --save lodash
@@ -41648,7 +41648,8 @@ https://github.com/Leonidas-from-XIV/node-xml2js
   });
 #+END_EXAMPLE
 
-*** crypto
+*** casual <<<nodejs:casual>>>
+*** crypto - Built-in <<<nodejs:crypto>>>
 **** HMAC
 SSL certificate changes from SHA1 to SHA256 which is SHA2 algorithm.
 
@@ -41662,7 +41663,7 @@ Output size of SHA1 is 160, which is 40 hex characters
 
 The secret/key of SHA256 should at least contain 256 bits. But I use 128 bits.. Which is 32 hex characters.
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var crypto = require('crypto')
    , text = 'hello'
    , key = 'abcdeg' // better to have 32 hex characters, but length could be any
@@ -41672,7 +41673,7 @@ The secret/key of SHA256 should at least contain 256 bits. But I use 128 bits.. 
   hmac.write(text);
   hmac.end();
   let hash = hmac.read().toString('hex');
-#+END_EXAMPLE
+#+END_SRC
 
 **** encrypt, decrypt <<<nodejs:decrypt>>>
 Refer to php:openssl_decrypt
@@ -41680,7 +41681,7 @@ Refer to php:openssl_decrypt
 All AES, regardless 128/256 or key length, the output size depends on the input size
 (floor(Input size / 16 bytes) + 1) * 16 bytes
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   const crypto = require('crypto');
 
   const KEYAES = '64 hex characters'
@@ -41718,7 +41719,10 @@ All AES, regardless 128/256 or key length, the output size depends on the input 
     decryptor.end();
     console.log(decryptor.read().toString('utf-8'));
   }
-#+END_EXAMPLE
+#+END_SRC
+
+**** generate random characters for unique id
+~let id = require('crypto').randomBytes(10).toString('hex')~
 
 *** body-parser
 parse POST data. Refer to nodejs:express
@@ -42233,6 +42237,13 @@ Check javascript syntax
   // Use ES6 standard
   /* jshint esnext: true */
 #+END_EXAMPLE
+
+*** mongoose <<<nodejs:mongoose>>>
+- Refer to jsSandbox:lynda-graphql_essential_training
+
+*** sequelize <<<nodejs:sequelize>>>
+- ORM for MySQL, MariaDB, SQLite, Postgres and MSSQL
+- Refer to jsSandbox:lynda-graphql_essential_training
 
 *** ws
 Refer to js:ws for client
@@ -52404,6 +52415,11 @@ This one is Debian and has curl
     docker run -it --rm --name mypy -v "$PWD":/usr/src/myapp -w /usr/src/myapp python:3.8.2-buster python hello.py
   #+END_SRC
 
+** image:mongo <<<image:mongo>>>
+- Last used :: mongo:4.2.5-bionic
+- Other related images
+   - <<<image:mongo-express>>>
+
 ** image:mysql:5.7.9 <<<image:mysql>>>
 - Parent :: image:debian:jessie
 - user:group :: mysql:mysql
@@ -55425,7 +55441,7 @@ Database Drivers
   vagrant up && vagrant ssh
 #+END_SRC
 
-** Vagrant VM, VirtualBox
+** Vagrant VM and VirtualBox
 #+BEGIN_SRC sh
   # Status of all Vagrant VM's
   vagrant global-status --prune
@@ -55438,6 +55454,9 @@ Database Drivers
   # VirtualBox version
   ./VBoxManage.exe --version
 #+END_SRC
+
+- Forward ports after Vagrant has started in VirtualBox
+   - Select the running VM in VirtualBox, Settings > Network > Port Forwarding, add e.g. forward ~127.0.0.1:2223~ to ~10.0.2.15:22~
 
 ** Frequent commands
 #+BEGIN_SRC sh
@@ -55465,6 +55484,9 @@ Database Drivers
   # Show current vagrant vm ssh config
   vagrant ssh-config
   # Usually it's 127.0.0.1:2222, notice the port may change as vagrant will auto select port if it's in use
+
+  # Forward ports after Vagrant has started. Forward 7000 on host to 5432 on Vagrant VM
+  vagrant ssh -- -L 7000:localhost:5432
 #+END_SRC
 
 ** Vagrantfile
@@ -55755,14 +55777,13 @@ You can see the *.conf files loading sequence
 Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
 
 *** Restart <<<apache:restart>>>
-Check config before restart. Wrong config (e.g. SSL) may prevent Apache from starting
-
-~apache2ctl configtest~ or ~apachectl configtest~ or ~httpd -t~
-
-~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container
-Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line.
-
-~apache2ctl restart~ or ~service apache2 restart~ or ~/etc/init.d/apache2 restart~ or ~service httpd restart~
+- Check config before restart. Wrong config (e.g. SSL) may prevent Apache from starting
+   - ~apache2ctl configtest~
+   - ~apachectl configtest~
+   - ~httpd -t~
+- ~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line
+- ~apache2ctl restart~ or ~service apache2 restart~ or ~/etc/init.d/apache2 restart~ or ~service httpd restart~
+- On Ubuntu, use systemctl
 
 ** Modules
 - Available modules :: ~/etc/apache2/mods-available~
@@ -57796,18 +57817,6 @@ Show file names only between 2 commits
    - Apply 2nd latest stash :: ~git stash apply stash@{2}~
    - Remove latest stash :: ~git stash drop stash@{0}~
 
-** Commit an empty folder
-In the empty folder add .gitignore file
-
-#+BEGIN_EXAMPLE
-  # Not to ignore .gitignore
-  !.gitignore
-
-  # Or you intend to keep the folder empty, exclude everything
-  ,*
-
-#+END_EXAMPLE
-
 ** Checkout vs Reset vs Revert
 Let's current branch has c1, c2 and c3 commits in order
 
@@ -58219,74 +58228,64 @@ when you are done, set the HEAD back to the front
 #+END_EXAMPLE
 
 ** Ignore, Local/Global Ignore, Show Ignored Files
-https://www.gitignore.io/
+- https://www.gitignore.io/
 - Show untracked files :: ~git status -u~
-
 - Add file or directory paths to
-  - .git/info/exclude/ (will not be committed)
-  - .gitignore file (will be commited)
-  - Create ~touch .gitignore~
-
+   - ~.git/info/exclude/~ (will not be committed)
+   - ~.gitignore~ file (will be commited)
+   - Create ~touch .gitignore~
 - Add global ignore file :: =~\.gitignore_global= and run =git config --global core.excludesfile ~/.gitignore_global=
-
-Sometimes, Windows is set up for all applications to use user profile folder at a different location, e.g. phpStorm
-- Find which config files set a certain config :: ~git config --list --show-origin~ 
-- Change excludesfile to a folder location that you know under ~[core]~ after ~git config --global -e~ (edit the global config file)
-- Or try this ~git config --global core.excludesfile K:/.gitignore_global~
-
+- Find which config files set a certain config :: ~git config --list --show-origin~
+   - Sometimes, Windows is set up for all applications to use user profile folder at a different location, e.g. phpStorm
+      - Change excludesfile to a folder location that you know under ~[core]~ after ~git config --global -e~ (edit the global config file)
+      - Or try this ~git config --global core.excludesfile K:/.gitignore_global~
 - Show all ignored files :: ~git status --ignored~
 - Why a file is ignored :: ~git check-ignore -v path/to/filename~
+- After 1.8.2, ~**~ can be used to mean zero or more sub-directories (relative to the place where .gitignore is)
+   - ~bin/~ ignores any folder named bin
+   - ~/bin/~ ignores one folder named bin relative to the .gitignore file
+   - However, if there're more than 1 folder, ~wp-content/uploads/~ only ignore /wp-content/uploads. Use ~**/wp-content/uploads/~ to ignore any folder that has path ~wp-content/uploads~
+     #+BEGIN_SRC conf
+       /main/**/bin/
+     #+END_SRC
+- Negate. An optional prefix ~!~ which negates the pattern; any matching file excluded by a previous pattern will become included again. If a negated pattern matches, this will override lower precedence patterns sources.
+  #+BEGIN_SRC conf
+    # Ignore everything
+    ,*
 
-After 1.8.2, ~**~ can be used to mean zero or more sub-directories (relative to the place where .gitignore is)
-~bin/~ ignores any folder named bin
-~/bin/~ ignores one folder named bin relative to the .gitignore file
+    # But don't ignore these files...
+    !.gitignore
+    !script.pl
+    !template.latex
+    # etc...
 
-However, if there're more than 1 folder
-~wp-content/uploads/~ only ignore /wp-content/uploads.
-Use ~**/wp-content/uploads/~ to ignore any folder that has path ~wp-content/uploads~
+    # ...even if they are in subdirectories. (don't ignore first level subdirectories)
+    # without this line, script.pl will only be included in the root directory
+    !*/
+  #+END_SRC
+- Ignore a folder but keep files in subdirectories, create ~.gitignore~ in that folder
+  #+BEGIN_SRC conf
+    # ignore everything
+    ,*
 
-#+BEGIN_SRC conf
-  /main/**/bin/
-#+END_SRC
+    # add gitignore
+    !.gitignore
 
-Negate
-An optional prefix ! which negates the pattern; any matching file excluded by a previous pattern will become included again. If a negated pattern matches, this will override lower precedence patterns sources.
-#+BEGIN_SRC conf
-  # Ignore everything
+    # keep sql files
+    !*.sql
 
-  ,*
-
-  # But don't ignore these files...
-  !.gitignore
-  !script.pl
-  !template.latex
-  # etc...
-
-  # ...even if they are in subdirectories. (don't ignore first level subdirectories)
-  # without this line, script.pl will only be included in the root directory
-  !*/
-#+END_SRC
-
-If you want to ignore a folder but don't ignore a file, create .gitignore in that folder
-#+BEGIN_SRC conf
-  ,*
-  !.gitignore
-  !*.sql
-  !*/
-#+END_SRC
-
-Escape square brackets
-#+BEGIN_EXAMPLE
-  e.g. ignore a directory site[123]
-  site\[123\]
-#+END_EXAMPLE
-
+    # keep subdirectories
+    !*/
+  #+END_SRC
+- Escape square brackets :: e.g. ignore a directory site[123]
+  #+BEGIN_SRC conf
+    site\[123\]
+  #+END_SRC
 - Ignore files whose name ends in =~= which is a usual suffix for text editors backup files :: =*~=
-
-https://www.atlassian.com/git/tutorials/gitignore
+- https://www.atlassian.com/git/tutorials/gitignore
 
 *** WordPress .gitignore <<<git:gitignore:wordpress>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   ,*~
   cgi-bin/
   .well-known/
@@ -58315,13 +58314,13 @@ https://www.atlassian.com/git/tutorials/gitignore
   sitemap.xml.gz
   sql-admin/
   cs-devops/
-#+END_EXAMPLE
+#+END_SRC
 
 *** NodeJS, NPM .gitignore
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC conf
   node_modules
   npm-debug.log
-#+END_EXAMPLE
+#+END_SRC
 
 ** Customize Settings per folder
 For a single repository, attributes should be placed in ~$GIT_DIR/info/attributes~ file.
@@ -61662,6 +61661,13 @@ Run this .sql file:
 #+BEGIN_EXAMPLE
   sqlcmd -S sqlservername -i C:\sqlFileName.sql
 #+END_EXAMPLE
+
+** MongoDB
+- Installation
+   - https://docs.mongodb.com/manual/installation/ Community Edition
+   - Windows
+- Naming convention
+   - camelCase for DB name 
 
 ** GraphQL
 - GitHub GraphQL API explorer :: https://developer.github.com/v4/explorer/
