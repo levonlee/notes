@@ -28316,7 +28316,7 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
   #+BEGIN_SRC html
     <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
   #+END_SRC
-- Example
+- Example :: https://web.dev/promises/
   #+BEGIN_SRC js
     function get(url) {
       // You should wrap all code into return
@@ -43157,14 +43157,25 @@ Widget shows png image converted to jpg with 85% quality and black background co
 - Alternative
    - Bing places for business
    - Local directory management services
+      - Yellow Pages
+	 - Superpages.com
+      - Yelp
+      - BBB.org
+      - Manta.com
+      - Yahoo yext.com
+      - AngiesList.com
       - advicelocal.com
       - synup.com
       - brightlocal.com
-      - yext.com
+      - Data Aggregators
+	 - InfoGroup.com
+	 - Acxiom.com
 - Insights
    - Direct Search and Discovery Search
    - Search views and Maps views
    - Visit your website, Request directions, Call you, View photos
+- Local Business Categories
+   - https://blumenthals.com/google-lbc-categories/
 - API :: https://developers.google.com/my-business/
 
 ** Google Analytics <<<google:ga>>>
@@ -44468,6 +44479,49 @@ https://analytics.google.com/analytics/academy/
       - Structured Data Markup Helper :: <<<google:search console:structured data markup helper>>>
 	 - If you not sure how to add structured data, pick a type and page, match fields with the intended type, generate
 
+*** Remove URL from Google Index
+- This is to permanently remove a url from Google Search
+- If a page is recently deleted, returning 404 and doing the following is the right way to do
+  - Yoast adds meta tag to 404 pages
+  - Google Search Console will stop showing the 404 after about a month
+  - But you should pay attention if the url is in sitemap but returns 404 (shown as 404 error on Search Console)
+- Make the URL return 404 or 410 status
+- Don't block access to that URL using robots.txt
+- Return meta tag ~<meta name="robots" content="noindex, nofollow">~
+- Return ~X-Robots-Tag~ HTTP header
+- Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL
+- Submit a removal request
+  - For sites you own on Google Search Console :: https://www.google.com/webmasters/tools/url-removal
+  - For sites that you don't own :: https://www.google.com/webmasters/tools/removals
+- To check if the URL is removed
+  - Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed
+
+#+BEGIN_SRC apache
+  <Files ~ "\.pdf$">
+    Header set X-Robots-Tag "noindex, nofollow"
+  </Files>
+#+END_SRC
+
+#+BEGIN_SRC php
+  $apacheURL = (strlen($_SERVER['REQUEST_URI'])) ?
+    substr($_SERVER['REQUEST_URI'],1) : $_SERVER['REQUEST_URI'];
+  $noIndexNoFollow = array(
+    "~^subscriber-services/trucking-renewal(.*)~i",
+    "~^lookup-subscription(.*)~i",
+    "~^users/(.*)~i",
+    "~^user/(.*)~i",
+  );
+
+  if (!empty($apacheURL)) {
+    foreach ($noIndexNoFollow as $key => $value) {
+      $matches = array();
+      if (preg_match($value, $apacheURL, $matches)) {
+	header("X-Robots-Tag: noindex, nofollow", true);
+      }
+    }
+  }
+#+END_SRC
+
 ** Google Trends
 - Compare search terms in different Google Search platforms and see their related topics and related queries
    - Plural vs sigular spelling
@@ -44501,10 +44555,14 @@ Search products (Google defines them). For US only. Nation > region > city level
 By age, household income, sex, device.
 
 ** Google Ads - Google AdWords, Google Keyword Planner, Google Video Advertising
-*** Keyword Planner
-Hiking > hike > backpacking > backpack
-
-KP shows you a keyword's search volume, avg cpc and give you recommendation on other relelvant keywords.
+*** Keyword Planner <<<google:ads:keyword-planner>>>
+- Keyword Ideas
+   - Hiking, hike, backpacking, backpack
+- Get keyword's search volume, avg cpc and recommendation on other relelvant keywords
+- Targeting
+   - Geo
+   - Language
+   - Search network
 
 *** Google Ads - AdWords
 AdWords requires 1+ hour/week and AdWords Express requires 15 min/week. Express only has text ads on Search and Google Maps and doesn't require to have a website. [[https://support.google.com/adwords/answer/7539883][Academy for Ads]] http://school4seo.com/category/google-adwords-advance-search/ https://academy.exceedlms.com/student/catalog/list?category_ids=53
@@ -45551,6 +45609,7 @@ Same as SpyFu but it breaks down by country and different SE.
 - https://moz.com/free-seo-tools
    - Keyword Explorer :: free for 20 queries per month
    - MozBar :: Chrome extension to show Page Authority, Domain Authority, MozRank, MozTrust
+   - Online Presence :: check consistency of all your online profiles 
 - Education :: https://moz.com/learn/seo
 
 ***** Keyword Explorer
@@ -45560,6 +45619,8 @@ Same as SpyFu but it breaks down by country and different SE.
    - WordTracker
    - WordStream
    - Ahrefs Keywords Explorer
+   - https://neilpatel.com/ubersuggest/
+   - google:ads:keyword-planner
 - Pro :: 5k queries per month
 - Metrics
    - Difficulty :: invest on high volume keyword with lower difficulty
@@ -45586,6 +45647,7 @@ Same as SpyFu but it breaks down by country and different SE.
 - Page Authority, Domain Authority, Linking Domains, Inbound Links, Ranking Keywords, etc. 
 - Analyze all websites including yours
 - Alternatives
+   - SEMrush
    - linkpopularity.com
    - checkyourlinkpopularity.com
    - majestic.com
@@ -45855,48 +45917,8 @@ More specific types e.g. Article,  Blog, Book, Comment, Game, Map, Movie, Websit
   }
 #+END_SRC
 
-** Remove URL from Google Index
-- This is to permanently remove a url from Google Search
-- If a page is recently deleted, returning 404 and doing the following is the right way to do
-  - Yoast adds meta tag to 404 pages
-  - Google Search Console will stop showing the 404 after about a month
-  - But you should pay attention if the url is in sitemap but returns 404 (shown as 404 error on Search Console)
-- Make the URL return 404 or 410 status
-- Don't block access to that URL using robots.txt
-- Return meta tag ~<meta name="robots" content="noindex, nofollow">~
-- Return ~X-Robots-Tag~ HTTP header
-- Go to Google Search Console and Fetch as Google to manually tell Google update index for that URL
-- Submit a removal request
-  - For sites you own on Google Search Console :: https://www.google.com/webmasters/tools/url-removal
-  - For sites that you don't own :: https://www.google.com/webmasters/tools/removals
-- To check if the URL is removed
-  - Make a [[https://www.google.com/webmasters/tools/removals][removal request]] and it will tell you if the URL is removed
-
-#+BEGIN_SRC apache
-  <Files ~ "\.pdf$">
-    Header set X-Robots-Tag "noindex, nofollow"
-  </Files>
-#+END_SRC
-
-#+BEGIN_SRC php
-  $apacheURL = (strlen($_SERVER['REQUEST_URI'])) ?
-    substr($_SERVER['REQUEST_URI'],1) : $_SERVER['REQUEST_URI'];
-  $noIndexNoFollow = array(
-    "~^subscriber-services/trucking-renewal(.*)~i",
-    "~^lookup-subscription(.*)~i",
-    "~^users/(.*)~i",
-    "~^user/(.*)~i",
-  );
-
-  if (!empty($apacheURL)) {
-    foreach ($noIndexNoFollow as $key => $value) {
-      $matches = array();
-      if (preg_match($value, $apacheURL, $matches)) {
-	header("X-Robots-Tag: noindex, nofollow", true);
-      }
-    }
-  }
-#+END_SRC
+*** BreadcrumbList
+- https://developers.google.com/search/docs/data-types/breadcrumb
 
 ** robots.txt
 - https://developers.google.com/search/reference/robots_txt
@@ -45952,6 +45974,16 @@ More specific types e.g. Article,  Blog, Book, Comment, Game, Map, Movie, Websit
   User-agent: SemrushBot-SA
   User-agent: PowerMapper
   Allow: /
+#+END_SRC
+
+** Disavow.txt
+Submit to https://www.google.com/webmasters/tools/disavow-links
+
+#+BEGIN_SRC conf
+  # block a whole domain
+  domain:spamwebsite.com
+  # block individual page url
+  https://www.spamwebsite.com/paid-links/mysite.html
 #+END_SRC
 
 ** Design & User Experience
@@ -51288,20 +51320,20 @@ Build a lot of times while testing a Dockerfile
 
 ** run
 *** Interactive mode with tty ~-it~
-If there's an  error, ~cannot enable tty mode on non tty input~, try ~-i~ only.
+If there's an  error, ~cannot enable tty mode on non tty input~, try ~-i~ only
 
 *** Run an image in a container and keep running in background
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   docker run --name wordpressdb -v=/vagrant/mydbdump:/tmp/mydbdump \
   -v=/mydbdata:/var/lib/mysql \
   -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=wordpress \
   -d mysql:5.7.9
-#+END_EXAMPLE
+#+END_SRC
 
-Container name :: wordpressdb
-Image name :: mysql:5.7.9
-Detached mode (in background) :: -d
-Insert environment variables :: -e
+Container name: wordpressdb
+Image name: mysql:5.7.9
+Detached mode (in background): -d
+Insert environment variables: -e
 
 *** Run an image in a temp container only once, then remove the container
 A MySQL container, wordpressdb, created by mysql:5.7.9 image, is already running.
@@ -51486,14 +51518,14 @@ Personal dev project
   # a volume can be created when using `docker run -v some_volume:/path/to/container`
 #+END_SRC
 
+*** Access the named volume by starting another container
 On Windows, you may be forced to have named volume because file permissions cannot be set. In this case, you can start a new container to access the volume
 
-*** Access the named volume by starting another container
 Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/html~
 
 #+BEGIN_SRC sh
   # check what files are in the volume
-  docker run -ti --volumes-from yourContainerName ubuntu
+  docker run -ti --rm --volumes-from yourContainerName ubuntu:latest
   ll /var/www/html
 
   # backup volume `dbdata` to host backup/backup.bar
@@ -52571,18 +52603,14 @@ Check db status, then you docker-compose restart the container without specifyin
       ...
 #+END_EXAMPLE
 
-** image:wordpress
-<<<image:wordpress:apache>>>
-wordpress:4.9.3-php7.1-apache
-Parent :: php:7.1-apache image:php:apache image:php:7:apache
-
-Tag latest is 4.9.4-php7.2-apache
-
-Installed PHP extensions
-gd mysqli opcache
+** image:wordpress <<<image:wordpress:apache>>>
+- wordpress:4.9.3-php7.1-apache
+   - Parent :: php:7.1-apache image:php:apache image:php:7:apache
+- Installed Debian packages :: ghostscript libfreetype6-dev libjpeg-dev libmagickwand-dev libpng-dev libzip-dev
+- Installed PHP extensions :: gd mysqli opcache bcmath exif zip
 
 *** docker-compose.yml
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   version: '2'
   volumes:
     dbsandboxwp:
@@ -52590,41 +52618,41 @@ gd mysqli opcache
     app_netsandboxwp:
       driver: bridge
       ipam:
-        driver: default
-        config:
-        - subnet: 172.20.0.0/24
-          gateway: 172.20.0.1
+	driver: default
+	config:
+	- subnet: 172.20.0.0/24
+	  gateway: 172.20.0.1
   services:
     dbsandboxwp:
       image: mysql:5.7.9
       container_name: dbsandboxwp
       networks:
-        app_netsandboxwp:
-          ipv4_address: 172.20.0.2
+	app_netsandboxwp:
+	  ipv4_address: 172.20.0.2
       ports:
-        - "31000:3306"
+	- "31000:3306"
       restart: always
       environment:
-        MYSQL_ROOT_PASSWORD: wp
-        MYSQL_DATABASE: wp
-        MYSQL_USER: wp
-        MYSQL_PASSWORD: wp
+	MYSQL_ROOT_PASSWORD: wp
+	MYSQL_DATABASE: wp
+	MYSQL_USER: wp
+	MYSQL_PASSWORD: wp
 
     phpsandboxwp:
       image: wordpress:4.9.3-php7.1-apache
       container_name: phpsandboxwp
       volumes:
-        - "./:/var/www/html"
+	- "./:/var/www/html"
       restart: always
       networks:
-        app_netsandboxwp:
-          ipv4_address: 172.20.0.3
+	app_netsandboxwp:
+	  ipv4_address: 172.20.0.3
       environment:
-        WORDPRESS_DB_HOST: dbsandboxwp
-        WORDPRESS_DB_PASSWORD: wp
-        WORDPRESS_DB_USER: wp
-        WORDPRESS_DB_NAME: wp
-        WORDPRESS_TABLE_PREFIX: wp_
+	WORDPRESS_DB_HOST: dbsandboxwp
+	WORDPRESS_DB_PASSWORD: wp
+	WORDPRESS_DB_USER: wp
+	WORDPRESS_DB_NAME: wp
+	WORDPRESS_TABLE_PREFIX: wp_
       # environment variables honor mysql
       # WORDPRESS_DB_HOST WORDPRESS_DB_PASSWORD
       # environment variables default
@@ -52632,15 +52660,14 @@ gd mysqli opcache
       # WORDPRESS_DB_NAME wordpress
       # WORDPRESS_TABLE_PREFIX ""
       ports:
-        - "32000:80"
+	- "32000:80"
       depends_on:
-        - dbsandboxwp
+	- dbsandboxwp
       links:
-        - dbsandboxwp
-#+END_EXAMPLE
+	- dbsandboxwp
+#+END_SRC
 
-** image:drupal
-<<<image:drupal:apache>>>
+** image:drupal <<<image:drupal:apache>>>
 drupal:7.56-apache
 Parent :: php:7.0-apache
 
@@ -52648,7 +52675,7 @@ Parent :: php:7.0-apache
 docker run -ti --rm --volumes-from phpsandboxd7 --name html-data ubuntu:xenial
 docker cp html-data:/var/www/html .
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC yaml
   version: '2'
   volumes:
     volsandboxd7:
@@ -52656,48 +52683,48 @@ docker cp html-data:/var/www/html .
     app_netsandboxd7:
       driver: bridge
       ipam:
-        driver: default
-        config:
-        - subnet: 172.20.1.0/24
-          gateway: 172.20.1.1
+	driver: default
+	config:
+	- subnet: 172.20.1.0/24
+	  gateway: 172.20.1.1
   services:
     dbsandboxd7:
       image: mysql:5.7.9
       container_name: dbsandboxd7
       networks:
-        app_netsandboxd7:
-          ipv4_address: 172.20.1.2
-          aliases:
-            - mysql
+	app_netsandboxd7:
+	  ipv4_address: 172.20.1.2
+	  aliases:
+	    - mysql
       ports:
-        - "31001:3306"
+	- "31001:3306"
       restart: always
       environment:
-        MYSQL_ROOT_PASSWORD: d7
-        MYSQL_DATABASE: d7
-        MYSQL_USER: d7
-        MYSQL_PASSWORD: d7
+	MYSQL_ROOT_PASSWORD: d7
+	MYSQL_DATABASE: d7
+	MYSQL_USER: d7
+	MYSQL_PASSWORD: d7
 
     phpsandboxd7:
       image: drupal:7.56-apache
       container_name: phpsandboxd7
       volumes:
-        - volsandboxd7:/var/www/html
-  ;; #      - /var/www/html/modules
-  ;; #      - /var/www/html/profiles
-  ;; #      - /var/www/html/sites
-  ;; #      - /var/www/html/themes
+	- volsandboxd7:/var/www/html
+  #      - /var/www/html/modules
+  #      - /var/www/html/profiles
+  #      - /var/www/html/sites
+  #      - /var/www/html/themes
       restart: always
       networks:
-        app_netsandboxd7:
-          ipv4_address: 172.20.1.3
-          aliases:
-            - drupal
+	app_netsandboxd7:
+	  ipv4_address: 172.20.1.3
+	  aliases:
+	    - drupal
       ports:
-        - "32001:80"
+	- "32001:80"
       depends_on:
-        - dbsandboxd7
-#+END_EXAMPLE
+	- dbsandboxd7
+#+END_SRC
 
 ** image:tatemz/wp-cli <<<image:tatemz/wp-cli>>>
 https://github.com/tatemz/docker-wpcli
@@ -55805,7 +55832,7 @@ Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess
    - ~httpd -t~
 - ~/etc/init.d/apache2 reload~ for apache that is initialized using command e.g. php apache docker container Or ~apache2ctl graceful~ to stop and start httpd daemon. Also works for apache started using command line
 - ~apache2ctl restart~ or ~service apache2 restart~ or ~/etc/init.d/apache2 restart~ or ~service httpd restart~
-- On Ubuntu, use systemctl
+- On Ubuntu, use ~systemctl status apache2.service~
 
 ** Modules
 - Available modules :: ~/etc/apache2/mods-available~
