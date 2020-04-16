@@ -23034,7 +23034,7 @@ Polyfill: [[https://github.com/jquery/PEP#why-pointer-events][jQuery PEP]]
 - download :: filename. force download
 - ~contenteditable~ :: true or false. Become editable
 - contextmenu :: right click menu. Only in Firefox
-- ~dir~ :: ltr, rtl or auto. text direction
+- ~dir~ :: ~ltr~ ~rtl~ or ~auto~. text direction
 - hidden :: 
 - spellcheck :: true or false
 - tabindex :: Tab button. 1 is first
@@ -23230,6 +23230,7 @@ transitionend
 | li       | value="100"                       | increment by 1                                            |
 |          |                                   |                                                           |
 
+- ~<main>~
 - ~<header>~
 - ~<nav>~
 - ~<section>~
@@ -23238,7 +23239,7 @@ transitionend
 - ~<footer>~
 
 *** ~<iframe>~ attribute ~sandbox~
-- Add space-separated ~allow--*~ tokens as value in ~sandbox~ attribute to lift particular restrictions. By default, all are not allowed
+- Add space-separated ~allow-*~ tokens as value in ~sandbox~ attribute to lift particular restrictions. By default, all are not allowed
    - ~allow-forms~ :: form submission
    - ~allow-scripts~ :: 
 
@@ -23434,8 +23435,18 @@ CSS fallback
   <time datetime="2020-11-04 19:00-0500">Wednesday, Nov 4th at 7pm</time>
 #+END_SRC
 
-*** video <<<html:video>>>
-- MP4 is the most compatible video format. Uses H.264 video codec and AAC audio codec
+*** ~<figure>~ ~<figcaption>~
+#+BEGIN_SRC html
+  <figure>
+    <img src="a.png" width="960" height="720" alt="shiny black dog in the sun">
+
+    <figcaption>Maggie the dog enjoys resting in a field, after a long day of chasing squirrels.</figcaption>
+  </figure>
+
+#+END_SRC
+
+*** ~<video>~ <<<html:video>>>
+- MP4 is the most compatible video format. Uses H.264 (not free, not open source) video codec and AAC audio codec
 - WebM is Google for HTML5. Uses VP8 video codec and Vorbis audio codec. Doesn't support in iOS, Safari nor old IE
 - FLV is Flash only. Uses H.263 video codec and MP3 audio codec
 
@@ -23502,6 +23513,43 @@ CSS fallback
 	 }
        </script>
      #+END_SRC
+
+**** Caption
+- webvtt :: web video text tracks. Plain text with ~.vtt~ extension
+- ~kind~ attribute
+   - descriptions :: for blind people
+   - chapters :: allow video player to jump to a certain chapter
+
+#+BEGIN_SRC  html
+  <video controls>
+    <source src="moonwalk.480p.vp9.webm" type="video/webm">
+    <source src="moonwalk.480p.h264.mp4" type="video/mp4">
+  
+    <track src="moonwalk.vtt"
+	   kind="captions"
+	   label="English"
+	   srclang="en"
+	   default>
+  
+     <track src="moonwalk.es-la.es.vtt"
+	   kind="subtitles"
+	   label="Español"
+	   srclang="es">
+  
+    <p>This would be a video of a moonwalk, if your device supported playing this video.</p>
+  </video>
+#+END_SRC
+
+*** ~<audio>~ <<<html:audio>>>
+#+BEGIN_SRC html
+  <audio controls loop autoplay>
+      <source src="b.ogg"
+	      type="audio/ogg; codec=opus">
+      <source src="a.mp3"
+	      type="audio/mpeg">
+      Sorry your browser doesn't not support audio.
+  </audio>
+#+END_SRC
 
 ** Meta
 *** Meta Refresh (redirect)
@@ -26829,9 +26877,9 @@ https://amp.dev/documentation/components/amp-analytics/
 * JavaScript
 ** Loading Sequence <<<js:defer>>> <<<js:async>>>
 - Refer to html:event:DOMContentLoaded
-- <script> tags without any attributes are downloaded together and executed immediately in order
-- defer :: Works when src is defined. Download together, execute in order and defer execution until before ~DOMContentLoaded~. The download and execute process do not block HTML parsing
-- async :: Works when src is defined. Download together, execute in any order as soon as they're downloaded and ~DOMContentLoaded~ does not have to wait for the execution. The download process does not stop HTML passing, but the execution process does. If async scripts are downloaded and executed before DCL, it will still block HTML parsing
+- ~<script>~ tags without any attributes are downloaded together and executed immediately in order
+   - defer :: Works when src is defined. Download together, execute in order and defer execution until before ~DOMContentLoaded~. The download and execute process do not block HTML parsing
+   - async :: Works when src is defined. Download together, execute in any order as soon as they're downloaded and ~DOMContentLoaded~ does not have to wait for the execution. The download process does not stop HTML passing, but the execution process does. If async scripts are downloaded and executed before DCL, it will still block HTML parsing
    - ~async="false"~ :: Works when src is defined. Download together, execute in order as soon as all are downloaded
    - async is useful when the script files are not dependent on other files and do not have any dependencies themselves. Use it when you don't care exactly at which point the file is executed
    - By default, all dynamically added scripts are async
@@ -63733,6 +63781,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 **** stylelint
 **** Prettier -  Code formatter
 **** Bracket Pair Colorizer 2
+**** Indenticator
 *** Shortcuts
 - Search all files in an open folder :: ~C-S-f~
 - Focus on Editor Group 1 :: ~C-1~ ~View: Focus First Editor Group~
@@ -64242,79 +64291,78 @@ To compile ~C-c C-c~ and display inline image ~C-c C-x C-v~
 
 *** Toggle/detach dock side (DevTools > C-S D)
 *** Navigate Panels (DevTools > ~C [~ or ~C ]~)
-*** Console
+*** Console Panel
 **** Console Commands
 https://developers.google.com/web/tools/chrome-devtools/console/console-reference
 
-console.count
-#+BEGIN_EXAMPLE
-  function login(user) {
-      console.count("Login called for user " + user);
-  }
+- console.count
+  #+BEGIN_SRC js
+    function login(user) {
+	console.count("Login called for user " + user);
+    }
 
-  users = [ // by last name since we have too many Pauls.
-      'Irish',
-      'Bakaus',
-      'Kinlan'
-  ];
+    users = [ // by last name since we have too many Pauls.
+	'Irish',
+	'Bakaus',
+	'Kinlan'
+    ];
 
-  users.forEach(function(element, index, array) {
-      login(element);
-  });
+    users.forEach(function(element, index, array) {
+	login(element);
+    });
 
-  login(users[0]);
-#+END_EXAMPLE
+    login(users[0]);
+  #+END_SRC
+- ~console.dir(document.body.firstElementChild)~ :: Formats DOM elements as JavaScript objects
+- ~console.table(anArrayOfObjects)~ :: can be an array, object or an array of objects
+- ~console.assert( condition, string )~
+  Show string only when the first parameter evaluates to false
+  ~console.assert(list.childNodes.length <= 500, "Node count is > 500");~
+- Specifiers
+  #+BEGIN_SRC js
+    //Style console output with CSS
+    console.log("%cThis will be formatted with large, blue text", "color: blue; font-size: x-large");
 
-console.dir(document.body.firstElementChild) :: Formats DOM elements as JavaScript objects
-
-Show string only when the first parameter evaluates to false
-#+BEGIN_EXAMPLE
-  console.assert(list.childNodes.length <= 500, "Node count is > 500");
-#+END_EXAMPLE
-
-Specifiers
-#+BEGIN_EXAMPLE
-  //Style console output with CSS
-  console.log("%cThis will be formatted with large, blue text", "color: blue; font-size: x-large");
-
-  // format a value as string
-  console.log("%s has %d points", "Sam", 100);
-
-  %i or %d for integer
-  %f float
-  %o :: expandable DOM element as seen in Elements panel
-  %O :: Formats the value as an expandable JavaScript object
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-  console.group("Authenticating user '%s'", user);
-  console.group("Authorizing user '%s'", user);
-  console.log("User '%s' was authorized.", user);
-  console.groupEnd();
-  console.groupEnd();
-#+END_EXAMPLE
-
-console.warn(), console.info()
-
-console.trace(object)
+    // format a value as string
+    console.log("%s has %d points", "Sam", 100);
+    console.group("Authenticating user '%s'", user);
+    console.group("Authorizing user '%s'", user);
+    console.log("User '%s' was authorized.", user);
+    console.groupEnd();
+    console.groupEnd();
+  #+END_SRC
+   - %i or %d :: integer
+   - %f :: float
+   - %o :: expandable DOM element as seen in Elements panel
+   - %O :: Formats the value as an expandable JavaScript object
+   - %c :: color and other styles 
+- ~console.warn()~, ~console.info()~, ~console.error()~
+- ~console.trace(object)~
 
 **** Command Line API
-https://developers.google.com/web/tools/chrome-devtools/console/command-line-reference
+- https://developers.google.com/web/tools/chrome-devtools/console/command-line-reference
 
-$('code') // Returns the first code element in the document.
-$$('figure') // Returns an array of all figure elements in the document.
-$x('html/body/p') // Returns an array of all paragraphs in the document body. XPath
+#+BEGIN_SRC js
+  $('code') // Returns the first code element in the document
+  $$('figure') // Returns an array of all figure elements in the document
+  $x('html/body/p') // Returns an array of all paragraphs in the document body. XPath
 
-$('[data-target="inspecting-dom-elements-example"]')
-inspect($_)
+  $('[data-target="inspecting-dom-elements-example"]') // CSS selector
 
-$0, $1, $2, $3, $4 :: recently selected
-$_ :: last evaluated expression
+  // $_ :: last evaluated expression
+  // Open the selected element on Elements Panel
+  inspect($_)
 
-monitorEvents(document.body, "click");
+  // $0, $1, $2, $3, $4 :: recently selected
+
+  // copy a JavaScript variable value, later paste to e.g. Notepad
+  copy(abc)
+
+  monitorEvents(document.body, "click");
+#+END_SRC
 
 **** Inject CSS file in Console
-=jQuery(document.head).append('<link rel="stylesheet" href="path_to_my_css">');=
+~jQuery(document.head).append('<link rel="stylesheet" href="path_to_my_css">');~
 
 **** Offload CSS file in Console
 #+BEGIN_SRC js
@@ -64327,7 +64375,7 @@ monitorEvents(document.body, "click");
 Block a certain file request or any files from a domain. Network > right click on a file and Block Request
 
 *** Get all events of an element in Console
-getEventListeners($0);
+~getEventListeners($0);~
 
 *** XPath <<<XPath>>>
 In DevTools > Elements, search using Xpath, e.g. find all h4 element //h4
@@ -64383,15 +64431,15 @@ chrome://flags > search a Feature, enable and relaunch
 Developer Tools experiments :: Experiments under DevTools > Settings
 Experimental JavaScript
 
-*** Elements
+*** Elements Panel
 **** Styles
 Click on color and expand Contrast Ratio produces 1 line. Choose color below the line in order to make it AA or AAA compliant.
 
 **** Accessibility
-*** Audits
+*** Audits Panel
 Run checks using Light House
 
-*** Sources
+*** Sources Panel
 **** Local Overrides
 Specify a directory where DevTools should save changes. This directory will contain all changes across different website domains.
 DevTools > Sources > Overrides
@@ -66046,7 +66094,7 @@ Remove size attribute for input type file, confirm_email
 Right below <body>
 #+BEGIN_SRC html
   <a id="skip-nav" href="#main-content">Skip to content</a>
-  <div id="main-content"></div>
+  <main id="main-content"></main>
 #+END_SRC
 
 #+BEGIN_SRC css
