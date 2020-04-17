@@ -18204,7 +18204,7 @@ css:animation
    });
 #+END_SRC
 
-** Font, Text
+** Font, Text <<<css:font>>>
 *** Ellipsis
 Single Line
 #+BEGIN_EXAMPLE
@@ -18303,6 +18303,9 @@ https://css-tricks.com/fitting-text-to-a-container/
 - IE 11 and less only supports EOT. Edge supports WOFF
 - Use full url in ~src: url() format()~ for email HTML
    - ~format()~ :: Optional. Can be: woff2, woff, truetype, opentype, embedded-opentype, svg
+- For a Variable Font, can be a range e.g.
+   - ~font-weight: 100 900;~
+   - ~font-stretch: 25% 140%;~
 
 #+BEGIN_SRC css
   @font-face {
@@ -18517,7 +18520,7 @@ https://css-tricks.com/fitting-text-to-a-container/
 
 [[http://www.cssfontstack.com/][Web Safe Fonts in PC and Mac]] and font stack
 
-*** ~font-feature-setting~ <<<css:font-feature-settings
+*** ~font-feature-setting~ <<<css:font-feature-settings>>>
 - Some fonts have OpenType Features. Refer to font:woff
 #+BEGIN_SRC css
   /* Use the default settings */
@@ -18539,6 +18542,24 @@ https://css-tricks.com/fitting-text-to-a-container/
    normal | <string> [ <integer> | on | off ]?
   ,*/
 #+END_SRC
+
+*** ~font-variation-settings~ <<<css:font-variation-settings>>>
+- Change value for each axis for a Variable Font
+  #+BEGIN_SRC css
+    font-variation-settings: "wght" 370;
+    font-variation-settings: "wght" 370, "wdth" 75, "YOPQ" 54;
+  #+END_SRC
+- Fallback
+  #+BEGIN_SRC css
+    h1 {
+	font-family: some-non-variable-font-family;
+    }
+    @supports (font-variation-settings: 'wdth' 115) {
+	h1 {
+	    font-family: some-variable-font-family;
+	}
+    }
+  #+END_SRC
 
 ** CSS Selectors <<<CSS Selectors>>>
 - ~div > p~ :: select p elements where the direct parent is div
@@ -18652,7 +18673,7 @@ But anything inside it counts.
   }
 #+END_SRC
 
-*** counter <<<css:f:counter>>>
+*** ~counter~ <<<css:f:counter>>>
 #+BEGIN_SRC css
   body {
    counter-reset: section;
@@ -18670,13 +18691,35 @@ But anything inside it counts.
   }
 #+END_SRC
 
-*** minmax <<<css:f:minmax>>>
+*** ~var(x)~ <<<css:f:var>>>
+#+BEGIN_SRC css
+  :root {
+      --body-font-family: Arial;
+      --amstel-wght: 370;
+      --amstel-wdth: 75;
+  }
+
+  ,* {
+      font-variable-settings: 'wght' var(--amstel-wght), 'wdth' var(--amstel-wdth);
+  }
+
+  body {
+      font-family: var(--body-font-family);
+  }
+#+END_SRC
+
+*** ~minmax(x,y)~ <<<css:f:minmax>>>
 - Refer to css:grid:container:grid-template-rows, css:grid:container:grid-template-columns
 #+BEGIN_SRC css
   /*
   sets minimum row height to 100px, max height to auto
   ,*/
   grid-column-rows: minmax(100px, auto);
+#+END_SRC
+
+*** ~repeat(x,y)~ <<<css:f:repeat>>>
+#+BEGIN_SRC css
+  grid-template-columns: repeat(3, 20px [col-start]) 5%;
 #+END_SRC
 
 ** border-image
@@ -19409,9 +19452,8 @@ WD. Only Edge. Same as html:meta:viewport
   }
 #+END_SRC
 
-** @supports
-
-#+BEGIN_EXAMPLE
+** @supports <<<css:@supports>>>
+#+BEGIN_SRC css
   @supports not (display:flex) {}
   @supports (display: flex) or 
             (display: -ms-flexbox) or
@@ -19420,7 +19462,7 @@ WD. Only Edge. Same as html:meta:viewport
   @supports (transition-property: color) or 
             ( (animation-name: myAnimation) and (transform: rotate(225deg) )
             ) {}
-#+END_EXAMPLE
+#+END_SRC
 
 ** Flexbox <<<css:flex>>>
 *** Basics
@@ -67743,11 +67785,16 @@ p {
 - http://alternatype.net/
 - Identify font :: https://www.whatfontis.com/
 
+*** Variable Fonts
+- https://v-fonts.com/
+- https://github.com/TypeNetwork/Amstelvar/tree/master/fonts
+
 *** [[https://docs.microsoft.com/en-us/typography/font-list/][Windows Font List]]
 *** [[http://iosfonts.com/][iOS Font List]]
 
 *** Extensis
 https://www.extensis.com/support Download Universal Type Client (6.1.5) not Universal Type Server 6 Core Client
+
 *** Adobe Fonts former Adobe TypeKit (AF)
 - https://fonts.adobe.com/about
 - Pricing
