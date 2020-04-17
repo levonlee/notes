@@ -39597,7 +39597,8 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
   #+END_SRC
 
 * NodeJS
-** Install on Ubuntu
+** Install
+*** Install on Ubuntu
 #+BEGIN_SRC sh
   apt-get update
   apt-get install build-essential libssl-dev
@@ -39618,7 +39619,7 @@ Log out and back again or source the file so that current session knows changes
 =source ~/.profile=
 
 List Node.js available versions ~nvm ls-remote~ and look for version with Latest LTS
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   nvm install 10.14.1
   nvm use 10.14.1
 
@@ -39647,7 +39648,7 @@ Global packages installed using ~npm install -g express~ are in ~~/.nvm/versions
 
 https://github.com/nodejs/LTS
 
-*** Install using PPA
+**** Install using PPA
 #+BEGIN_SRC sh
   curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
   sudo apt-get install -y nodejs
@@ -39665,7 +39666,7 @@ https://github.com/nodejs/LTS
   sudo apt install build-essential
 #+END_SRC
 
-** Install on Windows
+*** Install on Windows
 Download the .msi and install with NPM. Installation path: =C:\Program Files\nodejs\=
 Download the latest .msi to upgrade. And upgrade any existing global packages.
 
@@ -39678,7 +39679,11 @@ Upgrade npm on Windows
 Refer to phpstorm:nodejs
 
 ** Basic
-Modules installed globally usually have an executable command for direct use. If installed locally, usually run ~./node_modules/module_name/bin/exec_cmd~
+- Modules installed globally usually have an executable command for direct use. 
+   - For locally installed modules, usually run ~./node_modules/module_name/bin/exec_cmd~
+- ES6 support check :: https://node.green/
+   - Find V8 versio :: ~node -p process.versions.v8~ shows ~V8.ver.number-node.nodeVersionNumber~
+   - More :: https://nodejs.org/en/docs/es6/
 
 #+BEGIN_SRC sh
   node -v
@@ -39738,7 +39743,7 @@ Link
 console.log is actually global.console.log
 https://nodejs.org/api/globals.html
 
-*** __dirname, __filename
+*** ~__dirname~, ~__filename~
 Full path of the directory/file of the current module/file
 
 *** console <<<nodejs:console>>>
@@ -39755,22 +39760,42 @@ Backtick
   });
 #+END_SRC
 
-*** process
-**** process.argv
-node app.js --user li --greeting "Good Day Sir"
-console.log(process.argv);
-//['nodejs installation full path', 'full path to module', '--user', 'li', '--greeting', 'Good Day Sir']
-
+*** require <<<nodejs:require>>>
 #+BEGIN_SRC js
-  function grab(flag) {
-    var index = process.argv.indexOf(flag);
-    return (index === 01) ? null : process.argv[index+1];
+  // Importing a local module with a path relative to the `__dirname` or current
+  // working directory. (On Windows, this would resolve to .\path\myLocalModule.)
+  const myLocalModule = require('./path/myLocalModule');
+
+  // Importing a JSON file:
+  const jsonData = require('./path/filename.json');
+
+  // Importing a module from node_modules or Node.js built-in module:
+  const crypto = require('crypto');
+#+END_SRC
+
+*** process <<<nodejs:process>>>
+- ~console.log(process.pid)~
+   - ~process.versions.node~
+
+**** process.argv
+#+BEGIN_SRC sh
+  node app.js --user li --greeting "Good Day Sir"
+#+END_SRC
+
+app.js
+#+BEGIN_SRC js
+  console.log(process.argv);
+  // ['nodejs installation full path', 'full path to module', '--user', 'li', '--greeting', 'Good Day Sir']
+
+  const grab = flag => {
+      let index = process.argv.indexOf(flag)+1;
+      return process.argv[index];
   }
 
   var greeting = grab('--greeting');
 #+END_SRC
 
-**** stdout
+**** process.stdout, process.stdin, process.exit(), process.on()
 #+BEGIN_SRC js
   var q = ['Q1', 'Q2'];
   var a = [];
@@ -39796,21 +39821,7 @@ console.log(process.argv);
   ask(0);
 #+END_SRC
 
-*** module
-#+BEGIN_SRC js
-  // ./lib/Person.js
-  // some code
-  module.exports = Person;
-  // literal object or any Javascript type
-  // module.exports is the object that is returned by the require statement
-
-  // ./app.js
-  var Person = require('./lib/Person'); // do not include .js
-  var ben = new Person('Ben');
-  var george = new Person('George');
-#+END_SRC
-
-*** Timing
+**** process.stdout.clearLine(), process.stdout.cursorTo(), process.stdout.write()
 #+BEGIN_SRC js
   var currentTime = 0;
   var percentWaited = 0;
@@ -39834,6 +39845,24 @@ console.log(process.argv);
   }, 3000);
 
   writePercent(percentWaited);
+#+END_SRC
+
+*** module <<<nodejs:o:module>>>
+~./lib/Person.js~
+#+BEGIN_SRC js
+  // some code
+  module.exports = Person; // literal object or any Javascript type
+
+  // even export an anonymous function will work
+
+  // module.exports is the object that is returned by the require statement
+#+END_SRC
+
+~./app.js~
+#+BEGIN_SRC js
+  var Person = require('./lib/Person'); // do not include .js
+  var ben = new Person('Ben');
+  var george = new Person('George');
 #+END_SRC
 
 ** Modules, Packages, Frameworks
@@ -39941,10 +39970,240 @@ For example, you app depends on angular and your app doesn't have peerDependenci
 
 You will make sure to list any angular's peerDependencies into your app's devDepenedencies 
 
-*** v8
+*** Core modules
+**** v8 - core <<<nodejs:v8>>>
 #+BEGIN_SRC js
   var v8 = require('v8');
   console.log('v8.getHeapStatistics()');
+#+END_SRC
+
+**** util - core <<<nodejs:util>>>
+#+BEGIN_SRC js
+  var EventEmitter = require('events').EventEmitter;
+  const util = require('util');
+  var Person = function(name) {
+    this.name = name;
+  };
+
+  util.inherits(Person, EventEmitter);
+  // Add EventEmitter to Person's prototype
+  // Person inherits all from EventEmitter
+
+  var ben = new Person("Ben");
+
+  ben.on('speak', function(said) {
+    console.log(`${this.name} said ${said}`);
+  });
+
+  ben.emit('speak', "I'm Ben");
+
+  // fully print an object
+  console.log(util.inspect(myObj, {showHidden: false, depth: null}));
+  // or this for short
+  cosole.log(util.inspect(myObj, false, null));
+  // console.dir actually uses util.inspect. See nodejs:console
+
+  util.format('%s:%s', 'foo'); // 'foo:%s'
+  util.format('%s:%s', 'foo', 'bar', 'baz'); 
+  // extra arguments are coerced into strings delimited by a space 
+  // 'foo:bar baz'
+  // %s > string, %d > integer or floating point value
+  // %i > integer, %f > floating point value
+  // %j > JSON
+  // %% > percent sign '%'
+#+END_SRC
+
+**** path - core <<<nodejs:path>>>
+#+BEGIN_SRC js
+  var path = require('path');
+  // path is native, get just the file name
+  console.log(path.basename(__filename));
+
+  // No trailing '/'
+  var dirUploads = path.join(__dirname, 'www', 'files', 'uploads');
+#+END_SRC
+
+**** readline - core <<<nodejs:readline>>>
+- ~rl.createInterface(options)~
+- ~rl.question(query, callback)~
+- Events
+   - close
+#+BEGIN_SRC js
+  var readline = require('readline');
+  var rl = readline.createInterface(process.stdin, process.stdout);
+  var aPerson = {
+    name: '',
+    sayings: []
+  }
+
+  rl.question("What is the name of a real person? ", function(a) {
+    aPerson.name = a;
+    rl.setPrompt(`What would ${aPerson.name} say? `);
+    rl.prompt(); // display prompt
+    rl.on('line', function(saying) {
+      aPerson.sayings.push(saying.trim());
+      if (saying.toLowerCase().trim() === 'exit') {
+        rl.close();
+      }
+      else {
+        rl.setPrompt(`What else would ${aPerson.name} say?  ('exit' to leave) `);
+        rl.prompt();
+      }
+
+    });
+  });
+
+  rl.on('close', function() {
+    console.log("5s is a real person that says %j", aPerson.name, aPerson.sayings);
+    process.exit();
+  });
+#+END_SRC
+
+**** events - core <<<nodejs:events>>>
+- ~e.EventEmitter()~ :: emitter class
+   - emitter.on('eventName', callback)
+   - emitter.emit('eventName', var1, var2)
+
+#+BEGIN_SRC js
+  var events = require('events');
+  var emitter = new events.EventEmitter();
+
+  emitter.on('customEvent', (msg, status) => {
+    console.log(`${status}: ${msg}`);
+  });
+
+  emitter.emit('customEvent', "Hello", 200);
+#+END_SRC
+
+**** fs - core <<<nodejs:fs>>>
+- Default fs is not a Promise although it is async with callback
+  ~fs.readdir( './abc', callback)~
+   - They cannot be chained. Consider nodejs:bluebird or nodejs:co-fs
+   - Every function has a sync version. Just append ~Sync~ at the end
+      - ~let theFiel = fs.readdirSync('./abc')~
+- fs.readFile('path', 'utf-8', callback(err, data))
+- fs.readdir('path', callback(err, data))
+- fs.statSync('path') :: stats
+   - stats.isFile()
+- fs.writeFile('path', data)
+- fs.rename
+- fs.unlink
+- fs.appendFile
+- fs.mkdir, fs.rmdir
+- fs.createReadStream, fs.createWriteStream
+
+#+BEGIN_SRC js
+  var fs = require('fs');
+  var data = require('./data1.json');
+  console.log(data.name); // data is an object
+  fs.readFile('./data1.json', 'utf-8', (err, data) => {
+    // without specifying utf-8, file will be read as binary
+    data = JSON.parse(data); // data is string
+    console.log(data.name);
+    // res.setHeader('Content-Type', 'text/html');
+    // res.send(html);
+  });
+
+  // Read directory
+  fs.readdir('/root', function(err, data) {
+    console.log(data); // data is array
+    data.forEach(function(fname) {
+      var file = path.join(__dirname, "lib", fname);
+      var stats = fs.statSync(file);
+      if (stats.isFile() && fname !== '.DS_Store') {
+        fs.readFile(file, "UTF-8", function(err, data) {
+          console.log(data);
+        });
+      } 
+      
+    });
+  });
+
+  // Write file
+  var tomString = '{ "name": "Tom" }';
+  fs.writeFile('tom.json', tomString, function(err) {});
+  var timmy = {
+    name: 'Timmy'
+  };
+
+  fs.writeFile('timmy.json', JSON.stringify(timmy));
+
+  // Append file
+  fs.appendFile('timmy.json', 'more text \n');
+
+  // Rename file
+  fs.rename('./lib/project-config.js', './lib/config.json');
+
+  // Move file
+  fs.rename('./lib/project-config.js', './config.json');
+
+  // Remove file
+  fs.unlink('./lib/config.json');
+
+  // New folder
+  if (!fs.existsSync("lib")) {
+    fs.mkdir("lib", function(err) {});
+  }
+
+  // Rename or move
+  fs.rename('./assets/logs', './logs');
+
+  // Remove folder, folder must be empty
+  fs.rmdir('./logs');
+
+  // Remove all files from a directory
+  fs.readdirSync('./logs').forEach(function(fileName) {
+    fs.unlinkSync('./logs/' + fileName);
+  });
+
+  // File read stream
+  var stream = fs.createReadStream('./chat.log', 'UTF-8');
+  var data = "";
+  stream.once('data', function() {
+    console.log('Start reading file');
+  });
+  stream.on("data", function(chunk) {
+    process.stdout.write(` chunk: ${chunk.length} |`);
+    data += chunk;
+  });
+  stream.on('end', function() {
+    console.log(data.length);
+  });
+
+  // File write stream
+  var stream = fs.createWriteStream('result.md');
+  stream.write(`${data}\n`);
+  stream.close();
+#+END_SRC
+
+**** child_process - core <<<nodejs:child_process>>>
+Exec is for short process
+#+BEGIN_SRC js
+  var exec = require('child_process').exec;
+  exec('ls', function(err, stdout) {
+    if (err) throw err;
+    console.log(stdout);
+  });
+#+END_SRC
+
+Spawn for ongoing process (async)
+#+BEGIN_SRC js
+  var spawn = require('child_process').spawn;
+  var cp = spawn('node', ["app"]); // node app
+  cp.stdout.on("data", function(data) {
+    // Output child process stdout
+    console.log(`STDOUT: ${data.toString()}`);
+  });
+
+  cp.on("close", function() {
+    console.log("Child process has ended.");
+    process.exit();
+  });
+
+  setTimeout(function() {
+    // maximum run time
+    cp.stdin.write("stop");
+  }, 4000);
 #+END_SRC
 
 *** npx <<<npm:npx>>>
@@ -39999,91 +40258,11 @@ You will make sure to list any angular's peerDependencies into your app's devDep
   }
 #+END_SRC
 
-*** readline
-#+BEGIN_SRC js
-  var readline = require('readline');
-  var rl = readline.createInterface(process.stdin, process.stdout);
-  var aPerson = {
-    name: '',
-    sayings: []
-  }
-
-  rl.question("What is the name of a real person? ", function(a) {
-    aPerson.name = a;
-    rl.setPrompt(`What would ${aPerson.name} say? `);
-    rl.prompt(); // display prompt
-    rl.on('line', function(saying) {
-      aPerson.sayings.push(saying.trim());
-      if (saying.toLowerCase().trim() === 'exit') {
-        rl.close();
-      }
-      else {
-        rl.setPrompt(`What else would ${aPerson.name} say?  ('exit' to leave) `);
-        rl.prompt();
-      }
-
-    });
-  });
-
-  rl.on('close', function() {
-    console.log("5s is a real person that says %j", aPerson.name, aPerson.sayings);
-    process.exit();
-  });
-#+END_SRC
-
-*** events
-#+BEGIN_SRC js
-  var events = require('events');
-  var emitter = new events.EventEmitter();
-
-  emitter.on('customEvent', function(msg, status) {
-    console.log(`${status}: ${msg}`);
-  });
-
-  emitter.emit('customEvent', "Hello", 200);
-#+END_SRC
-
 *** axios
 - ~npm i axios~
 - ~imort axios from 'axios'~
 - ~axios.post(url[, data[, config]])~
 - Request config
-
-*** util (native) <<<nodejs:util>>>
-#+BEGIN_SRC js
-  var EventEmitter = require('events').EventEmitter;
-  const util = require('util');
-  var Person = function(name) {
-    this.name = name;
-  };
-
-  util.inherits(Person, EventEmitter);
-  // Add EventEmitter to Person's prototype
-  // Person inherits all from EventEmitter
-
-  var ben = new Person("Ben");
-
-  ben.on('speak', function(said) {
-    console.log(`${this.name} said ${said}`);
-  });
-
-  ben.emit('speak', "I'm Ben");
-
-  // fully print an object
-  console.log(util.inspect(myObj, {showHidden: false, depth: null}));
-  // or this for short
-  cosole.log(util.inspect(myObj, false, null));
-  // console.dir actually uses util.inspect. See nodejs:console
-
-  util.format('%s:%s', 'foo'); // 'foo:%s'
-  util.format('%s:%s', 'foo', 'bar', 'baz'); 
-  // extra arguments are coerced into strings delimited by a space 
-  // 'foo:bar baz'
-  // %s > string, %d > integer or floating point value
-  // %i > integer, %f > floating point value
-  // %j > JSON
-  // %% > percent sign '%'
-#+END_SRC
 
 *** lodash <<<nodejs:lodash>>>
 #+BEGIN_SRC sh
@@ -40232,36 +40411,6 @@ Creates a function that returns the value at path of a given object
 
   _.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
   // => [1, 2]
-#+END_SRC
-
-*** child_process
-Exec is for short process
-#+BEGIN_SRC js
-  var exec = require('child_process').exec;
-  exec('ls', function(err, stdout) {
-    if (err) throw err;
-    console.log(stdout);
-  });
-#+END_SRC
-
-Spawn for ongoing process
-#+BEGIN_SRC js
-  var spawn = require('child_process').spawn;
-  var cp = spawn('node', ["app"]); // node app
-  cp.stdout.on("data", function(data) {
-    // Output child process stdout
-    console.log(`STDOUT: ${data.toString()}`);
-  });
-
-  cp.on("close", function() {
-    console.log("Child process has ended.");
-    process.exit();
-  });
-
-  setTimeout(function() {
-    // maximum run time
-    cp.stdin.write("stop");
-  }, 4000);
 #+END_SRC
 
 *** lighthouse <<<npm:lighthouse>>>
@@ -40697,7 +40846,7 @@ Sort files in stream by path or any custom sort comparator
 
 **** gulp-concat
 Concat files using operating system's newLine
-#+BEGIN_SRC javascript
+#+BEGIN_SRC js
   var concat = require('gulp-concat');
  
   gulp.task('scripts', function() {
@@ -40878,7 +41027,7 @@ Minify CSS using [[https://github.com/fmarcia/UglifyCSS][UglifyCSS]]
   npm i -D gulp-postcss
 #+END_SRC
 
-#+BEGIN_SRC javascript
+#+BEGIN_SRC js
   gulp.task('autoprefixer', function () {
     var postcss      = require('gulp-postcss');
     var sourcemaps   = require('gulp-sourcemaps');
@@ -41509,104 +41658,6 @@ Build on top of PostCSS, minify css
 **** precss <<<npm:precss>>>
 Use Sass-like markup and staged CSS features in .css file.
 npm install precss --save-dev
-
-*** path <<<nodejs:path>>>
-#+BEGIN_EXAMPLE
-  var path = require('path');
-  // path is native, get just the file name
-  console.log(path.basename(__filename));
-
-  // No trailing '/'
-  var dirUploads = path.join(__dirname, 'www', 'files', 'uploads');
-#+END_EXAMPLE
-
-*** fs
-Default fs is not a Promise although it is async with callback.
-Every function has a sync version. Just append Sync at the end.
-They cannot be chained. Consider nodejs:bluebird or nodejs:co-fs
-#+BEGIN_EXAMPLE
-  var fs = require('fs');
-  var data = require('./data1.json');
-  console.log(data.name); // data is an object
-  fs.readFile('./data1.json', 'utf-8', function(err, data) {
-    // without specifying utf-8, file will be read as binary
-    data = JSON.parse(data); // data is string
-    console.log(data.name);
-    // res.setHeader('Content-Type', 'text/html');
-    // res.send(html);
-  });
-
-  // Read directory
-  fs.readdir('/root', function(err, data) {
-    console.log(data); // data is array
-    data.forEach(function(fname) {
-      var file = path.join(__dirname, "lib", fname);
-      var stats = fs.statSync(file);
-      if (stats.isFile() && fname !== '.DS_Store') {
-        fs.readFile(file, "UTF-8", function(err, data) {
-          console.log(data);
-        });
-      } 
-      
-    });
-  });
-
-  // Write file
-  var tomString = '{ "name": "Tom" }';
-  fs.writeFile('tom.json', tomString, function(err) {});
-  var timmy = {
-    name: 'Timmy'
-  };
-
-  fs.writeFile('timmy.json', JSON.stringify(timmy));
-
-  // Append file
-  fs.appendFile('timmy.json', 'more text \n');
-
-  // Rename file
-  fs.rename('./lib/project-config.js', './lib/config.json');
-
-  // Move file
-  fs.rename('./lib/project-config.js', './config.json');
-
-  // Remove file
-  fs.unlink('./lib/config.json');
-
-  // New folder
-  if (!fs.existsSync("lib")) {
-    fs.mkdir("lib", function(err) {});
-  }
-
-  // Rename or move
-  fs.rename('./assets/logs', './logs');
-
-  // Remove folder, folder must be empty
-  fs.rmdir('./logs');
-
-  // Remove all files from a directory
-  fs.readdirSync('./logs').forEach(function(fileName) {
-    fs.unlinkSync('./logs/' + fileName);
-  });
-
-  // File read stream
-  var stream = fs.createReadStream('./chat.log', 'UTF-8');
-  var data = "";
-  stream.once('data', function() {
-    console.log('Start reading file');
-  });
-  stream.on("data", function(chunk) {
-    process.stdout.write(` chunk: ${chunk.length} |`);
-    data += chunk;
-  });
-  stream.on('end', function() {
-    console.log(data.length);
-  });
-
-  // File write stream
-  var stream = fs.createWriteStream('result.md');
-  stream.write(`${data}\n`);
-  stream.close();
-#+END_EXAMPLE
 
 *** co-fs, co <<<nodejs:co-fs>>> <<<nodejs:co>>>
 Default fs doesn't support Promise or Generator Function
