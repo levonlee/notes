@@ -18058,22 +18058,57 @@ Save cfdump in a string
   - ~AUTOTHROTTLE_ENABLED = True~
 
 * CSS
-** Position, box-sizing
-Default position is static. left, right, top, bottom have not effect
-relative is relative to default static position, use left, right, top and bottom
+** Display, Float, Position, ~box-sizing~
+*** Display
+- block
+- inline
+   - ~width~ ~height~ have no effect
+   - ~margin~ only can be set horizontally
+- inline-block
+   - ~width~ ~height~ can be set
+   - spaces between inline-block's can be eliminated by ~font-size:0;~
 
-Other elements adjacent to position:relative element will no be adjusted to fit into
+*** Float
+- Clear float to fix parent height less than total children height
+  #+BEGIN_SRC html
+    <div class="clearfix">
+      <div style="">Div 1 doesn't float</div>
+      <div style="float: left;">Div 2</div>
+    </div>
+  #+END_SRC
+  #+BEGIN_SRC css
+    /* Solution 1 */
+    .clearfix:after {
+	content: " ";
+	display:block;
+	clear:both;
+	height:0;
+    }
+
+    /* Solution 2 */
+    .clearfix {
+	display:inline-block;
+	width:100%;
+    }
+
+    /* Solution 2 */
+    .clearfix {
+	overflow:hidden;
+    }
+  #+END_SRC
+
+*** Position
+- static :: Default position. left, right, top, bottom have no effect
+- relative :: is relative to default static position, use left, right, top and bottom
+   - Other elements adjacent to position:relative element will not be adjusted to fit into
 any gap left by the element (treat the relative element as static)
+- fixed :: ~position:fixed~ is relative to viewport
+- sticky :: Stay in original position, when it goes out of view, act like ~position:fixed~
+- A "positioned" element is one whose position is anything except static
+   - When elements are positioned, they can overlap other elements
+- absolute :: ~postion:absolute~ is positioned relative to the nearest positioned ancestor. If there's no positioned ancestors, document body is used.
 
-position:fixed is relative to viewport
-
-A "positioned" element is one whose position is anything except static.
-
-postion:absolute is positioned relative to the nearest positioned ancestor.
-If there's no positioned ancestors, document body is used.
-
-When elements are positioned, they can overlap other elements.
-
+*** ~box-sizing~
 ~box-sizing: border-box | padding-box | content-box (default);~
 
 ** Horizontal Center Absolute
@@ -18157,15 +18192,6 @@ css:animation
    - backface-visibility :: visible|hidden|initial|inherit
 - http://ds-overdesign.com/transform/matrix3d.html
 
-** Link
-#+BEGIN_SRC css
-  // In order
-  a:link {} /* Unvisited and normal */
-  a:visited {}
-  a:hover {}
-  a:active {}
-#+END_SRC
-
 ** Insert CSS File <<<css:js insert>>>
 #+BEGIN_SRC js
   ['//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/ui-darkness/jquery-ui.css',
@@ -18178,7 +18204,7 @@ css:animation
    });
 #+END_SRC
 
-** Text
+** Font, Text
 *** Ellipsis
 Single Line
 #+BEGIN_EXAMPLE
@@ -18192,7 +18218,7 @@ Single Line
 
 Multiple Lines (IE and Edge will not show 3 dots)
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .excerpt {
     display: block;
     display: -webkit-box;
@@ -18205,7 +18231,7 @@ Multiple Lines (IE and Edge will not show 3 dots)
     text-overflow: ellipsis;
     height: 189px; /* 15*1.4*9 */
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Long Word
 #+BEGIN_EXAMPLE
@@ -18213,19 +18239,15 @@ Multiple Lines (IE and Edge will not show 3 dots)
 #+END_EXAMPLE
 
 *** Font size, line-height, letter-spacing
-font-size in child elements inherit parent element
-em uses the current element's font-size or its closest parent element which has font-size defined
-rem is relative to the <html>'s font-size. Set rem for line-height in <body> to ensure line-height is relative to <html>'s font-size.
-
-!! Both em and rem will be affected by parent element's css:zoom in Edge!
-
-vw and vh are the viewport width and height. 1vw is 1% of vw
-
-Google recommends line-height is at least 1.2
-
-line-height is normal means to use user agent style. Most likely default is 1 not 1.2
-
-letter-spacing, padding using em is relative to the current element's font size
+- ~font-size~ in child elements inherit parent element
+- ~em~ uses the current element's font-size or its closest parent element which has ~font-size~ defined
+- ~rem~ is relative to the ~<html>~'s font-size
+   - e.g. set ~rem~ for ~line-height~ in ~<body>~ to ensure ~line-height~ is relative to <html>'s font-size
+- *Both em and rem will be affected by parent element's css:zoom in Edge!*
+- ~vw~ and ~vh~ are the viewport width and height. 1vw is 1% of vw
+- Google recommends ~line-height~ is at least 1.2
+   - ~line-height~ is normal means to use user agent style. Most likely default is 1 not 1.2
+- ~letter-spacing~, padding using em is relative to the current element's font size
 
 *** Prevent sup and sub affecting line height <<<css:sup:line-height>>>
 #+BEGIN_EXAMPLE
@@ -18276,6 +18298,248 @@ Email
 
 https://css-tricks.com/fitting-text-to-a-container/
 
+*** ~@font-face~ <<<css:font-face>>>
+- Most widely accepted font format is WOFF2, WOFF then TTF and OTF
+- IE 11 and less only supports EOT. Edge supports WOFF
+- Use full url in ~src: url() format()~ for email HTML
+   - ~format()~ :: Optional. Can be: woff2, woff, truetype, opentype, embedded-opentype, svg
+
+#+BEGIN_SRC css
+  @font-face {
+      font-family: myFirstFont;
+      src: url(sansation_light.woff) format('woff');
+  }
+
+  /* Another for bold */
+  @font-face {
+      font-family: myFirstFont;
+      src: url(sansation_bold.woff) format('woff');
+      font-weight: bold;
+  /*
+   font-stretch: normal | condensed | semi condensed | extra condensed | ultra condensed | expanded | ...;
+   font-style: normal | italic | oblique 
+  ,*/
+  }
+#+END_SRC
+
+**** ~font-display~
+- Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs
+- IE has 0 timeout and use fallback immediately and swap later if font is available
+- Safari always wait for the font to be downloaded
+- font-display :: Not supported in IE, Edge and iOS < 11.4
+   - auto :: use user-agent's default. Most user-agents use block
+   - block :: After 3 seconds if the font is not loaded use a invisible text and swap to the downloaded font with infinite swap period
+   - swap :: browser draws text immediately with a fallback and swap to it after it's loaded.
+   - fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
+   - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
+
+#+BEGIN_SRC css
+  @font-face {
+    font-family: 'Awesome Font';
+    font-style: normal;
+    font-weight: 400;
+    font-display: auto; /* or block, swap, fallback, optional */
+    src: local('Awesome Font'),
+         url('/fonts/awesome-l.woff2') format('woff2'), /* will be preloaded */ 
+         url('/fonts/awesome-l.woff') format('woff'),
+         url('/fonts/awesome-l.ttf') format('truetype'),
+         url('/fonts/awesome-l.eot') format('embedded-opentype');
+    unicode-range: U+000-5FF; /* Latin glyphs */
+  }
+#+END_SRC
+
+**** Font Loading API
+- https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/webfont-optimization
+- https://medium.com/@matuzo/getting-started-with-css-font-loading-e24e7ffaa791
+- Not supported in IE and Edge
+
+#+BEGIN_SRC js
+  var font = new FontFace("Awesome Font", "url(/fonts/awesome.woff2)", {
+    style: 'normal', unicodeRange: 'U+000-5FF', weight: '400'
+  });
+
+  // don't wait for the render tree, initiate an immediate fetch!
+  font.load().then(function() {
+    // apply the font (which may re-render text and cause a page reflow)
+    // after the font has finished downloading
+    document.fonts.add(font);
+    document.body.style.fontFamily = "Awesome Font, serif";
+
+    // OR... by default the content is hidden, 
+    // and it's rendered after the font is available
+    var content = document.getElementById("content");
+    content.style.visibility = "visible";
+
+    // OR... apply your own render strategy here... 
+  });
+
+  // check status :: unloaded, loading, loaded, error
+  font.status
+
+  // Promise loaded resolves when the font is loaded
+  notoSansRegular.loaded.then((fontFace) => {
+    // This is where you can declare a new font-family, because the font is now loaded and ready.  
+    console.info('Current status', fontFace.status);
+    console.log(fontFace.family, 'loaded successfully.');
+    // Throw an error if loading wasn't successful
+  }, (fontFace) => {
+    console.error('Current status', notoSansRegular.status);
+  });
+
+
+  // when all fonts are ready
+  document.fonts.ready.then((fontFaceSet) => {
+    console.log(document.fonts.size, 'FontFaces loaded.');
+  });
+#+END_SRC
+
+**** Bootstrap 3
+#+BEGIN_EXAMPLE
+  @font-face {
+    font-family: 'Glyphicons Halflings';
+    src: url('../fonts/glyphicons-halflings-regular.eot');
+    src: url('../fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), 
+         url('../fonts/glyphicons-halflings-regular.woff2') format('woff2'), 
+         url('../fonts/glyphicons-halflings-regular.woff') format('woff'), 
+         url('../fonts/glyphicons-halflings-regular.ttf') format('truetype'),
+         url('../fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+  }
+#+END_EXAMPLE
+
+**** Google Font ~local()~ ~unicode-range~
+- Example ~<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">~
+- ~local('Font Name')~ :: if user agent has the font, then the font will not be downloaded <<<css:font-face:local>>>
+   - Refer to html:link:rel:preload:font
+- ~unicode-range~ :: ranges are separated by comma
+   - Sigle codepoint :: ~U+416~
+   - Interval range :: start and end e.g. ~U+400-4ff~
+   - Wildcard range :: ~?~ is any hexadecimal digit e.g. ~U+4??~
+- Browser limitation :: benefit of loading variants of the same font
+   - Can't make a bold font lighter
+   - Can't make an oblique (italic) font "straight"
+   - Has limited ability to synthesize bold(er) fonts
+   - Has limited ability to synthesize oblique fonts and may produce wrong shapes esepcially in Cyrillic fonts
+
+#+BEGIN_SRC css
+  /* cyrillic-ext */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459WRhyzbi.woff2) format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  /* cyrillic */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459W1hyzbi.woff2) format('woff2');
+    unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  /* vietnamese */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+  }
+  /* latin-ext */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  /* latin */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  /* cyrillic-ext */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gTD_u50.woff2) format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  /* cyrillic */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3g3D_u50.woff2) format('woff2');
+    unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  /* vietnamese */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gbD_u50.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+  }
+  /* latin-ext */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gfD_u50.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  /* latin */
+  @font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gnD_g.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+#+END_SRC
+
+**** Web Safe Fonts <<<css:font-face:web safe fonts>>>
+- Arial, Arial Black
+- Comic Sans MS
+- Courier New
+- Georgia
+- Impact / Charcoal
+- Lucida Sans / Lucida Grande
+- Tahoma / Geneva
+- Times New Roman
+- Trebuchet MS
+- Verdana
+
+[[http://www.cssfontstack.com/][Web Safe Fonts in PC and Mac]] and font stack
+
+*** ~font-feature-setting~ <<<css:font-feature-settings
+- Some fonts have OpenType Features. Refer to font:woff
+#+BEGIN_SRC css
+  /* Use the default settings */
+  font-feature-settings: normal;
+
+  /* Set values for OpenType feature tags */
+  font-feature-settings: "smcp"; /* same as font-feature-settings: "smcp" 1; */
+  font-feature-settings: "smcp" on; /* same as font-feature-settings: "smcp" 1; */
+
+  font-feature-settings: "swsh" 2;
+  font-feature-settings: "smcp", "swsh" 2;
+
+  /* Global values */
+  font-feature-settings: inherit;
+  font-feature-settings: initial;
+  font-feature-settings: unset;
+
+  /* Syntax
+   normal | <string> [ <integer> | on | off ]?
+  ,*/
+#+END_SRC
+
 ** CSS Selectors <<<CSS Selectors>>>
 - ~div > p~ :: select p elements where the direct parent is div
 - ~div + p~ :: select p elements that are placed immediately after div
@@ -18309,7 +18573,7 @@ https://css-tricks.com/fitting-text-to-a-container/
   #+END_SRC
 - ~a:active~
 - ~a:hover~
-- ~a:link~ :: ~div:link~ may be possible when div has href attribute
+- ~a:link~ :: Unvisited and normal. ~div:link~ may be possible when div has href attribute
 - ~a:visited~
 - ~p:even~ ~p:odd~ ::*jQuery only*
 - ~p:first~ ~p:last~ 
@@ -18358,39 +18622,37 @@ b - each id add 1
 c - class, pseudo-class and attribute add 1
 d - element add 1
 
-Pseudo-class :not is not considered as pesudo-class in specificity calculation.
+Pseudo-class ~:not~ is not considered as pesudo-class in specificity calculation.
 But anything inside it counts.
 
 ** Functions
-*** attr(data-attr-1)
-#+BEGIN_EXAMPLE
+*** ~attr(data-attr-1)~ <<<css:f:attr>>>
+#+BEGIN_SRC css
   a::after {
    content: " (" attr(href) ")";
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** calc()
-No parenthesis is allowed inside calc()
-Only attr() and calc() are allowed inside calc()
+*** ~calc()~ <<<css:f:calc>>>
+- No parenthesis is allowed inside calc()
+- Only css:f:attr and calc() are allowed inside calc()
 
-#+BEGIN_EXAMPLE
-  <div>Some Text...</div>
-
-  // Always leave 50px on both sides for space
-  // and take all that is left for width
-
+#+BEGIN_SRC css
+  /* Always leave 50px on both sides for space
+   and take all that is left for width
+  ,*/
   div {
    width: calc(100% - 100px); /* calculate */
    margin-left: 50px;
   }
 
-  // 3 columns minus gutter
+  /* 3 columns minus gutter */
   .item {
     width: calc(100%/3 - 10px/3);
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** counter
+*** counter <<<css:f:counter>>>
 #+BEGIN_SRC css
   body {
    counter-reset: section;
@@ -18406,6 +18668,15 @@ Only attr() and calc() are allowed inside calc()
    counter-increment: subsection;
    content: counter(section) "." counter(subsection) " ";
   }
+#+END_SRC
+
+*** minmax <<<css:f:minmax>>>
+- Refer to css:grid:container:grid-template-rows, css:grid:container:grid-template-columns
+#+BEGIN_SRC css
+  /*
+  sets minimum row height to 100px, max height to auto
+  ,*/
+  grid-column-rows: minmax(100px, auto);
 #+END_SRC
 
 ** border-image
@@ -18642,225 +18913,6 @@ fill (default) | contain | cover | none | scale-down
 #+END_EXAMPLE
 
 Edge and IE only works for <img> element
-
-** ~@font-face~ <<<css:font-face>>>
-- Most widely accepted font format is WOFF2, WOFF then TTF and OTF
-- IE 11 and less only supports EOT. Edge supports WOFF
-- Use full url in ~src: url() format()~ for email HTML
-   - ~format()~ :: Optional. Can be: woff2, woff, truetype, opentype, embedded-opentype, svg
-
-#+BEGIN_SRC css
-  @font-face {
-      font-family: myFirstFont;
-      src: url(sansation_light.woff) format('woff');
-  }
-
-  /* Another for bold */
-  @font-face {
-      font-family: myFirstFont;
-      src: url(sansation_bold.woff) format('woff');
-      font-weight: bold;
-  /*
-   font-stretch: normal | condensed | semi condensed | extra condensed | ultra condensed | expanded | ...;
-   font-style: normal | italic | oblique 
-  ,*/
-  }
-#+END_SRC
-
-*** ~font-display~
-- Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs
-- IE has 0 timeout and use fallback immediately and swap later if font is available
-- Safari always wait for the font to be downloaded
-- font-display :: Not supported in IE, Edge and iOS < 11.4
-   - auto :: use user-agent's default. Most user-agents use block
-   - block :: After 3 seconds if the font is not loaded use a invisible text and swap to the downloaded font with infinite swap period
-   - swap :: browser draws text immediately with a fallback and swap to it after it's loaded.
-   - fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
-   - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
-
-#+BEGIN_SRC css
-  @font-face {
-    font-family: 'Awesome Font';
-    font-style: normal;
-    font-weight: 400;
-    font-display: auto; /* or block, swap, fallback, optional */
-    src: local('Awesome Font'),
-         url('/fonts/awesome-l.woff2') format('woff2'), /* will be preloaded */ 
-         url('/fonts/awesome-l.woff') format('woff'),
-         url('/fonts/awesome-l.ttf') format('truetype'),
-         url('/fonts/awesome-l.eot') format('embedded-opentype');
-    unicode-range: U+000-5FF; /* Latin glyphs */
-  }
-#+END_SRC
-
-*** Font Loading API
-- https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/webfont-optimization
-- https://medium.com/@matuzo/getting-started-with-css-font-loading-e24e7ffaa791
-- Not supported in IE and Edge
-
-#+BEGIN_SRC js
-  var font = new FontFace("Awesome Font", "url(/fonts/awesome.woff2)", {
-    style: 'normal', unicodeRange: 'U+000-5FF', weight: '400'
-  });
-
-  // don't wait for the render tree, initiate an immediate fetch!
-  font.load().then(function() {
-    // apply the font (which may re-render text and cause a page reflow)
-    // after the font has finished downloading
-    document.fonts.add(font);
-    document.body.style.fontFamily = "Awesome Font, serif";
-
-    // OR... by default the content is hidden, 
-    // and it's rendered after the font is available
-    var content = document.getElementById("content");
-    content.style.visibility = "visible";
-
-    // OR... apply your own render strategy here... 
-  });
-
-  // check status :: unloaded, loading, loaded, error
-  font.status
-
-  // Promise loaded resolves when the font is loaded
-  notoSansRegular.loaded.then((fontFace) => {
-    // This is where you can declare a new font-family, because the font is now loaded and ready.  
-    console.info('Current status', fontFace.status);
-    console.log(fontFace.family, 'loaded successfully.');
-    // Throw an error if loading wasn't successful
-  }, (fontFace) => {
-    console.error('Current status', notoSansRegular.status);
-  });
-
-
-  // when all fonts are ready
-  document.fonts.ready.then((fontFaceSet) => {
-    console.log(document.fonts.size, 'FontFaces loaded.');
-  });
-#+END_SRC
-
-*** Bootstrap 3
-#+BEGIN_EXAMPLE
-  @font-face {
-    font-family: 'Glyphicons Halflings';
-    src: url('../fonts/glyphicons-halflings-regular.eot');
-    src: url('../fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), 
-         url('../fonts/glyphicons-halflings-regular.woff2') format('woff2'), 
-         url('../fonts/glyphicons-halflings-regular.woff') format('woff'), 
-         url('../fonts/glyphicons-halflings-regular.ttf') format('truetype'),
-         url('../fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
-  }
-#+END_EXAMPLE
-
-*** Google Font ~local()~ ~unicode-range~
-- Example ~<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">~
-- ~local('Font Name')~ :: if user agent has the font, then the font will not be downloaded <<<css:font-face:local>>>
-   - Refer to html:link:rel:preload:font
-- ~unicode-range~ :: ranges are separated by comma
-   - Sigle codepoint :: ~U+416~
-   - Interval range :: start and end e.g. ~U+400-4ff~
-   - Wildcard range :: ~?~ is any hexadecimal digit e.g. ~U+4??~
-- Browser limitation :: benefit of loading variants of the same font
-   - Can't make a bold font lighter
-   - Can't make an oblique (italic) font "straight"
-   - Has limited ability to synthesize bold(er) fonts
-   - Has limited ability to synthesize oblique fonts and may produce wrong shapes esepcially in Cyrillic fonts
-
-#+BEGIN_SRC css
-  /* cyrillic-ext */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459WRhyzbi.woff2) format('woff2');
-    unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-  }
-  /* cyrillic */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459W1hyzbi.woff2) format('woff2');
-    unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-  }
-  /* vietnamese */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2) format('woff2');
-    unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
-  }
-  /* latin-ext */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2) format('woff2');
-    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
-  }
-  /* latin */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Montserrat Regular'), local('Montserrat-Regular'), url(https://fonts.gstatic.com/s/montserrat/v12/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-  }
-  /* cyrillic-ext */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 700;
-    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gTD_u50.woff2) format('woff2');
-    unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-  }
-  /* cyrillic */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 700;
-    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3g3D_u50.woff2) format('woff2');
-    unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-  }
-  /* vietnamese */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 700;
-    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gbD_u50.woff2) format('woff2');
-    unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
-  }
-  /* latin-ext */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 700;
-    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gfD_u50.woff2) format('woff2');
-    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
-  }
-  /* latin */
-  @font-face {
-    font-family: 'Montserrat';
-    font-style: normal;
-    font-weight: 700;
-    src: local('Montserrat Bold'), local('Montserrat-Bold'), url(https://fonts.gstatic.com/s/montserrat/v12/JTURjIg1_i6t8kCHKm45_dJE3gnD_g.woff2) format('woff2');
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-  }
-#+END_SRC
-
-*** Web Safe Fonts <<<css:font-face:web safe fonts>>>
-- Arial, Arial Black
-- Comic Sans MS
-- Courier New
-- Georgia
-- Impact / Charcoal
-- Lucida Sans / Lucida Grande
-- Tahoma / Geneva
-- Times New Roman
-- Trebuchet MS
-- Verdana
-
-[[http://www.cssfontstack.com/][Web Safe Fonts in PC and Mac]] and font stack
 
 ** CSS target IE 11 and IE10
 Target IE 11 only
@@ -19372,87 +19424,100 @@ WD. Only Edge. Same as html:meta:viewport
 
 ** Flexbox <<<css:flex>>>
 *** Basics
-Container could be display:flex or display:inline-flex
-Flexbox is good for aligning child elements with irregular or unknown or inconsistent width and height
-And the number of child elements are unknown
-Good for vertical and horizontal center a child element inside a container (parent)
-Good for these scenarios https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Typical_Use_Cases_of_Flexbox
-
-Can't set equal width for child items when the number of child items is unknown
+- Container could be ~display:flex~ or ~display:inline-flex~
+- Flexbox is good for aligning child elements with irregular or unknown or inconsistent width and height and unknown number of child elements
+- Good for vertical and horizontal center a child element inside a container (parent)
+- Good for these scenarios :: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Typical_Use_Cases_of_Flexbox
+- Can't set equal width for child items when the number of child items is unknown
 
 #+BEGIN_SRC css
   .container {
-   display: flex;
-   /* flex-flow: <flex-direction> <flex-wrap> */
+    display: flex;
+    /* flex-flow: <flex-direction> <flex-wrap> */
 
-   /* flex-direction: row | row-reverse | column | column-reverse; */
-   /* main axis is by default horizontally left to right 
-    ,* main axis is changed by direcion css property (say change it ot rtl, right to left)
-    ,* row is left to right , column is top to bottom
-    ,*
-    ,*/
-   /* flex-wrap: nowrap | wrap | wrap-reverse; */
-      flex-flow: row wrap;
+    /* flex-direction: row | row-reverse | column | column-reverse; */
+    /* main axis is by default horizontally left to right
+     ,* main axis is changed by direcion css property (say change it ot rtl, right to left)
+     ,* row is left to right , column is top to bottom
+     ,*
+     ,*/
+    /* flex-wrap: nowrap | wrap | wrap-reverse; */
+    flex-flow: row wrap;
 
-   /* justify-content: flex-start | flex-end | center | space-between | space-around; */
-   /* e.g. you can change from flex-end to space-around for menu nav with @media queries */
-      justify-content: space-around;
+    /* justify-content: flex-start | flex-end | center | space-between | space-around; */
+    /* e.g. you can change from flex-end to space-around for menu nav with @media queries */
+    justify-content: space-around;
 
-   /* align-items: stretch | flex-start | flex-end | center | baseline; */
-   /* This is for aligning items on one line (default x axis) on cross axis (y axis) */
-   /* relative to the same line. e.g. you have 3 lines of items and each line holds 3 items. 
-    ,* 3 items on each line have different height
-    ,* how do the 3 items align on y axis on every line?
-    ,* default is stretch
-    ,*/ 
+    /* align-items: stretch | flex-start | flex-end | center | baseline;
 
-   /* align-content: flex-start | flex-end | center | space-between | space-around | stretch;
-    ,* This is for space between multiple lines
-    ,* e.g. There're 3 lines of items and each line has 3 items 
-    ,* How do the 3 lines align on the y axis on each line?
-    ,* default is stretch
-    ,* It only works when there are multiple lines and the container height is larger than total children height
-    ,*/
+       This is for aligning items on one line (default x axis) on cross axis (y axis)
+       relative to the same line. e.g. you have 3 lines of items and each line holds 3 items.
+       3 items on each line have different height
+       how do the 3 items align on y axis on every line?
+       default is stretch
+     ,*/
+
+    /* align-content: flex-start | flex-end | center | space-between | space-around | stretch;
+     ,* This is for space between multiple lines
+     ,* e.g. There're 3 lines of items and each line has 3 items
+     ,* How do the 3 lines align on the y axis on each line?
+     ,* default is stretch
+     ,* It only works when there are multiple lines and the container height is larger than total children height
+     ,*/
 
     /* It's always to set width and height in container */
     width: 100%;
   }
 
   .item {
-   /* order: <integer>; // optional */
+    /* order: <integer>; // optional */
 
-   /* flex: none | <flex-grow> <flex-shrink> <flex-basis> */
-   /* Default flex:0 1 auto; */
+    /* flex: none | <flex-grow> <flex-shrink> <flex-basis> */
+    /* Default flex:0 1 auto; */
 
-   /* flex-grow: 0 | <number>; */
-   /* 0 is default and means do not enlarge item in width (default x axis) */
+    /* flex-grow: 0 | <number>;
 
-   /* flex-shrink: 1 | <number> */
-   /* 1 is default and means do not shrink item in width (default x axis) */
-   /* 0 might be necessary for items to shrink */
+       Determines how the flex-item will expand if there's extra space in the container
 
-   /* flex-basis: auto | <length>; */
-   /* auto is default. if it's 0, extra space will not be factored in. Always use auto */
-   /* Set to 0% instead of 0 */
+       0 is default and means do not enlarge item in width (default x axis)
+     ,*/
 
-   /* don't set width in flex item */
-   flex: 0 0 100px; /* instead of width:100px */
-   flex: 0 0 50%; /* width: 50% */
-   /* However, flex-basis is not guaranteed and it's based on max-width and min-width */
+    /* flex-shrink: 1 | <number>
 
-   flex: 0 0 100%; /* use this in child item instead of width:100%, make sure parent has flex-wrap: wrap */
+       Determines how the flex-item will shrink if there isn't enough space in the container
 
-   flex: 1 0 auto; /* grow to the rest of the width, no shrink, auto */
+       1 is default and means the item can be shrank in width (default x axis)
 
-   /* Override align-items in container */
-   /* align-self: stretch | auto | flex-start | flex-end | center | baseline; */
+       Set to 0, flex-items might overflow
+     ,*/
+
+    /* flex-basis: auto | <length>;
+
+       Sets the initial size of the flex-item
+
+       if it's 0, the final width of the flex-item only depends on grow/shrink factor ratio. Using auto or others, the final width is based on that set length and the amount of grow/shrink
+
+       Set to 0% instead of 0
+     ,*/
+
+    /* don't set width in flex item */
+    flex: 0 0 100px; /* instead of width:100px */
+    flex: 0 0 50%; /* width: 50% */
+    /* However, flex-basis is not guaranteed and it's based on max-width and min-width */
+
+    flex: 0 0 100%; /* use this in child item instead of width:100%, make sure parent has flex-wrap: wrap */
+
+    flex: 1 0 auto; /* grow to the rest of the width, no shrink, auto */
+
+    /* Override align-items in container */
+    /* align-self: stretch | auto | flex-start | flex-end | center | baseline; */
 
   }
 
   .item_1 {
-   /* Set margin:auto in an item will absorb all space of the current line in current direction
-   margin-right: auto;
-   /* all other items to the right of item_1 will not have extra space */
+    /* Set margin:auto in an item will absorb all space of the current line in current direction
+    margin-right: auto;
+    /* all other items to the right of item_1 will not have extra space */
   }
 #+END_SRC
 
@@ -19564,8 +19629,48 @@ You don't have to get height of any other rows.
 ** Grid
 https://css-tricks.com/snippets/css/complete-guide-grid/
 
+*** container: grid, grid-template
+- ~grid~ :: https://developer.mozilla.org/en-US/docs/Web/CSS/grid
+  #+BEGIN_SRC css
+    grid: <'grid-template'> | <'grid-template-rows'> / [ auto-flow && dense? ] <'grid-auto-columns'>? | [ auto-flow && dense? ] <'grid-auto-rows'>? / <'grid-template-columns'>
+  #+END_SRC
+- ~grid-template~ :: https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template
+  #+BEGIN_SRC css
+    .container {
+      grid-template: none | subgrid | <grid-template-rows> / <grid-template-columns>;
+    }
+
+    /* Keyword value */
+    grid-template: none;
+
+    /* grid-template-rows / grid-template-columns values */
+    grid-template: 100px 1fr / 50px 1fr;
+    grid-template: auto 1fr / auto 1fr auto;
+    grid-template: [linename] 100px / [columnname1] 30% [columnname2] 70%;
+    grid-template: fit-content(100px) / fit-content(40%);
+
+    /* grid-template-areas grid-template-rows / grid-template-column values */
+    grid-template: "a a a"
+		   "b b b";
+    grid-template: "a a a" 20%
+		   "b b b" auto;
+    grid-template: [header-top] "a a a"     [header-bottom]
+		     [main-top] "b b b" 1fr [main-bottom]
+				/ auto 1fr auto;
+
+    /* Global values */
+    grid-template: inherit;
+    grid-template: initial;
+    grid-template: unset;
+  #+END_SRC
+   - css:grid:container:grid-template-rows
+   - css:grid:container:grid-template-columns
+   - css:grid:container:grid-template-areas
+
 *** container: display, grid-template-columns, grid-template-rows
-<<<css:grid-template-columns>>> <<<css:grid-template-rows>>>
+<<<css:grid:container:grid-template-columns>>>
+<<<css:grid:container:grid-template-rows>>>
+- Can use css:f:minmax
 
 #+BEGIN_SRC html
   <!-- div.container has to be the direct parent of all grid items -->
@@ -19610,7 +19715,7 @@ https://css-tricks.com/snippets/css/complete-guide-grid/
       Any row or column line can have the same name */
 
    grid-template-columns: repeat(3, 20px [col-start]) 5%;
-   /* equivalent to */
+   /* eq. to */
    grid-template-columns: 20px [col-start] 20px [col-start] 20px [col-start] 5%;
 
    /* Free space is defined as total space minus any fixed size items */
@@ -19619,8 +19724,8 @@ https://css-tricks.com/snippets/css/complete-guide-grid/
   }
 #+END_SRC
 
-*** <<<container: grid-template-areas>>>, items: grid-area
-<<<css:grid-template-areas>>>
+*** container: grid-template-areas <<<css:grid:container:grid-template-areas>>>
+- Refer to css:grid:item:grid-area
 
 #+BEGIN_SRC css
   .item-a{
@@ -19650,26 +19755,17 @@ https://css-tricks.com/snippets/css/complete-guide-grid/
   ,*/
 #+END_SRC
 
-*** container: grid-template
-Shorthand for setting css:grid-template-rows, css:grid-template-columns and css:grid-template-areas
+*** container: grid-column-gap, grid-row-gap, grid-gap <<<css:grid:container:grid-gap>>>
+Gutter size: space inbetween 2 row lines or column lines. But start and end space is always 0
 
-#+BEGIN_EXAMPLE
-  .container {
-    grid-template: none | subgrid | <grid-template-rows> / <grid-template-columns>;
-  }
-#+END_EXAMPLE
-
-*** container: grid-column-gap, grid-row-gap, grid-gap <<<css:grid-gap>>>
-Gutter size: space inbetween 2 row lines or column lines. But start and end space is always 0.
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
+  grid-gap: <grid-row-gap> <grid-column-gap>;
   grid-column-gap: 10px;
   grid-row-gap: 15px;
-  grid-gap: <grid-row-gap> <grid-column-gap>;
-#+END_EXAMPLE
+#+END_SRC
 
-*** container: justify-items, items: justify-self <<<css:justify-items>>>
-#+BEGIN_EXAMPLE
+*** container: justify-items, item: justify-self <<<css:grid:container:justify-items>>>
+#+BEGIN_SRC css
   justify-items: start | end | center | stretch (default);
   /* Adjust content in a grid item along the row axis
      start: align to left end of the grid area
@@ -19680,10 +19776,10 @@ Gutter size: space inbetween 2 row lines or column lines. But start and end spac
   .item {
    justify-self: /* To overwrite .container: justify-items */
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** container: align-items, items: align-self <<<css:align-items>>>
-#+BEGIN_EXAMPLE
+*** container: align-items, item: align-self <<<css:grid:container:align-items>>>
+#+BEGIN_SRC css
   align-items: start | end | center | stretch (default);
   /* Adjust content in a grid item along the column axis
      start: align content to the top of the grid area
@@ -19694,9 +19790,9 @@ Gutter size: space inbetween 2 row lines or column lines. But start and end spac
   .item {
     align-self: start | end | center | stretch (default);
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** container: justify-content
+*** container: justify-content <<<css:grid:container:justify-content>>>
 Align the grid along the row axis.
 If all grid items are sized with non-flexible units like px, the total size of grid might be less than the size of its grid container.
 Total width of all grids is less than width of its grid container.
@@ -19706,23 +19802,26 @@ stretch: resize the grid items to allow the grid to fill the full width of the g
 space-around: place an even amount of space between each grid item, with half-sized spaces on the far ends
 space-between: place an even amount of space between each grid item, with no space at the far ends
 space-evenly: place an even amount of space between each grid item, including the far ends
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   justify-content: start | end | center | stretch | space-around | space-between | space-evenly
-#+END_EXAMPLE
+#+END_SRC
 
-*** container: align-content
+*** container: align-content <<<css:grid:container:align-content>>>
 Align the grid along the column axis.
 Total height of all grids is less than height of its grid container.
 start: align all grids to the top of the grid container
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   align-content: start | end | center | stretch | space-around | space-between | space-evenly
-#+END_EXAMPLE
+#+END_SRC
 
-*** container: grid-auto-columns, grid-auto-rows <<<css:grid-auto-columns>>> <<<css:grid-auto-rows>>>
-Implicit grid tracks are created when items have positioned or resized (items: grid-column, grid-row) outside of the defined grid (container: grid-template-areas).
-Implicit grid tracks will have 0 width by default until it's set.
-Implicit grid tracks of 2 columns and 2 rows are set.
-#+BEGIN_EXAMPLE
+*** container: grid-auto-columns, grid-auto-rows
+<<<css:grid:container:grid-auto-columns>>>
+<<<css:grid:container:grid-auto-rows>>>
+- Implicit grid tracks are created when items have positioned or resized (css:grid:item:grid-column, grid-row) outside of the defined grid (css:grid:container:grid-template-areas)
+- Implicit grid tracks will have 0 width by default until it's set
+- Implicit grid tracks of 2 columns and 2 rows are set
+
+#+BEGIN_SRC css
   grid-template-columns: 60px 60px;
   grid-tempalte-rows: 90px 90px;
   /* 2x2 grids are created. 3 row lines and 3 column lines */
@@ -19734,29 +19833,19 @@ Implicit grid tracks of 2 columns and 2 rows are set.
   /* It's 5x2 grids now. */
   grid-auto-columns: 60px; /* the implicit grid tracks width is 60px but .item-b is auto */
   grid-auto-rows: auto;
-#+END_EXAMPLE
+#+END_SRC
 
 *** container: grid-auto-flow <<<css:grid-auto-flow>>>
-For items that are not positioned (items: grid-column, grid-row) nor 
-put in a named area (items: grid-area) which is later used by container: grid-template-areas,
+For items that are not positioned (css:grid:item:grid-column, grid-row) nor 
+put in a named area (css:grid:item:grid-area) which is later used by css:grid:container:grid-template-areas,
 these items are "not explicitly placed on the grid".
 Use this to control the auto placement
-#+BEGIN_EXAMPLE
-  grid-auto-flow: row | column | row dense | column dense
+#+BEGIN_SRC css
+  grid-auto-flow: row | column | row dense | column dense;
   /* row : fill rows first (default)
      column: fill columns first
      dense : fill smaller items first (order of items might change!)
   ,*/
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-  <section class="container">
-    <div class="item-a">item-a</div>
-    <div class="item-b">item-b</div>
-    <div class="item-c">item-c</div>
-    <div class="item-d">item-d</div>
-    <div class="item-e">item-e</div>
-  </section>
 
   .container { /* 5x2 */
     display: grid;
@@ -19771,29 +19860,50 @@ Use this to control the auto placement
   .item-e { /* 2x1 */
     grid-column: 5;
     grid-row: 1 / 3;
+  }	    
+#+END_SRC
+
+#+BEGIN_SRC html
+  <section class="container">
+    <div class="item-a">item-a</div>
+    <div class="item-b">item-b</div>
+    <div class="item-c">item-c</div>
+    <div class="item-d">item-d</div>
+    <div class="item-e">item-e</div>
+  </section>
+#+END_SRC
+
+*** item: grid-column, grid-row <<<css:grid:item:grid-column, grid-row>>>
+css:grid:item:grid-column-start 
+css:grid:item:grid-column-end 
+css:grid:item:grid-row-start 
+css:grid:item:grid-row-end
+
+Position and resize an item
+#+BEGIN_SRC css
+  grid-column: <grid-column-start> / <grid-column-end>;
+  grid-row: <grid-row-start> / <grid-row-end>;
+
+  .item-c {
+    grid-column: 3 / span 2;
+    grid-row: third-line / 4;
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** container: grid
-css:grid-template-rows css:grid-template-columns css:grid-auto-flow
-css:grid-auto-columns css:grid-auto-rows
-#+BEGIN_EXAMPLE
-  grid: none | <grid-template-rows> / <grid-template-columns> | <grid-auto-flow> [<grid-auto-rows> [/ <grid-auto-columns>]];
-#+END_EXAMPLE
+**** item: grid-column-start, grid-column-end, grid-row-start, grid-row-end
+<<<css:grid:item:grid-column-start>>>
+<<<css:grid:item:grid-column-end>>>
+<<<css:grid:item:grid-row-start>>>
+<<<css:grid:item:grid-row-end>>>
 
-*** item: grid-column-start, grid-column-end, grid-row-start, grid-row-end
-<<<css:grid-column-start>>> <<<css:grid-column-end>>> <<<css:grid-row-start>>> <<<css:grid-row-end>>>
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   .item {
     grid-column-start: <number> | <name> | span <number> | span <name> | auto
     grid-column-end: <number> | <name> | span <number> | span <name> | auto
     grid-row-start: <number> | <name> | span <number> | span <name> | auto
     grid-row-end: <number> | <name> | span <number> | span <name> | auto
   }
-#+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
   .item-a {
     grid-column-start: 2;
     grid-column-end: five; /* line-name */
@@ -19807,58 +19917,41 @@ css:grid-auto-columns css:grid-auto-rows
     grid-row-start: 2;
     grid-row-end: span 2; /* span 2 rows */
   }
-#+END_EXAMPLE
+#+END_SRC
 
-*** <<<items: grid-column, grid-row>>>
-css:grid-column-start css:grid-column-end css:grid-row-start css:grid-row-end
+*** item: grid-area <<<css:grid:item:grid-area>>>
+Refer to css:grid:container:grid-template-areas
 
-Position and resize an item
-#+BEGIN_EXAMPLE
-  grid-column: <grid-column-start> / <grid-column-end>;
-  grid-row: <grid-row-start> / <grid-row-end>;
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-  .item-c {
-    grid-column: 3 / span 2;
-    grid-row: third-line / 4;
-  }
-#+END_EXAMPLE
-
-*** <<<items: grid-area>>>
-css:grid-template-areas
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   grid-area: <name> | <grid-row-start> / <grid-column-start> / <grid-row-end> / <grid-column-end>
-#+END_EXAMPLE
+#+END_SRC
 
-*** item: justify-self, align-self
-Used to overwrite grid container's css:justify-items, css:align-items
+*** item: justify-self, align-self <<<css:grid:item:justify-self>>> <<<css:grid:item:align-self>>>
+Used to overwrite grid container's css:grid:container:justify-items, css:grid:container:align-items
 
 *** IE10, IE11
 IE doesn't support:
 https://rachelandrew.co.uk/archives/2016/11/26/should-i-try-to-use-the-ie-implementation-of-css-grid-layout/
 - auto-placement (for each item, need to specify -ms-grid-row, -ms-grid-column, -ms-grid-row-span, -ms-grid-column-span)
-- grid-template-areas
+- css:grid:container:grid-template-areas
 
-
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   display: -ms-grid;
   display: grid;
   grid-gap:10px; /* not supported in IE, use grid*/
   -ms-grid-columns: 100px 10px 100px 10px 100px; /* 2 extra columns are for gap */
   -ms-grid-rows: 100px 10px 100px; /* the extra row is for gap */
   grid-template-columns: 100px 100px 100px; /* notice there are 3 columns here while in IE there are 5 columns */
-#+END_EXAMPLE
+#+END_SRC
 
 .item
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   -ms-grid-row: 1;
   -ms-grid-column: 1;
   -ms-grid-column-span: 3;
   grid-column: 1 / 3;
   grid-row: 1;
-#+END_EXAMPLE
+#+END_SRC
 
 ** Horizontal and Vertical Center
 If both the parent and child are blocks, use flexbox.
@@ -19995,7 +20088,7 @@ You can only control size in this method
 
 *** <<<CSS in SVG>>>
 Inline CSS
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC xml
   <svg xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink">
 
@@ -20017,18 +20110,18 @@ Inline CSS
       <circle  class="myGreen" cx="40" cy="40"  r="24"/>
       <circle  class="myRed"   cx="40" cy="100" r="24"/>
   </svg>
-#+END_EXAMPLE
+#+END_SRC
 
 External CSS
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC xml
   <?xml-stylesheet type="text/css" href="svg-stylesheet.css" ?>
   <svg xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink">
       <circle cx="40" cy="40" r="24"
          style="stroke:#006600; fill:#00cc00"/>
   </svg>
-#+END_EXAMPLE
+#+END_SRC
 
 Embedded CSS in SVG only affects the SVG not other elements in the global HTML if svg is not inline with global HTML.
 
@@ -20489,37 +20582,13 @@ Other than <a> tag, :hover doesn't work on iOS. Try one of these workaround
   }
 #+END_EXAMPLE
 
-*** Fix parent height less than total children height
-#+BEGIN_SRC html
-  <div class="clearfix">
-    <div style="">Div 1 doesn't float</div>
-    <div style="float: left;">Div 2</div>
-  </div>
-
-  <style>
-    /* Solution 1 */
-    .clearfix:after {
-    content: " ";
-    display:block;
-    clear:both;
-    height:0;
-    }
-
-    /* Solution 2 */
-    .clearfix {
-    display:inline-block;
-    width:100%;
-    }
-  </style>
-#+END_SRC
-
 *** Image inside a div
 Div's height is greater than img. add display:block in <img>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <div class="item">
       <img src="http://placehold.it/230x20/?text=6" style="display:block">
   </div>
-#+END_EXAMPLE
+#+END_SRC
 
 *** Transparent Image
 #+BEGIN_EXAMPLE
@@ -67601,7 +67670,8 @@ TeamViewer.exe、TeamViewer_Service.exe、TeamViewer_Desktop.exe
 http://www.zdfans.com/6351.html
 
 ** Font
-- WOFF :: supported in Edge and modern browsers. For web, always include WOFF (Web Open Font Format) > TTF > OTF
+- WOFF :: <<<font:woff>>>
+   - supported in Edge and modern browsers. For web, always include WOFF (Web Open Font Format) > TTF > OTF
    - It's good for SEO
    - It has TrueType Hinting and OpenType Features
 - EOT :: IE 11 and less
@@ -67689,7 +67759,7 @@ https://www.extensis.com/support Download Universal Type Client (6.1.5) not Univ
    - Some or full font library is included in some educational licensing programs
 - Font Pack
    - Showcase a group of fonts, then you can select individual font to fav, add, activate
-- Activate a font to use on desktop apps with a sub plan
+- Activate a font to use on desktop apps with a subscription plan
 - Web project
    - No limits on pageviews and domains for any web projects
    - Character set or subset
