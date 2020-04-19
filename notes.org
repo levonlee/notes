@@ -51352,126 +51352,109 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 
 ** Install SSL <<<linux:ssl>>>
 - File .crt :: certificate starts with ~--BEGIN CERTIFICATE--~, file extension can be .pem, .crt
-  - Fingerprint of a certificate
-    - SHA-256 :: ~openssl x509 -noout -fingerprint -sha256 -inform pem -in your.pem~
-    - SHA-1 :: ~openssl x509 -noout -fingerprint -sha1 -inform pem -in your.pem~
-    - MD5 :: ~openssl x509 -noout -fingerprint -md5 -inform pem -in your.pem~
+   - Fingerprint of a certificate
+      - SHA-256 :: ~openssl x509 -noout -fingerprint -sha256 -inform pem -in your.pem~
+      - SHA-1 :: ~openssl x509 -noout -fingerprint -sha1 -inform pem -in your.pem~
+      - MD5 :: ~openssl x509 -noout -fingerprint -md5 -inform pem -in your.pem~
 - File .key :: private key starts with ~--BEGIN RSA PRIVATE KEY--~
+- Certificate Chain or Chain of trust: end-user, intermediate and root certificate
+   - Certificate Authorities issue SSL/digital certificate
+      - certify the ownership of a public key (CSR) which is generated locally
+   - Install SSL certificate issued from CA1, this is called the end-user certificate
+      - this certificate basically vouches for the CSR which is a URL and its registration info
+   - CA1 utilizes a certificate issued by CA2 and CA2 utilizes a certificate issued by CA3
+   - CA2's certificate is an intermediate CA 
+   - CA3 is a root CA and its certificate is directly embeded in the web browser and is called root certificate since its CA is trusted by the browser
+- Generate CSR (Certificate Signing Request) which gives a private key ~myserver.key~ and a CSR file ~myserver.csr~ with 2048 bits
+  #+BEGIN_SRC sh
+    openssl req –new –newkey rsa:2048 –nodes –keyout myserver.key –out myserver.csr
 
-Certificate Chain, Root Certificate, Intermediate Certificate, Root Certificate
-Certificate Authorities issue SSL certificate
-- Install SSL certificate issued from CA1, this is called the end-user certificate.
-- CA1 utilizes a certificate issued by CA2 and CA2 utilizes a certificate issued by CA3
-- CA2's certificate is an intermediate CA. 
-- CA3 is a root CA and its certificate is directly embeded in the web browser and is called root certificate since its CA is trusted by the browser.
+    # Prompt for Common Name
+    # example.com for a single domain
+    # *.example.com for wildcard certificate
+  #+END_SRC
+- Submit CSR to SSL authority (CA) to get ~.crt~ and use .key generated above and make them root user only
+- [[https://medium.freecodecamp.org/how-to-get-https-working-on-your-local-development-environment-in-5-minutes-7af615770eec][Generate self-signed certificate]]
+   - docker-compose.yml
+     #+BEGIN_SRC yaml
+	 ports:
+	   - "32012:80"
+	   - "443:443"
+     #+END_SRC
+   - Create a Root SSL Certificate
+      - ~openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 5000 -out rootCA.pem~
+	 - ~-new~ :: create a new private key and also certificate request (CR)
+	 - ~-x509~ :: create a self signed certificate rather than a cerficiate request (CR)
+	 - ~-nodes~ :: create private key without providing passphrase which is at least 4 letters long
+	 - Enter random values for the prompt
+      - Optionaly, you can create a certificate with an existing key
+	 - ~openssl req -new -nodes -key rootCA.key -x509 -days 1024 -out rootCA.pem~
+	 - ~-new~ with ~-key~ creates a CR with an existing key
+      - Combine private key and certificate into a .p12 (pkcs12, pfx format) file
+	 - ~openssl pkcs12 -inkey rootCA.key -in rootCA.pem -export -out rootCA.p12~
+	 - Validate ~openssl pkcs12 -in rootCA.p12 -noout -info~
+      - Add ~rootCA.p12~ if Chrome supports it. Windows can import .p12 file
+	 - On Chrome, Settings > Manage certificates > Import under Trusted Root Certification Authorities
+	 - After that, select the certificate with name Internet Widigits Pty Ltd. click Advanced and select all Certificate purposes
+	 - In Ubuntu, Chrome only supports pkcs7 (.p7b file). So just add ~rootCA.pem~ to Chrome as Authorities
+	 - Without adding to Chrome, ~https://localhost~ only works in InCognito mode.
+   - Now create domain certificate using the root SSL certificate
+      - Create *~server.csr.cnf~* so you don't have to type
+	#+BEGIN_SRC conf
+	  [req]
+	  default_bits = 4096
+	  prompt = no
+	  default_md = sha256
+	  distinguished_name = dn
 
-Apache requires to bundle the intermediate certificates and assign the location of the bundle to ~SSLCertificateChainFile~ config.
-Nginx requires to package the intermediate certificates in a single bundel with the end-user certificate.
+	  [dn]
+	  C=US
+	  ST=RandomState
+	  L=RandomCity
+	  O=RandomOrganization
+	  OU=RandomOrganizationUnit
+	  emailAddress=hello@example.com
+	  CN = localhost
+	#+END_SRC
+      - Create ~v3.ext~ for creating X509 v3 certificate
+	#+BEGIN_SRC conf
+	  authorityKeyIdentifier=keyid,issuer
+	  basicConstraints=CA:FALSE
+	  keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+	  subjectAltName = @alt_names
 
-Generate CSR (Certificate Signing Request) which gives a private key (myserver.key) and a CSR file (myserver.csr) with 2048 bits
-#+BEGIN_EXAMPLE
-  openssl req –new –newkey rsa:2048 –nodes –keyout myserver.key –out myserver.csr
+	  [alt_names]
+	  DNS.1 = localhost
+	#+END_SRC
+      - Now create a certificate key ~server.key~ for localhost and also create a certificate signing request (CSR) ~server.csr~ using ~server.csr.cnf~ 
+	~openssl req -new -nodes -out server.csr -newkey rsa:4096 -keyout server.key -config <( cat server.csr.cnf )~
+      - Genereate the domain certificate file *~server.crt~* using *~v3.ext~* that is created earlier
+	~openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 5000 -extfile v3.ext~
+      - Some read and verify commands
+	#+BEGIN_SRC sh
+	  # Read and verify a certificate
+	  openssl x509 -text -noout -in server.crt
 
-  # Prompt for Common Name
-  # example.com for a single domain
-  # *.example.com for wildcard certificate
-#+END_EXAMPLE
+	  # Read and verify a key
+	  openssl rsa -check -in server.key
 
-Submit CSR to SSL authority to get .crt and use .key generated above and make them root user only.
+	  # Read and verify a CSR
+	  openssl req -text -noout -verify -in server.scr
 
-[[https://medium.freecodecamp.org/how-to-get-https-working-on-your-local-development-environment-in-5-minutes-7af615770eec][Generate self-signed certificate]]
-Create a Root SSL Certificate
-- ~-new~ :: create a new private key and also certificate request (CR)
-- ~-x509~ :: create a self signed certificate rather than a cerficiate request (CR)
-- ~-nodes~ :: create private key without providing passphrase which is at least 4 letters long
-- Enter random values for the prompt
-
-~openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 5000 -out rootCA.pem~
-
-Optionaly, you can create a certificate with an existing key
-- ~-new~ with ~-key~ creates a CR with an existing key
-- ~openssl req -new -nodes -key rootCA.key -x509 -days 1024 -out rootCA.pem~
-
-Combine private key and certificate into a .p12 (pkcs12, pfx format) file.
-- ~openssl pkcs12 -inkey rootCA.key -in rootCA.pem -export -out rootCA.p12~
-- Validate ~openssl pkcs12 -in rootCA.p12 -noout -info~
-
-You can add ~rootCA.p12~ if Chrome supports it. In Ubuntu, Chrome only supports pkcs7 (.p7b file). Windows can import .p12 file
-- On Chrome, Settings > Manage certificates > Import under Trusted Root Certification Authorities
-- After that, select the certificate with name Internet Widigits Pty Ltd. click Advanced and select all Certificate purposes
-- In Ubuntu, just add ~rootCA.pem~ to Chrome as Authorities
-- Without doing the above step, ~https://localhost~ only works in InCognito mode.
-
-docker-compose.yml
-#+BEGIN_SRC yaml
-    ports:
-      - "32012:80"
-      - "443:443"
-#+END_SRC
-
-Inside the PHP + Apache container, copy the ~<VirtualHost: *:80>~ and make it ~*:443~ and add 3 lines of SSL config as described in apache:ssl
-#+BEGIN_SRC apache
-  a2enmod ssl
-  apache2ctl configtest
-  apache2ctl graceful
-#+END_SRC
-
-Now create domain certificate using the root SSL certificate
-
-Create server.csr.cnf so you don't have to type
-#+BEGIN_SRC conf
-  [req]
-  default_bits = 4096
-  prompt = no
-  default_md = sha256
-  distinguished_name = dn
-
-  [dn]
-  C=US
-  ST=RandomState
-  L=RandomCity
-  O=RandomOrganization
-  OU=RandomOrganizationUnit
-  emailAddress=hello@example.com
-  CN = localhost
-#+END_SRC
-
-Create v3.ext for creating X509 v3 certificate
-#+BEGIN_SRC conf
-  authorityKeyIdentifier=keyid,issuer
-  basicConstraints=CA:FALSE
-  keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-  subjectAltName = @alt_names
-
-  [alt_names]
-  DNS.1 = localhost
-#+END_SRC
-
-Now create a certificate key for localhost using ~server.csr.cnf~. The key is ~server.key~. Also create a certificate signing request (CSR) ~server.csr~
-~openssl req -new -nodes -out server.csr -newkey rsa:4096 -keyout server.key -config <( cat server.csr.cnf )~
-
-Genereate the domain certificate file server.crt using v3.ext that is created earlier
-~openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 5000 -extfile v3.ext~
-
-#+BEGIN_SRC sh
-  # Read and verify a certificate
-  openssl x509 -text -noout -in server.crt
-
-  # Read and verify a key
-  openssl rsa -check -in server.key
-
-  # Read and very a CSR
-  openssl req -text -noout -verify -in server.scr
-
-  # Read and verify a PKCS#12 file .pfx or .p12
-  openssl pkcs12 -info -in rootCA.p12 -noout
-#+END_SRC
-
-Combine certificates and install:
-- nginx:ssl:config 
-- nginx:ssl:example
-
-apache:ssl
+	  # Read and verify a PKCS#12 file .pfx or .p12
+	  openssl pkcs12 -info -in rootCA.p12 -noout
+        #+END_SRC
+   - Combine certificates and install
+      - Nginx requires to package the intermediate certificates in a single bundle with the end-user certificate
+	 - nginx:ssl:config
+	 - nginx:ssl:example
+      - Apache requires to bundle the intermediate certificates and assign the location of the bundle to ~SSLCertificateChainFile~ config
+	 - Inside the PHP + Apache container, copy the ~<VirtualHost: *:80>~ and make it ~*:443~ and add 3 lines of SSL config as described in apache:ssl
+	   #+BEGIN_SRC apache
+	     a2enmod ssl
+	     apache2ctl configtest
+	     apache2ctl graceful
+	   #+END_SRC
 
 ** SSL Testing Tools <<<ssl:test>>>
 https://www.whynopadlock.com/
@@ -56755,35 +56738,31 @@ InMotion https://www.inmotionhosting.com/support/website/ssl/how-to-force-https-
 
 ** SSL <<<apache:ssl>>>
 [[https://www.digicert.com/csr-ssl-installation/apache-openssl.htm][Docs from DigiCert]]
-Find config file that handles SSL
-#+BEGIN_EXAMPLE
-  grep -i -r "SSLCertificateFile" /etc/httpd/
-#+END_EXAMPLE
-
-~sudo a2enmod ssl~
+- Find config file that handles SSL :: ~grep -i -r "SSLCertificateFile" /etc/httpd/~
+- ~sudo a2enmod ssl~
 
 [[https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile][The ~SSLCertificateFile~ may also contain intermediate certificates, DH parameters and EC curve.]]
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   # May need for port 80 as well
   <VirtualHost 192.168.0.1:80>
       DocumentRoot /var/www/html2
       ServerName www.yourdomain.com
-          SSLEngine on
-          SSLCertificateFile /path/to/your_domain_name.crt
-          SSLCertificateKeyFile /path/to/your_private.key
-          SSLCertificateChainFile /path/to/DigiCertCA.crt
+	  SSLEngine on
+	  SSLCertificateFile /path/to/your_domain_name.crt
+	  SSLCertificateKeyFile /path/to/your_private.key
+	  SSLCertificateChainFile /path/to/DigiCertCA.crt
   </VirtualHost>
 
   <VirtualHost 192.168.0.1:443>
       DocumentRoot /var/www/html2
       ServerName www.yourdomain.com
-          SSLEngine on
-          SSLCertificateFile /path/to/your_domain_name.crt
-          SSLCertificateKeyFile /path/to/your_private.key
-          SSLCertificateChainFile /path/to/DigiCertCA.crt
+	  SSLEngine on
+	  SSLCertificateFile /path/to/your_domain_name.crt
+	  SSLCertificateKeyFile /path/to/your_private.key
+	  SSLCertificateChainFile /path/to/DigiCertCA.crt
   </VirtualHost>
-#+END_EXAMPLE
+#+END_SRC
 
 Check before apache:restart
 
@@ -57450,27 +57429,22 @@ access_log
 *** certbot nginx apache plugins
 They are authenticator and install plugins. tls-sni-01 challenge
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   sudo add-apt-repository ppa:certbot/certbot
   sudo apt-get update
   sudo apt-get install python-certbot-nginx
   # sudo apt-get install python-certbot-apache
-#+END_EXAMPLE
+#+END_SRC
 
-~certbot~ looks for server block files with server_name
-
-Allow HTTPS in firewall nginx:ufw
-
-Obtain an SSL certificate using --nginx plugin for those -d server names
-#+BEGIN_EXAMPLE
-  sudo certbot --nginx -d example.com -d www.example.com
-#+END_EXAMPLE
-
-The first time running certbot, prompt to enter an email address and agree to the terms of service. After doing so, certbot will communicate with the Let's Encrypt server, then run a challenge to verify that you control the domain you're requesting a certificate for.
-
-After everything, certificate is downloaded, Nginx config is updated and reloaded.
-
-Modified :: /etc/nginx/sites-enabled/yoursite.com
+- Allow HTTPS in firewall nginx:ufw
+- Obtain an SSL certificate using ~--nginx~ plugin for those -d server names
+  #+BEGIN_EXAMPLE
+    sudo certbot --nginx -d example.com -d www.example.com
+  #+END_EXAMPLE
+- ~certbot~ looks for server block files with server_name
+- The first time running certbot, prompt to enter an email address and agree to the terms of service. After doing so, certbot will communicate with the Let's Encrypt server, then run a challenge to verify that you control the domain you're requesting a certificate for
+- After that, certificate is downloaded, Nginx config is updated and reloaded
+- Modified :: /etc/nginx/sites-enabled/yoursite.com
 <<<nginx:ssl:server block>>>
 
 #+BEGIN_SRC nginx
@@ -57508,12 +57482,10 @@ Modified :: /etc/nginx/sites-enabled/yoursite.com
   }
 #+END_SRC
 
-Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
-Certbot config and account credential :: /etc/letsencrypt
-
-ssl:test
-
-Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbot~ package to renew certificate. ~certbot renew~ is run twice a day on systemd timer. For non-systemd, /etc/cron.d also runs twice a day.
+- Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
+- Certbot config and account credential :: /etc/letsencrypt
+- ssl:test
+- Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbot~ package to renew certificate. ~certbot renew~ is run twice a day on systemd timer. For non-systemd, ~/etc/cron.d~ also runs twice a day.
 
 /etc/cron.d/certbot
 #+BEGIN_EXAMPLE
@@ -57522,17 +57494,16 @@ Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbo
 
   0 */12 * * * root test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(3600))' && certbot -q renew
 #+END_EXAMPLE
-
-Dry run ~sudo certbot renew --dry-run~, expect no error.
+- Dry run ~sudo certbot renew --dry-run~, expect no error
 
 *** manual plugin
 - authenticator only :: obtain a certificate by giving you instructions to perform domain validation yourself. Additionally allows you to specify scripts to automate the validation task in a customized way. hooks can be specified
 - Challenge types :: http-01, dns-01 or tls-sni-01
 
 Example usage for HTTP-01:
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   certbot certonly --manual --preferred-challenges=http --manual-auth-hook /path/to/http/authenticator.sh --manual-cleanup-hook /path/to/http/cleanup.sh -d secure.example.com
-#+END_EXAMPLE
+#+END_SRC
 
 authenticator.sh
 #+BEGIN_SRC bash
@@ -57796,8 +57767,9 @@ Download latest release, unzip and run letsencrypt.exe with admin privileges.
 - A task is added to Windows Task Scheduler
 
 *** Alternative clients (ACME Clients)
-https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
-
+- https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
+- ACME :: Automatic Certificate Management Environment. It is a protocol. Let's Encrypt just issues certificates
+- Cerbot is one ACME client that is developed by Electronic Frontier Foundation (EFF) which uses ACEM protocol
 - [[https://github.com/xenolf/lego][lego]] :: Written in Go, lego is a one-file binary install, and supports many DNS providers when using the DNS challenge
 - [[https://github.com/Neilpang/acme.sh][acme.sh]] :: acme.sh is a simple shell script that can run in unprivileged mode, and also interact with 30+ DNS providers
 - [[https://caddyserver.com/][Caddy]] :: Caddy is a full web server written in Go with built-in support for Let's Encrypt.
@@ -57805,16 +57777,17 @@ https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encryp
 [[https://letsencrypt.org/docs/client-options/][All other clients]]
 
 *** Limitation
-There are 5 levels of validation
-Domain Validation (DV), Organization Validation (OV), Extended Validation (EV), Wildcard Certificate
-
-Certificate Authority (CA) provides the above validation and Commercial Certificate Authorities are the only one provide EV and Wildcard.
-
-Let's Encrypt provides DV only and planning to support Wildcard in near future. A certificate with up to 100 hostnames.
+- 5 levels of validation
+   - Domain Validation DV :: domain registrar or put a file on the domain
+   - Organization Validation OV
+   - Extended Validation EV :: phone call. Most expensive
+   - Wildcard Certificate
+- Certificate Authority (CA) provides the above validation and Commercial Certificate Authorities are the only one provide EV and Wildcard
+- Let's Encrypt provides DV only and planning to support Wildcard in near future. A certificate with up to 100 hostnames
 
 *** SSL config <<<nginx:ssl:config>>>
 **** Combine end-user and bundled intermediate certificates
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   cat your_domain.crt intermediate.crt root.crt >> ssl-bundle.crt
 
   # e.g. PositiveSSL
@@ -57822,7 +57795,7 @@ Let's Encrypt provides DV only and planning to support Wildcard in near future. 
 
   # e.g. combine end-user and bundled intermediate certificates
   cat example_com.crt bundle.crt >> ssl-bundle.crt
-#+END_EXAMPLE
+#+END_SRC
 
 **** [[https://michael.lustfield.net/nginx/getting-a-perfect-ssl-labs-score][Strengthen Nginx SSL Setup]]
 #+BEGIN_SRC nginx
