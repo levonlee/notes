@@ -23900,18 +23900,15 @@ strict-origin-when-cross-origin :: Similar to origin-when-cross-origin above but
 unsafe-url :: The browser will always send the full URL with any request to any origin.
 
 *** Strict-Transport-Security - response <<<header:strict-transport-security>>>
-HSTS lets a website tell browsers that it should only be accessed using HTTPS. The first time your site is accessed using HTTPS and it returns the Strict-Transport-Security header, the browser records this information, so that future attempts to load the site using HTTP will automatically use HTTPS instead.
-
-~Strict-Transport-Security: max-age=<expire-time>~
- - max-age :: The time, in seconds, that the browser should remember that a site is only to be accessed using HTTPS.
-
-~Strict-Transport-Security: max-age=<expire-time>; includeSubDomains~
- - includeSubDomains Optional :: If this optional parameter is specified, this rule applies to all of the site's subdomains as well.
-
-~Strict-Transport-Security: max-age=<expire-time>; preload~
- - preload is not recommended
-
-https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
+- HSTS lets a website tell browsers that it should only be accessed using HTTPS. The first time your site is accessed using HTTPS and it returns the Strict-Transport-Security header, the browser records this information, so that future attempts to load the site using HTTP will automatically use HTTPS instead
+- ~Strict-Transport-Security: max-age=<expire-time>~
+   - max-age :: The time, in seconds, that the browser should remember that a site is only to be accessed using HTTPS
+- ~Strict-Transport-Security: max-age=<expire-time>; includeSubDomains~
+   - includeSubDomains Optional :: If this optional parameter is specified, this rule applies to all of the site's subdomains as well
+- ~Strict-Transport-Security: max-age=<expire-time>; preload~
+   - preload requires to register the domain on https://hstspreload.org
+   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
+- Applied in hosting:pantheon:hsts
 
 *** Vary - response <<<header:vary>>>
 - ~Vary: <header-name>, <header-name>~
@@ -51365,7 +51362,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
    - CA1 utilizes a certificate issued by CA2 and CA2 utilizes a certificate issued by CA3
    - CA2's certificate is an intermediate CA 
    - CA3 is a root CA and its certificate is directly embeded in the web browser and is called root certificate since its CA is trusted by the browser
-- Generate CSR (Certificate Signing Request) which gives a private key ~myserver.key~ and a CSR file ~myserver.csr~ with 2048 bits
+- Generate a private key ~myserver.key~ with 2048 bits, then generate a CSR (Certificate Signing Request) file ~myserver.csr~ using that private key and answering some registration questions. The CSR contains the answers linux:ssl:server.csr.cnf and a public key
   #+BEGIN_SRC sh
     openssl req –new –newkey rsa:2048 –nodes –keyout myserver.key –out myserver.csr
 
@@ -51373,7 +51370,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
     # example.com for a single domain
     # *.example.com for wildcard certificate
   #+END_SRC
-- Submit CSR to SSL authority (CA) to get ~.crt~ and use .key generated above and make them root user only
+- Submit CSR to SSL authority (CA) to get ~.crt~ and use ~myserver.key~ generated above and make them root user only
 - [[https://medium.freecodecamp.org/how-to-get-https-working-on-your-local-development-environment-in-5-minutes-7af615770eec][Generate self-signed certificate]]
    - docker-compose.yml
      #+BEGIN_SRC yaml
@@ -51381,7 +51378,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 	   - "32012:80"
 	   - "443:443"
      #+END_SRC
-   - Create a Root SSL Certificate
+   - Create a Root SSL Certificate for domain ~localhost~
       - ~openssl req -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 5000 -out rootCA.pem~
 	 - ~-new~ :: create a new private key and also certificate request (CR)
 	 - ~-x509~ :: create a self signed certificate rather than a cerficiate request (CR)
@@ -51399,7 +51396,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 	 - In Ubuntu, Chrome only supports pkcs7 (.p7b file). So just add ~rootCA.pem~ to Chrome as Authorities
 	 - Without adding to Chrome, ~https://localhost~ only works in InCognito mode.
    - Now create domain certificate using the root SSL certificate
-      - Create *~server.csr.cnf~* so you don't have to type
+      - Create *~server.csr.cnf~* so you don't have to type <<<linux:ssl:server.csr.cnf>>>
 	#+BEGIN_SRC conf
 	  [req]
 	  default_bits = 4096
@@ -51416,6 +51413,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 	  emailAddress=hello@example.com
 	  CN = localhost
 	#+END_SRC
+	CN is common name which is a FQDN
       - Create ~v3.ext~ for creating X509 v3 certificate
 	#+BEGIN_SRC conf
 	  authorityKeyIdentifier=keyid,issuer
@@ -51444,17 +51442,21 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 	  # Read and verify a PKCS#12 file .pfx or .p12
 	  openssl pkcs12 -info -in rootCA.p12 -noout
         #+END_SRC
-   - Combine certificates and install
-      - Nginx requires to package the intermediate certificates in a single bundle with the end-user certificate
-	 - nginx:ssl:config
-	 - nginx:ssl:example
-      - Apache requires to bundle the intermediate certificates and assign the location of the bundle to ~SSLCertificateChainFile~ config
-	 - Inside the PHP + Apache container, copy the ~<VirtualHost: *:80>~ and make it ~*:443~ and add 3 lines of SSL config as described in apache:ssl
-	   #+BEGIN_SRC apache
-	     a2enmod ssl
-	     apache2ctl configtest
-	     apache2ctl graceful
-	   #+END_SRC
+- Combine certificates and install
+   - Nginx requires to package the intermediate certificates in a single bundle with the end-user certificate
+      - nginx:ssl:config
+      - nginx:ssl:example
+      - nginx:restart
+      - Redirect HTTP to HTTPS :: nginx:redirect:HttpToHttps
+   - Apache requires to bundle the intermediate certificates and assign the location of the bundle to ~SSLCertificateChainFile~ config
+      - Inside the PHP + Apache container, copy the ~<VirtualHost: *:80>~ and make it ~*:443~ and add 3 lines of SSL config as described in apache:ssl
+	#+BEGIN_SRC apache
+	  a2enmod ssl
+	  apache2ctl configtest
+	  apache2ctl graceful
+	#+END_SRC
+      - Redirect HTTP to HTTPS :: apache:https
+   - HSTS setup :: header:strict-transport-security
 
 ** SSL Testing Tools <<<ssl:test>>>
 https://www.whynopadlock.com/
@@ -56005,26 +56007,25 @@ Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ 
 - Refer to image:php:apache to get configs
 - Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for ~HTTPD_ROOT~ and ~SERVER_CONFIG_FILE~
 - Show parsed vhost settings and run settings :: ~apache2ctl -S~
+  #+BEGIN_SRC apache
+    VirtualHost configuration:
+    ,*:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
 
-#+BEGIN_SRC apache
-  VirtualHost configuration:
-  ,*:80                   172.17.0.7 (/etc/apache2/sites-enabled/000-default.conf:1)
+    # run settings followed
 
-  # run settings followed
-
-  ServerRoot: "/etc/apache2"
-  Main DocumentRoot: "/var/www/html"
-  Main ErrorLog: "/var/log/apache2/error.log"
-  Mutex default: dir="/var/lock/apache2" mechanism=fcntl
-  Mutex mpm-accept: using_defaults
-  Mutex watchdog-callback: using_defaults
-  Mutex rewrite-map: using_defaults
-  PidFile: "/var/run/apache2/apache2.pid"
-  Define: DUMP_VHOSTS
-  Define: DUMP_RUN_CFG
-  User: name="www-data" id=33
-  Group: name="www-data" id=33
-#+END_SRC
+    ServerRoot: "/etc/apache2"
+    Main DocumentRoot: "/var/www/html"
+    Main ErrorLog: "/var/log/apache2/error.log"
+    Mutex default: dir="/var/lock/apache2" mechanism=fcntl
+    Mutex mpm-accept: using_defaults
+    Mutex watchdog-callback: using_defaults
+    Mutex rewrite-map: using_defaults
+    PidFile: "/var/run/apache2/apache2.pid"
+    Define: DUMP_VHOSTS
+    Define: DUMP_RUN_CFG
+    User: name="www-data" id=33
+    Group: name="www-data" id=33
+  #+END_SRC
 
 *** Loaded Modules
 - Show all loaded modules :: ~apache2ctl -M~
@@ -56078,28 +56079,28 @@ Sample for image:php:apache
 #+END_EXAMPLE
 
 *** Main Config files <<<apache:config:main file>>>
-Main config file :: /etc/apache2/apache2.conf /etc/httpd/httpd.conf /usr/local/apache/conf/httpd.conf
+- Main config file
+   - /etc/apache2/apache2.conf
+   - /etc/httpd/httpd.conf
+   - /usr/local/apache/conf/httpd.conf
+   - Run apache:config to get Apache root directory to find config location
+- ~*.conf~ files loading sequence
+  #+BEGIN_SRC conf
+    # include module config
+    IncludeOptional mods-enabled/*.load
+    IncludeOptional mods-enabled/*.conf
 
-Run apache:config to get Apache root directory to find config location
+    # include list of ports to listen on
+    Include ports.conf
 
-You can see the *.conf files loading sequence
-#+BEGIN_EXAMPLE
-  # include module config
-  IncludeOptional mods-enabled/*.load
-  IncludeOptional mods-enabled/*.conf
+    # main config file config
 
-  # include list of ports to listen on
-  Include ports.conf
-
-  # main config file config
-
-  # generic
-  IncludeOptional conf-enabled/*.conf
-  # virutal host config
-  IncludeOptional sites-enabled/*.conf
-#+END_EXAMPLE
-
-Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
+    # generic
+    IncludeOptional conf-enabled/*.conf
+    # virutal host config
+    IncludeOptional sites-enabled/*.conf
+  #+END_SRC
+- Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
 
 *** Restart <<<apache:restart>>>
 - Check config before restart. Wrong config (e.g. SSL) may prevent Apache from starting
@@ -56155,8 +56156,8 @@ Create remoteip.conf file under /etc/apache2/conf-available/remoteip.conf
 #+END_SRC
 
 *** mod_headers <<<apache:mod_headers>>>
-https://httpd.apache.org/docs/current/mod/mod_headers.html
-It provides directives to control and modify HTTP request and response headers. Headers can be merged, replaced or removed.
+- https://httpd.apache.org/docs/current/mod/mod_headers.html
+   - It provides directives to control and modify HTTP request and response headers. Headers can be merged, replaced or removed
 
 #+BEGIN_SRC apache
   <IfModule mod_headers.c>
@@ -56170,7 +56171,8 @@ It provides directives to control and modify HTTP request and response headers. 
   </IfModule>
 #+END_SRC
 
-<<<apache:mod_headers:cache>>> Refer to header:cache-control, php:header
+**** <<<apache:mod_headers:cache>>> 
+Refer to header:cache-control, php:header
 #+BEGIN_SRC apache
   <filesMatch "\.(html|htm|js|css)$">
     FileETag None
@@ -56183,12 +56185,15 @@ It provides directives to control and modify HTTP request and response headers. 
   </filesMatch>
 #+END_SRC
 
-<<<apache:mod_headers:header>>>
-Syntax:	Header [condition] add|append|echo|edit|edit*|merge|set|setifempty|unset|note header [[expr=]value [replacement] [early|env=[!]varname|expr=expression]]
-All apache:directive context
-
-- ~env=varname~ :: applies if varname is defined
-- ~env=!varname~ :: applies if varname is not defined
+**** <<<apache:mod_headers:header>>>
+- Syntax :: ~Header [condition] add|append|echo|edit|edit*|merge|set|setifempty|unset|note header [[expr=]value [replacement] [early|env=[!]varname|expr=expression]]~
+- All apache:directive context
+- Eq. to nginx:d:add_header
+- condition
+   - ~always~ 
+- env
+   - ~env=varname~ :: applies if varname is defined
+   - ~env=!varname~ :: applies if varname is not defined
 
 #+BEGIN_SRC apache
   <IfModule mod_headers.c>
@@ -56737,34 +56742,34 @@ InMotion https://www.inmotionhosting.com/support/website/ssl/how-to-force-https-
 #+END_EXAMPLE
 
 ** SSL <<<apache:ssl>>>
-[[https://www.digicert.com/csr-ssl-installation/apache-openssl.htm][Docs from DigiCert]]
-- Find config file that handles SSL :: ~grep -i -r "SSLCertificateFile" /etc/httpd/~
+- [[https://www.digicert.com/csr-ssl-installation/apache-openssl.htm][Docs from DigiCert]]
+- Find config file that handles SSL
+   - ~grep -i -r "SSLCertificateFile" /etc/httpd/~ or
+   - ~grep -i -r "SSLCertificateFile" /etc/apache2/~
 - ~sudo a2enmod ssl~
+- [[https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile][The ~SSLCertificateFile~ may also contain intermediate certificates, DH parameters and EC curve.]]
+- Add ~SSL*~ directives
+  #+BEGIN_SRC apache
+    # May need for port 80 as well
+    <VirtualHost 192.168.0.1:80>
+	DocumentRoot /var/www/html2
+	ServerName www.yourdomain.com
+	    SSLEngine on
+	    SSLCertificateFile /path/to/your_domain_name.crt
+	    SSLCertificateKeyFile /path/to/your_private.key
+	    SSLCertificateChainFile /path/to/DigiCertCA.crt
+    </VirtualHost>
 
-[[https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile][The ~SSLCertificateFile~ may also contain intermediate certificates, DH parameters and EC curve.]]
-
-#+BEGIN_SRC apache
-  # May need for port 80 as well
-  <VirtualHost 192.168.0.1:80>
-      DocumentRoot /var/www/html2
-      ServerName www.yourdomain.com
-	  SSLEngine on
-	  SSLCertificateFile /path/to/your_domain_name.crt
-	  SSLCertificateKeyFile /path/to/your_private.key
-	  SSLCertificateChainFile /path/to/DigiCertCA.crt
-  </VirtualHost>
-
-  <VirtualHost 192.168.0.1:443>
-      DocumentRoot /var/www/html2
-      ServerName www.yourdomain.com
-	  SSLEngine on
-	  SSLCertificateFile /path/to/your_domain_name.crt
-	  SSLCertificateKeyFile /path/to/your_private.key
-	  SSLCertificateChainFile /path/to/DigiCertCA.crt
-  </VirtualHost>
-#+END_SRC
-
-Check before apache:restart
+    <VirtualHost 192.168.0.1:443>
+	DocumentRoot /var/www/html2
+	ServerName www.yourdomain.com
+	    SSLEngine on
+	    SSLCertificateFile /path/to/your_domain_name.crt
+	    SSLCertificateKeyFile /path/to/your_private.key
+	    SSLCertificateChainFile /path/to/DigiCertCA.crt
+    </VirtualHost>
+  #+END_SRC
+- Check before apache:restart
 
 ** Redirect to HTTPS <<<apache:https>>>
 #+BEGIN_SRC apache
@@ -56846,30 +56851,26 @@ Enable HTTPS, allow Full and delete HTTP
 #+END_SRC
 
 *** Service Check, reload, restart, Check syntax <<<nginx:restart>>>
-- Restart :: ~systemctl status nginx~ ~service nginx restart~ ~sudo /etc/init.d/nginx restart~
-- Check syntax for config :: ~sudo nginx -t~
-- stop, quit, reopen, reload :: ~nginx -s reload~
+- Check syntax for config before restart :: ~sudo nginx -t~
+- ~systemctl stop/start/restart/reload/disable/enable nginx~
+   - status :: ~systemctl status nginx~
+   - restart :: ~service nginx restart~ or ~sudo /etc/init.d/nginx restart~
+   - reload config files only :: ~sudo nginx -s reload~
+      - ~restart~ drops connection, use ~reload~ to not drop connection
+   - disable :: nginx service, default the nginx service is to start automatically
 - Version in short :: ~nginx -v~
-
-Output
-#+BEGIN_EXAMPLE
-  ● nginx.service - A high performance web server and a reverse proxy server
-     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
-     Active: active (running) since Mon 2016-04-18 16:14:00 EDT; 4min 2s ago
-   Main PID: 12857 (nginx)
-     CGroup: /system.slice/nginx.service
-             ├─12857 nginx: master process /usr/sbin/nginx -g daemon on; master_process on
-             └─12858 nginx: worker process
-#+END_EXAMPLE
-
-systemctl stop/start/restart/reload/disable/enable nginx
-
-~restart~ drops connection, use ~reload~ to not drop connection
-disable nginx service, default the nginx service is to start automatically
+  Output
+  #+BEGIN_EXAMPLE
+    ● nginx.service - A high performance web server and a reverse proxy server
+       Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+       Active: active (running) since Mon 2016-04-18 16:14:00 EDT; 4min 2s ago
+     Main PID: 12857 (nginx)
+       CGroup: /system.slice/nginx.service
+	       ├─12857 nginx: master process /usr/sbin/nginx -g daemon on; master_process on
+	       └─12858 nginx: worker process
+  #+END_EXAMPLE
 
 ** /etc/nginx /var/log/nginx
-Config directory.
-
 *** /etc/nginx/sites-available/
 The directory where per-site "server blocks" can be stored.
 Nginx will not use config files in this directory unless they are linked to the ~sites-enabled~ directory.
@@ -57444,56 +57445,52 @@ They are authenticator and install plugins. tls-sni-01 challenge
 - ~certbot~ looks for server block files with server_name
 - The first time running certbot, prompt to enter an email address and agree to the terms of service. After doing so, certbot will communicate with the Let's Encrypt server, then run a challenge to verify that you control the domain you're requesting a certificate for
 - After that, certificate is downloaded, Nginx config is updated and reloaded
-- Modified :: /etc/nginx/sites-enabled/yoursite.com
-<<<nginx:ssl:server block>>>
+- Modified :: /etc/nginx/sites-enabled/yoursite.com <<<nginx:ssl:server block>>>
+  #+BEGIN_SRC nginx
+    server {
+	listen 80;
+	listen [::]:80;
+	server_name example.com www.example.com; 
+	return 301 https://example.com$request_uri;
+      # force redirect to https
+    }
 
-#+BEGIN_SRC nginx
-  server {
+    server {
+      # your original setting
+      # listen 80; # if you want to serve http as well in the same block
+      # ssl on; # is not needed when ssl is in listen directive
+      listen 443 ssl; # managed by Certbot
+      ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
+      ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
+      include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+      ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+      # follow by these proxy rules nginx:proxy:docker
+
+    }
+
+    # certbot will insert this block, but it's better to use the one atop.
+    server {
+      if ($host = yoursite.com) {
+	    return 301 https://$host$request_uri;
+	} # managed by Certbot
+
       listen 80;
-      listen [::]:80;
-      server_name example.com www.example.com; 
-      return 301 https://example.com$request_uri;
-    # force redirect to https
-  }
-
-  server {
-    # your original setting
-    # listen 80; # if you want to serve http as well in the same block
-    # ssl on; # is not needed when ssl is in listen directive
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/yoursite.com/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/yoursite.com/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
-
-    # follow by these proxy rules nginx:proxy:docker
-
-  }
-
-  # certbot will insert this block, but it's better to use the one atop.
-  server {
-    if ($host = yoursite.com) {
-	  return 301 https://$host$request_uri;
-      } # managed by Certbot
-
-    listen 80;
-    server_name yoursite.com;
-      return 404; # managed by Certbot
-  }
-#+END_SRC
-
+      server_name yoursite.com;
+	return 404; # managed by Certbot
+    }
+  #+END_SRC
 - Certificate :: /etc/letsencrypt/live/example.com/fullchain.pem
 - Certbot config and account credential :: /etc/letsencrypt
 - ssl:test
 - Let's Encrypt SSL certificates are valid for 90 days. On Ubuntu, install ~certbot~ package to renew certificate. ~certbot renew~ is run twice a day on systemd timer. For non-systemd, ~/etc/cron.d~ also runs twice a day.
+- /etc/cron.d/certbot
+  #+BEGIN_EXAMPLE
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-/etc/cron.d/certbot
-#+BEGIN_EXAMPLE
-  SHELL=/bin/sh
-  PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-
-  0 */12 * * * root test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(3600))' && certbot -q renew
-#+END_EXAMPLE
+    0 */12 * * * root test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(3600))' && certbot -q renew
+  #+END_EXAMPLE
 - Dry run ~sudo certbot renew --dry-run~, expect no error
 
 *** manual plugin
@@ -57726,6 +57723,7 @@ Sample /etc/letsencrypt/renewal/mydomain.com.conf
 #+END_EXAMPLE
 
 *** A certificate <<<nginx:ssl:example>>>
+- Or see an example of Let's Encrypt on Nginx nginx:ssl:server block
 #+BEGIN_SRC nginx
   server {
     # your original setting
@@ -57766,7 +57764,7 @@ Download latest release, unzip and run letsencrypt.exe with admin privileges.
 
 - A task is added to Windows Task Scheduler
 
-*** Alternative clients (ACME Clients)
+*** Alternative ACME clients
 - https://www.digitalocean.com/community/tutorials/an-introduction-to-let-s-encrypt
 - ACME :: Automatic Certificate Management Environment. It is a protocol. Let's Encrypt just issues certificates
 - Cerbot is one ACME client that is developed by Electronic Frontier Foundation (EFF) which uses ACEM protocol
@@ -57968,7 +57966,9 @@ Context:	http, server, location, limit_except
     systemctl reload nginx
  #+END_SRC
 
-*** HTTP to HTTPS redirect
+*** HTTP to HTTPS redirect <<<nginx:redirect:HttpToHttps>>>
+- Or see an example of Let's Encrypt on Nginx nginx:ssl:server block
+
 #+BEGIN_SRC nginx
   server {
   # we want to listen on port 80 on all IPs on our system - both IPv4 and IPv6
@@ -59669,11 +59669,12 @@ https://pantheon.io/docs/domains/
   }
 #+END_SRC
 
-*** HSTS: HTTP Header
-After redirection to HTTPS is setup, set the HTTP Strict Transport Security (HSTS) header to stop client communicating to HTTP.
-A+ SSL rating will be achieved in [[https://www.ssllabs.com/ssltest/][SSL Labs]].
+*** HSTS: HTTP Header <<<hosting:pantheon:hsts>>>
+- After redirection to HTTPS is setup, set the HTTP Strict Transport Security (HSTS) header to stop client communicating to HTTP
+- A+ SSL rating will be achieved in [[https://www.ssllabs.com/ssltest/][SSL Labs]]
+- Refer to header:strict-transport-security
 
-Wordpress: install LH HSTS plugin
+WordPress: install LH HSTS plugin
 #+BEGIN_SRC sh
   terminus remote:wp <site>.<env> -- plugin install lh-hsts --activate
   # Once enabled, this header will be sent in response
