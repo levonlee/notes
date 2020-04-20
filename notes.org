@@ -2713,6 +2713,27 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
 - ~composer remove [vendor/package]~
 - ~.gitignore~ :: ~/vendor/~
 
+*** composer.json
+- autoload :: after edit, run ~composer dump-autoload~
+   - psr-4
+     #+BEGIN_SRC json
+       "autoload": {
+	   "psr-4": {
+	       "TDD\\": "src/"
+	   }
+       },
+     #+END_SRC
+      - Map a namespace TDD to directory ~src~
+      - Search a namespace in multiple directories :: ~"psr-4": { "Monolog\\": ["src/", "lib/"] }~
+      - Create a fallback directory where any namespace will be looked for :: ~"psr-4": { "": "src/" }~
+   - classmap :: build map by scanning for classes in all ~.php~ and ~.inc~ files in specified directories/files
+     #+BEGIN_SRC json
+       {
+	   "autoload": {
+	       "classmap": ["src/", "lib/", "Something.php"]
+	   }
+       }
+     #+END_SRC
 *** Packages
 - PHP Package Repo :: https://packagist.org/
 
@@ -2734,6 +2755,40 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
 	},
     }
   #+END_SRC
+
+** PHPUnit
+- https://phpunit.de/getting-started/phpunit-9.html
+   - v9 :: PHP 7.3, 7.4
+   - v8 :: PHP 7.2, 7.3
+- ~composer require --dev phpunit/phpunit ^9~
+   - ~./vendor/bin/phpunit --version~
+- composer.json should look like
+  #+BEGIN_SRC json
+    {
+	"autoload": {
+	    "classmap": [
+		"src/"
+	    ]
+	},
+	"require-dev": {
+	    "phpunit/phpunit": "^9"
+	}
+    }
+  #+END_SRC
+- Code to test ~src/Email.php~, Test file is ~tests/EmailTest.php~
+- Execute tests in dir ~tests~ :: ~./vendor/bin/phpunit tests~
+   - Run one test file :: ~./vendor/bin/phpunit tests/ReceiptTest.php~
+   - Filter test cases in files and run tests :: ~./vendor/bin/phpunit tests --filter=testTax~
+      - Run function that matches the regex ~testTax~
+      - ~./vendor/bin/phpunit tests --filter=ReceiptTest::testTax~
+   - Filter by testsuite :: ~./vendor/bin/phpunit --testsuite=app --filter=testTax~
+- Assertion methods :: https://phpunit.readthedocs.io/en/8.5/assertions.html
+   - ~assertEquals(mixed $expected, mixed $actual[, string $message = ''])~
+
+*** phpunit.xml <<<phpunit:phpunit.xml>>>
+- Set filter, testsuites (groups), colors
+- testsuites
+- logging
 
 ** Libraries
 *** mPDF
@@ -52803,12 +52858,12 @@ Poibt a directory that has a .sh, .sql, and .sql.gz to a dir in container
 Importing needs a lot of memory. If host doesn't have 128M memory, try to import it locally and then rsync the persist data folder to host and chown -R 999:docker /path/to/persistdir accordingly on host.
 
 *** Access, view logs, db dump
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   docker exec -it my-mysql-container bash
   docker logs my-mysql-container
   docker exec some-mysql sh -c \
     'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
-#+END_EXAMPLE
+#+END_SRC
 
 *** Persist data
 A place to persist db data on host :: /my/own/datadir
