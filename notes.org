@@ -10,7 +10,7 @@
 
 * PHP
 ** Installation
-*** Debian
+*** Debian <<<php:install:debian>>>
 - [[https://www.php.net/supported-versions.php][Supported versions]]
 
 Install multiple versions of PHP
@@ -2737,9 +2737,9 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
 *** Packages
 - PHP Package Repo :: https://packagist.org/
 
-**** squizlabs/php_codesniffer
+**** squizlabs/php_codesniffer <<<php:composer:php_codesniffer>>>
 - Prefer to require it as local dev
-- Install this package so that any other phpcs coding standards are installed through composer will be configured correctly so that php_codesniffer can use/refer to them
+- Install this package so that any other phpcs coding standards are installed through composer will be configured correctly and php_codesniffer can use/refer to them
    - dealerdirect/phpcodesniffer-composer-installer
 - Install other coding standards
    - wp-coding-standards/wpcs
@@ -2747,14 +2747,16 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
 - Sample
   #+BEGIN_SRC json
     {
-	"require-dev": {	
-	    "php": ">=7.0",
+	"require-dev": {
 	    "dealerdirect/phpcodesniffer-composer-installer": "^0.4",
 	    "wp-coding-standards/wpcs": "^2",
 	    "phpcompatibility/php-compatibility": "^9"
 	},
     }
   #+END_SRC
+- And run ~composer install~
+- PHP_CodeSniffer is installed at ~./vendor/bin/phpcs~ and it links to multiple standards installed above
+   - Set it as PHP_CodeSniffer phpstorm:php:quality tools
 
 ** PHPUnit
 - https://phpunit.de/getting-started/phpunit-9.html
@@ -46709,8 +46711,9 @@ Which group a user belongs to ~groups username~
 
 [[https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos][More info]]
 
-*** Change a user's password
-Login as root and run ~passwd~, ~sudo passwd ausername~
+*** Change a user's password <<<linux:user:passwd>>>
+- Login as root and run ~passwd~ to change root password
+- ~sudo passwd ausername~ :: change another user's password
 
 *** List all users ~cut -d: -f1 /etc/passwd~ or ~cat /etc/passwd~ <<<linux:/etc/passwd>>>
 - Login username
@@ -46773,7 +46776,7 @@ Refer to
 - aws:scp
 - linux:package:openssh-client
 
-*** Install SSH Server
+*** Install SSH Server <<<linux:ssh:install>>>
 Ubuntu
 #+BEGIN_SRC sh
   sudo apt install ssh
@@ -46790,13 +46793,16 @@ Ubuntu
   sudo systemctl enable ssh
 #+END_SRC
 
-*** Transfer Client Key to Host
-Generate a private key on your local machine ~ssh-keygen -t rsa~
-Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
+*** Generate client public and private keys, transfer public key to remote <<<linux:ssh:public-private>>>
+- Generate a private key on your local machine ~ssh-keygen -t rsa~
+- Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
 - Show the public key and later copy to cloud server :: ~cat ~/.ssh/id_rsa.pub~
-
-When using private key you might encounter ~Permissions 0777 for '~/.ssh/id_rsa_your_private_key' are too open~
+- When using private key you might encounter ~Permissions 0777 for '~/.ssh/id_rsa_your_private_key' are too open~
 Use ~chmod 400 ~/.ssh/id_rsa_your_private_key~ to fix it chmod:400
+- Move public key to remote
+   - Fast way
+      - Append the client public key to remote host's ~/.ssh/authorized_keys~ :: ~ssh-copy-id remoteusername@123.45.56.78~
+      - Or specify a public key file :: ~ssh-copy-id -i ~/.ssh/id_rsa.pub remoteusername@123.45.56.78~
 
 **** Manual way move pub key to remote
 - On the remote server, login as a normal user ~sudo su - username~
@@ -46817,10 +46823,6 @@ Add a name to id_rsa.pub
   cat yourpubkey.pub
   ssh-rsa longstring yourname@yourhost
 #+END_SRC
-
-**** Fast way move pub key to remote
-Append the client public key to remote host's ~/.ssh/authorized_keys~ :: ~ssh-copy-id remoteusername@123.45.56.78~
-Or specify a public key file :: ~ssh-copy-id -i ~/.ssh/mykey remoteusername@123.45.56.78~
 
 **** Move private key to another computer
 - ~mkdir .ssh~ ~chmod 700 .ssh~
@@ -46847,7 +46849,7 @@ The following no longer works
   cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
 #+END_SRC
 
-*** ssh config
+*** ssh config <<<linux:ssh:config>>>
 Create ssh host alias and the private key to use in =~/.ssh/config= file
 
 #+BEGIN_SRC sh
@@ -46867,6 +46869,7 @@ Create ssh host alias and the private key to use in =~/.ssh/config= file
   Host example2
       HostName example.com
       User root
+      Password abc
 
   Host example3
       HostName 64.233.160.0
@@ -46881,9 +46884,8 @@ Create ssh host alias and the private key to use in =~/.ssh/config= file
       IdentityFile /path/to/special/privatekey/amazon.pem
 #+END_SRC
 
-Sends a packet to the server every 240 seconds (4 minutes). If the client does not receive a response after 2 tries, it closes the connection.
-
-In Putty, under Connection > Seconds between keepalives > 240
+- ~ServerAliveInterval 240~ :: Sends a packet to the server every 240 seconds (4 minutes). If the client does not receive a response after 2 tries, it closes the connection.
+   - In Putty, under Connection > Seconds between keepalives > 240
 
 *** Use private key from SSH server to connect
 AWS uses .pem file as the private key on its SSH server.
@@ -46901,15 +46903,13 @@ Refer to aws:ssh
 #+END_SRC
 
 *** Disallow SSH as root user, SSH Daemon Config <<<linux:ssh:disallow_root>>>
-Login as root then
-~nano /etc/ssh/sshd_config~
-Change ~PermitRootLogin yes~ to no
+- Login as root then ~nano /etc/ssh/sshd_config~
+- Change ~PermitRootLogin yes~ to no <<<linux:ssh:permitrootlogin>>>
 Restart SSH
-Before logout, open another terminal to see if it works.
+- Before logout, open another terminal to see if it works
+- Default SSH port is 22 <<<linux:ssh:sshd_config:port>>>
 
-Default SSH port is 22
-
-*** Disable Password Authentication
+*** Disable Password Authentication <<<linux:ssh:sshd_config:passwordauthentication>>>
 - Force to use public key only instead of plain password only :: ~sudo nano /etc/ssh/sshd_config~
 - Replace ~#PasswordAuthentication yes~ with ~PasswordAuthentication no~
 - linux:ssh:restart
@@ -47000,15 +47000,14 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 #+END_SRC
 
 *** SSH tunneling
-Port forwarding is also called tunneling.
-
-Say your IMAP port 143 to gmail is blocked by Wi-fi firewall. 
-
-Default ssh port is 22. Default https port is 443.
-
-For Github and BitBucket, you can directly change to use port 443 without doing anything.
-
-If you have control of the target server's ssh server, simply just add port 443 to /etc/ssh/sshd_config and use -p 443 locally.
+- Port forwarding is also called tunneling
+- Say your IMAP port 143 to gmail is blocked by Wi-fi firewall
+- Default ssh port is 22. Default https port is 443
+   - For Github and BitBucket, you can directly change to use port 443 without doing anything
+   - If you have control of the target server's ssh server, simply just add port 443 to /etc/ssh/sshd_config and use ~-p 443~ locally
+- Required server-side config
+   - AllowTcpForwarding :: yes (default, means, allow all forwarding ~local~ / ~remote~ to allow local/remote forwarding) <<<linux:ssh:sshd_config:allowtcpforwarding>>>
+   - AllowStreamLocalForwarding :: yes (default) <<<linux:ssh:sshd_config:allowstreamlocalforwarding>>>
 
 #+BEGIN_SRC conf
   Host github.com
@@ -47021,24 +47020,20 @@ If you have control of the target server's ssh server, simply just add port 443 
 #+END_SRC
 
 **** Port Forwarding via a single intermediate host
-In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, linux:ssh:restart, ~sudo ufw allow 443/tcp~
-
-Check if it connects from local ~ssh -p 443 my.server.com~
-
-Then open, listen and forward port 10143 to destination imap.google.com at port 143 using intermediate host at 443
-#+BEGIN_SRC sh
-  ssh -L localhost:10143:mail.google.com:143 -p 443 user@my.server.com
-#+END_SRC
-
-Refer to network:port on port range you should use
-
-Change email client setting to use localhost at port 10143
-
-Multiple redirections can be set up in the same tunnel
-#+BEGIN_SRC sh
-  # add -f to go into background and -N to not launch a shell
-  ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
-#+END_SRC
+- We are going to forward local client port 10143 to an intermediate host ~my.server.com~ at port 443, which forwards to mail.google.com at 143
+   - In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, linux:ssh:restart, ~sudo ufw allow 443/tcp~
+   - Check if it connects from local ~ssh -p 443 my.server.com~
+   - Then open, listen and forward local client port 10143 to destination imap.google.com at port 143 using intermediate host at 443
+     #+BEGIN_SRC sh
+       ssh -L localhost:10143:mail.google.com:143 -p 443 user@my.server.com
+     #+END_SRC
+   - Change local email client setting to use localhost at port 10143
+- Refer to network:port on port range you should use
+- Multiple redirections can be set up in the same tunnel
+  #+BEGIN_SRC sh
+    # add -f to go into background and -N to not launch a shell
+    ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
+  #+END_SRC
 
 Now SSH to localhost:10022 will be forwarded to target_server_user@target.server.com:22 through SSH server user@my.server.com:443
 #+BEGIN_SRC sh
@@ -47047,9 +47042,8 @@ Now SSH to localhost:10022 will be forwarded to target_server_user@target.server
   rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
 #+END_SRC
 
-- -L [bind_address:]port:host:hostport :: specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine.
+- -L [bind_address:]port:host:hostport :: Local forwarding. specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine.
   - Summary :: [localhost | bind_address]:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
-
 - -D [bind_addres:]port :: similar to -L but the destionation host:hostport is not specified. It's called dynamic application-level port forwarding.
   - e.g. ~ssh -ND 10022 -p 443 user@my.server.com~
   - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
@@ -47090,7 +47084,7 @@ Now SSH to localhost:10022 will be forwarded to target_server_user@target.server
 
 #+END_SRC
 
-- ~-R [bind_address:]port:host:hostport~ :: Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
+- ~-R [bind_address:]port:host:hostport~ :: Remote forwarding. Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
   - Summary :: ~port~ my.server.com (access from internet) > -p 443 user@my.server.com (SSH) > from remote forward to host:hostport (at local).
   - host:hostport is usually localhost:8888 
   - e.g. people on the internet my.server.com:9000 to access your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
@@ -51651,7 +51645,7 @@ The temp container is then removed.
 
 Refer to docker:link
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   docker run -it --rm \
   -v=/vagrant/mydbdump:/tmp/mydbdump \
   --link wordpressdb:wpdb mysql:5.7.9 \
@@ -51660,7 +51654,7 @@ Refer to docker:link
   -P"$WPDB_PORT_3306_TCP_PORT" \
   -uroot -p"$WPDB_ENV_MYSQL_ROOT_PASSWORD" \
   wordpress < /tmp/mydbdump/pantheon_db_sql'
-#+END_EXAMPLE
+#+END_SRC
 
 *** Link <<<docker:link>>>
 Deprecated and it relies on Docker in default bridge network mode.
@@ -51674,6 +51668,11 @@ Combine --name and --hostname as much as you can
 *** --privileged <<<docker:run:privileged>>>
 e.g. allow docker container to run docker daemon, allow docker container to access all devices such as file systems.
 
+*** ~-p~ <<<docker:run:port>>>
+#+BEGIN_SRC sh
+  docker run -it -p 1234:7890
+#+END_SRC
+
 ** Containers cp logs stats start stop restart rm inspect
 - List containers :: ~docker ps -a~
 - Stop and Start :: ~docker stop containerName~ ~docker start containerName~
@@ -51686,15 +51685,13 @@ e.g. allow docker container to run docker daemon, allow docker container to acce
 - Container log :: ~docker logs -f containerName~ -f to follow log output
 
 *** docker inspect
-~docker inspect containerName~
-
-- Container network IP and settings :: ~NetworkSetting > IPAddress~ or 
-#+BEGIN_SRC bash
+- ~docker inspect containerName~
+- Container network IP and settings <<<docker:inspect:ip>>> :: ~NetworkSetting > IPAddress~ or 
+#+BEGIN_SRC sh
   docker inspect containername | grep -i "IPAddress"
 #+END_SRC
 
 - Volume :: ~Config > Volumes~ and ~Mounts~
-
 - Return true or false for container running state :: ~docker inspect -f {{.State.Running}} $CONTAINER_ID~
 
 *** docker events - Show docker system log
@@ -51811,6 +51808,7 @@ Personal dev project
 #+END_EXAMPLE
 
 ** Volume <<<docker:volume>>>
+*** Basics
 #+BEGIN_SRC sh
   # List all volumes
   docker volume ls
@@ -51824,7 +51822,7 @@ Personal dev project
   # a volume can be created when using `docker run -v some_volume:/path/to/container`
 #+END_SRC
 
-*** Access the named volume by starting another container
+*** Access the named volume by starting another container <<<docker:volume:access>>>
 On Windows, you may be forced to have named volume because file permissions cannot be set. In this case, you can start a new container to access the volume
 
 Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/html~
@@ -55813,7 +55811,7 @@ Database Drivers
 - Forward ports after Vagrant has started in VirtualBox
    - Select the running VM in VirtualBox, Settings > Network > Port Forwarding, add e.g. forward ~127.0.0.1:2223~ to ~10.0.2.15:22~
 
-** Frequent commands
+** Frequent commands <<<vagrant:ssh>>>
 #+BEGIN_SRC sh
   # force to run provision
   vagrant up --provision
@@ -55836,12 +55834,19 @@ Database Drivers
   # current vagrant vm running status
   vagrant status
 
+  # Forward ports after Vagrant has started. Forward 7000 on host to 5432 on Vagrant VM
+  vagrant ssh -- -L 7000:localhost:5432
+#+END_SRC
+
+<<<vagrant:ssh:pure ssh>>>
+#+BEGIN_SRC sh
   # Show current vagrant vm ssh config
   vagrant ssh-config
   # Usually it's 127.0.0.1:2222, notice the port may change as vagrant will auto select port if it's in use
 
-  # Forward ports after Vagrant has started. Forward 7000 on host to 5432 on Vagrant VM
-  vagrant ssh -- -L 7000:localhost:5432
+  # save to ~/.ssh/config, make it possible to use ssh directly
+  vagrant ssh-config --host myvagrant >> ~/.ssh/config
+  ssh myvagrant
 #+END_SRC
 
 ** Vagrantfile
@@ -63988,6 +63993,20 @@ Settings > Languages & Frameworks > PHP
   - include path: ~C:\Users\li\.lando\services\config\pantheon~, absolute path on server: ~/srv/includes~
 
 **** For Vagrant
+- Settings > Languages & Frameworks > PHP
+   - Choose correct PHP version
+   - Install PHP on Vagrant php:install:debian
+   - Add CLI Interpreter > type is Vagrant, choose the path of the Vagrantfile. Everything should be auto set up:
+      - Vagrant Instance Folder: C:\c
+      - Varant Host URL: ssh://vagrant@127.0.0.1:2222
+      - PHP executable :: /usr/bin/php7.3
+      - Configuration file: /etc/php/7.3/cli/php.ini
+- Settings > Languages & Frameworks > PHP > Quality Tools <<<phpstorm:php:quality tools>>>
+   - Refer to php:composer:php_codesniffer
+   - Then Editor > Inspections > PHP > Quality Tools > enable ~PHP_CodeSniffer validation~, and choose one coding standard
+- Run Code > Inspect Code > select scope, double check Quality Tools settings, run
+   - ~PHP CODE BEAUTIFIER AND FIXER~ auto fix is available to some problems listed under PHP > Quality Tools > PHP_CodeSniffer validation
+
 *** Troubleshoot
 **** TS: Reset Index
 File | Invalidate Caches and restart IDE
@@ -64009,18 +64028,78 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 - ~ext install extension.name~
 
 **** GitLens eamodio.gitlens
-**** Glitch for VS Code <<<vs:code:ext:glitch.glitch>>>
-- https://marketplace.visualstudio.com/items?itemName=glitch.glitch
-- ~C-S p~ :: glitch show commands
-   - Sign in
-   - Open Project
-
-**** MJML <<<vs:code:ext:attilabuti.vscode-mjml>>>
+***** Git History donjayamanne.githistory
 **** Live Server
 **** Live Share
+**** Remote SSH ms-vscode-remote.remote-ssh
+***** Basics
+- Basics
+   - Install SSH client on local machine. Run command in VS Code ~Remote-SSH: Connect to Host...~
+   - After successful login, open Remote Explorer in left View Bar
+      - Set up forward port
+   - File > Close Remote Connection
+- Install Local Extensions on Remote
+   - Remote Explorer > LOCAL - INSTALLED, the cloud download icon
+- Limitations
+   - Alpine Linux and non-glibc based Linux SSH remote host is not supported
+- Full doc :: https://code.visualstudio.com/docs/remote/ssh
+- Tips and Tricks :: https://code.visualstudio.com/docs/remote/troubleshooting#_ssh-tips
+   - Some files including extensions are installed in remote host =~/.vscode-server=. Local VS Code is at =~/.vscode=
+   - VS Code nees execute access on ~/tmp~ directory on remote host
+
+***** Local > Vagrant > Docker Container
+- Goal :: VS Code remote development on a Docker container, which is spawn by Vagrant (Docker host) using Remote - SSH VS Code extension
+- Install linux:ssh:install in the target container
+   - linux:ssh:permitrootlogin to yes
+   - linux:ssh:sshd_config:port to 22
+   - linux:ssh:sshd_config:passwordauthentication to yes
+   - Set a password for root linux:user:passwd
+   - linux:ssh:restart
+- On Docker host (Vagrant)
+   - Get docker container ip docker:inspect:ip
+   - Test ~ssh -p 22 root@1.2.3.4~
+   - Set up linux:ssh:config file, and linux:ssh:public-private keys, so that docker host can run ~ssh onedockercontainer~ to connect
+   - Test ~ssh onedockercontainer~
+- On Windows
+   - Copy the private key generated on Docker host to Windows =~/.ssh/id_rsa_vagrant_spawn=
+   - vagrant:ssh:pure ssh and test ~ssh myvagrant~
+   - =~/.ssh/config=
+     #+BEGIN_SRC conf
+       # This is added by `vagrant ssh-config --host myvagrant >> ~/.ssh/config`
+       Host myvagrant
+	   HostName 127.0.0.1
+	   User vagrant
+	   Port 2222
+	   UserKnownHostsFile /dev/null
+	   StrictHostKeyChecking no
+	   PasswordAuthentication no
+	   IdentityFile C:/c/.vagrant/machines/default/virtualbox/private_key
+	   IdentitiesOnly yes
+	   LogLevel FATAL
+
+       Host remotecontainer
+	   Hostname 172.17.0.2
+	   User root
+	   # the private key is copied from Docker host (Vagrant)
+	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
+	   # On Windows after `ssh -V` is v8+, just use `ssh` not the whole path of the executable
+	   ProxyCommand C:\WINDOWS\System32\OpenSSH\ssh.exe\ssh.exe myvagrant -W %h:%p
+
+       Host remotecontainer2
+	   Hostname 172.17.0.2
+	   User root
+	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
+	   # On Windows after `ssh -V` is v8+, use ProxyJump
+	   ProxyJump myvagrant
+     #+END_SRC
+   - ~ssh remotecontainer~ :: done!
+
 **** Rest Client humao.rest-clident
 - Create ~.http~ file with ~GET http://a.ca HTTP/1.1~
 - Generate target code to execute that REST request
+**** Better Comments aaron-bond.better-comments
+**** Prettier -  Code formatter
+**** Bracket Pair Colorizer 2
 
 **** Python extension for Visual Studio Code <<<vs:code:ext:my-python.python>>>
 - Select code and run :: ~S-Enter~
@@ -64034,15 +64113,21 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
    - Run Python File in Terminal
 
 **** Python Docstring Generator njpwerner.autodocstring
-**** Better Comments aaron-bond.better-comments
+**** JavaScript (ES6) code snippets xabikos.javascriptsnippets
 **** ESLint
+**** npm Intellisense christian-kohler.npm-intellisense
+Autocomplete npm modules in import statements based on package.json
+
+**** Import Cost wix.vscode-import-cost
 **** phpcs
 **** stylelint
-**** Prettier -  Code formatter
-**** Bracket Pair Colorizer 2
-**** Indenticator
+**** Glitch for VS Code <<<vs:code:ext:glitch.glitch>>>
+- https://marketplace.visualstudio.com/items?itemName=glitch.glitch
+- ~C-S p~ :: glitch show commands
+   - Sign in
+   - Open Project
 **** Sass syler.sass-indented
-**** JavaScript (ES6) code snippets xabikos.javascriptsnippets
+**** MJML <<<vs:code:ext:attilabuti.vscode-mjml>>>
 *** Shortcuts
 - Left bar is called View Bar that contains views
    - Explorer :: C-S-e
@@ -65230,6 +65315,9 @@ Ctrl+Alt+Del > Task Manager to stop Update_Windows.exe, then delete Update_Windo
   # see if a user `matt` is locked out
   Get-ADUser matt -Properties * | Select-Object LockedOut
 #+END_SRC
+
+**** Get-Command
+- See file path of a command like linux which command :: ~Get-Command ssh~ <<<windows:c:which>>>
 
 **** Get-Command - gcm
 Get manual of a command e.g. Select-String
