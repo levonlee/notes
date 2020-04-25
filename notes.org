@@ -54,11 +54,12 @@ Install multiple versions of PHP
 
 ** Configuration <<<php:config>>>
 *** Basics
-- Get php configuration files location :: ~php --ini~
-- CLI ~php -i~ :: equivalent to ~phpinfo()~
-- Get loaded extensions :: ~php -r "print_r(get_loaded_extensions());"~
-- Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
-- Changing php.ini requires restarting apache
+- CLI 
+   - Get php configuration files location :: ~php --ini~
+   - ~php -i~ :: eq. to ~phpinfo()~
+   - Get loaded extensions :: ~php -r "print_r(get_loaded_extensions());"~
+   - Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
+- Changing php.ini requires [[apache:restart][apache:restart]] or Nginx
 
 **** PHP Version
 
@@ -69,7 +70,12 @@ Install multiple versions of PHP
 #+END_SRC
 
 **** Possible places for php.ini
-- 7.x :: /etc/php/7.0/apache2/php.ini, /etc/php/7.0/apache2/conf.d/*.ini
+- 7.x
+   - Ubuntu
+      - Apache :: /etc/php/7.x/apache2/php.ini, /etc/php/7.0/apache2/conf.d/*.ini
+      - CLI :: /etc/php/7.x/cli/php.ini, /etc/php/7.x/cli/conf.d/*.ini
+   - Debian
+      - Nginx (FPM) :: [[image:php:7.x-fpm:ini][image:php:7.x-fpm:ini]]
 - 5.6 :: /usr/local/etc/php/php.ini, /usr/local/etc/php/conf.d/*.ini
 - 5.3 :: /etc/php5/apache/php.ini, /etc/php5/cli/php.ini
 
@@ -223,14 +229,14 @@ php.ini can also enable module. e.g. to enable module intl. Use php.ini:extensio
 http://php.net/manual/en/extensions.alphabetical.php
 https://pecl.php.net/packages.php
 
-*** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]] <<<php.ini:prod>>>
-error_reporint=E_ALL & ~E_DEPRECATED (22527)
+*** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]] <<php:ini:prod>>
+error_reporting=E_ALL & ~E_DEPRECATED (22527)
 display_errors=Off
 log_errors=On
 error_log not set go to Apache error log
 
-*** [[https://github.com/php/php-src/blob/master/php.ini-development][dev]] <<<php.ini:dev>>>
-*** Mail <<<php:ini:mail>>>
+*** [[https://github.com/php/php-src/blob/master/php.ini-development][dev]]
+*** Mail <<php:ini:mail>>
 http://php.net/manual/en/mail.configuration.php
 
 #+BEGIN_SRC conf
@@ -273,24 +279,34 @@ You may need to change the sendmail_path to a php wrapper instead of just adding
 http://www.matteomattei.com/how-to-log-email-sent-from-php-through-mail-function/
 https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-detect-form-spam
 
-*** Error log <<<php:show error>>>
+*** Error log <<php:ini:error>>
 - d7:show error
 - d7:debug
 - wp:show error
 - [[http://php.net/manual/en/errorfunc.configuration.php][Runtime configuration for error handling]]
-
-#+BEGIN_SRC php
-  ini_set('display_errors', 1);
-  ini_set('display_startup_errors', 1);
-  error_reporting(E_ALL);
-#+END_SRC
-
-- display_errors, display_startup_errors bool or stderr :: prod always use Off
-- log_errors bool :: prod needs to log error instead of display_errors. If true, either to server's system log or error_log
-- log_errors_max_len :: (1024) in bytes. 0 to no limit
-- error_log :: (NULL) place to store error log. If not set, errors are sent to SAPI error logger e.g. Apache error log or stderr in CLI.
-- error_reporting :: E_ALL & ~E_DEPRECATED & ~E_NOTICE :: show all except deprecated and notice
-  - 22527 :: E_ALL & ~E_DEPRECATED
+- Sample
+  #+BEGIN_SRC php
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+  #+END_SRC
+- ~display_errors~, ~display_startup_errors~
+   - PHP_INI_ALL. Default 1
+   - PROD always uses ~Off~ or ~0~ 
+- ~log_errors~
+   - PHP_INI_ALL. default ~0~. prod needs to log error instead of display_errors. If true, either to server's system log or error_log
+- ~log_errors_max_len~
+   - PHP_INI_ALL. default 1024 (bytes). 0 to no limit
+- ~error_log~
+   - PHP_INI_ALL. default NULL or empty. place to store error log. If not set, errors are sent to SAPI error logger e.g. Apache error log or stderr in CLI
+- ~error_reporting~ <<php:ini:error_reporting>>
+   - PHP_INI_ALL
+   - =E_ALL & ~E_DEPRECATED & ~E_NOTICE= :: show all except deprecated and notice 
+   - ~22527~ :: eq. ~E_ALL & ~E_DEPRECATED~
+- Trigger error <<php:trigger_error>>
+  #+BEGIN_SRC php
+    trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
+  #+END_SRC
 
 ** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
 ** Protocols
@@ -3817,16 +3833,16 @@ array() is to t() $message. Don't forget to put empty array otherwise you will h
 
 If error or warning messages are printed using drupal_set_message, 
 modify the `drupal_set_message` function so that it prints debug_backtrace
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   if ($type == 'error') {
     $message .= ' '. print_r(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT,3),1);
   }
-#+END_EXAMPLE
+#+END_SRC
 
 You can throw an Exception
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   throw new Exception(print_r($val));
-#+END_EXAMPLE
+#+END_SRC
 
 #+BEGIN_EXAMPLE
   if (ip_address() === '123.456.789.123') {
@@ -8201,17 +8217,17 @@ Make sure this line is exactly like this and wp-config.php shouldn't run any WP 
 Latest version of WordPress Docker is PHP 7 and hence has some extensions removed like mysql_connect. Make sure your PHP environment is the same for WordPress and wp-cli.
 
 **** Out of memory
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   php -i | grep php.ini
 
   # /usr/local/etc/php/conf.d/myphp.ini
   memory_limit=512M
 
-  # apache:restart
+  # then apache:restart
 
   # Or you can run this to temporarily change the memory limit
   php -d memory_limit=512M "$(which wp)" package install <package-name>
-#+END_EXAMPLE
+#+END_SRC
 
 **** Allow root <<<wp-cli:allow-root>>>
 This is for interactive shell
@@ -46776,7 +46792,7 @@ Refer to
 - aws:scp
 - linux:package:openssh-client
 
-*** Install SSH Server <<<linux:ssh:install>>>
+*** Install SSH Server <<linux:ssh:install>>
 Ubuntu
 #+BEGIN_SRC sh
   sudo apt install ssh
@@ -46887,12 +46903,16 @@ Create ssh host alias and the private key to use in =~/.ssh/config= file
 - ~ServerAliveInterval 240~ :: Sends a packet to the server every 240 seconds (4 minutes). If the client does not receive a response after 2 tries, it closes the connection.
    - In Putty, under Connection > Seconds between keepalives > 240
 
+*** Remove a known_host <<linux:ssh:known_hosts:remove>>
+- TS: SSH Client, Warning Remote Host Identification Has Changed!
+- ~ssh-keygen -f "/home/vagrant/.ssh/known_hosts" -R "[172.22.0.3]:2222"~
+
 *** Use private key from SSH server to connect
 AWS uses .pem file as the private key on its SSH server.
 Convert this .pem file in PuttyGen and later uses it to connect to AWS
 Refer to aws:ssh
 
-*** Restart SSH <<<linux:ssh:restart>>>
+*** Restart SSH <<linux:ssh:restart>>
 - General :: ~service ssh restart~
 - Ubuntu :: ~sudo systemctl reload sshd~ (16.04) or ~sudo systemctl restart sshd~ (16.04) or ~sudo restart ssh~ (14.04)
 
@@ -46904,12 +46924,12 @@ Refer to aws:ssh
 
 *** Disallow SSH as root user, SSH Daemon Config <<<linux:ssh:disallow_root>>>
 - Login as root then ~nano /etc/ssh/sshd_config~
-- Change ~PermitRootLogin yes~ to no <<<linux:ssh:permitrootlogin>>>
+- Change ~PermitRootLogin yes~ to no <<linux:ssh:permitrootlogin>>
 Restart SSH
 - Before logout, open another terminal to see if it works
-- Default SSH port is 22 <<<linux:ssh:sshd_config:port>>>
+- Default SSH port is 22 <<linux:ssh:sshd_config:port>>
 
-*** Disable Password Authentication <<<linux:ssh:sshd_config:passwordauthentication>>>
+*** Disable Password Authentication <<linux:ssh:sshd_config:passwordauthentication>>
 - Force to use public key only instead of plain password only :: ~sudo nano /etc/ssh/sshd_config~
 - Replace ~#PasswordAuthentication yes~ with ~PasswordAuthentication no~
 - linux:ssh:restart
@@ -46953,7 +46973,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
   gpg -d -q .sshpassword.gpg > fifo; sshpass -f fifo ssh vivek@server1.cyberciti.biz
 #+END_SRC
 
-*** Random password <<<linux:ssh:random password>>>
+*** Random password <<linux:ssh:random password>>
 #+BEGIN_SRC sh
   # base64 will likely to have = at the end, remove those to have length 16
   openssl rand -base64 17
@@ -47006,8 +47026,8 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
    - For Github and BitBucket, you can directly change to use port 443 without doing anything
    - If you have control of the target server's ssh server, simply just add port 443 to /etc/ssh/sshd_config and use ~-p 443~ locally
 - Required server-side config
-   - AllowTcpForwarding :: yes (default, means, allow all forwarding ~local~ / ~remote~ to allow local/remote forwarding) <<<linux:ssh:sshd_config:allowtcpforwarding>>>
-   - AllowStreamLocalForwarding :: yes (default) <<<linux:ssh:sshd_config:allowstreamlocalforwarding>>>
+   - AllowTcpForwarding :: yes (default, means, allow all forwarding ~local~ / ~remote~ to allow local/remote forwarding) <<linux:ssh:sshd_config:allowtcpforwarding>>
+   - AllowStreamLocalForwarding :: yes (default) <<linux:ssh:sshd_config:allowstreamlocalforwarding>>
 
 #+BEGIN_SRC conf
   Host github.com
@@ -47021,7 +47041,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 
 **** Port Forwarding via a single intermediate host
 - We are going to forward local client port 10143 to an intermediate host ~my.server.com~ at port 443, which forwards to mail.google.com at 143
-   - In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, linux:ssh:restart, ~sudo ufw allow 443/tcp~
+   - In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, [[linux:ssh:restart][linux:ssh:restart]], ~sudo ufw allow 443/tcp~
    - Check if it connects from local ~ssh -p 443 my.server.com~
    - Then open, listen and forward local client port 10143 to destination imap.google.com at port 143 using intermediate host at 443
      #+BEGIN_SRC sh
@@ -47089,7 +47109,7 @@ Now SSH to localhost:10022 will be forwarded to target_server_user@target.server
   - host:hostport is usually localhost:8888 
   - e.g. people on the internet my.server.com:9000 to access your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
   - ~ssh -R 9000:localhost:8001 -p 443 user@my.server.com~
-  - In order to use ~-R~, on my.server.com add this line to ~/etc/ssh/sshd_config~ then linux:ssh:restart :: ~GatewayPorts yes~
+  - In order to use ~-R~, on my.server.com add this line to ~/etc/ssh/sshd_config~ then [[linux:ssh:restart][linux:ssh:restart]] :: ~GatewayPorts yes~
 - -g :: allows remote hosts to connect to local forwarded ports.
 - -N :: don't run command. Just forwarding ports.
 
@@ -48854,7 +48874,7 @@ Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total ho
 *** Port <<<network:port>>>
 - If a port is in use ~telnet localhost 9000~, if it's connected, it's in use
    - It's better to use ~telnet IP_address port_number~ in an external computer to connect to a port to check if it's in use
-- ~netstat~ <<<linux:netstat>>>
+- ~netstat~ <<linux:netstat>>
    - List all ports in use ~netstat -lp~ or ~netstat -nlp~ to list in numeric form
    - Search a port ~netstat -nlp | grep 8000~
    - In Windows, to see if a port is being used in a local computer
@@ -49294,7 +49314,7 @@ For example, create a webhooks.conf file to monitor a process
   sendmail -bp
 #+END_SRC
 
-- Should setup logging in app level, such as php:ini:mail
+- Should setup logging in app level, such as [[php:ini:mail][php:ini:mail]]
 - Executable path :: ~/usr/sbin/sendmail~
 
 **** ssmtp <<<linux:ssmtp>>>
@@ -51468,7 +51488,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
    - Nginx requires to package the intermediate certificates in a single bundle with the end-user certificate
       - nginx:ssl:config
       - nginx:ssl:example
-      - nginx:restart
+      - [[nginx:restart][nginx:restart]]
       - Redirect HTTP to HTTPS :: nginx:redirect:HttpToHttps
    - Apache requires to bundle the intermediate certificates and assign the location of the bundle to ~SSLCertificateChainFile~ config
       - Inside the PHP + Apache container, copy the ~<VirtualHost: *:80>~ and make it ~*:443~ and add 3 lines of SSL config as described in apache:ssl
@@ -52567,9 +52587,10 @@ Short name: php:5.6.31-apache
 Parent: image:debian:jessie
 [[https://github.com/docker-library/php/blob/0bb4068bd639ba98631bc2999e0d20cae583ec00/5.6/jessie/apache/Dockerfile][Dockerfile]]
 
-Refer to apache:config
+Refer to [[apache:config][apache:config]]
 
-PHP_INI_DIR :: /usr/local/etc/php (/conf.d)
+- PHP_INI_DIR
+   - image:php:/usr/local/etc/php (/conf.d)
 
 APACHE_CONFDIR :: /etc/apache2
 APACHE_ENVVAR ::  /etc/apache2/envvars
@@ -52756,10 +52777,19 @@ This one is Debian and has curl
         - dbhoht
 #+END_EXAMPLE
 
-** image:php:7 <<<image:php:7>>>
+** image:php:7 <<image:php:7>>
 - Tag latest is 7.2.3-cli-stretch
 - php:7.2.3-apache <<<image:php:7:apache>>>
 - Installed PHP extensions :: ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
+
+** image:php:7-fpm <<image:php:7.x-fpm>>
+- Tag latest is php:7.2-fpm
+- FPM is for Nginx
+- PHP_INI_DIR <<image:php:7.x-fpm:ini>>
+   - ~/usr/local/etc/php/php.ini~
+   - ~/usr/local/etc/php/conf.d/*.ini~
+      - Setting of extensions installed by docker-php-ext-enable <<image:php:7.x-fpm:ini:extensions>>
+   - Restart using ~docker-compose restart phpcontainername~
 
 ** image:python <<<image:python>>>
 - ~python:3~
@@ -55811,7 +55841,7 @@ Database Drivers
 - Forward ports after Vagrant has started in VirtualBox
    - Select the running VM in VirtualBox, Settings > Network > Port Forwarding, add e.g. forward ~127.0.0.1:2223~ to ~10.0.2.15:22~
 
-** Frequent commands <<<vagrant:ssh>>>
+** Frequent commands <<vagrant:ssh>>
 #+BEGIN_SRC sh
   # force to run provision
   vagrant up --provision
@@ -55838,7 +55868,15 @@ Database Drivers
   vagrant ssh -- -L 7000:localhost:5432
 #+END_SRC
 
-<<<vagrant:ssh:pure ssh>>>
+Connect from Vagrant to Host using Host IP <<vagrant:host:ip>>
+#+BEGIN_SRC sh
+  # get the default gateway
+  netstat -rn
+
+  # Usually, it is 10.0.2.2
+#+END_SRC
+
+Vagrant Pure SSH <<vagrant:ssh:pure ssh>>
 #+BEGIN_SRC sh
   # Show current vagrant vm ssh config
   vagrant ssh-config
@@ -56034,9 +56072,9 @@ Convert the Identityfile to .ppk with SSH-2-RSA with 2048 bits and save it to th
 ** Basics
 Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ in Ubuntu
 
-** Config loading <<<apache:config>>>
+** Config loading <<apache:config>>
 - ~apt-get update; apt-get install apache2~
-- Refer to apache:config:main file
+- Refer to [[apache:config:main file][apache:config:main file]]
 - Refer to image:php:apache to get configs
 - Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for ~HTTPD_ROOT~ and ~SERVER_CONFIG_FILE~
 - Show parsed vhost settings and run settings :: ~apache2ctl -S~
@@ -56111,12 +56149,12 @@ Sample for image:php:apache
   </VirtualHost>
 #+END_EXAMPLE
 
-*** Main Config files <<<apache:config:main file>>>
+*** Main Config files <<apache:config:main file>>
 - Main config file
    - /etc/apache2/apache2.conf
    - /etc/httpd/httpd.conf
    - /usr/local/apache/conf/httpd.conf
-   - Run apache:config to get Apache root directory to find config location
+   - Run [[apache:config][apache:config]] to get Apache root directory to find config location
 - ~*.conf~ files loading sequence
   #+BEGIN_SRC conf
     # include module config
@@ -56135,7 +56173,7 @@ Sample for image:php:apache
   #+END_SRC
 - Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
 
-*** Restart <<<apache:restart>>>
+*** Restart <<apache:restart>>
 - Check config before restart. Wrong config (e.g. SSL) may prevent Apache from starting
    - ~apache2ctl configtest~
    - ~apachectl configtest~
@@ -56157,7 +56195,7 @@ Command line enable modules
   # some modules need to load config. If don't specify, then the following modules don't need a3enconf
 
   a2enconf remoteip
-  # apache:restart
+  # then apache:restart
 #+END_SRC
 
 *** remoteip
@@ -56171,10 +56209,10 @@ Create remoteip.conf file under /etc/apache2/conf-available/remoteip.conf
   RemoteIPProxiesHeader X-Forwarded-By
 #+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   a2enmod remoteip && a2enconf remoteip
-  apache:restart
-#+END_EXAMPLE
+  # then apache:restart
+#+END_SRC
 
 *** mod_setenvif
 #+BEGIN_SRC apache
@@ -56802,7 +56840,7 @@ InMotion https://www.inmotionhosting.com/support/website/ssl/how-to-force-https-
 	    SSLCertificateChainFile /path/to/DigiCertCA.crt
     </VirtualHost>
   #+END_SRC
-- Check before apache:restart
+- Check before [[apache:restart][apache:restart]]
 
 ** Redirect to HTTPS <<<apache:https>>>
 #+BEGIN_SRC apache
@@ -56883,7 +56921,7 @@ Enable HTTPS, allow Full and delete HTTP
   sudo ufw delete allow 'Nginx HTTP'
 #+END_SRC
 
-*** Service Check, reload, restart, Check syntax <<<nginx:restart>>>
+*** Service Check, reload, restart, Check syntax <<nginx:restart>>
 - Check syntax for config before restart :: ~sudo nginx -t~
 - ~systemctl stop/start/restart/reload/disable/enable nginx~
    - status :: ~systemctl status nginx~
@@ -63959,25 +63997,19 @@ Settings > Languages & Frameworks > PHP > Frameworks > WordPress > Enable WordPr
 - Specify installation path
 - May also need to add the installation path to Settings > Languages & Frameworks > PHP > Include Path
 
-*** XDebug <<<phpstorm:xdebug>>>
-https://www.drupaleasy.com/blogs/ultimike/2018/01/setting-xdebug-lando-and-phpstorm
-
-Since XDebug 2.0, protocol DBGp is used.
-
-Config on XDebug host, IDE is client
-- ~xdebug.remote_enable = 1~
-- Debugger should connect to client using ~remote_host~ (e.g. ~host.docker.internal~ ~localhost~) ~remote_port~ (e.g. 9000)
-- remote_mode
-  - req :: default debugger initiates a session as soon as script is started
-  - jit :: initiate when a session should only be initiated on an error 
-
-When one of these happens, XDebug debugger will activate:
-- ~XDEBUG_SESSION_START=session_name~ in URL, ~XDEBUG_SESSION_START~ as POST parameter, or a cookie named ~XDEBUG_SESSION~. Chrome extension just adds a cookie in order to enable XDebug
-- ~export XDEBUG_CONFIG="idekey=session_name remote_host=localhost profiler_enable=1"~ in XDebug host
-
-Consider extend timeout
-- nginx:d:fastcgi_read_timeout
-- php.ini:max_execution_time
+*** Xdebug <<<phpstorm:xdebug>>>
+- https://www.drupaleasy.com/blogs/ultimike/2018/01/setting-xdebug-lando-and-phpstorm
+- Since XDebug 2.0, protocol DBGp is used
+- Set up [[xdebug:config][xdebug:config]]
+- Restart the [[image:php:7.x-fpm][image:php:7.x-fpm]] container or apache:restart or nginx:restart 
+- When one of these happens, XDebug server will try to connect IDE debugger:
+   - ~XDEBUG_SESSION_START=session_name~ in URL
+   - ~XDEBUG_SESSION_START~ as POST parameter
+   - a cookie named ~XDEBUG_SESSION~
+      - *Install [[https://chrome.google.com/webstore/detail/xdebug-helper/eadndfjplgieldjbigjakmdgkmoaaaoc][Chrome extension]]* which adds a cookie in order to enable XDebug
+   - ~export XDEBUG_CONFIG="idekey=session_name remote_host=localhost profiler_enable=1"~ in XDebug host
+- ~Start Listening for PHP Debug Connections~ on phpStorm
+   - IDE's debugger works by listening the remote_port. It works without setting up any CLI interpreter
 
 **** For lando:xdebug
 https://www.youtube.com/watch?v=sHNJxx0L9r0
@@ -63992,7 +64024,7 @@ Settings > Languages & Frameworks > PHP
   - =~/.lando/services/config/pantheon= or Windows ~C:\Users\li\.lando\services\config\pantheon~
   - Or other recipe ~C:\Users\li\.lando\services\config\drupal8~
   - The point is to load ~prepend.php~ which defines global vars related to environments
-- Enable PhpStorm to listen for XDebug connections, then load the local website, accept the Incoming Connection from XDebug
+- ~Start Listening for PHP Debug Connections~, then load the local website, accept the Incoming Connection from XDebug
 - Settings > Languages & Frameworks > PHP > Servers will show the newly accepted connection as a server. Make sure the following is correct
   - host: appserver, port: 80, debugger: XDebug
   - project files: ~your-local-directory-of-the-project~, absolute path on server: ~/app~ (very important)
@@ -64012,6 +64044,56 @@ Settings > Languages & Frameworks > PHP
    - Then Editor > Inspections > PHP > Quality Tools > enable ~PHP_CodeSniffer validation~, and choose one coding standard
 - Run Code > Inspect Code > select scope, double check Quality Tools settings, run
    - ~PHP CODE BEAUTIFIER AND FIXER~ auto fix is available to some problems listed under PHP > Quality Tools > PHP_CodeSniffer validation
+
+**** For Docker > Vagrant > Windows <<phpstorm:php:cli:ssh proxy>>
+- Do the same as [[vscode:remote:ssh:proxy][vscode:remote:ssh:proxy]]
+- Settings > Language & Frameworks > PHP
+- Choose correct PHP version
+- New CLI Interpreter, type ~SSH Credentials~
+   - Host, Port, User name have to be filled. Same as Windows local =~/.ssh/config= for ~remotecontainer~
+   - Auth type: OpenSSH config and authentication agent
+   - Select the CLI php. Find it in Docker container by ~which php~
+- Path mappings :: ~<Project root> -> /var/www/html~
+
+**** XDebug config <<xdebug:config>>
+- https://xdebug.org/docs/all_settings
+- Config location [[image:php:7.x-fpm:ini:extensions][image:php:7.x-fpm:ini:extensions]]
+- remote_host could be
+   - [[vagrant:host:ip][vagrant:host:ip]]
+- Consider extend timeout
+   - nginx:d:fastcgi_read_timeout
+   - php.ini:max_execution_time
+
+#+BEGIN_SRC conf
+  # Type configname = default
+  # boolean xdebug.collect_vars = false 
+  # integer xdebug.show_local_vars = 0
+
+  # boolean xdebug.remote_enable = false
+  xdebug.remote_enable = 1
+
+  # If it's 1, remote_host will be ignored. Xdebug on server will try to connect debugger e.g. IDE using $_SERVER['REMOTE_ADDR'] and xdebug.remote_port 
+  # This remote_connect_back only works for HTTP but not CLI request
+  # xdebug.remote_connect_back = 1
+
+  # Docker container hosted on Vagrant and IDE is on Windows. Docker container with Xdebug server can connect to Windows using an IP
+  # If Xdebug is on a Docker container hosted directly on Windows, consider use `host.docker.internal` or `localhost`
+  xdebug.remote_host=10.0.2.2
+
+  # default. Xdebug server will try to combine remote_host or $_SERVER['REMOTE_ADDR'] and this remote_port to connect the debugger e.g. on IDE over the internet
+  # No port forwarding should be set up as the connection is over the internet
+  # xdebug.remote_port=9000
+
+  # req :: default. initiates a session as soon as script is started
+  # jit :: initiate when a session should only be initiated on an error 
+  # xdebug.remote_mode = req
+
+  # Default. Xdebug server does not attempt to try to connect to a debug client e.g. IDE
+  # xdebug.remote_autostart=false
+
+  # Shows whether or not Xdebug server can connect to a debug client
+  # xdebug.remote_log=/tmp/xdebug.log
+#+END_SRC
 
 *** Troubleshoot
 **** TS: Reset Index
@@ -64053,14 +64135,14 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
    - Some files including extensions are installed in remote host =~/.vscode-server=. Local VS Code is at =~/.vscode=
    - VS Code nees execute access on ~/tmp~ directory on remote host
 
-***** Local > Vagrant > Docker Container
+***** Local > Vagrant > Docker Container <<vscode:remote:ssh:proxy>>
 - Goal :: VS Code remote development on a Docker container, which is spawn by Vagrant (Docker host) using Remote - SSH VS Code extension
-- Install linux:ssh:install in the target container
-   - linux:ssh:permitrootlogin to yes
-   - linux:ssh:sshd_config:port to 22
-   - linux:ssh:sshd_config:passwordauthentication to yes
+- Install [[linux:ssh:install][linux:ssh:install]] in the target container
+   - [[linux:ssh:permitrootlogin][linux:ssh:permitrootlogin]] to yes
+   - [[linux:ssh:sshd_config:port][linux:ssh:sshd_config:port]] to 22
+   - [[linux:ssh:sshd_config:passwordauthentication][linux:ssh:sshd_config:passwordauthentication]] to yes
    - Set a password for root linux:user:passwd
-   - linux:ssh:restart
+   - [[linux:ssh:restart][linux:ssh:restart]]
 - On Docker host (Vagrant)
    - Get docker container ip docker:inspect:ip
    - Test ~ssh -p 22 root@1.2.3.4~
@@ -64068,7 +64150,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
    - Test ~ssh onedockercontainer~
 - On Windows
    - Copy the private key generated on Docker host to Windows =~/.ssh/id_rsa_vagrant_spawn=
-   - vagrant:ssh:pure ssh and test ~ssh myvagrant~
+   - [[vagrant:ssh:pure ssh][vagrant:ssh:pure ssh]] and test ~ssh myvagrant~
    - =~/.ssh/config=
      #+BEGIN_SRC conf
        # This is added by `vagrant ssh-config --host myvagrant >> ~/.ssh/config`
@@ -64089,7 +64171,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 	   # the private key is copied from Docker host (Vagrant)
 	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
 	   # On Windows after `ssh -V` is v8+, just use `ssh` not the whole path of the executable
-	   ProxyCommand C:\WINDOWS\System32\OpenSSH\ssh.exe\ssh.exe myvagrant -W %h:%p
+	   ProxyCommand C:\WINDOWS\System32\OpenSSH\ssh.exe myvagrant -W %h:%p
 
        Host remotecontainer2
 	   Hostname 172.17.0.2
@@ -64099,6 +64181,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 	   ProxyJump myvagrant
      #+END_SRC
    - ~ssh remotecontainer~ :: done!
+- TS: may need to [[linux:ssh:known_hosts:remove][linux:ssh:known_hosts:remove]]
 
 **** Rest Client humao.rest-clident
 - Create ~.http~ file with ~GET http://a.ca HTTP/1.1~
