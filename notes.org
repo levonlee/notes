@@ -48763,18 +48763,15 @@ Linux OS always uses physical memory so free is always low.
 
 A Linux system is really low on memory if the free value in -/+ buffers/cache: line gets low which is the available column in new Linux.
 
-** Service
-~service --status-all~
-- List all services (on '+', off '-', managed by Upstart '?') 
-
-~systemctl~ :: List running services only with more detail
-
-~service~ operates on the daemon files in ~/etc/init.d~ which is an old init system.
-
-~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old init.
-
-Some daemon files can do restart and it might be the preferred way to interact with service. e.g.
-~sudo /etc/init.d/jenkins restart~
+** Service <<linux:init>>
+- System V init system
+   - ~service --status-all~ :: List all services (on '+', off '-', managed by Upstart '?') 
+   - ~service~ operates on the daemon files in ~/etc/init.d~ which is an old init system
+- SystemD :: System Management Daemon
+   - a new init system :: parallel
+   - ~systemctl~ :: List running services only with more detail
+   - ~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old System V init
+   - Some daemon files can do restart and it might be the preferred way to interact with service. e.g. ~sudo /etc/init.d/jenkins restart~
 
 ** Network
 All active NIC and IP addresses: =ifconfig=
@@ -51619,24 +51616,15 @@ Extract Dockerfile from an image. Use one or more of below
 #+END_SRC
 
 *** docker build, docker tag
-With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
-
-Change myimage(:latest) to myimage:1.0
-~docker tag myimage myimage:1.0~
-
-Build an image and tag it with latest and 2.0
-~docker build -t myimage:latest -t myimage:2.0 .~
-
-Multiple Dockerfiles (Dockerfile1, Dockerfile2) in the current folder
-~docker build -t your-image-name -f Dockerfile2 .~
-
-Dockerfile and resource are in different folders (e.g. COPY a file from parent folder in Dockerfile)
-~docker build -t your-image-name -f /path/Dockerfile.yourname /path/to/docker/~
-
-Build a lot of times while testing a Dockerfile
-#+BEGIN_EXAMPLE
-  docker build --rm --force-rm --no-cache -t my-image-name .
-#+END_EXAMPLE
+- With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
+- Change ~myimage(:latest)~ to ~myimage:1.0~ :: ~docker tag myimage myimage:1.0~
+- Build an image and tag it with latest and 2.0 :: ~docker build -t myimage:latest -t myimage:2.0 .~
+- Multiple Dockerfiles (Dockerfile1, Dockerfile2) in the current folder :: ~docker build -t your-image-name -f Dockerfile2 .~
+- Dockerfile and resource are in different folders (e.g. COPY a file from parent folder in Dockerfile) :: ~docker build -t your-image-name -f /path/Dockerfile.yourname /path/to/docker/~
+- Build a lot of times while testing a Dockerfile
+  #+BEGIN_SRC sh
+    docker build --rm --force-rm --no-cache -t my-image-name .
+  #+END_SRC
 
 ** run
 *** Interactive mode with tty ~-it~
@@ -64003,7 +63991,9 @@ Settings > Languages & Frameworks > PHP > Frameworks > WordPress > Enable WordPr
 - Set up [[xdebug:config][xdebug:config]]
 - Restart the [[image:php:7.x-fpm][image:php:7.x-fpm]] container or apache:restart or nginx:restart 
 - When one of these happens, XDebug server will try to connect IDE debugger:
-   - ~XDEBUG_SESSION_START=session_name~ in URL
+   - URL
+      - ~XDEBUG_SESSION_START=session_name~
+      - ~XDEBUG_PROFILE=1~
    - ~XDEBUG_SESSION_START~ as POST parameter
    - a cookie named ~XDEBUG_SESSION~
       - *Install [[https://chrome.google.com/webstore/detail/xdebug-helper/eadndfjplgieldjbigjakmdgkmoaaaoc][Chrome extension]]* which adds a cookie in order to enable XDebug
@@ -64093,6 +64083,8 @@ Settings > Languages & Frameworks > PHP
 
   # Shows whether or not Xdebug server can connect to a debug client
   # xdebug.remote_log=/tmp/xdebug.log
+
+  # xdebug.profiler_enable_trigger = 1
 #+END_SRC
 
 *** Troubleshoot
