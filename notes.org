@@ -2774,7 +2774,7 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
 - PHP_CodeSniffer is installed at ~./vendor/bin/phpcs~ and it links to multiple standards installed above
    - Set it as PHP_CodeSniffer phpstorm:php:quality tools
 
-** PHPUnit
+** PHPUnit <<php:phpunit>>
 - https://phpunit.de/getting-started/phpunit-9.html
    - v9 :: PHP 7.3, 7.4
    - v8 :: PHP 7.2, 7.3
@@ -2802,6 +2802,7 @@ Javascript XMLHttpRequest made on the same domain always transfer all cookies.
    - Filter by testsuite :: ~./vendor/bin/phpunit --testsuite=app --filter=testTax~
 - Assertion methods :: https://phpunit.readthedocs.io/en/8.5/assertions.html
    - ~assertEquals(mixed $expected, mixed $actual[, string $message = ''])~
+- [[phpstorm:phpunit][phpstorm:phpunit]]
 
 *** phpunit.xml <<<phpunit:phpunit.xml>>>
 - Set filter, testsuites (groups), colors
@@ -46906,6 +46907,7 @@ Create ssh host alias and the private key to use in =~/.ssh/config= file
 *** Remove a known_host <<linux:ssh:known_hosts:remove>>
 - TS: SSH Client, Warning Remote Host Identification Has Changed!
 - ~ssh-keygen -f "/home/vagrant/.ssh/known_hosts" -R "[172.22.0.3]:2222"~
+- ~ssh-keygen -f "/home/vagrant/.ssh/known_hosts" -R "[172.22.0.3]:0"~ *use 0 for all ports*
 
 *** Use private key from SSH server to connect
 AWS uses .pem file as the private key on its SSH server.
@@ -63518,11 +63520,12 @@ BackstopJS 3
 - https://loader.io/
 
 ** Code Quality
-*** Test-Driven Development to refactor legacy code
+*** TTD: refactor legacy code
 - Add pin-down tests to cover 100% legacy code
 - Refactor
    - Start from small refactoring e.g. convert string, numbers and other hard coded variables to constants
    - De Morgan's Laws
+   - [[https://refactoring.com/catalog/][Catalog of refactorings]]
 - Add new behavior :: usually after refactoring, a new feature needs to be implemented
    - Add small test and implement smallest incremental amount of code to pass the test
 
@@ -63905,7 +63908,7 @@ Code Style
 - Use Project scheme and ~Set from~ WordPress
 - Change Tab size and Indent from 4 to 2
 
-*** Settings > Directories <<<phpstorm:settings:directories>>>
+*** Settings > Directories <<phpstorm:settings:directories>>
 **** Exclude Directories
 - Settings > Directories > Select and Exclude
 - For SFTP syncing :: Settings > Deployment > Excluded Paths
@@ -63985,8 +63988,8 @@ Settings > Languages & Frameworks > PHP > Frameworks > WordPress > Enable WordPr
 - Specify installation path
 - May also need to add the installation path to Settings > Languages & Frameworks > PHP > Include Path
 
-*** Xdebug <<<phpstorm:xdebug>>>
-- https://www.drupaleasy.com/blogs/ultimike/2018/01/setting-xdebug-lando-and-phpstorm
+*** Xdebug <<phpstorm:xdebug>>
+**** Basics
 - Since XDebug 2.0, protocol DBGp is used
 - Set up [[xdebug:config][xdebug:config]]
 - Restart the [[image:php:7.x-fpm][image:php:7.x-fpm]] container or apache:restart or nginx:restart 
@@ -64000,9 +64003,12 @@ Settings > Languages & Frameworks > PHP > Frameworks > WordPress > Enable WordPr
    - ~export XDEBUG_CONFIG="idekey=session_name remote_host=localhost profiler_enable=1"~ in XDebug host
 - ~Start Listening for PHP Debug Connections~ on phpStorm
    - IDE's debugger works by listening the remote_port. It works without setting up any CLI interpreter
+   - Only enable ~Use path mappings~ and specify the Path Mapping. Leave defaults for Name:_, Host:_, Port:80, Debugger:Xdebug
+   - The added server can be found later under Language & Frameworks > PHP > Servers
 
 **** For lando:xdebug
-https://www.youtube.com/watch?v=sHNJxx0L9r0
+- https://www.drupaleasy.com/blogs/ultimike/2018/01/setting-xdebug-lando-and-phpstorm
+- https://www.youtube.com/watch?v=sHNJxx0L9r0
 For per project to include third-party code (e.g. libraries) that is used for completion and reference resolution in functions/methods that use file paths as arguments, for example, ~require()~ or ~include()~
 
 Settings > Languages & Frameworks > PHP 
@@ -64038,12 +64044,12 @@ Settings > Languages & Frameworks > PHP
 **** For Docker > Vagrant > Windows <<phpstorm:php:cli:ssh proxy>>
 - Do the same as [[vscode:remote:ssh:proxy][vscode:remote:ssh:proxy]]
 - Settings > Language & Frameworks > PHP
-- Choose correct PHP version
-- New CLI Interpreter, type ~SSH Credentials~
-   - Host, Port, User name have to be filled. Same as Windows local =~/.ssh/config= for ~remotecontainer~
-   - Auth type: OpenSSH config and authentication agent
-   - Select the CLI php. Find it in Docker container by ~which php~
-- Path mappings :: ~<Project root> -> /var/www/html~
+   - Choose correct PHP version
+   - New CLI Interpreter, type ~SSH Credentials~
+      - Host, Port, User name have to be filled. Same as Windows local =~/.ssh/config= for ~remotecontainer~
+      - Auth type: OpenSSH config and authentication agent
+      - Select the CLI php. Find it in Docker container by ~which php~
+   - Path mappings :: ~<Project root> -> /var/www/html~
 
 **** XDebug config <<xdebug:config>>
 - https://xdebug.org/docs/all_settings
@@ -64086,6 +64092,20 @@ Settings > Languages & Frameworks > PHP
 
   # xdebug.profiler_enable_trigger = 1
 #+END_SRC
+
+*** PHPUnit <<phpstorm:phpunit>>
+- [[php:phpunit][php:phpunit]]
+- Set up CLI interpreter as Local or [[phpstorm:php:cli:ssh proxy][phpstorm:php:cli:ssh proxy]]
+- Languages & Frameworks > PHP > Test Frameworks, add a ~PHPUnit Local~ or
+   - ~PHPUnit by Remote Interpreter~
+      - Select the previously set remote CLI Interpreter, then Path Mappings is auto set
+      - PHPUnit library: Use Composer autloader
+	 - Path to script: ~/var/www/html/vendor/autoload.php~
+      - Test Runner
+	 - Default configuration file: ~/var/www/html/phpunit.xml~
+- Run > Edit Configuration, add PHPUnit
+   - Give a name and only check ~Defined in the configuration file~
+- Now click the run button!
 
 *** Troubleshoot
 **** TS: Reset Index
