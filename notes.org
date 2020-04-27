@@ -10,7 +10,7 @@
 
 * PHP
 ** Installation
-*** Debian <<<php:install:debian>>>
+*** Debian <<php:install:debian>>
 - [[https://www.php.net/supported-versions.php][Supported versions]]
 
 Install multiple versions of PHP
@@ -52,7 +52,7 @@ Install multiple versions of PHP
   php -i | grep "Loaded Configuration File"
 #+END_SRC
 
-** Configuration <<<php:config>>>
+** Configuration <<php:config>>
 *** Basics
 - CLI 
    - Get php configuration files location :: ~php --ini~
@@ -169,10 +169,12 @@ Sample production
   ;mail.force_extra_parameters =
 #+END_SRC
 
-*** [PHP] <<<php.ini:directives>>>
+*** [PHP] <<php.ini:directives>>
 http://php.net/manual/en/ini.list.php
 
 **** magic quotes
+Ignore. They are deprecated. Should be Off at all times
+
 #+BEGIN_SRC conf
   ; Magic quotes for incoming GET/POST/Cookie data.
   magic_quotes_gpc = Off
@@ -184,7 +186,7 @@ http://php.net/manual/en/ini.list.php
   magic_quotes_sybase = Off
 #+END_SRC
 
-**** allow_url_fopen <<<php.ini:allow_url_fopen>>>
+**** allow_url_fopen <<php:ini:allow_url_fopen>>
 Default is 1 to enable. If disabled, file_get_contents is not possible. This setting can only be set PHP_INI_SYSTEM
 
 **** auto_prepend_file
@@ -198,7 +200,7 @@ Default is 1 to enable. If disabled, file_get_contents is not possible. This set
   }
 #+END_SRC
 
-**** expose_php <<<php.ini:expose_php>>>
+**** expose_php <<php:ini:expose_php>>
 expose_php = On
 
 **** session <<<php.ini:session>>>
@@ -231,10 +233,33 @@ http://php.net/manual/en/extensions.alphabetical.php
 https://pecl.php.net/packages.php
 
 *** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]] <<php:ini:prod>>
-error_reporting=E_ALL & ~E_DEPRECATED (22527)
-display_errors=Off
-log_errors=On
-error_log not set go to Apache error log
+#+BEGIN_SRC conf
+  ; Show all errors, except for notices and coding standards warnings.
+  error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+  display_errors=Off
+  log_errors=On
+
+  ; error_log not set go to Apache error log
+  ; Refer to apache:core:serversignature 
+  expose_php = Off
+
+  memory_limit = 128M
+  post_max_size = 8M
+  max_execution_time = 30
+  max_input_time = 60
+
+  ; default no functions are disabled
+  ; disable_functions = show_source, exec, shell_exec, system, passthru, proc_open, popen
+
+  file_uploads = On
+  max_file_uploads = 20
+  upload_max_filesize = 2M
+
+  allow_url_fopen = On
+
+  ; Whether to allow `include`/`require` to open URLs (like http:// or ftp://) as files.
+  allow_url_include = Off
+#+END_SRC
 
 *** [[https://github.com/php/php-src/blob/master/php.ini-development][dev]]
 *** Mail <<php:ini:mail>>
@@ -300,9 +325,11 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
    - PHP_INI_ALL. default 1024 (bytes). 0 to no limit
 - ~error_log~
    - PHP_INI_ALL. default NULL or empty. place to store error log. If not set, errors are sent to SAPI error logger e.g. Apache error log or stderr in CLI
+   - ~error_log=syslog~ :: use whatever Linux syslog is using
 - ~error_reporting~ <<php:ini:error_reporting>>
    - PHP_INI_ALL
-   - =E_ALL & ~E_DEPRECATED & ~E_NOTICE= :: show all except deprecated and notice 
+   - =E_ALL & ~E_DEPRECATED & ~E_NOTICE= :: show all except deprecated and notice
+      - eq. to ~E_ALL ^ (E_DEPRECATED | E_NOTICE)~
    - ~22527~ :: eq. ~E_ALL & ~E_DEPRECATED~
 - Trigger error <<php:trigger_error>>
   #+BEGIN_SRC php
@@ -334,7 +361,7 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
   fclose($fptr);
 #+END_SRC
 
-** $_SERVER <<<php:$_SERVER>>>
+** ~$_SERVER~ <<php:$_SERVER>>
 [[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
 
 GATEWAY_INTERFACE
@@ -455,7 +482,7 @@ POST as array
 ** Filesystem
 http://php.net/manual/en/ref.filesystem.php
 
-*** Delete file - unlink
+*** Delete file <<php:unlink>>
 Use absolute path. See dirname
 #+BEGIN_SRC php
   $files = [
@@ -672,7 +699,7 @@ Here's how to remove any 4 byte character:
   );
 #+END_SRC
 
-** Array <<<php:array>>>
+** Array <<php:array>>
 *** array_merge, array_merge_recursive <<<php:array_merge>>>
 array_merge
 - only merge on the first level
@@ -953,7 +980,7 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
 - d7:ellipsis
 - php:mb_strimwidth
 
-*** Encode HTML <<<php:htmlspecialchars>>>
+*** Encode HTML <<php:htmlspecialchars>>
 - d7:functions:check_plain is ~htmlspecialchars($text, ENT_QUOTES, 'UTF-8');~ which can also be used in sanitize HTML attribute values
 - May sanitize ~$_POST~ value to safe html text
 - What it does?
@@ -981,14 +1008,32 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
   #+END_SRC
 - Flags
    - ~ENT_QUOTES~ :: convert both double and single quotes
-
-*** UTF-8 encoding <<<php:string:encoding>>> <<<php:mb_convert_encoding>>> <<<php:mb_detect_encoding>>>
+*** [[php:urlencode][php:urlencode]]
+*** strip_tags <<php:strip_tags>>
+*** UTF-8 encoding <<php:string:encoding>> <<php:mb_convert_encoding>> <<php:mb_detect_encoding>>
 Make sure the string is UTF-8 encoded especially after php:file_get_contents
 #+BEGIN_SRC php
   $twitterHTML = mb_convert_encoding($twitterHTML, 'UTF-8',
     mb_detect_encoding($twitterHTML)
   );
   echo $twitterHTML;
+#+END_SRC
+
+*** Variables to JSON <<php:json_encode>>
+#+BEGIN_SRC php
+  $a = [1,2,3];
+  var_dump(json_encode($a));
+#+END_SRC
+
+*** Back slashes for quotes and other characters <<php:addslashes>> <<php:stripslashes>>
+#+BEGIN_SRC php
+  $str = "Is your name O'Reilly?";
+
+  // Outputs: Is your name O\'Reilly?
+  echo addslashes($str);
+
+  // Outputs: Is your name O'reilly?
+  echo stripslashes($str);
 #+END_SRC
 
 *** Replace <<<php:str_replace>>>
@@ -1035,7 +1080,7 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
   }
 #+END_SRC
 
-*** sprintf and printf <<<php:sprintf>>>
+*** sprintf and printf <<php:sprintf>>
 #+BEGIN_SRC php
   // Syntax %[flags][width][.precision]specifier
 
@@ -1068,8 +1113,8 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
 #+END_SRC
 
 ** URL
-- ~urlencode~ :: encodes URL parameter values
-  - encodes spaces as plus signs current URL
+- ~urlencode()~ :: encodes URL parameter values <<php:urlencode>>
+   - encodes spaces as plus signs current URL
 
 #+BEGIN_SRC php
   $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
@@ -1405,7 +1450,7 @@ Nowdoc can't expand variables and the result is single quoted string
   EOT;
 #+END_SRC
 
-** Buffer <<<php:buffer>>>
+** Buffer <<php:buffer>>
 http://php.net/manual/en/book.outcontrol.php
 https://phpfashion.com/everything-about-output-buffering-in-php
 Send headers to browser after php has begun outputting data.
@@ -1726,7 +1771,7 @@ It can be used to demo by presenting the contents of files that use them.
   @example example1.php Some Description
 #+END_EXAMPLE
 
-** mysqli
+** mysqli <<php:mysqli>>
 #+BEGIN_SRC php
   $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
@@ -2547,7 +2592,7 @@ Pay attention to global scope
 ** Http Request - cURL, file_get_contents
 *** cURL-less <<<php:file_get_contents>>>
 Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
-Make sure php.ini:allow_url_fopen is enabled.
+Make sure [[php.ini:allow_url_fopen][php.ini:allow_url_fopen]] is enabled
 
 #+BEGIN_SRC php
   $url = 'http://server.com/path';
@@ -2571,7 +2616,7 @@ Make sure php.ini:allow_url_fopen is enabled.
   var_dump($result);
 #+END_SRC
 
-*** cURL <<<php:curl>>>
+*** cURL <<php:curl>>
 #+BEGIN_SRC php
   $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
   // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
@@ -4097,7 +4142,7 @@ Convert string to CSS ready element name, class and ID in selectors.
 *** Sanitization functions <<<d7:functions:sanitization>>>
 https://api.drupal.org/api/drupal/includes%21common.inc/group/sanitization/7.x
 
-- ~check_plain($text)~ :: refer to php:htmlspecialchars. Can be used to sanitize HTML attribute value. <<<d7:functions:check_plain>>>
+- ~check_plain($text)~ :: refer to [[php:htmlspecialchars][php:htmlspecialchars]]. Can be used to sanitize HTML attribute value. <<<d7:functions:check_plain>>>
 - drupal_strip_dangerous_protocols($uri) :: not for display.
 - ~drupal_attributes(array $attributes = [])~ :: Each array key and its value will be formatted into an attribute string. Attr. values are check_plain() but not the key (attribute name).
 - check_url($uri) :: strip and encode a uri for output to HTML. eq. to check_plain(drupal_strip_dangerous_protocols)
@@ -23974,7 +24019,7 @@ strict-origin-when-cross-origin :: Similar to origin-when-cross-origin above but
 
 unsafe-url :: The browser will always send the full URL with any request to any origin.
 
-*** Strict-Transport-Security - response <<<header:strict-transport-security>>>
+*** Strict-Transport-Security - response <<header:strict-transport-security>>
 - HSTS lets a website tell browsers that it should only be accessed using HTTPS. The first time your site is accessed using HTTPS and it returns the Strict-Transport-Security header, the browser records this information, so that future attempts to load the site using HTTP will automatically use HTTPS instead
 - ~Strict-Transport-Security: max-age=<expire-time>~
    - max-age :: The time, in seconds, that the browser should remember that a site is only to be accessed using HTTPS
@@ -24020,7 +24065,7 @@ sizes attribute has to be set in order for the Width header to be sent. In the n
   - Image server will deliver the images based on the CH request headers
 
 *** X-Powered-By
-Remove it :: apache:mod_headers php.ini:expose_php
+- Remove it :: apache:mod_headers [[apache:core:serversignanture][apache:core:serversignanture]] [[php:ini:expose_php][php:ini:expose_php]]
 
 ** Cookie <<<html:cookie>>>
 HTTP response header
@@ -51498,7 +51543,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 	  apache2ctl graceful
 	#+END_SRC
       - Redirect HTTP to HTTPS :: apache:https
-   - HSTS setup :: header:strict-transport-security
+   - HSTS setup :: [[header:strict-transport-security][header:strict-transport-security]]
 
 ** SSL Testing Tools <<<ssl:test>>>
 https://www.whynopadlock.com/
@@ -56565,7 +56610,7 @@ https://httpd.apache.org/docs/2.4/mod/core.html
   Options -MultiViews
 #+END_SRC
 
-*** AllowOverride <<<apache:core:allowoverride>>>
+*** AllowOverride <<apache:core:allowoverride>>
 AllowOverride All|None|directive-type [directive-type] ...
 context: only directory
 default: AllowOverride None (2.3.9 and later), AllowOverride All (2.3.8 and earlier)
@@ -56582,6 +56627,11 @@ Force to download a PDF file. The path doesn't matter
     Header add Content-Disposition "attachment"
   </filesMatch>
 #+END_SRC
+
+*** ServerSignature <<apache:core:serversignature>>
+- ~ServerSignature On|Off|EMail~
+- Default :: off
+- Context :: server config, virtual host, directory, .htaccess
 
 ** LogLevel
 Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
@@ -59734,7 +59784,7 @@ https://pantheon.io/docs/domains/
 *** HSTS: HTTP Header <<<hosting:pantheon:hsts>>>
 - After redirection to HTTPS is setup, set the HTTP Strict Transport Security (HSTS) header to stop client communicating to HTTP
 - A+ SSL rating will be achieved in [[https://www.ssllabs.com/ssltest/][SSL Labs]]
-- Refer to header:strict-transport-security
+- Refer to [[header:strict-transport-security][header:strict-transport-security]]
 
 WordPress: install LH HSTS plugin
 #+BEGIN_SRC sh
@@ -63801,15 +63851,13 @@ Find Action > To Tab
 **** Code > Code Completion > Basic  ~C-Space~
 **** Surround with ~M-S-z~ or ~C-M-t~ <<<phpstorm:surround with>>>
 ***** Surround with Live Template
-Select a text abc and wrap it into a function call
-
-Settings > Live Templates > under user, +, Live Template >
-Abbreviation :: lifc
-Description :: Surround with function call
-Template text :: ~$END$($SELECTION$)~
-Context :: Everywhere
-
-Then select the text, Code > Surround with, or ~M-S-z~
+- Select a text abc and wrap it into a function call
+   - Settings > Live Templates > under user, +, Live Template >
+      - Abbreviation :: ~lifc~
+      - Description :: Surround with function call
+      - Template text :: ~$END$($SELECTION$)~
+      - Context :: Everywhere
+- Select the text, Code > Surround with, or ~M-S-z~
 
 ***** Surround with Emmet phpstorm:emmet:wrap
 **** Code > Insert Live Template ~C-M-S-j~
@@ -64041,7 +64089,7 @@ Settings > Languages & Frameworks > PHP
 **** For Vagrant
 - Settings > Languages & Frameworks > PHP
    - Choose correct PHP version
-   - Install PHP on Vagrant php:install:debian
+   - Install PHP on Vagrant [[php:install:debian]]
    - Add CLI Interpreter > type is Vagrant, choose the path of the Vagrantfile. Everything should be auto set up:
       - Vagrant Instance Folder: C:\c
       - Varant Host URL: ssh://vagrant@127.0.0.1:2222
