@@ -133,43 +133,7 @@ Empty string
   ; sets foo to the string 'None'
 #+END_SRC
 
-Sample production
-
-#+BEGIN_SRC conf
-  [PHP]
-  ; copy from https://github.com/php/php-src/blob/master/php.ini-production
-
-  ;;;;;;;;;;;;;;;;;;;
-  ; Custom php.ini  ;
-  ;;;;;;;;;;;;;;;;;;;
-
-  memory_limit = 128M
-  post_max_size = 100M
-  upload_max_filesize = 100M
-  session.cookie_lifetime = 2000000
-
-  [mail function]
-  ; For Win32 only.
-  ; http://php.net/smtp
-  ;SMTP = localhost
-  ; http://php.net/smtp-port
-  ;smtp_port = 25
-
-  ; For Win32 only.
-  ; http://php.net/sendmail-from
-  ;sendmail_from = me@example.com
-
-  ; For Unix only.  You may supply arguments as well (default: "sendmail -t -i").
-  ; http://php.net/sendmail-path
-  ;sendmail_path =
-
-  ; Force the addition of the specified parameters to be passed as extra parameters
-  ; to the sendmail binary. These parameters will always replace the value of
-  ; the 5th parameter to mail().
-  ;mail.force_extra_parameters =
-#+END_SRC
-
-*** [PHP] <<php.ini:directives>>
+*** ~[PHP]~ <<php.ini:directives>>
 http://php.net/manual/en/ini.list.php
 
 **** magic quotes
@@ -203,12 +167,13 @@ Default is 1 to enable. If disabled, file_get_contents is not possible. This set
 **** expose_php <<php:ini:expose_php>>
 expose_php = On
 
-**** session <<<php.ini:session>>>
-http://us3.php.net/manual/en/session.configuration.php
-
-Most of them are PHP_INI_ALL
-- session.cookie_secure :: bool <<<php.ini:session:cookie_secure>>>
-- session.cookie_httponly :: bool
+**** session <<php:ini:session>>
+- http://us3.php.net/manual/en/session.configuration.php
+- [[php:session][php:session]]
+- Most of them are PHP_INI_ALL
+   - session.cookie_secure :: bool <<php:ini:session:cookie_secure>>
+   - session.cookie_httponly :: bool
+   - session.cookie_lifetime :: 
 
 **** extension_dir <<<php.ini:extension_dir>>>
 **** max_execution_time <<<php.ini:max_execution_time>>>
@@ -259,6 +224,15 @@ https://pecl.php.net/packages.php
 
   ; Whether to allow `include`/`require` to open URLs (like http:// or ftp://) as files.
   allow_url_include = Off
+
+  ; php:session
+
+  ; in seconds
+  session.cookie_lifetime = 0
+  session.cookie_secure = 1 ; 0 if not using SSL
+  session.cookie_httponly = 1
+  session.use_only_cookies = 1 ; ID can't come from GET or POST
+  ; session.entropy_file = "/dev/urandom" ; add more randomness bits
 #+END_SRC
 
 *** [[https://github.com/php/php-src/blob/master/php.ini-development][dev]]
@@ -372,7 +346,7 @@ SERVER_ADMIN
 SERVER_SIGNATURE
 
 *** Partyly safe
-- HTTPS
+- HTTPS :: bool whether the request is https
 - HTTP_HOST :: see below
 - REQUEST_TIME
 - REQUEST_URI :: ~/abc/xyz.html?abc=xyz~ without hash. Raw value is encoded. Use ~urldecode~
@@ -399,7 +373,7 @@ SERVER_SIGNATURE
 *** HTTP_HOST and SERVER_NAME
 - ~curl -H "Host: notyourdomain.com" http://yoursite.com/~
    - By default, ~HTTP_HOST~ or ~SERVER_NAME~ is ~notyourdomain.com~
-   - Server might hard set (static) ~SERVER_NAME~ to the a real machine name e.g. Pantheon
+   - Server might hard set (static) ~SERVER_NAME~ to a real machine name e.g. Pantheon
    - Server might dynamically set ~HTTP_HOST~ based on the request e.g. Pantheon
    - Attackers might trigger a lot of requests and cause your website that is cached by a proxy (Varnish, Cloudflare) to have wrong cache that has content which points to the attacker's domain. Cache poisoning
    - Solution :: Never display ~$_SERVER['HTTP_HOST']~ or ~$_SERVER['SERVER_NAME']~
@@ -435,49 +409,41 @@ SERVER_SIGNATURE
 #+END_SRC
 
 ** ~$_FILES~ POST method uploads
-http://www.php.net/manual/en/features.file-upload.post-method.php
+- http://www.php.net/manual/en/features.file-upload.post-method.php
+- ~<input type="file" name="userfile" >~
+   - If no name attribute, then it's ~file~, which means ~$_FILES['file']~
+- ~$_FILES['userfile']['name']~
+   - The original name of the file on the client machine
+- ~$_FILES['userfile']['type']~
+   - The mime type of the file, if the browser provided this information. An example would be "image/gif". This mime type is however not checked on the PHP side and therefore don't take its value for granted
+- ~$_FILES['userfile']['size']~
+   - size in bytes, of the uploaded file
+- ~$_FILES['userfile']['tmp_name']~
+   - Temporary filename of the file in which the uploaded file was stored on the server
+- ~$_FILES['userfile']['error']~
+   - Error code associated with this file upload. No error is 0
+- POST as array
+  #+BEGIN_SRC web-php
+    <form action="" method="post" enctype="multipart/form-data">
+	<div>Pictures:
+	    <input type="file" name="pictures[]" />
+	    <input type="file" name="pictures[]" />
+	    <input type="file" name="pictures[]" />
+	    <input type="submit" value="Send" />
+	</div>
+    </form>
 
-enctype="multipart/form-data"
-
-'userfile' is the <input> name attribute. If no name, then it's 'file' > $_FILES['file']
-
-$_FILES['userfile']['name']
-The original name of the file on the client machine.
-
-$_FILES['userfile']['type']
-The mime type of the file, if the browser provided this information. An example would be "image/gif". This mime type is however not checked on the PHP side and therefore don't take its value for granted.
-
-$_FILES['userfile']['size']
-The size, in bytes, of the uploaded file.
-
-$_FILES['userfile']['tmp_name']
-The temporary filename of the file in which the uploaded file was stored on the server.
-
-$_FILES['userfile']['error']
-The error code associated with this file upload.
-
-POST as array
-#+BEGIN_SRC web-php
-  <form action="" method="post" enctype="multipart/form-data">
-      <div>Pictures:
-	  <input type="file" name="pictures[]" />
-	  <input type="file" name="pictures[]" />
-	  <input type="file" name="pictures[]" />
-	  <input type="submit" value="Send" />
-      </div>
-  </form>
-
-  <?php
-  foreach ($_FILES["pictures"]["error"] as $key => $error) {
-      if ($error == UPLOAD_ERR_OK) {
-	  $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
-	  // basename() may prevent filesystem traversal attacks;
-	  // further validation/sanitation of the filename may be appropriate
-	  $name = basename($_FILES["pictures"]["name"][$key]);
-	  move_uploaded_file($tmp_name, "data/$name");
-      }
-  }
-#+END_SRC
+    <?php
+    foreach ($_FILES["pictures"]["error"] as $key => $error) {
+	if ($error == UPLOAD_ERR_OK) {
+	    $tmp_name = $_FILES["pictures"]["tmp_name"][$key];
+	    // basename() may prevent filesystem traversal attacks;
+	    // further validation/sanitation of the filename may be appropriate
+	    $name = basename($_FILES["pictures"]["name"][$key]);
+	    move_uploaded_file($tmp_name, "data/$name");
+	}
+    }
+  #+END_SRC
 
 ** Filesystem
 http://php.net/manual/en/ref.filesystem.php
@@ -1112,6 +1078,125 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
   $str = substr(base64_encode(sha1(mt_rand())), 0, 16);
 #+END_SRC
 
+*** Hash <<php:sha1>>
+#+BEGIN_SRC php
+  <?php
+  // Signed cookie example
+
+  function sign_string($string)
+  {
+      // Using $salt makes it hard to guess how $checksum is generated
+      // Caution: changing salt will invalidate all signed strings
+      $salt = "Simple salt";
+      $checksum = sha1($string . $salt); // Any hash algorithm would work
+      // return the string with the checksum at the end
+      return $string . '--' . $checksum;
+  }
+
+  function signed_string_is_valid($signed_string)
+  {
+      $array = explode('--', $signed_string);
+
+      if (count($array) != 2) {
+	  // string is malformed or not signed
+	  return false;
+      }
+
+      // Sign the string portion again. Should create same
+      // checksum and therefore the same signed string.
+      $new_signed_string = sign_string($array[0]);
+      if ($new_signed_string == $signed_string) {
+	  return true;
+      } else {
+	  return false;
+      }
+  }
+
+  // Uncomment to demonstrate usage
+
+  $string = "This is a test.";
+  echo "Original: " . $string . "<br />";
+  echo "<br />";
+
+  $signed_string = sign_string($string);
+  echo "Signed: " . $signed_string . "<br />";
+  echo "<br />";
+
+  $valid = signed_string_is_valid($signed_string);
+  echo "Valid? " . ($valid ? 'true' : 'false') . "<br />";
+  echo "<br />";
+
+  $tampered_string = "This was a test.--521d61df5d4c239a1f5a191ff3803826b60587a9";
+  echo "Tampered: " . $tampered_string . "<br />";
+  echo "<br />";
+
+  $valid = signed_string_is_valid($tampered_string);
+  echo "Valid? " . ($valid ? 'true' : 'false') . "<br />";
+  echo "<br />";
+#+END_SRC
+
+*** Password Hash <<php:password_hash>>
+#+BEGIN_SRC php
+  if ( isset( $_POST['submit'] ) ) {
+	  $password = $_POST['password'];
+	  echo "Text password: " . $password . "<br />";
+
+	  // Encryption example
+	  $hashed_password = password_hash( $password, PASSWORD_BCRYPT );
+	  echo "Hashed password: " . $hashed_password . "<br />";
+	  echo "<br />";
+
+	  // Verification example
+	  $wrong_password = "anything_else";
+	  $is_match       = password_verify( $wrong_password, $hashed_password );
+	  echo "Attempt 1: " . ( $is_match ? 'correct' : 'wrong' ) . "<br />";
+
+	  $is_match = password_verify( $password, $hashed_password );
+	  echo "Attempt 2: " . ( $is_match ? 'correct' : 'wrong' ) . "<br />";
+	  echo "<br />";
+	  echo "<hr />";
+  }
+#+END_SRC
+
+*** encrypt, decrypt
+- <<php:encrypt:openssl>> should be used instead of <<php:mcrypt>>
+- Encrypt
+  #+BEGIN_SRC php
+    $data = "hello";
+    $method = "aes-256-cbc";
+    $key = "123455";
+    $iv = "1234567890123456"; // has to be 16 bytes or 16 text characters
+    $iv = openssl_random_pseudo_bytes(16); // $iv should be different every time
+
+    $options = 0; // If $data, $key and $iv are normal text like above, 0 can be used. Output is base64 encoded string
+    // Otherwise use OPENSSL_RAW_DATA. Output is binary
+
+    $encryptedMessage = openssl_encrypt($data, $method, $key, $options, $iv);
+
+    echo $encryptedMessage.PHP_EOL; // because $options is 0, the encrypted message is base64 encoded
+
+    $decryptedMessage = openssl_decrypt($encryptedMessage, $method, $key, $options, $iv);
+  #+END_SRC
+- Decrypt
+  #+BEGIN_SRC php
+    $fromNode = 'encryptedString$intializedVector';
+    $fromNode = explode('$', $fromNode);
+    $key = '64 hex characters'; // same as in nodejs
+
+    $data = hex2bin($fromNode[0]);
+    $keyAES = hex2bin($key);
+    $iv = hex2bin($fromNode[1]);
+    $options = OPENSSL_RAW_DATA; // Input are all binary, output is binary, too. 
+    // But because the encrypted message is a string, the decrypted message is a string.
+
+    $decrypted = openssl_decrypt($data, 'aes-256-cbc', $keyAES, $options, $iv);
+
+    // If $data, $keyAES and $iv are raw data (bytes), use OPENSSL_RAW_DATA as $options
+    // if all 3 of them are string, use 0 as $options
+  #+END_SRC
+   - If ~$encryptedMessage~, ~$key~ and ~$iv~ are all hex, you need to convert them to binary to decrypt <<php:openssl_decrypt>>
+   - Refer to [[nodejs:decrypt][nodejs:decrypt]]
+
 ** URL
 - ~urlencode()~ :: encodes URL parameter values <<php:urlencode>>
    - encodes spaces as plus signs current URL
@@ -1377,45 +1462,6 @@ There're several ways
 
   echo(mt_rand(10,100)); // min: 0, max: 100
   $rnd = rand(pow(10, 8-1), pow(10, 8)-1); // random 7 digits integer
-#+END_SRC
-
-** encrypt, decrypt
-#+BEGIN_SRC php
-  $data = "hello";
-  $method = "aes-256-cbc";
-  $key = "123455";
-  $iv = "1234567890123456"; // has to be 16 bytes or 16 text characters
-  $iv = openssl_random_pseudo_bytes(16); // $iv should be different every time
-
-  $options = 0; // If $data, $key and $iv are normal text like above, 0 can be used. Output is base64 encoded string
-  // Otherwise use OPENSSL_RAW_DATA. Output is binary
-
-  $encryptedMessage = openssl_encrypt($data, $method, $key, $options, $iv);
-
-  echo $encryptedMessage.PHP_EOL; // because $options is 0, the encrypted message is base64 encoded
-
-  $decryptedMessage = openssl_decrypt($encryptedMessage, $method, $key, $options, $iv);
-#+END_SRC
-
-If $encryptedMessage, $key and $iv are all hex, you need to convert them to binary to decrypt
-<<<php:openssl_decrypt>>>
-Refer to nodejs:decrypt
-
-#+BEGIN_SRC php
-  $fromNode = 'encryptedString$intializedVector';
-  $fromNode = explode('$', $fromNode);
-  $key = '64 hex characters'; // same as in nodejs
-
-  $data = hex2bin($fromNode[0]);
-  $keyAES = hex2bin($key);
-  $iv = hex2bin($fromNode[1]);
-  $options = OPENSSL_RAW_DATA; // Input are all binary, output is binary, too. 
-  // But because the encrypted message is a string, the decrypted message is a string.
-
-  $decrypted = openssl_decrypt($data, 'aes-256-cbc', $keyAES, $options, $iv);
-
-  // If $data, $keyAES and $iv are raw data (bytes), use OPENSSL_RAW_DATA as $options
-  // if all 3 of them are string, use 0 as $options
 #+END_SRC
 
 ** HTML encode and decode
@@ -2592,7 +2638,7 @@ Pay attention to global scope
 ** Http Request - cURL, file_get_contents
 *** cURL-less <<<php:file_get_contents>>>
 Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
-Make sure [[php.ini:allow_url_fopen][php.ini:allow_url_fopen]] is enabled
+Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 
 #+BEGIN_SRC php
   $url = 'http://server.com/path';
@@ -2712,15 +2758,15 @@ Global names must be prefixed or use namespace.
   echo shell_exec("whoami");
 #+END_SRC
 
-** Session
-PHP relies on client cookie PHPSESSID to identify session.
-
-Javascript XMLHttpRequest made on the same domain always transfer all cookies.
-#+BEGIN_SRC php
-  // need to start session. check if session is already started.
-  if (session_id() == "")
-    session_start();
-#+END_SRC
+** Session <<php:session>>
+- PHP relies on client cookie ~PHPSESSID~ to identify session
+- JavaScript XMLHttpRequest made on the same domain always transfer all cookies
+- [[php:ini:session][php:ini:session]]
+- Need to start session. check if session is already started
+  #+BEGIN_SRC php
+    if (session_id() == "")
+      session_start();
+  #+END_SRC
 
 ** Development mode determined by url parameter
 #+BEGIN_SRC php
@@ -6918,7 +6964,7 @@ An image is a file. Get a image field:
 
 *** Get File URI from db d7:db:file uri
 ** Basic Ajax
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   // Create a menu to receive ajax
   $items['newsletter/builder_entry/%'] = array(
       'title' => "",
@@ -6940,26 +6986,27 @@ An image is a file. Get a image field:
 
       $ids = json_decode($_POST['ids']);
       foreach ($ids as $id) {
-        $id = trim($id);
-        $_SESSION['session_name']["item_" . $id] = $id;
+	$id = trim($id);
+	$_SESSION['session_name']["item_" . $id] = $id;
       }
     }
     else {
       return drupal_not_found();
     }
   }
+#+END_SRC
 
-  // Javascript
+#+BEGIN_SRC js
   $.ajax({
-   type: "POST",
-   url: '?q=newsletter/builder_entry/manage',
-   data: "ids=" + 'some string',
-   success: function(e) {
-     // do something
-   },
-   dataType: "json"
+      type: "POST",
+      url: '?q=newsletter/builder_entry/manage',
+      data: "ids=" + 'some string',
+      success: function(e) {
+	  // do something
+      },
+      dataType: "json"
   });
-#+END_EXAMPLE
+#+END_SRC
 
 ** Javascript API
 [[https://www.drupal.org/docs/7/api/javascript-api/javascript-api-overview][Javascript API Overview]]
@@ -7661,7 +7708,7 @@ Which php file is used for template
 #+END_SRC
 
 *** Image Sizes ~$_wp_additional_image_sizes~
-Refer to wp:debug:image sizes
+Refer to [[wp:debug:image sizes][wp:debug:image sizes]]
 
 *** Post statuses ~$wp_post_statuses~ <<<wp:global:wp_post_statuses>>>
 *** ~$wp_customize~ <<<wp:global:wp_customize>>>
@@ -8460,7 +8507,7 @@ Use wp:plugin:acf
    - WP_Meta_Query
    - WP Order and Orderby
 - Class methods and properties :: ~wp-includes/class-wp-query.php~
-- Debug :: wp:debug:wp_query
+- Debug :: [[wp:debug:wp_query][wp:debug:wp_query]]
 - Public vs Private query vars :: Refer to wp:filter:query_vars
 
 #+BEGIN_SRC php
@@ -16407,7 +16454,7 @@ https://codecanyon.net/item/media-grid-wordpress-responsive-portfolio/2218545
 - automated social media posting
 - Paid plans :: $3.5, $9, $29/month
 
-** Debug, WP_Error <<<wp:debug>>>
+** Debug, WP_Error <<wp:debug>>
 https://codex.wordpress.org/Function_Reference/WP_Error
 Function may return WP_Error object. Catch error
 #+BEGIN_SRC php
@@ -16461,7 +16508,7 @@ Write to file ~wp-content/debug.log~ after ~define( 'WP_DEBUG_LOG' , true );~
   error_log(print_r($abc, 1));
 #+END_SRC
 
-*** Debug WP_Query <<<wp:debug:wp_query>>>
+*** Debug WP_Query <<wp:debug:wp_query>>
 About ~SAVEQUERIES~
 #+BEGIN_SRC php
   if ( current_user_can( 'administrator' ) ) {
@@ -16496,7 +16543,7 @@ About ~SAVEQUERIES~
 #+END_SRC
 
 *** Which template? wp:global:template
-*** All Image Sizes <<<wp:debug:image sizes>>>
+*** All Image Sizes <<wp:debug:image sizes>>
 #+BEGIN_SRC php
   add_action( 'wp_footer', 'debug_all_image_sizes' );
   function debug_all_image_sizes() {
@@ -16517,7 +16564,7 @@ About ~SAVEQUERIES~
   }
 #+END_SRC
 
-*** Filters <<<wp:debug:filters>>>
+*** Filters <<wp:debug:filters>>
 #+BEGIN_SRC php
   if ( WP_DEBUG && array_intersect( array( 'administrator' ), wp_get_current_user()->roles ) ) {
 	  add_action( 'wp_footer', 'debug_genesis_attr_filters' );
@@ -16624,8 +16671,8 @@ Download additional language packs from [[https://make.wordpress.org/polyglots/t
 Upload thme to wp-content/languages
 Then change the language in each User Profile.
 
-** File Permissions <<<wp:file permissions>>>
-- All files should be chmod:644 and all folders chmod:755
+** File Permissions <<wp:file permissions>>
+- All files should be [[chmod:644][chmod:644]] and all folders chmod:755
 - ~wp-config.php~ should be chmod:660 or chmod:664
 
 #+BEGIN_SRC sh
@@ -17800,7 +17847,7 @@ https://codex.wordpress.org/FAQ_My_site_was_hacked
 https://codex.wordpress.org/Hardening_WordPress
 Change wp users' passwords
 Compare wp-config.php with wp-config-sample.php
-wp:file permissions
+[[wp:file permissions][wp:file permissions]]
 wp:wp-config:DISALLOW_FILE_EDIT
 
 *** Search backdoor scripts
@@ -24028,7 +24075,7 @@ unsafe-url :: The browser will always send the full URL with any request to any 
 - ~Strict-Transport-Security: max-age=<expire-time>; preload~
    - preload requires to register the domain on https://hstspreload.org
    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#Preloading_Strict_Transport_Security
-- Applied in hosting:pantheon:hsts
+- Applied in [[hosting:pantheon:hsts][hosting:pantheon:hsts]]
 
 *** Vary - response <<<header:vary>>>
 - ~Vary: <header-name>, <header-name>~
@@ -24065,7 +24112,7 @@ sizes attribute has to be set in order for the Width header to be sent. In the n
   - Image server will deliver the images based on the CH request headers
 
 *** X-Powered-By
-- Remove it :: apache:mod_headers [[apache:core:serversignanture][apache:core:serversignanture]] [[php:ini:expose_php][php:ini:expose_php]]
+- Remove it :: apache:mod_headers [[apache:core:serversignature][apache:core:serversignature]] [[php:ini:expose_php][php:ini:expose_php]]
 
 ** Cookie <<<html:cookie>>>
 HTTP response header
@@ -24084,7 +24131,7 @@ HTTP response header
    - ~Strict~ ::
    - ~Lax~ :: only action e.g. links, cookies will be passed
    - ~None~ :: requires ~secure~ 
-- Refer to setcookie, php.ini:session:cookie_secure, apache:mod_headers for adding flags to cookies
+- Refer to setcookie, [[php:ini:session:cookie_secure][php:ini:session:cookie_secure]], apache:mod_headers for adding flags to cookies
 
 ** Email
 *** View email source on Outlook
@@ -28921,21 +28968,21 @@ Don't try to access or modify parent window DOM. Do it indirectly.
 #+END_SRC
 
 *** application/x-www-form-urlencoded vs multipart/form-data
-urlencoded has to transfer extra data if large amount of binary data is sent.
+- urlencoded
+   - Transfers extra data if large amount of binary data is sent
+- multipart/form-data
+   - Request header
+      - Content-Type: multipart/form-data; boundary=--user-agent-sets-this-boundary
+   - Request Payload
+     #+BEGIN_EXAMPLE
+       --user-agent-sets-this-boundary
+       Content-Disposition: form-data; name="gv-inv_image"; filename="alectra-APP-dynamic-card.jpg"
+       Content-Type: image/jpeg
 
-multipart/form-data
-- Request header
-  - Content-Type: multipart/form-data; boundary=--user-agent-sets-this-boundary
-- Request Payload
-#+BEGIN_EXAMPLE
-  --user-agent-sets-this-boundary
-  Content-Disposition: form-data; name="gv-inv_image"; filename="alectra-APP-dynamic-card.jpg"
-  Content-Type: image/jpeg
 
 
-
-  --user-agent-sets-this-boundary--
-#+END_EXAMPLE
+       --user-agent-sets-this-boundary--
+     #+END_EXAMPLE
 
 *** FormData to send file
 Supports all browsers except IE 9 and below.
@@ -42017,8 +42064,8 @@ The secret/key of SHA256 should at least contain 256 bits. But I use 128 bits.. 
   let hash = hmac.read().toString('hex');
 #+END_SRC
 
-**** encrypt, decrypt <<<nodejs:decrypt>>>
-Refer to php:openssl_decrypt
+**** encrypt, decrypt <<nodejs:decrypt>>
+Refer to [[php:openssl_decrypt][php:openssl_decrypt]]
 
 All AES, regardless 128/256 or key length, the output size depends on the input size
 (floor(Input size / 16 bytes) + 1) * 16 bytes
@@ -45911,7 +45958,7 @@ Create Custom Dimension ~Page Terms~, hit type Hit. Say Index number is 1
 	 - Advertiser Campaign Management products that can manage ads across display, mobile, social, search and video advertising channels
 	 - Integrate with ad exchanges which serve as a marketplace for ad inventory
 	 - On the Publisher side, it's Supply Side Platform (SSP) :: publishers use SSPs to sell ad inventory in ad exchanges
-	    - Such as google:gam
+	    - Such as [[google:gam][google:gam]]
 	 - Some DSPs can integrate directly with SSPs to foster direct buys
       - ATD :: Adgency Trading Desk
 	 - Bigger than DSP :: ATDs hire software developers, account managers and data analysts who work for the agency's advertising clients. ATDs can use multiple DSPs. Advertisers using the services of an ATD don't get direct access to the available media inventory
@@ -47481,23 +47528,23 @@ First of the 4 digits of Octal mode
 |        |       |                                         |
 
 - Last 3 digits :: owner-group-public
-   - 400 :: r-------- e.g. ssh private keys in ~/.ssh/ <<<chmod:400>>>
-   - 440 :: read for owner and group, but none for public <<<chmod:440>>>
-   - 555 :: read and execute (can't modify) for all <<<chmod:555>>>
-   - 700 :: rwx------ full for owner <<<chmod:700>>>
+   - ~400~ :: r-------- e.g. ssh private keys in ~/.ssh/ <<<chmod:400>>>
+   - ~440~ :: read for owner and group, but none for public <<<chmod:440>>>
+   - ~555~ :: read and execute (can't modify) for all <<<chmod:555>>>
+   - ~700~ :: rwx------ full for owner <<<chmod:700>>>
    - ~755~ :: rwxr-xr-x (e.g. wordpress directory) Default directory permission and default executable file permission <<<chmod:755>>>
-   - 770 :: rwxrwx--- <<<chmod:770>>>
-   - 775 :: rwxrwxr-x <<<chmod:775>>>
+   - ~770~ :: rwxrwx--- <<<chmod:770>>>
+   - ~775~ :: rwxrwxr-x <<<chmod:775>>>
    - ~777~ :: -rwxrwxrwx Directory's full permission <<<chmod:777>>>
-   - 600 :: -rw------ only owner can read and write file <<<chmod:600>>>
-   - ~644~ :: -rw-r--r-- (e.g. wordpress .php files) <<<chmod:644>>>
+   - ~600~ :: -rw------ only owner can read and write file <<<chmod:600>>>
+   - ~644~ :: -rw-r--r-- (e.g. wordpress .php files) <<chmod:644>>
    - ~660~ :: rw-rw---- (e.g. wp-config.php) <<<chmod:660>>>
-   - 666 :: anyone can read and write. File full permission. <<<chmod:666>>>
-   - 664 :: rw-rw-r-- <<<chmod:664>>>
+   - ~666~ :: anyone can read and write. File full permission. <<<chmod:666>>>
+   - ~664~ :: rw-rw-r-- <<<chmod:664>>>
 - By default, umask is ~0022~
-- A file's full permission is 666. So new file has this default permission :: 666-022 = 644
-- A directory's full permission is 777. So new directory has default permission :: 777-022 = 755
-- Return umask simply run ~umask~
+   - A file's full permission is 666. So new file has this default permission :: 666-022 = 644
+   - A directory's full permission is 777. So new directory has default permission :: 777-022 = 755
+- Get umask :: ~umask~
 - Permanently set umask in =~/.bashrc= :: ~umask 0022~
 - remove write permission for all :: ~chmod a-w /path/to/afile~
    - u :: user that owns the file
@@ -47514,7 +47561,7 @@ First of the 4 digits of Octal mode
   sudo chown -R user:group .
 #+END_SRC
 
-List files or directories that are not a user or group. Refer to wp:file permissions
+List files or directories that are not a user or group. Refer to [[wp:file permissions][wp:file permissions]]
 #+BEGIN_SRC sh
   find . -type d -not -group test -o -type f -not -user test
 #+END_SRC
@@ -47529,7 +47576,7 @@ file2 will have the exact same owners and permissions as file1
 **** Create several users for SFTP and final file permissions are www-data <<<linux:permission:users>>>
 If more than one users are needed, try linux:bindfs
 
-Otherwise, add user to group ~www-data~ and change default wp:file permissions from chmod:644 files chmod:755 directories to chmod:664 for files and chmod:775 for directories
+Otherwise, add user to group ~www-data~ and change default [[wp:file permissions][wp:file permissions]] from [[chmod:644][chmod:644]] files chmod:755 directories to chmod:664 for files and chmod:775 for directories
 This way new file will be the user not www-data but editing/uploading exising files will remain www-data:www-data
 wp:check file permissions
 
@@ -56295,7 +56342,7 @@ Refer to header:cache-control, php:header
 **** <<<apache:mod_headers:header>>>
 - Syntax :: ~Header [condition] add|append|echo|edit|edit*|merge|set|setifempty|unset|note header [[expr=]value [replacement] [early|env=[!]varname|expr=expression]]~
 - All apache:directive context
-- Eq. to nginx:d:add_header
+- Eq. to [[nginx:d:add_header][nginx:d:add_header]]
 - condition
    - ~always~ 
 - env
@@ -57388,7 +57435,7 @@ wp:redirect path to wp
   }
 #+END_SRC
 
-** Rewrite directive <<<nginx:d:rewrite>>>
+** Rewrite directive <<nginx:d:rewrite>>
 http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#rewrite
 
 Syntax:	~rewrite regex replacement [flag];~
@@ -57422,10 +57469,10 @@ Parameter ipv6only can be set only once across all config files. Default is on. 
   listen [::]:443 ssl ipv6only=on;
 #+END_EXAMPLE
 
-** fastcgi directives - Module ngx_http_fastcgi_module <<<nginx:d:fastcgi>>>
-- fastcgi_read_timeout :: default 60s, 3600s <<<nginx:d:fastcgi_read_timeout>>>
+** fastcgi directives - Module ngx_http_fastcgi_module <<nginx:d:fastcgi>>
+- fastcgi_read_timeout :: default 60s, 3600s <<nginx:d:fastcgi_read_timeout>>
 
-** add_header <<<nginx:d:add_header>>>
+** add_header <<nginx:d:add_header>>
 - Context :: http, server, location, if in location
 - Syntax :: ~add_header name value [always]~
 
@@ -57438,8 +57485,8 @@ Add to a response header. The value can contain variables.
   add_header X-XSS-Protection "1; mode=block" always;
 #+END_SRC
 
-** Server name redirect <<<nginx:d:redirect>>>
-Use nginx:d:rewrite for regex redirect
+** Server name redirect <<nginx:d:redirect>>
+Use [[nginx:d:rewrite][nginx:d:rewrite]] for regex redirect
 
 #+BEGIN_SRC nginx
   server {
@@ -58107,7 +58154,7 @@ Context:	http, server, location, limit_except
 #+END_SRC
 
 * Web Application Firewall (WAF)
-** ModSecurity <<<waf:modsecurity>>>
+** ModSecurity <<waf:modsecurity>>
 Mod security is a free Web Application Firewall (WAF) that works with Apache, Nginx and IIS. It supports a flexible rule engine to perform simple and complex operations and comes with a Core Rule Set (CRS) which has rules for SQL injection, cross site scripting, Trojans, bad user agents, session hijacking and a lot of other exploits. For Apache, it is an additional module which makes it easy to install and configure.
 
 https://www.digitalocean.com/community/tutorials/how-to-set-up-mod_security-with-apache-on-debian-ubuntu
@@ -59271,7 +59318,7 @@ git branch -vv
     localbranch2 hexcode [origin/localbranch2] last commit msg
 #+END_EXAMPLE
 
-* Pantheon <<<hosting:pantheon>>>
+* Pantheon <<hosting:pantheon>>
 ** File size
 - Files over 100MB cannot be uploaded through WP or Drupal. Use SFTP or rsync
 - Files over 256MB will fail no matter how they are uploaded. Host them on 3rd party CDN
@@ -59294,8 +59341,8 @@ git branch -vv
    - MySQL interactive_timeout :: 420 sec
    - Nginx fastcgi_read_timeout :: 900 sec. PHP won't run forever
 
-** Terminus
-https://pantheon.io/docs/terminus/install/ <<<hosting:pantheon:terminus>>>
+** Terminus <<hosting:pantheon:terminus>>
+- https://pantheon.io/docs/terminus/install/
 
 #+BEGIN_SRC sh
   apt-get update
@@ -59413,13 +59460,13 @@ PHP supported version :: 5.3, 5.5, 5.6, and 7.0.
 Drush version: 5, 7, or 8. 8 is recommended
 
 ** Drush <<<Pantheon Drush>>>
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   terminus drush "<drush command> <drush args>" --site=<> --env=<> 
   terminus remote:drush site-name.env-name drush-command
   terminus remote:drush site-name.env-name -- ws --tail
   terminus env:clear-cache site-name.env-name
   terminus remote:drush <site>.<env> -- cc all
-#+END_EXAMPLE
+#+END_SRC
 
 If a module is updated via Pantheon terminus drush up, original module folder will be saved to /drush-backups/pantheon/date/modules/modulename
 
@@ -59781,7 +59828,7 @@ https://pantheon.io/docs/domains/
   }
 #+END_SRC
 
-*** HSTS: HTTP Header <<<hosting:pantheon:hsts>>>
+*** HSTS: HTTP Header <<hosting:pantheon:hsts>>
 - After redirection to HTTPS is setup, set the HTTP Strict Transport Security (HSTS) header to stop client communicating to HTTP
 - A+ SSL rating will be achieved in [[https://www.ssllabs.com/ssltest/][SSL Labs]]
 - Refer to [[header:strict-transport-security][header:strict-transport-security]]
@@ -62099,7 +62146,7 @@ Run this .sql file:
 ** GraphQL
 - GitHub GraphQL API explorer :: https://developer.github.com/v4/explorer/
 
-* Google Ad Manager - DFP <<<google:dfp>>> <<<google:gam>>>
+* Google Ad Manager - DFP <<google:dfp>> <<google:gam>>
 ** Default code - Google Publisher Tag - gpt.js
 - After 2019-06-12, it's ~https://securepubads.g.doubleclick.net/tag/js/gpt.js~
    - Before 2019-06-12, it's ~https://www.googletagservices.com/tag/js/gpt.js~
@@ -63122,27 +63169,27 @@ Upload a creative of Native type. Specify the placeholders.
     </div>
   #+END_SRC
 
-** ~googletag.Service~ <<<google:gam:gpt:service>>>
+** ~googletag.Service~ <<google:gam:gpt:service>>
 - Methods
-   - ~addEventListener(eventType, listener)~ :: refer to google:gam:gpt:event
+   - ~addEventListener(eventType, listener)~ :: refer to [[google:gam:gpt:event][google:gam:gpt:event]]
    - ~getSlots()~ :: 
 - ~googletag.pubads()~ is a ~googletag.PubAdsService~ which extends ~googletag.Service~
    - ~getTargetingKeys()~ :: e.g. ~['publisher', 'site', 'section', 'exclusive', 'sponsor']~
    - ~getTargeting(key)~ :: return array e.g. ~getTargeting('exclusive')~
 
-** ~googletag.Slot~ <<<google:gam:gpt:slot>>>
+** ~googletag.Slot~ <<google:gam:gpt:slot>>
 - Methods
    - ~addService(service)~
    - ~getAdUnitPath()~
    - ~getSlotElementId()~
    - ~setCollapseEmptyDiv(collapse, opt_collapseBeforeAdFetch)~
-   - ~getTargetingKeys()~ :: targeting set on Service level is not assigned here. Refer to google:gam:gpt:service
+   - ~getTargetingKeys()~ :: targeting set on Service level is not assigned here. Refer to [[google:gam:gpt:service][google:gam:gpt:service]]
    - ~getTargeting(key)~ :: same as above
 
-** Events <<<google:gam:gpt:event>>>
+** Events <<google:gam:gpt:event>>
 - ~googletag.events.Event~ interface :: https://developers.google.com/doubleclick-gpt/reference#googletag.events.Event
    - serviceName ::
-   - slot :: google:gam:gpt:slot
+   - slot :: [[google:gam:gpt:slot][google:gam:gpt:slot]]
 - ~googletag.evetns.Event~ extension for certain events
    - ~googletag.events.SlotRenderEndedEvent~ :: fired when the creative code is injected into a slot. Before the creative's resources are fetched. Extra fields:
       - ~isEmpty~ :: true if no ad was returned for the slot, false otherwise
@@ -63812,7 +63859,7 @@ Hide all active tool windows and leave the Editor Tabs open. Can toggle
 - Quickly change presentation mode, fullscreen mode and some other theme presests
 
 *** XPath
-You need to make the xml file part of a project to use Evaluate XPath... (right click) 
+Make the xml file part of a project to use Evaluate XPath... (right click) 
 
 *** Navigate and Display inside Editor
 **** Paste from history ~C-S-v~
@@ -63834,15 +63881,17 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 - Navigate > Next / Previous Highlighted Error :: ~S-F1~
 
 **** Custom code folding regions
-Select the block of code you want to fold
-C-M-t or "surround with"
-Choose either NetBeans style or VisualStudio style. Don't mix 2 styles.
+- Select the block of code you want to fold
+- ~C-M-t~ or ~surround with~
+- Choose either NetBeans style or VisualStudio style. Don't mix 2 styles
 
 **** Split and multiple Editor Tabs
 - ~C-Tab~ to cycle through
 - Window > Editor Tabs > Split Vertically
 - Window > Editor Tabs > Change Split Orientation
 
+**** Quick Definition ~C-S-i~
+**** Quick Documentation ~C-S-Space~
 *** Edits inside Editor
 **** Line Comment ~C-/~, Block Comment ~C-S-/~
 **** Convert to Tab/Spaces for indentation - Action: To Tab
@@ -64117,7 +64166,7 @@ Settings > Languages & Frameworks > PHP
 - remote_host could be
    - [[vagrant:host:ip][vagrant:host:ip]]
 - Consider extend timeout
-   - nginx:d:fastcgi_read_timeout
+   - [[nginx:d:fastcgi_read_timeout][nginx:d:fastcgi_read_timeout]]
    - php.ini:max_execution_time
 
 #+BEGIN_SRC conf
@@ -65059,7 +65108,7 @@ Expand the Events and RC on handler to Reveal function in source.
       - ga:gtag
       - google:gtm
    - ~securepubads.g.doubleclick.net~ :: before googletagservices.com
-      - google:dfp, google:gam, gpt.js
+      - [[google:dfp][google:dfp]], [[google:gam][google:gam]], gpt.js
    - google-analytics.com (analytics.js) ga:ga
    - googleadservices.com (old AdWords)
 
@@ -66544,7 +66593,7 @@ You want to point the root domain to antoher server. Assuming root domain origin
 - Change yourdomain.com MX yourdomain.com to mail.yourdomain.com 
 
 ** Web Hosting Comparison
-hosting:pantheon is good for hosting one website
+[[hosting:pantheon][hosting:pantheon]] is good for hosting one website
 
 Charged by monthly pageviews
 
