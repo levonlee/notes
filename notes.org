@@ -47611,7 +47611,7 @@ wp:check file permissions
 #+END_SRC
 
 <<<symlink:windows>>>
-- Refer to git:symlink
+- Refer to [[git:symlink][git:symlink]]
 - To create a symlink on Windows, enable Developer Mode first and :: ~mklink symlinkgoesto myfolder\mytargetfolder~
 
 *** Search files or directories, sort by size <<<bash:find>>> <<<linux:find>>>
@@ -58243,7 +58243,13 @@ To see any requests that violate which rules in which .conf file, tail the apach
   #         acp = "!llg_acp(){ git add . && git commit -m \"$1\" && git push; };llg_acp"
 #+END_SRC
 
-** Working Tree <<<git:Working_Tree>>>
+** Working Tree <<git:stages>>
+- Working Copy (unstaged, working directory, working tree) -> ~git add~ -> Index (staged) -> ~git commit~ -> ~HEAD~
+- ~HEAD~ <<git:HEAD>> :: ~cat .git/HEAD~ 
+   - It can be the tip of a branch
+   - Or any commit in any branch
+      - Use ~git checkout <branchname>~ to set HEAD to the tip of a branch
+- ~HEAD^~ :: the previous commit
 - untracked :: it was never staged nor committed
 - tracked :: it was previously committed, but it is not staged
 - staged :: ready for commit
@@ -58262,27 +58268,23 @@ To see any requests that violate which rules in which .conf file, tail the apach
 - ~--prefix=<prefix>/~ :: prepend ~<prefix>/~ to each filename in the archive
 - ~-o <file>~, ~--output=<file>~
 
-** diff <<<git:diff>>>
-
-Working Copy -> git add -> Index -> git commit -> HEAD
-
-- ~HEAD^~ :: the previous commit
-
-- ~git diff~ :: Between Working Copy and Index
-- ~git diff --cached~ :: Between HEAD and Index
-- ~git diff HEAD~ :: Between Working Copy and HEAD
-- ~git diff HEAD^~ :: Between Working Copy and HEAD^
+** diff <<git:diff>>
+- [[git:stages][git:stages]]
+- ~git diff~ :: Between Working Copy and Index (Staged)
+- ~git diff --cached~ :: Between HEAD and Index (Staged)
+- ~git diff HEAD~ :: Between (Unstaged or Staged) and HEAD
+- ~git diff HEAD^~ :: Between (Unstaged or Staged) and HEAD^
+- [[git:branch:file difference][git:branch:file difference]]
 
 ** Patch
-Create a patch
-- Refer to git:diff
-- Working directory changes (unstaged) :: ~git diff > my.patch~
-- Staged changes :: ~git diff --cached > my.patch~
-- Between last 10 commits into 10 patch files :: ~git format-patch -10~
-- Between last 10 commits into 1 patch file :: ~git fortmat-patch -10 --stdout > my.patch~
-
-Apply a patch
-- Apply a patch to working directory :: ~git apply my.patch~
+- Create a patch
+   - Refer to [[git:diff][git:diff]]
+   - Working directory changes (unstaged) :: ~git diff > my.patch~
+   - Staged changes :: ~git diff --cached > my.patch~
+   - Between last 10 commits into 10 patch files :: ~git format-patch -10~
+   - Between last 10 commits into 1 patch file :: ~git fortmat-patch -10 --stdout > my.patch~
+- Apply a patch
+   - Apply a patch to working directory :: ~git apply my.patch~
 
 ** Show file names only between 2 commits
 Show file names only for 1 commit
@@ -58296,27 +58298,33 @@ Show file names only between 2 commits
 #+END_SRC
 
 ** Stash, Reset, Clean
-- git:Working_Tree
-- ~git reset --hard~ :: clean working tree, go back to last commit but keep the untracked
-- ~git reset~ :: undo ~git add .~
-- ~git clean -dfn~ :: remove untracked files
-- ~git stash~ :: Save and remove working directory changes
+- [[git:stages][git:stages]]
+- ~git reset~ <<git:reset>>
+   - eq. to ~git reset --mixed HEAD~
+      - Reset current HEAD to a ~<tree-ish>~ or ~<commit>~ which defaults to ~HEAD~
+      - ~--mixed~ :: default mode. Reset the Index (staged) but not the working tree
+- ~git reset --hard~
+   - eq. to ~git reset --hard HEAD~
+   - clean working tree, go back to HEAD but the untracked are intact
+- ~git clean -dfn~ <<git:clean>> :: remove untracked files
+- ~git stash~ :: Save and remove Staged and Unstaged changes <<git:stash>>
    - List all stashes :: ~git stash list~
    - Apply latest stash :: ~git stash apply~
-   - Apply 2nd latest stash :: ~git stash apply stash@{2}~
-   - Remove latest stash :: ~git stash drop stash@{0}~
+      - Apply 2nd latest stash :: ~git stash apply "stash@{2}"~
+      - Apply when there's no staged and unstaged
+      - After applied, all changes are unstaged 
+   - Remove latest stash :: ~git stash drop "stash@{0}"~
+   - remove all stashes :: ~git stash clear~ 
 
 ** Checkout vs Reset vs Revert
 - Current branch has c1, c2 and c3 commits in order
-   - ~git checkout c1~ :: sets branch to commit 1 in a detached HEAD state. HEAD is not at tip of branch. It's at that commit. Not changing anything. git checkout <branchname> to go back to HEAD
-
-~git checkout c1 .~ or ~git checkout -f c1 -- .~ sets branch to commit c1 but about to make a commit c4 (Changes to be committed) that is after c3.
-c4 contains all the necessary changes for going back to c1.
-
-~git reset c1~ :: sets branch to commit 1. set branch to last commit ~git reset --hard HEAD^~
-Reset rewrites history. Only use it for local changes that are never pushed to remote.
-
-~git revert c1 --no-edit~ undoes commit 1 and creates a commit. --no-edit means to skip the commit message.
+   - ~git checkout c1~ :: sets branch to commit 1 in a detached HEAD state. HEAD is not at tip of branch. It's at that commit. Not changing anything
+   - ~git checkout <branchname>~ :: go back to the tip of the branch
+   - ~git checkout c1 .~ or ~git checkout -f c1 -- .~ :: sets branch to commit c1 but about to make a commit c4 (Changes to be committed) that is after c3. c4 contains all the necessary changes for going back to c1
+   - ~git reset c1~ :: sets branch to commit 1
+   - ~git reset --hard HEAD^~ :: set branch to last commit
+   - ~git reset~ rewrites history. Only use it for local changes that are never pushed to remote
+   - ~git revert c1 --no-edit~ undoes commit 1 and creates a commit. ~--no-edit~ means to skip the commit message
 
 ** Checkout a folder from another branch to current branch
 current branch is master and get folder target-folder/ from feature branch
@@ -58325,20 +58333,20 @@ current branch is master and get folder target-folder/ from feature branch
   git checkout feature target-folder/
 #+END_SRC
 
-** Branch
+** Branch <<git:branch>>
 *** Duplicate current branch with changes and switch to it
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   git checkout -b newbranch
 #+END_SRC
 
 Create a local branch and then push to a new remote branch. Save changes to a new branch.
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   git checkout -b newbranch
   git add . && git commit -m "..."
   git push --set-upstream origin newbranch
 #+END_SRC
 
-*** Duplicate current branch to a commit and switch 
+*** Duplicate current branch to a commit and switch
 ~git checkout -b newbranch <SHA1>~
 
 *** Delete branch
@@ -58352,12 +58360,13 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
 
 For a specific file ~git log master..li path/to/file~
 
-*** File difference between 2 branches <<<git:branch:file difference>>>
-~git diff --name-status master..origin/master~ or 
-=git diff --stat --color master..origin/master=
-| Missing file or line in remote branch | D or - |
-| New file or line in remote branch     | A or + |
-| Both are modified                     | M      |
+*** File difference between 2 branches <<git:branch:file difference>>
+- [[git:diff][git:diff]]
+- ~git diff --name-status master..origin/master~
+   - or ~git diff --stat --color master..origin/master~
+   - D or - :: Missing file or line in remote branch
+   - A or + :: New file or line in remote branch
+   - M :: Both are modified 
 
 *** Find authors of all remote/local branches and tags
 #+BEGIN_EXAMPLE
@@ -58437,14 +58446,14 @@ Don't use ~git pull origin master~ as it pulls from origin/master to local and c
 *** Orphan Branch with no parent
 github:gh-pages
 
-** Merge <<<git:merge>>>
+** Merge <<git:merge>>
 By default without any options, merge will not create merge commits when fast-forward is possible.
 - Create a merge commit even if fast-forward is possible :: ~--no-ff~
 - Create a merge commit if fast-forward is possible. If not, fix the conflict and ~git add~ files then normal commit :: ~--no-commit~
 - Abort a merge and restore the project's state as it was before starting the merge :: ~--abort~
 - Combine all integrated changes into a single commit instead of perserving them as individual commits. Need to make a normal commit after :: ~--squash~
 
-** Rebase <<<git:rebase>>>
+** Rebase <<git:rebase>>
 feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
 
 #+BEGIN_SRC sh
@@ -58537,36 +58546,29 @@ Add a remote: upstream
   git pull upstream master
 #+END_SRC
 
-** Symlink <<<git:symlink>>>
-Keep ~core.symlinks=false~, symlinks might not be pulled. Create symlink:windows and remove tracking for those symlink files
-~git update-index --assume-unchanged symlink1~ using git:update-index 
+** Symlink <<git:symlink>>
+- Keep ~core.symlinks=false~, symlinks might not be pulled. Create symlink:windows and remove tracking for those symlink files
+~git update-index --assume-unchanged symlink1~ using [[git:update-index][git:update-index]] 
 
 To find all symlink files but are not created as symlinks on Windows:
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   git ls-files -s | awk '/120000/{print $4}'
 #+END_SRC
 
-** Remove tracking for commited files <<<git:update-index>>>
-A file is commited but you don't want to track it anymore in the future.
-Remember the file will still be in Git but future clone won't grab the file.
-=git update-index --assume-unchanged path/to/file.txt=
-
-If you change your mind and want to track it again:
-=git update-index --no-assume-unchanged path/to/file.txt=
-
-Don't track a folder of files which are already commited
-First try to run this because this will work with file names with space
-=git ls-files -z myFolderToIgnore/ | xargs -0 git update-index --assume-unchanged=
-
-Path is relative.
-
-If you encounter error =xargs: git: bad file number=, run this
-=git ls-files -- myFolderToIgnore/ | xargs -l git update-index --assume-unchanged=
-
-List all assumed unchanged files
-#+BEGIN_EXAMPLE
-  git ls-files -v | grep '[[:lower:]]'
-#+END_EXAMPLE
+** Remove tracking for commited files <<git:update-index>>
+- A file is commited but you don't want to track it anymore in the future
+   - ~git update-index --assume-unchanged path/to/file.txt~
+   - Remember the file will still be in Git but future clone won't grab the file.
+- If you change your mind and want to track it again
+   - ~git update-index --no-assume-unchanged path/to/file.txt~
+- Don't track a folder of files which are already commited
+   - First try to run this because this will work with file names with space
+      - ~git ls-files -z myFolderToIgnore/ | xargs -0 git update-index --assume-unchanged~
+      - Path is relative
+      - If you encounter error ~xargs: git: bad file number~, run this
+	 - ~git ls-files -- myFolderToIgnore/ | xargs -l git update-index --assume-unchanged~
+- List all assumed unchanged files
+   - ~git ls-files -v | grep '[[:lower:]]'~
 
 ** Remove a commited file from file but leave in filesystem
 Delete a file from Git (top of the current branch) but leave the file in filesystem
@@ -58651,7 +58653,7 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
   git push anotherremote shrinksize:master
 #+END_SRC
 
-** Commit History
+** Show Commit History
 - ~git log --graph~
 - ~git log -3~ :: Last 3 commits
 - ~git log --grep=<pattern>~ :: Search commit message
