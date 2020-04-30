@@ -1832,7 +1832,11 @@ It can be used to demo by presenting the contents of files that use them.
   @example example1.php Some Description
 #+END_EXAMPLE
 
-** mysqli <<php:mysqli>>
+** Database
+*** mysqli <<php:mysqli>>
+- Driver only for MySQL while [[php:pdo][php:pdo]] has 12 different drivers
+- It can be OOP or procedural. php:pdo only has OOP
+
 #+BEGIN_SRC php
   $mysqli = new mysqli("localhost", "my_user", "my_password", "world");
 
@@ -1874,6 +1878,9 @@ It can be used to demo by presenting the contents of files that use them.
 	)
   SQL;
 #+END_SRC
+
+*** PDO <<php:pdo>>
+- It supports named parameters and prepared statements on client side while [[php:mysqli][php:mysqli]] doesn't 
 
 ** OOP
 - Features
@@ -46918,7 +46925,7 @@ Ubuntu
   sudo systemctl enable ssh
 #+END_SRC
 
-*** Generate client public and private keys, transfer public key to remote <<<linux:ssh:public-private>>>
+*** Generate client public and private keys, transfer public key to remote <<linux:ssh:public-private>>
 - Generate a private key on your local machine ~ssh-keygen -t rsa~
 - Under folder ~/Users/username/.ssh/~ id_rsa.pub is the public key and id_rsa is the private key
 - Show the public key and later copy to cloud server :: ~cat ~/.ssh/id_rsa.pub~
@@ -46974,6 +46981,7 @@ The following no longer works
   cp ~/.ssh/id_rsa_new ~/.ssh/id_rsa
 #+END_SRC
 
+*** [[github:ssh:key:fingerprint][github:ssh:key:fingerprint]]
 *** ssh config <<<linux:ssh:config>>>
 Create ssh host alias and the private key to use in =~/.ssh/config= file
 
@@ -58435,17 +58443,15 @@ git reset --hard common1
 git push -f
 
 *** Pull from remote/master to master branch which is not the current branch
-You're at local branch ~dev~ and you want to pull remote/master to your local master branch
-
-~git fetch origin master:master~
-
-This does not work if current branch is local master
-
-Don't use ~git pull origin master~ as it pulls from origin/master to local and current ~dev~ branch
+- ~git fetch origin master:master~
+   - Currently at local branch ~dev~ and need to pull remote/master to local master branch
+   - This does not work if current branch is local master
+   - Don't use ~git pull origin master~ as it pulls from origin/master to local and current ~dev~ branch
 
 *** Orphan Branch with no parent
-github:gh-pages
+[[github:gh-pages][github:gh-pages]]
 
+*** [[git:upstream][git:upstream]]
 ** Merge <<git:merge>>
 By default without any options, merge will not create merge commits when fast-forward is possible.
 - Create a merge commit even if fast-forward is possible :: ~--no-ff~
@@ -58558,7 +58564,7 @@ To find all symlink files but are not created as symlinks on Windows:
 ** Remove tracking for commited files <<git:update-index>>
 - A file is commited but you don't want to track it anymore in the future
    - ~git update-index --assume-unchanged path/to/file.txt~
-   - Remember the file will still be in Git but future clone won't grab the file.
+   - Remember the file will still be in Git but future clone won't grab the file
 - If you change your mind and want to track it again
    - ~git update-index --no-assume-unchanged path/to/file.txt~
 - Don't track a folder of files which are already commited
@@ -58704,17 +58710,6 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
   #+BEGIN_SRC sh
     git log --author="Li Li" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
   #+END_SRC
-
-** Head Detached Mode, checkout previous commit
-At the current branch master, find hash of the old commit that you want to revert back to and checkout
-#+BEGIN_EXAMPLE
-  git checkout a1b2c3
-#+END_EXAMPLE
-
-when you are done, set the HEAD back to the front
-#+BEGIN_EXAMPLE
-  git checkout master
-#+END_EXAMPLE
 
 ** Ignore, Local/Global Ignore, Show Ignored Files
 - https://www.gitignore.io/
@@ -58890,14 +58885,14 @@ It's better to fix the file names on Linux, commit and push and work on local..
   #+END_SRC
 
 ** Clone to an empty folder
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   cd ~/expressjs
   # add .git at the end
   # --bare means to clone all branches
   git clone --bare https://githublink/express.git .git
   git config --bool core.bare false
   git reset --hard
-#+END_EXAMPLE
+#+END_SRC
 
 ** Clone or Pull to existing repository
 *** Existing repo is not git initialized
@@ -58937,15 +58932,20 @@ Just clone examples/shopping-cart directory from branch dev
   rm -rf ./dirformynewrepo/.git
 #+END_SRC
 
-** Track local branch with a remote branch <<<git:upstream>>>
-#+BEGIN_EXAMPLE
+** Clone a branch only
+#+BEGIN_SRC sh
+  git clone -b <branchname> https://github.com/...
+#+END_SRC
+
+** Track local branch with a remote branch <<git:upstream>>
+#+BEGIN_SRC sh
   git branch --set-upstream master origin/master
-#+END_EXAMPLE
+#+END_SRC
 
 List all local branches' upstream remotes
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git branch -vv
-#+END_EXAMPLE
+#+END_SRC
 
 ** List all remote repo
 #+BEGIN_EXAMPLE
@@ -58958,7 +58958,7 @@ List all local branches' upstream remotes
   - See all corruptions :: ~git fsck --full~ and it shows the following types (not all types) 
     - Commits that belong to no branch and no tag is attached (dangling commits) :: ~git fsck --unreachable~
     - Tags that don't point a commit (dangling tag)  :: ~git fsck --no-reflogs~
-  - Remove all tags in local repo :: refer to git:tag 
+  - Remove all tags in local repo :: refer to [[git:tag][git:tag]] 
   - Mark reflog entries of all types as expired and prune them :: ~git reflog expire --expire=now --all~
   - Prune garbage :: ~git gc --prune=now~ 
 - Data recovery :: https://git-scm.com/book/en/v2/Git-Internals-Maintenance-and-Data-Recovery
@@ -59062,7 +59062,7 @@ Method 2: Add another remote github
   git push github
 #+END_SRC
 
-** Tag <<<git:tag>>>
+** Tag <<git:tag>>
 #+BEGIN_SRC sh
   # list all tags
   git tag -l
@@ -59154,7 +59154,7 @@ If you don't have branch gh-pages or /docs in master branch, just click on Launc
 
 Project website is https://levonlee.github.io/reponame or a domain docs.abc.com CNAME YOUR-GITHUB-USERNAME.github.io then it'd be https://docs.abc.com/reponame 
 
-<<<github:gh-pages>>>
+<<github:gh-pages>>
 #+BEGIN_SRC sh
   git checkout --orphan gh-pages
   git rm -rf .
@@ -59261,16 +59261,17 @@ RawGit is down.. Use raw.githack.com
       - The highest given in 3 categories :: Read, Write and Admin
       - Permissions can be given in *Team*, *Organization Permissions* and *Repo Permission Levels*
 
-** SSH Key Fingerprint
+** SSH Key Fingerprint <<github:ssh:key:fingerprint>>
 - On GitHub, it shows the fingerprint for a public key you upload. To see which private/public key on your local machine matches the finger print
   #+BEGIN_SRC sh
     # GitHub uses MD5
-    # Same finger print for private and public keys
-    ssh-keygen -E md5 -lf id_rsa
-    ssh-keygen -E md5 -lf id_rsa.pub
+    # Same finger print for private and public keys that are one pair
+    ssh-keygen -E md5 -lvf id_rsa
+    ssh-keygen -E md5 -lvf id_rsa.pub
 
     # -E :: hash algorithm. Default is sha256
     # -f :: specify a file
+    # -v :: ascii-art
     # -l :: Show fingerprint of specified public key file. Private RSA1 keys are also supported. For RSA and DSA keys, it tries to find the matching public key and prints its fingerprint
   #+END_SRC
 - Deploy Keys can be set up for a repo rather than using keys on user account level. Usually use that to pull from repo but write perm can be assigned to push
@@ -59317,7 +59318,7 @@ For existing local Git repo, add a remote
 
 By default, ~git push~ pushes code at current local branch to the same branch on upstream remote.
 
-See git:upstream to change local branch's upstream remote branch
+See [[git:upstream][git:upstream]] to change local branch's upstream remote branch
 
 .git/config
 #+BEGIN_EXAMPLE
@@ -64285,7 +64286,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 - On Docker host (Vagrant)
    - Get docker container ip docker:inspect:ip
    - Test ~ssh -p 22 root@1.2.3.4~
-   - Set up linux:ssh:config file, and linux:ssh:public-private keys, so that docker host can run ~ssh onedockercontainer~ to connect
+   - Set up linux:ssh:config file, and [[linux:ssh:public-private][linux:ssh:public-private]] keys, so that docker host can run ~ssh onedockercontainer~ to connect
    - Test ~ssh onedockercontainer~
 - On Windows
    - Copy the private key generated on Docker host to Windows =~/.ssh/id_rsa_vagrant_spawn=
