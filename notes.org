@@ -47844,6 +47844,35 @@ wp:check file permissions
   #+END_SRC
 
 *** Search Text in Files <<linux:grep>>
+- Basic Regular Expression
+  #+BEGIN_EXAMPLE
+    ^ $ . [ ] - and * as Meta characters
+
+    \d # any digit
+    \D # anything not a digit
+    \w # any word (alphanumeric + underscore)
+    \W # anything not a word character
+    \s # whitespace (space, tab, line break)
+    \S # anything not whitespace
+
+    # Character set
+    [:alpha:]
+    [:digit:]
+    [:alnum:]
+    [:lower:]
+    [:upper:]
+    [:punct:]
+    [:space:] # space character (space, tab, new line)
+    [:blank:] # whitespace character
+    [:print:] # printable characters, including space
+    [:graph:] # printable characters, not including space
+    [:cntrl:] # Control character (non-printing)
+    [:xdigit:] # Hexadecimal characters (0-9, A-F, a-f)
+
+    # e.g.
+    echo 'AaBbCcDdEe' | grep --color '[[:upper:]]'
+  #+END_EXAMPLE
+
 #+BEGIN_SRC sh
   grep --color -HRi "google\.com" /root/dir
 
@@ -47863,7 +47892,6 @@ wp:check file permissions
   grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
 
   # Extended Regular Expression ::  ( ) { } ? + and | as extra Meta characters
-  # Basic Regular Expression :: ^ $ . [ ]~ and * as Meta characters
   grep -E 'o' geeks.txt
 
   # 2 or more vowels
@@ -47890,8 +47918,13 @@ wp:check file permissions
 
 - Options
    - --color :: hightlight
-   - ~-H~ :: return only the file names
+   - ~-H, -h~ :: return only the file names
    - ~-R, -r, --resursive~ :: recursive
+   - ~-w~ :: whole word
+      - ~grep -w apple fruit.txt~
+   - ~-v~ :: inversion. Return lines that don't match
+      - ~grep -v apple fruit.txt~
+   - ~-L, -l~ :: like ~-v~, but return files that don't have a match
    - ~-i~ :: ignore case
    - ~-I~ :: process binary files as if they don't contain matching data
    - ~-n~ :: show line number
@@ -47899,26 +47932,58 @@ wp:check file permissions
    - ~-A <NUM>~ :: number of trailing lines of text
    - ~-B <NUM>~ :: number of leading lines of text
    - ~--exclude-dir=node_modules~
-- <<<linux:env:GREP_OPTIONS>>>
+- ~GREP_OPTIONS~ <<linux:env:GREP_OPTIONS>>
    - Set default options using [[linux:env][linux:env]]
    - ~export GREP_OPTIONS='--color=auto --binary-files=without-match'~ then you don't have to provide ~-I~ and ~--color~ in command lines
    - Escape single quotes and backslash using backslash and separate options by space.
 
-*** tr translate <<<bash:tr>>>
+*** Translate <<linux:tr>>
 - Syntax :: ~tr [OPTIONS]... SET1 [SET2]~
 - Replace SET1 with SET2
-
+- ~echo '123456789' | tr '12345678' 'ABCDEFGH'~ :: result ~ABCDEFGH9~
 - Change to uppercase :: ~echo 'hello world!' | tr [a-z] [A-Z]~
+   - eq. to ~tr '[:upper:]' '[:lower:]'~
+- Delete with ~-d~
+  #+BEGIN_SRC sh
+    echo 'abc123' | tr -d [:digit:]
+    # abc
+
+    echo 'abc123' | tr -dc [:digit:]
+    # 123
+    # c option means NOT! inverse, contradict
+
+    echo 'abc1233deee567f' | tr -s [:digit:]
+    # abc123deeee567f
+    # -s is squeeze consecutive matched characters
+
+    echo 'abc1233deee567f' | tr -sc [:digit:]
+    # abc1233de567
+    # c inverse again
+
+    echo 'abc1233deee567f' | tr -ds [:digit:] [:alpha:]
+    # abcdef
+    # delete digits, squeeze on alpha characters
+
+    echo 'abc1233deee567f' | tr -dsc [:digit:] [:digit:]
+    # 123567
+    # c only applies to d here..
+
+    tr -d '\015\032' < windows_file > unix_file
+  #+END_SRC
 
 *** column <<<bash:column>>>
 Default delimiter is space
 - Use colon :: ~cat /etc/passwd | column -t -s ':'~
 - Use tab :: ~cat atabdelimited.csv | column -t -s $'\t'~ or ~column -t -s '\t'~ Refer to linux:/etc/passwd
 
-*** cut <<<bash:cut>>>
+*** cut <<linux:cut>>
 - Extract columns from file
 - Syntax :: ~cut OPTION... [FILE]...~
 - ~echo -e "a\tb\tc" | cut -d $'\t' -f 2~ :: field 2 with delimiter tab
+- Options
+   - ~-d $'\t'~ :: tab delimiter. It is also the default when ~-f~ is used
+   - ~-f 2~ :: field 2 after delimited
+   - ~-c 2-10,72-~ :: each line, grab character from 2nd to 10th position and 72 to the end.  Index starts from 1
 
 *** awk <<<bash:awk>>>
 - https://www.tutorialspoint.com/awk/index.htm
@@ -48327,7 +48392,7 @@ Array loop
   tree -d -L 1
 #+END_SRC
 
-*** Compare files in 2 directories <<<linux:diff>>>
+*** Compare files in 2 directories <<linux:diff:directory>>
 #+BEGIN_SRC sh
   diff --brief -Nr dir1/ dir2/
   # -N shows difference of file existance
@@ -48342,12 +48407,25 @@ Array loop
   # < ./test.txt
 #+END_SRC
 
-*** Compare text files
+*** Compare text files <<linux:diff:file>>
 #+BEGIN_SRC sh
   diff file1.txt file2.txt
   # < means the line belongs to the left file
   # > means the line belongs to the right file
 #+END_SRC
+
+- Options
+   - ~-i~ :: case insensitive
+   - ~-b~ :: ignore chagnes to blank characters
+   - ~-w~ ::  ignore all whitespace
+   - ~-B~ :: ignore blank lines
+   - ~-r~ :: recursive for directories
+   - ~-s~ :: show identical files
+- Output options
+   - ~-c~ :: copied context
+   - ~-u~ :: unified context
+   - ~-y~ :: side by side
+   - ~-q~ :: only whether files differ
 
 *** Delete folders with a name
 #+BEGIN_SRC sh
@@ -50859,69 +50937,92 @@ List files or directories by name
 - ~uniq -u filename~
    - Filter out lines that repeated consecutively
 
-*** Replace String  ~sed~ <<<bash:sed>>>
-Replace all (g) Nick with John case-insensitive
-cat report.txt | sed 's/Nick/John/gi' > report_new.txt
+*** Replace String, Stream Editor ~sed~ <<linux:sed>>
+- Replace all (g) ~Nick~ with ~John~ case-insensitive
+   - ~cat report.txt | sed 's/Nick/John/gi' > report_new.txt~
+- ~sed SCRIPT INPUTFILE...~
+   - or ~sed OPTIONS... [SCRIPT] [INPUTFILE...]~
+- SCRIPT
+   - ~s~ command :: substitution
+      - ~'s/{regexp}/{replacement}/{flags}'~
+      - ~{regexp}~ :: To literally match string, wrap each letter in ~[~ and ~]~ and for ~^~ do ~[\^]~
+	 - e.g. literal string ~'&#x1f;'~ :: ~sed 's/[&][#][x][1][f][;]//gi' -i c.xml~
+	 - literal string ~'&#^x1f;'~ :: ~sed 's/[&][#][\^][x][1][f][;]//gi' -i c.xml~
+	 - Special characters to escape for ~{regexp}~
+	    - Single quote :: \'
+	    - ~$~ :: ~\$~
+	    - ~.~ :: ~\.~
+	    - ~*~ :: ~\*~
+	    - ~[~ :: ~\[~
+	    - ~\~ :: ~\\~
+	    - ~]~ :: ~\]~
+	    - ~^~ :: ~\^~ 
+      - ~{replacement}~
+	 - e.g. ~echo 'daytime' | sed -E 's/(...)time/\1light/'~, result is ~xxxlight
+	    - Up to ~\9~
+	 - Use ~&~ to subsitute the whole matched portion of the pattern
+	 - Special characters to escape for ~{replacement}~
+	    - Single quote :: ~\'~
+	    - ~&~ and ~\~ need to be escaped, as do the delimiter (usually ~/~) and newlines ~\n~
+      - Refer to [[https://stackoverflow.com/questions/29613304/is-it-possible-to-escape-regex-metacharacters-reliably-with-sed][regexp and replacement escape]]
+   - Instead of ~/~ as delimiter, use ~|~ for handling string with ~/~ such as ~http://~
+      - Always use ~\~ to escape no matter what delimiter is
+   - For inside bracket expression (list of characters), to literally include:
+      - ~^~ :: put it not at the beginning ~[ab^c]~. If it's the only one, use ~[\^]~
+      - ~-~ :: put it either at the start or end ~[-abc]~ or ~[abc-]~ not ~[a-bc]~. If it's the only one, use ~[\-]~
+      - ~]~ :: put it at the start ~[]abc]~ or ~[^]abc]~ but not ~[abc]]~ nor ~[abc\]]~. If it's the only one, ~[^]]~
+   - Notice :: escape ~\~ is crucial because ~\number~ e.g. ~\1~ is subsitution, ~\letter~ e.g. ~\n~ also has special meaning
+   - Notice :: use double quotes for interpolation ~sed -e "s/$BRE/$REPL/"~
+- OPTIONS
+   - ~-E~ :: extended regex
+   - ~-e SCRIPT~ :: run several inline SCRIPT's described above
+   - ~-f SCRIPT-FILE~ :: Run commands in SCRIPT-FILE's
+   - ~-i~ :: files are edited in-place
+      - ~-i~ :: original files are overwritten, no backup files are created
+	 - For deleting only
+	    - ~sed "s/deletethis//g" -i input.txt~
+	    - ~sed 's/&#x1f;//gi' -i c.xml~
+      - ~-i.backup~ or ~-i .backup~ (only Mac) :: copy original to ~*.backup~ and change original files
+	 - For multiple files
+	    - No backup :: ~sed 's/Nick/John/gi' *.txt~
+	    - create backup files :: ~sed 's/Nick/John/gi' -i.backup *.txt~
+- [[https://www.gnu.org/software/sed/manual/sed.txt][man sed]]
+- Refer usage in mysql:unknown collation
 
-sed SCRIPT INPUTFILE...
-or 
-sed OPTIONS... [SCRIPT] [INPUTFILE...]
+*** xargs <<linux:xargs>>
+- Build and execute commands from standard input. It converts input from standard input into arguments to a command
 
-SCRIPT
-- s command :: 's/{regexp}/{replacement}/{flags}'
-  - {regexp} :: To literally match string, wrap each letter in [ and ] and for ^ do [\^]
-    - e.g. literal string '&#x1f;' =sed 's/[&][#][x][1][f][;]//gi' -i c.xml=
-    - literal string '&#^x1f;' =sed 's/[&][#][\^][x][1][f][;]//gi' -i c.xml=
-  - {replacement} :: You can use & to subsitute the whole matched portion of the pattern.
+#+BEGIN_SRC sh
+  echo 'lorem.txt' | xargs wc
 
-Refer to [[https://stackoverflow.com/questions/29613304/is-it-possible-to-escape-regex-metacharacters-reliably-with-sed][regexp and replacement escape]]
+  # output whole command before run (-t)
+  echo 'lorem.txt' | xargs -t wc
 
-OPTIONS
-- -e SCRIPT :: run several inline SCRIPT's described above
-- -f SCRIPT-FILE :: Run commands in SCRIPT-FILE's
-- -i :: files are edited in-place
-  - -i :: original files are overwritten, no backup files are created
-  - -i.backup or -i .backup (only Mac) :: copy original to *.backup and change original files
-- :: 
+  # loop
+  # `-n 1` means use at most 1 argument per command line
 
-For deleting only
-- ~sed "s/deletethis//g" -i input.txt~
-- ~sed 's/&#x1f;//gi' -i c.xml~
+  echo 'a.txt' 'b.txt' | xargs -t -n1 wc
 
-For multiple files
-- No backup :: ~sed 's/Nick/John/gi' *.txt~
-- create backup files :: ~sed 's/Nick/John/gi' -i.backup *.txt~
+  # eq. to
+  wc a.txt
+  wc b.txt
 
-Instead of ~/~ as delimiter, use ~|~ for handling string with ~/~ such as ~http://~
+  # Similarly, `-L 1` means use at most 1 nonblank input line per command line
+  cat a.txt | xargs -t -L1 wc
 
-Always use ~\~ to escape no matter what delimiter is
+  # placeholder
+  cat fruit.txt | xargs -I :FRUIT: echo "buy more: :FRUIT:"
 
-Special characters to escape for ~{regexp}~
-- Single quote :: \'
-- $ :: ~\$~
-- . :: ~\.~
-- * :: ~\*~
-- [ :: ~\[~
-- \ :: ~\\~
-- ] :: ~\]~
-- ^ :: ~\^~
+  # only delimit input on newline but not space, `-0`
+  # e.g. there're some directories or files that have spaces in names
+  ls ~/Library/ | grep 'A.*' | xargs -0 -n1
 
-For inside bracket expression (list of characters), to literally include:
-- ^ :: put it not at the beginning [ab^c]. If it's the only one, use [\^]
-- - :: put it either at the start or end [-abc] or [abc-] not [a-bc]. If it's the only one, use [\-]
-- ] :: put it at the start []abc] or [^]abc] but not [abc]] nor [abc\]]. If it's the only one, [^]]
+  # combine with find's -print0
+  find test1/ -type f -print0 | xargs -0 chmod 755
 
-Special characters to escape for ~{replacement}~
-- Single quote :: \'
-- & and \ need to be escaped, as do the delimiter (usually /) and newlines \n
-
-Notice :: escape ~\~ is crucial because ~\number~ e.g. ~\1~ is subsitution, ~\letter~ e.g. ~\n~ also has special meaning
-
-Notice :: use double quotes for interpolation ~sed -e "s/$BRE/$REPL/"~
-
-[[https://www.gnu.org/software/sed/manual/sed.txt][man sed]]
-
-Refer usage in mysql:unknown collation
+  # interactive, `-p`
+  find . -name "*.backup" -depth 1 -print0 | xargs -p -0 rm
+#+END_SRC
 
 *** Concatenate String with File
 Append to the beginning
@@ -62198,7 +62299,7 @@ iconv -f UCS-2 -t UTF-8 a.xml > b.xml
 Add xml declaration
 echo '<?xml version="1.0"?>' | cat - b.xml > c.xml
 
-Delete xml:invalid_characters bash:sed
+Delete xml:invalid_characters [[linux:sed][linux:sed]]
 sed "s/&#x1f;//gi; s/&#x1e;//gi;" c.xml > d.xml
 
 *** Copy to Excel
@@ -66199,6 +66300,45 @@ Put Reflexil AIO dll to Reflector's Addins folder C:\Program Files (x86)\Red Gat
 After edit, right click on the Object Browser > Reflexil > Save as
 
 ** macOS
+*** Terminal
+- ~open afile~, ~open adir~, ~open .~, ~open ..~ :: open in Finder
+- ~open -a TextEdit afile.txt~ :: open a file using an app
+- ~ls -al | open -f~ :: redirect stdout to TextEdit
+- ~cat a.tsv | open -fa Numbers~ :: redirect stdout to an app
+- Clipboard
+   - ~ls -la | pbcopy~, ~pbcopy < afile.txt~
+   - ~pbpaste > afile.txt~
+   - 4 different clipboards!
+     #+BEGIN_SRC sh
+       echo "first" | pbcopy -pboard general
+       echo "second" | pbcopy -pboard find
+
+       pbpast -pboard find
+     #+END_SRC
+- Screen capture
+  #+BEGIN_SRC sh
+    screencapture /path/to/screencapture.png
+
+    # interactive
+    screencapture -i /path/to/screencapture.png
+
+    # -m main monitor only. Default all monitors
+    # -t, format: png, pdf, jpg, tiff
+    # -C, show cursor
+    # -T, delay in seconds
+    # -P, open file with Preview
+  #+END_SRC
+   - ~Cmd-S-3~
+   - ~Cmd-S-4~ :: interactive
+- ~sudo shutdown~
+   - Options 
+      - ~h~ :: halt
+      - ~r~ :: reboot
+      - ~s~ :: sleep
+   - Time
+      - now :: ~sudo shutdown -h now~
+      - +minutes
+      - yymmddhhmm
 
 ** Project Management
 *** Jira
