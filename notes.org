@@ -729,7 +729,7 @@ Use ~in_array('string', $a)~ for case sensitive search
   $_lower_GET = array_change_key_case($_GET, CASE_LOWER); // Or CASE_UPPER
 #+END_SRC
 
-*** Get values of a column in a multidimensional array
+*** Get values of a column in a multidimensional array <<php:array_column>>
 Require PHP 5.5+
 
 #+BEGIN_SRC  php
@@ -2784,7 +2784,7 @@ Global names must be prefixed or use namespace.
 
 ** Session <<php:session>>
 - PHP relies on client cookie ~PHPSESSID~ to identify session
-- JavaScript XMLHttpRequest made on the same domain always transfer all cookies
+- [[js:xmlhttprequest][js:xmlhttprequest]] made on the same domain always transfer all cookies
 - [[php:ini:session][php:ini:session]]
 - Need to start session. check if session is already started
   #+BEGIN_SRC php
@@ -23384,7 +23384,7 @@ Bubbling phrase (default): DOM heirarchy down
 
 These objects have implemented EventTarget interface which can receive events and may have listeners:
 - element, document, window
-- XMLHttpRequest, AudioNode, AudioContext and others
+- [[js:xmlhttprequest][js:xmlhttprequest]], AudioNode, AudioContext and others
 
 *** Windows Event in body tag
 | onafterprint, onbeforeprint | only IE and FF                                |
@@ -28921,73 +28921,81 @@ Don't try to access or modify parent window DOM. Do it indirectly.
   }
 #+END_SRC
 
-** XMLHttpRequest <<<XMLHttpRequest>>>
+** XMLHttpRequest <<js:xmlhttprequest>>
 #+BEGIN_SRC js
   function loadDoc() {
-   var xhttp = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest();
 
-   // event handlers. Others: onloadstart, onprgress, onabort, onerror, onload, ontimeout, onloadend
-   // Always use onload instead of onreadystatechange
-   // onload = onreadystatechange and this.readyState ==4
+      // event handlers. Others: onloadstart, onprogress, onabort, onerror, onload, ontimeout, onloadend
+      // Always use onload instead of onreadystatechange
+      // onload = onreadystatechange and this.readyState ==4
 
-   // XHR property: readyState
-   // 0: request not initialized, 
-   // 1: connection established
-   // 2: request received, 
-   // 3: processing request
-   // 4: request finished and response is ready 
+      // XHR property: readyState
+      // 0: request not initialized,
+      // 1: connection established
+      // 2: request received,
+      // 3: processing request
+      // 4: request finished and response is ready
 
-   xhttp.onload = function() {
-    if (this.status == 200) {
-     console.log(
-	this.responseText // as text
-      , this.responseXML // as it's XML data
-      , this.statusText // "OK" or "Not Found"
-     );
+      xhr.onload = function () {
+	  if (this.status === 200) {
+	      console.log(
+		  this.responseText // as text
+		  , this.responseXML // as it's XML data
+		  , this.statusText // "OK" or "Not Found"
+	      );
 
-      console.log(xhttp.getAllResponseHeaders());
-      xhttp.getResponseHeader("Last-Modified");
+	      console.log(xhr.getAllResponseHeaders());
+	      xhr.getResponseHeader("Last-Modified");
 
-    } 
-   };
+	  }
+      };
 
-   xhttp.open('GET', 'ajax_info.txt'
-   , true // async
-   , "username" // optional
-   , "psw" // optional
-   );
+      xhr.onreadystatechange = function () {
+	  // if (xhr.readyState == 4 && xhr.status == 200) { ... }
+      }
 
-   /* After open() */
-   xhttp.setRequestHeader(); // set request header. Especially if 'POST' form fields
-   /* For POST
-    ,* xhttp.setRequestHeader("Content-type",'application/x-www-form-urlencoded');
-    ,*/
+      xhr.open('GET', 'ajax_info.txt'
+	  , true // async
+	  , "username" // optional
+	  , "psw" // optional
+      );
 
-   // For receiving a binary string
-   // xhttp.overrideMimeType("text/plain; charset=x-user-defined");
+      /* After open() */
 
-   /* before send(); */
+      xhr.setRequestHeader("Content-type", 'application/x-www-form-urlencoded');
+      // set request header. Especially if 'POST' form fields
+      xhr.setRequestHeader('Accept', 'application/json, text/javascript');
 
-   xhttp.send(); // Nothing when 'GET'
-   /* For POST
-    ,* var fname = encodeURIComponent('Henry');
-    ,* var varJson = encodeURIComponent(JSON.stringify(var1));
-    ,* xhttp.send("fname="+fname+"&var2="+varJson);
-    ,* if .setRequestHeader content-type is www-form-urlencoded
-    ,* when data is received from PHP, you need to
-    ,* json_decode(stripslashes($_POST['var2'])) 
-    ,*/
+      // it's common for JavaScript client to add this request header
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      // On PHP, the request header appears as $_SERVER['HTTP_X_REQUESTED_WITH']
 
-   // binary data can be sent
-   /* var blob = new Blob(['abc123'], {type: 'text/plain'});
-    ,* xhttp.send(blob);
-    ,* var myArray = new ArrayBuffer(512);
-    ,* var longInt8View = new Uint8Array(myArray);
-    ,* for (var i=0; i< longInt8View.length; i++) {
-    ,*  longInt8View[i] = i % 255;
-    ,* }
-    ,* xhttp.send(myArray);
-    ,*/ 
+      // For receiving a binary string
+      // xhr.overrideMimeType("text/plain; charset=x-user-defined");
+
+      /* before send(); */
+
+      xhr.send(); // Nothing when 'GET'
+      /* For POST
+       ,* var fname = encodeURIComponent('Henry');
+       ,* var varJson = encodeURIComponent(JSON.stringify(var1));
+       ,* xhr.send("fname="+fname+"&var2="+varJson);
+       ,* if .setRequestHeader content-type is www-form-urlencoded
+       ,* when data is received from PHP, you need to
+       ,* json_decode(stripslashes($_POST['var2']))
+       ,*/
+
+      // binary data can be sent
+      /* var blob = new Blob(['abc123'], {type: 'text/plain'});
+       ,* xhr.send(blob);
+       ,* var myArray = new ArrayBuffer(512);
+       ,* var longInt8View = new Uint8Array(myArray);
+       ,* for (var i=0; i< longInt8View.length; i++) {
+       ,*  longInt8View[i] = i % 255;
+       ,* }
+       ,* xhr.send(myArray);
+       ,*/
   }
 #+END_SRC
 
@@ -35492,7 +35500,7 @@ Return control of $ back to the other library with a call to $.noConflict(). Old
    jQuery( "div > p" ).hide();
  #+END_SRC
 
-*** Ajax
+*** Ajax <<jquery:ajax>>
 - ~$.get(url[, data] [, success], [, dataType] )~
 - ~$.post(url[, data] [, success], [, dataType] )~
 #+BEGIN_SRC js
@@ -65458,7 +65466,7 @@ For more edge cases like above and in case of the local network DNS caches which
 Properites > Security, give Full Control for Everyone in this folder
 C:\Users\you\AppData\Local\Google\Chrome\User Data\PepperFlash\some.version.number
 
-*** Allow XMLHttpRequest for local files chrome:cli:allow-file-access-from-files
+*** Allow [[js:xmlhttprequest][js:xmlhttprequest]] for local files chrome:cli:allow-file-access-from-files
 *** Allow CORS locally <<<chrome:cors>>>
 May need to close all Chrome instances. Mine opens the Chromium version not the regular Chrome.
 Errors such as
@@ -65491,7 +65499,7 @@ For headless
 - --headless
 - --no-sandbox :: need to have it when CLI is running by a root user
 
-- --allow-file-access-from-files :: By default, ~file://~ URIs cannot read other ~file://~ URIs e.g. XMLHttpRequest for local files <<<chrome:cli:allow-file-access-from-files>>>
+- --allow-file-access-from-files :: By default, ~file://~ URIs cannot read other ~file://~ URIs e.g. [[js:xmlhttprequest][js:xmlhttprequest]] for local files <<<chrome:cli:allow-file-access-from-files>>>
 - --disable-web-security
   - Don't enforce the same-origin policy
   - refer to chrome:cors
