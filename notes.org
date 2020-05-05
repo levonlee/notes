@@ -46898,22 +46898,15 @@ Use ~useradd~ for non-interactive (Docker)
 - ~-o -u 1000~ :: change UID to 1000, -o is to allow duplicate UID
 
 *** Group sudo
-Run ~visudo~ to see permissions given to each group
-And check sudo environment variable setting
-
-#+BEGIN_EXAMPLE
-  root ALL=(ALL:ALL) ALL
-#+END_EXAMPLE
-User root can run sudo as all hosts (1st ALL), all users, all groups and apply to all commands.
-
-Start with % means is a group
-#+BEGIN_EXAMPLE
-  %sudo   ALL=(ALL:ALL) ALL 
-#+END_EXAMPLE
-
-Which group a user belongs to ~groups username~
-
-[[https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos][More info]]
+- Run ~sudo visudo~ to see
+   - permissions given to each group
+   - check sudo environment variable setting
+- e.g.
+   - ~root ALL=(ALL:ALL) ALL~ :: User root can run sudo as all hosts (1st ALL), all users, all groups and apply to all commands
+   - ~%sudo   ALL=(ALL:ALL) ALL~ :: Start with % means is a group
+   - ~lili2   ALL=(ALL:ALL) ALL~ :: login as a sudoer, add another user lili2 in sudoers file
+- Which group a user belongs to :: ~groups username~
+- [[https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos][More info]]
 
 *** Change a user's password <<linux:user:passwd>>
 - Login as root and run ~passwd~ to change root password
@@ -46931,19 +46924,20 @@ Which group a user belongs to ~groups username~
 Refer to bash:awk
 ~awk -F':' 'BEGIN{OFS="\t"; print "Login Username","Password","UID", "Group ID (GID)", "Comment", "Home Dir", "Default shell"} {print $1,$2,$3,$4,$5,$6,$7}' /etc/passwd | column -t -s $'\t'~
 
-*** Switch to superuser <<linux:sudo:su>>
-- Debian :: ~sudo su~
-- RedHat :: ~sudo -~
-
-*** Login to another user, Run command as another user <<linux:sudo:o:u>>
-- Login (need to type password)
-   - ~/bin/su - username~
-- Run as a user (need to type password)
-   - ~sudo -u lynda whoami~
-   - ~/bin/su - username -c 'whoami'~
-- As root user, run as another user without typing password
-   - ~sudo -H -u username bash -c 'whoami'~
-      - ~-H~ :: to use the target user's home directory <<linux:sudo:o:H>>
+*** Switch to another user <<linux:sudo:su>>
+- Switch to superuser/root
+   - Debian :: ~sudo su~
+   - RedHat :: ~sudo -~
+- Login to another user, Run command as another user <<linux:sudo:o:u>>
+   - Login (need to type password)
+      - ~/bin/su - username~ or ~su liliadmin~
+      - ~exit~ to go back to original user
+   - Run as a user (need to type password)
+      - ~sudo -u lynda whoami~
+      - ~/bin/su - username -c 'whoami'~
+   - As root user, run as another user without typing password
+      - ~sudo -H -u username bash -c 'whoami'~
+	 - ~-H~ :: to use the target user's home directory <<linux:sudo:o:H>>
 
 *** Sudo run multiple commands
 ~sudo bash -c 'apt-get update;apt-get install'~
@@ -66310,6 +66304,54 @@ Put Reflexil AIO dll to Reflector's Addins folder C:\Program Files (x86)\Red Gat
 After edit, right click on the Object Browser > Reflexil > Save as
 
 ** macOS
+*** Versions
+- Catalina :: 10.15
+
+*** Homebrew <<macos:homebrew>>
+- https://brew.sh/
+
+#+BEGIN_SRC sh
+  # install homebrew
+
+  # Install on Catalina
+  # Switch to an Administrator or who can modify /usr/local. The dir belongs to root:wheel
+  # su liliadmin
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
+  # exit to normal user
+
+  brew -v
+
+  # to uninstall homebrew
+  # https://github.com/homebrew/install#uninstall-homebrew
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh)"
+
+  # search and find version before installing a piece
+  brew search zsh
+  brew info zsh
+
+  brew search iterm2
+  brew cask info iterm2
+  # iterm2 needs to be installed with cask
+#+END_SRC
+
+*** iTerm 2
+- XCode CLi tools
+
+#+BEGIN_SRC sh
+  # install CLI developer tools for Xcode
+  xcode-select --install
+
+  # if an error, run this to reset `xcode-select`
+  # xcode-select -r
+
+  # install homebrew
+
+  # install iterm2
+  brew cask install iterm2
+
+#+END_SRC
+
 *** Terminal
 - ~open afile~, ~open adir~, ~open .~, ~open ..~ :: open in Finder
 - ~open -a TextEdit afile.txt~ :: open a file using an app
