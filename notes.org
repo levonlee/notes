@@ -46904,7 +46904,7 @@ Use ~useradd~ for non-interactive (Docker)
 - e.g.
    - ~root ALL=(ALL:ALL) ALL~ :: User root can run sudo as all hosts (1st ALL), all users, all groups and apply to all commands
    - ~%sudo   ALL=(ALL:ALL) ALL~ :: Start with % means is a group
-   - ~lili2   ALL=(ALL:ALL) ALL~ :: login as a sudoer, add another user lili2 in sudoers file
+   - ~lili2   ALL=(ALL:ALL) ALL~ :: login as a sudoer, add another user lili2 in sudoers file <<linux:user:sudoer>>
 - Which group a user belongs to :: ~groups username~
 - [[https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos][More info]]
 
@@ -49331,11 +49331,12 @@ Then you delete ~sudo ufw delete allow 22~
 [[https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands][More info]]
 
 ** Font <<<linux:font>>>
-Install Source Code Pro
-#+BEGIN_SRC sh
-  git clone --depth 1 --branch release https://github.com/adobe-fonts/source-code-pro.git /usr/local/share/fonts/adobe-fonts/source-code-pro/
-  sudo fc-cache -fv
-#+END_SRC
+- Install Source Code Pro
+  #+BEGIN_SRC sh
+    git clone --depth 1 --branch release https://github.com/adobe-fonts/source-code-pro.git /usr/local/share/fonts/adobe-fonts/source-code-pro/
+    sudo fc-cache -fv
+  #+END_SRC
+- [[macos:font][macos:font]]
 
 ** Timezone, NTP <<<linux:timezone>>>
 - Set timezone first :: ~sudo dpkg-reconfigure tzdata~
@@ -56144,6 +56145,7 @@ Database Drivers
 	 - Turn it off. As Windows takes over the hardware acceleration
 	 - Then reboot and change UEFI or BIOS setting
 	    - name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration
+- Install [[vagrant:plugin][vagrant:plugin]]
 - Simply install the latest version to upgrade :: https://www.vagrantup.com/downloads.html
 
 #+BEGIN_SRC sh
@@ -56317,7 +56319,7 @@ Vagrant Pure SSH <<vagrant:ssh:pure ssh>>
   end
 #+END_SRC
 
-** Plugin
+** Plugin <<vagrant:plugin>>
 - ~vagrant-docker-compose~ plugin enables a new provisioner Docker Compose
    - ~vagrant plugin install vagrant-docker-compose~
    - https://github.com/leighmcculloch/vagrant-docker-compose
@@ -64723,6 +64725,10 @@ Install linux:font, open Emacs:
   - ~[M-x] package-refresh [RET]~
   - ~[M-x] package-list-packages [RET]~
 
+**** Install on Mac Catalina
+- ~brew cask install emacs~
+- [[macos:full disk access][macos:full disk access]] to Emacs :: Applications > Emacs
+
 *** MELPA packages
 Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
 Add http://melpa.org/packages/
@@ -66307,6 +66313,7 @@ After edit, right click on the Object Browser > Reflexil > Save as
 *** Versions
 - Catalina :: 10.15
 
+*** Add a user to sudoers file [[linux:user:sudoer][linux:user:sudoer]]
 *** Homebrew <<macos:homebrew>>
 - https://brew.sh/
 
@@ -66336,7 +66343,7 @@ After edit, right click on the Object Browser > Reflexil > Save as
 #+END_SRC
 
 *** iTerm 2
-- XCode CLi tools
+**** Install
 
 #+BEGIN_SRC sh
   # install CLI developer tools for Xcode
@@ -66349,8 +66356,19 @@ After edit, right click on the Object Browser > Reflexil > Save as
 
   # install iterm2
   brew cask install iterm2
-
 #+END_SRC
+
+**** Shortcuts
+- Tab
+   - new tab :: ~Cmd-t~
+   - close current tab :: ~Cmd-w~
+   - Switch to a tab left or right :: ~Cmd-S-[~ ~Cmd-S-]~
+   - Switch to a tab :: ~Cmd-1~, ~Cmd-2~
+- Pane
+   - new vertical pane :: ~Cmd-d~
+   - new horizontal pane :: ~Cmd-S-d~
+   - Close current pane :: ~C-d~ 
+   - Switch to a pane left or right :: ~Cmd-[~ ~Cmd-]~
 
 *** Terminal
 - ~open afile~, ~open adir~, ~open .~, ~open ..~ :: open in Finder
@@ -66391,6 +66409,49 @@ After edit, right click on the Object Browser > Reflexil > Save as
       - now :: ~sudo shutdown -h now~
       - +minutes
       - yymmddhhmm
+
+*** Font <<macos:font>>
+#+BEGIN_SRC sh
+  brew tap homebrew/cask-fonts
+  brew cask install font-source-code-pro
+#+END_SRC
+
+*** NFS <<macos:nfs>>
+- Give Full Disk Access to nfsd <<macos:full disk access>>
+   - System Preferences > Security & Privacy > Privacy > on the left ~Full Disk Access~, add another
+   - ~Cmd-S-g~ then type ~/sbin/nfsd~
+
+#+BEGIN_SRC sh
+  sudo nano /etc/exports
+
+  # where $U is `id -u`, $G is `id -g`
+
+  # Since Catalina, /Users are in another volume
+  # instead of doing this:
+  # /Users -alldirs -mapall=$U:$G localhost
+
+  # now insert the following
+  # /System/Volumes/Data -alldirs -mapall=$U:$G localhost
+
+  # more about /etc/exports file
+  # http://scottlab.ucsc.edu/xtal/wiki/index.php//etc/exports
+
+  sudo nano /etc/nfs.conf
+
+  # insert
+  # nfs.server.mount.require_resv_port = 0
+  # more about /etc/nfs.conf file
+  # http://scottlab.ucsc.edu/xtal/wiki/index.php//etc/nfs.conf
+
+  sudo nfsd restart
+#+END_SRC
+
+*** Shortcut for Window Management
+- Close current window :: ~Cmd-w~
+- Close all windows of the app :: ~Cmd-M-w~
+- No shortcut for maximize current window
+- Switch to next window of the app :: ~Cmd-`~
+- Hide all windows of other apps :: ~Cmd-M-h~
 
 ** Project Management
 *** Jira
