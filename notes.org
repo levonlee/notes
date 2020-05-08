@@ -29939,7 +29939,7 @@ Refer to bootstrap:responsive helpers
  #+END_SRC
 
 *** js:for...of
-*** Import, export
+*** Import, export <<js:import>>
 - ES5 :: ~require~ and ~module.exports~
   #+BEGIN_SRC js
     // App.js
@@ -43277,32 +43277,68 @@ The install is conflict-free meaning that they do not mess with existing install
 - ~npm i gist:mygistid~ :: create a Gist on GitHub with package.json
 
 ** Increase memory and ~NODE_OPTIONS~ <<<nodejs:memory>>>
-Default memory is 512mb. Increase to 1gb.
+- Default memory is 512mb. Increase to 1gb
+- https://nodejs.org/api/cli.html#cli_node_options_options
+- For command line e.g. ~npm install~
+   - ~NODE_OPTIONS=--max-old-space-size=1024 npm install something~
+- For node project
+   - ~node --max_old_space_size=1024 main.js~
+- For gulp
+   - ~gulp yourTask --max_old_space_size=1024~ or
+   - ~node --max-old-space-size=1024 ./node_modules/.bin/gulp yourTask~
+- Using a package and build a script
+   - ~npm install --save-dev increase-memory-limit~
+     #+BEGIN_SRC json
+       // ...
+	 "scripts": {
+	   "fix-memory-limit": "cross-env LIMIT=1024 increase-memory-limit"
+	 },
+	 "devDependencies": {
+	   "increase-memory-limit": "^1.0.3",
+	   "cross-env": "^5.0.5"
+	 }
+       // ...
+     #+END_SRC
 
-https://nodejs.org/api/cli.html#cli_node_options_options
+** yarn <<nodejs:yarn>>
+*** Basics
+#+BEGIN_SRC sh
+  npm install -g yarn
 
-For command line e.g. ~npm install~
-- ~NODE_OPTIONS=--max-old-space-size=1024 npm install something~
+  mkdir test
+  cd test
+  yarn init
 
-For node project
-- ~node --max_old_space_size=1024 main.js~
+  # add a devDependency
+  yarn add --dev ava
 
-For gulp
-- ~gulp yourTask --max_old_space_size=1024~ or
-- ~node --max-old-space-size=1024 ./node_modules/.bin/gulp yourTask~
+  # a yaml file `yarn.lock` is created
 
-Using a package and build a script
-- ~npm install --save-dev increase-memory-limit~
+  # install a global package
+  yarn global add rollup
+#+END_SRC
+
+*** ava <<yarn:ava>>
+#+BEGIN_SRC sh
+  mkdir test
+  touch test/index.test.js
+#+END_SRC
+
+package.json, add this
 #+BEGIN_SRC json
-  // ...
-    "scripts": {
-      "fix-memory-limit": "cross-env LIMIT=1024 increase-memory-limit"
-    },
-    "devDependencies": {
-      "increase-memory-limit": "^1.0.3",
-      "cross-env": "^5.0.5"
-    }
-  // ...
+  "scripts": {
+      "test": "ava"
+  }
+#+END_SRC
+
+index.test.js
+#+BEGIN_SRC js
+  import test from 'ava';
+
+  test('reverse', t => {
+      t.is('hello', 'olleh', 'The strings to not match')
+      t.is('goodbye','dadfa')
+  })
 #+END_SRC
 
 ** TS: gulp-util is deprecated
