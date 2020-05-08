@@ -82,3 +82,11 @@ There are two things you can do about this warning:
 'org-babel-load-languages
 '((dot . t)))
 
+;; use visual bell
+(defun my-terminal-visible-bell ()
+   "A friendlier visual bell effect."
+   (invert-face 'mode-line)
+   (run-with-timer 0.1 nil 'invert-face 'mode-line))
+
+ (setq visible-bell nil
+       ring-bell-function 'my-terminal-visible-bell)
