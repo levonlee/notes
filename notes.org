@@ -47850,7 +47850,6 @@ wp:check file permissions
     /home/user/a
     /home/user/afile
   #+END_EXAMPLE
-    
   The depth of ~/home/user/1~ and ~/home/user/a~ related to =~= is 1
   To find any folder that is named ~1~ but not at first level
   #+BEGIN_EXAMPLE
@@ -47942,50 +47941,54 @@ wp:check file permissions
     # e.g.
     echo 'AaBbCcDdEe' | grep --color '[[:upper:]]'
   #+END_EXAMPLE
+- Basic usage
+  #+BEGIN_SRC sh
+    grep --color -HRi "google\.com" /root/dir
 
-#+BEGIN_SRC sh
-  grep --color -HRi "google\.com" /root/dir
+    # Only file names
+    grep --color -HRi "abc" /root/dir | cut -d: -f1
 
-  # Only file names
-  grep --color -HRi "abc" /root/dir | cut -d: -f1
+    # Unique file names
+    grep --color -HRi "abc" /root/dir | cut -d: -f1 | sort -u
 
-  # Unique file names
-  grep --color -HRi "abc" /root/dir | cut -d: -f1 | sort -u
+    # Exclude file types
+    grep --color -HRi --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
 
-  # Exclude file types
-  grep --color -HRi --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
+    # Exclude binary files
+    grep --color -HIRin --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
 
-  # Exclude binary files
-  grep --color -HIRin --exclude=\*.{pdf,jpg,jpeg,JPG,mp3,png,bmp,sql} "abc" .
+    # Return 5 trailing lines and 10 leading lines for each match
+    grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
+  #+END_SRC
+- Extended Regular Expression
+  ~(~, ~)~, ~{~, ~}~, ~?~, ~+~ and ~|~ as extra Meta characters
+  #+BEGIN_SRC sh
+    grep -E 'o' geeks.txt
 
-  # Return 5 trailing lines and 10 leading lines for each match
-  grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
+    # 2 or more vowels
+    grep -E '[aeiou]{2,}' geeks.txt
 
-  # Extended Regular Expression ::  ( ) { } ? + and | as extra Meta characters
-  grep -E 'o' geeks.txt
+    # 1 to 2 vowels
+    grep -E '[aeiou]{1,2}' geeks.txt
 
-  # 2 or more vowels
-  grep -E '[aeiou]{2,}' geeks.txt
+    # exactly 2 vowels
+    grep -E 'el{2}' geeks.txt
 
-  # 1 to 2 vowels
-  grep -E '[aeiou]{1,2}' geeks.txt
+    # Start of a word
+    grep -E -i '\<h' geeks.txt
 
-  # exactly 2 vowels
-  grep -E 'el{2}' geeks.txt
+    # End of a a word
+    grep -E 'y\>' geeks.txt
 
-  # Start of a word
-  grep -E -i '\<h' geeks.txt
+    # Word boundary :: match a whole word
+    grep -E '\bGlenn\b' geeks.txt
 
-  # End of a a word
-  grep -E 'y\>' geeks.txt
+    # Word boundary :: `way` must be part of a word or the whole word
+    grep -E '\Bway\B' geeks.txt
 
-  # Word boundary :: match a whole word
-  grep -E '\bGlenn\b' geeks.txt
-
-  # Word boundary :: `way` must be part of a word or the whole word
-  grep -E '\Bway\B' geeks.txt
-#+END_SRC
-
+    # OR
+    ls -al | grep -i -E 'folder1$|folder2$'
+  #+END_SRC
 - Options
    - --color :: hightlight
    - ~-H, -h~ :: return only the file names
