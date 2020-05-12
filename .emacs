@@ -52,6 +52,7 @@ There are two things you can do about this warning:
  '(org-adapt-indentation nil)
  '(org-confirm-babel-evaluate nil)
  '(org-export-with-sub-superscripts (quote {}))
+ '(org-goto-interface (quote outline-path-completion))
  '(package-selected-packages
    (quote
     (graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))))
