@@ -520,7 +520,7 @@ require debian pkg libicu-dev
     # restart memcached to clear cache
     sudo service memcached restart
   #+END_SRC
-- There's an old version which has a different name ~memcache~
+- There's an old version of PHP client which has a different name ~memcache~. On Linux, server/daemon is still ~memcached~
 
 *** pspell
 *** soap
@@ -2939,17 +2939,37 @@ Global names must be prefixed or use namespace.
 - Execute tests in dir ~tests~ :: ~./vendor/bin/phpunit tests~
    - Run one test file :: ~./vendor/bin/phpunit tests/ReceiptTest.php~
    - Filter test cases in files and run tests :: ~./vendor/bin/phpunit tests --filter=testTax~
-      - Run function that matches the regex ~testTax~
+      - Run function that matches the regex ~testTax~ :: e.g. matched methodName
       - ~./vendor/bin/phpunit tests --filter=ReceiptTest::testTax~
+	 - Old version of PHPUnit
+	    - ~phpunit --filter testTax path/to/ReceiptTest.php~
    - Filter by testsuite :: ~./vendor/bin/phpunit --testsuite=app --filter=testTax~
 - Assertion methods :: https://phpunit.readthedocs.io/en/8.5/assertions.html
    - ~assertEquals(mixed $expected, mixed $actual[, string $message = ''])~
 - [[phpstorm:phpunit][phpstorm:phpunit]]
 
-*** phpunit.xml <<<phpunit:phpunit.xml>>>
+*** phpunit.xml <<phpunit:phpunit.xml>>
 - Set filter, testsuites (groups), colors
 - testsuites
 - logging
+
+*** CLI
+- Syntax
+   - ~phpunit --help~
+   - ~phpunit [options] UnitTest.php~
+   - ~phpunit [options] <directory>~
+- Characters to indicate progress
+   - . :: success
+   - F :: fail
+   - E :: error
+   - R :: marked as risky
+   - S :: skipped
+   - I :: incomplete or not yet implemented
+- Options of config
+   - ~-d key[=value]~ :: set a php.ini value e.g. ~-d memory_limit=256M~
+   - ~--configuration~, ~-c~ :: e.g. ~-c sub/phpunit.xml~ read config. If omitted, ~phpunit.xml~ or ~phpunit.xml.dist~ at current dir. will be read
+- Options of test selection
+   - ~--testsuite <name,pattern,...>~ :: which testsuites to run 
 
 ** Libraries
 *** mPDF
@@ -49532,15 +49552,17 @@ Most of devices: =lshal=
 
 *** Package Management
 **** Debian only =yum=
-~yum check-update~ only checks if any updates are available for installed packages only.
+- ~yum check-update~
+   - only checks if any updates are available for installed packages only
+- ~yum~ doesn't need to ~apt-get update~ like Ubuntu. In fact, ~yum update~ updates every currently installed package which is equivalent to Ubuntu ~apt-get update; apt-get upgrade~
+- Try to avoid ~yum upgrade~ as it forces the removal of obsolete packages. Same as ~yum update --obsoletes~
+- ~yum list tree~ to list package 'tree' info
+- ~yum list installed tree~ :: If it returns error, it means the package tree is not installed
 
-~yum~ doesn't need to ~apt-get update~ like Ubuntu. In fact, ~yum update~ updates every currently installed package which is equivalent to Ubuntu ~apt-get update; apt-get upgrade~
-
-Try to avoid ~yum upgrade~ as it forces the removal of obsolete packages. Same as ~yum update --obsoletes~
-
-~yum list tree~ to list package 'tree' info
-
-~yum list installed tree~ If it returns error, it means the package tree is not installed.
+**** rpm Red-Hat Package Manager
+- Low level
+- RHEL (Red Hat Enterprise Linux) ,CentOS, Fedora
+- List installed packages :: ~rpm -qa~
 
 **** =dpkg= lowest level Ubuntu, Debian
 List installed packages: =dpkg -l= 
@@ -58559,7 +58581,7 @@ To see any requests that violate which rules in which .conf file, tail the apach
   # 3 levels: system > global (user) > local
 
   # List all active config for the current folder
-  git config --list
+  git config --list | grep credential
 
   # List global config only
   git config --global --list
@@ -58680,7 +58702,8 @@ Show file names only between 2 commits
    - clean working tree, go back to HEAD but the untracked are intact
 - ~git clean -dfn~ <<git:clean>> :: remove untracked files
 - ~git stash~ :: Save and remove Staged and Unstaged changes <<git:stash>>
-   - List all stashes :: ~git stash list~
+   - Give a name :: ~git stash save 'my_stash'~ 
+   - List all stashes :: ~git --no-pager stash list~
    - Apply latest stash :: ~git stash apply~
       - Apply 2nd latest stash :: ~git stash apply "stash@{2}"~
       - Apply when there's no staged and unstaged
@@ -59029,6 +59052,8 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
 - Syntax :: ~git log [<options>] [<revision range>] [[--] <path>…​]~
    - ~git log --oneline origin/master -- path/to/a/file~
       - show commits on origin/master which modify a file
+   - ~git log --graph --oneline --all -- path/to/a/file~
+      - show commits of all branches about a file
 - Commit formatting 
    - ~git log --graph~
    - ~git log --oneline~
@@ -64558,7 +64583,7 @@ Settings > Languages & Frameworks > PHP
 **** XDebug config <<xdebug:config>>
 - https://xdebug.org/docs/all_settings
 - Config location [[image:php:7.x-fpm:ini:extensions][image:php:7.x-fpm:ini:extensions]]
-- remote_host could be
+- ~remote_host~ could be
    - [[vagrant:host:ip][vagrant:host:ip]]
 - Consider extend timeout
    - [[nginx:d:fastcgi_read_timeout][nginx:d:fastcgi_read_timeout]]
@@ -64800,6 +64825,7 @@ Autocomplete npm modules in import statements based on package.json
 :CUSTOM_ID: emacs
 :END:
 *** Install & Configuration
+**** Windows
 - Download for Windows https://ftp.gnu.org/pub/gnu/emacs/windows/
 - This version :: https://ftp.gnu.org/gnu/emacs/windows/emacs-26/emacs-26.1-x86_64.zip
    - Previous versions :: ~emacs-26.1-x86_64.zip~ (with all deps 64-bit) ~emacs-25.1-i686-w64-mingw32~ ~emacs-24.5-bin-i686-mingw32.zip~
@@ -64870,20 +64896,23 @@ Install linux:font, open Emacs:
 - ~brew cask install emacs~
 - [[macos:full disk access][macos:full disk access]] to Emacs :: Applications > Emacs
 
+**** Init files
+- =~/=
+   - ~.emacs~
+   - ~.emacs.el~ or
+   - ~.emacs.d/init.el~
+
 *** MELPA packages
-Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
-Add http://melpa.org/packages/
-
-Run ~M-x list-packages~ to see all packages including built-in pkgs and package-archives
-- ~i~ :: installation
-- ~u~ :: unmark
-- ~x~ :: perform the i and u installation
-- ~RET~ to see more about a pkg
-- ~q~ :: quit
-
-New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=, then you can follow instructions on Melpa.org to initialize in .emacs init file.
-
-Another GitHub pkg ~el-get~ can be used to install/load pkgs from difference sources :: https://mrblog.nl/emacs/config.html
+- Add http://melpa.org/packages/
+   - Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
+- Run ~M-x list-packages~ to see all packages including built-in pkgs and package-archives
+   - ~i~ :: installation
+   - ~u~ :: unmark
+   - ~x~ :: perform the i and u installation
+   - ~RET~ to see more about a pkg
+   - ~q~ :: quit
+- New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=, then follow instructions on Melpa.org to initialize in ~.emacs~ init file
+- Another GitHub pkg ~el-get~ can be used to install/load pkgs from difference sources :: https://mrblog.nl/emacs/config.html
 
 Place packages under load-path ~C-h v load-path RET~
 C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\VERSION\site-lisp is /usr/local/share/emacs/VERSION/site-lisp for a particular Emacs version
