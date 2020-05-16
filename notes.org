@@ -56764,20 +56764,16 @@ Add flags for cookies
 
 *** mod_include
 *** mod_rewrite
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <IfModule mod_rewrite.c>
   RewriteEngine on
-  ...
+  # ...
   </IfModule>
-#+END_EXAMPLE
+#+END_SRC
 
-**** RewriteBase <<<apache:RewriteBase>>>
+**** RewriteBase <<apache:rewritebase>>
 Syntax:	RewriteBase [URL-path]
-specifies the URL prefix to be used for per-directory (htaccess) RewriteRule directives that substitute a relative path.
-
-#+BEGIN_EXAMPLE
-  RewriteBase /
-#+END_EXAMPLE
+specifies the URL prefix to be used for per-directory (htaccess) RewriteRule directives that substitute a relative path
 
 Request ~GET /somepath/localpath/pathinfo~
 #+BEGIN_SRC apache
@@ -56790,8 +56786,12 @@ Request ~GET /somepath/localpath/pathinfo~
   # /otherpath/pathinfo
 #+END_SRC
 
-**** RewriteCond <<<apache:RewriteCond>>>
-Syntax: RewriteCond [TestString] [CondPattern] [flags]
+**** RewriteCond <<apache:rewritecond>>
+- Syntax :: RewriteCond [TestString] [CondPattern] [flags]
+- CondPattern can be
+   - regex
+   - ~-d~, ~!-d~ :: is, not a directory
+   - ~-f~, ~!-f~ :: is, not a file
 
 #+BEGIN_SRC apache
   RewriteCond %{REMOTE_ADDR} ^1\.2\.3\.4$
@@ -56801,27 +56801,27 @@ Syntax: RewriteCond [TestString] [CondPattern] [flags]
   RewriteRule ^(.*)$ "https\:\/\/www\.xyz\.com\/$1" [R=302,L]
 #+END_SRC
 
-**** Server-Variables
-https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+***** Server-Variables
+- https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+- https://abc.com:8080/path/to/file
+- %{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
+- %{HTTPS} :: ~on~
+- %{REQUEST_URI} :: ~/path/to/file~ leading slash
+- %{REQUEST_FILENAME}
+   - The full local filesystem path if a file matches the request. Otherwise, REQUEST_URI
 
-%{HTTP_HOST} %{SERVER_PORT} %{QUERY_STRING}
-
-%{REQUEST_URI} :: leading slash
-
-***** ~${HTTP_COOKIE}~
-#+BEGIN_EXAMPLE
+****** ~${HTTP_COOKIE}~
+#+BEGIN_SRC apache
   RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
   RewriteCond %1                 ^me$
   RewriteRule ......
-#+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
   RewriteCond %{HTTP_COOKIE}     its=([^;]+) 
   RewriteCond %{unescape:%1}     ^me$
   RewriteRule ......
-#+END_EXAMPLE
+#+END_SRC
 
-***** ~%{TIME_*}~
+****** ~%{TIME_*}~
 #+BEGIN_SRC apache
   <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -56832,71 +56832,71 @@ https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
   </IfModule>
 #+END_SRC
 
-**** RewriteCond Flags
-NC :: no case
-NV :: no vary
-OR
+***** RewriteCond Flags <<apache:rewritecond:flags>>
+- NC :: no case
+- NV :: no vary
+- OR
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   RewriteCond "%{REMOTE_HOST}"  "^host1"  [OR]
   RewriteCond "%{REMOTE_HOST}"  "^host2"  [OR]
   RewriteCond "%{REMOTE_HOST}"  "^host3"
   RewriteRule ...some special stuff for any of these hosts...
-#+END_EXAMPLE
+#+END_SRC
 
-**** RewriteRule <<<apache:RewriteRule>>>
-Syntax:	RewriteRule [Pattern] [Substitution] [flags]
+**** RewriteRule <<apache:rewriterule>>
+- Syntax :: RewriteRule [Pattern] [Substitution] [flags]
+- Pattern
+   - Don't add leading slash. ~^something~ is a relative path that either starts with the current directory's .htaccess or [[apache:rewritebase][apache:rewritebase]]
+   - regex
+      - ~| ^ $ ( ) [ ] . * + ?~
+      - ~\d~
+      - ~\w~ :: a-Z, 0-9 and underscore
+- Substitution
+   - ~"-"~ or ~-~ :: the requested URI is not modified
+   - If it doesn't have a leading slash, the end URL has the current directory's .htaccess or [[apache:rewritebase][apache:rewritebase]]
+- Use double quotes
+   - When ~#~ is used in Pattern or Substituion. If it is in Substition, apache:rewriterule:flags NE is required
 
-Pattern
-Don't add leading slash. ~^something~ is a relative path that either starts with the current directory's .htaccess or apache:RewriteBase
-
-Substitution
-"-" or - :: the requested URI is not modified
-If it doesn't have a leading slash, the end URL has the current directory's .htaccess or apache:RewriteBase
-
-**** RewriteRule Flags <<<apache:RewriteRule:flags>>>
-https://httpd.apache.org/docs/2.4/rewrite/flags.html
-
-F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
-L :: Last
-NC :: no case
-T :: set MIME type with which the resulting response will be sent.
-E :: set environment variable e.g. [E=VAR:VAL] [E=VAR] (set to empty) [E=!VAR] (unset a previously set env var named VAR)
-
-P|proxy :: handle request by mod_proxy
-
-QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
+**** RewriteRule Flags <<apache:rewriterule:flags>>
+- https://httpd.apache.org/docs/2.4/rewrite/flags.html
+- *No space between flags!*
+- F :: return 403 and L is implied e.g. ~RewriteRule "\.exe" "-" [F]~
+- L :: Last
+- NC :: no case
+- NE :: no escape. By default, special characters in Substituion wrapped in quotes will be escaped e.g. ~& ? #~
+- T :: set MIME type with which the resulting response will be sent.
+- E :: set environment variable e.g. [E=VAR:VAL] [E=VAR] (set to empty) [E=!VAR] (unset a previously set env var named VAR)
+- P|proxy :: handle request by mod_proxy
+- QSA|qsappend :: Default behavior of RewriteRule is to discard the existing query string, and replace it with the newly generated one. Use it to cause the query string to be combined
 e.g. ~RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]~
 /pages/123?one=two will be mapped to /page.php?page=123&one=two
 
-**** ReWrite a path to sub directory with .htaccess
-URL /inventory/* rewrite to /my-app/public/*
-
-./my-app/public/index.php is where the app starts
-~./my-app/app/*.*~ are the app codes
-~./my-app/public/theme/*.*~ and ~./my-app/public/uploads/*.*~ have the assets
-
-./.htaccess
-#+BEGIN_SRC apache
-  <IfModule mod_rewrite.c>
-      RewriteEngine On
-      RewriteBase /
-      RewriteRule ^inventory/?$ /my-app/public/index.php [L]
-      RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
-  </IfModule>
-#+END_SRC
-
-./my-app/public/.htaccess
-#+BEGIN_SRC apache
-  <IfModule mod_rewrite.c>
-      RewriteEngine On
-      RewriteBase /my-app/public/
-      RewriteRule ^index\.php$ - [L]
-      RewriteCond %{REQUEST_FILENAME} !-f
-      RewriteCond %{REQUEST_FILENAME} !-d
-      RewriteRule . /my-app/public/index.php [L]
-  </IfModule>
-#+END_SRC
+**** Rewrite a path to sub directory with .htaccess
+- URL ~/inventory/*~ rewrite to /my-app/public/*
+   - ~./my-app/public/index.php~ is where the app starts
+   - ~./my-app/app/*.*~ are the app codes
+   - ~./my-app/public/theme/*.*~ and ~./my-app/public/uploads/*.*~ have the assets
+- ./.htaccess
+  #+BEGIN_SRC apache
+    <IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /
+	RewriteRule ^inventory/?$ /my-app/public/index.php [L]
+	RewriteRule ^inventory/(.*)$ /my-app/public/$1 [L]
+    </IfModule>
+  #+END_SRC
+- ./my-app/public/.htaccess
+  #+BEGIN_SRC apache
+    <IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteBase /my-app/public/
+	RewriteRule ^index\.php$ - [L]
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule . /my-app/public/index.php [L]
+    </IfModule>
+  #+END_SRC
 
 **** WordPress Example
 RewriteRule with redirect flag [R] is to redirect URL. Without it, RedirectRule maintains the URL on LHS in the address bar.
@@ -57045,7 +57045,7 @@ https://httpd.apache.org/docs/2.4/mod/mod_alias.html
    - Not allowed in .htaccess files at all.
 - virtual host :: This context means that the directive may appear inside <VirtualHost> containers in the server configuration files
 - directory :: A directive marked as being valid in this context may be used inside <Directory>, <Location>, <Files>, <If>, and <Proxy> containers in the server configuration files, subject to the restrictions outlined in Configuration Sections.
-- ~.htaccess~ :: If a directive is valid in this context, it means that it can appear inside per-directory .htaccess files. It may not be processed, though depending upon the overrides currently active.
+- ~.htaccess~ :: If a directive is valid in this context, it means that it can appear inside per-directory .htaccess files. It may not be processed, though depending upon the overrides currently active
 
 ** Core Directives
 These can be used in all apache:directive context. However, some directive setting needs to happen in a different context.
@@ -57082,16 +57082,24 @@ Force to download a PDF file. The path doesn't matter
 - Default :: off
 - Context :: server config, virtual host, directory, .htaccess
 
-** LogLevel
-Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
-#+BEGIN_EXAMPLE
+*** LogLevel <<apache:core:loglevel>>
+- Syntax :: ~LogLevel [module:]level [module:level] ...~
+- Default :: ~LogLevel warn~
+- Context :: server config, virtual host, directory
+- https://httpd.apache.org/docs/2.4/mod/core.html#loglevel
+- Put it inside VirtualHost e.g. in /etc/apache2/sites-available/*.conf
+
+#+BEGIN_SRC apache
+  # for all modules use alert level, but for rewrite module, level is trace6, which is extremely detailed
   LogLevel alert rewrite:trace6
+
+  # sometimes, mod_rewrite.c:trace6 is required
 
   # For < 2.4 use this for Rewrite log
   RewriteEngine On
   RewriteLog "/var/log/apache2/rewrite.log"
   RewriteLogLevel 3
-#+END_EXAMPLE
+#+END_SRC
 
 trace1 to trace8 (most detailed)
 
