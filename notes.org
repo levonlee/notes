@@ -83,12 +83,14 @@ Install multiple versions of PHP
 - 5.6 :: /usr/local/etc/php/php.ini, /usr/local/etc/php/conf.d/*.ini
 - 5.3 :: /etc/php5/apache/php.ini, /etc/php5/cli/php.ini
 
-**** php.ini vs .user.ini
-Put .user.ini in website root directory. Only place php.ini in main config or conf.d directory or a directory that is setup to scan php.ini files. Placing php.ini in website root directory only works for that directory but not recursively in sub directories.
+**** ~php.ini~ vs ~.user.ini~
+Put ~.user.ini~ in website root directory. Only place php.ini in main config or conf.d directory or a directory that is setup to scan php.ini files. Placing php.ini in website root directory only works for that directory but not recursively in sub directories.
 
 **** Apache
-Set PHP via Apache directives e.g. httpd.conf .htaccess
-Require ~AllowOverride Options~ or ~AllowOverride All~
+- Set PHP via Apache directives e.g. httpd.conf .htaccess
+- Require ~AllowOverride Options~ or ~AllowOverride All~
+- Cannot use PHP constants e.g. E_ALL
+- Changing this does not require to reload Apache nor PHP
 
 And then
 #+BEGIN_SRC php
@@ -1240,36 +1242,35 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
    - Refer to [[nodejs:decrypt][nodejs:decrypt]]
 
 ** URL
-- ~urlencode()~ :: encodes URL parameter values <<php:urlencode>>
+- ~urlencode()~ :: encode the query string (the part after ~?~) <<php:urlencode>>
+		   Encode space as ~+~
+  #+BEGIN_SRC php
+    $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
+    echo '<a href="mycgi?' . htmlentities($query_string) . '">';
+  #+END_SRC	   
    - encodes spaces as plus signs current URL
-
-#+BEGIN_SRC php
-  $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
-  echo '<a href="mycgi?' . htmlentities($query_string) . '">';
-#+END_SRC
-
-To encode path
-#+BEGIN_SRC php
-  echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
-       '@ftp.example.com/x.txt">';
-  echo '<a href="http://example.com/department_list_script/',
-      rawurlencode('sales and marketing/Miami'), '">';
-#+END_SRC
-
+- ~rawurlencode~ :: encode path (the part before ~?~)
+		    Almost the same as ~urlencode~ except it enocodes space as ~%20~
+  #+BEGIN_SRC php
+    echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
+	 '@ftp.example.com/x.txt">';
+    echo '<a href="http://example.com/department_list_script/',
+	rawurlencode('sales and marketing/Miami'), '">';
+  #+END_SRC
 - ~parse_str~ :: parse query parameter value as an array
-#+BEGIN_SRC php
-  $url = $_SERVER['REQUEST_URI'];
-  $parts = parse_url($url);
-  parse_str($parts['query'], $query);
-  echo $query['email'];
+  #+BEGIN_SRC php
+    $url = $_SERVER['REQUEST_URI'];
+    $parts = parse_url($url);
+    parse_str($parts['query'], $query);
+    echo $query['email'];
 
-  $str = "first=value&arr[]=foo+bar&arr[]=baz";
+    $str = "first=value&arr[]=foo+bar&arr[]=baz";
 
-  parse_str($str, $output);
-  echo $output['first'];  // value
-  echo $output['arr'][0]; // foo bar
-  echo $output['arr'][1]; // baz
-#+END_SRC
+    parse_str($str, $output);
+    echo $output['first'];  // value
+    echo $output['arr'][0]; // foo bar
+    echo $output['arr'][1]; // baz
+  #+END_SRC
 
 Current URL path. Refer to php:parse_url
 #+BEGIN_SRC php
