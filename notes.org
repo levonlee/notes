@@ -803,10 +803,17 @@ Single dimension
     return htmlspecialchars($s);
   }
   $a = array('harmless', '<bad>', '>>click here!<<');
-  $a = array_map('sanitize', $a);
+  $a = array_map('sanitize', $a); // immutable
   // trim each element
   $a = array_map('trim', $a);
   echo implode(' ', $a);
+
+  // multiple arrays can be passed
+  $pairs = array_map(
+	  fn($letter, $index) => "Index at $index is $letter",
+	  $letters,
+	  array_keys($letters)
+  );
 #+END_SRC
 
 *** Insert to any position of an array
@@ -824,10 +831,12 @@ Single dimension
 *** array_filter
 - cb function should return true or false. By default, only value is passed to the callback function. Unless flag is used
 - ~array_filter($my_array)~ can be used to roughly filter empty/null elements out
+- Original index number is used!
 
 #+BEGIN_SRC php
   $arr = ['a' => 1, 'b' => 2, 'c' => 3, 'd' => 4];
 
+  // default values are passed. To pass the keys of array, use a flag
   var_dump(array_filter($arr, function($k) {
 	  return $k == 'b';
   }, ARRAY_FILTER_USE_KEY));
@@ -835,10 +844,7 @@ Single dimension
   var_dump(array_filter($arr, function($v, $k) {
 	  return $k == 'b' || $v == 4;
   }, ARRAY_FILTER_USE_BOTH));
-
 #+END_SRC
-
-Original index number is used!
 
 *** array_shift, array_unshift, array_pop
 #+BEGIN_SRC php
@@ -863,60 +869,54 @@ Original index number is used!
 **** ksort <<php:ksort>>
 Sort (associative) array by its key
 
-**** usort uasort - value sort
-usort doesn't maintain key association but uasort does. If callback function returns negative integer, means the comparison is less than.
+**** usort uasort - value sort <<php:usort>>
+- Mutating
+- ~usort~ doesn't maintain key association but uasort does. If callback function returns negative integer, means the comparison is less than
 
 #+BEGIN_SRC php
-  Array
-  (
-      [0] => Array
-	  (
-	      [hashtag] => a7e87329b5eab8578f4f1098a152d6f4
-	      [title] => Flower
-	      [order] => 3
-	  )
-
-      [1] => Array
-	  (
-	      [hashtag] => b24ce0cd392a5b0b8dedc66c25213594
-	      [title] => Free
-	      [order] => 2
-	  )
-
-      [2] => Array
-	  (
-	      [hashtag] => e7d31fc0602fb2ede144d18cdffd816b
-	      [title] => Ready
-	      [order] => 1
-	  )
-  )
+  $to_sort = [
+	  [
+		  'hashtag' => 'a7e87329b5eab8578f4f1098a152d6f4',
+		  'title' => 'Flower',
+		  'order' => 3
+	  ],
+	  ['hashtag' => 'b24ce0cd392a5b0b8dedc66c25213594',
+	   'title' => 'Free',
+	   'order' => 2
+	  ],
+	  [
+		  'hashtag' => 'e7d31fc0602fb2ede144d18cdffd816b',
+		  'title' => 'Ready',
+		  'order' => 1
+	  ]
+  ];
 
   // PHP 5.2 and lower
   function sortByOrder($a, $b) {
-      return $a['order'] - $b['order']; // ascending order
+	  return $a['order'] - $b['order']; // ascending order
   }
   usort($myArray, 'sortByOrder');
 
   // PHP 5.3 and above
   usort($myArray, function($a, $b) {
-      return $a['order'] - $b['order'];
+	  return $a['order'] - $b['order'];
   });
 
   // PHP 7 and above
   usort($myArray, function($a, $b) {
-      return $a['order'] <=> $b['order'];
+	  return $a['order'] <=> $b['order'];
   });
 
   // Order by multiple values
   usort($myArray, function($a, $b) {
-      $retval = $a['order'] <=> $b['order'];
-      if ($retval == 0) {
-	  $retval = $a['suborder'] <=> $b['suborder'];
+	  $retval = $a['order'] <=> $b['order'];
 	  if ($retval == 0) {
+		  $retval = $a['suborder'] <=> $b['suborder'];
+		  if ($retval == 0) {
 	      $retval = $a['details']['subsuborder'] <=> $b['details']['subsuborder'];
+		  }
 	  }
-      }
-      return $retval;
+	  return $retval;
   });
 #+END_SRC
 
@@ -16664,7 +16664,6 @@ About ~SAVEQUERIES~
 	  }
 	  print "$h1$ul</ul>$out";
   }
-
 #+END_SRC
 
 #+BEGIN_SRC php
