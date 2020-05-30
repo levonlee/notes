@@ -317,6 +317,25 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
     trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
   #+END_SRC
 
+*** opcache <<php:ini:opcache>>
+- Preload Laravel
+   - https://stitcher.io/blog/preloading-in-php-74
+   - ~opcache.preload=/path/to/project/preload.php~
+     preload.php
+     #+BEGIN_SRC php
+       $files = /* All files in eg. vendor/laravel */;
+
+       foreach ($files as $file) {
+	       // will parse but not execute
+	       opcache_compile_file($file);
+
+	       // to ensure linked files are also loaded, use require_once
+	       // require_once($file);
+       }
+     #+END_SRC
+   - Load all dependecies e.g. parent class first
+   - To verify, restart ~php-fpm~ and ~var_dump(opcache_get_status())~
+
 ** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
 ** Protocols
 *** ~php://~
@@ -1187,6 +1206,8 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
 
 	  // Encryption example
 	  $hashed_password = password_hash( $password, PASSWORD_BCRYPT );
+	  // default PASSWORD_DEFAULT now actually uses PASSWORD_BCRYPT, should stick with default as
+	  // PHP will upgrade the underlying algo in the future
 	  echo "Hashed password: " . $hashed_password . "<br />";
 	  echo "<br />";
 
@@ -1199,6 +1220,12 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
 	  echo "Attempt 2: " . ( $is_match ? 'correct' : 'wrong' ) . "<br />";
 	  echo "<br />";
 	  echo "<hr />";
+
+	  // rehash
+	  $opt = ['cost' => 12 ];
+	  if (password_needs_rehash($password, PASSWORD_DEFAULT, $opt)) {
+		  $newHash = password_hash($password, PASSWORD_DEFAULT, $opt);
+	  }
   }
 #+END_SRC
 
@@ -2033,7 +2060,7 @@ RestJson.php
 	 public function whereId($id);
        }
 
-       interface CustomerQueryInterface extends QueryInterface {
+       interface CustomerQueryInterface extesnds QueryInterface {
 	 public function whereType($type);
        }
      #+END_SRC
@@ -29340,9 +29367,47 @@ Options
 
 If an iframe observes one of its elements, both scrolling the iframe as well as scrolling the window containing the iframe will trigger the callback. For the latter case, rootBounds will be set to null to avoid leaking data across origins.
 
-*** Beacon API <<<js:beacon>>>
+*** Beacon API <<js:beacon>>
 - https://golb.hplar.ch/2018/09/beacon-api.html
 - Beacon request is POST request which does not require response
+
+*** Fetch API <<js:fetch>>
+- No timeout built-in
+  #+BEGIN_SRC js
+    function fetchTimeout(url, init, timeout = 3000) {
+	return new Promise((resolve, reject) => {
+	    fetch(url, init)
+		.then(resolve)
+		.catch(reject);
+	    setTimeout(reject, timeout);
+	})
+    }
+
+    // Or
+
+    Promise
+	.race([
+	    fetch('http://url', {method: 'GET'}),
+	    new Promise(resolve => setTimeout(resolve, 3000))
+	])
+	.then(response => console.log(response))
+  #+END_SRC
+- Force to abort. Have to use AbortController API
+  #+BEGIN_SRC js
+    const controller = new AbortController();
+
+    fetch(
+      'http://domain/service',
+      {
+	method: 'GET'
+	signal: controller.signal
+      })
+      .then( response => response.json() )
+      .then( json => console.log(json) )
+      .catch( error => console.error('Error:', error) );
+  #+END_SRC
+- No progress e.g. 30% download complete
+- Cookies are not sent
 
 ** Testing
 *** Unit Testing
@@ -30501,7 +30566,7 @@ https://gist.github.com/Craga89/2829457
     // a new property is defined after initialization, so it won't trigger view update
     // Define all variables with default values you need in initialization
   #+END_SRC
-- Special instance properties and method
+- Special instance properties and methods
   #+BEGIN_SRC js
    var data = { a: 1 }
    var vm = new Vue({
@@ -30519,90 +30584,100 @@ https://gist.github.com/Craga89/2829457
 - Don't use arrow function
 
 **** Mutation, Vue.set <<<vue:data:mutation>>>
- - Mutation methods :: when these methods are called, the views will be updated.
- push, pop, shift, unshift, splice, sort, reverse
+- Mutation methods :: when these methods are called, the views will be updated
+   - push, pop, shift, unshift, splice, sort, reverse
+   - e.g. ~my_vue_app.items.push({ message: 'Baz'});~
+- Non-mutating methods always return a new array
+  e.g. filter, concat
+  #+BEGIN_SRC js
+     example1.items = example1.items.filter(function (item) {
+       return item.message.match(/Foo/)
+     })
+  #+END_SRC
+- Add new prop reactivitely :: Don't use ~vm.items[indexOfItem] = newValue~, instead use:
+  #+BEGIN_SRC js
+     // Vue.set
+     Vue.set(example1.items, indexOfItem, newValue)
 
- e.g. my_vue_app.items.push({ message: 'Baz'});
+     // Or
 
- Non-mutating methods always return a new array.
+     // Array.prototype.splice
+     example1.items.splice(indexOfItem, 1, newValue)
+  #+END_SRC
 
- e.g. filter, concat
- #+BEGIN_EXAMPLE
-   example1.items = example1.items.filter(function (item) {
-     return item.message.match(/Foo/)
-   })
- #+END_EXAMPLE
+   Don't use vm.items.length = newLenth, instead use:
+   #+BEGIN_EXAMPLE
+     example1.items.splice(newLength)
+   #+END_EXAMPLE
 
- Add new prop reactivitely :: Don't use vm.items[indexOfItem] = newValue, instead use:
- #+BEGIN_SRC js
-   // Vue.set
-   Vue.set(example1.items, indexOfItem, newValue)
-
-   // Or
-
-   // Array.prototype.splice
-   example1.items.splice(indexOfItem, 1, newValue)
- #+END_SRC
-
- Don't use vm.items.length = newLenth, instead use:
- #+BEGIN_EXAMPLE
-   example1.items.splice(newLength)
- #+END_EXAMPLE
-
- Add reactive properties to an object at root-level
- #+BEGIN_SRC js
-   var vm = new Vue({
-     data: {
-       userProfile: {
-	 name: 'Anika'
+   Add reactive properties to an object at root-level
+   #+BEGIN_SRC js
+     var vm = new Vue({
+       data: {
+	 userProfile: {
+	   name: 'Anika'
+	 }
        }
-     }
-   })
+     })
 
-   Vue.set(vm.userProfile, 'age', 27);
+     Vue.set(vm.userProfile, 'age', 27);
 
-   // or this.$set(this.userProfile, 'age', 27)
-   // or vm.$set
- #+END_SRC
+     // or this.$set(this.userProfile, 'age', 27)
+     // or vm.$set
+   #+END_SRC
 
- The other way to add a new prop is to rebuild the object using Object.assign() or _.extend()
+   The other way to add a new prop is to rebuild the object using Object.assign() or _.extend()
 
- #+BEGIN_SRC js
-   /* Don't do it directly
-   Object.assign(this.userProfile, {
-     age: 27,
-     favoriteColor: 'Vue Green'
-   })
-   ,*/
+   #+BEGIN_SRC js
+     /* Don't do it directly
+     Object.assign(this.userProfile, {
+       age: 27,
+       favoriteColor: 'Vue Green'
+     })
+     ,*/
 
-   this.userProfile = Object.assign({}, this.userProfile, {
-     age: 27,
-     favoriteColor: 'Vue Green'
-   })
- #+END_SRC
+     this.userProfile = Object.assign({}, this.userProfile, {
+       age: 27,
+       favoriteColor: 'Vue Green'
+     })
+   #+END_SRC
 
- vue:plugin:vuex:mutations
+   vue:plugin:vuex:mutations
+
+**** vm.methods <<vue:methods>>
+#+BEGIN_SRC js
+  var vm = new Vue({
+    data: { a: 1 },
+    methods: {
+      plus: function () {
+	this.a++
+      }
+    }
+  })
+  vm.plus()
+  vm.a // 2
+#+END_SRC
 
 *** Instance Lifecycle Hooks
 - Data observation > compile templates > mount instance to DOM > Update DOM when data changes
 - Don't use arrow function in those hooks e.g. ~created: () => console.log(this.a)~
--  [[https://vuejs.org/v2/guide/instance.html#Lifecycle-Diagram][Full lifecycle diagram and hooks]]
+   - this is ok ~mounted() => {}~
+- [[https://vuejs.org/v2/guide/instance.html#Lifecycle-Diagram][Full lifecycle diagram and hooks]]
 
 **** beforeCreate, created
- run code after an instance is created
-
- #+BEGIN_EXAMPLE
-   new Vue({
-     data: {
-       a: 1
-     },
-     created: function () {
-       // `this` points to the vm instance
-       console.log('a is: ' + this.a)
-     }
-   })
-   // => "a is: 1"
- #+END_EXAMPLE
+run code after an instance is created
+#+BEGIN_SRC js
+  new Vue({
+    data: {
+      a: 1
+    },
+    created: function () {
+      // `this` points to the vm instance
+      console.log('a is: ' + this.a)
+    }
+  })
+  // => "a is: 1"
+#+END_SRC
 
 **** vm.$mount(el), beforeMount, mounted
 **** beforeUpdate, updated
@@ -30809,7 +30884,7 @@ https://gist.github.com/Craga89/2829457
  #+END_EXAMPLE
 
 ***** Don't mutate a prop of child component
- You shouldn't mutate a prop insde a child component. Refer to vue:data:mutation
+ You shouldn't mutate a prop inside a child component. Refer to vue:data:mutation
 
  Because objects and arrays in JavaScript are passed by reference. So mutating the object or array inside the child will affect parent state.
 
@@ -31270,7 +31345,7 @@ Don't use
   #+END_SRC
 - vue:x-template
 
-**** ~v-once~ on text or element
+**** ~v-once~ <<vue:v-once>>
 one-time interpolations and remain cached
 #+BEGIN_SRC html
   <span v-once>This will never change: {{ msg }}</span>
@@ -31287,17 +31362,24 @@ one-time interpolations and remain cached
   })
 #+END_SRC
 
-**** ~v-html~ Raw HTML
+**** ~v-html~ Raw HTML <<vue:v-html>>
 Can't be used for components. Watch out for XSS
 #+BEGIN_SRC html
  <div v-html="rawHtml"></div>
 #+END_SRC
 
-**** ~v-bind:attributeName~, ~:attributeName~
+**** ~v-bind:attributeName~, ~:attributeName~ <<vue:v-bind>>
 #+BEGIN_SRC html
   <!-- bool is a bit different. If isButtonDisabled has the value of null, undefined or false, the disabled attribute will not be rendered -->
   <button v-bind:disabled="isButtonDisabled">Button</button>
   <button :disabled="isButtonDisabled">Button</button>
+
+  <!-- multiple attributes binding -->
+  <img v-bind="{
+  class: imgClass,
+  src: products[2].image,
+  alt: products[2].alt
+  }">
 #+END_SRC
 
 **** Expression
@@ -31315,7 +31397,7 @@ Can't be used for components. Watch out for XSS
 #+END_EXAMPLE
 
 **** Directive Arguments ~v-bind:href~, ~v-bind:class~, ~v-on:click~
-***** v-bind:href, v-on:click
+***** v-bind:href, v-on:click <<vue:v-on>>
  #+BEGIN_SRC html
    <a v-bind:href="url"> ... </a>
    // bind element's href attribute to the value of the expression url
@@ -31368,7 +31450,7 @@ Or
 
 Array
 #+BEGIN_SRC html
-  <div v-bind:class="[activeClass, errorClass]"></div>
+  <div :class="[activeClass, errorClass]"></div>
   <!--
   data: {
     activeClass: 'active',
@@ -31402,7 +31484,7 @@ When you use the class attribute on a custom component, those classes will be ad
 
 ***** ~v-bind:style~
 - CSS vendor-prefixes are auto detected and added when ~v-bind:style~ is used
-- Use either camelCase or kebab-case for CSS property name
+- Use either camelCase with hypen and quotes or kebab-case with hyphen and quotes for CSS property name
 #+BEGIN_SRC html
   <div v-bind:style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
 
@@ -32445,7 +32527,7 @@ Use render function (reactive)
 
 **** JSX
 
-*** ~vm.computed~ property, ~vm.watch~ property
+*** ~vm.computed~ property, ~vm.watch~ property <<vue:computed>>
 **** Computed property
 - Example
   #+BEGIN_SRC html
@@ -32480,8 +32562,7 @@ Use render function (reactive)
     })
   #+END_SRC
 - ~vm.computed.reversedMessage~ is reactive to ~vm.$data.message~ and it's cached when there is no change
-  While ~method~ will run every time the view updates (re-render).
-  Hence, never define computed property without refering to ~vm.$data~ e.g. Don't do this
+- While ~method~ will run every time the view updates (re-render). Hence, never define computed property without refering to ~vm.$data~ e.g. Don't do this
   #+BEGIN_SRC js
     computed: {
       now: function () {
