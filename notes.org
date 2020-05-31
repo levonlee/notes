@@ -18398,7 +18398,7 @@ Notice: any parents will not expand in width and height according to that absolu
 ** Transform, Transition
 css:animation
 
-*** Transition
+*** Transition <<css:transition>>
 - ~transition: /transition-property/ /transition-duration/ /transition-timing-function/ /transition-delay/~
   #+BEGIN_SRC css
     div {
@@ -18415,8 +18415,7 @@ css:animation
       - e.g. use ease-in for div:hover and ease-out in div
    - transition-delay :: delay n seconds before the current transition starts.
 
-
-*** Transform <<<css:transform>>>
+*** Transform <<css:transform>>
 #+BEGIN_SRC css
   div:hover {
     width: 300px;
@@ -21294,7 +21293,7 @@ Don't have to know the child's exact width
   }
 #+END_SRC
 
-** BEM <<<css:bem>>>
+** BEM <<css:bem>>
 - ~.Block__Element--Modifier~ :: Block, Element, Modifier
 - ~.sky~ :: parent block, standalone component
    - ~.sky__clouds~ :: clouds element inside parent block sky
@@ -23100,6 +23099,9 @@ trigger mode manual if you want to distinguish hover and click events
 
 *** Third party
 https://mdbootstrap.com/
+
+** Animate.css <<css:animate.css>>
+- https://github.com/animate-css/animate.css
 
 * HTML
 ** DOM
@@ -27721,7 +27723,7 @@ js:forEach
   });
 #+END_SRC
 
-**** array.map(), array.filter() 
+**** array.map(), array.filter() <<js:array:filter>>
 - Do something while each item is iterated, join returned values into an array
 
 #+BEGIN_SRC js
@@ -30806,35 +30808,37 @@ run code after an instance is created
    })
  #+END_EXAMPLE
 
-**** Option filters
- Text formatting
- #+BEGIN_EXAMPLE
-   <!-- in mustaches -->
-   {{ message | capitalize }}
-   <!-- in v-bind -->
-   <div v-bind:id="rawId | formatId"></div>
+**** Option filters <<vue:filters>>
+- Filters provide text formatting
 
-   filters: {
-     capitalize: function (value) {
-       if (!value) return ''
-       value = value.toString()
-       return value.charAt(0).toUpperCase() + value.slice(1)
-     }
-   }
+#+BEGIN_SRC html
+  <!-- in mustaches -->
+  {{ message | capitalize }}
+  <!-- in v-bind -->
+  <div v-bind:id="rawId | formatId"></div>
 
-   // define globally
-   Vue.filter('capitalize', function (value) {
-     if (!value) return ''
-     value = value.toString()
-     return value.charAt(0).toUpperCase() + value.slice(1)
-   })
+  <!-- can be chained -->
+  {{ message | filterA | filterB }}
 
-   // can be chained
-   {{ message | filterA | filterB }}
+  <!-- can have arguments -->
+  {{ message | filterA('arg1', arg2) }}
+#+END_SRC
+#+BEGIN_SRC js
+  filters: {
+    capitalize: function (value) {
+      if (!value) return ''
+      value = value.toString()
+      return value.charAt(0).toUpperCase() + value.slice(1)
+    }
+  }
 
-   // can have arguments
-   {{ message | filterA('arg1', arg2) }}
- #+END_EXAMPLE
+  // define globally
+  Vue.filter('capitalize', function (value) {
+    if (!value) return ''
+    value = value.toString()
+    return value.charAt(0).toUpperCase() + value.slice(1)
+  })
+#+END_SRC
 
 **** Props down
  Pass down prop from parent to child using child component's prop option.
@@ -31808,7 +31812,7 @@ Array
    })
  #+END_EXAMPLE
 
-**** Event, v-on, @attributeName
+**** Event, v-on, @attributeName <<vue:event>> <<vue:v-on>>
 ***** Basics
  #+BEGIN_EXAMPLE
    <div id="example-1">
@@ -31878,34 +31882,33 @@ Array
  #+END_EXAMPLE
 
 ***** Event Modifiers <<<vue:event:modifiers>>>
+- https://vuejs.org/v2/guide/events.html#Event-Modifiers
+#+BEGIN_SRC html
+  <!-- the click event's propagation will be stopped -->
+  <a v-on:click.stop="doThis"></a>
 
- .stop, .prevent, .capture, .self, .once
- #+BEGIN_SRC html
-   <!-- the click event's propagation will be stopped -->
-   <a v-on:click.stop="doThis"></a>
+  <!-- the submit event will no longer reload the page -->
+  <form v-on:submit.prevent="onSubmit"></form>
 
-   <!-- the submit event will no longer reload the page -->
-   <form v-on:submit.prevent="onSubmit"></form>
+  <!-- modifiers can be chained :: chain stop and prevent. -->
+  <a v-on:click.stop.prevent="doThat"></a>
 
-   <!-- modifiers can be chained :: chain stop and prevent. -->
-   <a v-on:click.stop.prevent="doThat"></a>
+  <!-- chain order matters. @click.prevent.self will prevent all clicks while @click.self.prevent will only prevent clicks on the element itself -->
 
-   <!-- chain order matters. @click.prevent.self will prevent all clicks while @click.self.prevent will only prevent clicks on the element itself -->
+  <!-- just the modifier -->
+  <form v-on:submit.prevent></form>
 
-   <!-- just the modifier -->
-   <form v-on:submit.prevent></form>
+  <!-- use capture mode when adding the event listener -->
+  <!-- i.e. an event targeting an inner element is handled here before being handled by that element -->
+  <div v-on:click.capture="doThis">...</div>
 
-   <!-- use capture mode when adding the event listener -->
-   <!-- i.e. an event targeting an inner element is handled here before being handled by that element -->
-   <div v-on:click.capture="doThis">...</div>
+  <!-- only trigger handler if event.target is the element itself -->
+  <!-- i.e. not from a child element -->
+  <div v-on:click.self="doThat">...</div>
 
-   <!-- only trigger handler if event.target is the element itself -->
-   <!-- i.e. not from a child element -->
-   <div v-on:click.self="doThat">...</div>
-
-   <!-- the click event will be triggered at most once. 2.1.4+ -->
-   <a v-on:click.once="doThis"></a>
- #+END_SRC
+  <!-- the click event will be triggered at most once. 2.1.4+ -->
+  <a v-on:click.once="doThis"></a>
+#+END_SRC
 
 ***** Event Key Modifiers <<<vue:event:key modifiers>>>
 
@@ -32689,60 +32692,62 @@ Use render function (reactive)
    #+END_SRC
 
 *** Transition & Animation
-**** <transition> wrapper component
- Wrap v-if, v-show, dynamic components and component root nodes
+**** <transition> wrapper component <<vue:transition>>
+- Wrap v-if, v-show, dynamic components and component root nodes
 
 ***** CSS Transition
- #+BEGIN_EXAMPLE
-   <div id="demo">
-     <button v-on:click="show = !show">
-       Toggle
-     </button>
-     <transition name="fade">
-       <p v-if="show">hello</p>
-     </transition>
-   </div>
-   new Vue({
-     el: '#demo',
-     data: {
-       show: true
-     }
-   })
-   .fade-enter-active, .fade-leave-active {
-     transition: opacity .5s
-   }
-   .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-     opacity: 0
-   }
+#+BEGIN_SRC html
+  <div id="demo">
+    <button v-on:click="show = !show">
+      Toggle
+    </button>
+    <transition name="fade">
+      <p v-if="show">hello</p>
+    </transition>
+  </div>
+#+END_SRC
+#+BEGIN_SRC js
+  new Vue({
+    el: '#demo',
+    data: {
+      show: true
+    }
+  })
+#+END_SRC
+#+BEGIN_SRC css
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .5s
+  }
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0
+  }
 
-   // more examples using pure css
-   /* Enter and leave animations can use different */
-   /* durations and timing functions.              */
-   .slide-fade-enter-active {
-     transition: all .3s ease;
-   }
-   .slide-fade-leave-active {
-     transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-   }
-   .slide-fade-enter, .slide-fade-leave-to
-   /* .slide-fade-leave-active below version 2.1.8 */ {
-     transform: translateX(10px);
-     opacity: 0;
-   }
- #+END_EXAMPLE
-
- Classes
- *-enter :: before element inserted > one frame after element is inserted
- *-enter-active :: before element is inserted > removed when transition/animation finishes. Use it to define during, delay and easing curve for the entering transition.
- *-enter-to : one frame after element is inserted > transition/animation finishes.
- *-leave :: leave transition is triggered > after one frame
- *-leave-active :: leave transition is triggered > transition/animation finishes. Use it to define duration, delay and easing curve for the leaving transition.
- *-leave-to :: one frame after a leave transition is triggered > transition/animation finishes.
-
- *-enter is enter start, *-enter-to is enter end
- *-leave is leave start, *-leave-to is leave end
-
- v- prefix is used when <transition> has no name
+  /* more examples using pure css
+   ,* Enter and leave animations can use different
+   ,* durations and timing functions.              
+   ,*/
+  .slide-fade-enter-active {
+    transition: all .3s ease;
+  }
+  .slide-fade-leave-active {
+    transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+  }
+  .slide-fade-enter, .slide-fade-leave-to
+  /* .slide-fade-leave-active below version 2.1.8 */ {
+    transform: translateX(10px);
+    opacity: 0;
+  }
+#+END_SRC
+- Classes
+   - ~*-enter~ :: before element inserted > one frame after element is inserted
+   - ~*-enter-active~ :: before element is inserted > removed when transition/animation finishes. Use it to define during, delay and easing curve for the entering transition.
+   - ~*-enter-to~ : one frame after element is inserted > transition/animation finishes.
+   - ~*-leave~ :: leave transition is triggered > after one frame
+   - ~*-leave-active~ :: leave transition is triggered > transition/animation finishes. Use it to define duration, delay and easing curve for the leaving transition.
+   - ~*-leave-to~ :: one frame after a leave transition is triggered > transition/animation finishes.
+   - ~*-enter~ is enter start, ~*-enter-to~ is enter end
+   - ~*-leave~ is leave start, ~*-leave-to~ is leave end
+   - ~v-~ prefix is used when <transition> has no name
  
 ***** CSS Animations
  #+BEGIN_EXAMPLE
@@ -32780,22 +32785,23 @@ Use render function (reactive)
  #+END_EXAMPLE
 
 ***** Custom Transition Class
- Override the default class names such as Animate.css
- #+BEGIN_EXAMPLE
-   <link href="https://cdn.jsdelivr.net/npm/animate.css@3.5.1" rel="stylesheet" type="text/css">
-   <div id="example-3">
-     <button @click="show = !show">
-       Toggle render
-     </button>
-     <transition
-       name="custom-classes-transition"
-       enter-active-class="animated tada"
-       leave-active-class="animated bounceOutRight"
-     >
-       <p v-if="show">hello</p>
-     </transition>
-   </div>
- #+END_EXAMPLE
+Override the default class names such as Animate.css
+
+#+BEGIN_SRC html
+  <link href="https://cdn.jsdelivr.net/npm/animate.css@3.5.1" rel="stylesheet" type="text/css">
+  <div id="example-3">
+    <button @click="show = !show">
+      Toggle render
+    </button>
+    <transition
+      name="custom-classes-transition"
+      enter-active-class="animated tada"
+      leave-active-class="animated bounceOutRight"
+    >
+      <p v-if="show">hello</p>
+    </transition>
+  </div>
+#+END_SRC
 
 ***** prop
  #+BEGIN_EXAMPLE
@@ -33015,22 +33021,24 @@ Use render function (reactive)
    })
  #+END_EXAMPLE
 
-**** List transition <transition-group>
- Default is to turn the <transition-group> to <span>, change it to p in tag attribute. 
- key attribute is required.
+**** Loop items transition ~transition-group~ <<vue:transition-group>>
+- Attributes
+   - ~tag="span"~ :: Default is to animate each ~span~ child item inside the ~<transition-group>~, this example change it to animate ~p~ elements
+   - ~key~ :: required
 
 ***** Animate entering and leaving
- #+BEGIN_EXAMPLE
-   <div id="list-demo">
-     <button v-on:click="add">Add</button>
-     <button v-on:click="remove">Remove</button>
-     <transition-group name="list" tag="p">
-       <span v-for="item in items" v-bind:key="item" class="list-item">
-         {{ item }}
-       </span>
-     </transition-group>
-   </div>
-
+#+BEGIN_SRC html
+  <div id="list-demo">
+    <button v-on:click="add">Add</button>
+    <button v-on:click="remove">Remove</button>
+    <transition-group name="list" tag="p">
+      <span v-for="item in items" v-bind:key="item" class="list-item">
+	{{ item }}
+      </span>
+    </transition-group>
+  </div>
+#+END_SRC
+#+BEGIN_SRC js
    new Vue({
      el: '#list-demo',
      data: {
@@ -33039,133 +33047,139 @@ Use render function (reactive)
      },
      methods: {
        randomIndex: function () {
-         return Math.floor(Math.random() * this.items.length)
+	 return Math.floor(Math.random() * this.items.length)
        },
        add: function () {
-         this.items.splice(this.randomIndex(), 0, this.nextNum++)
+	 this.items.splice(this.randomIndex(), 0, this.nextNum++)
        },
        remove: function () {
-         this.items.splice(this.randomIndex(), 1)
+	 this.items.splice(this.randomIndex(), 1)
        },
      }
    })
+#+END_SRC
+#+BEGIN_SRC css
+  .list-item {
+    display: inline-block;
+    margin-right: 10px;
+  }
+  .list-enter-active, .list-leave-active {
+    transition: all 1s;
+  }
+  .list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+#+END_SRC
 
-   .list-item {
-     display: inline-block;
-     margin-right: 10px;
-   }
-   .list-enter-active, .list-leave-active {
-     transition: all 1s;
-   }
-   .list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
-     opacity: 0;
-     transform: translateY(30px);
-   }
- #+END_EXAMPLE
+***** Animate when order is changed, ~v-move~, ~*-move~ class
+- Vue uses FLIP and FLIP doesn't work with elements set to ~display:inline~. Set it to ~display: inline-block~ or place elements in a flex context
 
-***** Animate when order is changed, v-move, *-move class
- Vue uses FLIP and FLIP doesn't work with elements set to display:inline. Set it to display: inline-block or place elements in a flex context.
+#+BEGIN_SRC html
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.14.1/lodash.min.js"></script>
+  <div id="flip-list-demo" class="demo">
+    <button v-on:click="shuffle">Shuffle</button>
+    <transition-group name="flip-list" tag="ul">
+      <li v-for="item in items" v-bind:key="item">
+	{{ item }}
+      </li>
+    </transition-group>
+  </div>
+#+END_SRC
 
- #+BEGIN_EXAMPLE
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.14.1/lodash.min.js"></script>
-   <div id="flip-list-demo" class="demo">
-     <button v-on:click="shuffle">Shuffle</button>
-     <transition-group name="flip-list" tag="ul">
-       <li v-for="item in items" v-bind:key="item">
-         {{ item }}
-       </li>
-     </transition-group>
-   </div>
+#+BEGIN_SRC js
+  new Vue({
+    el: '#flip-list-demo',
+    data: {
+      items: [1,2,3,4,5,6,7,8,9]
+    },
+    methods: {
+      shuffle: function () {
+	this.items = _.shuffle(this.items)
+      }
+    }
+  })
+#+END_SRC
+#+BEGIN_SRC css
+  .flip-list-move {
+      transition: transform 1s;
+  }
+#+END_SRC
 
-   new Vue({
-     el: '#flip-list-demo',
-     data: {
-       items: [1,2,3,4,5,6,7,8,9]
-     },
-     methods: {
-       shuffle: function () {
-         this.items = _.shuffle(this.items)
-       }
-     }
-   })
+***** JavaScript event hooks
+- https://vuejs.org/v2/guide/transitions.html#JavaScript-Hooks
+- By assigning different delay, list items can be transitioned in/out in the same order as they first appeared
 
-   .flip-list-move {
-     transition: transform 1s;
-   }
- #+END_EXAMPLE
+#+BEGIN_SRC html
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.3/velocity.min.js"></script>
+  <div id="staggered-list-demo">
+    <input v-model="query">
+    <transition-group
+      name="staggered-fade"
+      tag="ul"
+      v-bind:css="false"
+      v-on:before-enter="beforeEnter"
+      v-on:enter="enter"
+      v-on:leave="leave"
+    >
+      <li
+	v-for="(item, index) in computedList"
+	v-bind:key="item.msg"
+	v-bind:data-index="index"
+      >{{ item.msg }}</li>
+    </transition-group>
+  </div>
+#+END_SRC
 
-
-***** javascript hooks
- By assigning different delay, list items can be transitioned in/out in the same order as they first appeared.
-
- #+BEGIN_EXAMPLE
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.3/velocity.min.js"></script>
-   <div id="staggered-list-demo">
-     <input v-model="query">
-     <transition-group
-       name="staggered-fade"
-       tag="ul"
-       v-bind:css="false"
-       v-on:before-enter="beforeEnter"
-       v-on:enter="enter"
-       v-on:leave="leave"
-     >
-       <li
-         v-for="(item, index) in computedList"
-         v-bind:key="item.msg"
-         v-bind:data-index="index"
-       >{{ item.msg }}</li>
-     </transition-group>
-   </div>
-
-   new Vue({
-     el: '#staggered-list-demo',
-     data: {
-       query: '',
-       list: [
-         { msg: 'Bruce Lee' },
-         { msg: 'Jackie Chan' },
-         { msg: 'Chuck Norris' },
-         { msg: 'Jet Li' },
-         { msg: 'Kung Fury' }
-       ]
-     },
-     computed: {
-       computedList: function () {
-         var vm = this
-         return this.list.filter(function (item) {
-           return item.msg.toLowerCase().indexOf(vm.query.toLowerCase()) !== -1
-         })
-       }
-     },
-     methods: {
-       beforeEnter: function (el) {
-         el.style.opacity = 0
-         el.style.height = 0
-       },
-       enter: function (el, done) {
-         var delay = el.dataset.index * 150
-         setTimeout(function () {
-           Velocity(
-             el,
-             { opacity: 1, height: '1.6em' },
-             { complete: done }
-           )
-         }, delay)
-       },
-       leave: function (el, done) {
-         var delay = el.dataset.index * 150
-         setTimeout(function () {
-           Velocity(
-             el,
-             { opacity: 0, height: 0 },
-             { complete: done }
-           )
-         }, delay)
-       }
-     }
-   })
- #+END_EXAMPLE
+#+BEGIN_SRC js
+  new Vue({
+    el: '#staggered-list-demo',
+    data: {
+      query: '',
+      list: [
+	{ msg: 'Bruce Lee' },
+	{ msg: 'Jackie Chan' },
+	{ msg: 'Chuck Norris' },
+	{ msg: 'Jet Li' },
+	{ msg: 'Kung Fury' }
+      ]
+    },
+    computed: {
+      computedList: function () {
+	var vm = this
+	return this.list.filter(function (item) {
+	  return item.msg.toLowerCase().indexOf(vm.query.toLowerCase()) !== -1
+	})
+      }
+    },
+    methods: {
+      beforeEnter: function (el) {
+	el.style.opacity = 0
+	el.style.height = 0
+      },
+      enter: function (el, done) {
+	var delay = el.dataset.index * 150
+	setTimeout(function () {
+	  Velocity(
+	    el,
+	    { opacity: 1, height: '1.6em' },
+	    { complete: done }
+	  )
+	}, delay)
+      },
+      leave: function (el, done) {
+	var delay = el.dataset.index * 150
+	setTimeout(function () {
+	  Velocity(
+	    el,
+	    { opacity: 0, height: 0 },
+	    { complete: done }
+	  )
+	}, delay)
+      }
+    }
+  })
+#+END_SRC
 
 **** Make transition reusable
  #+BEGIN_EXAMPLE
@@ -37530,6 +37544,9 @@ Options and their default
 
 - titleSelector: 'h1, h2, h3, h4, h5, h6' :: e.g. 'p.lead'
 - hideMissingTitles: false
+
+** VelocityJS <<js:velocityjs>>
+- https://github.com/julianshapiro/velocity
 
 ** BabylonJS
 - Install Blender :: https://www.blender.org/
