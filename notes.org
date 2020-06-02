@@ -29010,6 +29010,7 @@ Don't try to access or modify parent window DOM. Do it indirectly.
 #+END_SRC
 
 ** XMLHttpRequest <<js:xmlhttprequest>>
+*** Basics
 #+BEGIN_SRC js
   function loadDoc() {
       var xhr = new XMLHttpRequest();
@@ -29087,7 +29088,7 @@ Don't try to access or modify parent window DOM. Do it indirectly.
   }
 #+END_SRC
 
-*** application/x-www-form-urlencoded vs multipart/form-data
+*** ~application/x-www-form-urlencoded~ vs ~multipart/form-data~
 - urlencoded
    - Transfers extra data if large amount of binary data is sent
 - multipart/form-data
@@ -29105,11 +29106,10 @@ Don't try to access or modify parent window DOM. Do it indirectly.
      #+END_EXAMPLE
 
 *** FormData to send file
-Supports all browsers except IE 9 and below.
+- Not for IE 9 and below
+- HTML :: ~<input type="file" id="gv-inv_image">~
 
-#+BEGIN_EXAMPLE
-  <input type="file" id="gv-inv_image">
-
+#+BEGIN_SRC js
   var fileInputElement = document.getElementById('gv-inv_image');
 
   var formData = new FormData();
@@ -29134,10 +29134,10 @@ Supports all browsers except IE 9 and below.
   request.open("POST", "http://foo.com/submitform.php");
   request.send(formData);
   // request content type is multipart/form-data
-#+END_EXAMPLE
+#+END_SRC
 
 php
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC php
   if (isset($_FILES['gv-inv_image'])) {
     $file         = $_FILES['gv-inv_image']['name'];
     $ext          = pathinfo($file, PATHINFO_EXTENSION);
@@ -29150,10 +29150,10 @@ php
         $result = ['status' => 'ERR', 'message' => 'File Move Error.'];
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Receive binary as arraybuffer or blob
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var oReq = new XMLHttpRequest();
   oReq.open("GET", "/myfile.png", true);
   oReq.responseType = "arraybuffer";
@@ -29175,10 +29175,10 @@ php
   };
 
   oReq.send();
-#+END_EXAMPLE
+#+END_SRC
 
 Specify the received data is blob
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   var oReq = new XMLHttpRequest();
   oReg.open("GET", "/myfile.png", true);
   oReq.responseType = "blob";
@@ -29188,7 +29188,46 @@ Specify the received data is blob
   }
 
   oReq.send();
-#+END_EXAMPLE
+#+END_SRC
+
+*** Download a JSON file
+index.php
+#+BEGIN_SRC js
+  function hello () {
+      var xhr = new XMLHttpRequest()
+      xhr.onload = function () {
+	  if (this.status === 200) {
+	      var disposition = this.getResponseHeader('content-disposition')
+	      var matches = /"([^"]*)"/.exec(disposition)
+	      // if the response file does not have a name, give a default file name file.json
+	      var filename = (matches != null && matches[1] ? matches[1] : 'file.json')
+	      var blob = new Blob([this.response], { type: 'application/json' })
+	      var link = document.createElement('a')
+	      link.href = window.URL.createObjectURL(blob)
+	      link.download = filename
+	      document.body.appendChild(link)
+	      link.click()
+	      document.body.removeChild(link)
+	  }
+      }
+
+      // I found setting the response type is optional
+      //xhr.responseType="blob";
+      xhr.open('GET', 'index2.php', true)
+      xhr.send()
+  }
+#+END_SRC
+
+index2.php
+#+BEGIN_SRC php
+  <?php
+  http_response_code(200);
+  header('Content-Disposition: attachment; filename="filename.json"');
+
+  $result = [ 'data' => 'hello' ];
+
+  echo json_encode($result);
+#+END_SRC
 
 ** File handling
 https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
