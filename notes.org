@@ -59862,16 +59862,37 @@ Try using ssh server instead.
 - ~svn checkout svn://svn.ca/svn/repo/trunk~
    - Checkout a subfolder ~svn://svn.ca/svn/repo/trunk/subfolder1~
    - Checkout to a different local directory ~svn co svn://... my-working-copy~
-- ~svn update~
+- ~svn update~ :: ~svn up~
    - ~svn resolve~
 - ~svn add newfile1.php newfolder1~
 - ~svn delete~
 - ~svn move~
    - eq. to ~svn copy FOO BAR; svn delete FOO~
 - ~svn status~
+   - ~svn status -u~ :: what will happen if ~svn up~ is run
 - ~svn diff~
 - ~svn revert~
 - ~svn commit -m 'message' oldfile1 oldfile2 newfile1.php newfolder1~
+
+** Changelist
+Move modified files to a changelist
+
+#+BEGIN_SRC sh
+  # alias svn changelist
+  # group all modified files to a changelist named `li-cl`
+  svn cl li-cl $(svn st | grep '^M' | awk '{print $2}')
+
+  svn commit -m '...' --changelist li-cl
+#+END_SRC
+
+** Create a patch
+#+BEGIN_SRC sh
+  # create
+  svn diff afile.php > ../afile.php.diff
+
+  # apply
+  patch -p0 -i ~/afile.php.diff
+#+END_SRC
 
 ** Config
 - ~$HOME/.subversion/config~
@@ -64480,6 +64501,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 - Previous method / Next method :: ~C-S-Up~ ~C-S-Down~ Move to previous sibling element in HTML. If there's none, then move to the start of the parent element
 - Extend selection :: ~S-M-Up~ ~S-M-Down~ 
 - Move Caret to Code Block Start or end :: ~C-[~ ~C-]~
+
 **** Navigate > Class, File, Symbol
 **** Navigate > Jump to navigation bar
 **** Navigate > File Structure
@@ -64532,6 +64554,14 @@ Find Action > To Tab
    - For example, insert HTML code to a PHP variable. We need syntax highlighting of that HTML code inside the PHP file
    - https://www.jetbrains.com/help/phpstorm/using-language-injections.html#use-lang-annotation
    - Use PHP nowdoc or heredoc, ~Alt+Enter~ and choose ~Inject Language using PHPDoc~, change ~@lang text~ to e.g. ~@lang JavaScript~, in heredoc, ~Alt+Enter~ and choose ~Edit JavaScript Segment~
+   - SQL Dialect
+      - Settings > Editor > Language Injections
+	 - Manually find an entry named ~php: <<< SQL~. Duplicate it and change ~SQL~ to ~MYSQL~, now heredoc will use the MySQL dialect
+	   #+BEGIN_SRC php
+	     $s=<<<MYSQL
+	     SELECT * FROM `table`;
+	     MYSQL;
+	   #+END_SRC
 
 **** Code > Generate... ~M-Insert~
 - Generate PHPDoc Blocks
@@ -64637,8 +64667,9 @@ Settings > Editor > Code Style > File and Code Templates
 - This should be set to where the final CSS files are placed :: e.g. assets/css/style.css has ~background-image: url(../abc.jpg)~
    - Then the Resource Root should be set to assets/css
 
-*** Settings > Editor > TODO 
+*** Settings > Editor > TODO
 - Default ~\b(todo|fixme)\b.*~, show comments with those as prefix in window TODO ~M-6~
+
 *** Database
 **** MySQL
 When there're multiple statements (multiple ;), Ctrl + Enter (or to Execute from Menu) prompts a list of statements to run:
