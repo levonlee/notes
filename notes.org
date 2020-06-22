@@ -585,7 +585,9 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   $_u_time = mktime(11,0,0,11,22,2016);
 #+END_SRC
 
-**** ~strtotime( string $time [, int $now = time() ] ) : int~ String to Time - return Unix timestamp <<php:f:strtotime>>
+**** ~strtotime( string $time [, int $now = time() ] ) : int~ <<php:f:strtotime>>
+String to Time - return Unix timestamp
+
 #+BEGIN_SRC php
   $_u_time = strtotime('2016-11-01');
   // 20190228 format also works
@@ -621,18 +623,14 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   echo date('Ymd', $dayBeforeYesterday).PHP_EOL;
 #+END_SRC
 
-**** Datetime Object - Unix timestamp (int) and DateInterval
+**** DateTime, DateInterval <<php:DateTime>> <<php:DateInterval>>
+Create by using Unix timestamp (int) in seconds
 #+BEGIN_SRC php
   $_u_time = strtotime('2016-11-01'); // 20190228 also works
 
   $a = new DateTime();
   $a->setTimestamp($_u_time);
 
-  // to convert a more complex string format to date
-  // http://php.net/manual/en/datetime.createfromformat.php
-  $date = DateTime::createFromFormat( 'j-M-Y', '15-Feb-2009');
-
-  // return false if it is not of that format
 
   $now = new DateTime();
 
@@ -642,6 +640,16 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   $yesterday = new DateTime(); // now
   $yesterday->sub(new DateInterval('P1D')); // subtract one day
   echo $yesterday->format('Ymd');
+#+END_SRC
+
+Convert a string format to another
+#+BEGIN_SRC php
+  // to convert a more complex string format to date
+  // return false if it is not of that format
+  // http://php.net/manual/en/datetime.createfromformat.php
+  $date = DateTime::createFromFormat( 'j-M-Y', '15-Feb-2009');
+
+  $date_display = $date->format('Y-m-d');
 #+END_SRC
 
 *** Unix to Format String
@@ -2054,14 +2062,17 @@ RestJson.php
   // Names should not include Drupal, Class
   // Interface should be always suffixed "Interface"
   class RestJson {
-    // constant: strings, booleans, integers
+    // constant: strings, booleans, integers, no arrays!
+	  // constant can also be defined in child class
     const MY_CONSTANT_VAR = 1;
+	  // usage self::ABC, parent::ABC, static::ABC
 
     public static $valid_address_types = [
        RestJson::MY_CONSTANT_VAR => 'Residence',
     ];
 
     public static $filterables; // singleton. same for every instance.
+	  // usage self::$a, parent::$a
 
     public $lwp_options, $listings; // can be different for each instance
 
@@ -2076,7 +2087,7 @@ RestJson.php
       $this->lwp_options = self::getLwpOptions();
       // Call a instance function
       $this->listings = $this->getListings();
-   
+
     }
 
     public static getLwpOptions() {
