@@ -976,8 +976,29 @@ Sort (associative) array by its key
    - SORT_LOCALE_STRING :: compare items as strings, based on the current locale
 - value is the same by using ~(string) $elem1 === (string) $elem2~
 - is not intended to work on multi dimensional arrays
-- keys are preserved, the first element will be retained
-- Sometimes continuous keys is desired, do this
+- keys are preserved, the first element with the same value is retained
+- Example: reverse mapping
+  #+BEGIN_SRC php
+    $map = [
+	    'Annually'      => 12,
+	    'Semi-Annually' => 6,
+	    'Quarterly'     => 6, // no mapping on the receiving end
+	    'Monthly'       => 1,
+	    'Other'         => 1
+    ];
+
+    // norway of mapping
+    $fromPartyA = 'Quarterly';
+    $toUs       = $map[ $fromPartyA ];
+
+    // reverse mapping
+
+    $reversedMap = array_flip( array_unique( $map ) );
+
+    $fromUs   = 6;
+    $toPartyA = $reversedMap[ $fromUs ]; // Semi-Annually
+  #+END_SRC
+- Sometimes continuous keys is desired for numeric array
   #+BEGIN_SRC php
     // array_flip make sure the returned keys are unique
     $unique=array_keys(array_flip(['a', 'a', 'b', 'c']));
@@ -49784,7 +49805,7 @@ Most of devices: =lshal=
 		  - File ~./dist/bionic/InRelease~
 		  - ~sudo apt update~ compares local ~Release~ file with remote ~InRelease~ to check architectures, components, label, origin and suite (distribution)
 		     - To avoid checking, ~sudo apt-get --allow-releaseinfo-change update~. *Not recommended*
-			- Or remove the repo and add it back again. Refer to linux:ubuntu:ppa. *Not recommended*
+			- Or remove the repo and add it back again. Refer to [[linux:ubuntu:ppa][linux:ubuntu:ppa]]. *Not recommended*
 	       - Files under ~./dist/bionic/stable/~ actual files
    - Ubuntu
       - Repos / Components
@@ -51705,7 +51726,7 @@ https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
 - By default, nano covert tab to 4 spaces. Turn off :: ~M-S-q~
 - https://nano-editor.org/dist/latest/cheatsheet.html
 
-** Ubuntu <<<linux:ubuntu>>>
+** Ubuntu <<linux:ubuntu>>
 *** Gnome
 - Logout :: ~gnome-session-quit~
 - Logout gnome session in SSH remote session (haven't used it myself) :: ~env DISPLAY=:0.0 gnome-session-quit --logout --force~
@@ -51876,13 +51897,26 @@ TS: Cannot connect to "Your Connection Name" No such file or directory. Verify y
 - App usually use ~Passwords > Login~
 - phpStorm uses ~IntelliJ Platform DB — hash-id-get-it-from-proj-folder/idea/dataSources.xml~
 
+*** Sync date time
+#+BEGIN_SRC sh
+  # 18.04
+  # see if System clock synchronized is yes
+  timedatectl status
+
+  # check time difference between the local system and the internet time server, and sync if necessary
+  sudo chronyd -q
+
+  # to install
+  sudo apt install chrony
+#+END_SRC
+
 *** Maintenance
 - ~sudo apt autoremove --dry-run~ :: delete any unused dependencies
 - ~sudo du -sh /var/cache/apt~ :: APT keeps previously downloaded and installed packages even after they've been uninstalled
   - Remove only the outdated packages ~sudo apt autoclean --dry-run~
   - Clean it entirely ~sudo apt clean --dry-run~
 
-** Ubuntu Personal Package Archive - PPA <<<linux:ubuntu:ppa>>>
+** Ubuntu Personal Package Archive - PPA <<linux:ubuntu:ppa>>
 - Add a LibreOffice package from PPA to Software Sources :: ~sudo add-apt-repository ppa:libreoffice/ppa~, then ~sudo apt-get update~
 - Remove the package source :: ~sudo add-apt-repository --remove ppa:libreoffice/ppa~, ~apt-get update~
 - Remove it and downgrade back to previous version before using PPA :: ~sudo apt-get install ppa-purge~, ~sudo ppa-purge ppa:libreoffice/ppa~
