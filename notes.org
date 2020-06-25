@@ -498,17 +498,43 @@ Use absolute path. See dirname
   filemtime(__DIR__. "/wp-content/themes/a.css")) // int
 #+END_SRC
 
-*** Include file - ~__DIR__~, ~dirname(__FILE__)~
-#+BEGIN_SRC php
-  include __DIR__ . "/../abc.";
+*** Include file ~__DIR__~, ~dirname(__FILE__)~ <<php:include>>
+- An absolute path is defined
+  #+BEGIN_SRC php
+    include __DIR__ . "/../abc.";
 
-  // PHP version < 5
-  include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; 
+    // PHP version < 5
+    include dirname(__FILE__) . "/../../../../../wp-content/themes/a-theme/includes/thank-you.php"; 
 
-  foreach ( glob( dirname( __FILE__ ) . '/abc/*.php' ) as $file ) {
-	  include $file;
-  }
-#+END_SRC
+    foreach ( glob( dirname( __FILE__ ) . '/abc/*.php' ) as $file ) {
+	    include $file;
+    }
+  #+END_SRC
+- A relative path :: start with ~./~ or ~../~ 
+  #+BEGIN_SRC php
+    // cd ~; php run/start.php
+    // get_include_path() is ignored when relative paths are used in include :: `.:/usr/share/php`
+
+    // run/start.php
+    include './connect.php';
+
+    // ~/connect.php // working directory getcwd() which is ~, the initial run's working dir
+    // if not found, error
+    // same applies to `include '../connect.php'`
+
+    // run/start.php
+    include 'connect.php';
+
+    // get_include_path() is used first :: `.:/usr/share/php`
+
+    // eq. to `include './connect.php';`, which is ~/connect.php
+    // then `include '/usr/share/php/connect.php';`
+    // then ~/run/connect.php // the script's (~/run/start.php) path  is ~/run
+
+    // In short, both relative and bare filename first look into the entrypoint's path
+    // . and .. stops when the relative path based on the entrypoint's path is not found
+    // bare filename tries include_path first
+  #+END_SRC
 
 ** Module, Extension
 *** bz2
@@ -568,13 +594,13 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // m => 01 for January
   // d => 01 to 31
   // w => 0 to 6, 0 for Sunday and 6 for Saturday
-  // G :: 24-hour format for an hour with leading zeros
+  // H :: 24-hour format for an hour with leading zeros
   // i :: minutes with leading zeros
   // s :: seconds with leading zeros
 
   // Use / to escape
   echo date('Ymd'); // 20190131 for Jan 31, 2019
-  echo date('YmdGis'); // 20190131015959 for Jan 31, 2019 01:59:59
+  echo date('YmdHis'); // 20190131015959 for Jan 31, 2019 01:59:59
   echo date('c'); // 2019-05-24T07:11:55-07:00
   echo date('F j, Y'); // November 1, 2020
 #+END_SRC
@@ -61735,6 +61761,12 @@ MySQL 5.6
 - Version :: e.g. 10
 - Rows :: number of records. MyISAM shows exact while InnoDB shows approximation may vary by as much as 40% to 50%
 - Collation :: utf8mb4_general_ci
+
+*** ALTER TABLE <<mysql:alter>>
+#+BEGIN_SRC sql
+  -- Change definition only
+  ALTER TABLE `t1` MODIFY `col1` VARCHAR(255)
+#+END_SRC
 
 *** Index a column?
 - A column with <= 767 bytes can be indexed
