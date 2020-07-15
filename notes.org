@@ -60108,7 +60108,8 @@ Try using ssh server instead.
 - ~svn update~ :: ~svn up~
    - ~svn resolve~
 - ~svn add newfile1.php newfolder1~
-   - by default when a dir. is added, all files of it are added
+   - by default when a dir. is added, all files of its level are added
+   - add all files/folder in a subfolder recursively :: ~svn add path/to/folder/* --depth infinity~
 - ~svn delete~
 - ~svn move~
    - eq. to ~svn copy FOO BAR; svn delete FOO~
@@ -60124,15 +60125,18 @@ Try using ssh server instead.
 - List committed files for a revision :: ~svn log --verbose -r 123~
 
 ** Changelist
-Move modified files to a changelist
+- A file can only be in one changelist. Adding a file to another changelist will remove the file from the original changelist and add it to the new changelist
+   - Since a file can belong to one changelist, to remove a file from any changelist is
+      - ~svn cl --remove path/to/file~
+- ~svn st~ reviews all changelists and files under them
+- Move modified files to a changelist
+  #+BEGIN_SRC sh
+    # alias svn changelist
+    # group all modified files to a changelist named `li-cl`
+    svn cl li-cl $(svn st | grep '^M' | awk '{print $2}')
 
-#+BEGIN_SRC sh
-  # alias svn changelist
-  # group all modified files to a changelist named `li-cl`
-  svn cl li-cl $(svn st | grep '^M' | awk '{print $2}')
-
-  svn commit -m '...' --changelist li-cl
-#+END_SRC
+    svn commit -m '...' --changelist li-cl
+  #+END_SRC
 
 ** Create a patch
 #+BEGIN_SRC sh
