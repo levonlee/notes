@@ -62001,6 +62001,21 @@ Update Joined Tables
 	     WHEN 'value1' THEN colB
 	     WHEN 'value2' THEN colC
 	     ELSE 'value3' END;
+
+  SELECT colA,
+  ( SELECT COUNT(*) FROM t2) AS computedCol,
+  CASE computedCol -- Can't use computed column as CASE value!!
+  WHEN 2 then 1
+  END AS caseCol
+
+  -- Due to computed columns cannot be used, may need to repeat computed fields
+  SELECT colA,
+  (
+  SELECT CASE
+  WHEN COUNT(*) > 10 THEN 1
+  WHEN COUNT(*) > 0 THEN 2
+  END
+  FROM t2) AS caseCol
 #+END_SRC
 
 *** User Variable
@@ -62135,7 +62150,7 @@ word column is string
 - Drop a stored procedure :: ~DROP PROCEDURE IF EXISTS my_sp_name~
 
 *** User Defined Function <<<mysql:udf>>>
-A UDF always returns a value.
+- UDF always returns a value
 
 Syntax
 #+BEGIN_EXAMPLE
@@ -62201,6 +62216,39 @@ Syntax
 	     ELSE text
 	     END;
     END;
+#+END_SRC
+
+**** Return a single value from SELECT statement
+#+BEGIN_SRC sql
+  DROP FUNCTION IF EXISTS udfreturnselect;
+
+  DELIMITER ;;
+
+  CREATE FUNCTION udfreturnselect(parentQueryT1Col1_ BIGINT(20),
+				  parentQueryT2Col1_ DECIMAL(20, 2))
+      RETURNS INT(11)
+      DETERMINISTIC
+      CONTAINS SQL
+
+  BEGIN
+      DECLARE udfreturnselect_result INT;
+
+      SELECT CASE
+		 WHEN (IFNULL(parentQueryT2Col1_, 0) - SUM(IFNULL(t3.invamount, 0)) < 0.01 AND
+		       parentQueryT2Col1_ > 0) THEN 1
+		 WHEN (IFNULL(parentQueryT2Col1_, 0) - SUM(IFNULL(t3.invamount, 0)) > 0 AND
+		       SUM(IFNULL(t3.invamount, 0)) > 0) THEN 2
+		 ELSE 3
+		 END
+      INTO udfreturnselect_result
+      FROM t3
+      WHERE t3.roundid = parentQueryT1Col1_
+	AND t3.replaced = 0;
+
+      RETURN udfreturnselect_result;
+  END ;;
+
+  DELIMITER ;
 #+END_SRC
 
 *** SQL Fiddle <<<mysqlfiddle>>>
