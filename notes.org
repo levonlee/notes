@@ -61844,13 +61844,7 @@ MySQL 5.6
 - Rows :: number of records. MyISAM shows exact while InnoDB shows approximation may vary by as much as 40% to 50%
 - Collation :: utf8mb4_general_ci
 
-*** ALTER TABLE <<mysql:alter>>
-#+BEGIN_SRC sql
-  -- Change definition only
-  ALTER TABLE `t1` MODIFY `col1` VARCHAR(255)
-#+END_SRC
-
-*** Index a column?
+*** Index, Composite Index
 - A column with <= 767 bytes can be indexed
 - Index hints can be used in ~SELECT~ queries to specify whether or not to use the index column
    - https://dev.mysql.com/doc/refman/8.0/en/index-hints.html
@@ -61886,6 +61880,17 @@ MySQL 5.6
       - c3
       - c2, c4
       - Use leftmost concept to identify whether a combo is optimized
+
+*** JOIN
+- ~INNER JOIN~ is ~JOIN~
+- Comma separated tables is eq. to ~JOIN~ but the precedence is less than ~JOIN~, ~INNER JOIN~, ~LEFT JOIN~, ~CROSS JOIN~
+   - Generally, avoid mixing comma separated tables with ~* JOIN *~
+
+*** ALTER TABLE <<mysql:alter>>
+#+BEGIN_SRC sql
+  -- Change definition only
+  ALTER TABLE `t1` MODIFY `col1` VARCHAR(255)
+#+END_SRC
 
 *** REGEXP <<<mysql:regex>>>
 Unless the field is binary, REGEXP is case-insensitive.
@@ -62312,15 +62317,16 @@ Schema
   CREATE TABLE s_score (
   `id` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
   `sid` INT(6) UNSIGNED NOT NULL,
-  `score` INT(3) UNSIGNED NOT NULL
+  `score` INT(3) UNSIGNED NOT NULL,
   `testDate` BIGINT(20) UNSIGNED NOT NULL
   );
 
   INSERT INTO s_score ( sid, score, testDate )
   VALUES 
-  ( 1, 20 ),
-  ( 1, 30 ),
-  ( 2, 40 )( 1, 20, 1593015426 ),
+  ( 1, 20, 0 ),
+  ( 1, 30, 0 ),
+  ( 2, 40, 0 ),
+  ( 1, 20, 1593015426 ),
   ( 1, 30, 1594015426 ),
   ( 2, 40, 1595015426 )
   ;
