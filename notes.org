@@ -18594,10 +18594,19 @@ Save cfdump in a string
    - Other elements adjacent to position:relative element will not be adjusted to fit into
 any gap left by the element (treat the relative element as static)
 - fixed :: ~position:fixed~ is relative to viewport
-- sticky :: Stay in original position, when it goes out of view, act like ~position:fixed~
-- A "positioned" element is one whose position is anything except static
+   - Its element is removed from the normal document flow, and no space is created for the element in the page layout
+   - It's positioned relative to the initial containing block established by the viewport, except when one of its ancestors has a ~transform~, ~perspective~, or ~filter~ property set to something other than ~none~, in which case that ancestor behaves as the containing block. Its final position is determined by the values of ~top~, ~right~, ~bottom~, ~left~
+   - In printed documents, the element is placed in the same position on every page
+- sticky
+   - It is positioned according to the normal flow of the document, and then offset relative its nearest scrolling ancestor and containing block (nearest block-level ancestor) including table-related elements
+   - scrolling ancestors are ~overflow~ is ~hidden~, ~scroll~, ~auto~ or ~overlay~
+   - It is positioned based on the value of ~top~, ~right~, ~bottom~ and ~left~
+- absolute :: ~postion:absolute~ is positioned relative to the nearest positioned ancestor. If there's no positioned ancestors, document body is used
+- *positioned* element :: its ~position~ is anything except ~static~
    - When elements are positioned, they can overlap other elements
-- absolute :: ~postion:absolute~ is positioned relative to the nearest positioned ancestor. If there's no positioned ancestors, document body is used.
+   - it creates a stacking context
+- [[https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context][Stacking context]]
+- [[https://developer.mozilla.org/en-US/docs/Web/CSS/position][CSS Position from MDN]]
 
 *** ~box-sizing~
 ~box-sizing: border-box | padding-box | content-box (default);~
@@ -19954,7 +19963,7 @@ WD. Only Edge. Same as html:meta:viewport
             ) {}
 #+END_SRC
 
-** Flexbox <<<css:flex>>>
+** Flexbox <<css:flex>>
 *** Basics
 - Container could be ~display:flex~ or ~display:inline-flex~
 - Flexbox is good for aligning child elements with irregular or unknown or inconsistent width and height and unknown number of child elements
@@ -23333,37 +23342,38 @@ https://mdbootstrap.com/
 - scrollY :: same as [[dom:window:pageyoffset][dom:window:pageyoffset]]
 - innerHeight :: ~window.innerHeight + window.pageYOffset~ is the y coordinate of the window
 
-*** Document Object
+*** Document Object <<html:DocumentObject>>
 [[https://developer.mozilla.org/en/docs/Web/API/Document][Document properties and methods]]
 
-| document.methodName() or       | Notes                                                      | Use in          |
-| document.propertyName          |                                                            | Element Object? |
-|--------------------------------+------------------------------------------------------------+-----------------|
-| createElement("p")             | appendChild                                                | no              |
-|                                |                                                            |                 |
-| createTextNode("text node");   | appendChild                                                | no              |
-|                                |                                                            |                 |
-| createAttribute('data-id')     | appendChild                                                | no              |
-|                                |                                                            |                 |
-| getElementById("id")           | null or element object                                     | no              |
-|                                |                                                            |                 |
-| getElementsByClassName         | NodeList                                                   | yes             |
-|                                |                                                            |                 |
-| getElementsByTagName("p")      | NodeList                                                   | yes             |
-|                                |                                                            |                 |
-| querySelector('#id')           | 1st matched element. null or exception or element object   | yes             |
-|                                |                                                            |                 |
-| querySelectorAll('#id')        | Static NodeList or exception                               | yes             |
-|                                |                                                            |                 |
-| normalize()                    | remove empty text nodes and join adjacent text nodes       | yes             |
-|                                |                                                            |                 |
-| readyState                     | - loading :: the document is still loading                 | no              |
-| <<<html:document:readyState>>> | - interactive :: document has finished loading and         |                 |
-|                                | the document has been parsed but sub-resources e.g.        |                 |
-|                                | images, stylesheets and frames are still loading           |                 |
-|                                | - complete :: document and all sub-resources have finished |                 |
-|                                | loading. The state indicates that the html:event:load      |                 |
-|                                | is about to fire                                           |                 |
+| document.methodName() or       | Notes                                                        | Use in             |
+| document.propertyName          |                                                              | [[html:ElementObject][html:ElementObject]] |
+|                                |                                                              |                    |
+|--------------------------------+--------------------------------------------------------------+--------------------|
+| createElement("p")             | appendChild                                                  | no                 |
+|                                |                                                              |                    |
+| createTextNode("text node");   | appendChild                                                  | no                 |
+|                                |                                                              |                    |
+| createAttribute('data-id')     | appendChild                                                  | no                 |
+|                                |                                                              |                    |
+| getElementById("id")           | null or [[html:ElementObject][html:ElementObject]]                                   | no                 |
+|                                |                                                              |                    |
+| getElementsByClassName         | NodeList                                                     | yes                |
+|                                |                                                              |                    |
+| getElementsByTagName("p")      | NodeList                                                     | yes                |
+|                                |                                                              |                    |
+| querySelector('#id')           | 1st matched element. null or exception or [[html:ElementObject][html:ElementObject]] | yes                |
+|                                |                                                              |                    |
+| querySelectorAll('#id')        | Static NodeList or exception                                 | yes                |
+|                                |                                                              |                    |
+| normalize()                    | remove empty text nodes and join adjacent text nodes         | yes                |
+|                                |                                                              |                    |
+| readyState                     | - loading :: the document is still loading                   | no                 |
+| <<<html:document:readyState>>> | - interactive :: document has finished loading and           |                    |
+|                                | the document has been parsed but sub-resources e.g.          |                    |
+|                                | images, stylesheets and frames are still loading             |                    |
+|                                | - complete :: document and all sub-resources have finished   |                    |
+|                                | loading. The state indicates that the html:event:load        |                    |
+|                                | is about to fire                                             |                    |
 
 - designMode :: default ~"off"~
 
@@ -23398,78 +23408,125 @@ Another way to loop NodeList
   );
 #+END_SRC
 
-*** <<<Element Object>>>
+*** Element Object <<html:ElementObject>>
+**** Basics
 [[https://developer.mozilla.org/en-US/docs/Web/API/Element][Element Properties and Methods]]
 
-| element.methodName() or        | Notes                                           | Use in   |
-| element.propertyName           |                                                 | Document |
-|                                |                                                 | Object?  |
-|--------------------------------+-------------------------------------------------+----------|
-| accessKey                      | get/set accessKey                               |          |
-| addEventListerner()            | refer to event attributes without 'on'          | yes      |
-|                                | e.addEventListerner("click", myFunction,false ) |          |
-|                                | false for bubbling, true for capturing          |          |
-| removeEventListener()          | anonymous function will not work                | yes      |
-|                                |                                                 |          |
-| click()                        | simulate a click on an element                  | no       |
-| blur()                         |                                                 | no       |
-| focus()                        |                                                 | no       |
-|                                |                                                 |          |
-| innerHTML                      | get/set                                         | no       |
-|                                |                                                 |          |
-| appendChild(newChildNode)      | move element to the end of another element      | no       |
-|                                | <<<appendChild>>>                               |          |
-| removeChild(childNode)         |                                                 | no       |
-| list.insertBefore(newnode,     |                                                 |          |
-| list.childNodes[0])            |                                                 |          |
-|                                |                                                 |          |
-| <<<parentNode>>>               | read only                                       | no       |
-| <<<parentElement>>>            | read only                                       | no       |
-|                                |                                                 |          |
-| .cloneNode()                   |                                                 |          |
-|                                |                                                 |          |
-| attributes                     | read only. NamedNodeMap                         | no       |
-| getAttribute("class")          | attribute value in string                       | no       |
-| getAttributeNode("class")      | Attr object                                     | no       |
-|                                |                                                 |          |
-| .childElementCount             | the number of child element nodes not text      |          |
-|                                | and comment nodes                               |          |
-| .childNodes                    | NodeList object. .childNodes.length             |          |
-|                                | var c = e.childNodes[0].text                    |          |
-| .children                      | exclude text and comment nodes.                 |          |
-|                                | HTMLCollection object.                          |          |
-| classList                      | read only. DOMTokenList                         | no       |
-| className                      | get/set                                         | no       |
-|                                |                                                 |          |
-| clientHeight                   | height + padding, no border and scrollbar       | no       |
-| clientWidth                    |                                                 | no       |
-| clientTop                      | Top border width                                | no       |
-| clientLeft                     | Left border width                               | no       |
-| offsetWidth                    | width+padding+border+scrollbar but no margin    | no       |
-| offsetHeight                   |                                                 | no       |
-| .offsetLeft, offsetTop         | relative to offsetParent                        |          |
-| .scrollHeight, .scrollWidth    | width+padding only                              |          |
-| .scrollLeft, .scrollTop        | pixels are scrolled                             |          |
-|                                |                                                 |          |
-| e1.compareDocumentPosition(e2) | compare positions of elements                   |          |
-| e1.contains(e2)                | if e2 is a descendant of e1                     |          |
-| .contentEditable               |                                                 |          |
-|                                |                                                 |          |
-| .firstChild                    | child node                                      |          |
-| .firstElementChild             | child element node                              |          |
-| .nextSibling                   |                                                 |          |
-| .nextElementSibling            |                                                 |          |
-|                                |                                                 |          |
-| .hasAttribute("onclick")       |                                                 |          |
-| .hasAttributes()               | has any attributes?                             |          |
-| .hasChildNodes()               | has any child nodes                             |          |
-|                                |                                                 |          |
-| .isEqualNode(e1,e2)            |                                                 |          |
-|                                |                                                 |          |
-| .nodeName                      | tag name                                        |          |
-| .tagName                       | tag name in upppercase                          |          |
-| .nodeValue                     |                                                 |          |
-|                                |                                                 |          |
+| element.methodName() or        | Notes                                           | Use in               |
+| element.propertyName           |                                                 | [[html:DocumentObject][html:DocumentObject]]? |
+|--------------------------------+-------------------------------------------------+----------------------|
+| accessKey                      | get/set accessKey                               |                      |
+| addEventListerner()            | refer to event attributes without 'on'          | yes                  |
+|                                | e.addEventListerner("click", myFunction,false ) |                      |
+|                                | false for bubbling, true for capturing          |                      |
+| removeEventListener()          | anonymous function will not work                | yes                  |
+|                                |                                                 |                      |
+| click()                        | simulate a click on an element                  | no                   |
+| blur()                         |                                                 | no                   |
+| focus()                        |                                                 | no                   |
+|                                |                                                 |                      |
+| innerHTML                      | get/set                                         | no                   |
+|                                |                                                 |                      |
+| appendChild(newChildNode)      | move element to the end of another element      | no                   |
+|                                | <<<appendChild>>>                               |                      |
+| removeChild(childNode)         |                                                 | no                   |
+| list.insertBefore(newnode,     |                                                 |                      |
+| list.childNodes[0])            |                                                 |                      |
+|                                |                                                 |                      |
+| <<<parentNode>>>               | read only                                       | no                   |
+| <<<parentElement>>>            | read only                                       | no                   |
+|                                |                                                 |                      |
+| .cloneNode()                   |                                                 |                      |
+|                                |                                                 |                      |
+| attributes                     | read only. NamedNodeMap                         | no                   |
+| getAttribute("class")          | attribute value in string                       | no                   |
+| getAttributeNode("class")      | Attr object                                     | no                   |
+|                                |                                                 |                      |
+| .childElementCount             | the number of child element nodes not text      |                      |
+|                                | and comment nodes                               |                      |
+| .childNodes                    | NodeList object. .childNodes.length             |                      |
+|                                | var c = e.childNodes[0].text                    |                      |
+| .children                      | exclude text and comment nodes.                 |                      |
+|                                | HTMLCollection object.                          |                      |
+| classList                      | read only. DOMTokenList                         | no                   |
+| className                      | get/set                                         | no                   |
+|                                |                                                 |                      |
+| clientHeight                   | height + padding, no border and scrollbar       | no                   |
+| clientWidth                    |                                                 | no                   |
+| clientTop                      | Top border width                                | no                   |
+| clientLeft                     | Left border width                               | no                   |
+| offsetWidth                    | width+padding+border+scrollbar but no margin    | no                   |
+| offsetHeight                   |                                                 | no                   |
+| .offsetLeft, offsetTop         | relative to offsetParent                        |                      |
+| .scrollHeight, .scrollWidth    | width+padding only                              |                      |
+| .scrollLeft, .scrollTop        | pixels are scrolled                             |                      |
+|                                |                                                 |                      |
+| e1.compareDocumentPosition(e2) | compare positions of elements                   |                      |
+| e1.contains(e2)                | if e2 is a descendant of e1                     |                      |
+| .contentEditable               |                                                 |                      |
+|                                |                                                 |                      |
+| .firstChild                    | child node                                      |                      |
+| .firstElementChild             | child element node                              |                      |
+| .nextSibling                   |                                                 |                      |
+| .nextElementSibling            |                                                 |                      |
+|                                |                                                 |                      |
+| .hasAttribute("onclick")       |                                                 |                      |
+| .hasAttributes()               | has any attributes?                             |                      |
+| .hasChildNodes()               | has any child nodes                             |                      |
+|                                |                                                 |                      |
+| .isEqualNode(e1,e2)            |                                                 |                      |
+|                                |                                                 |                      |
+| .nodeName                      | tag name                                        |                      |
+| .tagName                       | tag name in upppercase                          |                      |
+| .nodeValue                     |                                                 |                      |
+|                                |                                                 |                      |
+
+**** Reflow
+- Reflow is a user-blocking operation that computes the layout of the document. A reflow on an element is the calculation of its dimensions and position in the document
+   - Insert, remove, update an element in the DOM
+      - modify content in an element including text in input box
+   - Move and animate a DOM element
+   - take measurements of an element e.g. offsetWidth and getComputedStyle
+   - Change a CSS style
+      - Set ~style~ attribute
+      - change font
+   - Activate a CSS-pseudo class e.g. ~:hover~
+   - add or remove a style sheet
+   - resize the window
+   - scroll
+   - https://csstriggers.com/ lists which CSS property change triggers what types of reflow
+      - layout, paint or composite
+   - https://gist.github.com/paulirish/5d52fb081b3570c81e3a lists JavaScript codes that trigger a reflow
+   - https://medium.com/better-programming/web-performance-dom-reflow-76ac7c4d2d4f
+
+**** elem.offsetWidth, elem.clientWidth, elem.scrollWidth, getComputedStyle(elem).width, elem.getBoundingClientRect().width
+- ~offsetWidth~, ~offsetHeight~
+   - width + padding + border + scrollbar, but no margin
+   - Rounded to integer in pixels
+   - it is faster than ~clientWidth~
+- ~clientWidth~, ~clientHeight~
+   - height + padding, but no margin, no border, no scrollbar
+   - 0 for inline elements and elements with no CSS
+   - rounded to integer in pixels
+- scrollWidth
+   - width + padding, but no margin, no border, no scrollbar :: similar to clientWidth
+   - rounded to integer in pixels
+- ~getComputedStyle(elem).width~
+   - https://developer.mozilla.org/en-US/docs/Web/API/Window/getComputedStyle
+   - returns a live CSSStyleDeclaration object
+      - ~var style = window.getComputedStyle(element [, pseudoElt]);~
+      - updates automatically when the element's styles are changed
+      - ~.width~ is a string with ~px~ at the end
+	 - could be ~auto~ for an inline element
+- ~elem.getBoundingClientRect().width~
+   - https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
+   - Returns a DOMRect object which has 4 keys that hold fractional values
+      - size of an element (~width~, ~height~) and its position relative to the viewport ~x~ eq. ~left~, ~y~ eq. ~top~, and ~right~
+	 - Returned size is very close to ~offsetWidth~ but different
+	    - width or height + padding + border-width, 
+	    - width or height only if ~box-sizing: border-box~
+	    - If the element is transformed e.g. ~width: 100px; transform: scale(0.5);~, it will return 50 as the width
+   - Also works for virtual DOM e.g. Vue ~this.$refs['some-ref'].getBoundingClientRect().height~
 
 *** Event Object
 #+BEGIN_SRC html
@@ -27514,7 +27571,7 @@ https://amp.dev/documentation/components/amp-analytics/
     });
   #+END_SRC
 - Load CSS files :: refer to css:js insert
-- ~document.write~ inside external script (asynchronously loaded) cannot modify DOM. Use these to modify the DOM. Refer to Element Object
+- ~document.write~ inside external script (asynchronously loaded) cannot modify DOM. Use these to modify the DOM. Refer to [[html:ElementObject][html:ElementObject]]
    - ~.appendChild()~
    - ~.insertBefore()~
      #+BEGIN_SRC js
