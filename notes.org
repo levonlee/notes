@@ -746,8 +746,9 @@ Convert a string format to another
      #+END_SRC
 
 *** Remove 4 byte characters <<<php:4byte>>>
-PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard change.
-mysql:charset d7:mysql:charset 
+- PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard to change
+   - mysql:charset
+   - d7:mysql:charset 
 
 Here's how to remove any 4 byte character:
 #+BEGIN_SRC php
@@ -61454,7 +61455,7 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
    - ~mysql:host=localhost;dbname=oophp~
    - ~mysql:host=localhost;port=3307;dbname=oophp~
 
-In console
+**** Get settings, global variables, session variable
 #+BEGIN_SRC sql
   -- all settings / global variables
   SHOW VARIABLES;
@@ -61474,6 +61475,25 @@ In console
 
   -- Or just use one line get 2 variables
   SELECT @@character_set_database, @@collation_database;
+
+  -- @@var_name means to get the session value if exists and the global value otherwise
+  -- To get or set session value specifically
+  SELECT @@SESSION.character_set_database;
+  -- To get or set global value specifically
+  SELECT @@global.character_set_database;
+
+  -- SET default is to set session variable
+  SET my_session_system_var_name = 'a';
+  -- eq. to
+  SET @@my_session_system_var_name = 'a';
+  SET @@SESSION.my_session_system_var_name = 'a';
+  SET SESSION my_session_system_var_name = 'a';
+
+  -- SET global system variable
+  SET @@GLOBAL.my_session_system_var_name = 'a';
+  SET GLOBAL my_session_system_var_name = 'a';
+
+  -- @ is User-defined variable
 
   -- default collation for a charset
   -- utf8mb4_general_ci
@@ -61521,18 +61541,24 @@ https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
 #+END_EXAMPLE
 
 **** charset, collation <<<mysql:charset>>> <<<mysql:collation>>>
-- Default charset is ~utf8~ and its default collation is ~utf8_general_ci~
-- MariaDB default charset is ~utf8mb4~ and its default collation is ~utf8mb4_general_ci~
-- Charset ~utf8~ is 3 bytes while ~utf8mb4~ is 4 bytes per character
-- PHP's UTF8 can support 4 bytes and hence a column should have the charset ~utf8mb4~
-
-#+BEGIN_SRC sql
-  -- See MySQL server default charset and collation
-  SELECT @@character_set_database, @@collation_database;
-  ALTER DATABASE db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-  ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-  ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-#+END_SRC
+- Collation
+   - A set of fules that defines how to compare and sort character strings
+   - Every collation belongs to a single character set
+   - A character set has at least one collation and most have 2 or more collations
+- Character Set
+   - ~latin1~ :: default for MySQL, 1 byte
+   - ~utf8~ :: default collation ~utf8_general_ci~, 3 bytes
+   - ~utf8mb4~ :: MariaDB default, default collation ~utf8mb4_general_ci~, 4 bytes. PHP's UTF8 is 4 bytes
+- Get all available character sets and their default collation
+   - ~SHOW CHARACTER SET;~
+   - ~Maxlen~ column shows each character byte
+- Get and set charset and collation
+  #+BEGIN_SRC sql
+    SELECT @@character_set_database, @@collation_database;
+    ALTER DATABASE db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+    ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+    ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  #+END_SRC
 
 In order to enable utf8mb4, you need to change my.cnf setting and restart MySQL
 mysqld (client) is used on Pantheon instead of libmysqlclient
@@ -61555,18 +61581,18 @@ But those columns already have ~varchar(255)~ defined, you will need to re-creat
   ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 #+END_SRC
 
-That's actually what Wordpress does: resize the indexed columns for some tables and make every table and field/columns to charset ~utf8mb4~
+That's actually what WordPress does: resize the indexed columns for some tables and make every table and field/columns to charset ~utf8mb4~
 
-Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as Wordpress.
+Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as WordPress.
 
 Referred by d7:mysql:charset
 
 **** Memory, InnoDB Buffer, packet
-name, default
-innodb-buffer-pool-size = innodb-buffer-pool-chunk-size * innodb-buffer-pool-instaces
-max-allowed-packet :: 16M # total BLOB data size for a single row
+- name :: default
+- innodb-buffer-pool-size :: ~innodb-buffer-pool-chunk-size * innodb-buffer-pool-instaces~
+- max-allowed-packet :: 16M, total BLOB data size for a single row
 
-**** Last Update time for a table in a database
+**** Last update time for a table in a database
 #+BEGIN_SRC sql
   SELECT UPDATE_TIME, TABLE_SCHEMA, TABLE_NAME
   FROM   INFORMATION_SCHEMA.TABLES
@@ -61714,20 +61740,6 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   sudo /etc/init.d/mysql start
 #+END_SRC
 
-*** Search by column name
-#+BEGIN_SRC sql
-  SELECT DISTINCT TABLE_NAME 
-  FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE COLUMN_NAME IN ('columnA','ColumnB')
-	AND TABLE_SCHEMA='YourDatabase';
-#+END_SRC
-
-*** Transpose query results
-#+BEGIN_SRC sh
-  mysql -u username -p
-  select * from atable\G
-#+END_SRC
-
 *** Data Types
 **** Integer <<mysql:datatype:int>>
 - SIGNED :: contains negative, 0 and positive
@@ -61792,50 +61804,60 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   UNIX_TIMESTAMP(NOW())
 #+END_SRC
 
-**** String <<<mysql:datatype:string>>>
-https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
+**** String Functions
+- https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
+- Concatenate user variable
+  #+BEGIN_SRC sql
+    SET @s3 = 'http://s3.amazonaws.com/abc/';
+    SELECT REGEXP_REPLACE(thumbnail.uri, "^(s3://)(.*)", CONCAT(@s3,'\\2')) AS thumbnail';
+  #+END_SRC
+- Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values
+  #+BEGIN_SRC sql
+    CONCAT_WS(',', colA, colB, 'Column C Value')
+    WHERE url_alias.source = CONCAT('node/', n.nid)
 
-Concatenate user variable
-#+BEGIN_SRC sql
-  SET @s3 = 'http://s3.amazonaws.com/abc/';
-  SELECT REGEXP_REPLACE(thumbnail.uri, "^(s3://)(.*)", CONCAT(@s3,'\\2')) AS thumbnail';
-#+END_SRC
+    -- if there any value that is NULL, CONCAT returns NULL
+    CONCAT_WS(',', NULL, '123', NULL) -- 123
+    CONCAT_WS(',', NULL, NULL) -- empty value
+    CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
+  #+END_SRC
+- Replace all occurances, case-sensitve. multibyte safe
+  #+BEGIN_SRC sql
+    SELECT REPLACE('www.mysql.com', 'w', 'Ww');
+  #+END_SRC
+- Use regex_replace to do more complicated find and replace. MariaDB driver on host is required
+  #+BEGIN_SRC sql
+    SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3');
+  #+END_SRC
+- String delimited list
+  #+BEGIN_SRC sql
+    substring_index ( substring_index ( context,',',1 ), ',', -1) ) 
+    substring_index ( substring_index ( context,',',2 ), ',', -1) ) 
+    substring_index ( substring_index ( context,',',3 ), ',', -1) ) 
+    substring_index ( substring_index ( context,',',4 ), ',', -1) )
+    -- it means 1st value, 2nd, 3rd, etc.
+  #+END_SRC
+   - Explanation :: original string is "34,7,23,89", ~substring_index( context,',', 3)~ returns "34,7,23". The outer substring_index takes the value returned by the inner substring_index and the -1 allows you to take the last value. So you get "23" from the "34,7,23"
+   - See mysql:string:list:temp table for more
+- ~CHAR_LENGTH(@str)~ :: visual string length
+- ~LENGTH(@str)~ :: byte length/size
 
-Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values.
-#+BEGIN_SRC sql
-  CONCAT_WS(',', colA, colB, 'Column C Value')
-  WHERE url_alias.source = CONCAT('node/', n.nid)
-
-  -- if there any value that is NULL, CONCAT returns NULL
-  CONCAT_WS(',', NULL, '123', NULL) -- 123
-  CONCAT_WS(',', NULL, NULL) -- empty value
-  CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
-#+END_SRC
-
-replace all occurances, case-sensitve. multibyte safe
-#+BEGIN_SRC sql
-  SELECT REPLACE('www.mysql.com', 'w', 'Ww');
-#+END_SRC
-
-Use regex_replace to do more complicated find and replace. MariaDB driver on host is required.
-#+BEGIN_SRC sql
-  SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3');
-#+END_SRC
-
-String delimited list
-#+BEGIN_SRC sql
-  substring_index ( substring_index ( context,',',1 ), ',', -1) ) 
-  substring_index ( substring_index ( context,',',2 ), ',', -1) ) 
-  substring_index ( substring_index ( context,',',3 ), ',', -1) ) 
-  substring_index ( substring_index ( context,',',4 ), ',', -1) )
-  -- it means 1st value, 2nd, 3rd, etc.
-#+END_SRC
-
-- Explanation :: original string is "34,7,23,89", ~substring_index( context,',', 3)~ returns "34,7,23". The outer substring_index takes the value returned by the inner substring_index and the -1 allows you to take the last value. So you get "23" from the "34,7,23".
-
-See mysql:string:list:temp table for more
-
-***** ~TEXT~ Type <<<mysql:datatype:text>>>
+**** ~CHAR~ and ~VARCHAR~
+- 1 character 1 byte
+- ~CHAR(n)~
+   - Fixed byte
+   - Required no storage space. So ~CHAR(n)~ is n bytes
+   - When retrieved, trailing spaces are removed unless PAD_CHAR_TO_FULL_LENGTH mode is enabled
+      - Trailing spaces are not retained when fetched!
+   - right padding with space
+- ~VARCHAR(n)~
+   - Variable length
+   - Not padded thus trailing spaces are retained
+   - n can be from 0 to 65,535
+   - Extra storage byte on top of the data storage
+      - If n <= 255, 1 storage byte
+      - n > 255, 2 storage byte
+**** ~TEXT~ Type <<mysql:datatype:text>>
 - ~TEXT~ data is not stored in the database server’s memory. Quering ~TEXT~ data requires reading from disk, much slower than ~CHAR~ and ~VARCHAR~
 - It holds data that is nonbinary strings
 - It doesn't count towards the maximum row size for each record
@@ -61848,7 +61870,7 @@ See mysql:string:list:temp table for more
 - ~MEDIUMTEXT~ :: 16,777,215, 16mb
 - ~LONGTEXT~ :: 4,294,967,295 characters, 4GB
 
-**** Blob <<<mysql:datatype:blob>>> 
+**** Blob <<mysql:datatype:blob>>
 - Binary large object for variable amount of data
 - Holds binary strings or so called byte strings
 - Data is stored on hard disk rather than in memory
@@ -61915,19 +61937,10 @@ MySQL 5.6
   ALTER TABLE users ADD UNIQUE(id_text);
 #+END_SRC
 
-*** Table Status
-#+BEGIN_SRC sql
-  SHOW TABLE STATUS FROM mydatabase;
-#+END_SRC
-
-- Storage Engine :: MyISAM or InnoDB
-   - InnoDB can roll back if a transaction fails
-- Version :: e.g. 10
-- Rows :: number of records. MyISAM shows exact while InnoDB shows approximation may vary by as much as 40% to 50%
-- Collation :: utf8mb4_general_ci
-
 *** Index, Composite Index
 - A column with <= 767 bytes can be indexed
+   - ~varchar(255)~ in ~utf8~ charset max byte size 255*3=765
+   - ~varchar(191)~ in ~utf8mb4~ charset max byte size 191*4=764
 - Index hints can be used in ~SELECT~ queries to specify whether or not to use the index column
    - https://dev.mysql.com/doc/refman/8.0/en/index-hints.html
    - With no index hint, MySQL will smartly decided whether to force using index
@@ -61963,25 +61976,34 @@ MySQL 5.6
       - c2, c4
       - Use leftmost concept to identify whether a combo is optimized
 
-*** JOIN
+*** Row size and number of columns
+- Row size
+   - Hard limit :: 65,535 bytes (slightly less than 64KB)
+   - [[mysql:datatype:blob][mysql:datatype:blob]] contributes 9 bytes
+   - [[mysql:datatype:text][mysql:datatype:text]] contributes 12 bytes
+   - [[mysql:innodb][mysql:innodb]]
+      - mysql:var:innodb_page_size default is 16,384 bytes (16kb), can be 4kb, 8kb, 16kb, 32kb and 64kb
+      - Max row size is slightly less than half of page size. For 64KB page size, slightly less than 16KB
+- Column Count
+   - Hard limit :: 4096
+   - Determined by row size
+   - [[mysql:innodb][mysql:innodb]] :: 1017
+      - including virutal generated columns
+
+*** Common queries
+**** JOIN
 - ~INNER JOIN~ is ~JOIN~
 - Comma separated tables is eq. to ~JOIN~ but the precedence is less than ~JOIN~, ~INNER JOIN~, ~LEFT JOIN~, ~CROSS JOIN~
    - Generally, avoid mixing comma separated tables with ~* JOIN *~
 
-*** ALTER TABLE <<mysql:alter>>
-#+BEGIN_SRC sql
-  -- Change definition only
-  ALTER TABLE `t1` MODIFY `col1` VARCHAR(255)
-#+END_SRC
-
-*** REGEXP <<<mysql:regex>>>
+**** REGEXP <<<mysql:regex>>>
 Unless the field is binary, REGEXP is case-insensitive.
 #+BEGIN_SRC sql
   WHERE aut_name REGEXP "^w"
   WHERE aut_name REGEXP "^I am \"Great!\""
 #+END_SRC
 
-*** Update Fields in Multiple Tables
+**** Update Fields in Multiple Tables
 #+BEGIN_SRC sql
   UPDATE node, node_revision
   SET node.comment=1,
@@ -61999,7 +62021,7 @@ Update Joined Tables
   WHERE a.val > 10 AND c.val > 10
 #+END_SRC
 
-*** ~LIMIT~, ~OFFSET~ <<<mysql:limit>>>
+**** ~LIMIT~, ~OFFSET~ <<mysql:limit>>
 :PROPERTIES:
 :CUSTOM_ID: mysql-limit
 :END:
@@ -62024,7 +62046,7 @@ Update Joined Tables
   #+END_SRC
 - Notice :: if the outter query has ~LIMIT~, then it will overwrite any subquery's ~LIMIT~
 
-*** EXISTS
+**** EXISTS
 - If only checking existance in other tables but not returning any data from other tables, always use ~EXISTS~ or ~NOT EXISTS~
 - The following returns nodes that have ~field_dealer = 101615~ and ~field_ad_status = active~ but not returning any fields from tables ~field_data_*~
 
@@ -62046,7 +62068,7 @@ Update Joined Tables
   )
 #+END_SRC
 
-*** UNION
+**** UNION
 #+BEGIN_EXAMPLE
   select_statement_1
   UNION [ALL]
@@ -62057,35 +62079,27 @@ Update Joined Tables
   ...
 #+END_EXAMPLE
 
-- In a UNION query, there are at least two SELECT statements.
-
+- In a UNION query, there are at least two SELECT statements
 - The two SELECT statements must have the same number of columns and the the columns must have compatible data types.
+- The column headings in each of the SELECT statements do not have to have the same name. The column headings in the result of a UNION query are always taken from the first SELECT statement
+- If you want to sort the result set of the UNION operation, you can only put an ORDER BY clause after the last SELECT statement. ORDER BY clause can't be specified in any other SELECT statements in the UNION query
+- The column(s) used in ORDER BY clause can only be taken from the first SELECT statement
+- If you don't specify an ORDER BY clause in the UNION query, the result set is always sorted by the first column
+- If you use UNION ALL, the entire result set from the second SELECT statement is appended to the first SELECT statement. In this case, there could be duplicate records in the unioned result set
+- If you only use UNION, MySQL removes duplicate rows from the final result set
+  #+BEGIN_SRC sql
+    SELECT s.id AS id, score.score, course.course, null AS certificate
+    FROM student s
+      LEFT JOIN s_score score ON score.sid = s.id
+      LEFT JOIN s_course course ON score.sid = s.id
+    UNION ALL
+    SELECT s.id AS id, null, null, cert.certificate
+    FROM student s
+      LEFT JOIN s_certificate cert ON cert.sid = s.id
+    ORDER BY id
+  #+END_SRC
 
-- The column headings in each of the SELECT statements do not have to have the same name. The column headings in the result of a UNION query are always taken from the first SELECT statement.
-
-- If you want to sort the result set of the UNION operation, you can only put an ORDER BY clause after the last SELECT statement. ORDER BY clause can't be specified in any other SELECT statements in the UNION query.
-
-- The column(s) used in ORDER BY clause can only be taken from the first SELECT statement.
-
-- If you don't specify an ORDER BY clause in the UNION query, the result set is always sorted by the first column.
-
-- If you use UNION ALL, the entire result set from the second SELECT statement is appended to the first SELECT statement. In this case, there could be duplicate records in the unioned result set.
-
-- If you only use UNION, MySQL removes duplicate rows from the final result set.
-
-#+BEGIN_SRC sql
-  SELECT s.id AS id, score.score, course.course, null AS certificate
-  FROM student s
-    LEFT JOIN s_score score ON score.sid = s.id
-    LEFT JOIN s_course course ON score.sid = s.id
-  UNION ALL
-  SELECT s.id AS id, null, null, cert.certificate
-  FROM student s
-    LEFT JOIN s_certificate cert ON cert.sid = s.id
-  ORDER BY id
-#+END_SRC
-
-*** ~CASE~, ~IF(expr1,expr2,expr3)~, ~IFNULL(expr1,expr2)~, ~NULLIF(expr1,expr2)~
+**** ~CASE~, ~IF(expr1,expr2,expr3)~, ~IFNULL(expr1,expr2)~, ~NULLIF(expr1,expr2)~
 :PROPERTIES:
 :CUSTOM_ID: mysql-control-flow-functions
 :END:
@@ -62142,6 +62156,43 @@ Update Joined Tables
   WHEN COUNT(*) > 0 THEN 2
   END
   FROM t2) AS caseCol
+#+END_SRC
+
+*** Admin queries
+**** ALTER TABLE <<mysql:alter>>
+#+BEGIN_SRC sql
+  -- Change definition only
+  ALTER TABLE `t1` MODIFY `col1` VARCHAR(255)
+#+END_SRC
+
+**** Table Status, Table Settings
+- Show table settings for all tables
+  #+BEGIN_SRC sql
+    SHOW TABLE STATUS FROM mydatabase;
+
+    -- filter by table name
+    SHOW TABLE STATUS WHERE Name LIKE '%users%';
+  #+END_SRC
+- Storage Engine
+   - MyISAM
+   - InnoDB :: <<mysql:innodb>>
+      - can roll back if a transaction fails
+- Version :: e.g. 10
+- Rows :: number of records. MyISAM shows exact while InnoDB shows approximation may vary by as much as 40% to 50%
+- Collation :: utf8mb4_general_ci
+
+**** Transpose query results
+#+BEGIN_SRC sh
+  mysql -u username -p
+  select * from atable\G
+#+END_SRC
+
+**** Search by column name
+#+BEGIN_SRC sql
+  SELECT DISTINCT TABLE_NAME 
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE COLUMN_NAME IN ('columnA','ColumnB')
+	AND TABLE_SCHEMA='YourDatabase';
 #+END_SRC
 
 *** User Variable
@@ -62377,7 +62428,7 @@ Syntax
   DELIMITER ;
 #+END_SRC
 
-*** SQL Fiddle <<<mysqlfiddle>>>
+*** SQL Fiddle <<mysqlfiddle>>
 http://sqlfiddle.com/ http://dbfiddle.uk/
 
 Schema
@@ -62483,7 +62534,7 @@ See if it's enabled and see if the format :: ROW, MIXED or STATEMENT
   show variables like 'datadir';
 #+END_EXAMPLE
 
-To update the setup, you need to update the MySQL configuration file (my.ini or my.cnf)  by adding the following lines to the [mysqld] section (the Server Section).
+To update the setup, you need to update the MySQL configuration file (my.ini or my.cnf) by adding the following lines to the [mysqld] section (the Server Section).
 
 #+BEGIN_EXAMPLE
   log-bin=bin.log
@@ -62550,7 +62601,7 @@ Data :: INSERT
 #+END_SRC
 
 *** UC: Concatenate values of a column across multiple rows about the same record <<<mysql:concat columns>>>
-mysqlfiddle
+- [[mysqlfiddle][mysqlfiddle]]
 
 #+BEGIN_SRC sql
   SELECT s.id, s.firstname, s.lastname
@@ -62563,12 +62614,11 @@ mysqlfiddle
   ORDER BY s.lastname
 #+END_SRC
 
-~GROUP_CONCAT~ only concatenates non-null values. If all values are null, null will be returned.
-
-~GROUP_CONCAT~ by default only handles 1024 letters. Change it for the current session
-#+BEGIN_EXAMPLE
-  SET SESSION group_concat_max_len = 65535;
-#+END_EXAMPLE
+- ~GROUP_CONCAT~ only concatenates non-null values. If all values are null, null will be returned
+- ~GROUP_CONCAT~ by default only handles 1024 letters. Change it for the current session
+  #+BEGIN_SRC sql
+    SET SESSION group_concat_max_len = 65535;
+  #+END_SRC
 
 If there're multiple fields that have multiple values, e.g. a student can have multiple scores and multiple courses, and they are joined,
 
@@ -65047,6 +65097,17 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 **** Navigate > Jump to navigation bar
 **** Navigate > File Structure
+**** Navigate > Type Hierarchy ~F4~, Method Hierarchy, Call Hierarchy
+- Type :: Class inheritance hierarchy
+- Method :: Hierarchy of a method of a class
+   - Defined in this class, superclasses? do subclasses also define this method?
+- Call
+   - Sometimes Expand All to get callers and callees will end up in infinite loop
+   - Caller Hierarchy
+      - Which functions call this method/class? And which functions call those functions?
+   - Callee Hierarchy
+      - Which functions get called by this method/class? And which functions also call those functions?
+
 **** Navigate > Implementation(s) ~C-t~
 **** Recent Locations ~C-S-e~ ~M-left or right~
 
@@ -65824,7 +65885,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - ~C-c C-j~ :: org-goto. Search in headlines only
 - ~C-u C-@~ :: go back
 
-*** Headline <<<emacs:headline>>>
+*** Headline <<emacs:headline>>
 - ~C-u TAB~ :: Global tree fold/unfold
    - ~C-u C-u C-u TAB~ :: Show all
 - ~S-<TAB>~ :: In table, go to previous cell. In other places, global fold/unfold
@@ -65918,7 +65979,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
   #+END_SRC
 
 **** Drawer
-- C-c C-x d :: Create a drawer
+- ~C-c C-x d~ :: Create a drawer
 
 :MYDRAWER: 
 This is inside the drawer
