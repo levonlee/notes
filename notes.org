@@ -4308,7 +4308,7 @@ If setting is an array, you have to override the whole array. Can't override a k
        ALTER TABLE cache_block CHANGE cid cid VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
      #+END_SRC
    - Do this for any problematic column the module returns
-- For new website, changing the database connectio settings in settings.php is good enough
+- For new website, changing the database connection settings in settings.php is good enough
 - If MySQL server doesn't bootup with ~inno_large_prefix=true~, all indexed columns will have max ~varchar(191)~
 - As a quick workaround, you can remove all php:4byte characters
 - Refer to mysql:charset for important info
@@ -61559,33 +61559,7 @@ https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
     ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
     ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
   #+END_SRC
-
-In order to enable utf8mb4, you need to change my.cnf setting and restart MySQL
-mysqld (client) is used on Pantheon instead of libmysqlclient
-The following settings becomes available on mysqld (MySQL) server version > 5.5.14 and default since 5.7.7
-As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26
-#+BEGIN_SRC conf
-  [mysqld]
-  innodb_large_prefix=true
-  innodb_file_format=barracuda
-  innodb_file_per_table=true
-#+END_SRC
-
-mysqld (client) > 5.0.9, libmysqlclient > v. 5.5.3, has to support utf8mb4 charset
-
-The major problem here is that for an indexed string column (primary key column) MySQL has 767 bytes limit.
-In ~utf8~, it's 767/3=255 characters ~varchar(255)~ or 3*255=765 < 767. In ~utf8mb4~, it's ~767/4=191~ characters ~varchar(191)~.
-If MySQL server doesn't have the above setting, the indexed column should contain less than 191 characters.
-But those columns already have ~varchar(255)~ defined, you will need to re-create the indexes:
-#+BEGIN_SRC sql
-  ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-#+END_SRC
-
-That's actually what WordPress does: resize the indexed columns for some tables and make every table and field/columns to charset ~utf8mb4~
-
-Until Nov 25, 2016, Pantheon doesn't make those settings to MySQL server, so you will need to manually do the same as WordPress.
-
-Referred by d7:mysql:charset
+- Refer to [[mysql:index][mysql:index]]
 
 **** Memory, InnoDB Buffer, packet
 - name :: default
@@ -61937,10 +61911,26 @@ MySQL 5.6
   ALTER TABLE users ADD UNIQUE(id_text);
 #+END_SRC
 
-*** Index, Composite Index
-- A column with <= 767 bytes can be indexed
+*** Index, Composite Index <<mysql:index>>
+- A column with <= 767 bytes can be indexed in Antelope file format which is default for MySQL 5.6 or less
    - ~varchar(255)~ in ~utf8~ charset max byte size 255*3=765
    - ~varchar(191)~ in ~utf8mb4~ charset max byte size 191*4=764
+   - Barracuda file format and DYNAMIC row format become the default since MySQL 5.7.7, which allows index key prefixes up to 3072 bytes (Barracuda + COMPRESSED row format can also reach)
+      - becomes available on mysqld (MySQL) server version > 5.5.14 and default since 5.7.7
+      - Use these settings in my.cnf and restart MySQL
+	#+BEGIN_SRC conf
+	  [mysqld]
+	  # innodb_large_prefix is to be deprecated. True to use larger index prefix length than 767 bytes
+	  innodb_large_prefix=true
+	  innodb_file_format=barracuda
+	  innodb_file_per_table=true
+        #+END_SRC
+      - As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26 and does not have the above setting
+      - If changing MySQL server setting is not possible and the index column has to be ~utf8mb4~, then need to convert those columns in every table to have ~varchar(191)~. Which is what WordPress does
+	#+BEGIN_SRC sql
+	  ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+        #+END_SRC
+      - Referred by d7:mysql:charset
 - Index hints can be used in ~SELECT~ queries to specify whether or not to use the index column
    - https://dev.mysql.com/doc/refman/8.0/en/index-hints.html
    - With no index hint, MySQL will smartly decided whether to force using index
