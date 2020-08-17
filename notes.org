@@ -115,29 +115,33 @@ And then
 - PHP_INI_ALL :: Entry can be set anywhere
 
 **** Directive Value
-Value can be a string, a number, a PHP constant (e.g. E_ALL or M_PI), one of the INI constants (On, Off, True, False, Yes, No and None) or an expression (e.g. E_ALL & ~E_NOTICE), a quoted string ("bar"), or a reference to a previously set variable or directive (e.g. ~${foo}~)
-
-Expression
-Expressions in the INI file are limited to bitwise operators and parentheses:
-- |  bitwise OR
-- ^  bitwise XOR
-- &  bitwise AND
-- ~  bitwise NOT
-- !  boolean NOT
-
-Boolean
-- True :: use 1, On, True or Yes
-- False :: use 0, Off, False or No
-
-Empty string
-#+BEGIN_SRC conf
-  foo =         
-  ; sets foo to an empty string
-  foo = None
-  ; sets foo to an empty string
-  foo = "None"
-  ; sets foo to the string 'None'
-#+END_SRC
+Value can be 
+- a string
+   - Empty string
+     #+BEGIN_SRC conf
+       foo =         
+       ; sets foo to an empty string
+       foo = None
+       ; sets foo to an empty string
+       foo = "None"
+       ; sets foo to the string 'None'
+     #+END_SRC
+- a number
+- a PHP constant :: e.g. ~E_ALL~ or ~M_PI~
+- one of the INI constants :: On, Off, True, False, Yes, No and None
+- an expression
+   - e.g. ~E_ALL~ & =~E_NOTICE=
+   - a quoted string ("bar")
+   - or a reference to a previously set variable or directive :: e.g. ~${foo}~
+   - Expressions in the INI file are limited to bitwise operators and parentheses:
+      - |  bitwise OR
+      - ^  bitwise XOR
+      - &  bitwise AND
+      - ~  bitwise NOT
+      - !  boolean NOT
+- Boolean
+   - True :: use ~1~, ~On~, ~True~ or ~Yes~
+   - False :: use ~0~, ~Off~, ~False~ or ~No~
 
 *** ~[PHP]~ <<php.ini:directives>>
 http://php.net/manual/en/ini.list.php
@@ -719,6 +723,30 @@ Convert a string format to another
   var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm +4 = 11pm
   date_default_timezone_set($timezone); // UTC
   var_dump(date('Y/m/d h:i:s a',time())); // e.g. 7pm
+#+END_SRC
+
+** Bitwise Operator
+#+BEGIN_SRC php
+  define('FLAG_A', 1); /// 0001
+  define('FLAG_B', 2); /// 0010
+  define('FLAG_C', 4); /// 0100
+  define('FLAG_D', 8); /// 1000
+
+  $combined_flags = FLAG_A | FLAG_C; // 0101 binary, which is decimal 5
+
+  var_dump( $combined_flags & FLAG_C ); // FLAG_C which is 0100, which is decimal 4
+  // 0101 :: FLAG_A or FLAG_C
+  // 0100 :: FLAG_C
+  // 0100 :: result is decimal 4
+
+  if ( $combined_flags & FLAG_C ) {
+	  echo 'Has FLAG_C';
+  }
+
+  var_dump( $combined_flags ^ FLAG_C ); // XOR :: like | but not both
+  // 0101 :: FLAG_A or FLAG_C
+  // 0100 :: FLAG_C
+  // 0001 :: result is decimal 1
 #+END_SRC
 
 ** Ternary Operator
