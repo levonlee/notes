@@ -590,7 +590,7 @@ require debian pkg libxml2-dev
 *** tidy
 *** xmlrpc
 ** Locale
-In Linux, you can run =locale -a= to get a list of codes
+In Linux, you can run ~locale -a~ to get a list of codes
 Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a backup.
 [[https://www.w3.org/WAI/ER/IG/ert/iso639.htm][ISO 639 3-letter codes]]
 
@@ -604,6 +604,7 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
   // Y => 1999
   // m => 01 for January
   // n => 1 for January
+  // M => Jan for January
   // d => 01 to 31
   // j => 1 to 31
   // w => 0 to 6, 0 for Sunday and 6 for Saturday
@@ -2136,15 +2137,15 @@ Examples
 - It supports named parameters and prepared statements on client side while [[php:mysqli][php:mysqli]] doesn't 
 
 ** OOP
-- Features
-   - Abstraction
-   - Encapsulation (expose functionality and access control)
-      - protected :: accessed within class, inherited (parent) / inheriting (child) classes
-      - private :: only the current class can access
-      - prefix underscore for protected and private properties' names
-   - Hierarchy :: inheritance
-   - Modularity :: accomplish one task
-   - Polymorphism :: interface interact with classes without knowing what class it is
+*** OOP Features
+- Abstraction
+- Encapsulation (expose functionality and access control)
+   - protected :: accessed within class, inherited (parent) / inheriting (child) classes
+   - private :: only the current class can access
+   - prefix underscore for protected and private properties' names
+- Hierarchy :: inheritance
+- Modularity :: accomplish one task
+- Polymorphism :: interface interact with classes without knowing what class it is
 
 *** Sample
 RestJson.php
@@ -2160,6 +2161,9 @@ RestJson.php
     const MY_CONSTANT_VAR = 1;
 	  // usage self::ABC (self class), parent::ABC, static::ABC (called class)
 
+	  // Class properties
+	  // - Only primitive types e.g. int, string, number, array
+	  // - PHP version > 5.4, arithmetic calculation is allowed
     public static $valid_address_types = [
        RestJson::MY_CONSTANT_VAR => 'Residence',
     ];
@@ -28090,18 +28094,23 @@ js:forEach
    - currentIndex
    - array :: the input array was called upon
 
-*** Date <<<js:Date>>> <<<js:time:iso>>>
-
+*** Date <<js:date>>
 #+BEGIN_SRC js
   var date1 = new Date();
   var date2 = new Date(77978); // milliseconds since 1970 01 01 GMT
+  var unixTimestampFromPHP = parseInt( (date1.getTime()/1000).toFixed(0) );
+  date2 = new Date( unixTimestampFromPHP * 1000 );
+
   var date3 = new Date(2017,0,31,15,35,20,20); // 2017 Jan 1 at 15:35:20 at 20 ms
   var date4 = new Date("31 January 2016"); 
   // "31 Jan 2016" "Jan 31 2016" "01-31-2016"
 
+  // Better to use UTC timezone to set Date object
+  var date5 = new Date('2011-04-11T10:20:30Z');
+
   // Get and Set
   var dayofmonth = date4.getDate(); // setDate
-  var dayofweek = date4.getDau(); // int, Sunday as 0. You can't set day
+  var dayofweek = date4.getDay(); // int, Sunday as 0. You can't set day
   var month = date4.getMonth(); // int, January as 0. setMonth
   var fullyear = date4.getFullYear(); // 4 digits. setFullYear
   var datestring = date4.toDateString(); // Current time zone. "Wed 31 Dec 2003"
@@ -28117,14 +28126,49 @@ js:forEach
   var date2 = new Date('01-31-2016');
   var timeDiff = date2.getTime() - date1.getTime(); // milliseconds
   var diff Days = timeDiff / (1000*3600*24);
-
-  // Conversion getter
-  date4.toISOString()
-  // e.g. 2011-10-05T14:48:00.000Z
-  // timezone is always zero UTC offset. 24 or 27 (I haven't seen one..) characters.
 #+END_SRC
 
-Compare current date with a future date
+**** Date to string
+#+BEGIN_SRC js
+  date4.toISOString(); // e.g. 2011-10-05T14:48:00.000Z
+  // <<js:time:iso>>
+  // timezone is always zero UTC offset. 24 or 27 (I haven't seen one..) characters.
+  // Good for php:f:strtotime
+
+  date4.toUTCString(); // UTC timezone. Sun, 23 Aug 2020 03:03:10 GMT
+  date4.toGMTString(); // same as .toUTCString()
+  date4.toString(); // browser's timezone. Sat Aug 22 2020 23:03:10 GMT-0400 (Eastern Daylight Time)
+
+  date4.toLocaleString(); // use browser's default locale
+  date4.toLocaleDateString(); // use browser's default locale
+
+  // My browser's default locale is en-US
+
+  // Use a specific locale
+  date4.toLocaleString( 'en-US' ); // 8/22/2020, 10:01:19 PM
+  date4.toLocaleDateString( 'en-US' ); // 8/22/2020
+
+  // Use options
+  var options = {
+      timezone: 'America/Toronto'
+  };
+
+  date4.toLocalDateString( undefined, options ); // Use default locale, and use custom options
+
+  options = {
+      timezone: 'America/Toronto',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'};
+  date4.toLocaleDateString( 'en-US', options ); // Aug 22, 2020
+#+END_SRC
+
+- options
+   - all options :: Use [[https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/DateTimeFormat][options from Intl.DateTimeFormat]]
+   - default option :: is undefined for all options. If so, ~year~, ~month~ and ~day~ are assumed to be ~"numeric"~
+   - timezone :: [[https://en.wikipedia.org/wiki/List_of_tz_database_time_zones][IANA time zone names]]
+
+**** Compare current date with a future date
 #+BEGIN_SRC js
   function checkFuture(futureDateString) {
     var futureMS = new Date(futureDateString).getTime();
