@@ -1465,14 +1465,25 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
     echo '<a href="mycgi?' . htmlentities($query_string) . '">';
   #+END_SRC	   
    - encodes spaces as plus signs current URL
-- ~rawurlencode~ :: encode path (the part before ~?~)
-		    Almost the same as ~urlencode~ except it enocodes space as ~%20~
-  #+BEGIN_SRC php
-    echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
-	 '@ftp.example.com/x.txt">';
-    echo '<a href="http://example.com/department_list_script/',
-	rawurlencode('sales and marketing/Miami'), '">';
-  #+END_SRC
+- ~rawurlencode~ <<php:rawurlencode>>
+   - encode path (the part before ~?~). Almost the same as ~urlencode~ except it enocodes space as ~%20~
+   - Basics
+     #+BEGIN_SRC php
+      echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
+	   '@ftp.example.com/x.txt">';
+      echo '<a href="http://example.com/department_list_script/',
+	  rawurlencode('sales and marketing/Miami'), '">';
+     #+END_SRC
+   - Use to encode filename in [[header:content-disposition][header:content-disposition]]
+     #+BEGIN_SRC php
+       function fileNameForHeader( $fileName = '' ) {
+	       // Usage: header("Content-disposition: attachment; filename=\"fileNameForHeader('FileName')\"");
+	       $fileName = str_replace( array( "\n", "\r", "\r\n", ' ', ',' ), '_', $fileName );
+	       $fileName = str_replace( array( "'", '"' ), '', $fileName );
+
+	       return rawurlencode( $fileName );
+       }
+     #+END_SRC
 - ~parse_str~ :: parse query parameter value as an array
   #+BEGIN_SRC php
     $url = $_SERVER['REQUEST_URI'];
@@ -24471,12 +24482,28 @@ DENY
 SAMEORIGIN :: the page can only be displayed in a frame on the same origin as the page itself.
 ALLOW-FROM uri :: Chrome doesn't support.
 
+*** Content-Type <<header:content-type>>
+- ~Content-Type: text/html; charset=UTF-8~
+- Directive ~boundary~ is required for [[rfc:mime:multipart/form-data][rfc:mime:multipart/form-data]]
+- Refer to [[rfc:mime][rfc:mime]]
+
 *** X-Content-Type-Options - response
 - Only one value :: ~X-Content-Type-Options: nosniff~
 - It only applies to script and style
 - Blocks a request if the requested type is
   - ~style~ and MIME type is not "text/css"
   - ~script~ and MIME type is not [[https://mimesniff.spec.whatwg.org/#javascript-mime-type][JavaScript MIME type]]
+
+*** Content-Disposition <<header:content-disposition>>
+- When used in email, it is more powerful. But in HTTP context, it has only 3 usage
+   - ~Content-Disposition: inline~ :: safe to be displayed in or as Web page
+   - ~Content-Disposition: attachment~ <<header:content-disposition:attachment>>
+      - or ~Content-Disposition: attachment; filename="filename.jpg"~ 
+      - Tells browser to download e.g. pop up `Save as` dialog
+   - ~Content-Disposition: form-data; name="fieldName"~
+      - or ~Content-Disposition: form-data; name="fieldName"; filename="filename.jpg"~
+      - Refer to [[rfc:mime:multipart/form-data][rfc:mime:multipart/form-data]]
+- Encode directive ~filename~ value :: [[php:rawurlencode][php:rawurlencode]]
 
 *** X-XSS-Protection - response
 Not supported in FireFox. Use Content-Security-Policy for modern browsers. This is used for older browsers.
@@ -24566,6 +24593,15 @@ sizes attribute has to be set in order for the Width header to be sent. In the n
 
 *** X-Powered-By
 - Remove it :: apache:mod_headers [[apache:core:serversignature][apache:core:serversignature]] [[php:ini:expose_php][php:ini:expose_php]]
+
+** MIME <<rfc:mime>>
+- Media type also known as Multipurpose Internet Mail Extensiions or MIME
+- All Media Types :: https://www.iana.org/assignments/media-types/media-types.xhtml
+- [[rfc:mime:multipart/form-data][rfc:mime:multipart/form-data]]
+- application/octet-stream <<rfc:mime:application/octet-stream>>
+   - With [[header:content-disposition:attachment][header:content-disposition:attachment]], browsers propose `Save as` dialog to download
+   - Other ~application/*~, browsers may propose to open with a matching software app/program
+   - Default for binary files also means unknown binary file
 
 ** Cookie <<html:cookie>>
 HTTP response header
@@ -29516,9 +29552,14 @@ Don't try to access or modify parent window DOM. Do it indirectly.
 *** ~application/x-www-form-urlencoded~ vs ~multipart/form-data~
 - urlencoded
    - Transfers extra data if large amount of binary data is sent
-- multipart/form-data
+- multipart/form-data <<rfc:mime:multipart/form-data>>
+   - HTML and use [[js:formdata][js:formdata]] to POST multipart/form-data
    - Request header
       - ~Content-Type: multipart/form-data; boundary=--user-agent-sets-this-boundary~
+      - ~--user-agent-sets-this-boundary~
+	 - can be any 1 to 70 characters and not ending with white space
+	 - characters are a set of characters known to be very robust through email gateways. Use numbers only to be safe
+	 - usually starts and ends with 2 dashes
    - Request Payload
      #+BEGIN_EXAMPLE
        --user-agent-sets-this-boundary
@@ -29528,11 +29569,29 @@ Don't try to access or modify parent window DOM. Do it indirectly.
 
 
        --user-agent-sets-this-boundary--
+       Content-Disposition: form-data; name="description" 
+
+       some text
+       --user-agent-sets-this-boundary--
      #+END_EXAMPLE
 
-*** FormData to send file
+*** FormData to send file <<js:formdata>>
+- Use JavaScript and HTML to POST multipart/form-data
 - Not for IE 9 and below
-- HTML :: ~<input type="file" id="gv-inv_image">~
+
+HTML to include a file upload field
+#+BEGIN_SRC html
+  <form action="" method="post" enctype="multipart/form-data">
+      <div>Pictures:
+	  <input type="file" name="pictures[]" />
+	  <input type="file" name="pictures[]" />
+	  <input type="file" name="pictures[]" />
+	  <input type="submit" value="Send" />
+      </div>
+      <!-- Or just one -->
+      <input type="file" id="gv-inv_image">
+  </form>
+#+END_SRC
 
 #+BEGIN_SRC js
   var fileInputElement = document.getElementById('gv-inv_image');
@@ -65880,14 +65939,18 @@ Install linux:font, open Emacs:
 *** MELPA packages
 - Add http://melpa.org/packages/
    - Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
+   - After adding, a new folder is created =~/.gnupg=
 - Run ~M-x list-packages~ to see all packages including built-in pkgs and package-archives
    - ~i~ :: installation
    - ~u~ :: unmark
    - ~x~ :: perform the i and u installation
    - ~RET~ to see more about a pkg
    - ~q~ :: quit
-- New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=, then follow instructions on Melpa.org to initialize in ~.emacs~ init file
-- Another GitHub pkg ~el-get~ can be used to install/load pkgs from difference sources :: https://mrblog.nl/emacs/config.html
+- New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=
+   - May need to follow instructions on Melpa.org to initialize in ~.emacs~ init file
+
+*** GitHub pkg ~el-get~
+It can be used to install/load pkgs from difference sources :: https://mrblog.nl/emacs/config.html
 
 Place packages under load-path ~C-h v load-path RET~
 C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\VERSION\site-lisp is /usr/local/share/emacs/VERSION/site-lisp for a particular Emacs version
