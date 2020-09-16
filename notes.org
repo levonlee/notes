@@ -32,7 +32,8 @@ Install multiple versions of PHP
   sudo apt install php7.3-cli
 
   # install multiple modules
-  sudo apt install php7.3-cli php7.3-xml php7.3-mysql
+  # sudo apt install php7.3-cli php7.3-xml php7.3-mysql
+  sudo apt install php7.3-{cli,xml,mysql,zip}
 
   # after install, php-fpm services should be auto started
   sudo systemctl status php7.3-fpm
@@ -47748,7 +47749,7 @@ Use ~chmod 400 ~/.ssh/id_rsa_your_private_key~ to fix it chmod:400
 
 **** Manual way move pub key to remote
 - On the remote server, login as a normal user ~sudo su - username~
-- Create ~/.ssh directory ~mkdir .ssh~ ~chmod 700 .ssh~
+- Create =~/.ssh= directory ~mkdir .ssh~ ~chmod 700 .ssh~
 - Create file and paste the public key ~nano .ssh/authorized_keys~
 
 Or concatenate it onto ~authorized_keys~ file manually
@@ -48447,9 +48448,12 @@ wp:check file permissions
   cd -P ~/abc
 #+END_SRC
 
-<<<symlink:windows>>>
-- Refer to [[git:symlink][git:symlink]]
-- To create a symlink on Windows, enable Developer Mode first and :: ~mklink symlinkgoesto myfolder\mytargetfolder~
+- On Windows <<<symlink:windows>>>
+   - Refer to [[git:symlink][git:symlink]]
+   - To create a symlink on Windows, enable Developer Mode first and command prompt not PowerShell
+      - ~mklink symlinkgoesto myfolder\mytargetfolder~
+      - ~del symlinkgoesto~
+- On Vagrant, refer to vagrant:symlink
 
 *** Search files or directories, sort by size <<linux:find>>
 - Return path of matched files or directories
@@ -48627,6 +48631,14 @@ wp:check file permissions
   #+END_EXAMPLE
 - Basic usage
   #+BEGIN_SRC sh
+    # only files at this directory, not subdirectories
+    grep 'abc' /root/dir
+
+    # recursive (subdirectories as well)
+    grep -r 'abc' /root/dir
+    # for current directory
+    grep -r 'abc' .
+
     grep --color -HRi "google\.com" /root/dir
 
     # Only file names
@@ -50147,7 +50159,9 @@ Most of devices: =lshal=
 - A software repo, also called *package source*, is a network server, local directory or CD/DVD
    - What software packages (versions, who package them) are available for download
 - Debian
-   - All repo :: ~cat /etc/apt/sources.list~ and all files in ~/etc/apt/sources.list.d/~
+   - All repos
+      - Files :: ~cat /etc/apt/sources.list~ and all files in ~/etc/apt/sources.list.d/~
+      - List all repos :: ~grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/*~
       - Format
 	 - Examples
 	    - ~deb http://site.example.com/debian distribution component1 component2 component3~
@@ -50236,7 +50250,7 @@ Find which package owns a file =dpkg -S /etc/crontab=
 
 **** ~apt-get~ ~apt-cache~ Ubuntu
 - Since Ubuntu 16.04, ~apt~ is introduced and it's a subset of ~apt-get~ and ~apt-cache~
-- Update list of available packages (/var/lib/apt/lists/) :: ~apt-get update~
+- Update list of available packages ~/var/lib/apt/lists/~ :: ~apt-get update~
    - It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network. Add a line ~nameserver 8.8.8.8~ to ~/etc/resolv.conf~. This way the ~/etc/resolv.conf~ is not persisted. You can also config DNS in Docker daemon
      #+BEGIN_SRC dockerfile
        RUN echo "nameserver 10.1.1.1" >> /etc/resolv.conf && \
@@ -56971,12 +56985,21 @@ Database Drivers
   cd /c/Program Files/Oracle/VirtualBox
   ./VBoxManage.exe list runningvms
 
+  # Show a VM info
+  ./VBoxManage.exe showvminfo myvm1
+
   # VirtualBox version
   ./VBoxManage.exe --version
 #+END_SRC
 
 - Forward ports after Vagrant has started in VirtualBox
    - Select the running VM in VirtualBox, Settings > Network > Port Forwarding, add e.g. forward ~127.0.0.1:2223~ to ~10.0.2.15:22~
+- By default, VirtualBox does not enable symlink for shared folders for hosts that don't support symlink
+   - Hosts such as Windows
+   - On Windows, enable symlink:windows
+   - Run this on Windows ~./VBoxManage.exe setextradata livagrantdev VBoxInternal2/SharedFoldersEnableSymlinksCreate/vagrant 1~
+   - ~vagrant halt~, ~vagrant up~
+   - Still not possible to create symlinks ~ln -s path/to/source path/to/symlink~ inside Vagrant but any symlinks created on Windows using ~mklink~ work as intended on Vagrant
 
 ** Frequent commands <<vagrant:ssh>>
 #+BEGIN_SRC sh
@@ -57211,9 +57234,8 @@ Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ 
 
 ** Config loading <<apache:config>>
 - ~apt-get update; apt-get install apache2~
-- Refer to [[apache:config:main file][apache:config:main file]]
 - Refer to image:php:apache to get configs
-- Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for ~HTTPD_ROOT~ and ~SERVER_CONFIG_FILE~
+- Show compiled setting :: ~apache2ctl -V~ or ~httpd -V~ to look for ~HTTPD_ROOT~ and ~SERVER_CONFIG_FILE~ to find the [[apache:config:main file][apache:config:main file]]
 - Show parsed vhost settings and run settings :: ~apache2ctl -S~
   #+BEGIN_SRC apache
     VirtualHost configuration:
@@ -57243,10 +57265,11 @@ Run this to get Apache version, root and config file ~httpd -V~ or ~apache2 -v~ 
 autoindex deflate expires filter mime rewrite setenvif mpm_prefork 
 
 *** sites-enabled VirtualHost
-Sites :: /etc/apache2/sites-enabled/
-Sample for image:php:apache
+- Sites :: /etc/apache2/sites-enabled/
+- Sample for image:php:apache
+- Use Listen directive to listen ports other than the default 80 and 443. Refer to [[apache:ports.conf][apache:ports.conf]]
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC apache
   <VirtualHost *:80>
           # The ServerName directive sets the request scheme, hostname and port that
           # the server uses to identify itself. This is used when creating
@@ -57284,10 +57307,10 @@ Sample for image:php:apache
           # after it has been globally disabled with "a2disconf".
           #Include conf-available/serve-cgi-bin.conf
   </VirtualHost>
-#+END_EXAMPLE
+#+END_SRC
 
 *** Main Config files <<apache:config:main file>>
-- Main config file
+- Main config file (one of the following)
    - /etc/apache2/apache2.conf
    - /etc/httpd/httpd.conf
    - /usr/local/apache/conf/httpd.conf
@@ -57308,7 +57331,10 @@ Sample for image:php:apache
     # virutal host config
     IncludeOptional sites-enabled/*.conf
   #+END_SRC
-- Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section.
+   - ports.conf <<apache:ports.conf>>
+      - Default only listen 80 and 443
+      - ~Listen 8081~
+- Include https://github.com/h5bp/server-configs-apache/blob/master/dist/.htaccess inside <Directory> section
 
 *** Restart <<apache:restart>>
 - Check config before restart. Wrong config (e.g. SSL) may prevent Apache from starting
@@ -65280,12 +65306,26 @@ e.g. all vendor prefixes for box-sizing. Type ~-box-sizing~ and hit tab
 - Settings > Languages & Frameworks > JavaScript > JavaScript language version to ECMAScript 6
 - For Scratch, right click on the file in Edit window and change language to ES6
 
-*** View modes
-**** Hide All Windows (Zen mode) ~C-S-F12~
-Hide all active tool windows and leave the Editor Tabs open. Can toggle
+*** View
+**** Appearance ~View > Appearance~ 
+- View modes :: e.g. Zen mode ~C-S-F12~ ~View > Appearance > Enter Zen Mode~
+   - Hide all active tool windows and leave the Editor Tabs open. Can toggle
+- Tool Window Bars
+   - appears on left of Editor Tabs
+- Status Bar
+- Status Bar Widgets :: select all items to display
+- Navigation Bar ~M-Home~
+- Details in Tree View :: In Project, show file dates and size
 
-**** Quick Switch Scheme ~C-`~
-- Quickly change presentation mode, fullscreen mode and some other theme presests
+**** Quick Switch Scheme ~C-`~ ~View > Quick Switch Schme~
+- Editor Color Scheme
+- Code Style Scheme
+   - default :: for all projects (default)
+   - Project :: for current project
+- Keymap :: I choose Eclipse to be my default keymap
+- View mode :: presentation mode, fullscreen mode, zen mode
+- Theme
+- Material Theme presets
 
 *** XPath
 Make the xml file part of a project to use Evaluate XPath... (right click) 
