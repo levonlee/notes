@@ -57142,7 +57142,7 @@ Vagrant Pure SSH <<vagrant:ssh:pure ssh>>
 #+END_SRC
 
 ** Plugin <<vagrant:plugin>>
-- ~vagrant-docker-compose~ plugin enables a new provisioner Docker Compose
+- ~vagrant-docker-compose~ :: enables a new provisioner Docker Compose
    - ~vagrant plugin install vagrant-docker-compose~
    - https://github.com/leighmcculloch/vagrant-docker-compose
      #+BEGIN_SRC ruby
@@ -57153,9 +57153,22 @@ Vagrant Pure SSH <<vagrant:ssh:pure ssh>>
 	 config.vm.provision :docker_compose
        end
      #+END_SRC
-- ~vagrant-vbguest~ plugin automatically installs VirtualBox Guest Additions (VBGA) on Vagrant VM
+- ~vagrant-vbguest~ :: automatically installs VirtualBox Guest Additions (VBGA) on Vagrant VM
    - Install :: ~vagrant plugin install vagrant-vbguest~
    - To prevent updating VBGA when ~vagrant up~, add ~config.vbguest.auto_update = false~ in Vagrantfile. This happens when .box file has older version of vbguest while Vagrant on host has a newer version
+- ~vagrant-disksize~ :: resize (upsize only) primary disk for Vagrant instance
+   - ~vagrant plugin install vagrant-disksize~
+   - Insert this and run ~vagrant halt~ and ~vagrant up~
+     #+BEGIN_SRC ruby
+       vagrant.configure('2') do |config|
+	   config.disksize.size = '50GB'
+       end
+     #+END_SRC
+   - While ~vagrant up~, something like this shows up, which means it is resized
+      - ~==> default: Resized disk: old 10240 MB, req 20480 MB, new 20480 MB~
+   - ~vagrant ssh~ and check if disk size is increased ~df -h~, if not, then "You may need to resize the filesystem from within the guest."
+      - Refer to https://stackoverflow.com/a/60185312/2196360
+   - Comment out ~config.disksize.size = '50GB'~ in Vagrantfile as it's unnecessary to upsize primary disk from now on
 - Update all installed plugins :: ~vagrant plugin update~
 - List all installed plugins :: ~vagrant plugin list~
 - Uninstall a plugin :: ~vagrant plugin uninstall vagrant-docker-compose~
