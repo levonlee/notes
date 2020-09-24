@@ -1469,6 +1469,8 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
     echo '<a href="mycgi?' . htmlentities($query_string) . '">';
   #+END_SRC	   
    - encodes spaces as plus signs
+   - eq. to [[js:encodeURIComponent][js:encodeURIComponent]]
+   - Should be used to encode keys and values pairs of POST data
 - ~rawurlencode~ <<php:rawurlencode>>
    - encode path (the part before ~?~). Almost the same as ~urlencode~ except it enocodes space as ~%20~
    - Basics
@@ -28850,6 +28852,7 @@ To make a method non enumerable
 #+END_SRC
 
 ** URI and URI Component Encode, Current URL, open, email link
+- eq. to [[php:urlencode][php:urlencode]] <<js:encodeURIComponent>>
 #+BEGIN_SRC js
   var url1 = "http://abc.com";
   var url2 = "http://xyz.com/test.php?url=" + encodeURIComponent(url1);
@@ -62287,7 +62290,7 @@ MySQL 5.6
    - [[mysql:innodb][mysql:innodb]] :: 1017
       - including virutal generated columns
 
-*** Common queries and functions
+*** Common queries, functions, operators
 **** JOIN
 - ~INNER JOIN~ is ~JOIN~
 - Comma separated tables is eq. to ~JOIN~ but the precedence is less than ~JOIN~, ~INNER JOIN~, ~LEFT JOIN~, ~CROSS JOIN~
@@ -62304,7 +62307,8 @@ Unless the field is binary, REGEXP is case-insensitive.
   WHERE aut_name REGEXP "^I am \"Great!\""
 #+END_SRC
 
-**** Update Fields in Multiple Tables
+**** ~UPDATE~
+***** Update fields in Multiple Tables
 #+BEGIN_SRC sql
   UPDATE node, node_revision
   SET node.comment=1,
@@ -62320,6 +62324,18 @@ Update Joined Tables
   SET b.val = a.val+c.val,
   a.val2 = 'new'
   WHERE a.val > 10 AND c.val > 10
+#+END_SRC
+
+***** Update multiple rows in one query
+#+BEGIN_SRC sql
+  UPDATE table_users
+  SET cod_user = (
+      case when user_role = 'student' then '622057'
+	   when user_role = 'assistant' then '2913659'
+	   when user_role = 'admin' then '6160230'
+      end),
+  date = '12082014'
+  WHERE user_role in ('student', 'assistant', 'admin') AND cod_office = '17389551';
 #+END_SRC
 
 **** ~LIMIT~, ~OFFSET~ <<mysql:limit>>
@@ -62414,6 +62430,14 @@ Update Joined Tables
   SELECT IF(1=1,2,3); -- 2
   SELECT IF(STRCMP('1', '1') = 0, 2, 3); -- 2
 
+  -- IFNULL(expr1, expr2) :: return expr2 if expr1 is null
+  -- NULLIF(expr1, expr2) :: return NULL if expr1 = expr2
+
+  -- If value is NULL or another value, then convert and compare in one line
+  SELECT IF(field1 IS NULL OR field1 = '', 'empty', field1) = 'empty'
+  -- Or even shorter
+  SELECT IFNULL( NULLIF( field1, '' ), 'empty' ) = 'empty'
+
   SELECT *
   FROM t1
   ORDER BY IF( colA = 'b', colB, NULL ) DESC, colC
@@ -62460,13 +62484,16 @@ Update Joined Tables
 #+END_SRC
 
 **** Math functions
+- [[https://dev.mysql.com/doc/refman/8.0/en/mathematical-functions.html][All Math Functions]]
 - ~CONV( N, from_base, to_base )~
-   - https://dev.mysql.com/doc/refman/8.0/en/mathematical-functions.html#function_conv
-      - Convert N from from_base to to_base
-      - return a string
+   - Convert N from from_base to to_base, return a string
    - N :: could be a number or a string
    - Minimum and maximum base :: 2 and 36
    - Make sure the N and the returned number is less than 2^64, otherwise the result is not accurate
+
+**** Comparison functions and Operators
+- ~COALESCE(value1, value2, ...)~
+   - Returns the first non-NULL value in the list, or NULL if there are no non-NULL values
 
 *** Admin queries
 **** ALTER TABLE <<mysql:alter>>
@@ -65380,6 +65407,7 @@ Mappings > Web path on server is /
    - e.g. PHP function ~currency_format( $val, $digits=2, $bracket=0, $omitzero=0 )~
    - Want to see all function calls with $bracket = 1
    - ~currency_format\(.*,\s*2\s*,\s*1\s*~
+   - ~currency_format\([^\)]*,[^\)]*,\s*2\s*~
 - Multiple lines
    - ~:PROPERTIES:\n:ID:.*\n:END:\n~
 
