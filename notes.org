@@ -4323,12 +4323,11 @@ It enforces secure authenticated session cookies and ensures the user login page
 Automate testing
 
 *** Security Kit - seckit
-https://www.drupal.org/project/seckit
-Content Security Policy implementation via HTTP response header Content-Security-Policy
-
-Control over Internet Explorer / Apple Safari / Google Chrome internal XSS filter via X-XSS-Protection HTTP response header
-
-Prevent content upsniffing and serving files with incorrect MIME-type via X-Content-Type-Options: nosniff HTTP response header
+- https://www.drupal.org/project/seckit
+- Refer to [[header:csp][header:csp]]
+- Content Security Policy (CSP) implementation via HTTP response header ~Content-Security-Policy~
+- Control over Internet Explorer / Apple Safari / Google Chrome internal XSS filter via ~X-XSS-Protection~ HTTP response header
+- Prevent content upsniffing and serving files with incorrect MIME-type via ~X-Content-Type-Options: nosniff~ HTTP response header
 
 ** Debug <<<d7:debug>>>
 Enable module Database Logging and Syslog if necessary.
@@ -23616,7 +23615,9 @@ Another way to loop NodeList
 	    - If the element is transformed e.g. ~width: 100px; transform: scale(0.5);~, it will return 50 as the width
    - Also works for virtual DOM e.g. Vue ~this.$refs['some-ref'].getBoundingClientRect().height~
 
-*** Event Object
+*** Event Object <<html:EventObject>>
+- https://developer.mozilla.org/en-US/docs/Web/API/Event
+
 #+BEGIN_SRC html
   <input id="elem" type="button" value="Click me">
   // event is the first argument
@@ -23653,9 +23654,9 @@ Property
 |                  |                                                            |
 
 Method
-| preventDefault()           | stop defeault event action                                            |
-| stopImmediatePropagation() | stop other listerns of the same event (e.g. click) on the same target |
-| stopPropagation()          | stop bubbling                                                         |
+| preventDefault()           | stop defeault event action                                             |
+| stopImmediatePropagation() | stop other listeners of the same event (e.g. click) on the same target |
+| stopPropagation()          | stop bubbling                                                          |
 
 **** MouseEvent Object
 | altKey        | whether ALT key was pressed                                                      |
@@ -23832,15 +23833,64 @@ Polyfill: [[https://github.com/jquery/PEP#why-pointer-events][jQuery PEP]]
        </script>
      #+END_SRC
 
-** Event Attributes
-Capturing phrase: DOM heirarchy up
-Bubbling phrase (default): DOM heirarchy down
+** Events and Event Attributes
+- [[https://developer.mozilla.org/en-US/docs/Web/Events][All DOM Events]]
+- an event handler can have one of the 2 mechanisms:
+   - Capturing phase :: DOM heirarchy up
+      - Run outer-most ancestor's (~<html>~) same event handler e.g. ~onclick~
+      - Then its child's same event handler, go on until the original element
+   - Bubbling phase (default) :: DOM heirarchy down
+      - Run the original element's same event handler
+      - Then its parent's same event handler, go on until the outer-most ancestor
+   - If an element has multiple event handlers of both mechanisms, the capturing phase will run first followed by bubbling
+   - There's another phase called target phase
+      - Which is activated for event handlers that are registered using ~element.onclick~ or using HTML attribute. These event handlers are only triggered on the original elements, will not capture or bubble
+- These DOM or JavaScript objects have implemented ~EventTarget~ interface which can receive events and may have listeners
+   - element, document, window
+   - [[js:xmlhttprequest][js:xmlhttprequest]], AudioNode, AudioContext and others
+- Add an event
+   - ~element.onsomeeventlowercase~
+     #+BEGIN_SRC js
+       var btn = document.getElementById('button-a');
+       btn.onclick = function() {} // anonymous function
 
-These objects have implemented EventTarget interface which can receive events and may have listeners:
-- element, document, window
-- [[js:xmlhttprequest][js:xmlhttprequest]], AudioNode, AudioContext and others
+       function bgCharge() {}
+       btn.onclick = bgCharge; // named function
 
-*** Windows Event in body tag
+       // cannot have multiple event handlers
+     #+END_SRC
+   - ~addEventListner()~ and ~removeEventListener()~ <<js:addEventListener>>
+   - https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+     #+BEGIN_SRC js
+       btn.addEventListener('click', function() {});
+       btn.addEventListener('click', bgCharge);
+       btn.removeEventListener('click', bgCharge);
+
+       // only one of the identical event handlers can be registered
+       // anonymous functions, even though they have the same code, they are considered different
+
+       // target.addEventListener(type, listener [, options]); // options is an object
+       // target.addEventListener(type, listener [, useCapture]);
+       // useCapture default is false to use bubbling phase, true to capturing phase
+     #+END_SRC
+   - Event delegation. e.g. in bubbling phase, add an event handler to the parent element of child elements, and this event handler knows which child element is clicked. This avoids adding unknown amount of event handlers to new/removed child elements
+     #+BEGIN_SRC js
+       document.getElementById("myULelements").addEventListener("click",function(e) {
+	   // e.target was the clicked element
+	   if (e.target && e.target.matches("li.classA")) {
+	       console.log("Anchor element clicked!");
+	   }
+       });
+     #+END_SRC
+- Event objects
+   - refer to [[html:EventObject][html:EventObject]]
+     #+BEGIN_SRC js
+       function bgCharge(e) {
+	   e.target
+       }
+     #+END_SRC
+
+*** Windows Event in ~body~ tag
 | onafterprint, onbeforeprint | only IE and FF                                |
 | onbeforeunload              | before page is closed/refreshed               |
 | onunload                    | after page is closed/refreshed                |
@@ -24395,7 +24445,7 @@ A non-negative integer of seconds that the object (response) has been in a proxy
 When the response is considered stale. Set to 0 means the response is expired.
 If Cache-Control has max-age or s-max-age, Expires is ignored.
 
-*** Content-Security-Policy (CSP) - response <<<header:content-security-policy>>>
+*** Content-Security-Policy (CSP) - response <<header:content-security-policy>> <<header:csp>>
 - ~Content-Security-Policy~ is official name
    - X-Content-Security-Policy (Old Firefox and IE) 
    - X-WebKit-CSP (Chrome and Safari)
@@ -29405,14 +29455,182 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
       .then(function() { /* ... */ });
   #+END_SRC
 
+** Strict mode <<js:strict>>
+- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
+- Strict mode applies to entire scripts or to individual functions. It doesn't apply to block statements enclosed in ~{}~ braces; attempting to apply it to such contexts does nothing. ~eval~ code, ~Function~ code, event handler attributes, strings passed to ~WindowTimers.setTimeout()~, and related functions are entire scripts, and invoking strict mode in them works as expected
+
+** ~this~ <<js:this>>
+- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this
+- It refers to an instance which is created using ~new~ keyword ora as object literals. Otherwise, ~this~ will default to the ~window~ scope
+- Arrow functions are different and follow the normal variable lookup rules
+   - So while searching for ~this~ which is not present in the current scope, an arrow function ends up finding the ~this~ from its enclosing scope
+   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions
+     #+BEGIN_SRC js
+       window.age = 10;
+
+       function Person () {
+	 this.age = 42; // this Person instance (beause it is created by new Person)
+	 // will have property age as 42
+	 console.log('this.age outside setTimeout', this.age); // 42
+
+	 setTimeout(function () {
+	   // This is a traditional function (anonymous) and it is not created by
+	   // using `new` So `this` is the window scope
+	   console.log('this.age', this.age); // 10
+	 }, 100);
+
+	 setTimeout(() => {
+	   // Arrow function executing in the "p" (an instance of Person) scope
+	   console.log('this.age', this.age); // yields "42" because the function
+					      // executes on the Person scope
+	 }, 100);
+
+       }
+
+       var p = new Person();
+       console.log('window.age', window.age); // 10
+     #+END_SRC
+*** ~globalThis~ <<js:globalThis>>
+- The global ~this~ value e.g. the global object
+- Different environments have different global ~this~ object
+   - On the web :: ~window~, ~self~, ~frames~
+   - [[js:worker][js:worker]] only uses ~self~
+   - Node.js :: ~global~
+   - Prior to ~globalThis~, the only reliable cross-platform way to get is :: ~Function('return this')()~
+      - Some environments that disable ~eval()~ in ~Function('')~, like [[header:csp][header:csp]] in browsers, prevent it this usage
+
+*** ~this~ in function context
+#+BEGIN_SRC js
+  function f1() {
+    return this;
+  }
+
+  // In a browser:
+  f1() === window; // true
+
+  // In NodeJS:
+  f1() === globalThis; // true
+
+  function f2() {
+    'use strict'; // see strict mode
+    return this;
+  }
+  f2() === undefined; // true
+#+END_SRC
+
+*** ~this~ in class context
+- All non-static methods within the class are added to the prototype of ~this~
+   - Static methods are properties of the class itself
+#+BEGIN_SRC js
+  class Example {
+    constructor() {
+      const proto = Object.getPrototypeOf(this);
+      console.log(Object.getOwnPropertyNames(proto));
+    }
+    first(){}
+    second(){}
+    static third(){}
+  }
+
+  new Example(); // ['constructor', 'first', 'second']
+#+END_SRC
+
+*** ~this~ in a method of an object
+#+BEGIN_SRC js
+  abc = {
+    a: 10,
+    b: function () {
+      // traditional function (anonymous) is in an instance, the instance's `a`
+      return this.a;
+    },
+  };
+
+  console.log(abc.b()); // 10
+  console.log(window.a); // undefined
+
+  var o = { prop: 37 };
+
+  function independent () {
+    return this.prop;
+  }
+
+  o.f = independent;
+  console.log(o.f()); // 37
+
+  o.b = { g: independent, prop: 42 };
+  console.log(o.b.g()); // 42
+
+  var o = { f: function () { return this.a + this.b; } };
+  var p = Object.create(o);
+  p.a = 1;
+  p.b = 4;
+
+  console.log(p.f()); // 5
+#+END_SRC
+#+BEGIN_SRC js
+  function sum () {
+    return this.a + this.b + this.c;
+  }
+
+  var o = {
+    a: 1,
+    b: 2,
+    c: 3,
+    get average () {
+      return (this.a + this.b + this.c) / 3;
+    },
+  };
+
+  Object.defineProperty(o, 'sum', {
+    get: sum, enumerable: true, configurable: true,
+  });
+
+  console.log(o.average, o.sum); // 2, 6
+#+END_SRC
+
+*** ~this~ in a DOM event handler
+#+BEGIN_SRC js
+  my_element.addEventListener('click', function (e) {
+    console.log(this.className);           // logs the className of my_element
+    console.log(e.currentTarget === this); // always `true`
+    console.log(this === e.target); // true when currentTarget and target are the
+				    // same object
+  });
+
+  my_element.addEventListener('click', (e) => {
+    console.log(this.className);           // WARNING: `this` is not `my_element`
+    console.log(e.currentTarget === this); // `false`
+  });
+#+END_SRC
+
+In an inline event handler
+#+BEGIN_SRC html
+  <button onclick="alert(this.tagName.toLowerCase());">
+    <!-- alert `button` -->
+    Show this
+  </button>
+
+  <button onclick="alert((function() { return this; })());">
+    <!-- alert the window object -->
+    Show inner this
+  </button>
+
+  <script>
+    function logID() { console.log(this.id); }
+  </script>
+  <table id="my_table" onclick="logID();"><!-- when called, `this` will refer to the global window object -->
+    ...
+  </table>
+#+END_SRC
+
 ** Observable <<<js:observable>>>
 A promise is a push mechanism that calls some code after the promise has been resolved or rejected with a single value.
 An observable is like a promise, but it calls some code every time a new value becomes available, and can emit many values over time.
 
-** Worker
-IE 10 and above supports worker.
-Workers are independent and separated from parent window. 
-Don't try to access or modify parent window DOM. Do it indirectly.
+** Worker <<js:worker>>
+- IE 10 and above supports worker
+- Workers are independent and separated from parent window.
+- Don't try to access or modify parent window DOM. Do it indirectly
 #+BEGIN_SRC js
   var w;
 
@@ -30417,6 +30635,21 @@ Refer to bootstrap:responsive helpers
 - ~ES6~ is ~ES2015~ :: 6 stands for 6th edition. 2015 is the year <<<js:es6>>>
 - ~ES7-2016~, ~ES8-2017~, ~ES9-2018~, ~ES10-2019~
 
+*** Arrow function <<js:arrow function>>
+- [[js:this][js:this]]
+
+#+BEGIN_SRC js
+  // anonymous function or traditional JS functions
+  function (a) {
+      return a + 100;
+  }
+
+  // arrow function
+  (a) => {
+      return a + 100;
+  }
+#+END_SRC
+
 *** Map - New Data Type (ES6)
 - js:for...of
 
@@ -30724,6 +30957,14 @@ Refer to bootstrap:responsive helpers
 	//...
     }
   #+END_SRC
+
+*** Trailing commas
+- Safe in
+   - array
+   - object literals since ES5
+   - function parameters since ES8-2017
+- Disallow in
+   - JSON
 
 ** TypeScript
 - Playground :: https://www.typescriptlang.org/play/index.html
@@ -60454,11 +60695,13 @@ Try using ssh server instead.
 * SVN Subversion
 - http://svnbook.red-bean.com/
    - Basic usage :: http://svnbook.red-bean.com/nightly/en/svn.tour.html 
+- Install Tortoise on Windows which includes SVN. Command Line Client Tools is necessary to integrate with phpStorm
 
 ** Basic
 - ~svn checkout svn://svn.ca/svn/repo/trunk~
    - Checkout a subfolder ~svn://svn.ca/svn/repo/trunk/subfolder1~
    - Checkout to a different local directory ~svn co svn://... my-working-copy~
+- ~svn info~
 - ~svn update~ :: ~svn up~
    - ~svn resolve~
 - ~svn add newfile1.php newfolder1~
@@ -60470,15 +60713,16 @@ Try using ssh server instead.
 - ~svn status~
    - ~svn status -u~ :: what will happen if ~svn up~ is run
 - ~svn diff~
+   - ~svn diff -r124:123~
 - ~svn revert~
 - ~svn log --quiet --search li~
    - This still works :: ~svn log --quiet | sed -n '/li/,/-----$/ p'| grep "^r"~
    - ~--quiet~ has to be used because username ~li~ will be part of the returned message ~lines~
 - ~svn log -v -r 1234~ :: list modified files in a revision number
+   - ~svn log -v -r 123 -r 124 -r 125~ :: for multiple revisions
 - ~svn log --diff path/to/file~ :: list all revision numbers and diffs for a file
 - ~svn commit -m 'a'~ :: commit all modified files but not non-added files
    - ~svn commit -m 'message' newfile1.php newfolder1~ :: commit specific files or folders only
-- List committed files for a revision :: ~svn log --verbose -r 123~
 
 ** Changelist
 - A file can only be in one changelist. Adding a file to another changelist will remove the file from the original changelist and add it to the new changelist
