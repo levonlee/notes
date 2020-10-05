@@ -874,7 +874,7 @@ Case insensitive search
 
 Use ~in_array('string', $a)~ for case sensitive search
 
-*** Change Case for All Keys
+*** Change Case for All Keys <<php:array_change_key_case>>
 #+BEGIN_SRC php
   $_lower_GET = array_change_key_case($_GET, CASE_LOWER); // Or CASE_UPPER
 #+END_SRC
@@ -1229,7 +1229,7 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
    - ~htmlentities~ is identical to ~htmlspecialchars()~. It also converts characters which have [[html:character entity][html:character entity]] equivalents
 - Flags
    - ~ENT_QUOTES~ :: convert both double and single quotes
-   - ~htmlspecialchars($text, ENT_QUOTES | ENT_XML1, 'UTF-8')~ :: escape XML values in elements or attributes
+   - ~htmlspecialchars($text, ENT_QUOTES | ENT_XML1, 'UTF-8')~ :: escape XML values in elements and attributes
    - ~ENT_COMPAT | ENT_HTML401~ :: default flags
       - ~ENT_COMPAT~ :: convert double quotes only and leave single-quotes alone
 
@@ -23993,7 +23993,6 @@ transitionend
 | article  |                                   | affect outline                                            |
 | aside    |                                   |                                                           |
 | section  | headline tag is required          | affect outline                                            |
-| main     | Use it once                       | not descendant of other tags                              |
 | nav      |                                   | affect outline                                            |
 |          |                                   |                                                           |
 | cite     | <cite>U of T Professor</cite>     | wrap a person's title                                     |
@@ -24040,13 +24039,15 @@ transitionend
 | li       | value="100"                       | increment by 1                                            |
 |          |                                   |                                                           |
 
-- ~<main>~
-- ~<header>~
-- ~<nav>~
-- ~<section>~
-- ~<aside>~
-- ~<article>~
-- ~<footer>~
+- Some HTML5 tags
+   - ~<main>~ <<html:main>>
+      - Use it once and it is descendant of other tags
+   - ~<header>~
+   - ~<nav>~
+   - ~<section>~
+   - ~<aside>~
+   - ~<article>~
+   - ~<footer>~
 
 *** ~<iframe>~ attribute ~sandbox~
 - Add space-separated ~allow-*~ tokens as value in ~sandbox~ attribute to lift particular restrictions. By default, all are not allowed
@@ -24234,7 +24235,7 @@ CSS fallback
   </p>
 #+END_SRC
 
-*** ~<time>~ <<<html:time>>>
+*** ~<time>~ <<html:time>>
 #+BEGIN_SRC html
   <time>May 8</time>
   <time datetime="2025-05-08">Tomorrow or any string</time>
@@ -24350,7 +24351,7 @@ CSS fallback
   </video>
 #+END_SRC
 
-*** ~<audio>~ <<<html:audio>>>
+*** ~<audio>~ <<html:audio>>
 #+BEGIN_SRC html
   <audio controls loop autoplay>
       <source src="b.ogg"
@@ -24360,6 +24361,18 @@ CSS fallback
       Sorry your browser doesn't not support audio.
   </audio>
 #+END_SRC
+
+*** ~<tbody>~, ~<thead>~ and ~<tfoot>~
+- All 3 are to group multiple rows ~<tr>~'s
+   - To scroll ~<tbody>~ independently of ~<thead>~ and ~<tfoot>~
+- ~<tbody>~ <<html:tbody>>
+   - Parent is ~<table>~
+   - Used to group rows ~<tr>~. Multiple groups are allowed
+   - Use a ~<tr>~ filled with ~<th>~'s to create headers within each ~<tbody>~
+      - These ~<th>~'s have different browser native CSS styles
+- ~<thead>~ and ~<tfoot>~ <<html:thead>>
+   - Parent is ~<table>~
+   - Only one is permitted in a ~<table>~
 
 ** Meta
 *** Meta Refresh (redirect)
@@ -59720,7 +59733,7 @@ current branch is master and get folder target-folder/ from feature branch
 #+END_SRC
 
 ** Branch <<git:branch>>
-*** Duplicate current branch with changes and switch to it
+*** Duplicate current branch with uncommited changes and switch to it
 #+BEGIN_SRC sh
   git checkout -b newbranch
 #+END_SRC
@@ -60715,7 +60728,7 @@ Try using ssh server instead.
 - ~svn status~
    - ~svn status -u~ :: what will happen if ~svn up~ is run
 - ~svn diff~
-   - ~svn diff -r124:123~
+   - ~svn diff -r123:124~
 - ~svn revert~
 - ~svn log --quiet --search li~
    - This still works :: ~svn log --quiet | sed -n '/li/,/-----$/ p'| grep "^r"~
@@ -61906,8 +61919,8 @@ MongoDB and document-oriented db is CP
 
 *** Modeling Optimization
 - First normal form (1NF) :: every field should have one value. (Not comma separated values)
-- Second normal form (2NF) :: If you have multiple primary keys (composite keys) in a table, every field should be unique to all of those composite keys.
-e.g. CourseID and Date are 2 primary keys in table A. Field CourseTitle is unique to courseID. courseTitle should not be in table A. Create a new table B to include CourseID and CourseTitle
+- Second normal form (2NF) :: If you have multiple primary keys (composite keys) in a table, every field should be unique to all of those composite keys
+   - e.g. CourseID and Date are 2 primary keys in table A. Field ~CourseTitle~ is unique to courseID. courseTitle should not be in table A. Create a new table B to include CourseID and CourseTitle
 - Third normal form (3NF) :: Say you have CourseID, Date, Room, Seats in table A. Seats is unique to Room. You should create table B to hold Room, Seats and include just Room in table A
 
 *** Integrity mode - ACID and BASE
@@ -66764,6 +66777,11 @@ To compile ~C-c C-c~ and display inline image ~C-c C-x C-v~
   - ~polylines~ :: edges are one or multiple straight lines connected
   - ~ortho~ :: edges are routed with 2 perpendicular straight lines 
 
+** WinMerge
+- Edit > Options
+   - Backup Files
+      - Create backup files into Global backup folder
+
 ** Regex
 - Regular expression is also called pattern. Syntax
    - Boolean "or" :: ~|~
@@ -66896,6 +66914,14 @@ Block a certain file request or any files from a domain. Network > right click o
 - Multiple predicates
    - ~//*[local-name()='CSItem'][@name='NameAsReported'][@maxLength='250']~, or
       - ~//*[local-name()='CSItem' and @name='NameAsReported' and @maxLength='250']~
+   - ~//library/books/book[author[firstName[contains(text(),'Li')]]]~
+      - Select any book element that has child element author that has a firstName element with text Li
+      - ~//library/books/*[local-name()='book'][*[local-name()='author'][*[local-name()='firstName' and contains(text(), 'Li')]]]~ :: using local-name
+- Functions
+   - contains() :: ~//author[firstName[contains(text(),'Li')]]~
+   - text() :: text of a node
+   - starts-with()
+      - ~//author[starts-with(@firstName, 'Li')]~ :: attribute value starts with
 
 **** Axis Syntax
 - ~axisname::nodetest[predicate]~
@@ -69220,6 +69246,14 @@ Individuals who receive certification but are not considered Google Partners unl
 
 **** Bookmark to go directly to a Gmail account
 https://mail.google.com/mail/u/?authuser=myemail@gmail.com
+
+*** Google Sheets
+**** Shortcuts
+- Menu :: Help > Keyboard Shortcuts or ~C-/~
+   - Enable compatible shortcuts
+   - Search a shortcut
+- Insert row/columns or Open insert menu
+   - ~C-M-=~ or ~C-M-S-=~
 
 *** Google Maps
 - Embed single location :: https://www.embedgooglemap.net/
