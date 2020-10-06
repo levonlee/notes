@@ -987,8 +987,9 @@ Single dimension
   // prepend passed elements to the front of the array. Literal keys won't be changed
 #+END_SRC
 
-*** array_search
-- return the first key that has a value
+*** array_search <<php:array_search>>
+- ~array_search ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : mixed~
+- return the first key that has the value
 
 *** Sort arrays
 - http://php.net/manual/en/array.sorting.php
@@ -1061,15 +1062,14 @@ Sort (associative) array by its key
 #+BEGIN_SRC php
   array_unique ( array $array [, int $sort_flags = SORT_STRING ] ) : array
 #+END_SRC
-
+- return a new array without duplicate values
 - sort_flags
    - SORT_REGULAR :: don't change types
-   - SORT_NUMERIC - compare items numerically
-   - SORT_STRING
+   - SORT_NUMERIC :: compare items numerically
+   - SORT_STRING :: default. the same if ~(string) $elem1 === (string) $elem2~
    - SORT_LOCALE_STRING :: compare items as strings, based on the current locale
-- value is the same by using ~(string) $elem1 === (string) $elem2~
-- is not intended to work on multi dimensional arrays
-- keys are preserved, the first element with the same value is retained
+- Not intended to work on multi dimensional arrays
+- Keys are preserved, the first element with the same value is retained
 - Example: reverse mapping
   #+BEGIN_SRC php
     $map = [
@@ -1091,11 +1091,24 @@ Sort (associative) array by its key
     $fromUs   = 6;
     $toPartyA = $reversedMap[ $fromUs ]; // Semi-Annually
   #+END_SRC
-- Sometimes continuous keys is desired for numeric array
+- Sometimes continuous keys is desired for numeric array, use ~array_keys~
   #+BEGIN_SRC php
     // array_flip make sure the returned keys are unique
-    $unique=array_keys(array_flip(['a', 'a', 'b', 'c']));
+    $unique=array_keys(array_flip(['a', 'a', 'b', 'c'])); // ['a', 'b', 'c']
   #+END_SRC
+
+*** array_flip <<php:array_flip>>
+- Return an array with keys eq. to the values of input array, with values eq. to the keys of the input array
+   - return NULL on failure
+- The new keys need to be valid e.g. integer or string. Invalid key and its value will not be included in the result
+- The latest key will be used as its value
+#+BEGIN_SRC php
+  var_dump( array_flip( [ 'a', 'a', 'b', 'c' ] ) );
+  // [ a => 1, b => 2, c=> 3 ]
+
+  var_dump( array_flip( [ 'a', 'b', 'a', 'c' ] ) );
+  // [ a => 2, b => 1, c => 3]
+#+END_SRC
 
 ** String
 *** Multibyte - refer to php:multibyte
@@ -1151,6 +1164,16 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
 
 *** Regex <<php:regex>>
 **** preg_replace <<php:preg_replace>>
+**** preg_match <<php:preg_match>>
+#+BEGIN_SRC php
+  preg_match ( string $pattern , string $subject [, array &$matches [, int $flags = 0 [, int $offset = 0 ]]] ) : int
+#+END_SRC
+
+- Return 1 if the pattern matches given subject, 0 if it does not, or FALSE if an error occurred
+- ~$matches~
+   - $matches[0] :: the text matched the full pattern
+   - $matches[1] :: the text matched the first captured parenthesized subpattern and so on
+
 **** preg_match_all <<php:preg_match_all>>
 #+BEGIN_SRC php
   preg_match_all ( string $pattern , string $subject [, array &$matches [, int $flags = PREG_PATTERN_ORDER [, int $offset = 0 ]]] ) : int
@@ -1181,7 +1204,7 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
   $array = preg_split("#\n\s*\n#Uis", $text);
 #+END_SRC
 
-**** Remove HTML tag, regex
+**** Remove HTML tag <<php:regex:remove html tags>>
 - Refer to remove spaces between HTML start and end tags :: email:spaces between html tags
 #+BEGIN_SRC php
   // Remove HTML tags
@@ -1191,6 +1214,32 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
   // Remove an attribute from string
   // e.g. remove style attribute
   $output = preg_replace('/(<[^>]+) style=".*?"/si', '$1', $input);
+#+END_SRC
+
+**** Separate Street Name from Civic Number in Address String <<php:regex:civic number>>
+https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields-from-an-address-using-regular-expressions.html
+
+#+BEGIN_SRC php
+  $addresses = [
+	  '100 Baker Street', // => '100 '
+	  '109 - 111 Wharfside Street', // => '109 - 111 '
+	  '40-42 Parkway', // => '40-42 '
+	  '25b-26 Sun Street', // '25b-26 '
+	  '43a Garden Walk', // '43'
+	  '6/7 Marine Road', // '6/7 '
+	  '10 - 12 Acacia Ave', // '10 - 12 '
+	  '4513 3RD STREET CIRCLE WEST', // '4513 3'
+	  '0 1/2 Fifth Avenue', // '0 1/2 '
+	  '194-03 1/2 50th Avenue', // '194-03 1/2 '
+  ];
+
+  $re = '/^\d+\w*\s*(?:[\-\/]?\s*)?\d*\s*\d+\/?\s*\d*\s*/';
+
+  foreach ( $addresses as $k => $v ) {
+	  $matches = [];
+	  preg_match( $re, $v, $matches );
+	  var_dump( $matches );
+  }
 #+END_SRC
 
 *** String Ellipsis, Trim <<<php:ellipsis>>>
@@ -60799,6 +60848,28 @@ Try using ssh server instead.
     sqlite3 .svn/wc.db "pragma integrity_check"
     sqlite3 .svn/wc.db "reindex nodes"
     sqlite3 .svn/wc.db "reindex pristine"
+  #+END_SRC
+- Or
+  #+BEGIN_SRC sh
+    # may need to delete multiple times because wc.db is being used
+    rm -rf .svn
+    svn co svn://www.j.ca/reponame .
+
+    # you may see
+    # directory 'abc'
+    # > local dir unversioned, incoming dir add upon update
+
+    # choose `r` to accpet
+    svn up
+
+    # for conflicts, choose `mc` to accept
+    svn resolve
+
+    # a lot of files and directories are marked as delete
+    svn status
+
+    # don't worry, revert the whole directory. Done!
+    svn revert -R .
   #+END_SRC
 
 * BitBucket
