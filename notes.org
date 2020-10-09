@@ -751,7 +751,7 @@ Convert a string format to another
   // 0001 :: result is decimal 1
 #+END_SRC
 
-** Ternary Operator
+** Ternary Operator and Short ~if~
 #+BEGIN_SRC php
   // null coalescing operator since PHP 7.0
   // It returns its first operand if it exists and is not NULL; otherwise it returns its second operand.
@@ -759,6 +759,24 @@ Convert a string format to another
   // equivalent
   $foo = $bar ?? 'something';
   $foo = isset($bar) ? $bar : 'something';
+#+END_SRC
+
+*** Short if <<php:short if>>
+#+BEGIN_SRC php
+  function a() {
+	  return [ 'a' => '123' ];
+  }
+
+  // standalone with one condition. No parentheses needed
+  if ( $b = a() ) {
+	  print_r( $b, 1 );
+  }
+
+  // use parentheses for multiple conditions
+  if ( ( $b = a() ) && ( '321' !== $c = a() ) ) {}
+
+  // a useful example
+  if ( is_callable( 'a' ) && ( $b = a() ) && isset( $b['a'] ) && $b['a'] == '123' ) {}
 #+END_SRC
 
 ** Spaceship Operator
@@ -797,6 +815,7 @@ Here's how to remove any 4 byte character:
 #+END_SRC
 
 ** Array <<php:array>>
+
 *** array_merge, array_merge_recursive <<<php:array_merge>>>
 array_merge
 - only merge on the first level
@@ -856,23 +875,31 @@ array_merge_recursive
 *** Last element
 $_last = end($target_array);
 reset($target_array);
-
-*** Search Value and Return Key
-Case insensitive search
+*** in_array <<php:in_array>>
 #+BEGIN_SRC php
-  $a= array(
-      'k1'=> 'one',
-      'k2' => 'one1',
-      'k3' => 'three',
-  );
-
-  print_r( preg_grep( "/ONe$/i" , $a ) );
-  // return all matches
-  // Array ( [k1] => one, ... )
-  // empty array if no match
+  in_array ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : bool
 #+END_SRC
 
-Use ~in_array('string', $a)~ for case sensitive search
+- if needle is a string, then case-sensitive comparison
+   - [[php:array:search case-insensitive]]
+- Loose comparison unless $strict is set
+- $strict is true :: also check the types of the needle in the haystack
+
+*** Search Value and Return Key <<php:array:search case-insensitive>>
+- Case insensitive search
+  #+BEGIN_SRC php
+    $a= array(
+	'k1'=> 'one',
+	'k2' => 'one1',
+	'k3' => 'three',
+    );
+
+    print_r( preg_grep( "/ONe$/i" , $a ) );
+    // return all matches
+    // Array ( [k1] => one, ... )
+    // empty array if no match
+  #+END_SRC
+- Use [[php:in_array]] for case sensitive search
 
 *** Change Case for All Keys <<php:array_change_key_case>>
 #+BEGIN_SRC php
@@ -988,8 +1015,10 @@ Single dimension
 #+END_SRC
 
 *** array_search <<php:array_search>>
-- ~array_search ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : mixed~
-- return the first key that has the value
+#+BEGIN_SRC php
+  array_search ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : mixed
+#+END_SRC
+- return :: the first key that has the value
 
 *** Sort arrays
 - http://php.net/manual/en/array.sorting.php
@@ -60759,7 +60788,6 @@ Try using ssh server instead.
 * SVN Subversion
 - http://svnbook.red-bean.com/
    - Basic usage :: http://svnbook.red-bean.com/nightly/en/svn.tour.html 
-- Install Tortoise on Windows which includes SVN. Command Line Client Tools is necessary to integrate with phpStorm
 
 ** Basic
 - ~svn checkout svn://svn.ca/svn/repo/trunk~
@@ -60841,6 +60869,15 @@ Try using ssh server instead.
   [miscellany]
   global-ignores = *.o *.so *.so.[0-9]* .idea .DS_Store [Tt]humbs.db
 #+END_SRC
+
+** TortoiseSVN
+- Install on Windows which includes SVN. Command Line Client Tools is necessary to integrate with phpStorm
+*** Show log
+- Right click on directory > TortoiseSVN > Show log
+- Filter by multiple revisions
+   - Magnify glass dropdown select
+      - select Revision and Use regular express
+      - ~123|321|124~
 
 ** TS: ~svn: E200030: database disk image is malformed~
 - https://stackoverflow.com/questions/38422025/svn-e200030-database-disk-image-is-malformed
