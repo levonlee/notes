@@ -1832,11 +1832,26 @@ There're several ways
 ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 
 ** Heredoc, Nowdoc
-Heredoc result is a double-quoted string
+Nowdoc can't expand variables and the result is single quoted string
+#+BEGIN_SRC php
+  echo <<<'EOT'
+  <span>{$obj->name[1]}</span>
+  EOT;
+#+END_SRC
+
+*** Heredoc
+- Result is a double-quoted string
+- Limitation
+   - Can't interpolate constants. Use ~sprintf~ or ~printf~ instead
+
 #+BEGIN_SRC php
   $html = <<<HTML
   <span>{$obj->name[1]}</span>
   HTML;
+
+  $query = sprintf(<<<MYSQL
+  SELECT * FROM t1 WHERE id IN (%s, %s)
+  MYSQL, $a, $a);
 #+END_SRC
 
 #+BEGIN_SRC php
@@ -1844,13 +1859,6 @@ Heredoc result is a double-quoted string
   plain text and now a function: %s
   heredoc;
   $string = sprintf($string, testfunction());
-#+END_SRC
-
-Nowdoc can't expand variables and the result is single quoted string
-#+BEGIN_SRC php
-  echo <<<'EOT'
-  <span>{$obj->name[1]}</span>
-  EOT;
 #+END_SRC
 
 ** Buffer <<php:buffer>>
@@ -49657,25 +49665,30 @@ To enable wildcard for rm, use glob
 - -n :: restrain from attempting auto-login upon initial connection
 
 *** cp <<linux:cp>>
-#+BEGIN_SRC sh
-  # Copy a sub folder abc/ in the current directory to a new directory ~/xyz with everything preserved
-  cp -a abc/ ~/xyz
+- Basics
+  #+BEGIN_SRC sh
+    # Copy a sub folder abc/ in the current directory to a new directory ~/xyz with everything preserved
+    cp -a abc/ ~/xyz
 
-  # Duplicate subfolder abc and name it xyz
-  cp -a abc xyz
-#+END_SRC
-
-- ~-a~ :: ~-dR --preserve=all~
-- ~-d~ :: ~--no-dereference --preserve=links~
-- ~-P, --no-dereference~ :: never follow symbolic links in SOURCE
-- ~-R~, ~-r~, ~--recursive~ :: for directory
-- ~-f~, ~--force~ :: if an existing destination file cannot be opened, remove it and try again
-- ~-i~ :: default it will overwrite. Interactive to ask me
-
-To copy and exclude some directories use rsync
-#+BEGIN_SRC sh
-  rsync -Pavin sourceFolder/ /destinationFolder/ --exclude theFolderToExclude 
-#+END_SRC
+    # Duplicate subfolder abc and name it xyz
+    cp -a abc xyz
+  #+END_SRC
+- Options
+   - ~-a~ :: ~-dR --preserve=all~
+   - ~-d~ :: ~--no-dereference --preserve=links~
+   - ~-P, --no-dereference~ :: never follow symbolic links in SOURCE
+   - ~-R~, ~-r~, ~--recursive~ :: for directory
+   - ~-f~, ~--force~ :: if an existing destination file cannot be opened, remove it and try again
+   - ~-i~ :: default it will overwrite. Interactive to ask me
+- Copy the same file to multiple destinations use [[linux:tee][linux:tee]] <<linux:cp:multiple destinations>>
+   - No need to create destination files
+     #+BEGIN_SRC sh
+       tee ~/dest1/a.txt ~/dest2/a.txt < ~/source/a.txt > /dev/null
+     #+END_SRC
+- To copy and exclude some directories use rsync
+  #+BEGIN_SRC sh
+    rsync -Pavin sourceFolder/ /destinationFolder/ --exclude theFolderToExclude 
+  #+END_SRC
 
 *** mv <<linux:mv>>
 #+BEGIN_SRC sh
@@ -51222,8 +51235,10 @@ https://askubuntu.com/a/430944/481813
     # on the right, command that takes input
     echo "Hello" | wc
   #+END_SRC
-- ~tee~ <<linux:tee>>
-  #+BEGIN_SRC bash
+
+**** ~tee~ <<linux:tee>>
+- Basics
+  #+BEGIN_SRC sh
     # Redirect stdout of a commannd to a file and display stdout
     date | tee testfile
 
@@ -51259,6 +51274,7 @@ https://askubuntu.com/a/430944/481813
     echo "This doesn't display as STDOUT is redirected to a file"
     echo "This is an error and in errorLogFile" >&2
   #+END_SRC
+- Copy the same file to multiple places :: [[linux:cp:multiple destinations][linux:cp:multiple destinations]]
 
 *** declare <<<bash:declare>>>
 #+BEGIN_SRC sh
@@ -51895,8 +51911,8 @@ Download all subfolders and files of an FTP folder
 
 [[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
 
-** Cron <<<linux:cron>>>
-*** Cron table (crontab)
+** Cron <<linux:cron>>
+*** Cron table <<linux:crontab>>
 - Each user can have his own cron table. Use ~crontab~ to manage the current user's cron jobs
 - List current user's cron table (called crontab) :: ~crontab -l~
 - List a user's cron table :: ~crontab -u username -l~
