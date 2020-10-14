@@ -751,14 +751,14 @@ Convert a string format to another
   // 0001 :: result is decimal 1
 #+END_SRC
 
-** Ternary Operator and Short ~if~
+** Ternary Operator, Null Coalescing Operator, Short ~if~
 #+BEGIN_SRC php
   // null coalescing operator since PHP 7.0
   // It returns its first operand if it exists and is not NULL; otherwise it returns its second operand.
 
   // equivalent
-  $foo = $bar ?? 'something';
-  $foo = isset($bar) ? $bar : 'something';
+  $foo = $bar['id'] ?? 'something';
+  $foo = isset( $bar['id'] ) ? $bar : 'something';
 #+END_SRC
 
 *** Short if <<php:short if>>
@@ -777,6 +777,20 @@ Convert a string format to another
 
   // a useful example
   if ( is_callable( 'a' ) && ( $b = a() ) && isset( $b['a'] ) && $b['a'] == '123' ) {}
+#+END_SRC
+
+** Error Control Operator <<php:@>>
+- All PHP versions
+- https://www.php.net/manual/en/language.operators.errorcontrol.php
+- It only works only on expressions :: prepend it to variables, function and ~include~ calls
+   - Don't append to function/class definition and conditional structures e.g. if, foreach
+- It temporarily sets the error reporting level to 0 for the code
+   - If an error is triggered, the error handler is still called but just with error level of 0
+
+#+BEGIN_SRC php
+  $user = [];
+  $a = @$user['id']; // by default, no error is output and $a is NULL
+  $a = (int) @$user['id']; // int 0
 #+END_SRC
 
 ** Spaceship Operator
@@ -815,6 +829,10 @@ Here's how to remove any 4 byte character:
 #+END_SRC
 
 ** Array <<php:array>>
+*** Array Shorthand
+#+BEGIN_SRC php
+  $i = []; // Since PHP 5.4
+#+END_SRC
 
 *** array_merge, array_merge_recursive <<<php:array_merge>>>
 array_merge
@@ -1418,7 +1436,10 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
   $str = substr(base64_encode(sha1(mt_rand())), 0, 16);
 #+END_SRC
 
-*** Hash <<php:sha1>>
+*** Hash <<php:sha1>> <<hash:sha1>>
+- Hashed string (checksum) is a one-way transformation on the original string. Another string has a different checksum 
+- Result is a 40 characters (160-bit or 20-byte) hexadecimal number in lowercase
+
 #+BEGIN_SRC php
   <?php
   // Signed cookie example
@@ -1852,6 +1873,13 @@ Nowdoc can't expand variables and the result is single quoted string
   <span>{$obj->name[1]}</span>
   HTML;
 
+  // this is compatible with PHP 5.3+ including 5.3
+  $query = sprintf(<<<MYSQL
+  SELECT * FROM t1 WHERE id IN (%s, %s)
+  MYSQL
+  , $a, $a);
+
+  // For PHP 7.3+ and including 7.3
   $query = sprintf(<<<MYSQL
   SELECT * FROM t1 WHERE id IN (%s, %s)
   MYSQL, $a, $a);
@@ -57345,6 +57373,7 @@ Database Drivers
    - VirtualBox Oracle VM VirtualBox Extension Pack is needed :: https://www.vagrantup.com/docs/virtualbox/
    - VirtualBox version 5.0.x and 5.1.x are supported by Vagrant 1.x
    - Simply install the latest version of VirtualBox to upgrade
+      - https://www.vagrantup.com/downloads.html
       - If Oracle VM VirtualBox Extension Pack is previously installed, upgrading the VB core will also auto update it
    - TS: ~Error: "VT-x/AMD-V hardware acceleration is not available"~
       - On Windows, check if ~Hyper-V~ or ~Windows Hypervisor Platform~ is on by going to Windows Features
@@ -57353,7 +57382,6 @@ Database Drivers
 	 - Then reboot and change UEFI or BIOS setting
 	    - name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration
 - Install [[vagrant:plugin][vagrant:plugin]]
-- Simply install the latest version to upgrade :: https://www.vagrantup.com/downloads.html
 
 #+BEGIN_SRC sh
   vagrant --version
@@ -57491,6 +57519,7 @@ Vagrant Pure SSH <<vagrant:ssh:pure ssh>>
 	     vb.memory = memory
 	     vb.cpus = cpus
 	     vb.name = hostname
+	     vb.gui = true # enable GUI on VirtualBox
 	     # The name appears on VirtualBox GUI
 	     #  Can override any settings config.vm, config.ssh, config.winrm and config.vagrant
 	     end
@@ -65967,8 +65996,6 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 **** Line Comment ~C-/~, Block Comment ~C-S-/~
 **** Convert to Tab/Spaces for indentation - Action: To Tab
 Find Action > To Tab
-
-**** Code > Code Completion > Basic  ~C-Space~
 **** Surround with ~M-S-z~ or ~C-M-t~ <<<phpstorm:surround with>>>
 ***** Surround with Live Template
 - Select a text abc and wrap it into a function call
@@ -65980,8 +66007,23 @@ Find Action > To Tab
 - Select the text, Code > Surround with, or ~M-S-z~
 
 ***** Surround with Emmet phpstorm:emmet:wrap
+
+**** Code > Code Completion > Basic  ~C-Space~
 **** Code > Insert Live Template ~C-M-S-j~
 - Insert HTML5 template
+
+**** Code > Generate... ~M-Insert~
+- Generate PHPDoc Blocks
+   - A manual way is go to the previous line and type ~/** Enter~, PHPDoc will be generated
+- Constructor, Getter, Setter
+- Override methods
+   - Don't have an option to override fields..
+- Implement methods
+   - Magic methods
+
+**** Code > Folding Fold Selection / Remove region ~C-.~
+- Fold or unfold the parent of current code
+- Apply on integer in query to show the integer with thousand separator ~_~ e.g. ~1000~ shows ~1_000~
 
 **** Show Intention Actions ~M-Enter~
 - At code line, press ~M-enter~
@@ -66002,15 +66044,6 @@ Find Action > To Tab
 	     SELECT * FROM `table`;
 	     MYSQL;
 	   #+END_SRC
-
-**** Code > Generate... ~M-Insert~
-- Generate PHPDoc Blocks
-   - A manual way is go to the previous line and type ~/** Enter~, PHPDoc will be generated
-- Constructor, Getter, Setter
-- Override methods
-   - Don't have an option to override fields..
-- Implement methods
-   - Magic methods
 
 **** Fix Doc Comment ~C-S-a fix doc comment~
 - This is the only way to insert or fix JSDoc
@@ -68150,6 +68183,32 @@ Move a OneOnte on SharePoint to personal OneDrive
 ***** Outlook CSV Import 
 A file error has occured in the Comma Separated Values translator while initializing a translator to build a field map.
 That's because the CSV file does not use CR+LF. Open it in Excel and Save As
+
+** Cmder <<windows:cmder>>
+- https://cmder.net/ :: it's called Commander Console
+- Fork of ConEmu
+- Just executable no installation needed even for the full version
+   - Change the ~cmder.exe~ to run as administrator 
+- Preinstalled (full version)
+   - Git for Windows
+
+*** Shortcuts
+- Paste :: ~S-Insert~ or ~C-v~ or ~right click~ or ~C-S-v~
+- Copy from Cmder :: ~S-click~
+- Traverse up in directory structure :: ~C-A-u~
+- Zoom in, Zoom out :: ~C-Mouse Wheel~
+- Preferences / Settings :: ~Win-A-p~
+- History search :: ~C-r~
+
+**** Tab / console
+- New tab :: ~C-t~
+- Close tab :: ~C-w~
+- Switch tab :: ~C-Tab~ or ~C-S-Tab~
+
+*** Settings
+- Auto update is by default enabled
+- Scheme :: Features > Colors
+   - Default Monokai
 
 ** Reflector, ILSpy and Reflexil
 C#, VB, F# and other .NET codes are compiled to Common Intermediate Language (CIL) or IL for short. Which is .dll file.
