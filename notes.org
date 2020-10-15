@@ -325,6 +325,13 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
        // ... some code that threw warning and notice before, now won't
        error_reporting( $oldErrorReporting );
      #+END_SRC
+   - Refer to [[php:@][php:@]]
+      - Whenever an error of any level is generated, it is formatted and ready to output to browsers. Only just before it, error_reporting setting is checked. This applies to [[php:@][php:@]] as well
+   - Performance
+      - 10k errors of notice level, with error_reporting and display_errors enabled :: 5k ms
+      - same, but with display_errors disabled :: 136 ms
+      - same, but with error_reporting disabled too :: 118 ms
+      - no error of notice level :: 20 ms
 - Trigger error <<php:trigger_error>>
   #+BEGIN_SRC php
     trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
@@ -751,14 +758,19 @@ Convert a string format to another
   // 0001 :: result is decimal 1
 #+END_SRC
 
-** Ternary Operator, Null Coalescing Operator, Short ~if~
+** Ternary Operator, Null Coalescing Operator, Elvis Operator, Short ~if~
 #+BEGIN_SRC php
   // null coalescing operator since PHP 7.0
   // It returns its first operand if it exists and is not NULL; otherwise it returns its second operand.
 
-  // equivalent
+  // eq.
   $foo = $bar['id'] ?? 'something';
-  $foo = isset( $bar['id'] ) ? $bar : 'something';
+  $foo = isset( $bar['id'] ) ? $bar['id'] : 'something';
+
+  // Elvis Operator
+  $foo = isset( $bar['id'] ) ?: 'something';
+  // eq.
+  $foo = ( isset( $bar['id'] ) ) ? ( isset( $bar['id'] ) ) : 'something';
 #+END_SRC
 
 *** Short if <<php:short if>>
@@ -786,6 +798,10 @@ Convert a string format to another
    - Don't append to function/class definition and conditional structures e.g. if, foreach
 - It temporarily sets the error reporting level to 0 for the code
    - If an error is triggered, the error handler is still called but just with error level of 0
+   - Set and reset INI setting back and forth
+- Drawbacks
+   - It's slow
+- Refer to [[php:ini:error_reporting][php:ini:error_reporting]]
 
 #+BEGIN_SRC php
   $user = [];
@@ -15081,6 +15097,9 @@ Get first row or random row
 ***** Add a field group
 https://www.advancedcustomfields.com/resources/register-fields-via-php/
 
+**** Insert Headers and Footers
+https://wordpress.org/plugins/insert-headers-and-footers/
+
 *** Post, Post Type
 **** Types - Toolset Types <<<wp:plugin:types>>>
 - WP Types is different! Use <<<types_render_field>>>
@@ -23735,7 +23754,9 @@ Another way to loop NodeList
    - Also works for virtual DOM e.g. Vue ~this.$refs['some-ref'].getBoundingClientRect().height~
 
 *** Event Object <<html:EventObject>>
+**** Basics
 - https://developer.mozilla.org/en-US/docs/Web/API/Event
+- [[js:addEventListener][js:addEventListener]]
 
 #+BEGIN_SRC html
   <input id="elem" type="button" value="Click me">
@@ -23746,8 +23767,8 @@ Another way to loop NodeList
       alert('Thank you');
     };
 
-    elem.addEventListener('click', function () {
-     // ...
+    elem.addEventListener('click', function (e) {
+     // e is SomeEvent object
     });
   
   </script>
@@ -23875,6 +23896,12 @@ Detailed events using ~PerformanceNavigationTiming~
     }
   });
 #+END_SRC
+
+**** MessageEvent <<html:event:message>>
+- https://developer.mozilla.org/en-US/docs/Web/API/MessageEvent
+- Properties
+   - data
+   - origin :: e.g. ~'http://localhost:8080'~
 
 *** <<<DOMTokenList>>> Object
 A collection of space-separated tokens.
@@ -30177,10 +30204,10 @@ Javascript on client (e.g. web browser)
   };
 #+END_SRC
 
-*** Mutation Observer <<<js:MutationObserver>>>
+*** Mutation Observer <<js:MutationObserver>>
 [[https://developer.mozilla.org/en/docs/Web/API/MutationObserver][MDN MutationObserver]] [[https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord][MDN MutationRecord]]
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC js
   MutationObserver = window.MutationObserver;
 
   // callback function has 2 arguments
@@ -30224,7 +30251,7 @@ Javascript on client (e.g. web browser)
 
   // You may stop observing later
   observer.disconnect();
-#+END_EXAMPLE
+#+END_SRC
 
 *** Intersection Observer <<<js:intersection observer>>>
 [[https://developers.google.com/web/updates/2016/04/intersectionobserver][Introduction by Google]] [[https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API][MDN]]
@@ -60714,16 +60741,21 @@ Method 2: Add another remote github
    - Can be set on any repo or on an organization
    - Refer to go:github-webhook
 
-*** Pages
+*** GitHub Pages
 :PROPERTIES:
 :CUSTOM_ID: github-pages
 :END:
-You can add /docs folder to your repository on master and enable GitHub Pages in the repository setting
-Or you can create an orphan branch called gh-pages
-
-If you don't have branch gh-pages or /docs in master branch, just click on Launch automatic page generator and it will create the gh-pages branch with Jekyll files.
-
-Project website is https://levonlee.github.io/reponame or a domain docs.abc.com CNAME YOUR-GITHUB-USERNAME.github.io then it'd be https://docs.abc.com/reponame 
+- Available in
+   - public repos with free GitHub accounts
+   - private repos with Pro, Team, Enterprise Cloud, Enterprise Server accounts
+- add /docs folder to your repository on master
+   - Or create an orphan branch called ~gh-pages~
+   - When branch gh-pages and /docs in master branch not exist, just click on Launch automatic page generator and it will create the gh-pages branch with Jekyll files
+   - For User or Organization Site, create repo levonlee.github.io and add index.html and push to repo
+- enable GitHub Pages in the repository setting
+- Custom domain setting :: ~docs.abc.com~ with ~CNAME YOUR-GITHUB-USERNAME.github.io~
+   - https://docs.abc.com/reponame 
+   - Without a custom domain :: Project website is https://levonlee.github.io/reponame
 
 <<github:gh-pages>>
 #+BEGIN_SRC sh
@@ -60731,8 +60763,6 @@ Project website is https://levonlee.github.io/reponame or a domain docs.abc.com 
   git rm -rf .
   git commit -m "GitHub Pages"
 #+END_SRC
-
-For User or Organization Site, create repo levonlee.github.io and add index.html and push to repo
 
 **** SVG, View HTML
 http://rawgit.com/
