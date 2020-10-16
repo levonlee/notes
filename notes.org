@@ -62386,6 +62386,18 @@ MySQL >= 5.1.12
   SET GLOBAL general_log = 'ON';
 #+END_EXAMPLE
 
+**** Threads <<mysql:threads>>
+- Before v8.0.14, 1 query uses only 1 CPU core (concurrency not parallism)
+   - v8.0.14 uses multi CPU cores only in ~SELECT COUNT(*) FROM t1~ without any ~WHERE~ nor ~GROUP BY~
+- Concurrency threads can be configured
+   - See settings
+     #+BEGIN_SRC sql
+       SELECT @@innodb_thread_concurrency, @@innodb_read_io_threads, @@innodb_write_io_threads;
+     #+END_SRC
+   - innodb_thread_concurrency :: default 0 means no limit. Any non-zero throttles
+   - innodb_read_io_threads :: default 4
+   - innodb_write_io_threads :: default 4
+
 **** mysql Client Commands
 - https://dev.mysql.com/doc/refman/8.0/en/mysql-commands.html
 - ~status~, ~/s~ :: ~status~
@@ -62791,7 +62803,8 @@ MySQL 5.6
 
 **** ~GROUP BY~ and ~HAVING~ <<mysql:group by>>
 - After ~WHERE~ before ~ORDER BY~ and ~HAVING~
-- ~HAVING fieldDefinedinSELECT > 1~
+   - ~WHERE 1=1 GROUP BY col1 HAVING fieldDefinedinSELECT > 1 ORDER BY col1~
+- ~GROUP BY col1, col2~ as if ~ORDER BY col1, col2~ is also included. To suppress sorting :: ~GROUP BY col1 ORDER BY NULL~
 
 **** REGEXP <<<mysql:regex>>>
 Unless the field is binary, REGEXP is case-insensitive.
