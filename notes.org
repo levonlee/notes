@@ -28085,7 +28085,7 @@ https://amp.dev/documentation/components/amp-analytics/
 	     </script>
            #+END_SRC
 
-** Initialization <<<js:Initialization>>>
+** Initialization <<js:initialize>>>
 Always initialize variables at the top including vars in loops
 #+BEGIN_SRC js
   var myObj = {},
@@ -28099,10 +28099,12 @@ Always initialize variables at the top including vars in loops
 These values are considered as false
 
 ** Variable Scope
-*** Hoisting <<<js:hoisting>>>
+*** Hoisting <<js:hoisting>>
 - Refer to js:Function
 - Variables defined outside of any functions are Global
-- Only function can create local scope. Without using var to declare variables, those variables are global. This is called function-level scoping while PHP has block-level scoping, where new scope can be defined in block
+- Only function can create local scope
+   - This is called function-level scoping while PHP has block-level scoping, where new scope can be defined in block
+   - Without using ~var~ or ~let~ to declare variables in any function and run, those variables are global
 
 #+BEGIN_SRC js
   myFunction();
@@ -28117,7 +28119,6 @@ These values are considered as false
   }
   // Alternative way to get global var
   console.log(window.carName);
-
 
   // function and variable declaration are moved to the top of their
   // scope (global or local). It's called hoisting
@@ -28144,7 +28145,7 @@ These values are considered as false
 
   showState(); // output: Idle
 
-  // The function that is assigned to a variable doesn't have to anonymous.
+  // The function that is assigned to a variable doesn't have to be anonymous
 
   really.long.external.scoped.name = function shortcut(n) {
    // regression
@@ -28156,7 +28157,7 @@ These values are considered as false
 
 *** let, const, var
 - A variable is defined by ~var~ then this variable is available to the closest function scope
-- Always js:Initialization for variables declared by ~var~
+- Always [[js:initialize][js:initialize]] for variables declared by ~var~
 - ~let~ and ~const~ are /block-scoped/
    - ~let~ declares a variable which is available to the block it is enclosed in
    - A block can be a switch, for, or if statement which has one pair of ~{}~
@@ -28212,7 +28213,25 @@ These values are considered as false
   (function() { console.log('test'); })
 
   // Immediately Invoked Function Expression (IIFE)
-  (function() { console.log('test') })()
+  (function() {
+      console.log('test')
+  })();
+
+  // IIFE Variation 1
+  // ! eq. to +, -, or even ~. Any unary operator
+  !funtion() {
+      console.log('test');
+  }();
+
+  // Variation 2
+  (function() {
+      console.log('test');
+  }());
+
+  // Variation 3 only for assigning return value to a variable
+  var result = function() {
+      return 'test';
+  }();
 #+END_SRC
 
 Revealing Module pattern
@@ -28220,22 +28239,23 @@ Revealing Module pattern
   // Expose module as global variable
   var singleton = function(){
 
-    // Inner logic
+    // Inner logic, private methods
     function sayHello(){
       console.log('Hello');
     }
 
-    // Expose API
+    // Expose API, public methods
     return {
       sayHello: sayHello
     }
   }()
 
-
   // Access module
   singleton.sayHello();
   // => Hello
 
+
+  // Non-singleton
   // Expose module as global variable
   var Module = function(){
 
@@ -28251,13 +28271,18 @@ Revealing Module pattern
   }
 
   // instantiate
-  var module = new Module();
+  var module1 = Module();
+  // Or
+  // var module1 = new Module();
   module.sayHello();
 #+END_SRC
 
 *** Syntax, When to use closure?
-- When you don't want to change the variables in outer scope where the closure is in.
-The outer scope can be global or any place where the closure is in.
+- A closure gives access to an outer function's scope from an inner function
+   - Closures are created every time a function is created, at function creation time
+   - Closure is a function bundled together (enclosed) with references to its surrounding state (lexical environment)
+- When you don't want to change the variables in outer scope where the closure is in
+   - The outer scope can be global or any place where the closure is in
 - When you want to run the function later
 - When you want to run the function later by providing just reference to other function
 - When you want to run the function later by providing initial state
@@ -28766,10 +28791,9 @@ Match one tag only
 
 *** Function <<<js:Function>>>
 - A special type of object
-- Refer to js:hoisting
+- Refer to [[js:hoisting][js:hoisting]]
 
 **** arguments
-
 #+BEGIN_SRC js
   function add() {
     var sum = 0;
@@ -29535,61 +29559,69 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 #+END_SRC
 
 ** OOP Pattern
-
 #+BEGIN_SRC js
-  // Javascript Singleton
+  // JavaScript Singleton
   (function() {
-    this.myApp = this.MyApp || {};
-    var ns = this.myApp; // further shorten the keyboard typing
+      this.myApp = this.MyApp || {};
+      var ns = this.myApp; // further shorten the keyboard typing
 
-    // private properties
-    var vehicleCount = 5;
-    var vehicles = [];
+      // private properties
+      var vehicleCount = 5;
+      var vehicles = [];
 
-    // Public properties
+      // Public properties
+      ns.publicHello = 'This is public';
 
-    ns.publicHello = 'This is public';
+      // Define a Class
+      // You can even separate the class definition into another javascript file
+      // Just remember to include the necessary closure like the above
+      ns.Vehicle = (function() {
 
-    // Define a Class
-    // You can even separate the class definition into another javascript file
-    // Just remember to include the necessary closure like the above
-    ns.Vehicle = (function() {
+	  function Vehicle(year, make, model) {
+	      // private properties
+	      this.year = year;
+	      this.make = make;
+	      this.model = model;
+	  }
 
-      function Vehicle(year, make, model) {
-	this.year = year;
-	this.make = make;
-	this.model = model;
-      }
+	  // Public methods
+	  Vehicle.prototype.getInfo = function() {
+	      return this.year + ' ' + this.make + ' ' + this.model;
+	  };
+	  Vehicle.prototype.startEngine = function() {
+	      return 'Vroom';
+	  };
+	  /* Better not to override prototype
+	  Vehicle.prototype = {
+	      getInfo: function () {
+		  return this.year + ' ' + this.make + ' ' + this.model;
+	      },
+	      startEngine: function () {
+		  return 'Vroom';
+	      }
+	  };
+	  ,*/
 
-      Vehicle.prototype = {
-	getInfo: function () {
-	  return this.year + ' ' + this.make + ' ' + this.model;
-	},
-	startEngine: function () {
-	  return 'Vroom';
-	}
-      };
+	  return Vehicle;
+      }());
 
-      return Vehicle;
-    }());
+      // Define a sub Class
+      ns.Car = (function(parent) {
 
-    // Define a sub Class
-    ns.Car = (function(parent) {
+	  function Car(year, make, model) {
+	      parent.call(this, year, make, model);
+	      this.wheelQuantity = 4;
+	  }
 
-      function Car(year, make, model) {
-	parent.call(this, year, make, model);
-	this.wheelQuantity = 4;
-      }
+	  Car.prototype = Object.create(parent.prototype);
+	  Car.prototype.constructor = Car;
+	  Car.prototype.getInfo = function() {
+	      // Extend parent's method
+	      return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
+	  }
 
-      Car.prototype = Object.create(parent.prototype);
-      Car.prototype.constructor = Car;
-      Car.prototype.getInfo = function() {
-	// Extend parent's method
-	return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
-      }
-
-      return Car;
-    }(ns.Vehicle));
+	  return Car;
+      }(ns.Vehicle));
 
   }());
 
@@ -29816,37 +29848,53 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 #+END_SRC
 
 *** ~this~ in a method of an object
+- The method is assigned into an instance (could be its original definition or other defintion)
+- ~this~ value is the instance's value
+
+**** Example 1
 #+BEGIN_SRC js
   abc = {
-    a: 10,
-    b: function () {
-      // traditional function (anonymous) is in an instance, the instance's `a`
-      return this.a;
-    },
+      a: 10,
+      b: function () {
+	  return this.a;
+      },
   };
 
-  console.log(abc.b()); // 10
-  console.log(window.a); // undefined
+  // traditional function (anonymous) `b` is in an instance `abc`, the instance's `a` is 10
+  console.log(abc.b(), 'abc.b()'); // 10
+  console.log(window.a, 'window.a'); // undefined
 
   var o = { prop: 37 };
 
   function independent () {
-    return this.prop;
+      return this.prop;
   }
 
   o.f = independent;
-  console.log(o.f()); // 37
+  // the called traditional function `independent` is now in an instance `o`, the instance's `prop` is 37
+  console.log(o.f(), 'o.f()'); // 37
 
+  // the called traditional function `independent` is now in an instance `b`, the instance's `prop` is 42
   o.b = { g: independent, prop: 42 };
-  console.log(o.b.g()); // 42
+  console.log(o.b.g(), 'o.b.g()'); // 42
 
   var o = { f: function () { return this.a + this.b; } };
   var p = Object.create(o);
   p.a = 1;
   p.b = 4;
+  // the called traditional function `f` is now in an instance `p`, the instance's `a` is 1 and `b` is 4
+  console.log(p.f(), 'p.f()'); // 5
 
-  console.log(p.f()); // 5
+  xyz = {
+      a: 100,
+      b: abc.b,
+  };
+
+  // abc.b now belongs to instance xyz and xyz's `a` is 100
+  console.log(xyz.b(), 'xyz.b()'); // 100
 #+END_SRC
+
+**** Example 2
 #+BEGIN_SRC js
   function sum () {
     return this.a + this.b + this.c;
