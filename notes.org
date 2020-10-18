@@ -1348,7 +1348,7 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
 *** [[php:urlencode][php:urlencode]]
 *** strip_tags <<php:strip_tags>>
 *** UTF-8 encoding <<php:string:encoding>> <<php:mb_convert_encoding>> <<php:mb_detect_encoding>>
-Make sure the string is UTF-8 encoded especially after php:file_get_contents
+Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][php:file_get_contents]]
 #+BEGIN_SRC php
   $twitterHTML = mb_convert_encoding($twitterHTML, 'UTF-8',
     mb_detect_encoding($twitterHTML)
@@ -1357,10 +1357,80 @@ Make sure the string is UTF-8 encoded especially after php:file_get_contents
 #+END_SRC
 
 *** Variables to JSON <<php:json_encode>>
-#+BEGIN_SRC php
-  $a = [1,2,3];
-  var_dump(json_encode($a));
-#+END_SRC
+- Input variable is
+   - String :: result is a double quoted string
+      - with the following characters escaped by ~\~
+	 - ~"~
+	 - ~/~ :: e.g. ~</script>~ becomes ~<\/script>~
+      - Perfect for assigning a PHP string variable to JavaScript variable
+	#+BEGIN_SRC php
+	  <?php
+	  $html = <<<HTML
+	  <p></p>
+	  HTML;
+	  $html = json_encode($html);
+	  ?>
+	  <script>
+	  var a = <?php echo $html; ?>;
+	  var html = [];
+	  html.push(<?php echo $html; ?>);
+	  </script>
+	#+END_SRC
+   - Array :: result is a double quoted string. The keys are double quoted with no escape
+     #+BEGIN_SRC php
+       <?php
+       $aNumericArray = json_encode([
+	   1,
+	   "Hello I'm Li. \"",
+	   'Hello I\'m Li. "'
+       ]);
+       var_dump($aNumericArray);
+       // string with no double quotes wrapped
+       // [1,"Hello I'm Li. \"","Hello I'm Li. \""]
+
+       $aNumericArrayWithForceObject = json_encode([
+	   1,
+	   "Hello I'm Li. \"",
+	   'Hello I\'m Li. "'
+       ], JSON_FORCE_OBJECT);
+
+       $aNumericArrayWithPrettyPrint = json_encode([
+	   1,
+	   "Hello I'm Li. \"",
+	   'Hello I\'m Li. "'
+       ], JSON_PRETTY_PRINT);
+
+       var_dump($aNumericArrayWithForceObject);
+       // string with no double quotes wrapped
+       // {"0":1,"1":"Hello I'm Li. \"","2":"Hello I'm Li. \""}
+
+       var_dump($aNumericArrayWithPrettyPrint, '$aNumericArrayWithPrettyPrint');
+       // string with no double quotes wrapped
+       // same as $aNumericArray but with indentation
+
+       $anAssociativeArray = json_encode([
+	   'a' => 123,
+	   'b' => "Hello I'm Li. \"",
+	   'c' => 'Hello I\'m Li. "',
+	   'd' => ['a', 'b'],
+       ]);
+       var_dump($anAssociativeArray);
+       // string with no quotes wrapped
+       // {"a":123,"b":"Hello I'm Li. \"","c":"Hello I'm Li. \"","d":["a","b"]}
+       ?>
+
+       <script>
+       var anArray = <?php echo $aNumericArray; ?>; // a JavaScript array variable
+       console.log(anObj1);
+
+       var anObj = <?php echo $aNumericArrayWithForceObject; ?>; // a JavaScript object variable
+       console.log(anObj);
+
+       anObj = <?php echo $anAssociativeArray; ?>; // a JavaScript object variable
+       console.log(anObj);
+       </script>
+     #+END_SRC
+- Refer to [[js:innerHTML][js:innerHTML]]
 
 *** Back slashes for quotes and other characters <<php:addslashes>> <<php:stripslashes>>
 #+BEGIN_SRC php
@@ -3153,7 +3223,7 @@ Pay attention to global scope
 #+END_SRC
 
 ** Http Request - cURL, file_get_contents
-*** cURL-less <<<php:file_get_contents>>>
+*** cURL-less <<php:file_get_contents>>
 Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
 Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 
@@ -19133,7 +19203,8 @@ https://css-tricks.com/fitting-text-to-a-container/
   }
 #+END_EXAMPLE
 
-**** Google Font ~local()~ ~unicode-range~
+**** Google Font and ~local()~ ~unicode-range~
+***** ~local()~ ~unicode-range~
 - Example ~<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">~
 - ~local('Font Name')~ :: if user agent has the font, then the font will not be downloaded <<<css:font-face:local>>>
    - Refer to html:link:rel:preload:font
@@ -19229,6 +19300,39 @@ https://css-tricks.com/fitting-text-to-a-container/
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
   }
 #+END_SRC
+
+***** Google Web Font Loader
+- https://github.com/typekit/webfontloader
+   - A JavaScript library to dynamic font loading Google and Typekit fonts
+- Synchronous load
+  #+BEGIN_SRC html
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script>
+      WebFont.load({
+	google: {
+	  families: ['Droid Sans', 'Droid Serif', 'Roboto:300,400,700', ]
+	}
+      });
+    </script>
+  #+END_SRC
+- Async load
+  #+BEGIN_SRC js
+    WebFontConfig = {
+	google: {
+	    families: ['Poppins:400,500']
+	}
+    };
+    (function(d) {
+	if ( typeof WebFont === 'undefined' ) {
+	    var wf = d.createElement('script'), s = d.scripts[0];
+	    wf.src = 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js';
+	    wf.async = true;
+	    s.parentNode.insertBefore(wf, s);
+	} else {
+	    WebFont.load(WebFontConfig);
+	}
+    })(document);
+  #+END_SRC
 
 **** Web Safe Fonts <<<css:font-face:web safe fonts>>>
 - Arial, Arial Black
@@ -27945,7 +28049,24 @@ https://amp.dev/documentation/components/amp-analytics/
 
        t.parentNode.insertBefore(newNode, t);
      #+END_SRC
-   - ~.innerHTML = 'html'~ :: equivalent to jQuery ~.html('html')~
+   - ~Element.innerHTML = 'html'~ :: equivalent to jQuery ~.html('html')~ <<js:innerHTML>>
+      - Get or set the HTML or XML markup contained within the element
+	 - Set :: remove all of the element's descendants and replace them with nodes constructed by parsing the HTML given in the string
+	    - ~<script>~ elements inserted using innerHTML do not execute when they are inserted
+	    - ~onclick~ attributes are valid
+      - Refer to [[php:json_encode][php:json_encode]]
+      - May use with array
+	#+BEGIN_SRC js
+	  var html = [];
+	  // var html = <?php echo $html; ?>;
+	  html.push(<?php echo $html; ?>);
+	  html.push(<?php echo $html2; ?>);
+	  // t.innerHTML = html; // html is converted to string with commas
+	  t.innerHTML = html.join('');
+	#+END_SRC
+   - ~Element.innerText~ :: get and set text inside the element
+      - Get :: result is a plain text with all HTML tags stripped
+      - Set :: set text only. No HTML tag parsing
    - Refer to tool:html:document.write
    - Example :: https://support.jwplayer.com/customer/portal/articles/1406723#fndtn-method-1
       - Refer to video:jw 
@@ -57804,7 +57925,7 @@ autoindex deflate expires filter mime rewrite setenvif mpm_prefork
    - ~apache2ctl configtest~
    - ~apachectl configtest~
    - ~httpd -t~
-- Reload
+- Reload <<apache:reload>>
    - ~sudo systemctl reload apache2.service~ :: Ubuntu
    - ~/etc/init.d/apache2 reload~ :: for apache that is initialized using command e.g. php apache docker container
    - ~apache2ctl graceful~ :: to stop and start httpd daemon
@@ -57814,6 +57935,15 @@ autoindex deflate expires filter mime rewrite setenvif mpm_prefork
    - ~/etc/init.d/apache2 restart~
    - ~service httpd restart~
 - On Ubuntu, use ~systemctl status apache2.service~
+
+*** a2ensite, a2dissite <<apache:a2ensite>>
+- ~/etc/apache2/sites-available/000-client1-site1.conf~
+   - Should have ~<VirtualHost>~ block
+- ~sudo a2ensite 000-client1-site1~
+   - create a symlink in ~/etc/apache2/sites-enabled/~
+- ~sudo a2dissite 000-client1-site1~
+   - remove a symlink in ~/etc/apache2/sites-enabled~
+- [[apache:reload][apache:reload]]
 
 ** Modules
 - Available modules :: ~/etc/apache2/mods-available~
@@ -61005,6 +61135,25 @@ Try using ssh server instead.
       - ~*.[Tt][Mm][Pp].~ :: match ~*.tmp
       - ~.idea~ ~.git~
 
+*** Resolve conflict
+- Let's say the conflict is on file.txt. These files are created when a conflict happens
+   - file.txt :: the auto merge file with ~<<<<< .mine ... ||||| .r123 ====== ... >>>>> .r321~
+   - file.txt.mine :: your working copy before conflict happens e.g. before ~svn up~ or ~svn commit~
+   - file.txt.r123 :: your working copy is built upon revision #123
+   - file.txt.r321 :: the pulled/updated version or the remote version of the file which has a higher revision number than your local and thus a conflict creates
+- Double click on the file where has conflict to open WinMerge. 3 vertical panes from left to right
+   - file.txt: Working Base :: this is file.txt.r123
+      - not editable
+   - file.txt: Remote file  :: this is file.txt.r321
+      - not editable
+   - file.txt: Working Copy :: this is file.txt
+      - make any change and save the change to remove those ~<<<<< |||| ==== >>>>~ lines
+      - When done, close WinMerge
+- After conflicts are dealt with, mark as resovled for that file
+   - Right click on the repo > TortoiseSVN > Resolve..
+   - Then select the file and click OK
+      - All 3 files are deleted :: file.txt.mine, file.txt.r123 and file.txt.r321
+
 ** TS: ~svn: E200030: database disk image is malformed~
 - https://stackoverflow.com/questions/38422025/svn-e200030-database-disk-image-is-malformed
   #+BEGIN_SRC sh
@@ -62726,7 +62875,8 @@ MySQL 5.6
 #+END_SRC
 
 *** Index, Composite Index <<mysql:index>>
-- A column with <= 767 bytes can be indexed in Antelope file format which is default for MySQL 5.6 or less
+- Index columns used in ~WHERE~, ~ORDER BY~ and ~GROUP BY~ clauses
+- A column with <= 767 bytes can be indexed in Antelope file format which is default for MySQL 5.6 or lower
    - ~varchar(255)~ in ~utf8~ charset max byte size 255*3=765
    - ~varchar(191)~ in ~utf8mb4~ charset max byte size 191*4=764
    - Barracuda file format and DYNAMIC row format become the default since MySQL 5.7.7, which allows index key prefixes up to 3072 bytes (Barracuda + COMPRESSED row format can also reach)
@@ -63076,6 +63226,13 @@ All columns of a table
   WHERE table_schema ='mydbname'
   AND table_name = 'mytablename'
 #+END_SRC
+
+**** EXPLAIN
+- Use it before ~SELECT~, ~DELETE~, ~INSERT~, ~REPLACE~ AND ~UPDATE~ statements
+- Output
+   - key :: when it's NULL means it's a full table scan
+   - rows :: number of rows to scan
+      - when ~key~ is NULL, it'll be the table's total number of rows
 
 *** User Variable
 #+BEGIN_SRC sql
