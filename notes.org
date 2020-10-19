@@ -24622,6 +24622,19 @@ CSS fallback
    - Parent is ~<table>~
    - Only one is permitted in a ~<table>~
 
+*** ~<input>~ <<html:input>>
+**** type=number
+- When attribute ~step~ is supported, UI widget (arrow up/down keys and validation) is available
+   - Not supported on mobile :: iOS Safari, Android browser, Chrome for Andriod
+   - Supported on desktop browsers :: for IE, Edge, FF, Chrome, Safari, Opera
+- Attributes ~step~, ~min~, ~max~ are part of the validation and increment/decrement
+#+BEGIN_SRC html
+  <input type="number">
+  <input type="number" step="0.01" class="currency">
+  <input type="number" step="0.01" min="0" class="currency-positive">
+  <input type="number" step="any" class="any-decimal">
+#+END_SRC
+
 ** Meta
 *** Meta Refresh (redirect)
 #+BEGIN_SRC html
@@ -28104,7 +28117,7 @@ These values are considered as false
 - Variables defined outside of any functions are Global
 - Only function can create local scope
    - This is called function-level scoping while PHP has block-level scoping, where new scope can be defined in block
-   - Without using ~var~ or ~let~ to declare variables in any function and run, those variables are global
+   - Without using ~var~ or ~let~ to declare variables in any function (it's called implicitly declared) and that function runs, those variables are global
 
 #+BEGIN_SRC js
   myFunction();
@@ -28234,7 +28247,9 @@ These values are considered as false
   }();
 #+END_SRC
 
-Revealing Module pattern
+*** Revealing Module Pattern
+It means to use function scope, IIFE and JavaScript Object Prototype to create public and private methods
+
 #+BEGIN_SRC js
   // Expose module as global variable
   var singleton = function(){
@@ -29771,7 +29786,7 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
 - Strict mode applies to entire scripts or to individual functions. It doesn't apply to block statements enclosed in ~{}~ braces; attempting to apply it to such contexts does nothing. ~eval~ code, ~Function~ code, event handler attributes, strings passed to ~WindowTimers.setTimeout()~, and related functions are entire scripts, and invoking strict mode in them works as expected
 
-** ~this~ <<js:this>>
+** ~this~ and ~self~ <<js:this>>
 - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this
 - It refers to an instance which is created using ~new~ keyword ora as object literals. Otherwise, ~this~ will default to the ~window~ scope
 - Arrow functions are different and follow the normal variable lookup rules
@@ -29802,6 +29817,8 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
        var p = new Person();
        console.log('window.age', window.age); // 10
      #+END_SRC
+- self :: there is no self keyword in JavaScript. If JavaScript is run on a browser, ~window.self = window~ and all properties of ~window~ can be directly accessed. So ~self~ is ~windows~ unless it's overriden in other scopes
+
 *** ~globalThis~ <<js:globalThis>>
 - The global ~this~ value e.g. the global object
 - Different environments have different global ~this~ object
@@ -31588,27 +31605,26 @@ Changes the hash in URL and then go to the element
 #+END_EXAMPLE
 
 *** Get radio value, Event on radio buttons
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC html
   <input type="radio" name="genderS" value="1" checked> Male
   <input type="radio" name="genderS" value="0"> Female
+#+END_SRC
 
+#+BEGIN_SRC js
   function getRadioValue(name) {
     var radios = document.getElementsByName(name);
     if (!!radios && radios.length > 0) {
       for (var i = 0, length = radios.length; i < length; i++) {
-        if (radios[i].checked) {
-          return radios[i].value; // only one radio can be logically checked, don't check the rest
-        }
+	if (radios[i].checked) {
+	  return radios[i].value; // only one radio can be logically checked, don't check the rest
+	}
       }
     }
     return null;
   }
 
   getRadioValue('genderS');
-
-
-
-#+END_EXAMPLE
+#+END_SRC
 
 *** Detect iOS version
 https://gist.github.com/Craga89/2829457
@@ -66189,7 +66205,21 @@ e.g. all vendor prefixes for box-sizing. Type ~-box-sizing~ and hit tab
 Make the xml file part of a project to use Evaluate XPath... (right click) 
 
 *** Navigate, Display, Select inside Editor
-**** Paste from history ~C-S-v~
+**** Edit > Paste > Paste from history ~C-S-v~
+**** Edit > Find Usages
+- Find Usages :: ~C-g~
+   - If a JavaScript method is called inside a PHP Heredoc, you'll need to open the Edit Fragment, then you can Find Usages at the place where the JS method is defined
+      - You can still click on the called method insdie PHP Heredoc to locate the JS method declaration place
+   - TS: Control flow is too big to analyze
+      - When a file has too many lines inside a block scope e.g. ~switch~ with many lines
+      - or a file has a lot of function/method calls inside a block scope
+      - The inspection (e.g. Find Usages, Autocompletion) is turned off for that file
+- Find Usages Settings
+   - Scope :: default Project Files and Libraries
+   - General
+      - Search for text occurrences :: default unchecked
+      - Skip results tab with one usage :: default unchecked
+
 **** Show Whitespaces - Show unprintable characters (TAB)
 Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
@@ -66223,8 +66253,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
       - Which functions get called by this method/class? And which functions also call those functions?
 
 **** Navigate > Implementation(s) ~C-t~
-**** Recent Locations ~C-S-e~ ~M-left or right~
-
+**** View > Recent Locations ~C-S-e~ ~M-left or right~
 **** Next Error ~S-F1~
 - Navigate > Next / Previous Highlighted Error :: ~S-F1~
 
