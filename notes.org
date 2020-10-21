@@ -977,11 +977,14 @@ Require PHP 5.5+
   $a2 = [ 2135 => 'Doe', 3245 => 'Smith', 5623=>'Doe'];
 #+END_SRC
 
-*** Remove values <<php:array_diff>>
+*** Subset, Remove values, Intersection <<php:array_diff>>
 Single dimension
 #+BEGIN_SRC php
   $arr = ['nice_item', 'remove_me', 'another_liked_item', 'remove_me', 'remove_me_also'];
   $arr = array_diff($arr, ['remove_me', 'remove_me_also']);
+
+  $hasKeysThatAreNotSupposedToHave = ['nice_item', 'new key not existing'];
+  $diff = array_diff($hasKeysThatAreNotSupposedToHave, $arr);
 #+END_SRC
 
 *** Change values of all elements <<php:array_map>>
@@ -2277,25 +2280,36 @@ Separate different-type sections by a blank line
 
 **** @var <<PHPDoc:@var>>
 - [[PHPDoc:datatype][PHPDoc:datatype]]
+- For Class property :: variable name is not required
+  #+BEGIN_SRC php
+    class FooBar {
 
-#+BEGIN_SRC php
-  class FooBar {
+      /**
+       ,* The database connection object for this statement's DatabaseConnection.
+       ,*
+       ,* @var \Drupal\Core\Database\Connection
+       ,*/
+      public $dbh;
 
-    /**
-     ,* The database connection object for this statement's DatabaseConnection.
-     ,*
-     ,* @var \Drupal\Core\Database\Connection
-     ,*/
-    public $dbh;
+    }
 
-  }
+  #+END_SRC
+- Before a loop or expression :: variable name is required!
+  #+BEGIN_SRC php
+    /** @var \Sqlite3 $sqlite */
+    foreach ($connections as $sqlite) {
+	    // there should be no docblock here
+	    $sqlite->open('...');
+    }
+  #+END_SRC
+- Before an assignment :: variable name is required!
+  #+BEGIN_SRC php
+    // e.g. in `include` and `include_once`
+    // or an alias is desired
 
-  /** @var \Sqlite3 $sqlite */
-  foreach ($connections as $sqlite) {
-	  // there should be no docblock here
-	  $sqlite->open('...');
-  }
-#+END_SRC
+    /** @var \Sqlite3 $sqLite */
+    $sqlLite = $this;
+  #+END_SRC
 
 **** @see <<<PHPDoc:@see>>>
 #+BEGIN_SRC php
@@ -2400,17 +2414,7 @@ Examples
 *** PDO <<php:pdo>>
 - It supports named parameters and prepared statements on client side while [[php:mysqli][php:mysqli]] doesn't 
 
-** OOP
-*** OOP Features
-- Abstraction
-- Encapsulation (expose functionality and access control)
-   - protected :: accessed within class, inherited (parent) / inheriting (child) classes
-   - private :: only the current class can access
-   - prefix underscore for protected and private properties' names
-- Hierarchy :: inheritance
-- Modularity :: accomplish one task
-- Polymorphism :: interface interact with classes without knowing what class it is
-
+** OOP <<php:oop>>
 *** Sample
 RestJson.php
 #+BEGIN_SRC php
@@ -2431,16 +2435,23 @@ RestJson.php
 	  // Class properties
 	  // - Only primitive types e.g. int, string, number, array
 	  // - PHP version > 5.4, arithmetic calculation is allowed
+
     public static $valid_address_types = [
        RestJson::MY_CONSTANT_VAR => 'Residence',
     ];
 
-    public static $filterables; // singleton. same for every instance.
-	  // usage self::$a, parent::$a
+    public static $filterables;
+	  // singleton. same for every instance.
+	  // 
+	  // Can only be updated by static function/method
+	  // Static properties can be accessed in these ways (have to use :: but not ->)
+	  // - Inside class: self::$a, parent::$a
+	  // - Outside class:
+	  //   - RestJson::$staticProperty
+	  //   - $aClassInstance::$staticProperty
+    //   - $className = 'RestJson'; $className::$staticProperty
 
     public $lwp_options, $listings; // can be different for each instance
-
-    // Can only be updated by static function/method
 
     // variable and function names should be lowerCamel and avoid underscores
 
@@ -2451,7 +2462,6 @@ RestJson.php
       $this->lwp_options = self::getLwpOptions();
       // Call a instance function
       $this->listings = $this->getListings();
-
     }
 
     public static getLwpOptions() {
@@ -2462,13 +2472,32 @@ RestJson.php
       // Can't modify instance value $this->aPropertyName
       // Can't call instance method $this->aMethod();
     }
+	
+	  // static methods can be accessed in these ways (both :: and -> can be used)
+	  // - Inside class
+	  //   - RestJson::staticMethod();
+	  //   - $this->staticMethod();
+	  // - Outside class
+	  //   - RestJson::staticMethod();
+	  //   - $aClassInstance->staticMethod();
+	  //   - $className = 'RestJson'; $className::$staticMethod
 
     // Private and protected properties/methods prefixed with a single underscore
+	  // Private and protected cannot be used inside `include` `include_once`
   }
 
-  // Class::method()
-  // Class::$property
+  // Class::aStaticMethod()
+  // Class::$aStaticProperty
 #+END_SRC
+*** OOP Features
+- Abstraction
+- Encapsulation (expose functionality and access control)
+   - protected :: accessed within class, inherited (parent) / inheriting (child) classes
+   - private :: only the current class can access
+   - prefix underscore for protected and private properties' names
+- Hierarchy :: inheritance
+- Modularity :: accomplish one task
+- Polymorphism :: interface interact with classes without knowing what class it is
 
 *** Inheritance
 - Child can override parent's constants but not constants declared in interface
@@ -66467,8 +66496,12 @@ Settings > Editor > Code Style > File and Code Templates
 - This should be set to where the final CSS files are placed :: e.g. assets/css/style.css has ~background-image: url(../abc.jpg)~
    - Then the Resource Root should be set to assets/css
 
-*** Settings > Editor > TODO
+*** Settings > Editor
+**** ~TODO~
 - Default ~\b(todo|fixme)\b.*~, show comments with those as prefix in window TODO ~M-6~
+
+**** Inlay Hints
+- Show name for all arguments :: default off
 
 *** Database
 **** Console
