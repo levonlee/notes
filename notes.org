@@ -1000,7 +1000,7 @@ Single dimension
 
   // Lambda function is available since PHP 5.3.0
   $func = function($value) {
-      return $value * 2;
+	  return $value * 2;
   };
   print_r(array_map($func, range(1, 5)));
 
@@ -1010,6 +1010,21 @@ Single dimension
 	  $letters,
 	  array_keys($letters)
   );
+
+  // Lambda function or anonymous functions also work in array assignment for PHP 5.4 and plus
+  $c = 'c';
+  function abc($z) {
+	  return $z;
+  }
+  $a = [
+	  'a' => '1',
+	  'b' => function($z) {
+		  return abc($z);    
+	  },
+  ];   
+  $c= 'd';
+
+  var_dump($a['b']($c)); // d
 #+END_SRC
 
 *** Insert to any position of an array
@@ -1364,7 +1379,7 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 
 *** Variables to JSON <<php:json_encode>>
 - Input variable is
-   - String :: result is a double quoted string
+   - String :: result is wrapped with double quotes
       - with the following characters escaped by ~\~
 	 - ~"~
 	 - ~/~ :: e.g. ~</script>~ becomes ~<\/script>~
@@ -1382,7 +1397,8 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 	  html.push(<?php echo $html; ?>);
 	  </script>
 	#+END_SRC
-   - Array :: result is a double quoted string. The keys are double quoted with no escape
+   - Number :: result is not wrapped with double quotes
+   - Array :: result is not wrapped with double quotes. The keys are double quoted with no escape
      #+BEGIN_SRC php
        <?php
        $aNumericArray = json_encode([
@@ -66388,7 +66404,11 @@ Find Action > To Tab
 - Language Injection
    - For example, insert HTML code to a PHP variable. We need syntax highlighting of that HTML code inside the PHP file
    - https://www.jetbrains.com/help/phpstorm/using-language-injections.html#use-lang-annotation
-   - Use PHP nowdoc or heredoc, ~Alt+Enter~ and choose ~Inject Language using PHPDoc~, change ~@lang text~ to e.g. ~@lang JavaScript~, in heredoc, ~Alt+Enter~ and choose ~Edit JavaScript Segment~
+   - Use PHP nowdoc or heredoc
+      - Inside HereDoc ~Alt+Enter~ and choose ~Edit JavaScript Segment~
+   - Inline
+      - Place cursor in front of a string, ~M-Enter~ > ~Inject Language using PHPDoc~
+      - ~$a = /** @lang JavaScript */ "console.log('hello')";~ 
    - SQL Dialect
       - Settings > Editor > Language Injections
 	 - Manually find an entry named ~php: <<< SQL~. Duplicate it and change ~SQL~ to ~MYSQL~, now heredoc will use the MySQL dialect
