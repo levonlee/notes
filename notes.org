@@ -28118,6 +28118,10 @@ https://amp.dev/documentation/components/amp-analytics/
 	script.src = src;
 	script.async = false;
 	document.head.appendChild(script);
+
+	// another way
+	var s = document.scripts[0];
+	s.parentNode.insertBefore(script, s);
     });
   #+END_SRC
 - Load CSS files :: refer to css:js insert
@@ -66492,19 +66496,6 @@ Add comments around tags with id or class attribute.
 
 **** Join lines ~C-S-j~
 
-*** File and Code Templates, Code Style
-Settings > Editor > Code Style > File and Code Templates
-
-- Code Style
-   - Settings > Editor > Code Style
-   - Use Project scheme
-      - e.g. ~Set from~ WordPress Change Tab size and Indent from 4 to 2
-   - Set a default ~Code Style Scheme~ e.g. Project sheme and Reformat code will use that scheme
-   - If Code Style is set to PSR-12, enable Editor > Inspections > Code Style > PSR-12 
-   - JavaScript
-      - Punctuation
-	 - Use semicolon to terminate statements always
-
 *** Settings > Directories <<phpstorm:settings:directories>>
 **** Exclude Directories
 - Settings > Directories > Select and Exclude
@@ -66523,6 +66514,19 @@ Settings > Editor > Code Style > File and Code Templates
 **** Inlay Hints
 - Show name for all arguments :: default off
 
+**** Code Style
+***** For each language
+- Use Project scheme
+   - e.g. ~Set from~ WordPress Change Tab size and Indent from 4 to 2
+- Set a default ~Code Style Scheme~ e.g. Project sheme and Reformat code will use that scheme
+***** JavaScript
+- Punctuation
+   - Use semicolon to terminate statements always
+***** HTML
+- Other
+   - Do not indent children of :: add script
+
+**** File and Code Template
 *** Database
 **** Console
 When there're multiple statements (multiple ~;~), ~C-Enter~ (or to Execute from Menu) prompts a list of statements to run:
@@ -69636,21 +69640,53 @@ http://www.google.com/s2/favicons?domain=http://superuser.com/
   <script type="text/javascript">
     var onloadCallback = function() {
       alert("grecaptcha is ready!");
-      grecaptch.render('html_element', {
-        'sitekey' : 'your_site_key'
+      grecaptcha.render('html_element', {
+	'sitekey' : 'your_site_key'
       });
     };
   </script>
 
   <form action="?" method="POST">
-        <div id="html_element"></div>
-        <br>
-        <input type="submit" value="Submit">
+	<div id="html_element"></div>
+	<br>
+	<input type="submit" value="Submit">
   </form>
 
   <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit"
-          async defer>
+	  async defer>
   </script>
+#+END_SRC
+
+***** Use namespace
+#+BEGIN_SRC js
+  // v2 2020-10-22
+  myNamespace = {
+    myRender: function() {
+      grecaptcha.render('html_element', {
+	'sitekey' : '...'
+      });
+    },
+    loadReCaptcha: function() {
+      var g = document.createElement('script'), s = document.scripts[0];
+      g.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+      // cannot use dots in onload e.g. myNamespace.myRender
+      // https://www.google.com/recaptcha/api.js?onload=myNamespace.myRender&render=explicit
+      g.async = true;
+      g.defer = true;
+      g.onload = function() {
+	// this hack does not guarantee grecaptcha.render is loaded
+	// have to wrap with grecaptcha.ready
+	grecaptcha.ready(function() {
+	  grecaptcha.render('html_element', {
+	    'sitekey' : '...'
+	  });
+	});
+      };
+      s.parentNode.insertBefore(g, s);
+    },
+  };
+
+  myNamespace.loadReCaptcha();
 #+END_SRC
 
 **** Client - Multiple reCaptcha widgets/instance
@@ -69812,8 +69848,11 @@ bad-request :: The request is invalid or malformed.
 #+END_SRC
 
 **** CSS
-The button might be too large for width < 320px
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
+  /* center v2 2020-10-22 */
+  .g-recaptcha > div {margin:0 auto;}
+
+  /* The button might be too large for width < 320px */
   @media (max-width: 320px) {
     .g-recaptcha {
       transform:scale(0.77);
@@ -69822,7 +69861,7 @@ The button might be too large for width < 320px
       -webkit-transform-origin:0 0;
     }
   }
-#+END_EXAMPLE
+#+END_SRC
 
 *** Google Search - Advanced
 https://bynd.com/news-ideas/google-advanced-search-comprehensive-list-google-search-operators/
