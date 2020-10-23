@@ -3311,62 +3311,64 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 
 *** cURL <<php:curl>>
 #+BEGIN_SRC php
-  $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
-  // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
+    $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
+    // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
 
-  $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
+    $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
 
-  // Or
-  $myvars = [ 'myvar1' => $myvar1, 'myvar2' => $myvar2 ];
-  $myvars = http_build_query( $myvars ); // default content-type is application/x-www-form-urlencoded
+    // Or
+    $myvars = [ 'myvar1' => $myvar1, 'myvar2' => $myvar2 ];
+    $myvars = http_build_query( $myvars ); // default content-type is application/x-www-form-urlencoded
 
-  $ch = curl_init();
-  // use curl_setopt to set each one
-  // curl_setopt( $ch, CURLOPT_POST, 1);
+    $ch = curl_init();
+    // use curl_setopt to set each one
+    // curl_setopt( $ch, CURLOPT_POST, 1);
 
-  // use curl_setopt_array to set multiple
+    // use curl_setopt_array to set multiple
 
-  // $verbose = fopen('php://temp', 'w+'); // enable debug
+    // $verbose = fopen('php://temp', 'w+'); // enable debug
 
-  $options = array(
-   CURLOPT_URL => $url,
-   CURLOPT_POSTFIELDS => $myvars, // if value is array, then request content-type is multipart/form-data, otherwise x-www-form-urlencoded
-   CURLOPT_FOLLOWLOCATION =>  1,
-   CURLOPT_HEADER => 0,
-   CURLOPT_RETURNTRANSFER => 1,
-   // CURLOPT_VERBOSE => true, // enable debug
-   // CURLOPT_STDERR => $verbose, // enable debug
-   // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
-  );
+    $options = array(
+     CURLOPT_URL => $url,
+     CURLOPT_POSTFIELDS => $myvars, // if value is pure array, then request content-type should multipart/form-data
+     // if request content-type is application/json, then POSTFIELDS should be a json string
+	   // otherwise it should be x-www-form-urlencoded (use http_build_query($array))
+     CURLOPT_FOLLOWLOCATION =>  1,
+     CURLOPT_HEADER => 0,
+     CURLOPT_RETURNTRANSFER => 1,
+     // CURLOPT_VERBOSE => true, // enable debug
+     // CURLOPT_STDERR => $verbose, // enable debug
+     // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
+    );
 
-  // post json
-  $post = array( '...' );
-  $payload = json_encode($post);
+    // post json
+    $post = array( '...' );
+    $payload = json_encode($post);
 
-  $options = array(
-	  CURLOPT_URL => $url,
-	  CURLOPT_POST => 1, // post request with content-type: application/x-www-form-urlencoded header
-	  // For GET requests, just don't include CURLOPT_POST. Max 2048 bytes in URL restricted by browsers or servers. One TCP connection means the request sends http header and data together
-	  // For POST requests, browsers send http header, server responds with code 100 (continue), then browers send data (payload or CUROPT_POSTFIELDS), server responds with code 200
-	  CURLOPT_RETURNTRANSFER => 1, // return string rather than output
-	  CURLOPT_TIMEOUT => 5, // max. number of seconds
-	  CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
-	  CURLOPT_POSTFIELDS => $payload
-  );
+    $options = array(
+	    CURLOPT_URL => $url,
+	    CURLOPT_POST => 1, // post request with content-type: application/x-www-form-urlencoded header
+	    // For GET requests, just don't include CURLOPT_POST. Max 2048 bytes in URL restricted by browsers or servers. One TCP connection means the request sends http header and data together
+	    // For POST requests, browsers send http header, server responds with code 100 (continue), then browers send data (payload or CUROPT_POSTFIELDS), server responds with code 200
+	    CURLOPT_RETURNTRANSFER => 1, // return string rather than output
+	    CURLOPT_TIMEOUT => 5, // max. number of seconds
+	    CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
+	    CURLOPT_POSTFIELDS => $payload
+    );
 
-  curl_setopt_array($ch, $options);
+    curl_setopt_array($ch, $options);
 
-  $response = curl_exec( $ch );
+    $response = curl_exec( $ch );
 
-  // catch debug BEFORE close
-  /*
-  if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
-  rewind($verbose);
-  $verboseLog = stream_get_contents($verbose);
-  echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
-  ,*/
+    // catch debug BEFORE close
+    /*
+    if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
+    rewind($verbose);
+    $verboseLog = stream_get_contents($verbose);
+    echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+    ,*/
 
-  curl_close($ch);
+    curl_close($ch);
 #+END_SRC
 
 ** PHP HTTP Header <<<php:header>>>
@@ -69788,9 +69790,10 @@ opt_widget_id
 
 **** Server Validation
 - For web users, a new field (g-recaptcha-response) will be populated in HTML and you can get the user’s response in one of three ways
-   - ~g-recaptcha-response~ POST parameter when the user submits the form on your site
+   - A new form field with id ~g-recaptcha-response~ is created inside the container
+      - POST parameter when the user submits the form on your site
    - ~grecaptcha.getResponse(opt_widget_id)~ after the user completes the CAPTCHA challenge
-   - As a string argument to your callback function if data-callback is specified in either the g-recaptcha tag attribute or the callback parameter in the ~grecaptcha.render~ method
+   - As a string argument to your callback function if ~data-callback~ is specified in either the g-recaptcha tag attribute or the callback parameter in the ~grecaptcha.render~ method
 
 - URL: https://www.google.com/recaptcha/api/siteverify
 - METHOD: POST
@@ -69824,8 +69827,9 @@ bad-request :: The request is invalid or malformed.
     $C_CAPTCHA_google_request = [
       'url'     => 'https://www.google.com/recaptcha/api/siteverify',
       'options' => [
-        'secret'   => 'your-key',
-        'response' => $C_CAPTCHA,
+	'secret'   => 'your-key',
+	'response' => $C_CAPTCHA,
+			  // 'remoteip' => $_SERVER['REMOTE_ADDR'], // optional
       ],
     ];
 
@@ -69834,8 +69838,11 @@ bad-request :: The request is invalid or malformed.
       CURLOPT_URL            => $C_CAPTCHA_google_request['url'],
       CURLOPT_POSTFIELDS     => http_build_query($C_CAPTCHA_google_request['options']),
       CURLOPT_FOLLOWLOCATION => 1,
-      CURLOPT_HEADER         => 0,
+      // CURLOPT_HEADER         => 0, // not to include header in response
       CURLOPT_RETURNTRANSFER => 1,
+		  // CURLOPT_SSL_VERIFYPEER => 0,
+		  // CURLOPT_SSL_VERIFYHOST => 0,
+		  // CURLOPT_POST => 1,
     ];
     curl_setopt_array($ch, $options);
     $C_CAPTCHA_google_result = json_decode(curl_exec($ch), TRUE);
