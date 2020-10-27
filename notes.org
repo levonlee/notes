@@ -357,6 +357,14 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
    - To verify, restart ~php-fpm~ and ~var_dump(opcache_get_status())~
 
 ** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
+#+BEGIN_SRC php
+  define('MIN_VALUE', '0.0');   // RIGHT - Works OUTSIDE of a class definition.
+  define('MAX_VALUE', '1.0');   // RIGHT - Works OUTSIDE of a class definition.
+
+  //const MIN_VALUE = 0.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition.
+  //const MAX_VALUE = 1.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition.
+#+END_SRC
+
 ** Protocols
 *** ~php://~
 - ~php://stdin~ :: read only
@@ -3161,6 +3169,41 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 - Open-Closed Principle :: Classes should be open for extension but closed for modification
 
 *** Namespace
+- Namespace names are case-insensitive
+- Don't use ~PHP~ as namespace
+- PHP 5.3 and plus supports most of the functionalities
+- Works for ~const~, ~class~ and ~function~
+- Except ~declare~ statements, ~namespace~ should be the first line of the files
+- Don't declare namespace starting with backslash ~\~
+- When code under a namespace refers to other components that have a different namespace or no namespace, need to refer to it using fully qualified name which starts with backslash ~\~. e.g.
+   - ~\Symfony\Component\HttpFoundation\Request~
+   - ~new \DateTime~ :: PHP built-in functions
+- When code under no namespace, can refer to other components without backslash
+   - ~Symfony\Component\HttpFoundation\Request~
+   - ~new DateTime~
+- Alias or import using ~use~
+   - Alias for class and namespace supported on PHP 5.3 and plus
+   - Alias for function and constants on PHP 5.6 and plus
+   - e.g.
+     #+BEGIN_SRC php
+       namespace DBH\Helpers;
+
+       use \Symfony\Component\HttpFoundation\Request;
+       // Or
+       // use \Symfony\Component\HttpFoundation\Request as SymfonyRequest;
+
+       // WebFramework is DBH\Helpers\WebFramework
+       class WebFramework extends Request {}
+       // Or
+       // class WebFramework extends SymfonyRequest {}
+
+       // Both are eq. to
+       // class WebFramework extends \Symfony\Component\HttpFoundation\Request {}
+
+       // import or alias multiple components from the same path/package
+       use Symfony\Component\HttpFoundation\{Request, Response};
+     #+END_SRC
+
 ./index.php
 #+BEGIN_SRC php
   include_once __DIR__."/../app/config.php";
@@ -3170,6 +3213,8 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 ./../app/config.php
 #+BEGIN_SRC php
   namespace MyApp\Abc;
+  function convert_to_kelvin() {}
+  const MYCONST = 1;
   class CONFIG {
     static public function config() {
       return 'abc';
