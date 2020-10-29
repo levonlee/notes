@@ -1293,6 +1293,7 @@ The above will add ~<!doctype><html><body>~ tags, use this to do fragment
 #+BEGIN_SRC php
   preg_match_all ( string $pattern , string $subject [, array &$matches [, int $flags = PREG_PATTERN_ORDER [, int $offset = 0 ]]] ) : int
 #+END_SRC
+- Return the number of full pattern matches (could be 0). Or false if an error occured
 
 #+BEGIN_SRC php
   preg_match_all("|<[^>]+>(.*)</[^>]+>|U",
@@ -28882,23 +28883,52 @@ js:forEach
 - Syntax :: ~/pattern/modifiers~
 - Modifiers
    - [[https://www.php.net/manual/en/reference.pcre.pattern.modifiers.php][PHP PCRE Pattern Modifiers]]
-   - i :: case-insensitive
-   - g :: find all match
-   - m :: multiline
-   - U :: ungreedy
-   - s :: the dot metacharacter matches all characters including newlines
-- Brackets
-   - ~[abc]~ :: a character that is a, b or c
-   - ~[^abc]~ :: a character that is not a, b nor c
-   - ~[0-9]~ :: a digit
-   - ~[^0-9]~ :: a non-digit character
-   - Alphanumeric :: ~[0-9a-zA-Z]~
-   - Escape :: use backslash ~\~ to escape
-      - ~/~
-      - ~\~
+   - ~i~ :: case-insensitive
+   - ~g~ :: find all match
+   - ~m~ :: multiline
+   - ~U~ :: ungreedy
+   - ~s~ :: the dot metacharacter matches all characters including newlines
 - ~(x|y)~ :: one of x or y
+- Quantifier
+  | n+     | at least one of n                |
+  | n*     | zero or more                     |
+  | n?     | zero or one                      |
+  | n{X}   | \d{4} a 4-digit string           |
+  | n{X,Y} | \d{3,4} a 3-to-4-digit string    |
+  | n{X,}  | \d{3,} a at-least-3-digit string |
+  | n$     | at the end                       |
+  | ^n     | at the beginning                 |
+  | (?=n)  | non greedy match                 |
 
-Metacharacter
+***** Character Class or Character Set <<js:regex:character class>>
+- Brackets :: everything inside a pair of brackets are character class
+   - https://www.regular-expressions.info/refcharclass.html
+   - Refer to [[linux:regex:character class][linux:regex:character class]] for special character classes that can only be used inside ~[]~
+      - Some languages don't allow [[js:regex:metacharacter][js:regex:metacharacter]] inside ~[]~, so special character classes are the only choice
+   - Examples
+      - ~[abc]~ :: a character that is a, b or c
+      - ~[^abc]~ :: a character that is not a, b nor c
+      - ~[0-9]~ :: a digit
+      - ~[^0-9]~ :: a non-digit character
+      - Alphanumeric :: ~[0-9a-zA-Z]~
+   - Character Class subtraction :: ~[base-[subtract]]~
+      - ~[a-z-[aeiuo]]~ :: matches a single letter that is not a vowel
+   - Character Class intersection :: ~[base&&[intersect]]~
+      - ~[a-z&&[^aeiuo]]~ :: matches a single letter that is not a vowel
+   - Escape inside brackets :: use backslash ~\~ to escape
+      - non-literal characters 
+	 - ~^~
+	 - ~-~ :: as it's used in range and subtraction
+	 - ~]~
+	 - ~/~
+      - Characters in special occasions
+	 - ~\~ :: escape backslash itself
+	 - ~*~ :: no need to escape inside ~[]~
+
+***** Metacharacter <<js:regex:metacharacter>>
+- Some language can use metacharacters inside square brackets, some don't allow
+   - For those that don't allow, use special character classes inside ~[]~. Refer to [[linux:regex:character class][linux:regex:character class
+
 | .      | a character execpt newline or line terminator  |
 | \w     | a word character including _ [A-Za-z0-9_]      |
 | \W     | a non-word character. same as [$\w]            |
@@ -28918,18 +28948,7 @@ Metacharacter
 | \xdd   | \x57 is w                                      |
 |        |                                                |
 
-Quantifier
-| n+     | at least one of n                |
-| n*     | zero or more                     |
-| n?     | zero or one                      |
-| n{X}   | \d{4} a 4-digit string           |
-| n{X,Y} | \d{3,4} a 3-to-4-digit string    |
-| n{X,}  | \d{3,} a at-least-3-digit string |
-| n$     | at the end                       |
-| ^n     | at the beginning                 |
-| (?=n)  | non greedy match                 |
-
-***** Word Boundary ~\b~ and ~\B~
+****** Word Boundary ~\b~ and ~\B~
 #+BEGIN_SRC js
   var s = "Visit W3Schools";
   var pattern = /\bW3/g; // return words that start with W3
@@ -28948,7 +28967,7 @@ Quantifier
   var p = /is(?! all)/g; // Find any 'is' that doesn't have ' all' right behind
 #+END_SRC
 
-***** Match Tags <<<regex:match_tags>>>
+***** Match HTML Tags <<<regex:match_tags>>>
 Match all tags
 #+BEGIN_EXAMPLE
   '<[^>]*>'
@@ -49392,7 +49411,7 @@ wp:check file permissions
     find . -perm /u=w,g=w
   #+END_SRC
 
-*** Search Text in Files <<linux:grep>>
+*** Search Text in Files <<linux:grep>> <<linux:regex>>
 - Basic Regular Expression
   #+BEGIN_EXAMPLE
     ^ $ . [ ] - and * as Meta characters
@@ -49404,23 +49423,28 @@ wp:check file permissions
     \s # whitespace (space, tab, line break)
     \S # anything not whitespace
 
-    # Character set or Character Classes in PHP
-    [:alpha:]
-    [:digit:]
-    [:alnum:]
-    [:lower:]
-    [:upper:]
-    [:punct:]
-    [:space:] # space character (space, tab, new line)
-    [:blank:] # whitespace character
-    [:print:] # printable characters, including space
-    [:graph:] # printable characters, not including space
-    [:cntrl:] # Control character (non-printing)
-    [:xdigit:] # Hexadecimal characters (0-9, A-F, a-f)
-
-    # e.g.
-    echo 'AaBbCcDdEe' | grep --color '[[:upper:]]'
   #+END_EXAMPLE
+- Character Class :: anything inside a pair of brackets ~[]~
+   - Special character classes <<linux:regex:character class>>
+     #+BEGIN_SRC sh
+       # Character set or Character Classes in PHP
+       [:alpha:]
+       [:digit:]
+       [:alnum:]
+       [:lower:]
+       [:upper:]
+       [:punct:]
+       [:space:] # space character (space, tab, new line)
+       [:blank:] # whitespace character
+       [:print:] # printable characters, including space
+       [:graph:] # printable characters, not including space
+       [:cntrl:] # Control character (non-printing)
+       [:xdigit:] # Hexadecimal characters (0-9, A-F, a-f)
+
+       # e.g.
+       echo 'AaBbCcDdEe' | grep --color '[[:upper:]]'
+     #+END_SRC
+   - Refer to [[js:regex:character class][js:regex:character class]]
 - Basic usage
   #+BEGIN_SRC sh
     # only files at this directory, not subdirectories
