@@ -997,7 +997,7 @@ Single dimension
 
 *** Change values of all elements <<php:array_map>>
 - Lambda function <<php:lambda function>>
-   - Can be passed as data
+   - Can be passed as data to e.g. functions, array values
    - Not necessarily anonymous e.g. in JavaScript, the function passed in may have a function name
      #+BEGIN_SRC js
        $('#el').on('click', function clickHandler () {
@@ -1013,6 +1013,19 @@ Single dimension
 	 data).
 	 `);
        });
+     #+END_SRC
+   - Use array to pass object/class static/non-static methods as lambda
+     #+BEGIN_SRC php
+       $a = [
+	       'item1' => ['A', 'abc2'], // abc2 can be either static or non-static.
+	       // But abc2 method is run on static context which means if abc2 is non-static and `$this` is used inside
+	       // it will fail
+	       // Also calling non-static (instance) method in static context throws a warning
+	       // with namespace ['\LlPassObjectMethods\A', 'abc2'] or ['LlPassObjectMethods\A', 'abc2']
+	       'item2' => [$this, 'abc3'], // An instance's method is run
+       ];
+       $a['item1']('Pass self instance method in static context');
+       $a['item2']('Pass self instance method in instance context');
      #+END_SRC
 - Arrow function <<php:arrow function>>
    - https://www.php.net/manual/en/functions.arrow.php
@@ -3192,10 +3205,10 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
    - If another part of a large function does not share same variables as the first part, split them!
 - Open-Closed Principle :: Classes should be open for extension but closed for modification
 
-*** Namespace
+*** Namespace <<php:namespace>>
 - Namespace names are case-insensitive
 - Don't use ~PHP~ as namespace
-- PHP 5.3 and plus supports most of the functionalities
+- Since PHP 5.3 supports most of the functionalities
 - Works for ~const~, ~class~ and ~function~
 - Except ~declare~ statements, ~namespace~ should be the first line of the files
 - Don't declare namespace starting with backslash ~\~
@@ -3225,7 +3238,10 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
        // class WebFramework extends \Symfony\Component\HttpFoundation\Request {}
 
        // import or alias multiple components from the same path/package
-       use Symfony\Component\HttpFoundation\{Request, Response};
+       use \Symfony\Component\HttpFoundation\{Request, Response};
+
+       // Run a WebFramkework method inside this file with namespace DBH\Helpers
+       WebFramework::aStaticMethod();
      #+END_SRC
 
 ./index.php
