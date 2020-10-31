@@ -2879,7 +2879,37 @@ Reference is faster than clone and direct copy. But when ~===~ is used to compar
 #+END_SRC
 
 *** Autoload Classes
+- Autoloading is not available if using PHP in CLI mode
+- ~spl_autoload_register~ Parameters
+   - $autoload_function :: register this to ~__autoload()~ functions
+      - If no parameter is provided ~spl_autoload_register()~, then this is the default behavior
+	#+BEGIN_SRC php
+	  // Your custom class dir
+	  define('CLASS_DIR', 'class/')
+
+	  // Add your class dir to include path
+	  set_include_path(get_include_path().PATH_SEPARATOR.CLASS_DIR);
+
+	  // You can use this trick to make autoloader look for commonly used "My.class.php" type filenames
+	  spl_autoload_extensions('.class.php'); // or ".php,.inc"
+
+	  // Use default autoload implementation which is
+	  //spl_autoload ( string $class_name [, string $file_extensions = spl_autoload_extensions() ] ) : void
+
+	  spl_autoload_register();
+
+	  // Later on..
+	  use My\Name\Object
+	  // it will map to "class/My/Name/Object.class.php" file path!
+	#+END_SRC
+      - Not necessary to use ~include_once~ or ~require_once~ as the class is for sure missing
+   - $throw :: whether to throw exceptions when $autoload_function cannot be registered
+   - $prepend :: prepend $autoload_function to the autoload queue instead of appending it
+- Use ~spl_autoload_functions();~ to get all registered ~__autoload()~ functions
+
 #+BEGIN_SRC php
+  spl_autoload_register ([ callable $autoload_function [, bool $throw = TRUE [, bool $prepend = FALSE ]]] ) : bool
+
   function my_autoloader($class) {
       include 'classes/' . $class . '.class.php';
   }
@@ -2896,9 +2926,9 @@ Reference is faster than clone and direct copy. But when ~===~ is used to compar
   namespace Foobar;
 
   class Foo {
-      static public function test($name) {
-	  print '[['. $name .']]';
-      }
+	  static public function test($name) {
+		  print '[['. $name .']]'; // [[Foobar\InexistentClass]] 
+	  }
   }
 
   spl_autoload_register(__NAMESPACE__ .'\Foo::test'); // As of PHP 5.3.0
@@ -3216,7 +3246,8 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 
 *** Namespace <<php:namespace>>
 - Namespace names are case-insensitive
-- Don't use ~PHP~ as namespace
+- Don't use ~PHP~ as namespace name
+- ~__NAMESPACE__~ magic constant to refer to the current namespace
 - Since PHP 5.3 supports most of the functionalities
 - Works for ~const~, ~class~ and ~function~
 - Except ~declare~ statements, ~namespace~ should be the first line of the files
