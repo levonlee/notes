@@ -356,13 +356,16 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
    - Load all dependecies e.g. parent class first
    - To verify, restart ~php-fpm~ and ~var_dump(opcache_get_status())~
 
-** [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]] and [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]]
+** Constant, [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]], [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]], ~define~ vs ~const~
+- Predefined variables :: https://www.php.net/manual/en/language.variables.predefined.php
+   - Reserved variables :: https://www.php.net/manual/en/reserved.variables.php
+   - Superglobals :: https://www.php.net/manual/en/language.variables.superglobals.php
 #+BEGIN_SRC php
-  define('MIN_VALUE', '0.0');   // RIGHT - Works OUTSIDE of a class definition.
-  define('MAX_VALUE', '1.0');   // RIGHT - Works OUTSIDE of a class definition.
+  define('MIN_VALUE', '0.0');   // RIGHT - Works OUTSIDE of a class definition
+  define('MAX_VALUE', '1.0');   // RIGHT - Works OUTSIDE of a class definition
 
-  //const MIN_VALUE = 0.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition.
-  //const MAX_VALUE = 1.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition.
+  //const MIN_VALUE = 0.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition
+  //const MAX_VALUE = 1.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition
 #+END_SRC
 
 ** Protocols
@@ -820,7 +823,8 @@ Convert a string format to another
   $a = (int) @$user['id']; // int 0
 #+END_SRC
 
-** Spaceship Operator
+** Spaceship Operator <<php:spaceship operator>>
+- Since PHP 7
 - ~$a <=> $b~ :: returns -1 ($a less than $b), 0 or 1
 
 ** Multibyte <<<php:multibyte>>>
@@ -862,17 +866,33 @@ Here's how to remove any 4 byte character:
 #+END_SRC
 
 *** array_merge, array_merge_recursive <<<php:array_merge>>>
-array_merge
-- only merge on the first level
-- If key is the same, value at later array will overwrite the first array's value
-- If key does not exist in earlier arrays, the key/value will be appended
-- However, if key is numeric, values will always be appended (not overwriting) disregarding the values are the same
+- ~array_merge~
+  #+BEGIN_SRC php
+    $name = [
+	    'name' => 'Li',
+	    'age' => 24,
+    ];
+    $job = [
+	    'job' => 'developer',
+	    'salary' => 123321,
+    ];
+    array_merge($name, $job);
+    $result = [
+	    'name' => 'Li',
+	    'age' => 24,
+	    'job' => 'developer',
+	    'salary' => 123321,
+    ]
+  #+END_SRC
+   - only merge on the first level
+   - If key is the same, value at later array will overwrite the first array's value
+   - If key does not exist in earlier arrays, the key/value will be appended
+   - However, if key is numeric, values will always be appended (not overwriting) disregarding the values are the same
+- ~array_merge_recursive~
+   - If key is the same, values will be appended as array
+   - Very different from array_merge
 
-array_merge_recursive
-- If key is the same, values will be appended as array
-- Very different from array_merge
-
-*** Append an array to another <<php:array_push>>
+*** Append an array to another <<php:array_push>> <<php:splat operator>>
 - If 2 arrays only have numeric keys e.g. ~['a', 1, 2]~, php:array_merge can be used to append
 - Use this for appending 2 arrays
 
@@ -891,12 +911,21 @@ array_merge_recursive
   $php56AndPlus = $a;
   array_push($php56AndPlus, ...$b);
   var_dump($php56AndPlus, '$php56AndPlus');
+
+  // splat operator since PHP 5.6
+  $array3 = [
+	  'prepend',
+	  ...$array1,
+	  'inTheMiddle',
+	  ...$array2,
+	  'append',
+  ];
 #+END_SRC
 
 *** Union
 #+BEGIN_SRC php
   $a = [
-    'one' => 'a1',
+	  'one' => 'a1',
 	  'two' => 'a2',
 	  'three' => 'a3'
   ];
@@ -920,7 +949,7 @@ array_merge_recursive
 *** Last element
 $_last = end($target_array);
 reset($target_array);
-*** in_array <<php:in_array>>
+*** ~in_array~ <<php:in_array>>
 #+BEGIN_SRC php
   in_array ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : bool
 #+END_SRC
@@ -952,7 +981,7 @@ reset($target_array);
 #+END_SRC
 
 *** Get values of a column in a multidimensional array <<php:array_column>>
-Require PHP 5.5+
+Since PHP 5.5
 
 #+BEGIN_SRC  php
   $records = array(
@@ -1005,8 +1034,44 @@ Single dimension
 #+END_SRC
 
 *** Change values of all elements <<php:array_map>>
+- Anonymous function :: is just a function that has no name
+   - It may or may not create a closure
+   - However, in PHP, any anonymous function is implemented using the Closure class
+- Closure :: is a function that captures the state of the surrounding environment and create its own scope <<php:closure>>
+   - A closure can have a function name in JavaScript
+   - A closure may not be defined as a result of immediately run. Refer to [[js:closure][js:closure]]
+   - In PHP, any anonymous function is implemented using the ~Closure~ class <<php:closure:use>>
+     #+BEGIN_SRC php
+       $message = 'hello';
+
+       $example = function ($arg) use ($message) {
+	   var_dump($arg . ' ' . $message);
+       };
+
+       // Inherit by-reference
+       $example = function () use (&$message) {
+	   var_dump($message);
+       };
+       $example();
+
+       // Very different from JavaScript's Closure
+       $create_printer = function () {
+	   $my_number = 42;
+
+	   // First, `use` has to be used
+	   return function () use ($my_number) {
+	       $my_number++; // can only modify $my_number inside the closure
+	       echo "My fav number is $my_number\n";
+	   };
+       };
+
+       $my_printer = $create_printer();
+       $my_printer(); // My fav number is 43
+       $my_printer(); // My fav number is 43
+     #+END_SRC
+      - Since 7.1, cannot ~use~ superglobals, ~$this~ or variables with the same name as a parameter
 - Lambda function <<php:lambda function>>
-   - Can be passed as data to e.g. functions, array values
+   - A function can be passed as data to e.g. functions, array values
    - Not necessarily anonymous e.g. in JavaScript, the function passed in may have a function name
      #+BEGIN_SRC js
        $('#el').on('click', function clickHandler () {
@@ -1038,8 +1103,12 @@ Single dimension
      #+END_SRC
 - Arrow function <<php:arrow function>>
    - https://www.php.net/manual/en/functions.arrow.php
-   - A shorthand to define a function. As far as I know in all languages, it's anonymous function
+   - A shorthand to define a function. As far as I know in all languages
+      - it's anonymous function
+      - called short closures in PHP
    - Since PHP 7.4
+      - Only one expression in the function body with no curly brackets
+      - Don't need to use ~use~
 
 #+BEGIN_SRC php
   function sanitize($s) {
@@ -1092,7 +1161,7 @@ Single dimension
   array_unshift($original, "f", "g");
 #+END_SRC
 
-*** array_filter <<php:array_filter>>
+*** ~array_filter~ <<php:array_filter>>
 - cb function should return true or false. By default, only value is passed to the callback function. Unless flag is used
 - ~array_filter($my_array)~ can be used to roughly filter empty/null elements out
 - Original index number is used!
@@ -1110,7 +1179,15 @@ Single dimension
   }, ARRAY_FILTER_USE_BOTH));
 #+END_SRC
 
-*** array_shift, array_unshift, array_pop
+*** ~array_reduce~ <<php:array_reduce>>
+- Refer to [[js:array:reduce][js:array:reduce]]
+#+BEGIN_SRC php
+  array_reduce ( array $array , callable $callback [, mixed $initial = NULL ] ) : mixed
+
+  callback ( mixed $carry , mixed $item ) : mixed
+#+END_SRC
+
+*** ~array_shift~, ~array_unshift~, ~array_pop~
 #+BEGIN_SRC php
   // array_pop ( array &$array ) : mixed
   // pop and return the value of the last element of array, shorten the array by one element
@@ -1122,23 +1199,37 @@ Single dimension
   // prepend passed elements to the front of the array. Literal keys won't be changed
 #+END_SRC
 
-*** array_search <<php:array_search>>
+*** ~array_search~ <<php:array_search>>
 #+BEGIN_SRC php
   array_search ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : mixed
 #+END_SRC
 - return :: the first key that has the value
 
-*** Sort arrays
+*** Sort arrays <<php:sort>>
 - http://php.net/manual/en/array.sorting.php
 - All functions act directly on the input array
 - Maintain key association means the keys are not modified otherwise the keys are reset numerically (0,1,2)
+
+**** sort
+- Mutate
+- Flags
+   - SORT_REGULAR
+   - SORT_NUMERIC
+   - SORT_STRING
+   - SORT_LOCALE_STRING
+   - SORT_NATURAL
+   - SORT_FLAG_CASE :: case-insensitive for SORT_STRING and SORT_NATURAL
+#+BEGIN_SRC php
+  sort ( array &$array [, int $sort_flags = SORT_REGULAR ] ) : bool
+#+END_SRC
 
 **** ksort <<php:ksort>>
 Sort (associative) array by its key
 
 **** usort uasort - value sort <<php:usort>>
 - Mutating
-- ~usort~ doesn't maintain key association but uasort does. If callback function returns negative integer, means the comparison is less than
+- ~usort~ doesn't maintain key association but ~uasort~ does. If callback function returns negative integer, means the comparison is less than
+- Refer to [[php:spaceship operator][php:spaceship operator]]
 
 #+BEGIN_SRC php
   $to_sort = [
@@ -1164,12 +1255,12 @@ Sort (associative) array by its key
   }
   usort($myArray, 'sortByOrder');
 
-  // PHP 5.3 and above
+  // Since PHP 5.3
   usort($myArray, function($a, $b) {
 	  return $a['order'] - $b['order'];
   });
 
-  // PHP 7 and above
+  // Since PHP 7
   usort($myArray, function($a, $b) {
 	  return $a['order'] <=> $b['order'];
   });
@@ -1185,6 +1276,12 @@ Sort (associative) array by its key
 	  }
 	  return $retval;
   });
+#+END_SRC
+
+*** ~array_reverse~ <<php:array_reverse>>
+- $preserve_keys :: if true, numeric keys are preserved. Non-numeric keys are not affected by this setting and will always be preserved
+#+BEGIN_SRC php
+  array_reverse ( array $array [, bool $preserve_keys = FALSE ] ) : array
 #+END_SRC
 
 *** array_keys, array_values <<php:array_keys>> <<php:array_values>>
@@ -3244,7 +3341,7 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
    - If another part of a large function does not share same variables as the first part, split them!
 - Open-Closed Principle :: Classes should be open for extension but closed for modification
 
-*** Namespace <<php:namespace>>
+*** Namespace <<php:namespace>> <<php:namespace:use>>
 - Namespace names are case-insensitive
 - Don't use ~PHP~ as namespace name
 - ~__NAMESPACE__~ magic constant to refer to the current namespace
@@ -3277,7 +3374,7 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
        // Both are eq. to
        // class WebFramework extends \Symfony\Component\HttpFoundation\Request {}
 
-       // import or alias multiple components from the same path/package
+       // import or alias multiple components from the same path/package since PHP 7
        use \Symfony\Component\HttpFoundation\{Request, Response};
 
        // Run a WebFramkework method inside this file with namespace DBH\Helpers
@@ -28414,8 +28511,9 @@ These values are considered as false
        }
      #+END_SRC
 
-** Closure, Javascript Singleton
-*** IIFE vs Revealing Module Pattern
+** Closure, Javascript Singleton <<js:closure>>
+*** Compare to PHP Closure [[php:closure][php:closure]]
+*** IIFE (Immediately Invoked Function Expression)
 #+BEGIN_SRC js
   // function declaration
   function() { console.log('test') }
@@ -28488,6 +28586,19 @@ It means to use function scope, IIFE and JavaScript Object Prototype to create p
   // Or
   // var module1 = new Module();
   module.sayHello();
+#+END_SRC
+
+*** Closure does not have to be defined as a result of immediately run
+#+BEGIN_SRC js
+  function outer() {
+  var b = 10;
+     function inner() {
+	   var a = 20; 
+	   console.log(a+b);
+      }
+     return inner;
+  }
+  var X = outer();
 #+END_SRC
 
 *** Syntax, When to use closure?
@@ -28773,8 +28884,9 @@ js:forEach
   // return true if at least one return is true
 #+END_SRC
 
-**** array.reduce()
-- The reduce() method executes a reducer function (that you provide) on each element of the array, resulting in a single output value
+**** array.reduce() <<js:array:reduce>>
+- The method executes a provided reducer function on each element of the array, resulting in a single output value
+- Refer to [[php:array_reduce][php:array_reduce]]
 - ~arr.reduce(callback( accumulator, currentValue[, index[, array]] )[, initialValue])~
 #+BEGIN_SRC js
   var sum = [0, 1, 2, 3].reduce(
@@ -66022,20 +66134,43 @@ change to version 1.1 or get rid of the characters
    - Which execution model? Behavior of elements of the language
    - Code organization :: e.g. grouping a code into units along with the state that is modified by the code
    - Style of syntax and grammar
-- Imperative programming
-   - Imperative programs spend lines of code describing the specific steps used to achieve the desired results — the flow control: How to do things
-- Declarative programming
-   - Declarative programs abstract the flow control process, and instead spend lines of code describing the data flow: What to do. The how gets abstracted away
-   - To minimize or eliminate side effects
-   - One example is functional programming (FP)
-      - FP is the process of building software by composing pure functions, avoiding shared state, mutable data, and side-effects
-      - Functional code tends to be more concise, more predictable, and easier to test than imperative or object oriented code
-	 - An immutable object is an object that can’t be modified after it’s created. Conversely, a mutable object is any object which can be modified after it’s created. 
-      - Pure vs impure functions. A pure function must satisfy both of:
-	 - Referential transparency :: the function always gives the same return value for the same arguments. This means that the function cannot depend on any mutable state
-	    - Function composition :: ~a(b(c(x)))~
-	 - Side-effect freee :: the function cannnot cause any side effects which may include I/O (console.log), modifyng a mutable object, reassigning a variable, etc.
-	    - Triggering any external process
+
+*** Imperative programming
+Imperative programs spend lines of code describing the specific steps used to achieve the desired results — the flow control: *How to do things*
+
+*** Declarative programming
+- Declarative programs abstract the flow control process, and instead spend lines of code describing the data flow: *What to do*. The how gets abstracted away
+- To minimize or eliminate side effects
+- Core concepts
+   - Immutability
+   - Separating functions and data
+   - First-class functions :: functions are treated like any other variable e.g. can be passed as an argument to other functions, returned by another function, be assigned as a value to a variable
+      - Refer to [[php:closure][php:closure]] [[js:closure][js:closure]]
+   - High-order function :: function that does at least one of the following
+      - take one or more functions as arguments
+      - return a function as its result
+   - Partial Application
+     #+BEGIN_SRC php
+       $add = fn($x, $y, $z) => $x + $y + $z;
+       $add_partial = fn($x) => fn($y) => fn($z) => $add($x, $y, $z);
+       // some code later on
+       $add_5 = $add_partial(5); // the value for the first parameter is confirmed
+       // some code later on
+       $add_5_and_6 = $add_5(6); // the value for the second parameter is confirmed
+       $total = $add_5_and_6(7); // eq. to $add_partial(5)(6)(7)
+     #+END_SRC
+   - Recursion
+   - Function Composition
+      - Provide other functions to a composed function, running the composed function will run these functions in series e.g. separate first/last names from full name, add initial based on first/last names. Chaining of these functions
+- One example is functional programming (FP)
+   - FP is the process of building software by composing pure functions, avoiding shared state, mutable data, and side-effects
+   - Functional code tends to be more concise, more predictable, and easier to test than imperative or object oriented code
+      - An immutable object is an object that can’t be modified after it’s created. Conversely, a mutable object is any object which can be modified after it’s created. 
+   - Pure vs impure functions. A pure function must satisfy both of:
+      - Referential transparency :: the function always gives the same return value for the same arguments. This means that the function cannot depend on any mutable state
+	 - Function composition :: ~a(b(c(x)))~
+      - Side-effect free :: the function cannnot cause any side effects which may include I/O (console.log), modifyng a mutable object, reassigning a variable, etc.
+	 - Triggering any external process
 
 ** Side Effect
 An operation, function or expression is said to have a side effect if it modifies some state variable values outside its local environment, that is to say has an observable effect besides returning a value (the main effect) to the invoker of the operation
@@ -66338,15 +66473,17 @@ Help > Default Keymap Reference
 - To change Project View :: Settings > Appearance & Behavior > Material Theme > Project View
 
 *** Change config directories
-https://intellij-support.jetbrains.com/hc/en-us/articles/207240985-Changing-IDE-default-directories-used-for-config-plugins-and-caches-storage
-
-Before doing that, export settings so that you can import them later.
-
-Help | Edit Custom Properties…
-
-idea.config.path=c:/work/idea/caches/trunk-config
-idea.system.path=c:/work/idea/caches/trunk-system
-idea.plugins.path=c:/work/idea/caches/trunk-plugins
+- https://intellij-support.jetbrains.com/hc/en-us/articles/207240985-Changing-IDE-default-directories-used-for-config-plugins-and-caches-storage
+- Before doing that, export settings so that you can import them later
+- Help | Edit Custom Properties…
+   - ~idea.config.path=c:/work/idea/caches/trunk-config~
+   - ~idea.system.path=c:/work/idea/caches/trunk-system~
+   - ~idea.plugins.path=c:/work/idea/caches/trunk-plugins~
+- Windows config path
+   - C:\Users\Li\AppData\Roaming\JetBrains\PHPStorm2020.1
+      - codestyles
+- Windows installation path
+   - C:\Program Files\JetBrains\PhpStorm 2020.1\bin
 
 *** Open big file
 Ensure phpStorm is running in 64bit.
@@ -66720,6 +66857,10 @@ When there're multiple statements (multiple ~;~), ~C-Enter~ (or to Execute from 
    - indexed :: the left bar is highlighted (in blue)
    - Primary key :: yellow key
    - Foreign key :: blue key
+
+**** Return DDL
+- DDL :: Data Definition Language
+- In View > Tool Windows > Database, select a database object, Source Editor button on the toolbar (~F3~)
 
 *** Plugins
 **** Rainbow Brackets
