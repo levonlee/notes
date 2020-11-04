@@ -1667,6 +1667,8 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 #+BEGIN_SRC php
   // Syntax %[flags][width][.precision]specifier
 
+  // escape % with %%
+
   $num = 5;
   $location = 'tree';
 
@@ -29254,10 +29256,21 @@ They are also used to call a method on a varible (obj or array) which doesn't ha
 - Every js:Object has a prototype object
 - prototype object's default properties and methods
    - constructor :: property. get/set
+   - ~Object.getPrototypeOf(anObj)~ :: e.g. ~Object.getPrototypeOf(document.getElementById('abc'))~
+   - Get all keys (not only enumerable) in an object including prototype-chain properties and non-enumerable properties <<js:Object.getOwnPropertyNames>>
+     #+BEGIN_SRC js
+       function logAllProperties(obj) {
+	    if (obj == null) return; // recursive approach
+	    console.log(Object.getOwnPropertyNames(obj));
+	    logAllProperties(Object.getPrototypeOf(obj));
+       }
+       logAllProperties(my_object);
+     #+END_SRC
+      - Compared to [[js:Object.keys][js:Object.keys]] which only gets own enumerable properties
    - hasOwnProperty('aProperty') :: bool
       - ~objA.hasOwnProperty('aProperty')~ :: not ~objA.prototype.hasOwnProperty('aProperty')~!
 	 - ~aProperty~ has to be direct (not ~objA.prototype.aProperty~) and not inherited
-	 - Use ~if ('key' in myObj)~ to check all keys
+	 - Use ~if ('key' in myObj)~ to check all enumerable keys js:for...in
    - isPrototypeOf() :: <<<js:prototype.isPrototypeOf>>>
       - Parent.prototype.isPrototypeOf(SubParent.prototype) is true
       - Whether or not SubParent has some prototype properties removed, added or modified
@@ -29384,6 +29397,10 @@ Always provide a base number :: parseInt("10", 10); // decimal base
 #+END_SRC
 
 *** for...in <<<js:for...in>>>
+- Loop through all enumerable properties of an object including prototype-chain properties
+- Can be used to loop through arrays
+- The retrieval order is not the same as the object define order! For both objects and arrays
+
 #+BEGIN_SRC js
   var myObj = {};
   for (var prop in myObj) {
@@ -29399,8 +29416,26 @@ Always provide a base number :: parseInt("10", 10); // decimal base
 #+END_SRC
 
 *** for...of <<<js:for...of>>>
-- js:for...in interates over all enumerable properties of an object while js:for...of iterates over elements of any collection that has a ~[Symbo.iterator]~ property
-   - js:for...of interates over iterable objects :: Array, Map, Set, String, TypedArray, arguments but not objects!
+- js:for...in interates over all enumerable properties of an object including prototype-chain properties
+- js:for...of iterates over elements of any collection that has a ~[Symbo.iterator]~ property
+   - interates over iterable objects :: Array, Map, Set, String, TypedArray, arguments but not objects!
+      - Use it with ~Object.keys(myObj)~ to loop through object keys
+	 - ~Object.keys(myObj)~ returns an array of enumerable own properties not including prototype-chain properties. Supported by all browsers <<js:Object.keys>>
+	    - Compare to [[js:Object.getOwnPropertyNames][js:Object.getOwnPropertyNames]] which gets all keys!
+	 - ~Object.values(myObj)~ returns an array of values
+	 - ~Object.entries(myObj)~ returns ~[ ["name","John"], ["age",30] ]~
+	    - IE not supported
+	 - Refer to js:prototype
+      - Works with NodeList
+	#+BEGIN_SRC js
+	  const elements = document.querySelectorAll('.foo');
+
+	  for (const element of elements) {
+	      element.addEventListener('click', doSomething);
+	  }
+	#+END_SRC
+   - Order is the same as the definition! 
+   - Since ES2015
 
 #+BEGIN_SRC js
   for (let value of iterable) {
@@ -57989,9 +58024,12 @@ Database Drivers
 	 - Then reboot and change UEFI or BIOS setting
 	    - name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration
 - Install [[vagrant:plugin][vagrant:plugin]]
-- Hypervisor :: software, firmware or hardware that creates and runs virtual machines
+- Hypervisor :: software, firmware or hardware that creates and runs virtual machines. May be called virtualization
    - Hyper-V :: Windows' hypervisor
-   - Virtualbox hypervisor
+      - ~Docker for Windows~ requires Hyper-V on Windows
+      - Windows Subsystem for Linux v2 (WSL2) supports docker using Hyper-V even on Windows Home edition
+   - Virtualbox hypervisor :: does not work with Windows having Hyper_V enabled
+      - Inside Virtualbox, cannot have another virtualization
 
 #+BEGIN_SRC sh
   vagrant --version
@@ -71601,6 +71639,7 @@ Web Symbols
 *** Castos.com
 *** Exercism.io
 * TODOs
+** TODO Vagrant on Hyper-V
 ** TODO Inspectlet.com
 ** TODO QUnit
 ** TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
