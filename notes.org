@@ -2656,6 +2656,34 @@ RestJson.php
   // Class::aStaticMethod()
   // Class::$aStaticProperty
 #+END_SRC
+*** Instantiate Dynamically
+#+BEGIN_SRC php
+  class A {
+	  public $property = '';
+
+	  public function __construct(string $property) {
+		  $this->property = $property;
+	  }
+
+	  public function getProperty() {
+		  var_dump($this->property);
+	  }
+
+	  public static function getInstance($property) {
+		  return new A($property);
+	  }
+  }
+
+  $className = 'A'; // namespace 'MyNamespace\A'
+  // Since PHP 7
+  $instance = new $className('abc');
+
+  // Below PHP 7
+  $instance = call_user_func([$className, 'getInstance'], 'abc');
+
+  $instance->getProperty();
+#+END_SRC
+
 *** OOP Features
 - Abstraction
 - Encapsulation (expose functionality and access control)
@@ -3410,7 +3438,7 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 #+END_SRC
 
 *** Cannot redeclare class
-class_exists is case-insensitive match. Better to restart PHP first.
+class_exists is case-insensitive match. Better to restart PHP first
 #+BEGIN_SRC php
   if (!class_exists('MyClass')) {
     class MyClass { }
@@ -3743,7 +3771,7 @@ Global names must be prefixed or use namespace.
   #+END_SRC
 - And run ~composer install~
 - PHP_CodeSniffer is installed at ~./vendor/bin/phpcs~ and it links to multiple standards installed above
-   - Set it as PHP_CodeSniffer phpstorm:php:quality tools
+   - Set it as PHP_CodeSniffer [[phpstorm:php:quality tools][phpstorm:php:quality tools]]
 
 ** PHPUnit <<php:phpunit>>
 - https://phpunit.de/getting-started/phpunit-9.html
@@ -54680,7 +54708,18 @@ image:tatemz/wp-cli
 #+END_EXAMPLE
 
 ** Kubernetes - K8s
-- Docker Engine :: runtime and packaging tool that must be installed on the hosts that run Docker
+- Container :: a collection of software processes unified by one namespace, with ac cess to an OS kernal that it shares with other containers and little to no access between containers
+   - Not tied to infrastructure - only needs Docker Engine
+   - Run as isolated processes in user space on the host OS
+- Virtual Machine
+   - one or many applications
+   - Necessary binaries and libraries
+   - The entire guest OS to interact with the applications
+- Docker instance :: a runtime instance of a Docker image contains:
+   - A Docker image
+   - An execution environment
+   - A standard set of instructions
+- Docker Engine :: runtime and packaging tools that must be installed on the hosts that run Docker
 - Docker Store or Docker Hub :: online cloud service where users can store and share Docker images
 - Kubernetes :: a platform to schedule and run containers on clusters of virtual machines. It runs on bare metal, virutal machines, private datacenter and public cloud
    - Written in Go by Google
@@ -57945,11 +57984,14 @@ Database Drivers
       - If Oracle VM VirtualBox Extension Pack is previously installed, upgrading the VB core will also auto update it
    - TS: ~Error: "VT-x/AMD-V hardware acceleration is not available"~
       - On Windows, check if ~Hyper-V~ or ~Windows Hypervisor Platform~ is on by going to Windows Features
-	 - ~optionalfeatures.exe~ goes directly to Windows Features.
+	 - Run ~optionalfeatures.exe~ to go directly to Windows Features
 	 - Turn it off. As Windows takes over the hardware acceleration
 	 - Then reboot and change UEFI or BIOS setting
 	    - name might be "Intel VT-x, VT-d, Virtualization Extensions, Vanderpool" under Chipset, Northbridge or CPU configuration
 - Install [[vagrant:plugin][vagrant:plugin]]
+- Hypervisor :: software, firmware or hardware that creates and runs virtual machines
+   - Hyper-V :: Windows' hypervisor
+   - Virtualbox hypervisor
 
 #+BEGIN_SRC sh
   vagrant --version
@@ -66956,7 +66998,7 @@ Settings > Languages & Frameworks > PHP
       - Varant Host URL: ssh://vagrant@127.0.0.1:2222
       - PHP executable :: /usr/bin/php7.3
       - Configuration file: /etc/php/7.3/cli/php.ini
-- Settings > Languages & Frameworks > PHP > Quality Tools <<<phpstorm:php:quality tools>>>
+- Settings > Languages & Frameworks > PHP > Quality Tools <<phpstorm:php:quality tools>>
    - Refer to [[php:composer:php_codesniffer][php:composer:php_codesniffer]]
    - Then Editor > Inspections > PHP > Quality Tools > enable ~PHP_CodeSniffer validation~, and choose one coding standard
 - Run Code > Inspect Code > select scope, double check Quality Tools settings, run
