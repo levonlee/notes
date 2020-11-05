@@ -28831,12 +28831,26 @@ This provides you more debugging info
   }
 #+END_SRC
 
-**** array.indexOf()
-#+BEGIN_SRC js
-  var a = [1,2,3];
-  a.indexOf(4); // -1
-  a.indexOf(1); // 0
-#+END_SRC
+**** array.indexOf(), array.prototype.includes()
+- array.indexOf()
+  #+BEGIN_SRC js
+    arr.indexOf(searchElement[, fromIndex])
+
+    var a = [1,2,3];
+    a.indexOf(4); // -1
+    a.indexOf(1); // 0
+
+    (['joe', 'jane', 'mary'].indexOf('jane') >= 0; // true
+  #+END_SRC
+   - All browsers support
+   - Strict equality :: ~===~
+- array.prototype.includes()
+  #+BEGIN_SRC js
+    arr.includes(valueToFind[, fromIndex])
+
+    ['joe', 'jane', 'mary'].includes('jane'); // true
+  #+END_SRC
+   - IE not supported
 
 **** array.pop(), array.shift(), array.push(), array.unshift()
 #+BEGIN_SRC js
@@ -28874,8 +28888,37 @@ This provides you more debugging info
   // = [1, 3, 5, 6, 7, 8]
 #+END_SRC
 
-**** array.slice()
-~var slice = a.slice(1,2); // C, S~
+**** array.slice() vs array.splice() <<js:array:slice>> <<js:array:splice>>
+- Use [[js:array:filter][js:array:filter]] to remove values from array instead if mutation is not desired
+ 
+#+BEGIN_SRC js
+  Array.prototype.slice([start[, end]])
+  // not mutated
+  // start :: from 0
+  // end :: from 0. Up to this index but not including
+
+  var a = [1,2,3];
+  var slice = a.slice(1,2); // [2]
+
+  let arrDeletedItems = array.splice(start[, deleteCount[, item1[, item2[, ...]]]])
+  // mutated!
+  // start :: from 0
+  // deleteCount :: An integer indicating the number of elements in the array to remove from start. If deleteCount is omitted, or if its value is equal to or larger than array.length - start (that is, if it is equal to or greater than the number of elements left in the array, starting at start), then all the elements from start to the end of the array will be deleted.
+  // item1, item2, ... Optional :: The elements to add to the array, beginning from start. If you do not specify any elements, splice() will only remove elements from the array.
+
+  var deletedItems = a.splice(1,2); // deletedItems = [2,3] and a becomes [1]
+
+  // remove values in array
+  var arr = [1, 2, 3, 4, 5, 5, 6, 7, 8, 5, 9, 0];
+  for( var i = 0; i < arr.length; i++){
+      if ( arr[i] === 5) {
+	  arr.splice(i, 1);
+	  i--;
+      }
+  }
+  //=> [1, 2, 3, 4, 6, 7, 8, 9, 0]
+#+END_SRC
+
 **** array.join(), array.toString(), array.valueOf()
 #+BEGIN_SRC js
   var join = a.join(","); // "P,C,S"
@@ -28918,11 +28961,13 @@ js:forEach
 
 **** array.map(), array.filter() <<js:array:filter>>
 - Do something while each item is iterated, join returned values into an array
-
+- Use [[js:array:splice][js:array:splice]] to remove values from array if mutation is desired
 #+BEGIN_SRC js
   var result = a.map(function(i) { return i.toUpperCase(); }); // result is a new array
   console.log(a); // a is not affected!
 
+  // array.filter
+  // not mutated
   a = a.filter(function(i) { 
      if ( true then remove condition ) { 
       return false; 
@@ -28931,6 +28976,14 @@ js:forEach
       return true; // keep
      }
   });
+
+
+  var array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+  var filtered = array.filter(function(value, index, arr){
+      return value > 5;
+  });
+  //filtered => [6, 7, 8, 9]
+  //array => [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
 #+END_SRC
 
 **** array.every(), array.some()
