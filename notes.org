@@ -21747,8 +21747,8 @@ Old Way uses ~<defs>~, ~viewBox~ has to be defined in ~<svg>~
 #+END_SRC
 
 ** Use Cases
-*** iOS Hover
-Other than <a> tag, :hover doesn't work on iOS. Try one of these workaround
+*** iOS Hover <<css:hover:ios>>
+Other than <a> tag, ~:hover~ doesn't work on iOS. Try one of these workaround
 #+BEGIN_EXAMPLE
   // add onclick
   <div onClick="return true" class="tast test">
@@ -24233,6 +24233,20 @@ Method
 | relatedTarget | use with mouseover event to find the element the cursor jsut exited or           |
 |               | with the mouseout event to find the element the cursor just entered              |
 
+- onclick on ~<a href="#">~ ~a tag~
+   - ~onclick="doSomething();return false"~ :: eq. to applying both ~event.preventDefault(); event.stopPropagation();~
+   - ~onclick="doSomething(event);"~
+     #+BEGIN_SRC js
+       function doSomething(e, myVal){
+	   //doing custom things with myVal
+
+	   //here I want to prevent default
+	   e = e || window.event;
+	   e.preventDefault();
+	   // e.stopPropagation();
+       }
+     #+END_SRC
+
 **** KeyboardEvent Object
 - Keyboard code (KC) :: actual key on keyboard (always lowercase)
 - Unicode Character code (UCC) :: result Unicode character (~Shift + w = W~, return the character code of ~W~)
@@ -24355,48 +24369,66 @@ Polyfill: [[https://github.com/jquery/PEP#why-pointer-events][jQuery PEP]]
 - ~accesskey~ :: Add shortcut. ~M-accesskey~
 - download :: filename. force download
 - ~contenteditable~ :: true or false. Become editable
-- contextmenu :: right click menu. Only in Firefox
+- ~contextmenu~ :: right click menu. Only in Firefox
 - ~dir~ :: ~ltr~ ~rtl~ or ~auto~. text direction
-- hidden :: 
-- spellcheck :: true or false
-- tabindex :: Tab button. 1 is first
+- ~hidden~ :: 
+- ~spellcheck~ :: true or false
 - title :: tool tip
-- lang :: language <<<html:attribute:lang>>>
-   - https://www.w3.org/International/articles/language-tags/
-   - Codes :: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
-- Drag-and-Drop
-   - ondrop ondragover draggable ondragstart
-     #+BEGIN_SRC html
-       <!--
-	ondropover allows this tag to receive dropped elements.
-	ondrop defines what to do with the traferred data
-       -->
-       <div id="div1" ondrop="drop(e)" ondragover="allowDrop(e)"></div>
+*** lang <<html:attribute:lang>>
+- https://www.w3.org/International/articles/language-tags/
+- Codes :: http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
+*** Drag-and-Drop
+- ondrop ondragover draggable ondragstart
+  #+BEGIN_SRC html
+    <!--
+     ondropover allows this tag to receive dropped elements.
+     ondrop defines what to do with the traferred data
+    -->
+    <div id="div1" ondrop="drop(e)" ondragover="allowDrop(e)"></div>
 
-       <!--
-	Make a tag draggable: draggable="true"
-	<a> and <img> are by default draggable
-	ondragstart defines what data to pass to ondrop
-       -->
-       <img id="drag1" src="http://placehold.it/300x250" draggable="true" ondragstart="drag(e)">
+    <!--
+     Make a tag draggable: draggable="true"
+     <a> and <img> are by default draggable
+     ondragstart defines what data to pass to ondrop
+    -->
+    <img id="drag1" src="http://placehold.it/300x250" draggable="true" ondragstart="drag(e)">
 
-       <script>
-       function drag(e) {
-	 // Pass the dragged element id
-	 ev.dataTransfer.setData("text", ev.target.id);
-       }
+    <script>
+    function drag(e) {
+      // Pass the dragged element id
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
 
-       function allowDrop(e) {
-	 e.preventDefault();
-       } 
+    function allowDrop(e) {
+      e.preventDefault();
+    } 
 
-       function drop(e) {
-	 e.preventDefault();
-	 var data = e.dataTransfer.getData("text");
-	 e.target.appendChild(document.getElementById(data));
-       }
-       </script>
-     #+END_SRC
+    function drop(e) {
+      e.preventDefault();
+      var data = e.dataTransfer.getData("text");
+      e.target.appendChild(document.getElementById(data));
+    }
+    </script>
+  #+END_SRC
+*** tabindex <<html:attribute:tabindex>>
+- Elements by default are focusable
+   - a with href
+      - Better having every a to have href attribute as even though adding tabindex attribute with a positive integer enables focus but cannot enter or spacebar to trigger onclick
+   - link with href
+   - button
+   - input that are not type="hidden"
+   - select
+   - textarea
+- Bringing an element to focus
+   - Hit tab on the keyboard
+   - Use JavaScript e.g. ~document.getElementById('a').focus()~
+- Values :: integer
+   - -1 or any negative number :: make it unfocusable
+   - 0 :: put it in the default focus order determined by its position in the HTML
+   - positive number
+      - Elements with positive tabindex will be placed in front of elements that don't have a tabindex attribute
+      - The smaller, the higher order starting from 1
+      - To test which is the first tab, click on the URL bar and then tab
 
 ** Events and Event Attributes
 - [[https://developer.mozilla.org/en-US/docs/Web/Events][All DOM Events]]
