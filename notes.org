@@ -63808,6 +63808,20 @@ Update Joined Tables
 - ~COALESCE(value1, value2, ...)~
    - Returns the first non-NULL value in the list, or NULL if there are no non-NULL values
 
+**** Transaction
+#+BEGIN_SRC sql
+  SET autocommit = 0;
+  -- SET autocommit = OFF;
+
+  START TRANSACTION;
+
+  SELECT * FROM abc
+
+  COMMIT;
+
+  SET autocommit = 1;
+#+END_SRC
+
 *** Admin queries
 **** ALTER TABLE <<mysql:alter>>
 #+BEGIN_SRC sql
@@ -63846,6 +63860,39 @@ Update Joined Tables
 - Rows :: number of records. MyISAM shows exact while InnoDB shows approximation may vary by as much as 40% to 50%
 - Avg_row_length :: avg row size. Refer to [[mysql:row size][mysql:row size]] <<mysql:avg_row_length>>
 - Collation :: utf8mb4_general_ci
+
+**** Deadlock
+- TS :: ~Lock wait timeout exceeded; try restarting transaction~
+
+#+BEGIN_SRC sql
+  -- default lock wait is 50 secs
+  show variables like 'innodb_lock_wait_timeout';
+
+  -- see what is locked
+  SHOW ENGINE INNODB STATUS\G;
+#+END_SRC
+
+#+BEGIN_SRC conf
+  MySQL thread id 19, OS thread handle 140471672895232, query id 209779 localhost 127.0.0.1 root update
+  INSERT INTO yourQuery
+#+END_SRC
+
+#+BEGIN_SRC sql
+  SHOW PROCESSLIST;
+  -- eq. to 
+  -- SELECT * FROM information_schema.processlist ORDER BY id;
+  -- id is the MySQL thread id e.g. 19
+
+  -- May see more info about that thread
+  SELECT * FROM performance_schema.events_statements_history WHERE thread_id = (SELECT THREAD_ID FROM performance_schema.threads WHERE PROCESSLIST_ID = 19)
+
+  -- kill this thread meaning to kill the whole connection
+  KILL CONNECTION 19;
+  -- eq. to
+  -- KILL 19;
+
+  -- To check if it's killed, run SHOW PROCESSLIST;
+#+END_SRC
 
 **** Transpose query results
 #+BEGIN_SRC sh
@@ -66860,6 +66907,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 **** Multiple cursors, move cursor, selection, navigate cursor
 - Create a cursor at caret :: ~M-click~ or
+   - Hit ~Ctrl~ twice and hold ~Ctrl~, then press an arrow key to create a cursor
    - ~Clone Caret Below~ or ~Clone Caret Above~ when ~C-S-a~ (no shortcuts defined in Eclipse)
 - Select and make new cursors
    - Add selection for next occurance :: ~M-y~
