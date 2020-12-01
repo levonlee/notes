@@ -327,11 +327,25 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
      #+END_SRC
    - Refer to [[php:@][php:@]]
       - Whenever an error of any level is generated, it is formatted and ready to output to browsers. Only just before it, error_reporting setting is checked. This applies to [[php:@][php:@]] as well
-   - Performance
+   - Performance :: https://stackoverflow.com/a/1869185/2196360
       - 10k errors of notice level, with error_reporting and display_errors enabled :: 5k ms
       - same, but with display_errors disabled :: 136 ms
       - same, but with error_reporting disabled too :: 118 ms
       - no error of notice level :: 20 ms
+   - Example
+     #+BEGIN_SRC php
+       $x = [];
+       $a = $x['abc'] + 0; // notice undefined index
+
+       $x['abc'] = '';
+       $a = $x['abc'] + 0; // warning non-numeric
+
+       $a = (int) ($x['abc'] ?? 0); // PHP 7 using null coalescing operator. good!
+       $a = (float) ($x['abc'] ?? 0); // PHP 7. good!
+
+       $a = (int) (isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
+       $a = (float) (isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
+     #+END_SRC
 - Trigger error <<php:trigger_error>>
   #+BEGIN_SRC php
     trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
@@ -782,6 +796,23 @@ Convert a string format to another
   $foo = isset( $bar['id'] ) ?: 'something';
   // eq.
   $foo = ( isset( $bar['id'] ) ) ? ( isset( $bar['id'] ) ) : 'something';
+
+  // PHP 8 null safe operator can work with methods
+  // Instead of writing this
+  $country = null;
+  if ($session !== null) {
+	  $user = $session->user;
+	  if ($user !== null) {
+		  $address = $user->getAddress();
+
+		  if ($address !== null) {
+			  $country = $address->country;
+		  }
+	  }
+  }
+
+  // write this
+  $country = $session?->user?->getAddress()?->country;
 #+END_SRC
 
 *** Short if <<php:short if>>
