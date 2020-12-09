@@ -30727,20 +30727,20 @@ An observable is like a promise, but it calls some code every time a new value b
 - ~multipart/form-data~ <<rfc:mime:multipart/form-data>>
    - HTML and use [[js:formdata][js:formdata]] to POST multipart/form-data
    - Request header
-      - ~Content-Type: multipart/form-data; boundary=--user-agent-sets-this-boundary~
-      - ~--user-agent-sets-this-boundary~
+      - ~Content-Type: multipart/form-data; boundary=user-agent-sets-this-boundary~
+      - ~user-agent-sets-this-boundary~
 	 - can be any 1 to 70 characters and not ending with white space
 	 - characters are a set of characters known to be very robust through email gateways. Use numbers only to be safe
 	 - usually starts and ends with 2 dashes
    - Request Payload
      #+BEGIN_EXAMPLE
        --user-agent-sets-this-boundary
-       Content-Disposition: form-data; name="gv-inv_image"; filename="alectra-APP-dynamic-card.jpg"
+       Content-Disposition: form-data; name="gv-inv_image"; filename="a.jpg"
        Content-Type: image/jpeg
 
 
 
-       --user-agent-sets-this-boundary--
+       --user-agent-sets-this-boundary
        Content-Disposition: form-data; name="description" 
 
        some text
@@ -49677,10 +49677,10 @@ wp:check file permissions
 *** Search files or directories, sort by size <<linux:find>>
 - Return path of matched files or directories
 - Search by name of files :: ~-name~ ~-iname~
-- Name case insensitive :: use ~-iname~ instead of ~-name~
-  #+BEGIN_SRC sh
-    find ./targetFolder -type f -name "abc*" 
-  #+END_SRC
+   - Name case insensitive :: use ~-iname~ instead of ~-name~
+     #+BEGIN_SRC sh
+       find ./targetFolder -type f -name "abc*" 
+     #+END_SRC
 - wild cards :: ~? * []~ but not regex
    - used in ~-name~ ~-iname~ ~-path~
 - Search by name of directories :: ~-type d -name "abc"~
@@ -49728,9 +49728,23 @@ wp:check file permissions
     find . -size +100M -exec ls -lh {} \;
 
     # find and delete
-    find . -name "file-to-find" -exec rm -rf {} \;
-    # Or
     find . -type f -name "file-to-find" -exec rm -f {} \;
+
+    # Multiple. The first one needs to return success in order for the next one to be run
+    find . -name "*.txt" -exec echo {} \; -exec grep banana {} \;
+
+    # Multiple. Add `-o` to make sure both commands are run
+    find . -name "*.txt" \( -exec echo {} \; -o -exec true \; \) -exec grep banana {} \;
+
+    # Plus sign
+    find . -exec ls '{}' \;
+    # executes:
+    # ls file1
+    # ls file2
+
+    find . -exec ls '{}' \+
+    # executes
+    # ls file1 file2
   #+END_SRC
 - Get top 10 largest files in current folder
   #+BEGIN_SRC sh
@@ -49915,7 +49929,8 @@ wp:check file permissions
       - ~grep -w apple fruit.txt~
    - ~-v~ :: inversion. Return lines that don't match
       - ~grep -v apple fruit.txt~
-   - ~-L, -l~ :: like ~-v~, but return files that don't have a match
+   - ~-L~ :: like ~-v~, suppress normal output, but print names of files that don't have a match
+   - ~-l~ :: like ~-L~ but print names of files that have a match
    - ~-i~ :: ignore case
    - ~-I~ :: process binary files as if they don't contain matching data
    - ~-n~ :: show line number
