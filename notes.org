@@ -3677,6 +3677,98 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
     curl_close($ch);
 #+END_SRC
 
+**** Manual multipart/form-data
+Use CURLFile, requires physical files
+#+BEGIN_SRC php
+$someTextData = [
+	'a' => 123,
+	'b' => 'xyz',
+];
+
+$ch = curl_init("...");
+
+$postData = [
+	'data' => json_encode($someTextData),
+	'file1' => new CurlFile('origin-name.pdf', 'application/pdf', 'download-name.pdf'),
+	'file2' => new CurlFile('origin-name.pdf', 'application/pdf', 'download-name.pdf'),
+];
+
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+
+$rs = curl_exec($ch);
+#+END_SRC
+
+Manually construct a multipart/form-data with binary file data
+#+BEGIN_SRC php
+  <?php
+  $someTextData = [
+	  'a' => 123,
+	  'b' => 'xyz',
+  ];
+
+  $ch = curl_init("...");
+
+  $postData = [
+	  'data' => json_encode($someTextData),
+	  'file1' => file_get_contents(__DIR__ . "/a.pdf"),
+  ];
+
+  $postFiles = [
+	  'file1' => [
+		  'type' => 'application/pdf',
+		  'content' => file_get_contents(__DIR__ . "/a.pdf")],
+  ];
+
+  $delimiter = '-------------' . uniqid();
+  $data = '';
+  //region Populate file fields
+  foreach ($postFiles as $name => $file) {
+	  $data .= "--" . $delimiter . "\r\n";
+	  // "filename" attribute is not essential; server-side scripts may use it
+	  $data .= 'Content-Disposition: form-data; name="' . $name . '"'
+		   . '; filename="' . $name . '.pdf"'
+		   . "\r\n"
+		   // this is, again, informative only; good practice to include though
+		   . 'Content-Type: ' . $file['type'] . "\r\n"
+		   // if data is binary, I found it unnecessary but include it here
+		   . 'Content-Transfer-Encoding: binary' . "\r\n"
+		   . '';
+	  // this endline must be here to indicate end of headers
+	  $data .= "\r\n";
+	  // the file itself (note: there's no encoding of any kind)
+	  $data .= $file['content'] . "\r\n";
+  }
+  //endregion
+
+  foreach ($postData as $name => $content) {
+	  $data .= '--' . $delimiter . "\r\n";
+	  $data .= 'Content-Disposition: form-data; name="' . $name . '"';
+	  $data .= "\r\n\r\n";
+	  $data .= $content . "\r\n";
+  }
+
+  // last delimiter
+  $data .= "--" . $delimiter . "--";
+
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt(
+	  $ch,
+	  CURLOPT_HTTPHEADER,
+	  [
+		  'Content-Type: multipart/form-data; boundary=' . $delimiter,
+		  'Content-Length: ' . strlen($data),
+	  ]
+  );
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+  $rs = curl_exec($ch);
+#+END_SRC
+
 ** PHP HTTP Header <<<php:header>>>
 Refer to header:cache-control
 #+BEGIN_SRC php
@@ -68290,10 +68382,11 @@ https://developer.chrome.com/devtools/docs/blackboxing
 **** Google Tag Assistant <<<chrome:google tag assistant>>>
 **** [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
 - REST Client app
-- Fire GET and POST requests.
+- Fire GET and POST requests
 - For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
 - Set up an Environment which you can define key-value pairs which can be used in e.g. request url
    - e.g. ~GET {{base_url}}/wp-json/wp/v2/posts/~
+- Postman console (icon at the bottom) shows raw request and response
 
 **** [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
 Chrome's default save page as HTML has some limitations such as not all images are downloaded.
