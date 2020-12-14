@@ -14821,33 +14821,33 @@ https://wordpress.org/plugins/genesis-visual-hook-guide/
 Same page request custom cache
 
 #+BEGIN_SRC php
-  function lili_request_cache($field, $set = NULL) {
-    static $custom_cache;
-    if (!isset($custom_cache)) {
-      $custom_cache = [];
-    }
-    if ($set !== NULL && $field !== NULL ) {
-      // $set_field_value = _f('field_name', 123);
-      $custom_cache[$field] = $set;
-    }
-    elseif ($field !==  NULL && $set == NULL &&
-	    ( !isset($custom_cache[$field]) || $custom_cache[$field] == NULL )
-    ) {
-      // Set default
-      // $set_field_value = _f('field_name');
-      switch ($field) {
-	case "trigger_posts_clauses":
-	  $custom_cache[$field] = '';
-	  break;
-      }
-    }
+  function lili_request_cache($field, $set = null) {
+	  static $custom_cache = [];
+	  if ($set !== null) {
+		  $custom_cache[$field] = $set;
+	  }
+	  elseif ( ! isset($custom_cache[$field]) || $custom_cache[$field] == null) {
+		  // Set default by field
+		  switch ($field) {
+			  case 'c':
+				  $custom_cache[$field] = 'default value for c';
+				  break;
+			  default:
+				  $custom_cache[$field] = null;
+				  break;
+		  }
+	  }
 
-    if (!isset($custom_cache[$field])) {
-      $custom_cache[$field] = NULL;
-    }
-
-    return $custom_cache[$field];
+	  return $custom_cache[$field];
   }
+
+  lili_request_cache('a', 1);
+  var_dump('a: ', lili_request_cache('a')); // 1
+  var_dump('b: ', lili_request_cache('b')); // null
+  var_dump('a: ', lili_request_cache('a')); // 1
+  lili_request_cache('a', 2);
+  var_dump('a: ', lili_request_cache('a')); // 2
+  var_dump('c: ', lili_request_cache('c')); // default value for c
 #+END_SRC
 
 ** Custom page
@@ -28596,7 +28596,11 @@ https://amp.dev/documentation/components/amp-analytics/
 	#+END_SRC
    - ~Element.innerText~ :: get and set text inside the element
       - Get :: result is a plain text with all HTML tags stripped
+	 - trigger reflow
       - Set :: set text only. No HTML tag parsing
+   - ~Element.textContent~ :: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+      - concatenation of the textContent of every child node, excluding comments and processing instructions
+      - Set textContent on a node removes all of the node's children and replaces them with a single text node with the given string value
    - Refer to tool:html:document.write
    - Example :: https://support.jwplayer.com/customer/portal/articles/1406723#fndtn-method-1
       - Refer to video:jw 
@@ -66918,7 +66922,7 @@ PHP APM (Application Performance Metrics)
 *** Contributor License Agreements (CLA) <<<software:license:cla>>>
 
 * Tools
-** phpStorm
+** PhpStorm
 Help > Default Keymap Reference
 
 *** Installation and 64 bit
@@ -67287,16 +67291,19 @@ Add comments around tags with id or class attribute.
 - Use Project scheme
    - e.g. ~Set from~ WordPress Change Tab size and Indent from 4 to 2
 - Set a default ~Code Style Scheme~ e.g. Project sheme and Reformat code will use that scheme
+   - For IDE scheme, stored at C:\Users\Li\AppData\Roaming\JetBrains\PhpStorm2020.1\codestyles or can export scheme
 
 ***** PHP
 - PSR-1 < PSR-2 < PSR-12 :: Basic Coding standards https://www.php-fig.org/psr/psr-12/
 - PSR-0 < PSR-4 :: Namespaces, class names and file paths
+- Use PSR-12 and do some manual changes
 
 ***** JavaScript
 - Punctuation
    - Use semicolon to terminate statements always
 
 ***** HTML
+- https://google.github.io/styleguide/htmlcssguide.html :: don't have an xml for phpStorm.. need to do it manually
 - Other
    - Do not indent children of :: add script
 
@@ -67520,6 +67527,7 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 - Mac
    - Enable open by typing ~code .~ in terminal :: C-S-p, select ~Shell Command: Install 'code' command in PATH~
 - Updates and Blogs :: https://code.visualstudio.com/updates
+   - On Windows, I found I need to admin open to update VS Code
 
 *** Extensions
 - ~ext install extension.name~
@@ -67626,6 +67634,9 @@ Autocomplete npm modules in import statements based on package.json
    - Open Project
 **** Sass syler.sass-indented
 **** MJML <<<vs:code:ext:attilabuti.vscode-mjml>>>
+*** View
+**** Editor Layout
+
 *** Shortcuts
 - Left bar is called View Bar that contains views
    - Explorer :: C-S-e
@@ -67656,6 +67667,7 @@ Autocomplete npm modules in import statements based on package.json
    - Format Selection :: ~C-k C-f~
    - Expand Selection :: ~M-S-RightArrow~
    - Move Line Up (move selection up) :: ~M-UpArrow~
+   - Delete line :: ~C-S-k~
    - Trigger Suggest :: ~C-Space~
    - Toggle Block Comment :: ~M-S-a~
    - Toggle Line Comment :: ~C-/~
