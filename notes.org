@@ -1699,6 +1699,8 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 - Search and replace from left to right
 - Case-sensitive :: use ~str_ireplace()~ for case-insensitive
 - Binary safe
+- Parameters
+   - $count :: it's not for limit but instead the count of replacements
 
 #+BEGIN_SRC php
   str_replace( mixed $search, mixed $replace, mixed $subject [, int &$count ] ) : mixed
@@ -1714,17 +1716,43 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   // when $subject is an array, search and replace is performed with every entry of subject and return value is an array
 #+END_SRC
 
-*** Replace last
+*** Replace first or last occurance
 #+BEGIN_SRC php
-  function str_lreplace($search, $replace, $subject) {
-      $pos = strrpos($subject, $search);
+  function str_flreplace($search, $replace, $subject, $isFirstReplace = 1) {
+	  $pos = strpos($subject, $search);
+	  if ( ! $isFirstReplace) {
+		  // strrpos :: not strpos! Find the position of the last occurrence of a substring in a string
+		  $pos = strrpos($subject, $search);
+	  }
 
-      if($pos !== false) {
-	  $subject = substr_replace($subject, $replace, $pos, strlen($search));
-      }
+	  if ($pos !== false) {
+		  $subject = substr_replace($subject, $replace, $pos, strlen($search));
+	  }
 
-      return $subject;
+	  return $subject;
   }
+
+  function str_freplace($search, $replace, $subject) {
+	  $search = '/' . preg_quote($search, '/') . '/';
+
+	  return preg_replace($search, $replace, $subject, 1);
+  }
+
+  $search = '?';
+  $replace = "123";
+  $subject = "SELECT * FROM loans WHERE loanid = ? AND company = ?";
+
+  $a = str_flreplace($search, $replace ,$subject);
+  var_dump('$a', $a);
+  // "SELECT * FROM loans WHERE loanid = 123 AND company = ?"
+
+  $b = str_flreplace($search, $replace, $subject, false);
+  // "SELECT * FROM loans WHERE loanid = ? AND company = 123"
+  var_dump('$b', $b);
+
+  $c = str_freplace($search, $replace, $subject);
+  // "SELECT * FROM loans WHERE loanid = ? AND company = 123"
+  var_dump('$c', $c);
 #+END_SRC
 
 *** First character uppercase/lowercase - ~ucfirst()~ ~lcfirst()~
