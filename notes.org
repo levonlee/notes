@@ -68,7 +68,6 @@ Install multiple versions of PHP
 - Changing php.ini requires [[apache:restart][apache:restart]] or Nginx
 
 **** PHP Version
-
 #+BEGIN_SRC php
   phpinfo();
   echo phpversion();
@@ -190,6 +189,13 @@ expose_php = On
 **** max_execution_time <<<php.ini:max_execution_time>>>
 - PHP_INI_ALL, default 30s
 - ~set_time_limit( int $seconds )~ can extend the limit by ~$seconds~ for one PHP script file
+
+**** include_path <<php:ini:include_path>>
+- Refer to [[php:include]]
+- Unix :: use ~:~ to separate ~include_path = ".:/usr/share/php"~
+- Windows :: use ~;~ to separate ~include_path = ".;c:\php\includes"~
+- get_include_path()
+- set_include_path()
 
 *** Enable extension <<<php.ini:extension_dir>>>
 php.ini can also enable module. e.g. to enable module intl. Use php.ini:extension_dir
@@ -554,31 +560,34 @@ Use absolute path. See dirname
 	    include $file;
     }
   #+END_SRC
-- A relative path :: start with ~./~ or ~../~ 
-  #+BEGIN_SRC php
-    // cd ~; php run/start.php
-    // get_include_path() is ignored when relative paths are used in include :: `.:/usr/share/php`
-
-    // run/start.php
-    include './connect.php';
-
-    // ~/connect.php // working directory getcwd() which is ~, the initial run's working dir
-    // if not found, error
-    // same applies to `include '../connect.php'`
-
-    // run/start.php
-    include 'connect.php';
-
-    // get_include_path() is used first :: `.:/usr/share/php`
-
-    // eq. to `include './connect.php';`, which is ~/connect.php
-    // then `include '/usr/share/php/connect.php';`
-    // then ~/run/connect.php // the script's (~/run/start.php) path  is ~/run
-
-    // In short, both relative and bare filename first look into the entrypoint's path
-    // . and .. stops when the relative path based on the entrypoint's path is not found
-    // bare filename tries include_path first
+- A relative path :: start with ~./~ or ~../~
+  #+BEGIN_SRC sh
+    cd /path/to/project # this is the entrypoint which is the result of getcwd()
+    php run/start.php # this is not the entrypoint! the start.php file path
   #+END_SRC
+  #+BEGIN_SRC php
+    include './connect.php';
+    // getcwd() . 'connect.php', which is /path/to/project/connect.php
+    // if not found, return error
+    // same applies to `include '../connect.php'`
+  #+END_SRC
+- bare file name
+  #+BEGIN_SRC sh
+    cd /path/to/project # this is the entrypoint
+    php run/start.php
+  #+END_SRC
+  #+BEGIN_SRC php
+    include 'connect.php';
+  #+END_SRC
+   - Try these in order
+      - [[php:ini:include_path]]
+	 - default include paths have 2 directories :: ~.~ and ~/usr/share/php~
+	 - ~/usr/share/php~ :: ~/sur/share/php/a.php~
+	 - ~.~ :: stands for the file path of the file that has the include
+	    - which is ~/path/to/project/run/connect.php~
+	    - because the start.php file path is ~/path/to/project/run/start.php~
+	    - This is different from ~include './connect.php'~
+- When PhpStorm runs a script, it cd into the directory which has the script file and run it
 
 ** Module, Extension
 *** bz2
@@ -1739,7 +1748,7 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   }
 
   $search = '?';
-  $replace = "123";
+  $replace = 123;
   $subject = "SELECT * FROM loans WHERE loanid = ? AND company = ?";
 
   $a = str_flreplace($search, $replace ,$subject);
