@@ -802,9 +802,15 @@ Convert a string format to another
   $foo = isset( $bar['id'] ) ? $bar['id'] : 'something';
 
   // Elvis Operator
-  $foo = isset( $bar['id'] ) ?: 'something';
+  $foo = isset($bar['id']) ?: 'something';
   // eq.
-  $foo = ( isset( $bar['id'] ) ) ? ( isset( $bar['id'] ) ) : 'something';
+  $foo = (isset( $bar['id'])) ? (isset($bar['id'])) : 'something';
+
+  $bar = abc(); // $bar is always set and it could be 0 or some other non-null values
+  $foo = $bar ?: 'null'; // non-true values are converted to 'null' and other true values are kept
+  // eq.
+  $foo = ($bar) ? $bar : 'null';
+  // Elvis Operator still throws exception if there's undefined variables
 
   // PHP 8 null safe operator can work with methods
   // Instead of writing this
@@ -63442,10 +63448,12 @@ MySQL >= 5.1.12
 
 **** mysql Client Options
 - https://dev.mysql.com/doc/refman/8.0/en/mysql-command-options.html
-
-#+BEGIN_SRC sh
-  mysql -e "SELECT * FROM a WHERE col1 LIKE '%some%'" -uroot -p mydbname > /path/to/bk.txt
-#+END_SRC
+- Execute
+  #+BEGIN_SRC sh
+    mysql -e "SELECT * FROM a WHERE col1 LIKE '%some%'" -uroot -p mydbname > /path/to/bk.txt
+  #+END_SRC
+   - Escape ~"~ inside the query :: ~\"~
+   - Escape ~\~ :: ~\\~ 
 
 *** Install
 #+BEGIN_SRC sh
@@ -64517,6 +64525,27 @@ Dump a remote database
   # for a table only
   mysqldump -uroot -p --no-data mydatabase mytable1 > mytable1-def.sql
   # --no-create-info dump data not definition
+#+END_SRC
+
+**** Dump query result as CSV
+- ~SELECT ... INTO OUTFILE~ is for the purpose of ~LOAD DATA~. It has its limitation
+   - Does not work for field value that is multiple lines
+#+BEGIN_SRC sql
+  SELECT *
+  FROM a
+  INTO OUTFILE '/var/lib/mysql-files/a.txt'
+  -- default ESCAPED BY is '\', disable escape: ESCAPED BY ''
+  FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+  -- place ESCAPED BY here before LINES 
+  LINES TERMINATED BY '\n'
+#+END_SRC
+#+BEGIN_SRC sh
+mysql -e "SELECT * FROM a INTO OUTFILE '/var/lib/mysql-files/a.txt' FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n';" -u root -p abc
+#+END_SRC
+
+#+BEGIN_SRC sql
+  -- need to use this directory
+  SHOW VARIABLES LIKE "secure_file_priv";
 #+END_SRC
 
 *** Binary Log
