@@ -55441,7 +55441,7 @@ This one is Debian and has curl
     command:
       mysqld --innodb-buffer-pool-size=50M
   #+END_SRC
-- More mysql:config
+- More [[mysql:config]]
 
 *** Environment vars
 -e :: set environment vars. None of these will have effect if the container is started with a data dir that already contains a db.
@@ -63278,7 +63278,7 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 ~cf_sql_longvarchar~ doesn't work. You should use ~<cfqueryparam cfsqltype="CF_SQL_CLOB" value="#description#">~ instead. 
 
 ** MySQL
-*** Version, Settings, Global variables <<<mysql:config>>>
+*** Version, Settings, Global variables <<mysql:config>>
 - ~service mysql status~
 - ~service mysql restart~ or ~service mysqld restart~
 - MySQL driver DSN <<mysql:dsn>>
@@ -63336,6 +63336,32 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
   -- Database table mysql
   SELECT User, Host, Password FROM mysql.user;
 #+END_SRC
+
+**** Config files Ubuntu
+- /etc/mysql/mysql.conf.d/mysqld.cnf <<mysql:config:mysqld.cnf>>
+   - ~[mysqld]~
+      - bind-address :: <<mysql:confg:bind-address>>
+	 - ~127.0.0.1~ :: default which means it only allows localhost connection
+	 - ~0.0.0.0~ or ~*~ or comment out :: allow all network access
+
+**** Allow remote access to user root
+- Set priviledges
+  #+BEGIN_SRC sql
+    -- change 'password' to the password you want for the user root
+    -- '%' means all host, this will add a row in table `user` of database `mysql`
+    GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password';
+    FLUSH PRIVILEGES;
+    -- Then restart :: sudo systemctl restart mysql.service
+  #+END_SRC
+   - You may encounter `Your password does not satisfy the current policy requirements`
+      - The best way is to uninstall the validate_password plugin as changing the config file to change the policy level to low is not successful
+      - ~mysql -uroot -p~ and then
+	 - ~uninstall plugin validate_password~ (I tried this and it worked) or ~UNINSTALL COMPONENT 'file://component_validate_password';~
+	 - Restart MySQL ~sudo systemctl restart mysql.service~
+      - Reference :: https://stackoverflow.com/questions/36301100/how-do-i-turn-off-the-mysql-password-validation
+      - The plugin was installed during ~mysql_secure_installation~
+      - After uninstall, you shouldn't see any validate_password settings :: ~SHOW VARIABLES LIKE 'validate_password%';~
+- Set [[mysql:config:bind-address]] to allow all network access
 
 **** Minimum
 http://www.tocker.ca/2014/03/10/configuring-mysql-to-use-minimal-memory.html
@@ -63466,6 +63492,8 @@ MySQL >= 5.1.12
   # Ubuntu
   apt-get update; apt-get install mysql-server
   service mysql start
+  # or
+  sudo systemctl restart mysql.service
 
   # Debian
   yum install php-mysql
@@ -72178,6 +72206,7 @@ Web Symbols
 *** Castos.com
 *** Exercism.io
 * TODOs
+** TODO MySQL sql mode
 ** TODO Vagrant on Hyper-V
 ** TODO Inspectlet.com
 ** TODO QUnit
