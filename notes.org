@@ -63280,7 +63280,7 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 ** MySQL
 *** Version, Settings, Global variables <<mysql:config>>
 - ~service mysql status~
-- ~service mysql restart~ or ~service mysqld restart~
+- ~sudo systemctl restart mysql.service~ or ~service mysql restart~ or ~service mysqld restart~
 - MySQL driver DSN <<mysql:dsn>>
    - ~mysql:host=localhost;dbname=oophp~
    - ~mysql:host=localhost;port=3307;dbname=oophp~
@@ -63337,12 +63337,12 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
   SELECT User, Host, Password FROM mysql.user;
 #+END_SRC
 
-**** Config files Ubuntu
-- /etc/mysql/mysql.conf.d/mysqld.cnf <<mysql:config:mysqld.cnf>>
-   - ~[mysqld]~
-      - bind-address :: <<mysql:confg:bind-address>>
-	 - ~127.0.0.1~ :: default which means it only allows localhost connection
-	 - ~0.0.0.0~ or ~*~ or comment out :: allow all network access
+**** Config
+- [[mariadb:config:loading]]
+- ~[mysqld]~
+   - bind-address :: <<mysql:config:bind-address>>
+      - ~127.0.0.1~ :: default which means it only allows localhost connection
+      - ~0.0.0.0~ or ~*~ or comment out :: allow all network access
 
 **** Allow remote access to user root
 - Set priviledges
@@ -63353,7 +63353,7 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
     FLUSH PRIVILEGES;
     -- Then restart :: sudo systemctl restart mysql.service
   #+END_SRC
-   - You may encounter `Your password does not satisfy the current policy requirements`
+   - May encounter `Your password does not satisfy the current policy requirements`
       - The best way is to uninstall the validate_password plugin as changing the config file to change the policy level to low is not successful
       - ~mysql -uroot -p~ and then
 	 - ~uninstall plugin validate_password~ (I tried this and it worked) or ~UNINSTALL COMPONENT 'file://component_validate_password';~
@@ -64171,6 +64171,11 @@ Update Joined Tables
 - Avg_row_length :: avg row size. Refer to [[mysql:row size][mysql:row size]] <<mysql:avg_row_length>>
 - Collation :: utf8mb4_general_ci
 
+**** Routines
+#+BEGIN_SRC sql
+  SELECT * FROM INFORMATION_SCHEMA.ROUTINES
+#+END_SRC
+
 **** Deadlock
 - TS :: ~Lock wait timeout exceeded; try restarting transaction~
 
@@ -64836,16 +64841,24 @@ All together
   sudo mysql_secure_installation
 #+END_SRC
 
-*** Config <<<mariadb:config>>>
+*** Config <<mariadb:config:loading>>
 - /etc/my.cnf :: not exist in Ubuntu install
 - /etc/mysql/my.cnf :: loads other files. symlink to ~/etc/alternatives/my.cnf~ symlink to ~/etc/mysql/mariadb.cnf~ 
-  - ~/etc/mysql/mariadb.cnf~ :: global defaults. This file 
-  - ~/etc/mysql/conf.d/*.cnf~ :: global options
-  - ~/etc/mysql/mariadb.conf.d/*.cnf~ ::  MariaDB-only options
-    - 50-server.cnf :: ~[mysqld]~ ~bind-address~
-    - 50-client.cnf ::
-    - 50-mysqld_safe.cnf ::
-    - 50-mysql-clients.cnf :: 
+   - ~/etc/mysql/mariadb.cnf~ :: global defaults. This file
+      - In MySQL :: /etc/mysql/mysql.cnf
+   - ~/etc/mysql/conf.d/*.cnf~ :: global options
+      - In MySQL
+	 - mysql.cnf :: ~[mysql]~ empty
+	 - mysqldump.cnf :: ~[mysqldump]~ not empty
+   - ~/etc/mysql/mariadb.conf.d/*.cnf~ ::  MariaDB-only options
+      - 50-server.cnf :: ~[mysqld]~ ~bind-address~
+      - 50-client.cnf ::
+      - 50-mysqld_safe.cnf ::
+      - 50-mysql-clients.cnf ::
+      - In MySQL
+	 - mysqld.cnf :: ~[mysqld_safe]~ ~[mysqld]~
+	 - mysqld_safe_syslog.conf :: ~[mysqld_safe]~
+   - Custom config files should have only one dot and extension is ~.cnf~
 - =~/.my.cnf= :: by default not created. User-specific options
 
 #+BEGIN_SRC sh
