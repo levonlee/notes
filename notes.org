@@ -2747,7 +2747,7 @@ RestJson.php
     // constant: strings, booleans, integers, no arrays!
 	  // constant can also be defined in child class
     const MY_CONSTANT_VAR = 1;
-	  // usage self::ABC (self class), parent::ABC, static::ABC (called class)
+	  // usage self::ABC (self class or this class), parent::ABC, static::ABC (called class)
 
 	  // Class properties
 	  // - Only primitive types e.g. int, string, number, array (since PHP 5.6)
@@ -19678,7 +19678,7 @@ https://css-tricks.com/fitting-text-to-a-container/
   }
 #+END_SRC
 
-**** ~font-display~
+**** ~font-display~ under font-face <<css:font-display>>
 - Chrome and Firefox will use the font fallback if the first font choice is not available after 3 seconds (timeout). If the first font choice is available later, a swap occurs
 - IE has 0 timeout and use fallback immediately and swap later if font is available
 - Safari always wait for the font to be downloaded
@@ -19687,7 +19687,7 @@ https://css-tricks.com/fitting-text-to-a-container/
    - block :: After 3 seconds if the font is not loaded use a invisible text and swap to the downloaded font with infinite swap period
    - swap :: browser draws text immediately with a fallback and swap to it after it's loaded.
    - fallback :: fallback at first and swap to it later. If too much time passes (3s), then the fallback is used for the rest of page lifetime.
-   - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download.
+   - optional :: the font is a nice to have but not critical. It leaves it up to the browser to decide whether to initiate the font download
 
 #+BEGIN_SRC css
   @font-face {
@@ -19860,7 +19860,42 @@ https://css-tricks.com/fitting-text-to-a-container/
   }
 #+END_SRC
 
-***** Google Web Font Loader
+***** Google Fonts API - CSS
+- https://developers.google.com/fonts/docs/getting_started
+  #+BEGIN_SRC html
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Tangerine">
+  #+END_SRC
+- Replace any spaces in the font family name with plus signs (+)
+- Styles and weights
+   - Styles
+      - italic :: or i
+      - bold :: or b or a numerical weight e.g. 700
+      - bolditalic :: or bi
+   - https://fonts.googleapis.com/css?family=Cantarell:italic|Droid+Serif:bold
+   - https://fonts.googleapis.com/css?family=Cantarell:i|Droid+Serif:b
+   - https://fonts.googleapis.com/css?family=Cantarell:i|Droid+Serif:700
+- Multiple font families
+   - https://fonts.googleapis.com/css?family=Tangerine|Inconsolata|Droid+Sans
+   - https://fonts.googleapis.com/css?family=Tangerine:bold,bolditalic|Inconsolata:italic|Droid+Sans
+- [[css:font-display]]
+   - https://fonts.googleapis.com/css?family=Roboto&display=swap
+- Subset or script
+   - https://fonts.googleapis.com/css?family=Roboto+Mono&subset=cyrillic
+   - https://fonts.googleapis.com/css?family=Roboto+Mono&subset=greek,cyrillic
+- Just a handful of letters instead of loading all the letters
+   - no need to use ~subset=xxx~
+   - https://fonts.googleapis.com/css?family=Inconsolata&text=Hello%20World
+- Effect
+   - https://fonts.googleapis.com/css?family=Rancho&effect=shadow-multiple|3d-float
+- CSS API v2 :: tackle variable fonts
+   - https://developers.google.com/fonts/docs/css2
+   - ~<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro">~
+   - Multiple font families
+      - https://fonts.googleapis.com/css2?family=Crimson+Pro&family=Literata
+      - 
+
+
+***** Google Web Font Loader - JavaScript
 - https://github.com/typekit/webfontloader
    - A JavaScript library to dynamic font loading Google and Typekit fonts
 - Synchronous load
@@ -20245,46 +20280,55 @@ Lightness :: 100% is white, 0% is black, 50% is normal
 *** Darker or lighter color
 http://www.0to255.com/cd1713
 
-** Gradient <<<CSS gradient>>>
+** Gradient and repeat gradient <<CSS gradient>>
 Both CSS gradient and CSS repeat gradient can be stacked in background-image
 
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC css
   linear-gradient(45deg, blue, red);
-  // to bottom, to top
-  // to right, to left
-  // to bottom right, to top left
+
+  /* to bottom, to top
+     to right, to left
+     to bottom right, to top left
+  ,*/
+  /* blue at 0%, white at 80%, orange at 100% */
   linear-gradient(to bottom, blue, white 80%, orange);
-  // blue at 0%, white at 80%, orange at 100%
+
+  /* evenly distributed */
   linear-gradient(to right, red, orange, yellow, green, blue);
-  // evenly distributed
 
+  /* Use it with background image */
   background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,1))
-             ,url(/bg.jpg);
-  // Use it with background image
+	     ,url(/bg.jpg);
 
-  radial-gradient(red, yellow, rgb(30, 144, 255)); // evenly spaced
+  /* non evenly distributed :: 0-50% solid black, 50%-100% solid transparent */
+  background: linear-gradient(to right, black 0%, black 50%, transparent 50%, transparent 100%);
+
+  /* evenly spaced */
+  radial-gradient(red, yellow, rgb(30, 144, 255));
+
+  /* non evenly distributed */
   radial-gradient(red 5%, yellow 25%, #1E90FF 50%);
-  radial-gradient(
-   circle, 
-   // Shape can circle or ellipse
-   // Default farthest-side
-   // Fade from the center point to the ___
-   // closest-corner, closest-side, farthest-corner, farthest-side
-   yellow, #f06d06
-  );
-  // Change from center point to corner
+
+  /* With shape :: circle or ellipse
+     Default farthest-sided
+     Fade from the center point to the ___
+     closest-corner, closest-side, farthest-corner, farthest-side
+  ,*/
+  radial-gradient(circle, yellow, #f06d06);
+
+  /* gradient from center point to corner */
   radial-gradient(
    circle farthest-corner at top right,
    yellow, #f06d06
   );
-#+END_EXAMPLE
+#+END_SRC
 
-<<<CSS repeat gradient>>>
+Repeat gradient
 
-#+BEGIN_EXAMPLE
-  // On top of percentage, px can be used in repeat gradient
+#+BEGIN_SRC css
+  / On top of percentage, px can be used in repeat gradient */
   repeating-linear-gradient(-45deg, red, red 5px, white 5px, white 10px);
-#+END_EXAMPLE
+#+END_SRC
 
 ** opacity
 0, 0.3, 1. The lower the value the more transparent
