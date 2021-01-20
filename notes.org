@@ -1236,6 +1236,33 @@ Single dimension
   var_dump($a['b']($c)); // d
 #+END_SRC
 
+*** ~array_walk~ <<php:array_walk>>
+#+BEGIN_SRC php
+  array_walk ( array|object &$array , callable $callback , mixed $userdata = null ) : bool
+
+  $fruits = array("d" => "lemon", "a" => "orange", "b" => "banana", "c" => "apple");
+  array_walk($fruits, function($v, $k) {
+	  printf('%s="%s" ', $k, $v);
+  });
+
+  // $fruits is altered
+  array_walk($fruits, function(&$v, $k, $prefix) {
+	  $v = "$prefix: $v";
+  }, 'customPrefix');
+  var_dump('$fruits', $fruits); // this does not work! empty array
+
+  $fruits2 = [];
+  array_walk($fruits, function($v, $k, &$externalVar) {
+	  $externalVar[$k] = $v;
+  }, $fruits2);
+  var_dump('$fruits2', $fruits2); // this does not work! empty array
+
+  array_walk($fruits, function($v, $k) use (&$fruits2) {
+	  $fruits2[$k] = $v;
+  }, $fruits2);
+  var_dump('$fruits2', $fruits2); // works!
+#+END_SRC
+
 *** Insert to any position of an array
 #+BEGIN_SRC php
   $original = array( 'a', 'b', 'c', 'd', 'e' );
