@@ -3014,6 +3014,7 @@ Always use a trait that fulfils one, all or extra capabilities that are
   interface Person {
 	  public function greet();
 	  public function eat($food);
+	  public function drink($drink);
   }
 
   trait EatingTrait {
@@ -3021,16 +3022,36 @@ Always use a trait that fulfils one, all or extra capabilities that are
 		  $this->putInMouth($food);
 	  }
 
+	  public function drink($drink) {
+		  echo "Trait drinks {$drink}";
+	  }
+
 	  private function putInMouth($food) {
-		  // digest delicious food
+		  echo "Trait eats {$food}";
 	  }
   }
 
   class NicePerson implements Person {
-	  use EatingTrait;
+	  // use EatingTrait;
+	  // multiple traits
+	  /*
+	  use A, B {
+		  B::smallTalk insteadof A; // use B's smallTalk instead of A's smallTalk to avoid same method conflict
+		  A::bigTalk insteadof B;
+		  B::bigTalk as talk; // change B's bigTalk method name to talk
+	  }
+	  ,*/
+
+	  use EatingTrait {
+		  drink as protected traitDrink; // also change method visibility
+	  }
 
 	  public function greet()	{
 		  echo 'Good day, good sir!';
+	  }
+
+	  public function drink($drink) {
+		  $this->traitDrink("super {$drink}");
 	  }
   }
 
@@ -3041,6 +3062,9 @@ Always use a trait that fulfils one, all or extra capabilities that are
 		  echo 'Your mother was a hamster!';
 	  }
   }
+
+  $nicePerson = new NicePerson();
+  $nicePerson->drink('Kool-Aid'); // Trait drinks super Kool-Aid
 #+END_SRC
 
 *** Magic Methods
@@ -29267,7 +29291,7 @@ This provides you more debugging info
   a.unshift("Z"); // add to the beginning of array. return new length
 #+END_SRC
 
-**** array.concat() - merge without removing dups
+**** ~array.concat()~ merge without altering nor removing dups, return a new array
 #+BEGIN_SRC js
   var a = new Array("P", "C", "S");
   var b = new Array(31,29,34);
@@ -29291,6 +29315,15 @@ This provides you more debugging info
 
   // e.g. removeDuplicate([1,3,3,3,1,5,6,7,8,1]);
   // = [1, 3, 5, 6, 7, 8]
+
+  // if you want mutation instead of creating a new array
+  var a = ['a','b'];
+  var b = ['a', 'x', 'y'];
+  a.push.apply(a,b); // cross-browser
+  //Array.prototype.push.apply(a,b); // cross-browser
+  // a.push(a, ...b); // NodeJS where ES6/ES2015 is supported
+  console.log(a);
+  // ["a", "b", "a", "x", "y"]
 #+END_SRC
 
 **** array.slice() vs array.splice() <<js:array:slice>> <<js:array:splice>>
