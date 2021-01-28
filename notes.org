@@ -197,6 +197,9 @@ expose_php = On
 - get_include_path()
 - set_include_path()
 
+**** short_open_tag <<php.ini:short_open_tag>>
+~short_open_tag = Off~
+
 *** Enable extension <<<php.ini:extension_dir>>>
 php.ini can also enable module. e.g. to enable module intl. Use php.ini:extension_dir
 
@@ -851,6 +854,43 @@ Convert a string format to another
   var_dump($b);
 #+END_SRC
 
+** Short Echo
+- [[php.ini:short_open_tag]] is not required since PHP 5.4.0
+#+BEGIN_SRC php
+  <?php
+  $a = 'abc';
+  function abc($text) {
+	  return "running a function that returns $text";
+  }
+  ?>
+  <?= $a ?>
+  <!-- eq. to -->
+  <?=$a?>
+  <!-- eq. to -->
+  <?= $a; ?>
+  <!-- eq. to -->
+  <?php echo $a; ?>
+
+  <!-- running a funciton that returns hello! -->
+  <?= abc('hello!') ?>
+
+  <!-- abc_123 -->
+  <?= "{$a}_123" ?>
+
+  <!-- 'false' -->
+  <?= (0===1) ? 'true' : 'false' ?>
+
+  <!-- 'true' -->
+  <?= ($a === 'abc') ? 'true' : 'false' ?>
+
+  <?= ($a === 'abc') ? <<<HTML
+  <span>
+    true
+  </span>
+  HTML
+	  : 'false' ?>
+#+END_SRC
+
 ** Error Control Operator <<php:@>>
 - All PHP versions
 - https://www.php.net/manual/en/language.operators.errorcontrol.php
@@ -911,7 +951,7 @@ Here's how to remove any 4 byte character:
   $i = []; // Since PHP 5.4
 #+END_SRC
 
-*** array_merge, array_merge_recursive <<<php:array_merge>>>
+*** ~array_merge~, array_merge_recursive <<<php:array_merge>>>
 - ~array_merge~
   #+BEGIN_SRC php
     $name = [
@@ -934,7 +974,7 @@ Here's how to remove any 4 byte character:
    - If key is the same, value at later array will overwrite the first array's value
    - If key does not exist in earlier arrays, the key/value will be appended
    - However, if key is numeric, values will always be appended (not overwriting) disregarding the values are the same
-      - Use this to dedup for numeric array merging :: ~array_unique(array_merge($array1,$array2), SORT_REGULAR)~
+      * Use this to dedup for numeric array merging :: ~array_unique(array_merge($array1,$array2), SORT_REGULAR)~
 	 - refer to [[php:array_unique]]
 - ~array_merge_recursive~
    - If key is the same, values will be appended as array
@@ -1424,7 +1464,7 @@ Sort (associative) array by its key
 - return a new array without duplicate values
 - sort_flags
    - SORT_STRING :: default. the same if ~(string) $elem1 === (string) $elem2~
-   - SORT_REGULAR :: don't change types
+   - SORT_REGULAR :: don't change types. Refer to php:array_merge
    - SORT_NUMERIC :: compare items numerically
    - SORT_LOCALE_STRING :: compare items as strings, based on the current locale
 - Not intended to work on multi dimensional arrays
