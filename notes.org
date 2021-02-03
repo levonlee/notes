@@ -387,6 +387,8 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
   define('MIN_VALUE', '0.0');   // RIGHT - Works OUTSIDE of a class definition
   define('MAX_VALUE', '1.0');   // RIGHT - Works OUTSIDE of a class definition
 
+  if (defined('MYGLOBALVAR') && MYGLOBALVAR !== 'abc') {}
+
   //const MIN_VALUE = 0.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition
   //const MAX_VALUE = 1.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition
 #+END_SRC
@@ -61235,7 +61237,17 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
 ~git checkout -b newbranch <SHA1>~
 
 *** Delete branch
-~git branch -d branchname~ or ~-D~
+- ~git checkout master~ :: you can't be on the branch that is going to be deleted
+- ~git branch -d branchgroup/branchname~
+   - delete the local branch only if it has been pushed and merged with the remote branch
+- ~git branch -D branchname~
+   - delete the local branch even if it hasn't been pushed or merged with the remote branch
+- ~git push origin --delete branchgroup/branchname~
+   - delete a branch remotely
+   - Or the shorthand :: ~git push origin :branchgroup/branchname
+      - ~error: unable to push to unqualified destination: remoteBranchName The destination refspec neither matches an existing ref on the remote nor begins with refs/, and we are unable to guess a prefix based on the source ref. error: failed to push some refs to 'git@repository_name'~
+      - This error shows if the remote branch is already deleted
+- ~git fetch -p~ :: purge. sync branch list with remote
 
 *** Rename current branch
 ~git branch -m new-branch-name~
@@ -61329,10 +61341,16 @@ git push -f
 
 *** [[git:upstream][git:upstream]]
 ** Merge <<git:merge>>
-By default without any options, merge will not create merge commits when fast-forward is possible.
+- By default without any options, merge will not create merge commits when fast-forward is possible
 - Create a merge commit even if fast-forward is possible :: ~--no-ff~
 - Create a merge commit if fast-forward is possible. If not, fix the conflict and ~git add~ files then normal commit :: ~--no-commit~
-- Abort a merge and restore the project's state as it was before starting the merge :: ~--abort~
+- [[https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/resolving-a-merge-conflict-using-the-command-line][Resolve conflict]] 
+   - Conflict markers
+      - ~<<<<<<<~
+      - ~=======~
+      - ~>>>>>>>~
+   - ~git add .~ and ~git commit -m ""~
+- Abort a merge and restore the project's state as it was before starting the merge :: ~git merge --abort~
 - Combine all integrated changes into a single commit instead of perserving them as individual commits. Need to make a normal commit after :: ~--squash~
 
 ** Rebase <<git:rebase>>
