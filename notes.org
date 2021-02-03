@@ -379,6 +379,13 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
    - Load all dependecies e.g. parent class first
    - To verify, restart ~php-fpm~ and ~var_dump(opcache_get_status())~
 
+** Kill
+#+BEGIN_SRC sh
+  ps x
+  # find the pid
+  kill 1234
+#+END_SRC
+
 ** Constant, [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]], [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]], ~define~ vs ~const~
 - Predefined variables :: https://www.php.net/manual/en/language.variables.predefined.php
    - Reserved variables :: https://www.php.net/manual/en/reserved.variables.php
@@ -1150,7 +1157,7 @@ Since PHP 5.5
   $a4 = array_column($people, 'name'); // ['Fred', 'Jane', 'John']
 #+END_SRC
 
-*** Subset, Remove values, Intersection <<php:array_diff>>
+*** ~array_diff~ Subset, Remove values, Intersection <<php:array_diff>>
 Single dimension
 #+BEGIN_SRC php
   $arr = ['nice_item', 'remove_me', 'another_liked_item', 'remove_me', 'remove_me_also'];
@@ -1167,6 +1174,32 @@ Single dimension
   } else {
     var_dump($missingKeys, 'These keys are missing');
   }
+#+END_SRC
+
+*** Get values by keys in order
+#+BEGIN_SRC php
+  function arrayFilterByKeysInOrder($array, $keys, $default = null, $valuesOnly = true) {
+	  $allKeys = array_keys($array);
+	  $array2 = [];
+	  foreach ($keys as $k) {
+		  $r = (in_array($k, $allKeys)) ? $array[$k] : $default;
+		  if ($valuesOnly) {
+			  $array2[] = $r;
+		  }
+		  else {
+			  $array2[$k] = $r;
+		  }
+	  }
+
+	  return $array2;
+  }
+  $a = [
+	  'a' => 123,
+	  'b' => 'abc',
+	  'c' => 321,
+  ];
+  var_dump(arrayFilterByKeysInOrder($a, ['c', 'abc', 'a']));
+  // ['c' => 321, 'abc' => null, 'a' => 123]
 #+END_SRC
 
 *** Change values of all elements <<php:array_map>>
