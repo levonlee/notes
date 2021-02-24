@@ -4036,8 +4036,8 @@ Manually construct a multipart/form-data with binary file data
 
   curl_setopt($ch, CURLOPT_POST, 1);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0); // default is 2. In current version, 1 means the same as 2. Use 2 instead of 1. 0 means the connection succeeds regardless of the names in the certificate. 2 means that it has to have the same name in the certificate as is in the URL you operate against
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // accept any server (peer) certificate. Default 1: enable CA checking. If this is 0, CURLOPT_SSL_VERIFYHOST will become 'does not matter'.
   curl_setopt(
 	  $ch,
 	  CURLOPT_HTTPHEADER,
@@ -4049,6 +4049,13 @@ Manually construct a multipart/form-data with binary file data
   curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
   $rs = curl_exec($ch);
+#+END_SRC
+
+**** POST with CA
+#+BEGIN_SRC php
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+  curl_setopt($ch, CURLOPT_CAINFO, getcwd() . "/CAcerts/BuiltinObjectToken-EquifaxSecureCA.crt");
 #+END_SRC
 
 ** PHP HTTP Header <<<php:header>>>
@@ -4312,6 +4319,9 @@ Device tect, browser detect :: [[https://github.com/serbanghita/Mobile-Detect][G
   // Check for any mobile device, excluding tablets.
   if ($detect->isMobile() && !$detect->isTablet()) {}
 #+END_SRC
+
+*** firebase/php-jwt <<php:jwt>>
+https://github.com/firebase/php-jwt
 
 ** Coding Standard
 *** Variable, action/filter and function name
