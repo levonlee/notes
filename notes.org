@@ -4069,6 +4069,40 @@ Manually construct a multipart/form-data with binary file data
   curl_setopt($ch, CURLOPT_CAINFO, getcwd() . "/CAcerts/BuiltinObjectToken-EquifaxSecureCA.crt");
 #+END_SRC
 
+**** POST with SSL Certificate and Key
+- Convert PFX to a private key ~cl.pem~ and a certificate ~cl.cert~. A passphrase is needed
+  #+BEGIN_SRC sh
+    openssl pkcs12 -in a.pfx -nocerts -out cl.pem -nodes
+    openssl pkcs12 -in a.pfx -nokeys -out cl.crt -nodes
+
+    # Test
+    curl -v --key ./cl.pem --cert ./cl.crt https://xxx
+  #+END_SRC
+- PHP
+  #+BEGIN_SRC php
+    $curl = curl_init();
+    $xml = '';
+    curl_setopt($curl, CURLOPT_URL, "https://xxx.ca/endpoint?a=xyz");
+    curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+	    'Content-Length: ' . strlen($xml),
+	    'Content-Type: application/xml',
+    ));
+    $keyFile = 'cl.pem';
+    $certFile = 'cl.crt';
+    curl_setopt($curl, CURLOPT_POST, 1);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $xml);
+    curl_setopt($curl, CURLOPT_SSLKEY, $keyFile);
+    curl_setopt($curl, CURLOPT_SSLCERT, $certFile);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+    curl_setopt($curl, CURLOPT_VERBOSE, 1);
+    var_dump( curl_exec($curl));
+    var_dump( 'info', curl_getinfo($curl));
+    var_dump( 'error',  curl_error($curl));
+    var_dump( 'errno',  curl_errno($curl));
+  #+END_SRC
+
 ** PHP HTTP Header <<<php:header>>>
 Refer to header:cache-control
 #+BEGIN_SRC php
