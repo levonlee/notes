@@ -30733,70 +30733,82 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 #+BEGIN_SRC js
   // JavaScript Singleton
   (function() {
-      this.myApp = this.MyApp || {};
-      var ns = this.myApp; // further shorten the keyboard typing
+    // this === self === window
+    this.myApp = this.MyApp || {};
+    var ns = this.myApp; // further shorten the keyboard typing
 
-      // private properties
-      var vehicleCount = 5;
-      var vehicles = [];
+    // private properties
+    var vehicleCount = 5;
+    var vehicles = [];
 
-      // Public properties
-      ns.publicHello = 'This is public';
+    // Public properties
+    ns.publicHello = 'This is public';
 
-      // Define a Class
-      // You can even separate the class definition into another javascript file
-      // Just remember to include the necessary closure like the above
-      ns.Vehicle = (function() {
+    // Public method
+    ns.getVehicleCount = function() {
+      return vehicleCount;
+    };
+    ns.setVehicleCount = function(value) {
+      vehicleCount = value;
+    };
 
-	  function Vehicle(year, make, model) {
-	      // private properties
-	      this.year = year;
-	      this.make = make;
-	      this.model = model;
-	  }
+    // Define a Class
+    // You can even separate the class definition into another javascript file
+    // Just remember to include the necessary closure like the above
+    ns.Vehicle = (function() {
 
-	  // Public methods
-	  Vehicle.prototype.getInfo = function() {
-	      return this.year + ' ' + this.make + ' ' + this.model;
-	  };
-	  Vehicle.prototype.startEngine = function() {
-	      return 'Vroom';
-	  };
-	  /* Better not to override prototype
-	  Vehicle.prototype = {
-	      getInfo: function () {
-		  return this.year + ' ' + this.make + ' ' + this.model;
-	      },
-	      startEngine: function () {
-		  return 'Vroom';
-	      }
-	  };
-	  ,*/
+      function Vehicle(year, make, model) {
+	// private properties
+	this.year = year;
+	this.make = make;
+	this.model = model;
+      }
 
-	  return Vehicle;
-      }());
+      // Public methods
+      Vehicle.prototype.getInfo = function() {
+	return this.year + ' ' + this.make + ' ' + this.model;
+      };
+      Vehicle.prototype.startEngine = function() {
+	return 'Vroom';
+      };
+      /* Better not to override prototype
+	Vehicle.prototype = {
+	    getInfo: function () {
+	    return this.year + ' ' + this.make + ' ' + this.model;
+	    },
+	    startEngine: function () {
+	    return 'Vroom';
+	    }
+	};
+	,*/
 
-      // Define a sub Class
-      ns.Car = (function(parent) {
+      return Vehicle;
+    }());
 
-	  function Car(year, make, model) {
-	      parent.call(this, year, make, model);
-	      this.wheelQuantity = 4;
-	  }
+    // Define a sub Class
+    ns.Car = (function(parent) {
 
-	  Car.prototype = Object.create(parent.prototype);
-	  Car.prototype.constructor = Car;
-	  Car.prototype.getInfo = function() {
-	      // Extend parent's method
-	      return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
-	  }
+      function Car(year, make, model) {
+	parent.call(this, year, make, model);
+	this.wheelQuantity = 4;
+      }
 
-	  return Car;
-      }(ns.Vehicle));
+      Car.prototype = Object.create(parent.prototype);
+      Car.prototype.constructor = Car;
+      Car.prototype.getInfo = function() {
+	// Extend parent's method
+	return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
+      }
+
+      return Car;
+    }(ns.Vehicle));
 
   }());
 
   console.log(myApp.publicHello);
+  // undefined for private variable myApp.vehicleCount
+  myApp.getVehicleCount();
+  myApp.setVehicleCount(10);
 
   // Instantiate
   var v = new myApp.Vehicle(2012, 'Toyota', 'Rav4');
