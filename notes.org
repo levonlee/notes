@@ -29177,23 +29177,39 @@ These values are considered as false
   })();
 #+END_SRC
 
-*** Revealing Module Pattern
-It means to use function scope, IIFE and JavaScript Object Prototype to create public and private methods
+*** Revealing Module Pattern <<js:closure:revealing-module-pattern>>
+- It means to use function scope, IIFE and JavaScript Object Prototype to create public and private methods
+- More on [[js:singleton]]
+- Check another pattern [[js:oop]]
 
 #+BEGIN_SRC js
-  // Expose module as global variable
+  // Singleton without instantiation
   var singleton = function(){
+      var privateCounter = 0;
+      function changeBy(val) {
+	  privateCounter += val;
+      }
 
-    // Inner logic, private methods
-    function sayHello(){
-      console.log('Hello');
-    }
+      // private methods
+      function sayHello(){
+	  console.log('Hello');
+      }
 
-    // Expose API, public methods
-    return {
-      sayHello: sayHello
-    }
-  }()
+      // public methods
+      return {
+	  sayHello: sayHello,
+	  increment: function() {
+	      changeBy(1);
+	  },
+	  callBothPrivatePublicMethods: function() {
+	      changeBy(1);
+	      this.increment();
+	  },
+	  value: function() {
+	      return privateCounter;
+	  }
+      };
+  }();
 
   // Access module
   singleton.sayHello();
@@ -29204,16 +29220,16 @@ It means to use function scope, IIFE and JavaScript Object Prototype to create p
   // Expose module as global variable
   var Module = function(){
 
-    // Inner logic
-    function sayHello(){
-      console.log('Hello');
-    }
+      // Inner logic
+      function sayHello(){
+	  console.log('Hello');
+      }
 
-    // Expose API
-    return {
-      sayHello: sayHello
-    }
-  }
+      // Expose API
+      return {
+	  sayHello: sayHello
+      }
+  };
 
   // instantiate
   var module1 = Module();
@@ -29299,7 +29315,8 @@ It means to use function scope, IIFE and JavaScript Object Prototype to create p
   });
 #+END_SRC
 
-*** Singleton <<<Javascript Singleton>>>
+*** Singleton <<js:singleton>>
+- It's also called [[js:closure:revealing-module-pattern][Revealing Module Pattern]]
 #+BEGIN_SRC js
   var Managers = {}; //namespace
   // Singleton object CssManager
@@ -29307,42 +29324,42 @@ It means to use function scope, IIFE and JavaScript Object Prototype to create p
 
   Managers.CssManager = (function() {
 
-  // Private space in which all variables and methods are protected from the global scope
-  // Initialization of properties but it can't be instantialized.
+      // Private space in which all variables and methods are protected from the global scope
+      // Initialization of properties but it can't be instantialized.
 
-  var doc = document;
-  var setAttributes = function(element, attributes) {
-    for (attribute in attributes) {
-      element[attribute] = attributes[attribute];
-    }
-  }
-  // Private space.
-
-  return {
-    // Public members 
-    addStyleSheet: function(id, url) {
-      var newStyleSheet = document.createElement("link");
-      setAttributes(newStyleSheet, {
-	rel : "stylesheet",
-	type: "text/css",
-	id : id,
-	href: url
-      });
-      document.getElementByTagName("head")[0].appendChild(newStyleSheet);
-    },
-    removeStyleSheet: function(id) {
-      var currentStyleSheet = document.getElementById(id);
-      if (currentStyleSheet) {
-	currentStyleSheet.parentNode.removeChild(currentStyleSheet);
+      var doc = document;
+      var setAttributes = function(element, attributes) {
+	  for (attribute in attributes) {
+	      element[attribute] = attributes[attribute];
+	  }
       }
-    },
-    swapStyleSheet: function(id, url) {
-      this.removeStyleSheet(id);
-      this.addStyleSheet(id, url);
-    }
-    // Public members
-  }
-  // return ends.
+      // Private space.
+
+      return {
+	  // Public members 
+	  addStyleSheet: function(id, url) {
+	      var newStyleSheet = document.createElement("link");
+	      setAttributes(newStyleSheet, {
+		  rel : "stylesheet",
+		  type: "text/css",
+		  id : id,
+		  href: url
+	      });
+	      document.getElementByTagName("head")[0].appendChild(newStyleSheet);
+	  },
+	  removeStyleSheet: function(id) {
+	      var currentStyleSheet = document.getElementById(id);
+	      if (currentStyleSheet) {
+		  currentStyleSheet.parentNode.removeChild(currentStyleSheet);
+	      }
+	  },
+	  swapStyleSheet: function(id, url) {
+	      this.removeStyleSheet(id);
+	      this.addStyleSheet(id, url);
+	  }
+	  // Public members
+      }
+      // return ends.
 
   })();
 #+END_SRC
@@ -30765,7 +30782,8 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
   console.log(zParenizor instanceof Parenizor); // true
 #+END_SRC
 
-** OOP Pattern
+** OOP Pattern <<js:oop>>
+- Also see the signleton pattern [[js:singleton]]
 #+BEGIN_SRC js
   // JavaScript Singleton
   (function() {
