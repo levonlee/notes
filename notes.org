@@ -575,7 +575,7 @@ Use absolute path. See dirname
   #+END_SRC
 - A relative path :: start with ~./~ or ~../~
   #+BEGIN_SRC sh
-    cd /path/to/project # this is the entrypoint which is the result of getcwd()
+    cd /path/to/project # this is the entrypoint which is the result of getcwd(), current working directory
     php run/start.php # this is not the entrypoint! the start.php file path
   #+END_SRC
   #+BEGIN_SRC php
@@ -596,8 +596,11 @@ Use absolute path. See dirname
    - Try these in order
       - [[php:ini:include_path]]
 	 - default include paths have 2 directories :: ~.~ and ~/usr/share/php~
+	 - ~.~ :: stands for the entrypoint or current working directory ~getcwd()~, which is ~/path/to/project~ so the file included is ~/path/to/project/connect.php~. Which is the same behavior as relative path
 	 - ~/usr/share/php~ :: ~/usr/share/php/a.php~
-	 - ~.~ :: stands for the entrypoint, which is ~/path/to/project~ so the file included is ~/path/to/project/connect.php~. Which is the same behavior as relative path
+      - If the file isn't found in [[php:ini:include_path]]
+	 - the calling script's own directory
+	 - the current working directory which is the same as ~.~ in [[php:ini:include_path]]
 - Entrypoint
    - Command line :: the cd path which is ~/path/to/project~ in this case
    - Apache/Nginx :: always the path to the nearest directory
@@ -606,6 +609,12 @@ Use absolute path. See dirname
       - http://localhost/phpSandbox/inc/fileinclude.php entry point is
 	 - ~/path/to/project/phpSandbox/inc/~
 - When PhpStorm runs a script :: cd into the directory which has the script file and run it
+- Summary
+   - If the file to be included is in the same or deeper directory of the calling script's own directory, use bare file name or absolute path
+   - If the file to be included is in the parent directory of the calling script's own directory
+      - Try to avoid this happening
+      - Use absolute path
+      - When relative path is used be careful about different current working directory
 
 ** Module, Extension
 *** bz2
@@ -69134,12 +69143,16 @@ https://developer.chrome.com/devtools/docs/blackboxing
 *** Extension
 **** Google Tag Assistant <<<chrome:google tag assistant>>>
 **** [[https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop?utm_source%3Dchrome-app-launcher-info-dialog][Postman]]
-- REST Client app
-- Fire GET and POST requests
-- For POST request, insert data in Body and change Header > Content-Type to application/x-www-form-urlencoded; charset=UTF-8
-- Set up an Environment which you can define key-value pairs which can be used in e.g. request url
-   - e.g. ~GET {{base_url}}/wp-json/wp/v2/posts/~
-- Postman console (icon at the bottom) shows raw request and response
+- Raw request and response :: Postman console (icon at the bottom)
+- POST key value is array :: create multiple keys e.g.
+   - key ~channel[0]~, value ~hello~
+   - key ~channel[1]~, value ~world~
+- Tests
+   - It is run after the request has been sent and has response
+   - https://postman-quick-reference-guide.readthedocs.io/en/latest/assertions.html
+- Collection run
+   - Setup Tests, Pre-script for each request
+   - Select the requests and run them in sequence
 
 **** [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
 Chrome's default save page as HTML has some limitations such as not all images are downloaded.
