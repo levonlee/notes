@@ -324,6 +324,7 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
    - ~error_log=syslog~ :: use whatever Linux syslog is using
 - ~error_reporting~ <<php:ini:error_reporting>>
    - PHP_INI_ALL
+   - All error levels :: https://www.php.net/manual/en/errorfunc.constants.php
    - =E_ALL & ~E_DEPRECATED & ~E_NOTICE= :: show all except deprecated and notice
       - eq. to ~E_ALL ^ (E_DEPRECATED | E_NOTICE)~
    - ~22527~ :: eq. ~E_ALL & ~E_DEPRECATED~
@@ -343,21 +344,102 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
       - no error of notice level :: 20 ms
    - Example
      #+BEGIN_SRC php
+       // Rule of thumb, always set a valid value with the right type for a key/value if you want to manipute later
+       // Save you a lot of work to check, validate and type conversion hassles down the road
+
        $x = [];
        $a = $x['abc'] + 0; // notice undefined index
 
        $x['abc'] = '';
-       $a = $x['abc'] + 0; // warning non-numeric
+       $a = $x['abc'] + 0;
+       // fatal error for array
+       // warning non-numeric for string
+       // no warning for null
 
        $a = (int) ($x['abc'] ?? 0); // PHP 7 using null coalescing operator. good!
        $a = (float) ($x['abc'] ?? 0); // PHP 7. good!
 
        $a = (int) (isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
        $a = (float) (isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
+
+       // Use this function to have a warning/error proofing and the result could be int or float!
+       // Use this also for PHP 7+ when the result type cannot not be predefined
+       function toNumber($valueOrKey, $array = null, $default = 0) {
+	       $val = $valueOrKey;
+	       if (is_array($array) && isset($array[$val])) {
+		       $val = $array[$val];
+	       }
+	       if (is_numeric($val)) {
+		       return $val + $default;
+	       }
+
+	       return $default;
+       }
+
+       var_dump($test = toNumber(null), $test === 0);
+       var_dump($test = toNumber(''), $test === 0);
+       var_dump($test = toNumber(array()), $test === 0);
+       var_dump($test = toNumber(array(1, 2)), $test === 0);
+       $x = array('a' => 123);
+       var_dump($test = toNumber('keyNotExists', $x), $test === 0);
+       var_dump($test = toNumber('a', $x), $test === 123);
+
+       function arrayValue($key, $array, $default = null) {
+	       return isset($array[$key]) ? $array[$key] : $default;
+       }
+
+       $a = arrayValue('abc', $x);
+       $a = isset($x['abc']) ? $x['abc'] : null;
+       // $a = $x['abc'];
+
+       if (isset($x['abc']) ? $x['abc'] : null) {}
+       if (arrayValue('abc', $x)) {}
+       // if (array_key_exists('abc', $x) && $x['abc']) {}
+       //if ($x['abc']) {}
+
+       if (is_numeric(arrayValue('abc', $x))) {}
+       // if (isset($x['abc']) && is_numeric($x['abc'])) {}
+       // if (is_numeric($x['abc'])) {}
      #+END_SRC
 - Trigger error <<php:trigger_error>>
   #+BEGIN_SRC php
     trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
+  #+END_SRC
+
+*** Custom error/warning/notice hanlder
+- https://www.php.net/manual/en/function.set-error-handler.php
+  #+BEGIN_SRC php
+    // set_error_handler returns the previous handler
+    // Get error handler
+    set_error_handler($handler = set_error_handler('var_dump'));
+    var_dump('error handler', $handler); // NULL | string | array(2) | Closure
+
+    restore_error_handler(); // no parameter
+
+    // Set a handler for multipl error levels
+    $oldHandler = set_error_handler(
+	    function ($errno, $errstr, $errfile, $errline, $errcontext) {
+		    //var_dump('$errno', $errno); // int, same as error level
+		    //var_dump('$errstr', $errstr); // e.g. `Undefined index: someindexname`
+		    //var_dump('$errfile', $errfile); // absolute path to file
+		    //var_dump('$errline', $errline); // int
+		    //var_dump('$errcontext', $errcontext); // deprecated as of PHP 7.2.0 and removed in PHP 8
+		    $ignoreFiles = array('partial/path/to/file1', 'partial/path/to/file2');
+		    $r = false;
+		    foreach ($ignoreFiles as $ignoreFile) {
+			    if (strlen($ignoreFile) > 0 ? substr($errfile, -strlen($ignoreFile)) === $ignoreFile : true) {
+				    // file path ends with
+				    $r = true;
+				    break;
+			    }
+		    }
+
+		    return $r;
+		    // false: nothing will be output in this function and the default PHP error handler will be run
+		    // true: output as defined in this function and the default php error handler will not be run
+	    },
+	    E_NOTICE | E_WARNING
+    );
   #+END_SRC
 
 *** opcache <<php:ini:opcache>>
@@ -1939,7 +2021,7 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 #+END_SRC
 
 *** First character uppercase/lowercase - ~ucfirst()~ ~lcfirst()~
-*** Start with
+*** Start with / End with
 #+BEGIN_SRC php
   $prefix = '/inventory/';
   // case-insensitive compare
@@ -1950,6 +2032,19 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 
   // case-sensitive compare
   if ( substr($request_uri, 0, strlen($prefix)) === $prefix ) {}
+
+
+  function endsWith($haystack, $needle) {
+      $length = strlen($needle);
+
+      return $length > 0 ? substr($haystack, -$length) === $needle : true;
+  }
+
+  // one liner end with
+  $haystack = 'path/to/file';
+  $needle = 'to/file';
+
+  if (strlen($needle) > 0 ? substr($haystack, -strlen($needle)) === $needle : true) {}
 #+END_SRC
 
 *** sprintf and printf <<php:sprintf>>
