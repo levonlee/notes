@@ -1479,11 +1479,33 @@ Single dimension
 
 *** ~array_reduce~ <<php:array_reduce>>
 - Refer to [[js:array:reduce][js:array:reduce]]
-#+BEGIN_SRC php
-  array_reduce ( array $array , callable $callback [, mixed $initial = NULL ] ) : mixed
+  #+BEGIN_SRC php
+    array_reduce ( array $array , callable $callback [, mixed $initial = NULL ] ) : mixed
 
-  callback ( mixed $carry , mixed $item ) : mixed
-#+END_SRC
+    callback ( mixed $carry , mixed $item ) : mixed
+  #+END_SRC
+- Return deep value in array
+  #+BEGIN_SRC php
+    /**
+     ,* @param array $array
+     ,* @param array|string|int $keys
+     ,* @param null $default
+     ,*
+     ,* @return mixed|null
+     ,*/
+    function arrayGetDeepValue($array, $keys, $default = null) {
+	    $keys = ( ! is_array($keys)) ? array($keys) : $keys;
+	    $r = array_reduce(
+		    $keys,
+		    function ($result, $index) {
+			    return (isset($result) && array_key_exists($index, $result)) ? $result[$index] : null;
+		    },
+		    $array
+	    );
+
+	    return isset($r) ? $r : $default;
+    }
+  #+END_SRC
 
 *** ~array_shift~, ~array_unshift~ prepend, ~array_pop~
 #+BEGIN_SRC php
@@ -3891,7 +3913,7 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
    - ~Symfony\Component\HttpFoundation\Request~
    - ~new DateTime~
 - Alias or import using ~use~
-   - Alias for class and namespace supported on PHP 5.3 and plus
+   - Alias for class and namespace supported on PHP 5.3+
    - Alias for function and constants on PHP 5.6 and plus
    - e.g.
      #+BEGIN_SRC php
