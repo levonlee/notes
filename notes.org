@@ -64959,13 +64959,15 @@ Update Joined Tables
 #+END_SRC
 
 *** Admin queries
-**** ALTER TABLE <<mysql:alter>>
+**** ALTER TABLE <<mysql:alter table>>
 #+BEGIN_SRC sql
   -- MODIFY eq. MODIFY COLUMN can change definition only
   ALTER TABLE `t1` MODIFY `col1` VARCHAR(255);
   ALTER TABLE `t1` MODIFY `col1` VARCHAR(255) FIRST; -- AFTER can be used
 
   -- CHANGE eq. CHANGE COLUMN can change column name
+  -- The order ~FIRST | AFTER anotherColumn~ is optional
+  -- To get column definition, refer to mysql:show create table
   ALTER TABLE `t1` CHANGE `col1` `col1newname` VARCHAR(255) FIRST;
 
   ALTER TABLE `t1` ADD `col1` tinyint DEFAULT 0; -- set a default value
@@ -64973,11 +64975,17 @@ Update Joined Tables
 
   ALTER TABLE `t1` ADD `col1` VARCHAR(255) NULL AFTER `col2`;
 
+  -- RENAME
+  ALTER TABLE `t1` RENAME COLUMN original_column_name TO new_column_name; -- v8.0+
+
   -- ADD eq. ADD COLUMN
   ALTER TABLE `t1` ADD COLUMN `col1` VARCHAR(10) DEFAULT NULL; -- default null also means can be null
   ALTER TABLE `t1` ADD COLUMN `col1` VARCHAR(10) DEFAULT NULL,
     ADD COLUMN `col2` bigint(20) unsigned DEFAULT NULL,
     ADD COLUMN `col3` tinyint(1) unsigned DEFAULT 0; -- one query multiple alter's
+
+  -- DROP column
+  ALTER TABLE `t1` DROP COLUMN `col1`;
 #+END_SRC
 
 **** Table Status, Table Settings, Table Definition
@@ -65004,7 +65012,7 @@ Update Joined Tables
 - Avg_row_length :: avg row size. Refer to [[mysql:row size][mysql:row size]] <<mysql:avg_row_length>>
 - Collation :: utf8mb4_general_ci
 
-***** DDL - Data Definition Language, Table definition <<mysql:ddl>>
+***** DDL - Data Definition Language, Table definition <<mysql:show create table>>
 - Column definition and index keys
   #+BEGIN_SRC sql
     -- Column definition and index keys
@@ -65057,32 +65065,36 @@ Update Joined Tables
 #+END_SRC
 
 **** Table columns <<mysql:show columns>>
-Search tables by column name
-#+BEGIN_SRC sql
-  SELECT DISTINCT TABLE_NAME 
-  FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE COLUMN_NAME IN ('columnA','ColumnB')
-	AND TABLE_SCHEMA='YourDatabase';
-#+END_SRC
+- INFORMATION_SCHEMA.COLUMNS
+   - TABLE_NAME
+     Search tables by column name
+     #+BEGIN_SRC sql
+       SELECT DISTINCT TABLE_NAME 
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE COLUMN_NAME IN ('columnA','ColumnB') AND TABLE_SCHEMA='YourDatabase';
+     #+END_SRC
+   - COLUMN_NAME
+     All columns of a table
+     #+BEGIN_SRC sql
+       SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema ='mydbname' -- DATABASE() current database
+       AND table_name = 'mytablename'
+     #+END_SRC
+   - COLUMN_TYPE :: e.g. ~decimal(10,2) unsigned~
+   - IS_NULLABLE :: YES or NO
+   - COLUMN_DEFAULT :: e.g. 0, 'default string'
+   - COLUMN_COMMENT
+- Column definition
+   - Collation, privileges, comments
+     #+BEGIN_SRC sql
+       SHOW FULL COLUMNS FROM myTable;
 
-All columns of a table
-#+BEGIN_SRC sql
-  SELECT column_name
-  FROM information_schema.columns
-  WHERE table_schema ='mydbname' -- DATABASE() current database
-  AND table_name = 'mytablename'
-#+END_SRC
-
-Column definition
-- Collation, privileges, comments
-  #+BEGIN_SRC sql
-    SHOW FULL COLUMNS FROM myTable;
-
-    -- only show Type, Null, Key Default, Extra. They're all the same
-    DESCRIBE myTable;
-    EXPLAIN myTable;
-  #+END_SRC
-- To get index keys in a table :: [[mysql:ddl]]
+       -- only show Type, Null, Key Default, Extra. They're all the same
+       DESCRIBE myTable;
+       EXPLAIN myTable;
+     #+END_SRC
+- To get index keys in a table :: [[mysql:show create table]]
 
 **** EXPLAIN <<mysql:explain>>
 - Use it before ~SELECT~, ~DELETE~, ~INSERT~, ~REPLACE~ AND ~UPDATE~ statements
