@@ -63810,8 +63810,35 @@ Copy from remote to local <<<aws:scp>>>
   scp -r user@remotehostcom:/path/to/foo/. .
 #+END_SRC
 
-If port is not 22, it has to be specified ~-P 2222~.
-If the default private key doesn't work, use =-i ~/.ssh/your_private_key_file=
+- ~-P~ and ~-3~ :: If port is not 22, it has to be specified ~-P 2222~
+   - It's capital P
+   - only one ~-P~ in a scp command which always indicates the destination remote port
+   - If you want to specify the source remote port, do one of the following
+      - Set up =~/.ssh/config= on localhost with both source and destination servers' ports and credentials
+	#+BEGIN_SRC conf
+	  Host source
+	      Hostname 1.2.3.4
+	      Port 6774
+	      User sourceHostUserName
+	      IdentityFile ~/.ssh/id_rsa_source
+	  Host dest
+	      Hostname 5.6.7.8
+	      Port 8888
+	      User destinationHostUserName
+	      IdentityFile ~/.ssh/id_rsa_destination
+	#+END_SRC 
+	 - Run
+	    - ~scp -rp3 sourceHostUserName@1.2.3.4:/source/path/to/1.txt destinationHostUserName@5.6.7.8:/dest/~ Or
+	    - ~scp -rp3 source:/source/path/to/1.txt dest:/dest/~
+	    - ~-3~ :: means both source and destination are remotes, traffic is redirected to local, and local SSH config is used
+      - On the source server, set up =~/.ssh/config~= to include the destination port and credentials
+	 - Run
+	    - ~ssh -p 6774 sourceHostUserName@1.2.3.4 scp -rp -P 8888 /source/path/to/1.txt destinationHostUserName@5.6.7.8:/dest/~ Or
+	    - ~ssh source scp -rp /source/path/to/1.txt dest:/dest/~
+- ~-p~ :: preserve modification times, access times, and modes from original file
+- ~-r~ :: recursive and it follows sym links
+- ~-i~ :: If the default private key doesn't work, use =-i ~/.ssh/your_private_key_file=
+   - only one ~-i~ I assume.. for the destination remote
 
 ** EC2 <<<aws:ec2>>>
 - Pricing
@@ -64289,7 +64316,7 @@ MySQL >= 5.1.12
 - https://dev.mysql.com/doc/refman/8.0/en/mysql-command-options.html
 - Execute
   #+BEGIN_SRC sh
-    mysql -e "SELECT * FROM a WHERE col1 LIKE '%some%'" -uroot -p mydbname > /path/to/bk.txt
+    mysql -e "SELECT * FROM a WHERE col1 LIKE '%some%'" -uroot -p mydbname > /path/to/bk.tsv
   #+END_SRC
    - Escape ~"~ inside the query :: ~\"~
    - Escape ~\~ :: ~\\~ 
