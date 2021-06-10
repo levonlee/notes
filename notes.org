@@ -522,7 +522,7 @@ SERVER_SIGNATURE
 - HTTP_HOST :: see below
 - REQUEST_TIME
 - REQUEST_URI :: ~/abc/xyz.html?abc=xyz~ without hash. Raw value is encoded. Use ~urldecode~
-- REQUEST_METHOD
+- REQUEST_METHOD :: <<php:$_PUT>>
   #+BEGIN_SRC php
     $method = $_SERVER['REQUEST_METHOD'];
     if ('PUT' === $method) {		
@@ -530,6 +530,7 @@ SERVER_SIGNATURE
 	    var_dump($_PUT); //$_PUT contains put fields 
     }
   #+END_SRC
+   - Refer to [[php:input]] 
 - REMOTE_ADDR
 - REMOTE_HOST :: 
    - relies on reverse DNS lookups and may hence be spoofed by DNS attacks against server (at that time you have bigger problems anyway)
@@ -2952,6 +2953,23 @@ Separate different-type sections by a blank line
 #+END_SRC
 
 *** Tag reference
+**** @name
+#+BEGIN_SRC php
+  /**
+   ,* Now, when @global is used in a function, it will link to $baz
+   ,* @name $baz
+   ,* @global array $GLOBALS ['baz']
+   ,*/
+  $GLOBALS['baz'] = array('foo', 'bar');
+
+  /**
+   ,* @global array used for stuff
+   ,*/
+  function mine() {
+	  global $baz;
+  }
+#+END_SRC
+
 **** @code
 #+BEGIN_SRC php
   ,* Example usage:
@@ -3001,8 +3019,32 @@ Separate different-type sections by a blank line
 
 **** @link <<phpdoc:@link>>
 #+BEGIN_SRC php
-  @link URL <link text>
-  @link URL1, URL2, URL3...
+  // @link URL <link text>
+  // @link URL1, URL2, URL3...
+
+  // Use this to show mutation. Not standard but I find it convenient
+
+  class ABC {
+	  /**
+	   ,* @var string
+	   ,*/
+	  private string $firstVar;
+
+	  /**
+	   ,* Calls parent constructor, then increments {@link $firstVar}
+	   ,*
+	   ,* or
+	   ,*
+	   ,* @link $firstVar, $secondVar
+	   ,*
+	   ,* @echo string
+	   ,*/
+	  public function a() {
+		  $this->firstVar = '';
+		  echo 'das';
+	  }
+
+  }
 #+END_SRC
 
 **** @see <<<PHPDoc:@see>>>
@@ -3128,6 +3170,36 @@ Examples
 
 *** PDO <<php:pdo>>
 - It supports named parameters and prepared statements on client side while [[php:mysqli][php:mysqli]] doesn't 
+
+** Function <<php:function>>
+#+BEGIN_SRC php
+  // Chaining
+  function abc() {
+	  return ['a' => 123];
+  }
+
+  abc()['a'];
+
+  // Return a reference to the value
+  class Config {
+	  private $values = [];
+
+	  // return a REFERENCE to the actual $values array
+	  public function &getValues() {
+		  return $this->values;
+	  }
+
+	  // don't need to set function to pass by reference as objects are passed by reference by default, other data types are passed by value
+	  public function getObjectValue() {
+		  return $this->values;
+	  }
+
+  }
+
+  $config = new Config();
+  $config->getValues()['test'] = 'test'; // mutate a private property from outside
+  var_dump($test = $config->getValues()['test'], $test === 'test');
+#+END_SRC
 
 ** OOP <<php:oop>>
 *** Sample
@@ -31598,6 +31670,11 @@ An observable is like a promise, but it calls some code every time a new value b
 #+END_SRC
 
 *** ~application/x-www-form-urlencoded~ vs ~multipart/form-data~
+- Common
+   - PHP will have ~$_POST~ if the request content-type is either of these 2
+   - To intepret other content type or other request method e.g. [[php:$_PUT]] <<php:input>>
+      - ~$_POST = json_decode(file_get_contents('php://input'), true);~
+      - ~parse_str(file_get_contents('php://input'), $_PUT);~ :: ~$str = "first=value&arr[]=foo+bar&arr[]=baz";~
 - ~application/x-www-form-urlencoded~
    - Transfers extra data if large amount of binary data is sent
    - spaces are encoed as plus signs
