@@ -774,7 +774,8 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 *** Create a custom date
 **** ~mktime~ return Unix timestamp <<<php:f:mktime>>>
 #+BEGIN_SRC php
-  // hour, min, sec, month, day, year, $is_dst(daylight saving, 0 or 1)
+  // hour, min, sec, month, day, year, $is_dst(daylight saving, 0 or 1) based on the current set timezone
+  date_default_timezone_set('UTC'); // set the timezone to UTC
   $_u_time = mktime(11,0,0,11,22,2016);
 #+END_SRC
 
@@ -821,9 +822,9 @@ Create by using Unix timestamp (int) in seconds
 #+BEGIN_SRC php
   $_u_time = strtotime('2016-11-01'); // 20190228 also works
 
-  $a = new DateTime();
-  $a->setTimestamp($_u_time);
-
+  $a = new DateTime(); // now
+  $a->setTimestamp($_u_time); // set it based on a Unix timestamp to current set timezone
+  $a->getTimestamp(); // convert back to integer Unix timestamp
 
   $now = new DateTime();
 
@@ -833,6 +834,11 @@ Create by using Unix timestamp (int) in seconds
   $yesterday = new DateTime(); // now
   $yesterday->sub(new DateInterval('P1D')); // subtract one day
   echo $yesterday->format('Ymd');
+
+  $myDate = '02111981';
+  $newDate = DateTime::createFromFormat('mdY H:i:s', "$myDate 00:00:00"); // Current set timezone
+  $newDate = DateTime::createFromFormat('mdY H:i:s', "$myDate 00:00:00", new DateTimeZone('UTC')); // At a timezone other than the current set timezone
+  $newDate->format('m/d/Y');
 #+END_SRC
 
 Convert a string format to another
@@ -1212,8 +1218,23 @@ Here's how to remove any 4 byte character:
 #+END_SRC
 
 *** Last element
-$_last = end($target_array);
-reset($target_array);
+#+BEGIN_SRC php
+  // First element/value
+  // PHP 5.4+
+  $first = array_values($array)[0]; // throw error if array is empty
+  // PHP 7.3+
+  $first = $array[array_key_first($array)];
+
+  // $first = current($array); // requires the array current pointer is at the beginning
+  // $first = reset($array); // mutates the array and returns false if the array is empty!
+
+  // Last element
+  $last = end($target_array); // set array pointer to last
+  $last = reset($target_array);
+  // PHP 7.3+
+  $array[array_key_last($array)];
+#+END_SRC
+
 *** ~in_array~ <<php:in_array>>
 #+BEGIN_SRC php
   in_array ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : bool
