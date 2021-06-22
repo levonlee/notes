@@ -835,10 +835,14 @@ Create by using Unix timestamp (int) in seconds
   $yesterday->sub(new DateInterval('P1D')); // subtract one day
   echo $yesterday->format('Ymd');
 
-  $myDate = '02111981';
-  $newDate = DateTime::createFromFormat('mdY H:i:s', "$myDate 00:00:00"); // Current set timezone
-  $newDate = DateTime::createFromFormat('mdY H:i:s', "$myDate 00:00:00", new DateTimeZone('UTC')); // At a timezone other than the current set timezone
-  $newDate->format('m/d/Y');
+  $myDate = '02111981 00:00:00';
+  /** @var DateTime|false $date */
+  $newDate = DateTime::createFromFormat('mdY H:i:s', $myDate); // Current set timezone
+  $newDate = DateTime::createFromFormat('mdY H:i:s', $myDate, new DateTimeZone('UTC')); // At a timezone other than the current set timezone
+  $newDateString = ($date) ?
+	  $date->format('Y-n-j') // error if $date is false
+	  : false;
+  $newDateUnix = ($date) ? $date->getTimestamp() : null;
 #+END_SRC
 
 Convert a string format to another
@@ -1527,16 +1531,57 @@ Single dimension
   var_dump('$fruits2', $fruits2); // works!
 #+END_SRC
 
-*** Insert to any position of an array
+*** ~array_splice~ Insert to any position of an array <<php:array_splice>>
 #+BEGIN_SRC php
-  $original = array( 'a', 'b', 'c', 'd', 'e' );
-  $inserted = array( 'x' ); // Not necessarily an array
+  $original = array('a', 'b', 'c', 'd', 'e');
+  $inserted = array('x', 'y');
 
-  array_splice( $original, 3, 0, $inserted ); // splice in at position 3
-  // $original is now a b c x d e
+  // remove and replace elements in array
+  // array_splice (array &$input, $offset, $length = null, $replacement = null)
+  // return the array consisting of the extracted elements.
+  $extractedElements = array_splice($original, 3, 0, $inserted);
 
-  // prepend one or more elements
-  array_unshift($original, "f", "g");
+  var_dump(
+	  'Length is 0 means to insert at position 3 (offset)',
+	  $original === array('a', 'b', 'c', 'x', 'y', 'd', 'e')
+  );
+
+  var_dump(
+	  'Extracted elements is empty array because only insert',
+	  $extractedElements === array()
+  );
+
+  array_unshift($original, 'f', 'g');
+
+  var_dump(
+	  'Prepend f and g in front',
+	  $original === array('f', 'g', 'a', 'b', 'c', 'x', 'y', 'd', 'e')
+  );
+
+  $insertedOne = 'a string';
+  $extractedElements = array_splice($original, 3, 0, $insertedOne);
+
+  var_dump(
+	  'Inserted One',
+	  $original === array('f', 'g', 'a', 'a string', 'b', 'c', 'x', 'y', 'd', 'e')
+  );
+
+  $original = array('a' => 1, 'b' => 2, 'c' => 3, 'd' => 4, 'e' => 5);
+  $inserted = array('x' => 6, 'y' => 7);
+  $extractedElements = array_splice($original, 3, 0, $inserted);
+
+  var_dump(
+	  'Associative array',
+	  $original === array(
+		  'a' => 1,
+		  'b' => 2,
+		  'c' => 3,
+		  0 => 6,
+		  1 => 7,
+		  'd' => 4,
+		  'e' => 5,
+	  )
+  );
 #+END_SRC
 
 *** ~array_filter~ <<php:array_filter>>
