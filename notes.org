@@ -2153,7 +2153,7 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 
 *** Replace <<<php:str_replace>>>
 - Works with multibyte
-- Search and replace from left to right
+- Search and replace all from left to right
 - Case-sensitive :: use ~str_ireplace()~ for case-insensitive
 - Binary safe
 - Parameters
@@ -2173,8 +2173,10 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   // when $subject is an array, search and replace is performed with every entry of subject and return value is an array
 #+END_SRC
 
-*** Replace first or last occurance
+*** Replace first or last occurance <<php:substr_replace>>
 #+BEGIN_SRC php
+  // substr_replace ($string, $replacement, $start, $length = null) : string|string[]
+
   function str_flreplace($search, $replace, $subject, $isFirstReplace = 1) {
 	  $pos = strpos($subject, $search);
 	  if ( ! $isFirstReplace) {
@@ -2455,11 +2457,14 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   #+BEGIN_SRC php
     $url = $_SERVER['REQUEST_URI'];
     $parts = parse_url($url);
-    parse_str($parts['query'], $query);
-    echo $query['email'];
+    if ($parts !== false) {
+	    // if there's error, it will return false
+	    parse_str($parts['query'], $query);
+	    echo $query['email'];
+    }
 
+    // parse_str ($str, array &$result = null) : void
     $str = "first=value&arr[]=foo+bar&arr[]=baz";
-
     parse_str($str, $output);
     echo $output['first'];  // value
     echo $output['arr'][0]; // foo bar
@@ -4336,7 +4341,7 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
      CURLOPT_POSTFIELDS => $myvars, // if value is pure array, then request content-type should multipart/form-data
      // if request content-type is application/json, then POSTFIELDS should be a json string
 	   // otherwise it should be x-www-form-urlencoded (use http_build_query($array))
-     CURLOPT_FOLLOWLOCATION =>  1,
+     CURLOPT_FOLLOWLOCATION => 1, // follow through. Default is not to follow through
      CURLOPT_HEADER => 0,
      CURLOPT_RETURNTRANSFER => 1,
      // CURLOPT_VERBOSE => true, // enable debug
@@ -64301,7 +64306,7 @@ You can change the data type for some of fields to Long Text (>Access 2013) or M
 It's possibly due to you are using Microsoft Access with Unicode driver in ColdFusion and you insert to a memo or long text field. 
 ~cf_sql_longvarchar~ doesn't work. You should use ~<cfqueryparam cfsqltype="CF_SQL_CLOB" value="#description#">~ instead. 
 
-** MySQL
+** MySQL <<db:mysql>>
 *** Version, Settings, Global variables <<mysql:config>>
 - ~service mysql status~
 - ~sudo systemctl restart mysql.service~ or ~service mysql restart~ or ~service mysqld restart~
@@ -64916,6 +64921,9 @@ MySQL 5.6
       - including virutal generated columns
 
 *** Common queries, functions, operators
+**** Reuse alias in SELECT
+SELECT aliases can only be used in ORDER BY, GROUP BY and HAVING
+
 **** JOIN
 - ~INNER JOIN~ is ~JOIN~
 - Comma separated tables is eq. to ~JOIN~ but the precedence is less than ~JOIN~, ~INNER JOIN~, ~LEFT JOIN~, ~CROSS JOIN~
@@ -64931,6 +64939,10 @@ MySQL 5.6
     -- ON is
     a.c1, a.c2, a.c3, b.c1, b.c2, b.c3
   #+END_SRC
+***** Join on one row
+#+BEGIN_SRC sql
+
+#+END_SRC
 
 **** ~GROUP BY~ and ~HAVING~ <<mysql:group by>>
 - After ~WHERE~ before ~ORDER BY~ and ~HAVING~
