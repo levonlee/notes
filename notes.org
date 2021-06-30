@@ -2730,18 +2730,75 @@ There're several ways
 ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 
 ** Heredoc, Nowdoc
-Nowdoc can't expand variables and the result is single quoted string
-#+BEGIN_SRC php
-  echo <<<'EOT'
-  <span>{$obj->name[1]}</span>
-  EOT;
-#+END_SRC
-
 *** Heredoc
 - Result is a double-quoted string
 - Limitation
-   - Can't interpolate constants. Use ~sprintf~ or ~printf~ instead
+   - Can't interpolate constants directly. Use ~sprintf~ or ~printf~ instead
 
+**** Complex (curl) syntax
+#+BEGIN_SRC php
+  $juice = 'apple';
+  $a = array(
+	  'a' => 'abc',
+  );
+  $referToVariableJuice = 'juice';
+  function getVariableName() {
+	  return 'juice';
+  }
+
+  function returnArray($data = null) {
+	  return isset($data) ? $data : array('a' => 'abc');
+  }
+
+  $lambda = function ($data) {
+	  return $data;
+  };
+  $getNameLambda = function () {
+	  return 'getNameLambda';
+  };
+
+  class Foo {
+	  const NAME = 'name: foo';
+	  public $bar = 'I am bar.';
+	  public static $staticProperty = 'staticProperty';
+  }
+
+  $foo = new Foo();
+  $bar = 'bar';
+  $baz = array('foo', 'bar', 'baz', 'quux');
+
+  echo <<<HTML
+  Simple:
+  $juice => apple, use \$juice to escape
+
+  Dollar sign simple syntax: 
+  ${a['a']} => abc, use \${a['a']} to escape 
+  ${juice} => apple, use \${juice} to escape
+  ${juice}s => apples
+
+  Complex (curl) syntax:
+  {$a['a']} => abc, use {\$a['a']} to escape
+  {$juice}s => apples, 
+  {${$referToVariableJuice}} => ${$referToVariableJuice} => apple
+
+  Complex (curl) syntax access class properties using variables:
+  {$foo->bar} => I am bar.
+  {$foo->{$baz[1]}} => {\$foo->bar} => {$foo->bar} => I am bar.
+
+  Complex (curl) syntax can call function!
+  {${getVariableName()}} => \${getVariableName()} (syntax error on phpStorm and PHP 5.4-) => apple => \${juice}
+  {$getNameLambda()} => getNameLambda
+  {$lambda(time())} => Unix timestamp
+  {$lambda(time() / 2)} => Unix timestamp
+  {$lambda(returnArray()['a'])} => abc
+  {$lambda(returnArray(array('a' => 'xyz'))['a'])} => xyz
+  {$lambda((returnArray()['a']) ? time() : time() / 2)} => Unix timestamp
+  {$lambda(Foo::NAME)} => name: foo
+  {$lambda(Foo::$staticProperty)} => staticProperty
+  HTML;
+#+END_SRC
+
+**** Use ~sprintf~
 #+BEGIN_SRC php
   $html = <<<HTML
   <span>{$obj->name[1]}</span>
@@ -2764,6 +2821,12 @@ Nowdoc can't expand variables and the result is single quoted string
   plain text and now a function: %s
   heredoc;
   $string = sprintf($string, testfunction());
+#+END_SRC
+*** Nowdoc can't expand variables and the result is single quoted string
+#+BEGIN_SRC php
+  echo <<<'EOT'
+  <span>{$obj->name[1]}</span>
+  EOT;
 #+END_SRC
 
 *** Alternative
