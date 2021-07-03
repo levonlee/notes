@@ -1438,7 +1438,7 @@ Single dimension
        $my_printer(); // My fav number is 43
      #+END_SRC
       - Since 7.1, cannot ~use~ superglobals, ~$this~ or variables with the same name as a parameter
-- Lambda function <<php:lambda function>>
+- Lambda function <<php:lambda>>
    - A function can be passed as data to e.g. functions, array values
    - Not necessarily anonymous e.g. in JavaScript, the function passed in may have a function name
      #+BEGIN_SRC js
@@ -1516,6 +1516,60 @@ Single dimension
 
   var_dump($a['b']($c)); // d
 #+END_SRC
+
+**** PHP Immediately Invoked Function Expressions <<php:iife>>
+- v7.0+
+  #+BEGIN_SRC php
+    echo (function() {
+	return 42;
+    })();
+
+    $foo = (function() {
+	return function($a) {
+	    return $a + 42;
+	};
+    })();
+
+    echo $foo(10); // 52
+
+    $foo = (function($a) {
+	return function($b) use ($a) {
+	    return $a + $b;
+	};
+    })(42);
+    echo $foo(10); // 52
+
+
+    // Pass by reference
+    $sum = 0;
+    (function ($a, $b, &$sum) {
+	    $sum = $a + $b;
+	    echo $sum . ' inside IIFE' . PHP_EOL;
+    })(
+	    25, 9, $sum
+    );
+    var_dump($sum); // 34
+  #+END_SRC
+- PHP 7.0-
+  #+BEGIN_SRC php
+    call_user_func(function() {
+	echo "Hello World!";
+    });
+
+    call_user_func(function($a, $b) {
+	$sum = $a + $b;
+	echo $sum;
+    }, 25, 9);
+
+    // Pass by reference :: use call_user_func_array
+    call_user_func_array(
+	    function ($a, $b, &$sum) {
+		    $sum = $a + $b;
+		    echo $sum . ' inside IIFE' . PHP_EOL;
+	    },
+	    array(25, 9, &$sum)
+    );
+  #+END_SRC
 
 *** ~array_splice~ Insert to any position of an array <<php:array_splice>>
 #+BEGIN_SRC php
@@ -2729,13 +2783,14 @@ There're several ways
 
 ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 
-** Heredoc, Nowdoc
+** Heredoc, Nowdoc <<php:heredoc>>
 *** Heredoc
 - Result is a double-quoted string
 - Limitation
    - Can't interpolate constants directly. Use ~sprintf~ or ~printf~ instead
 
 **** Complex (curl) syntax
+- Refer to [[php:lambda]] [[php:iife]]
 #+BEGIN_SRC php
   $juice = 'apple';
   $a = array(
@@ -2795,6 +2850,39 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
   {$lambda((returnArray()['a']) ? time() : time() / 2)} => Unix timestamp
   {$lambda(Foo::NAME)} => name: foo
   {$lambda(Foo::$staticProperty)} => staticProperty
+
+  PHP v7.0 below
+  {$lambda(
+	  call_user_func(
+		  function ($delimiter) {
+			  $r = '';
+			  foreach (array('hello', 'world') as $i) {
+				  $r .= <<<HTML
+  <p>{$i}</p> {$delimiter}
+  HTML;
+			  }
+
+			  return $r;
+		  },
+		  $delimiter
+	  )
+  )}
+
+  PHP v7.0+
+  {$lambda(
+	  (function ($delimiter) {
+		  $r = '';
+		  foreach (array('hello', 'world') as $i) {
+			  $r .= <<<HTML
+  <p>{$i}</p> {$delimiter}
+  HTML;
+		  }
+
+		  return $r;
+	  })(
+		  $delimiter
+	  )
+  )}
   HTML;
 #+END_SRC
 
@@ -53018,6 +53106,10 @@ File > Settings
     - Profile ::  none
     - Tune :: none
     - x264 Options :: blank
+
+***** Audio Filters
+- Compressor
+- Noise Suppression
 
 *** Ubuntu troubleshooting
 **** Unmet dependencies
