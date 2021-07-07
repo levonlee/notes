@@ -2214,6 +2214,21 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
      #+END_SRC
 - Refer to [[js:innerHTML][js:innerHTML]]
 
+**** UTF-8
+#+BEGIN_SRC php
+  $string = 'Svrček';
+  var_dump($test = mb_detect_encoding($string), $test === 'UTF-8');
+  // detect if it's UTF-8 using preg_match
+  var_dump($test = preg_match('//u', $string), $test === 1);
+  var_dump($test = json_encode($string), $test === '"Svr\u010dek"');
+  var_dump($test = json_decode(json_encode($string)), $test === $string);
+  var_dump($test = json_encode($string, JSON_UNESCAPED_UNICODE), $test === '"' . $string . '"');
+  var_dump($test = json_decode(json_encode($string, JSON_UNESCAPED_UNICODE)), $test === $string);
+  var_dump($test = urlencode(json_encode($string, JSON_UNESCAPED_UNICODE)), $test === '%22Svr%C4%8Dek%22');
+  var_dump($test = urldecode(urlencode(json_encode($string, JSON_UNESCAPED_UNICODE))), $test === '"' . $string . '"');
+  var_dump($test = json_decode(urldecode(urlencode(json_encode($string, JSON_UNESCAPED_UNICODE)))), $test === $string);
+#+END_SRC
+
 *** Back slashes for quotes and other characters <<php:addslashes>> <<php:stripslashes>>
 #+BEGIN_SRC php
   $str = "Is your name O'Reilly?";
