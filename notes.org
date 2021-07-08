@@ -1843,6 +1843,57 @@ Single dimension
 - ~usort~ doesn't maintain key association but ~uasort~ does. If callback function returns negative integer, means the comparison is less than
 - Refer to [[php:spaceship operator][php:spaceship operator]]
 
+***** Basic example
+#+BEGIN_SRC php
+  $a = array(
+	  array('id' => 321, 'name' => 'Li Li 321'),
+  );
+  $b = array(
+	  array('id' => 456, 'name' => 'Li Li 456'),
+	  array('id' => 123, 'name' => 'Li Li 123'),
+  );
+  $c = array(); // no warning
+  $d = array(
+	  array('name' => 'Li Li Random no id'), // PHP Notice: no index 'id'
+  );
+
+  $toSort = array_merge($a, $b);
+  $toSort2 = array_merge($b, $c);
+  $toSort3 = array_merge($b, $d);
+
+  function mySort($a, $b) {
+	  return $a['id'] - $b['id']; // ascending order
+  }
+
+  usort($toSort, 'mySort');
+  var_export($toSort);
+  var_dump(
+	  $toSort === array(
+		  array('id' => 123, 'name' => 'Li Li 123',),
+		  array('id' => 321, 'name' => 'Li Li 321',),
+		  array('id' => 456, 'name' => 'Li Li 456',),
+	  )
+  );
+  usort($toSort2, 'mySort');
+  var_export($toSort2);
+  var_dump(
+	  $toSort2 === array(
+		  array('id' => 123, 'name' => 'Li Li 123'),
+		  array('id' => 456, 'name' => 'Li Li 456'),
+	  )
+  );
+  usort($toSort3, 'mySort');
+  var_export($toSort3);
+  var_dump(
+	  $toSort3 === array(
+		  array('name' => 'Li Li Random no id'), // PHP Notice: no index 'id'
+		  array('id' => 123, 'name' => 'Li Li 123'),
+		  array('id' => 456, 'name' => 'Li Li 456'),
+	  )
+  );
+#+END_SRC
+
+***** More examples
 #+BEGIN_SRC php
   $to_sort = [
 	  [
