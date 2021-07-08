@@ -1777,13 +1777,14 @@ Single dimension
   var_dump($test = array_sum(array('a' => 100, 'b' => 10, 'c' => 20, 'd' => 30)), $test === 100 + 10 + 20 + 30);
 #+END_SRC
 
-*** Sort arrays <<php:sort>>
+*** Sort arrays <<php:array:sort>>
 - http://php.net/manual/en/array.sorting.php
-- All functions act directly on the input array
-- Maintain key association means the keys are not modified otherwise the keys are reset numerically (0,1,2)
 
-**** sort
-- Mutate
+**** sort <<php:sort>>
+- Sort by value, the sorted array has keys starting from 0 (key/value pair is not maintained)
+   - sort :: ascending order
+   - rsort :: descending order
+- Mutation
 - Flags
    - SORT_REGULAR
    - SORT_NUMERIC
@@ -1794,12 +1795,51 @@ Single dimension
 #+BEGIN_SRC php
   sort ( array &$array [, int $sort_flags = SORT_REGULAR ] ) : bool
 #+END_SRC
+#+BEGIN_SRC php
+  $fruits = array('d' => 'lemon', 'a' => 'orange', 'b' => 'banana', 'c' => 'apple');
+  sort($fruits);
+  var_dump($fruits, $fruits === array('apple', 'banana', 'lemon', 'orange'));
+  $fruits = array('lemon', 'orange', 'banana', 'apple');
+  sort($fruits);
+  var_dump($fruits, $fruits === array('apple', 'banana', 'lemon', 'orange'));
+#+END_SRC
 
-**** ksort <<php:ksort>>
-Sort (associative) array by its key
+**** ksort, krsort <<php:ksort>>
+- Sort (associative) array by its key and maintain key to data correlations
+   - ksort :: ascending order
+   - krsort :: descending order
+- Mutation
+- Return true on success or false on failure
+#+BEGIN_SRC php
+  krsort(array &$array, int $flags = SORT_REGULAR): bool
+#+END_SRC
 
-**** usort uasort - value sort <<php:usort>>
-- Mutating
+**** asort, arsort <<php:asort>>
+- Sort (associative) array by its value and maintain key to data correlations
+   - asort :: ascending order
+   - arsort :: descending order
+- Similar to [[php:ksort]]
+   - When target array is numeric array, the key is maintained
+- Mutation
+- Return true on success or false on failure
+#+BEGIN_SRC php
+  arsort(array &$array, int $flags = SORT_REGULAR): bool
+#+END_SRC
+#+BEGIN_SRC php
+  $sortedKeyValuePair = array (
+	  'a' => 'orange',
+	  'd' => 'lemon',
+	  'b' => 'banana',
+	  'c' => 'apple',
+  );
+  $fruits = array('d' => 'lemon', 'a' => 'orange', 'b' => 'banana', 'c' => 'apple');
+  arsort($fruits);
+  var_dump($fruits, $fruits === $sortedKeyValuePair);
+#+END_SRC
+
+**** usort, uasort - custom sort by value <<php:usort>>
+- Mutation
+- Sort by value
 - ~usort~ doesn't maintain key association but ~uasort~ does. If callback function returns negative integer, means the comparison is less than
 - Refer to [[php:spaceship operator][php:spaceship operator]]
 
@@ -1849,6 +1889,8 @@ Sort (associative) array by its key
 	  return $retval;
   });
 #+END_SRC
+
+**** uksort - custom sort by keys
 
 *** ~array_reverse~ <<php:array_reverse>>
 - $preserve_keys :: if true, numeric keys are preserved. Non-numeric keys are not affected by this setting and will always be preserved
@@ -4524,64 +4566,77 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 
 *** cURL <<php:curl>>
 #+BEGIN_SRC php
-    $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
-    // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
+  $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
+  // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
 
-    $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
+  $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
 
-    // Or
-    $myvars = [ 'myvar1' => $myvar1, 'myvar2' => $myvar2 ];
-    $myvars = http_build_query( $myvars ); // default content-type is application/x-www-form-urlencoded
+  // Or
+  $myvars = [ 'myvar1' => $myvar1, 'myvar2' => $myvar2 ];
+  $myvars = http_build_query( $myvars ); // default content-type is application/x-www-form-urlencoded
 
-    $ch = curl_init();
-    // use curl_setopt to set each one
-    // curl_setopt( $ch, CURLOPT_POST, 1);
+  $ch = curl_init();
+  // use curl_setopt to set each one
+  // curl_setopt( $ch, CURLOPT_POST, 1);
 
-    // use curl_setopt_array to set multiple
+  // use curl_setopt_array to set multiple
 
-    // $verbose = fopen('php://temp', 'w+'); // enable debug
+  // $verbose = fopen('php://temp', 'w+'); // enable debug
 
-    $options = array(
-     CURLOPT_URL => $url,
-     CURLOPT_POSTFIELDS => $myvars, // if value is pure array, then request content-type should multipart/form-data
-     // if request content-type is application/json, then POSTFIELDS should be a json string
-	   // otherwise it should be x-www-form-urlencoded (use http_build_query($array))
-     CURLOPT_FOLLOWLOCATION => 1, // follow through. Default is not to follow through
-     CURLOPT_HEADER => 0,
-     CURLOPT_RETURNTRANSFER => 1,
-     // CURLOPT_VERBOSE => true, // enable debug
-     // CURLOPT_STDERR => $verbose, // enable debug
-     // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
-    );
+  $options = array(
+   CURLOPT_URL => $url,
+   CURLOPT_POSTFIELDS => $myvars, // if value is pure array, then request content-type should multipart/form-data
+   // if request content-type is application/json, then POSTFIELDS should be a json string
+	 // otherwise it should be x-www-form-urlencoded (use http_build_query($array))
+   CURLOPT_FOLLOWLOCATION => 1, // follow through. Default is not to follow through
+   CURLOPT_HEADER => 0,
+   CURLOPT_RETURNTRANSFER => 1,
+   // CURLOPT_VERBOSE => true, // enable debug
+   // CURLOPT_STDERR => $verbose, // enable debug
+   // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
+  );
 
-    // post json
-    $post = array( '...' );
-    $payload = json_encode($post);
+  // post json
+  $post = array( '...' );
+  $payload = json_encode($post);
 
-    $options = array(
-	    CURLOPT_URL => $url,
-	    CURLOPT_POST => 1, // post request with content-type: application/x-www-form-urlencoded header
-	    // For GET requests, just don't include CURLOPT_POST. Max 2048 bytes in URL restricted by browsers or servers. One TCP connection means the request sends http header and data together
-	    // For POST requests, browsers send http header, server responds with code 100 (continue), then browers send data (payload or CUROPT_POSTFIELDS), server responds with code 200
-	    CURLOPT_RETURNTRANSFER => 1, // return string rather than output
-	    CURLOPT_TIMEOUT => 5, // max. number of seconds
-	    CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
-	    CURLOPT_POSTFIELDS => $payload
-    );
+  $options = array(
+	  CURLOPT_URL => $url,
+	  CURLOPT_POST => 1, // post request with content-type: application/x-www-form-urlencoded header
+	  // For GET requests, just don't include CURLOPT_POST. Max 2048 bytes in URL restricted by browsers or servers. One TCP connection means the request sends http header and data together
+	  // For POST requests, browsers send http header, server responds with code 100 (continue), then browers send data (payload or CUROPT_POSTFIELDS), server responds with code 200
+	  CURLOPT_RETURNTRANSFER => 1, // return string rather than output
+	  CURLOPT_TIMEOUT => 5, // max. number of seconds
+	  CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
+	  CURLOPT_POSTFIELDS => $payload
+  );
 
-    curl_setopt_array($ch, $options);
+  curl_setopt_array($ch, $options);
 
-    $response = curl_exec( $ch );
+  $response = curl_exec( $ch );
 
-    // catch debug BEFORE close
-    /*
-    if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
-    rewind($verbose);
-    $verboseLog = stream_get_contents($verbose);
-    echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
-    ,*/
+  // catch debug BEFORE close
+  /*
+  if (curl_errno($ch)) { var_dump(curl_errno($ch)); }
+  rewind($verbose);
+  $verboseLog = stream_get_contents($verbose);
+  echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+  ,*/
 
-    curl_close($ch);
+  curl_close($ch);
+#+END_SRC
+
+**** Timeout
+#+BEGIN_SRC php
+  $ch = curl_init('https://a.com');
+  curl_setopt_array($ch, array(
+		  CURLOPT_NOSIGNAL => 1, // libcurl timeout by default doesn't count domain name resolver time into timeout limit, use nosignal means ignore the domain name resolver signal (running) so that CURLOPT_TIMEOUT is the total time limit
+		  CURLOPT_TIMEOUT => 4, // in seconds. For setting timeout less than 1 second, use CURLOPT_TIMEOUT_MS
+		  CURLOPT_RETURNTRANSFER => 1,
+  ));
+  $response = curl_exec($ch)
+  $info = curl_getinfo($ch);
+  // $info['http_code'] === 0 and $response === false if timeout
 #+END_SRC
 
 **** Manual multipart/form-data
