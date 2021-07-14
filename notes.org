@@ -645,6 +645,12 @@ Use absolute path. See dirname
 #+END_SRC
 
 *** Include file ~__DIR__~, ~dirname(__FILE__)~ <<php:include>>
+- Change current working directory
+  #+BEGIN_SRC php
+    echo getcwd() . "\n"; // /var/www/mysite/test
+    chdir(__DIR__ . '/../app/');
+    echo getcwd() . "\n"; // /var/www/mysite/app
+  #+END_SRC
 - An absolute path is defined
   #+BEGIN_SRC php
     include __DIR__ . "/../abc.";
@@ -4111,6 +4117,38 @@ Reference is faster than clone and direct copy. But when ~===~ is used to compar
   spl_autoload_register(function ($class) {
       include 'classes/' . $class . '.class.php';
   });
+
+  // Use the function to just include files (variable, function, class definition).
+  // Pass other variables to the function
+  $someNonGlobalVariable = '';
+
+  spl_autoload_register(
+	  function ($class) use ($someNonGlobalVariable){
+		  $map = array(
+			  'Dependency_function_a' => __DIR__ . '/../../app/inc/liba.inc.php',
+			  'Dependency_function_b' => __DIR__ . '/../../app/inc/functionb.inc.php',
+			  'NormalClass' => __DIR__ . '/../../app/classa/ClassA.php',
+		  );
+		  if (isset($map[$class])) {
+			  $functionName = explode('Dependency_', $class);
+			  if (isset($functionName[1])) {
+				  if ( ! function_exists($functionName[1])) {
+					  include_once $map[$class];
+				  }
+				  eval("class $class {}");
+			  }
+			  else {
+				  include_once $map[$class];
+			  }
+		  }
+	  }
+  );
+
+  new Dependency_function_a();
+  function_a();
+
+  // liba.inc.php
+  echo $someNonGlobalVariable;
 #+END_SRC
 
 #+BEGIN_SRC php
