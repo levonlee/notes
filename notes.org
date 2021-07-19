@@ -468,19 +468,33 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
   kill 1234
 #+END_SRC
 
-** Constant, [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]], [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]], ~define~ vs ~const~
+** Constant, [[http://php.net/manual/en/reserved.constants.php][Predefined Constants]], [[http://php.net/manual/en/language.constants.predefined.php][Magic Constants]], ~define~ vs ~const~ <<php:constant>>
 - Predefined variables :: https://www.php.net/manual/en/language.variables.predefined.php
    - Reserved variables :: https://www.php.net/manual/en/reserved.variables.php
    - Superglobals :: https://www.php.net/manual/en/language.variables.superglobals.php
+- const <<php:const>>
+   - defines constant at compile time which means:
+      - cannot be use inside a condition block
+      - cannot define a constant using a global variable
+   - Can be used inside and outside of a class
+      - Refer to [[php:oop]]
+      - can define a constant using another constant
+- define
+   - Defines constant at run time
+   - can specify whether it's case sensitive or not (although it's deprecated in PHP 7.3.0)
+   - Drawbacks
+      - Scalar only for PHP 5.x, no array. [[php:const]] can define constants as array for PHP 5.6+
+      - PHP 7.0+ can define array
+
 #+BEGIN_SRC php
   // define $GLOBALS['MIN_VALUE']
-  define('MIN_VALUE', '0.0');   // RIGHT - Works OUTSIDE of a class definition
-  define('MAX_VALUE', '1.0');   // RIGHT - Works OUTSIDE of a class definition
+  define('MIN_VALUE', '0.0');   // OUTSIDE of a class definition
+  define('MAX_VALUE', '1.0');   // OUTSIDE of a class definition
 
   if (defined('MYGLOBALVAR') && MYGLOBALVAR !== 'abc') {}
 
-  //const MIN_VALUE = 0.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition
-  //const MAX_VALUE = 1.0;         RIGHT - Works both INSIDE and OUTSIDE of a class definition
+  const MIN_VALUE = 0.0;
+  const MAX_VALUE = 1.0;
 #+END_SRC
 
 ** Protocols
@@ -1363,6 +1377,13 @@ Since PHP 5.5
 #+END_SRC
 
 *** ~array_diff~ Subset, Remove values, Intersection <<php:array_diff>>
+#+BEGIN_SRC php
+  array_diff(array $array, array ...$arrays): array
+#+END_SRC
+
+- Two elements are considered equal if and only if ~(string) $elem1 === (string) $elem2~
+- Throw Notice when element cannot be cast to a string
+
 Single dimension
 #+BEGIN_SRC php
   $arr = ['nice_item', 'remove_me', 'another_liked_item', 'remove_me', 'remove_me_also'];
@@ -3615,9 +3636,18 @@ RestJson.php
   // class names and function names are case-insensitive. However, class variable names are case sensitive
 
   class RestJson {
-    // constant: strings, booleans, integers, no arrays!
-	  // constant can also be defined in child class
+
+	  // Constant
+	  // - defined at compile time not at runtime
+	  // - strings, booleans, integers, or another defined constant. Can be array for PHP 5.6.0+
+	  // - Can be redefined in child class
+	  // - interface can also have constants
+	  // - default visibility of constants is public, can be set (even public) for PHP 7.1.0+
+	  // - For PHP 5.6+, arithmetic calculation is possible
+	
     const MY_CONSTANT_VAR = 1;
+	  const MY_CONSTANT_VAR_2 = self::MY_CONSTANT_VAR;
+	  const B_CONSTANT = B::FROM_ANOTHER_CLASS;
 	  // usage self::ABC (self class or this class), parent::ABC, static::ABC (called class)
 	  // RestJson::ABC
 	  // $className = 'RestJson'; $className::ABC
@@ -3732,7 +3762,7 @@ RestJson.php
   class AddressResidence extends Address {}
 #+END_SRC
 
-*** Abstract Class
+*** Abstract Class <<php:abstract>>
 - Abstract class cannot be instantiated
    - It's used as a base to make child classes and the base can have abstract methods that child must declare
 - If a method is abstract, any class (not abstract class) that extends that abstract class containing the method must also declare a method with the same name and arguments
@@ -3757,6 +3787,81 @@ RestJson.php
       $this->_setAddressTypeId(Address::ADDRESS_TYPE_BUSINESS);
     }
   }
+#+END_SRC
+
+**** Enummeration <<php:enums>>
+#+BEGIN_SRC php
+  abstract class BasicEnum {
+
+	  private static $constCacheArray = null;
+
+	  private static function getConstants() {
+		  if (self::$constCacheArray == null) {
+			  self::$constCacheArray = array();
+		  }
+		  $calledClass = get_called_class();
+		  if ( ! array_key_exists($calledClass, self::$constCacheArray)) {
+			  $reflect = new ReflectionClass($calledClass);
+			  self::$constCacheArray[$calledClass] = $reflect->getConstants();
+		  }
+
+		  return self::$constCacheArray[$calledClass];
+	  }
+
+	  public static function isValidName($name, $strict = false) {
+		  $constants = self::getConstants();
+
+		  return ($strict) ? array_key_exists($name, $constants) :
+			  in_array(strtolower($name), array_map('strtolower', array_keys($constants)));
+	  }
+
+	  public static function isValidValue($value, $strict = true) {
+		  return in_array($value, array_values(self::getConstants()), $strict);
+	  }
+
+	  /**
+	   ,* @param array $values
+	   ,* @param bool $strict default true
+	   ,* @param bool $returnInvalidValues default false, return bool
+	   ,*
+	   ,* @return array|bool default bool, or array of invalid values with original key
+	   ,*/
+	  public static function areValidValues($values, $strict = true, $returnInvalidValues = false) {
+		  if ( ! is_array($values)) {
+			  return false;
+		  }
+		  $allValues = array_values(self::getConstants());
+		  $invalidValues = array();
+		  foreach ($values as $value) {
+			  if ( ! in_array($value, $allValues, $strict)) {
+				  if ( ! $returnInvalidValues) {
+					  return false;
+				  }
+				  else {
+					  array_push($invalidValues, $value);
+				  }
+			  }
+		  }
+
+		  return ($returnInvalidValues) ? $invalidValues : true;
+	  }
+
+  }
+
+  abstract class DaysOfWeek extends BasicEnum {
+	  const Sunday = 0;
+	  const Monday = 1;
+	  const Tuesday = 2;
+	  const Wednesday = 3;
+	  const Thursday = 4;
+	  const Friday = 5;
+	  const Saturday = 6;
+  }
+
+  var_dump(DaysOfWeek::Monday);
+  var_dump(DaysOfWeek::isValidName('Monday'));
+  var_dump(DaysOfWeek::isValidValue(1));
+  var_dump(DaysOfWeek::areValidValues(array(0, 1, 100)));
 #+END_SRC
 
 *** Interface
@@ -4137,6 +4242,7 @@ Reference is faster than clone and direct copy. But when ~===~ is used to compar
 			  'Dependency_function_a' => __DIR__ . '/../../app/inc/liba.inc.php',
 			  'Dependency_function_b' => __DIR__ . '/../../app/inc/functionb.inc.php',
 			  'NormalClass' => __DIR__ . '/../../app/classa/ClassA.php',
+			  'MyNamespace\ClassC' => __DIR__ . '/../../app/classc/ClassC.php',
 		  );
 		  if (isset($map[$class])) {
 			  $functionName = explode('Dependency_', $class);
@@ -4558,13 +4664,20 @@ class_exists is case-insensitive match. Better to restart PHP first
   }
 #+END_SRC
 
-** Global
+** Global <<php:global>>
 Define superglobal
 #+BEGIN_SRC php
   $GLOBALS['a'] = 'localhost';
 
+  // eq. to
+  // global $a;
+  // $a = 'localhost';
+
   function body(){
 	  echo $GLOBALS['a'];
+	  // eq. to
+	  // global $a;
+	  // echo $a;
   }
 #+END_SRC
 
@@ -18961,7 +19074,7 @@ Inspired by plugin [[https://wordpress.org/plugins/ssl-insecure-content-fixer/][
 ** REST API <<<wp:rest>>>
 https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
 
-*** RESTful
+*** Methods
 - GET /tickets :: Retrieves a list of tickets
 - OPTIONS /tickets :: see any parameters and fields can be used for endpoint ~tickets~
 - GET /tickets/12 :: Retrieves a specific ticket
@@ -18969,6 +19082,20 @@ https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
 - PUT /tickets/12 :: Updates ticket #12
 - PATCH /tickets/12 :: Partially updates ticket #12
 - DELETE /tickets/12 :: Deletes ticket #12
+
+*** Status Codes <<api:rest:status>>
+- https://restfulapi.net/http-status-codes/
+- 1xx :: transfer protocol-level info
+   - 100 :: An interim response. Indicates the client that the initial part of the request has been received and has not yet been rejected by the server. The client should continue by sending the remaminder of the request, or if the request has already been completed, ignore this response. The server MUST send a final response after the request has been completed.
+   - 102 :: Processing (WebDav). Indicates the server has received and is processing the request, but no response is available yet.
+- 2xx :: Success
+   - 200 :: OK. Should have a response body
+   - 201 :: Created. Should return URI of the newly created resource
+   - 202 :: Accepted. Used for actions that take a long while to process. Indicates the request has been accepted for processing but it's not completed. The request might or might not be eventually acted upon, or even maybe disallowed when processing occurs. Should return the request's current status and either a pointer to a status monitor (job queue location) or some estimate of when the user can expect the request to be fulfilled
+   -  :: 
+- 3xx :: redirection
+- 4xx :: client error
+- 5xx :: server error
 
 *** Global parameters
 https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/
@@ -71905,6 +72032,9 @@ Tests
   http://a.ca/abc-xyz--><form><button formaction='/esi.attack.sim'><!--
   http://a.ca/abc-xyz--><script src='a' onerror=alert(document.domain)>
 #+END_EXAMPLE
+
+** Send password
+- https://onetimesecret.com/
 
 ** WCAG, AODA, Web Content Accessibility Guidelines
 Checking Tools
