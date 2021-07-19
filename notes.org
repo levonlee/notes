@@ -19084,18 +19084,44 @@ https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
 - DELETE /tickets/12 :: Deletes ticket #12
 
 *** Status Codes <<api:rest:status>>
-- https://restfulapi.net/http-status-codes/
-- 1xx :: transfer protocol-level info
-   - 100 :: An interim response. Indicates the client that the initial part of the request has been received and has not yet been rejected by the server. The client should continue by sending the remaminder of the request, or if the request has already been completed, ignore this response. The server MUST send a final response after the request has been completed.
-   - 102 :: Processing (WebDav). Indicates the server has received and is processing the request, but no response is available yet.
-- 2xx :: Success
+https://restfulapi.net/http-status-codes/
+
+**** 1xx Transfer protocol-level info
+- 100 :: An interim response. Indicates the client that the initial part of the request has been received and has not yet been rejected by the server. The client should continue by sending the remaminder of the request, or if the request has already been completed, ignore this response. The server MUST send a final response after the request has been completed
+- 102 :: Processing (WebDav). Indicates the server has received and is processing the request, but no response is available yet
+
+**** 2xx Success
    - 200 :: OK. Should have a response body
-   - 201 :: Created. Should return URI of the newly created resource
-   - 202 :: Accepted. Used for actions that take a long while to process. Indicates the request has been accepted for processing but it's not completed. The request might or might not be eventually acted upon, or even maybe disallowed when processing occurs. Should return the request's current status and either a pointer to a status monitor (job queue location) or some estimate of when the user can expect the request to be fulfilled
-   -  :: 
-- 3xx :: redirection
-- 4xx :: client error
-- 5xx :: server error
+   - 201 :: Created. *Should* return URI of the newly created resource
+   - 202 :: Accepted. Used for actions that take a long while to process. Indicates the request has been accepted for processing but it's not completed. The request might or might not be eventually acted upon, or even maybe disallowed when processing occurs. *Should* return the request's current status and either a pointer to a status monitor (job queue location) or some estimate of when the user can expect the request to be fulfilled
+   - 203 :: Non-authoritative information. The returned metainformation in the entity-header is not the definitive set as available from the origin server, but is gathered from a local or a third-party copy. The set presented MAY be a subset or superset of the original version
+   - 204 :: No content
+      - Usually it's sent out in response to PUT, POST or DELETE request when REST API declines to send back any status message or representation in the response body
+      - In response to GET request to indicate that the requested resource exists but has no state representation to include in the body
+      - *Must* not include a message-body and thus is always terminated by the first empty line after the header fields
+
+**** 3xx Redirection - The client must take some additional action in order to complete their request
+- 300 :: multiple choices. The request has more than one possible response. The user-agent or user should choose one of them
+- 301 :: Moved permanently. The URL of the requested resource has been changed permanently. The new URL is given by the Location header field in the resposne. This response is cachable unless indicated otherwise
+- 302 :: Found. The URL of the requested resource has been changed temporarily. The new URL is given by the Location field in the response. This response is only cacheable if indicated by a Cache-Control or Expires header field
+- 303 :: See other. The response can be found under a different URI and SHOULD be retrieved using a GET method on that resource
+- 304 :: Not modified. The client that the response has not been modified, so the client can continue to use the same cached version of the response
+- 307 :: Temporary redirect. The REST API is not going to process the client's request. Instead, the client should resubmit the request to the URI specified by the response message's Location header. However, future requests should still use the original URI. REST API can use this status code to assign a temporary URI to the client's requested resource. E.g. 307 response can be used to shift a client request over to another host.
+   - The temporary URI *SHOULD* be given by the Location field in the response. Unless the request method was HEAD, the entity of the response SHOULD contain a short hypertext note with a hyperlink to the new URI(s). If the 307 status code is received in response to a request other than GET or HEAD, the user agent MUST NOT automatically redirect the request unless it can be confirmed by the user, since this might change the conditions under which the request was issued
+
+**** 4xx Client error
+- 400 :: Bad request. General purpose when no other 4xx code is appropriate. The client SHOULD NOT repeat the request without modifications
+- 401 :: Unauthorized. *MUST* include a WWW-Authenticate header field containing a challenge applicable to the requested resource. The client MAY repeat the request which a suitable Authorization header field. If the request already included Authorization credentials, then the 401 response indicates that authorization has been refused for those credentials. If the 401 response contains the same challenge as the prior response, and the user agent has already attempted authentication at least once, then the user SHOULD be presented the entity that was given in the response, since that entity might include relevant diagnostic information
+- 403 :: Forbidden. The client request is formed correctly, but the REST API refuses to honor it e.g. the user does not have the necessary permissions for the resource. It's not a case of insufficient client credentials, that would be 401
+   - Authentication will not help, and the request SHOULD NOT be repeated
+- 405 :: Method not allowed. Must include the Allow header, which lists the HTTP methods that the resource supports e.g. ~Allow: GET, POST~
+- 406 :: Not acceptable. A client request for data formatted as application/xml will receive 406 if the API is only willing to format data as application/json. API is not able to generate any of the client's preferred media types as indicated by the Accept request header. A user agent should temporarily stop receipt of more data and query the user for a decision on further actions
+- 412 :: Precondition failed. The client specified one or more preconditions in its request headers, effectively telling the REST API to carry out its request only if certain conditions were met
+- 415 :: Unsupported media type. API is not able to process tthe client's supplied media type, as indicated by the Content-Type request header
+
+**** 5xx Server error
+- 500 :: Generic. e.g. when the server raises an exception
+- 501 :: Not implemented. The server either does not recognize the request method, or it cannot fulfill the request. Usually implies future availability
 
 *** Global parameters
 https://developer.wordpress.org/rest-api/using-the-rest-api/global-parameters/
