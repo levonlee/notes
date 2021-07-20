@@ -4720,19 +4720,30 @@ class_exists is case-insensitive match. Better to restart PHP first
 		  $refectionProperties = $reflect->getProperties($filter);
 		  $privateProperties = array();
 		  foreach ($refectionProperties as $_property) {
-			  array_push($privateProperties,array(
-				  'name' => $_property->name,
-				  'class' => $_property->class,
-				  'isDefault' => $_property->isDefault(), // whether it's declared at compile time
-				  // 'isInitialized' => $_property->isInitialized(), // PHP 7.4.0+
-			  ));
+			  $docComment = $_property->getDocComment();
+			  preg_match('/@var (\S+)/m', $docComment, $typeFromDocComment);
+			  $typeFromDocComment = isset($typeFromDocComment[1]) ? $typeFromDocComment[1] : null;
+			  $typeFromDocComment = isset($typeFromDocComment) ? explode('|', $typeFromDocComment) : array();
+			  array_push(
+				  $privateProperties,
+				  array(
+					  'name' => $_property->name,
+					  'class' => $_property->class,
+					  'isDefault' => $_property->isDefault(), // whether it's declared at compile time
+					  // 'isInitialized' => $_property->isInitialized(), // PHP 7.4.0+
+					  'docComment' => $docComment,
+					  'typesFromDocComment' => $typeFromDocComment, // array
+				  )
+			  );
 		  }
 		  var_export($privateProperties);
 		  echo PHP_EOL;
-
 	  }
 
   }
+
+  $test = new A();
+  $test->getClassInfo();
 #+END_SRC
 
 ** Global <<php:global>>
