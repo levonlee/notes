@@ -3644,7 +3644,7 @@ RestJson.php
 	  // - interface can also have constants
 	  // - default visibility of constants is public, can be set (even public) for PHP 7.1.0+
 	  // - For PHP 5.6+, arithmetic calculation is possible
-	
+
     const MY_CONSTANT_VAR = 1;
 	  const MY_CONSTANT_VAR_2 = self::MY_CONSTANT_VAR;
 	  const B_CONSTANT = B::FROM_ANOTHER_CLASS;
@@ -3653,8 +3653,9 @@ RestJson.php
 	  // $className = 'RestJson'; $className::ABC
 
 	  // Class properties
-	  // - Only primitive types e.g. int, string, number, array (since PHP 5.6)
+	  // - Only primitive types e.g. int, string, number, array
 	  // - PHP version > 5.4, arithmetic calculation is allowed
+	  // get_class_vars(__CLASS__) == array('property1Name' => 'property1Value', 'privateStaticPropertyName' => 123)
 
     public static $valid_address_types = [
        RestJson::MY_CONSTANT_VAR => 'Residence',
@@ -4593,7 +4594,7 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 - Don't use ~PHP~ as namespace name
 - ~__NAMESPACE__~ magic constant to refer to the current namespace
 - Since PHP 5.3 supports most of the functionalities
-- Works for ~const~, ~class~ and ~function~
+- Works for ~const~, ~class~, ~interfaces~ and ~function~
 - Except ~declare~ statements, ~namespace~ should be the first line of the files
 - Don't declare namespace starting with backslash ~\~
 - When code under a namespace refers to other components that have a different namespace or no namespace, need to refer to it using fully qualified name which starts with backslash ~\~. e.g.
@@ -4661,6 +4662,76 @@ class_exists is case-insensitive match. Better to restart PHP first
 #+BEGIN_SRC php
   if (!class_exists('MyClass')) {
     class MyClass { }
+  }
+#+END_SRC
+
+*** ReflectionClass, get_class_vars(), get_object_vars() <<php:ReflectionClass>>
+#+BEGIN_SRC php
+  class A {
+
+	  const CONSTANT_1 = 123;
+
+	  public $publicInstance = 123;
+	  protected $protectedInstance = 123;
+	  private $privateInstance = 123;
+	  public $publicInstanceNoDefault;
+	  private $privateInstanceNoDefault;
+	  public static $publicStaticNoDefault;
+	  public static $publicStatic = 123;
+	  private static $privateStaticNoDefault;
+	  private static $privateStatic = 123;
+
+	  public function getClassInfo() {
+		  var_export($test = get_class_vars(__CLASS__));
+		  echo PHP_EOL;
+		  var_dump(
+			  $test === array(
+				  'publicInstance' => 123,
+				  'protectedInstance' => 123,
+				  'privateInstance' => 123,
+				  'publicInstanceNoDefault' => NULL,
+				  'privateInstanceNoDefault' => NULL,
+				  'publicStaticNoDefault' => NULL,
+				  'publicStatic' => 123,
+				  'privateStaticNoDefault' => NULL,
+				  'privateStatic' => 123,
+			  )
+		  );
+
+		  var_export($test = get_object_vars($this));
+		  echo PHP_EOL;
+		  var_dump(
+			  'Get the accessible / visible non-static properties. Can be used outside of class',
+			  $test === array(
+				  'publicInstance' => 123,
+				  'protectedInstance' => 123,
+				  'privateInstance' => 123,
+				  'publicInstanceNoDefault' => NULL,
+				  'privateInstanceNoDefault' => NULL,
+			  )
+		  );
+
+		  $calledClass = get_called_class(); // vs __CLASS__
+		  $reflect = new ReflectionClass($calledClass);
+
+		  var_dump($test = $reflect->getConstants(), $test === array('CONSTANT_1' => 123));
+
+		  $filter = ReflectionProperty::IS_PRIVATE;
+		  $refectionProperties = $reflect->getProperties($filter);
+		  $privateProperties = array();
+		  foreach ($refectionProperties as $_property) {
+			  array_push($privateProperties,array(
+				  'name' => $_property->name,
+				  'class' => $_property->class,
+				  'isDefault' => $_property->isDefault(), // whether it's declared at compile time
+				  // 'isInitialized' => $_property->isInitialized(), // PHP 7.4.0+
+			  ));
+		  }
+		  var_export($privateProperties);
+		  echo PHP_EOL;
+
+	  }
+
   }
 #+END_SRC
 
@@ -62591,6 +62662,18 @@ The copy of the patch that failed is found in: .git/rebase-apply/patch
 When you have resolved this problem, run "git rebase --continue".
 If you prefer to skip this patch, run "git rebase --skip" instead.
 To check out the original branch and stop rebasing, run "git rebase --abort".
+
+**** Branch preference
+#+BEGIN_SRC sh
+  git checkout feature-a
+  # favor feature-a changes over master
+  git rebase -Xtheirs master
+
+  # favor master changes over feature-a
+  git rebase -Xours master
+
+  # -Xxxx is reversed in git merge!
+#+END_SRC
 
 *** Merge commits into one commit on local branch
 Branch feature has 4 commits ahead of branch master
