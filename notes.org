@@ -4673,6 +4673,9 @@ class_exists is case-insensitive match. Better to restart PHP first
 
 	  public $publicInstance = 123;
 	  protected $protectedInstance = 123;
+	  /**
+	   ,* @var int|string
+	   ,*/
 	  private $privateInstance = 123;
 	  public $publicInstanceNoDefault;
 	  private $privateInstanceNoDefault;
@@ -4724,15 +4727,40 @@ class_exists is case-insensitive match. Better to restart PHP first
 			  preg_match('/@var (\S+)/m', $docComment, $typeFromDocComment);
 			  $typeFromDocComment = isset($typeFromDocComment[1]) ? $typeFromDocComment[1] : null;
 			  $typeFromDocComment = isset($typeFromDocComment) ? explode('|', $typeFromDocComment) : array();
+			  $propertyName = $_property->name;
+			  $className = __CLASS__;
+			  $propertyValue = ($_property->isStatic()) ? $className::$$propertyName : $this->$propertyName;
+			  /** @var string $propertyValueType
+			   ,* https://www.php.net/manual/en/function.gettype.php
+
+			   ,*/
+			  $propertyValueType = gettype($propertyValue);
+			  $propertyValueTypeShortMap = array(
+				  'boolean' => 'bool',
+				  'integer' => 'int',
+				  // 'double' => 'float', // (for historical reasons "double" is returned in case of a float, and not simply "float")
+				  // 'string' => 'string',
+				  // 'array' => 'array',
+				  // 'object' => 'object',
+				  // 'resource' => 'resource',
+				  //  'resource (closed)' => 'resource (closed)', // as of PHP 7.2.0
+				  // 'NULL' => 'null',
+				  // 'unknown type' => 'unknown type'
+			  );
+			  $propertyValueTypeShort = isset($propertyValueTypeShortMap[$propertyValueType]) ? $propertyValueTypeShortMap[$propertyValueType] : $propertyValueType;
 			  array_push(
 				  $privateProperties,
 				  array(
-					  'name' => $_property->name,
+					  'name' => $propertyName,
 					  'class' => $_property->class,
 					  'isDefault' => $_property->isDefault(), // whether it's declared at compile time
 					  // 'isInitialized' => $_property->isInitialized(), // PHP 7.4.0+
 					  'docComment' => $docComment,
 					  'typesFromDocComment' => $typeFromDocComment, // array
+					  'propertyValue' => $propertyValue,
+					  'propertyValueType' => $propertyValueType,
+					  'propertyValueTypeShort' => $propertyValueTypeShort,
+					  'isTypeOneOfSpecifiedTypesFromDocComment' => in_array($propertyValueTypeShort, $typeFromDocComment),
 				  )
 			  );
 		  }
