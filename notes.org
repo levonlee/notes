@@ -19757,6 +19757,14 @@ I think REST response is object cache. When using with Pantheon Advanced Page Ca
        RewriteRule ^(.*) - [E=HTTP_AUTHORIZATION:%1]
      #+END_SRC
 
+** SOAP vs RESTful API
+- SOAP :: Simple Object Access Protocol
+   - only allows XML
+   - Used to expose components of application logic as service rather than data
+      - perform operations through a standardized set of messaging patterns
+- REST :: Representational State Transfer
+   - Used to access data (named resources)
+
 ** Life Cycle
 *** ~index.php~
 - index.php
@@ -65370,6 +65378,14 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     SELECT CONCAT('t1', null); -- null
     SELECT REGEXP_REPLACE(thumbnail.uri, "^(s3://)(.*)", CONCAT(@s3,'\\2')) AS thumbnail';
   #+END_SRC
+- Multiple columns all have to have values that are not empty string or null
+  #+BEGIN_SRC sql
+    SELECT * FROM aTable WHERE 1 = 1 AND
+	CONCAT(IF(TRIM(colA), 1, NULL),
+	       IF(TRIM(colB), 1, NULL),
+	       IF(TRIM(colC), 1, NULL));
+  #+END_SRC
+- Refer to [[mysql:separator]]
 - Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values
   #+BEGIN_SRC sql
     CONCAT_WS(',', colA, colB, 'Column C Value')
@@ -65399,6 +65415,11 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - See mysql:string:list:temp table for more
 - ~CHAR_LENGTH(@str)~ :: visual string length
 - ~LENGTH(@str)~ :: byte length/size
+  #+BEGIN_SRC sql
+    -- Times a substring appear in a string. e.g. substring is lili
+    SELECT ROUND((LENGTH(col1) - LENGTH(REPLACE(col1, 'lili', ''))) / LENGTH('lili')) AS numOfAppearanceOfSubstring
+    FROM t1
+  #+END_SRC
 - ~FIELD(str, str1, str2, ...)~
    - return index position (starting from 1) of ~str~ in the ~str1, str2, ...~ list
       - 0 if not found or ~str~ is ~NULL~
@@ -65577,8 +65598,31 @@ MySQL 5.6
       - including virutal generated columns
 
 *** Common queries, functions, operators
-**** Reuse alias in SELECT
+**** Reuse SELECT alias <<mysql:select alias>>
 SELECT aliases can only be used in ORDER BY, GROUP BY and HAVING
+
+***** Reuse SELECT alias later in SELECT
+#+BEGIN_SRC sql
+  SELECT
+  s.f1 + s.f2 as total_sale, 
+  s.f1 / (SELECT total_sale) as f1_percent
+  IF((SELECT total_score) > 100, 1, 0) AS good_or_bad,
+  IF((SELECT good_or_bad), 'good score', 'bad score') AS good_or_bad_text
+  -- Notice: total_sale is not s.total_sale, s.total_sale will error out
+  -- Still cannot use total_sale in WHERE
+  -- The alias should not be a group/aggregation function result. e.g. COUNT(*) AS localCount, (SELECT localCount) + 1
+  FROM sales s
+#+END_SRC
+
+***** Reuse SELECT alias in WHERE
+- Use sub query :: create a sub table with additional computed fields added in original table, and select from it later
+#+BEGIN_SRC sql
+  SELECT tbl1.total_sale,
+	 tbl1.f1 / tbl1.total_sale AS f1_percent
+  FROM (SELECT s.f1 + s.f2 AS total_sale,
+	       s.f1
+	FROM sales s) AS tbl1;
+#+END_SRC
 
 **** JOIN
 - ~INNER JOIN~ is ~JOIN~
@@ -66238,38 +66282,21 @@ Schema
 
   INSERT INTO student ( firstname, lastname, reg_date )
   VALUES 
-  ( 'first1', 'last1', current_timestamp),
-  ( 'first2', 'last2', current_timestamp),
-  ( 'first3', 'last3', current_timestamp);
-
-  CREATE TABLE s_score (
-  `ssid` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
-  `sid` INT(6) UNSIGNED NOT NULL,
-  `scid` INT(6) UNSIGNED NOT NULL,
-  `score` INT(3) UNSIGNED NOT NULL,
-  `test_date` BIGINT(20) UNSIGNED NOT NULL
-  );
-
-  INSERT INTO s_score ( sid, scid, score, testDate )
-  VALUES 
-  ( 1, 20, 0 ),
-  ( 1, 30, 0 ),
-  ( 2, 40, 0 ),
-  ( 1, 20, 1593015426 ),
-  ( 1, 30, 1594015426 ),
-  ( 2, 40, 1595015426 );
+  ( 'first1', 'last1', current_timestamp), -- 1
+  ( 'first2', 'last2', current_timestamp), -- 2
+  ( 'first3', 'last3', current_timestamp); -- 3
 
   CREATE TABLE course (
   `cid` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
   `coursename` VARCHAR(20) NOT NULL,
-  `semaster_date` TIMESTAMP
+  `semaster_date` BIGINT(20) UNSIGNED NOT NULL
   );
 
   INSERT INTO course ( coursename, semaster_date )
   VALUES 
-  ( 'Math',    0 ),
-  ( 'English', 0 ),
-  ( 'PHP',     1593015426 );
+  ( 'Math',    0 ), -- 1
+  ( 'English', 0 ), -- 2
+  ( 'PHP',     1593015426 ); -- 3
 
   CREATE TABLE s_course (
   `scid` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
@@ -66279,9 +66306,28 @@ Schema
 
   INSERT INTO s_course ( sid, cid )
   VALUES 
-  ( 1, 1 ),
-  ( 1, 2 ),
-  ( 2, 3 );
+  ( 1, 1 ), -- 1
+  ( 1, 2 ), -- 2
+  ( 2, 3 ); -- 3
+
+  CREATE TABLE s_score (
+  `ssid` INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
+  `scid` INT(6) UNSIGNED NOT NULL,
+  `score` INT(3) UNSIGNED NOT NULL,
+  `midterm_score` INT(3) UNSIGNED NOT NULL DEFAULT 0,
+  `assignment_score` INT(3) UNSIGNED NOT NULL DEFAULT 0,
+  `final_exam_score` INT(3) UNSIGNED NOT NULL DEFAULT 0,
+  `test_date` BIGINT(20) UNSIGNED NOT NULL
+  );
+
+  INSERT INTO s_score ( scid, score, midterm_score, assignment_score, final_exam_score, test_date )
+  VALUES 
+  ( 1, 20, 21, 22, 23, 0 ), -- 1
+  ( 2, 30, 31, 32, 33, 0 ), -- 2
+  ( 3, 40, 41, 42, 43, 0 ), -- 3
+  ( 1, 50, 51, 52, 53, 1593015426 ), -- 4
+  ( 1, 60, 61, 62, 63, 1594015426 ), -- 5
+  ( 2, 70, 71, 72, 73, 1595015426 ); -- 6
 #+END_SRC
 
 *** Dump, Restore <<mysql:mysqldump>>
@@ -66468,7 +66514,7 @@ When you do GROUP_CONCAT on course, use DISTINCT inside.
 Concatenate multiple fields
 ~GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses~
 
-**** Concatenate strings, use a different separator
+**** Concatenate strings, use a different separator <<mysql:separator>>
 - 0x1F (31): unit (fields) separator
 - 0x1E (30): record separator
 - 0x1D (29): group separator
@@ -70010,9 +70056,7 @@ This is inside the drawer
    - emacs:m-x:delete-trailing-whitespace
    - emacs:m-x:indent-region
 
-*** Export to HTML
-~C-c C-e h h~
-
+*** Export to HTML ~C-c C-e h h~
 *** Symbol and Escape <<<emacs:escape>>>
 #+BEGIN_EXAMPLE
   \vert{}
@@ -74162,7 +74206,6 @@ Web Symbols
 ** TODO https://www.ontario.ca/page/digital-government https://medium.com/ontariodigital
 ** TODO Learn New Relic One
 ** TODO Learn https://langserver.org
-** TODO Learn SOAP API
 ** TODO Python Standard Library Essential Training
 ** TODO Learn Rust to develop API, Restful Microservices
 ** TODO OMCP certification
