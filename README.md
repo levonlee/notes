@@ -1,5 +1,8 @@
-# notes
-My notes
+# My notes
+Some notes throughout my coding career ^_^
+
+[![Contact me on Codementor](https://www.codementor.io/m-badges/levonlee/im-a-cm-b.svg)](https://www.codementor.io/@levonlee?refer=badge)
+
 
 ## Installed MELPA packages
 php-mode htmlize apache-mode dockerfile-mode nginx-mode json-mode yaml-mode
