@@ -70432,12 +70432,70 @@ https://developer.chrome.com/devtools/docs/blackboxing
 - POST key value is array :: create multiple keys e.g.
    - key ~channel[0]~, value ~hello~
    - key ~channel[1]~, value ~world~
-- Tests
-   - It is run after the request has been sent and has response
-   - https://postman-quick-reference-guide.readthedocs.io/en/latest/assertions.html
-- Collection run
-   - Setup Tests, Pre-script for each request
-   - Select the requests and run them in sequence
+***** Tests tab for each request
+- It's run after the request has been sent and has response
+- https://postman-quick-reference-guide.readthedocs.io/en/latest/assertions.html
+
+***** Pre-request Script for each request
+- https://learning.postman.com/docs/writing-scripts/pre-request-scripts/
+
+****** Variable Scope
+- https://learning.postman.com/docs/sending-requests/variables/
+- Global :: a workspace which has collections, requests, test scripts and environments
+- Collection :: throughout the requests in a collection and are independent of environments
+- Environment :: e.g. local vs testing or production. Only one environment can be active at a time
+- Local :: only in request scripts
+- Data variables :: come from external CSV and JSON files to define data sets
+
+#+BEGIN_SRC js
+  pm.globals.set("global_variable_key", "variable_value");
+  pm.collectionVariables.set("collection_variable_key", "variable_value");
+  pm.environment.set("environment_variable_key", "variable_value");
+  pm.variables.set("local_variable_key", "variable_value");
+
+  pm.environment.unset("variable_key");
+
+  // {{local_variable_key}} in GUI
+
+  pm.variables.get("variable_key"); //access a variable at any scope including local
+  pm.globals.get("variable_key"); //access a global variable
+  pm.collectionVariables.get("variable_key"); //access a collection variable
+  pm.environment.get("variable_key"); //access an environment variable
+#+END_SRC
+
+****** Moment.js
+- https://momentjs.com/docs/
+#+BEGIN_SRC js
+  const moment = require('moment');
+
+  // moment() === '2021-07-28T19:26:01.558Z' // UTC
+
+  pm.variables.set("mydate", moment().format("YYYY-MM-DD-HH")); // eq. to PHP Y-m-d-H. Time is converted to current timezone! 
+  // So if local timezone is America/Toronto then it's 2021-07-28-15
+
+  pm.sendRequest("http://worldtimeapi.org/api/timezone/America/Toronto", function (err, res) {
+      pm.globals.set("localTime", res.json().datetime); // 2021-07-28T15:15:18.644592-04:00
+  });
+
+  var localTime = moment(pm.variables.get('localTime')).format("YYYY-MM-DD-HH"); // 2021-07-28-15
+
+  console.log(moment.utc().format("YYYY-MM-DD-HH")); // 2021-07-28-19
+#+END_SRC
+
+****** CryptoJS
+#+BEGIN_SRC js
+  // no need to require
+
+  // eq. to PHP sha1(key)
+  var key = 'abc';
+  var hash = CryptoJS.SHA1(key);
+  console.info(hash.toString(CryptoJS.enc.Hex));
+
+#+END_SRC
+
+***** Collection run
+- Setup Tests, Pre-script for each request
+- Select the requests and run them in sequence
 
 **** [[https://chrome.google.com/webstore/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof?utm_source%3Dchrome-app-launcher-info-dialog][Save Page WE]]
 Chrome's default save page as HTML has some limitations such as not all images are downloaded.
