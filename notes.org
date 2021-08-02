@@ -1303,6 +1303,40 @@ Here's how to remove any 4 byte character:
   $_lower_GET = array_change_key_case($_GET, CASE_LOWER); // Or CASE_UPPER
 #+END_SRC
 
+*** Change keys only <<php:array_combine>>
+#+BEGIN_SRC php
+  $a = array(
+	  'a_321' => '123',
+	  'abc' => '321',
+  );
+
+  var_export($test = array_combine(array_map('ucfirst', array_keys($a)), $a));
+  var_dump(
+	  $test === array(
+		  'A_321' => '123',
+		  'Abc' => '321',
+	  )
+  );
+
+  var_export(
+	  $test = array_combine(
+		  array_map(
+			  function ($item) {
+				  return str_replace('_', '', $item);
+			  },
+			  array_keys($a)
+		  ),
+		  $a
+	  )
+  );
+  var_dump(
+	  $test === array(
+		  'a321' => '123',
+		  'abc' => '321',
+	  )
+  );
+#+END_SRC
+
 *** Get values of a column in a multidimensional array <<php:array_column>>
 Since PHP 5.5
 
@@ -3657,6 +3691,7 @@ RestJson.php
 	  // Class properties
 	  // - Only primitive types e.g. int, string, number, array
 	  // - PHP version > 5.4, arithmetic calculation is allowed
+	  // array cannot contain expressions e.g. lambda functions
 	  // get_class_vars(__CLASS__) == array('property1Name' => 'property1Value', 'privateStaticPropertyName' => 123)
 
     public static $valid_address_types = [
