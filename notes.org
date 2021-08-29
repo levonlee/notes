@@ -774,15 +774,27 @@ Linux return multi-letter codes. You can use 3-letter or 2-letter codes as a bac
 
 #+BEGIN_SRC php
   // Y => 1999
+
   // m => 01 for January
   // n => 1 for January
   // M => Jan for January
+
   // d => 01 to 31
   // j => 1 to 31
+
   // w => 0 to 6, 0 for Sunday and 6 for Saturday
+
   // H :: 24-hour format for an hour with leading zeros
+  // G :: 24-hour format of an hour without leading zeros
+  // h :: 12-hour format of an hour with leading zeros
+  // g :: 12-hour format of an hour without leading zeros
+
   // i :: minutes with leading zeros
+
   // s :: seconds with leading zeros
+
+  // a :: am or pm
+  // A :: AM or PM
 
   // Use / to escape
   echo date('Ymd'); // 20190131 for Jan 31, 2019
@@ -1305,11 +1317,15 @@ Here's how to remove any 4 byte character:
 
 *** Change keys only <<php:array_combine>>
 #+BEGIN_SRC php
+  array_combine(array $keys, array $values): array
+#+END_SRC
+#+BEGIN_SRC php
   $a = array(
 	  'a_321' => '123',
 	  'abc' => '321',
   );
 
+  // Uppercase the first letter in keys
   var_export($test = array_combine(array_map('ucfirst', array_keys($a)), $a));
   var_dump(
 	  $test === array(
@@ -1318,6 +1334,7 @@ Here's how to remove any 4 byte character:
 	  )
   );
 
+  // Remove _ in keys
   var_export(
 	  $test = array_combine(
 		  array_map(
@@ -1335,6 +1352,41 @@ Here's how to remove any 4 byte character:
 		  'abc' => '321',
 	  )
   );
+
+  $indexDBRows = array(
+	  0 => array('id' => 123, 'name' => 'Li'),
+	  1 => array('id' => 124, 'name' => 'Hello'),
+	  2 => array('id' => 125, 'name' => 'World'),
+  );
+
+  $primaryKeyDBRows = array(
+	  123 =>
+		  array(
+			  'id' => 123,
+			  'name' => 'Li',
+		  ),
+	  124 =>
+		  array(
+			  'id' => 124,
+			  'name' => 'Hello',
+		  ),
+	  125 =>
+		  array(
+			  'id' => 125,
+			  'name' => 'World',
+		  ),
+  );
+
+  // PHP 5.5+
+  $r = array_combine(array_column($indexDBRows, 'id'), $indexDBRows);
+  var_dump($r === $primaryKeyDBRows);
+
+  // PHP < 5.5
+  $r = array_combine(
+	  array_map(function($v) { return $v['id']; }, $indexDBRows),
+	  $indexDBRows
+  );
+  var_dump($r === $primaryKeyDBRows);
 #+END_SRC
 
 *** Get values of a column in a multidimensional array <<php:array_column>>
@@ -1629,6 +1681,13 @@ Single dimension
 	echo $sum;
     }, 25, 9);
 
+    // Or
+    $a = 25; $b = 9;
+    call_user_func(function() use ($a, $b) {
+	$sum = $a + $b;
+	echo $sum;
+    });
+
     // Pass by reference :: use call_user_func_array
     call_user_func_array(
 	    function ($a, $b, &$sum) {
@@ -1707,6 +1766,9 @@ Single dimension
 #+END_SRC
 
 *** ~array_walk~ <<php:array_walk>>
+- Cannot change array keys! Use [[php:array_combine]]
+- Only change array values
+
 #+BEGIN_SRC php
   array_walk ( array|object &$array , callable $callback , mixed $userdata = null ) : bool
 
@@ -6442,6 +6504,10 @@ You can throw an Exception
 
   // can be used to see what files include this file
   var_export(debug_backtrace());
+
+  // Just return the last called function
+  $dbt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2);
+  $caller = isset($dbt[1]['function']) ? $dbt[1]['function'] : null;
 #+END_SRC
 
 ** Configuration, Setting, Maintenance Mode
