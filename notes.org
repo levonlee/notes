@@ -62697,10 +62697,11 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
 *** File difference between 2 branches <<git:branch:file difference>>
 - [[git:diff][git:diff]]
 - ~git diff --name-status master..origin/master~
-   - or ~git diff --stat --color master..origin/master~
    - D or - :: Missing file or line in remote branch
    - A or + :: New file or line in remote branch
-   - M :: Both are modified 
+   - M :: Both are modified
+- ~git diff --stat --color master..origin/master~
+   - Only number of lines of difference, can't see which files are D (deleted), A (added) or M (modified)
 
 *** Find authors of all remote/local branches and tags
 #+BEGIN_EXAMPLE
@@ -62790,6 +62791,17 @@ git push -f
    - ~git add .~ and ~git commit -m ""~
 - Abort a merge and restore the project's state as it was before starting the merge :: ~git merge --abort~
 - Combine all integrated changes into a single commit instead of perserving them as individual commits. Need to make a normal commit after :: ~--squash~
+
+*** Merge just one file
+Merge file ~f~ of branch ~B~'s ~HEAD~ into ~f~ of branch ~A~~
+#+BEGIN_SRC sh
+  git checkout A
+  git checkout B f
+
+  # --patch option makes it interactive
+  # if f on B does not exist yet, omit --patch, otherwise, you'll get a "No Change" message
+  # B could be any commit
+#+END_SRC
 
 ** Rebase <<git:rebase>>
 feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
@@ -65553,6 +65565,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     CONCAT_WS(',', NULL, '123', NULL) -- 123
     CONCAT_WS(',', NULL, NULL) -- empty string
     CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
+    CONCAT_WS(',', NULL, '123', NULLIF('',''), NULL) -- 123
   #+END_SRC
 - Replace all occurances, case-sensitve. multibyte safe
   #+BEGIN_SRC sql
