@@ -1825,6 +1825,17 @@ Single dimension
 
     callback ( mixed $carry , mixed $item ) : mixed
   #+END_SRC
+  #+BEGIN_SRC php
+    $sum = 100;
+    $fees = array(
+	    '1' => array('amount' => 1),
+	    '2' => array('amount' => 2),
+    );
+    $r = array_reduce($fees, function($carry, $item) {
+	    return $carry -= $item['amount'];
+    }, $sum);
+    var_dump($r === 97);
+  #+END_SRC
 - Can be associative array, but no way to access the key in callback function
    - Use [[php:array_walk]]
 - Return deep value in array
@@ -1877,7 +1888,16 @@ Single dimension
 #+END_SRC
 - return :: the first key that has the value
 - Examples
-   - Search value in a multidimensional array :: ~$key = array_search('100', array_column($userdb, 'uid'));~ Since PHP 5.5
+   - Search value in a multidimensional array
+     #+BEGIN_SRC php
+       // PHP 5.5+ to support array_column
+       $key = array_search('100', array_column($userdb, 'uid'));
+
+       // PHP < 5.5
+       $key = array_search('100', array_map(function($v) { return $v['id']; });
+       array_map(function($v) { return $v['id']; }
+     #+END_SRC
+   - ~$key = array_search('100', array_column($userdb, 'uid'));~ Since PHP 5.5
       - every item in $userdb has to have the column/array key as uid, otherwise, array_search returns the index of the first row that does not have the column/array key
 
 *** ~array_sum()~
