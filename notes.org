@@ -12,6 +12,7 @@
 ** Installation
 *** Debian <<php:install:debian>>
 - [[https://www.php.net/supported-versions.php][Supported versions]]
+- Apache and PHP FPM :: https://www.digitalocean.com/community/tutorials/how-to-run-multiple-php-versions-on-one-server-using-apache-and-php-fpm-on-ubuntu-18-04
 
 Install multiple versions of PHP
 #+BEGIN_SRC sh
@@ -25,7 +26,7 @@ Install multiple versions of PHP
   # install PHP for Apache (install Apache and everything?)
   sudo apt install php7.3
 
-  # install PHP for Nginx
+  # install PHP as FPM (one type of FastCGI, full name FastCGI Process Manager). Needed for Nginx
   sudo apt install php7.3-fpm
 
   # install a specific module, use tab
@@ -38,7 +39,7 @@ Install multiple versions of PHP
   # after install, php-fpm services should be auto started
   sudo systemctl status php7.3-fpm
 
-  # change PHP version on Apache
+  # change PHP version as an Apache module only
   a2dismod php7.0 ; a2enmod php5.6 ; service apache2 restart
 
   # check PHP version
@@ -47,7 +48,7 @@ Install multiple versions of PHP
   # see what alternatives of PHP
   update-alternatives --config php
 
-  # set default PHP version
+  # set default PHP version for PHP CLI only
   sudo update-alternatives --set php /usr/bin/php7.3
 
   # get location of php.ini, usually `/etc/php/7.3/cli/php.ini`
@@ -522,14 +523,14 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
 #+END_SRC
 
 ** ~$_SERVER~ <<php:$_SERVER>>
-[[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
-
-GATEWAY_INTERFACE
-SERVER_ADDR
-SERVER_SOFTWARE
-DOCUMENT_ROOT
-SERVER_ADMIN
-SERVER_SIGNATURE
+- [[https://stackoverflow.com/questions/6474783/which-server-variables-are-safe][Which are safe?]]
+   - GATEWAY_INTERFACE
+   - SERVER_ADDR
+   - SERVER_SOFTWARE
+   - DOCUMENT_ROOT
+   - SERVER_ADMIN
+   - SERVER_SIGNATURE
+- Refer to [[php:header]]
 
 *** Partyly safe
 - HTTPS :: bool whether the request is https
@@ -5277,7 +5278,18 @@ Manually construct a multipart/form-data with binary file data
     }
   #+END_SRC
 - Return all sent or ready to be sent response headers :: ~headers_list()~
-- Return all HTTP request headers :: ~getallheaders()~
+- Return all HTTP request headers
+   - ~getallheaders()~ :: alias of ~apache_request_headers()~. Only works for Apache web server
+      - Earlier only works for PHP running in Apache as a module
+      - Later supported for CGI and later from PHP 7.3 supported for FGM
+   - ~$_SERVER['HTTP_MY_REQUEST_HEADER']~
+      - Apache
+	 - If PHP is not running as a Apache module, then it's available
+	    - Any HTTP request header name will be converted to uppercase and dash to underscores
+	 - If PHP is running as an Apache module, do this
+	   #+BEGIN_SRC apache
+	     SetEnvIf MY_REQUEST_HEADER "(.*)" HTTP_MY_REQUEST_HEADER=$1
+	   #+END_SRC
 
 ** Troubleshooting
 *** Parse error: syntax error, unexpected end of file
@@ -60547,8 +60559,12 @@ autoindex deflate expires filter mime rewrite setenvif mpm_prefork
 - [[apache:reload][apache:reload]]
 
 ** Modules
-- Available modules :: ~/etc/apache2/mods-available~
-- Enabled modules :: ~/etc/apache2/mods-enabled~
+- Available modules
+   - ~cat /etc/apache2/mods-available~
+- Enabled modules
+   - ~cat /etc/apache2/mods-enabled~
+   - ~apache2ctl -M~
+   - ~apache2ctl -M | grep  headers_module~
 - Terms used to describe modules
    - Status
       - Base :: they're compiled and loaded into the server by default
