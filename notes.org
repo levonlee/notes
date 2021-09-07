@@ -1463,7 +1463,7 @@ Since PHP 5.5
   $a4 = array_column($people, 'name'); // ['Fred', 'Jane', 'John']
 #+END_SRC
 
-*** ~array_diff~ Subset, Remove values, Intersection <<php:array_diff>>
+*** ~array_diff~, ~array_diff_key~ Subset, Remove values, Intersection <<php:array_diff>> <<php:array_diff_key>>
 #+BEGIN_SRC php
   array_diff(array $array, array ...$arrays): array
 #+END_SRC
@@ -1487,6 +1487,47 @@ Single dimension
   } else {
     var_dump($missingKeys, 'These keys are missing');
   }
+#+END_SRC
+
+Associative arrays
+#+BEGIN_SRC php
+  $array1 = array('blue' => 1, 'red' => 2, 'green' => 3, 'purple' => 4);
+  $array2 = array('green' => 5, 'yellow' => 7, 'cyan' => 8);
+
+  var_export(
+	  array_diff_key($array1, $array2) === array(
+		  'blue' => 1,
+		  'red' => 2,
+		  'purple' => 4,
+	  )
+  );
+#+END_SRC
+
+*** ~array_key_exists~ <<php:array_key_exists>>
+- Refer to [[php:array_diff_key]]
+#+BEGIN_SRC php
+  $a = array(
+	  'a' => 123,
+	  'b'=> 321,
+  );
+
+  // Check if a single key exists in an array
+  var_export(array_key_exists('a', $a) === true);
+
+  // Check if multiple keys all exist in an array
+  function array_keys_all_exist(array $keys, array $arr) {
+	  var_export(
+		  array_flip($keys) === array(
+			  'a' => 0,
+			  'c' => 1,
+		  )
+	  );
+
+	  return ! array_diff_key(array_flip($keys), $arr);
+  }
+  var_export(array_keys_all_exist(array('a', 'c'), $a) === false);
+
+  function array_key_exists($key, array $search) bool	
 #+END_SRC
 
 *** Get values by keys in order
