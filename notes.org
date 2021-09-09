@@ -26037,9 +26037,15 @@ Method
 #+END_SRC
 
 - Initially, the checkbox is checked
-- If the label or the checkbox is clicked, onclick is trigger and logs the checked is false
-   - return false in onclick will stop saving this.checked = false, will remain as true
+- If the label or the checkbox is clicked, onclick is triggered and logs ~this.checked~ is false
+   - return false in onclick will stop saving this.checked = false, ~this.checked~ will remain as true
       - and onchange is not run
+
+**** Events about radio
+#+BEGIN_SRC html
+  <input type="radio" name="my_radio" id="my_radio_0" onclick="doSomething()" value="0">
+  <label for="my_radio_0">None</label>
+#+END_SRC
 
 **** MouseEvent Object
 | altKey        | whether ALT key was pressed                                                      |
@@ -33078,6 +33084,22 @@ If an iframe observes one of its elements, both scrolling the iframe as well as 
 *** Unit Testing
 QUnit
 
+*** Performance <<js:performance>>
+#+BEGIN_SRC js
+  var t0 = performance.now();
+  doSomething();
+  var t1 = performance.now();
+  console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
+
+  // Or this way for console only
+  console.time('doSomething');
+  doSomething();
+  console.timeEnd('doSomething');
+
+  // On console, `console.timeEnd` prints out one line:
+  // doSomething: 3.259765625 ms
+#+END_SRC
+
 ** Worker
 *** Web Worker
 - Workers are in external files which don't have access to DOM (objects like window, document and parent) and completely separate from the webpage
@@ -34163,6 +34185,17 @@ Changes the hash in URL and then go to the element
 #+END_SRC
 
 #+BEGIN_SRC js
+  // Returns the checked radio value, if no radio is checked
+  var checkedRadio = document.querySelector('input[name="my_radio_name"]:checked');
+
+  if (checkedRadio) {
+      console.log(checkedRadio.value);
+  }
+  else {
+      console.log('No radio is checked');
+  }
+
+  // Old
   function getRadioValue(name) {
     var radios = document.getElementsByName(name);
     if (!!radios && radios.length > 0) {
