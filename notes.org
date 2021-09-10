@@ -2195,6 +2195,56 @@ Associative arrays
   // [ a => 2, b => 1, c => 3]
 #+END_SRC
 
+*** range <<php:range>>
+#+BEGIN_SRC php
+  <?php
+
+  // When start and end are numbers
+  var_export(range(2,2) === array(2));
+  var_export(range(2,3) === array(2, 3));
+  // String of numbers are converted to numbers in the result
+  var_export(range('2','3') === array(2, 3));
+
+  // default step is int 1
+  var_export(range(2,3, 1) === array(2, 3));
+
+  // step is int 3
+  var_export(range(2,10, 3) === array(2, 5, 8));
+
+  // can go backwards, with step being positive int 1, only based on start and end
+  var_export(range(2,1) === array(2, 1));
+
+  // step should be a positive number, can be float
+  var_export(range(2,2.2, 0.1) === array(2.0, 2.1, 2.2));
+
+  // String of numbers are converted to numbers in the result
+  var_export(range('2','2.2', 0.1) === array(2.0, 2.1, 2.2));
+
+  // Force the result to be string of numbers instead of numbers, although it's not perfect for floats...
+  // It works for strings of integers
+  var_export(
+	  array_map('strval', range('2', '2.2', 0.1)) ===
+	  array(
+		  '2', // it should be '2.0' as the original.. but oh well..
+		  '2.1',
+		  '2.2',
+	  )
+  );
+
+  // When start and end are single length characters
+  var_export(range('a','c') === array('a', 'b', 'c'));
+
+  var_export(range('a','c', 2) === array('a', 'c'));
+
+  // The character length of start and end should one, the following does not work though does not throw errors
+  var_export(range('AB','AC'));
+
+  // Use case: Generate a series of strings with prefix and number padding
+  var_export(
+	  array_map(function ($n) { return sprintf('sample_%03d', $n); }, range(1, 2)) === array('sample_001', 'sample_002')
+  );
+#+END_SRC
+
 *** Associative array
 #+BEGIN_SRC php
   function isAssoc(array $arr) {
@@ -33085,6 +33135,8 @@ If an iframe observes one of its elements, both scrolling the iframe as well as 
 QUnit
 
 *** Performance <<js:performance>>
+- https://stackoverflow.com/a/1975103/2196360
+
 #+BEGIN_SRC js
   var t0 = performance.now();
   doSomething();
