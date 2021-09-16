@@ -1213,35 +1213,48 @@ Here's how to remove any 4 byte character:
    - If key is the same, values will be appended as array
    - Very different from array_merge
 
-*** Append an array to another <<php:array_push>> <<php:splat operator>>
+*** Append an array or an element to another array <<php:array_push>> <<php:splat operator>>
+**** Append an element
+#+BEGIN_SRC php
+  $a = array('1', 123);
+
+  var_dump(array_push($a, 'hello') === 3);
+  var_dump(($a[] = 'world') === 'world');
+  var_dump(
+	  array_merge($a, array('array_merge')) ===
+	  array('1', 123, 'hello', 'world', 'array_merge')
+  );
+#+END_SRC
+
+**** Append several elements ~array_push($a, 'hello', 'world')~
+**** Append an array
 - If 2 arrays only have numeric keys e.g. ~['a', 1, 2]~, php:array_merge can be used to append
 - Use this for appending 2 arrays
+  #+BEGIN_SRC php
+    $a = $b = [
+	['a'=>1,'c'=>321],
+	['a'=>1, 'b'=>2]
+	];
 
-#+BEGIN_SRC php
-  $a = $b = [
-      ['a'=>1,'c'=>321],
-      ['a'=>1, 'b'=>2]
-      ];
+    $php56Less = $a;
+    foreach ($b as $item) {
+	$php56Less[] = $item;
+    }
+    var_dump($php56Less, '$php56Less');
 
-  $php56Less = $a;
-  foreach ($b as $item) {
-      $php56Less[] = $item;
-  }
-  var_dump($php56Less, '$php56Less');
+    $php56AndPlus = $a;
+    array_push($php56AndPlus, ...$b);
+    var_dump($php56AndPlus, '$php56AndPlus');
 
-  $php56AndPlus = $a;
-  array_push($php56AndPlus, ...$b);
-  var_dump($php56AndPlus, '$php56AndPlus');
-
-  // splat operator since PHP 5.6
-  $array3 = [
-	  'prepend',
-	  ...$array1,
-	  'inTheMiddle',
-	  ...$array2,
-	  'append',
-  ];
-#+END_SRC
+    // splat operator since PHP 5.6
+    $array3 = [
+	    'prepend',
+	    ...$array1,
+	    'inTheMiddle',
+	    ...$array2,
+	    'append',
+    ];
+  #+END_SRC
 
 *** Union
 #+BEGIN_SRC php
@@ -1903,13 +1916,13 @@ Associative arrays
     }
   #+END_SRC
 
-*** ~array_shift~, ~array_unshift~ prepend, ~array_pop~
+*** ~array_shift~, ~array_unshift~ prepend elements, ~array_pop~
 #+BEGIN_SRC php
   // array_pop ( array &$array ) : mixed
   // pop and return the value of the last element of array, shorten the array by one element
 
   // array_shift ( array &$array ) : mixed
-  // first value, literal keys won't be affected
+  // first element, literal keys won't be affected
 
   // array_unshift ( array &$array [, mixed $... ] ) : int
   // prepend passed elements to the front of the array. Literal keys won't be changed
