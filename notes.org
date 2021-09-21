@@ -66314,6 +66314,10 @@ Update Joined Tables
   ALTER TABLE `t1` MODIFY `col1` VARCHAR(255);
   ALTER TABLE `t1` MODIFY `col1` VARCHAR(255) FIRST; -- AFTER can be used
 
+  -- Duplicate a column
+  ALTER TABLE `t1` ADD `col1duplicate` VARCHAR(255);
+  UPDATE `t1` SET `col1duplicate` = `col1`;
+
   -- CHANGE eq. CHANGE COLUMN can change column name
   -- The order ~FIRST | AFTER anotherColumn~ is optional
   -- To get column definition, refer to mysql:show create table
@@ -66431,13 +66435,22 @@ Update Joined Tables
        AND table_name = 'mytablename'
      #+END_SRC
    - COLUMN_TYPE :: e.g. ~decimal(10,2) unsigned~
-   - IS_NULLABLE :: YES or NO
    - COLUMN_DEFAULT :: e.g. 0, 'default string'
+   - IS_NULLABLE :: YES or NO
    - COLUMN_COMMENT
+   - [[mysql:alter table]]
+     #+BEGIN_SRC sql
+       alter table myTable
+	       modify colA tinyint unsigned default 0 null;
+
+       ALTER TABLE myTable
+	     MODIFY colA {COLUMN_TYPE} DEFAULT {COLUMN_DEFAULT} {IS_NULLABLE}
+     #+END_SRC
 - Column definition
    - Collation, privileges, comments
      #+BEGIN_SRC sql
        SHOW FULL COLUMNS FROM myTable;
+       SHOW FULL COLUMNS FROM myTable WHERE Field = 'col1';
 
        -- only show Type, Null, Key Default, Extra. They're all the same
        DESCRIBE myTable;
