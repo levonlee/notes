@@ -26091,6 +26091,19 @@ Method
   <button onclick="document.getElementById('lili').value=321;document.getElementById('lili').dispatchEvent(new Event('change'));">Change me, event object is passed onto #lili.onchange, just like a normal UI operation</button>
 #+END_SRC
 
+**** Event <<html:event:onchange>>
+- onchange actually happens after oninput and then after onblur
+- iOS doesn't trigger onchange if the input value is changed programmatically
+- In Safari, if onblur modifies the input value programmatically, and the value is different from the last oninput, then onchange will not fire!
+  #+BEGIN_SRC js
+    // onblur event handler
+    // may change text.value based on some conditions
+    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (focus && text.value !== oldAmount && text.onchange && isSafari) {
+	text.dispatchEvent(new Event('change'));
+    }
+  #+END_SRC
+
 **** Events about checkbox
 #+BEGIN_SRC html
   <div class="inputrow">
@@ -33605,6 +33618,11 @@ Refer to bootstrap:responsive helpers
       }
     }, 5000);
   }
+#+END_SRC
+
+** Device Detection
+#+BEGIN_SRC js
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 #+END_SRC
 
 ** CSS Media Viewport Size <<<js:viewport size>>>
