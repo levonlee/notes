@@ -2846,6 +2846,25 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
    - If ~$encryptedMessage~, ~$key~ and ~$iv~ are all hex, you need to convert them to binary to decrypt <<php:openssl_decrypt>>
    - Refer to [[nodejs:decrypt][nodejs:decrypt]]
 
+*** Random Password <<php:random password>>
+#+BEGIN_SRC php
+  $randmode = 0;
+  if (is_callable('random_bytes')) $randmode = 1;
+  if (is_callable('openssl_random_pseudo_bytes') && $randmode == 0) $randmode = 2;
+  switch ($randmode) {
+	  case 0:
+		  $rand = mt_rand();
+		  break;
+	  case 1:
+		  $rand = random_bytes(32);
+		  break;
+	  case 2:
+		  $rand = openssl_random_pseudo_bytes(32);
+		  break;
+  }
+  $rand = substr(base64_encode($rand), 0, 16);
+#+END_SRC
+
 *** True or False on string
 #+BEGIN_SRC php
   // index.php?
