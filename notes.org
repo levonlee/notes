@@ -1804,6 +1804,94 @@ Associative arrays
 		  'e' => 5,
 	  )
   );
+
+  var_dump(
+	  'Find Index By Key',
+	  findIndexByKey($original, 'c') === 2,
+	  findIndexByKey($original, 'd') === 3,
+	  findIndexByKey(array_merge($original, array('d' => 6)), 'd') === 3,
+	  findIndexByKey(array('a' => 1, 'b' => 2, 'c' => 3, 'd' => 4, 'e' => 5, 'd' => 6), 'd') === 3
+
+  );
+
+  var_dump(
+	  'Insert before key d',
+	  insertKeyValuePairsToAssocArray($original, 'd', $inserted) === array(
+		  'a' => 1,
+		  'b' => 2,
+		  'c' => 3,
+		  0 => 6,
+		  1 => 7,
+		  'x' => 6,
+		  'y' => 7,
+		  'd' => 4,
+		  'e' => 5,
+	  ),
+	  'Insert after key d',
+	  insertKeyValuePairsToAssocArray($original, 'd', $inserted, false) === array(
+		  'a' => 1,
+		  'b' => 2,
+		  'c' => 3,
+		  0 => 6,
+		  1 => 7,
+		  'd' => 4,
+		  'x' => 6,
+		  'y' => 7,
+		  'e' => 5,
+	  ),
+	  'Insert after key e, last key',
+	  insertKeyValuePairsToAssocArray($original, 'e', $inserted, false) === array(
+		  'a' => 1,
+		  'b' => 2,
+		  'c' => 3,
+		  0 => 6,
+		  1 => 7,
+		  'd' => 4,
+		  'e' => 5,
+		  'x' => 6,
+		  'y' => 7,
+	  ),
+	  'Insert after key 1, last key',
+	  insertKeyValuePairsToAssocArray($original, 1, $inserted, false) === array(
+		  'a' => 1,
+		  'b' => 2,
+		  'c' => 3,
+		  0 => 6,
+		  1 => 7,
+		  'x' => 6,
+		  'y' => 7,
+		  'd' => 4,
+		  'e' => 5,
+	  )
+  );
+
+  function findIndexByKey($array, $key) {
+	  // If the $array is associative array with no numeric keys and no duplicate keys, below can be used
+	  return array_search($key, array_keys($array));
+  }
+
+  /**
+   ,*
+   ,* @param array $array must be associative array with no numeric keys
+   ,* @param string|int $insertAtThisKey
+   ,* @param array $insertItems
+   ,* @param bool $insertBefore otherwise, insert after
+   ,*
+   ,* @return array
+   ,*/
+  function insertKeyValuePairsToAssocArray($array, $insertAtThisKey, $insertItems, $insertBefore = true) {
+	  $index = array();
+	  foreach ($array as $_k => $_v) {
+		  $index[] = $_k;
+	  }
+	  $indexFlip = array_flip($index);
+	  $indexToInsert = $insertBefore ? $indexFlip[$insertAtThisKey] : $indexFlip[$insertAtThisKey] + 1;
+	  $arrayEnd = array_splice($array, $indexToInsert);
+	  $arrayStart = array_splice($array, 0, $indexToInsert);
+	  //array_splice($array, $indexToInsert, 0, $insertItems);
+
+	  return array_merge($arrayStart, $insertItems, $arrayEnd);
+  }
 #+END_SRC
 
 *** ~array_fill~ fill values <<php:array_fill>>
