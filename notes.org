@@ -66,7 +66,15 @@ Install multiple versions of PHP
    - Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
    - All CLI options :: https://www.php.net/manual/en/features.commandline.options.php 
    - Interactive shell mode :: ~php -a~, type ~quit~
-- Changing php.ini requires [[apache:restart][apache:restart]] or Nginx
+- Changing php.ini requires PHP restart and [[apache:restart][apache:restart]] or Nginx
+  #+BEGIN_SRC sh
+    # raw way
+    /etc/init.d/php7.4-fpm restart
+
+    # SystemD
+    systemctl | grep 'php'
+    systemctl restart php7.4-fpm.service
+  #+END_SRC
 
 **** PHP Version
 #+BEGIN_SRC php
@@ -53309,6 +53317,9 @@ A Linux system is really low on memory if the free value in -/+ buffers/cache: l
 - SystemD :: System Management Daemon
    - a new init system :: parallel
    - ~systemctl~ :: List running services only with more detail
+     #+BEGIN_SRC sh
+       systemctl | grep 'php'
+     #+END_SRC		    
    - ~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old System V init
    - Some daemon files can do restart and it might be the preferred way to interact with service. e.g. ~sudo /etc/init.d/jenkins restart~
    - Set up an PHP script file as a system
@@ -54333,7 +54344,7 @@ https://askubuntu.com/a/430944/481813
     ls -al goodfile > stdoutlogfile
     # same as 2>, 3> etc.
 
-    # Redirect stdout, creates if not exist or appends to a file
+    # Redirect stdout, creates if not exist and appends to a file
     ls -al goodfile >> stdoutlogfile
     # same as &>>, 2>>, 3>> etc.
 
@@ -54356,6 +54367,8 @@ https://askubuntu.com/a/430944/481813
     # On the right, it's a file not an output
     sort < fruit.txt
     wc < fruit.txt
+    # clear a file's content, perfect when sudo is not needed
+    < clearThisFile.txt
   #+END_SRC
 - Piping <<linux:pipe>>
   #+BEGIN_SRC sh
@@ -61707,7 +61720,7 @@ Enable HTTPS, allow Full and delete HTTP
 #+END_SRC
 
 *** Service Check, reload, restart, Check syntax <<nginx:restart>>
-- Check syntax for config before restart :: ~sudo nginx -t~
+- Check syntax for config before restart <<nginx:config:syntax>>:: ~sudo nginx -t~
 - ~systemctl stop/start/restart/reload/disable/enable nginx~
    - status :: ~systemctl status nginx~
    - restart :: ~service nginx restart~ or ~sudo /etc/init.d/nginx restart~
@@ -61862,6 +61875,13 @@ Define server(s) in /etc/nginx/conf.d/default.conf
 #+END_SRC
 
 https://github.com/h5bp/server-configs
+
+- Check syntax and restart [[nginx:restart][nginx:restart]]
+- Check a setting
+  #+BEGIN_SRC sh
+    cd /etc/nginx/
+    grep -r 'client_max_body_size' .
+  #+END_SRC
 
 ** server Block <<<nginx:b:server>>>
 - Include directives :: listen, server_name, root, index
