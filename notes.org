@@ -66239,6 +66239,19 @@ SELECT aliases can only be used in ORDER BY, GROUP BY and HAVING
 	FROM sales s) AS tbl1;
 #+END_SRC
 
+**** Select all columns except some columns
+#+BEGIN_SRC sql
+  SET @sql = CONCAT(
+	  'SELECT ',
+	  (SELECT REPLACE(GROUP_CONCAT(COLUMN_NAME), '<columns_to_omit>,', '')
+	   FROM INFORMATION_SCHEMA.COLUMNS
+	   WHERE TABLE_NAME = '<table>'
+	     AND TABLE_SCHEMA = '<database>'),
+	  ' FROM <table>');
+  PREPARE stmt1 FROM @sql;
+  EXECUTE stmt1;
+#+END_SRC
+
 **** JOIN
 - ~INNER JOIN~ is ~JOIN~
 - Comma separated tables is eq. to ~JOIN~ but the precedence is less than ~JOIN~, ~INNER JOIN~, ~LEFT JOIN~, ~CROSS JOIN~
