@@ -63037,6 +63037,11 @@ Don't verify SSL
 - ~git diff HEAD^~ :: Between (Unstaged or Staged) and HEAD^
 - [[git:branch:file difference][git:branch:file difference]]
 
+** log <<git:log>>
+#+BEGIN_SRC sh
+  git log --all --decorate --oneline --graph
+#+END_SRC
+
 ** Patch
 - Create a patch
    - Refer to [[git:diff][git:diff]]
@@ -63153,8 +63158,20 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
       - This error shows if the remote branch is already deleted
 - ~git fetch -p~ :: purge. sync branch list with remote
 
-*** Rename current branch
-~git branch -m new-branch-name~
+*** Rename branch
+#+BEGIN_SRC sh
+  # Rename current branch
+  git branch -m new-branch-name
+
+  # Rename another branch which is not the current branch
+  git branch -m old-branch-name new-branch-name
+
+  # If the previous local branch has pushed to remote, do the above to rename the local branch, and do these
+  # Delete the old remote branch and push the current branch to the new remote branch
+  git push origin :old-branch-name new-branch-name
+  # Reset the upstream of the local branch to the new remote branch
+  git push origin -u new-branch-name
+#+END_SRC
 
 *** Commit difference between 2 branches 
 - What commits ~li~ has but ~master~ doesn't :: ~git log master..li~
@@ -66013,7 +66030,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   SELECT * FROM a WHERE aUnixTimeColumn > UNIX_TIMESTAMP(NOW() - INTERVAL 24 HOUR) -- last 24 hours
 #+END_SRC
 
-**** String Functions
+**** String Functions <<mysql:string:functions>>
 - https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
 - Concatenate user variable
   #+BEGIN_SRC sql
@@ -66048,7 +66065,6 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   #+BEGIN_SRC sql
     SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3');
   #+END_SRC
-- SUBSTRING(aColumn, 1, 10) :: First 10 characters <<mysql:substring>>
 - String delimited list
   #+BEGIN_SRC sql
     substring_index ( substring_index ( context,',',1 ), ',', -1) ) 
@@ -66075,6 +66091,27 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - The complement is ~ELT()~
 - ~ELT(N, str1, str2, ... )~
    - ~SELECT ELT(1, 'Aa', 'Bb', 'Cc', 'Dd')~ :: ~'Aa'~
+
+***** SUBSTRING()  <<mysql:substring>>
+- alias SUBSTR
+
+#+BEGIN_SRC sql
+  SUBSTRING('foobarbar' FROM 4) = SUBSTRING('foobarbar', 4) = 'barbar'
+
+  -- Get 6 characters from the 5 + 1 position
+  SUBSTRING('Quadratically',5,6) = SUBSTRING('Quadratically' FROM 5 FOR 6) = 'ratica'
+#+END_SRC
+
+***** LOCATE() <<mysql:locate>>
+- multibyte safe and is case-sensitive only if at least one argument is a binary string
+
+#+BEGIN_SRC sql
+  SELECT LOCATE('bar', 'foobarbar') = 4;
+  SELECT LOCATE('xbar', 'foobar') = 0;
+
+  -- search 'bar' from 5 + 1 position
+  SELECT LOCATE('bar', 'foobarbar', 5) = 7;
+#+END_SRC
 
 **** ~CHAR~ and ~VARCHAR~
 - 1 character 1 byte
@@ -66531,6 +66568,7 @@ Update Joined Tables
    - Never do ~$convertedValue = $aColumnValue + 0;~ :: throws warning when input value is empty string
       - null is fine and converted to 0 in int or float
 
+**** String functions [[mysql:string:functions]]
 **** Comparison functions and Operators
 - ~COALESCE(value1, value2, ...)~
    - Returns the first non-NULL value in the list, or NULL if there are no non-NULL values
