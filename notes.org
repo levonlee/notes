@@ -67136,6 +67136,15 @@ Schema
 #+BEGIN_SRC sh
   mysqldump -u user -p database_name > database_name_backup.sql
 
+  # prevents table being locked
+  mysqldump --single-transaction -u user -p database_name > backup.sql
+
+  # Assuming there's enough disk space
+  mysqldump --single-transaction -u user -p database_name > backup.sql && gzip backup.sql
+
+  # Not enough disk space then use pipe
+  mysqldump --single-transaction -u user -p database_name > backup.sql | gzip backup.sql
+
   # dump specific tables
   mysqldump -u user -p database_name t1 t2 t3 > a.sql
 
@@ -69720,20 +69729,78 @@ PHP APM (Application Performance Metrics)
 - View hidden files :: Command + Shift + .
 
 *** Homebrew
-**** brew install svn
-svntools have been installed to:
-  /opt/homebrew/opt/subversion/libexec
+**** Basics
+#+begin_src sh
+  # like sudo apt-get update, it also updates brew and cask
+  brew update
 
-The perl bindings are located in various subdirectories of:
-  /opt/homebrew/opt/subversion/lib/perl5
+  # list installed
+  brew list
 
-You may need to link the Java bindings into the Java Extensions folder:
-  sudo mkdir -p /Library/Java/Extensions
-  sudo ln -s /opt/homebrew/lib/libsvnjavahl-1.dylib /Library/Java/Extensions/libsvnjavahl-1.dylib
-==> Summary
-🍺  /opt/homebrew/Cellar/subversion/1.14.1_4: 234 files, 33.1MB
+  # show an installed package's installation path
+  brew list git
+
+  # list installed applications
+  brew list --cask
+
+  # see what versions you have, and later switch to a different version
+  brew list --versions git
+
+  # Change versions
+  brew switch git 2.5.0
+
+  # install an application using dmg
+  brew install --cask firefox
+
+  # upgrade a package
+  brew upgrade git
+
+  # upgrade all packages
+  brew upgrade
+
+  # List all added/tapped repositories. Third-Party Repositories = Tap
+  brew tap
+
+  # brew folder/directory which is /opt/homebrew
+  brew --repository
+
+  # Clones `https://github.com/<user>/homebrew-<repo>` to /opt/homebrew/Library/Taps, later formulae will be updated when `brew update` is run
+  brew tap <user/repo>
+
+  # Remove the tap
+
+  # Check a package versions, caveats, etc. May do it before installation
+  brew info git
+#+end_src
+
+**** mutagen
+#+begin_src sh
+  brew tap mutagen-io/mutagen
+  brew install mutagen-io/mutagen/mutagen
+
+  # /opt/homebrew/Cellar/mutagen/0.13.1
+#+end_src
+**** svn
+#+begin_src sh
+  brew install svn
+#+end_src
+
+#+begin_src text
+  svntools have been installed to:
+    /opt/homebrew/opt/subversion/libexec
+
+  The perl bindings are located in various subdirectories of:
+    /opt/homebrew/opt/subversion/lib/perl5
+
+  You may need to link the Java bindings into the Java Extensions folder:
+    sudo mkdir -p /Library/Java/Extensions
+    sudo ln -s /opt/homebrew/lib/libsvnjavahl-1.dylib /Library/Java/Extensions/libsvnjavahl-1.dylib
+  ==> Summary
+  🍺  /opt/homebrew/Cellar/subversion/1.14.1_4: 234 files, 33.1MB
+#+end_src
 
 **** Font
+***** source code pro
 #+begin_src sh
   brew tap homebrew/cask-fonts
   brew install --cask font-source-code-pro
