@@ -43898,15 +43898,17 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 
 * NodeJS
 ** Install
-*** Install on Ubuntu
+*** Ubuntu
 #+BEGIN_SRC sh
   apt-get update
 
   # 18.04 has the first installed but not the libssl-dev
   apt-get install build-essential libssl-dev
 
-  # Just go to https://github.com/nvm-sh/nvm to run the install script 
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+  # Just go to https://github.com/nvm-sh/nvm to run the install script
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+
+  source ~/.bashrc
 #+END_SRC
 
 - Directory =~/.nvm= is created with the cloned code
@@ -43915,8 +43917,10 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 - Log out and back again or source the file so that current session knows changes
 - List Node.js available versions ~nvm ls-remote~ and look for version with Latest LTS
 #+BEGIN_SRC sh
-  nvm install 10.14.1
-  nvm use 10.14.1
+  # nvm install 10.14.1
+  # nvm use 10.14.1
+
+  nvm install v16.14.0
 
   # What versions are installed
   nvm ls
@@ -50883,9 +50887,10 @@ shutdown -h now
 - https://github.com/Bash-it/bash-it/tree/master/aliases/available
 
 *** Config <<linux:bash:config>>
-- zsh :: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 - Login shell
-   - When bash is invoked as in interactive login shell or as a non-interactive shell with ~--login~ option
+   - A login shell is invoked when
+      - bash is invoked as in interactive login shell ~/bin/bash -i --login~
+      - or as a non-interactive shell ~/bin/bash --login~
    - a login shell is loaded when X11 or virtual terminal is loaded 
       - e.g. Open Terminal on Mac using Bash
       - ~--noprofile~ option may be used when the shell is started to inhibit this behavior
@@ -50905,12 +50910,17 @@ shutdown -h now
 		  - =~/.bash_aliases=
 	       - Add user's private bin to ~$PATH~ :: =~/bin= =~/.local/bin= 
 	 - =~/.login= for Mac Bash
-- Logout
-   - =~/.bash_logout=
-- When an interactive shell that is not a login shell is started e.g. starting a subshell, ~/etc/bash.bashrc~ and =~/.bashrc= are run
-   - ~--norc~ option may be used to inhibit
-   - ~--rcfile~ option will force bash to run a certain file rather than the default 2 files
+   - Logout
+      - =~/.bash_logout=
+- Subshell
+   - When an interactive shell that is not a login shell is started
+   - ~/etc/bash.bashrc~ and =~/.bashrc= are run
+      - ~--norc~ option may be used to inhibit
+      - ~--rcfile~ option will force bash to run a certain file rather than the default 2 files
 - Graphical shells, in Ubuntu, will read ~/etc/profile~ and =~/.profile= but not for all Linux
+- In Ubuntu, ~.bashrc~ is loaded when
+   - a login and interactive shell
+   - Subshell
 - Search for all ~*.bashrc~ files :: ~find \ -type f -iname '*.bashrc'~
 - Since =~/.bashrc= may not be included in all Linux distros and all login/subshell instances, may need to manually include it e.g. inside =~/.bash_profile=
   #+BEGIN_SRC sh
@@ -51059,6 +51069,7 @@ https://github.com/magicmonty/bash-git-prompt
 #+END_SRC
 
 ** zsh <<linux:zsh>>
+-  [[https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/][Startup files loading order (URL)]]
 *** Homebrew
 - https://rick.cogley.info/post/use-homebrew-zsh-instead-of-the-osx-default/
 #+begin_src sh
@@ -51143,6 +51154,12 @@ https://github.com/magicmonty/bash-git-prompt
   # Select the material-design-colors.itermcolors file
   # Select the material-design-colors from Load Presets
 #+end_src
+
+**** Settings ~⌘ + ,~
+- Profiles
+   - General
+      - Working Directory :: Reuse previous session's directory
+	
 *** .zshrc
 - get some ideas from `cat /etc/zshrc`
 
@@ -56709,38 +56726,62 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
 #+end_src
 
 *** CMD, RUN, ENTRYPOINT
+**** CMD <<dockerfile:cmd>>
 - ~CMD~ is to provide defaults for a container that is already created from an image and running.
+   - ~CMD~ is just to provide paremeters to ~ENTRYPOINT~ when ~docker run~ is run
+      - ~docker run ...longoptions $image $other_command~ :: ~$other_command~ overrides ~CMD~!
    - There can only be one ~CMD~ in a Dockerfile or a chain of Dockerfiles included as in parent images
    - If there're multiple, only the last one will run
-- ~RUN~ runs a command and commits the result to an image at build time
 - ~CMD~ doesn't execute anything at build time and it's not committed to the image.
-- ~ENTRYPOINT~ Docker's default entrypoint is ~/bin/sh -c~. Actually every ~RUN <your command>~ is ~/bin/sh -c <your command>~
-   - Docker allows you to specify a different entrypoint for ~docker run~ e.g. ~docker run -it ubuntu <your command>~ is to run ~/bin/sh -c <your command>~ where ~<your command>~ could be ~bash~
-   - ~CMD~ is just to provide paremeters to ~ENTRYPOINT~ when ~docker run~ is run. e.g. Ubuntu ~CMD ["bash"]~ then you can run ~docker run -it ubuntu~ to run ~/bin/sh -c bash~ directly
-
-For example
-Without ~ENTRYPOINT~, this needs to run ~docker run redisimg redis -H something -u toto get key~
-With ~ENTRYPOINT~, ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~, only this needs to run ~docker run redisimg get key~
+- ~ENTRYPOINT~ Docker's default entrypoint is to start a shell ~/bin/sh -c~
+   - Docker allows you to specify a command in ~docker run~, and that's to combine with entrypoint to run
+      - e.g. ~docker run -it ubuntu <my command>~ will run ~/bin/sh -c <my command>~
+      - where ~<my command>~ could be ~bash~
+   - Combine ENTRYPOINT, ~docker run without extra command~ and CMD
+      - ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~
+      - ~CMD ["get", "key"]~
+      - ~docker run redisimg~ is eq. to ~docker run redisimg get key~
 
 There're 3 forms of ~CMD~
 #+BEGIN_SRC dockerfile
-  # exec form, json array
+  # exec form, json array, doesn't have variable substitution
   CMD ["executable", "param1", "param2"]
+
+  # But you can be clever, this works
+  CMD [ "sh", "-c", "echo $HOME" ]
 
   # as default parameters to ENTRYPOINT
   CMD ["param1","param2"]
 
   # shell form
-  CMD command param1 param2
+  CMD echo $HOME
 #+END_SRC
 
-exec form doesn't have variable substitution
-CMD ["echo", "$HOME"] won't output $HOME variable
+**** RUN <<dockerfile:run>>
+- ~RUN~ runs a command and commits the result to an image at build time
+   - Can be multiple RUN directives
+- It runs using a shell
+- Say [[dockerfile:shell][dockerfile:shell]] is ~/bin/sh -c~ and ~RUN <my command>~, it actually runs
+   - ~/bin/sh -c <my command>~
+- Exec form without substitution :: ~RUN ["executable", "param1", "param2"]~
+- Shell form with substitution :: ~RUN <command>~
+  https://stackoverflow.com/questions/25899912/how-to-install-nvm-in-docker/60137919#60137919
+  #+begin_src dockerfile
+    # change shell or load .bashrc
+    # because non-interactive-non-login shell does not load .bashrc
+    RUN /bin/bash -c 'source $HOME/.bashrc; \
+    echo $HOME'
+  #+end_src
+  
+**** SHELL <<dockerfile:shell>>
+- Change default shell
+   - can be multiple ~SHELL~ directives
+- Syntax :: ~SHELL ["executable", "parameters"]~
+- Default on Linux :: ~["/bin/sh", "-c"]~
+   - Ubuntu is :: ~["/bin/bash", "-c"]~
+- Default on Windows :: ~["cmd", "/S", "/C"]~ 
 
-Use shell form ~CMD [ "sh", "-c", "echo $HOME" ]~ or
-~CMD echo $HOME~ at default shell of the running container
-
-~/bin/bash~ vs ~/bin/sh~
+**** ~/bin/bash~ vs ~/bin/sh~
 - Most of the time ~bash~ is an advanced shell that is on top of ~sh~
 - Sometimes ~sh~ is linked to ~bash~
 - Alpine doesn't have ~/bin/bash~
@@ -56761,34 +56802,34 @@ Always use COPY if it can do what you want
   RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 #+END_SRC
 
-*** ARG Debian (Jessie)
-When building an image using Debian, a lot of these:
-debconf: delaying package configuration, since apt-utils is not installed
+*** ARG Debian (Jessie) <<dockerfile:arg>>
+- Problem :: When building an image using Debian, a lot of these:
+   - ~debconf: delaying package configuration, since apt-utils is not installed~
+- It's like ~ENV~ but ~ENV~ always overrides ~ARG~
+- Define in Dockerfile without a value
+   - So that users can pass at build-time to the builder with the docker build command
+   - ~--build-arg <varname>=<value>~
+     #+BEGIN_SRC dockerfile
+       FROM busybox
+       ARG user1
+       ARG buildno
+     #+END_SRC
+- Define ~ARG~ after ~FROM~
+  #+BEGIN_SRC dockerfile
+    ARG VERSION=latest
+    FROM busybox:$VERSION
+    ARG VERSION
+    RUN echo $VERSION > image_version
+  #+END_SRC
+  ARG defined before FROM is outside of build stage so it can't be used in any other instruction
+- Define with a value
+  #+BEGIN_SRC dockerfile
+    ARG DEBIAN_FRONTEND=noninteractive
+    RUN apt-get update && apt-get install -y apt-utils
 
-<<<Dockerfile:ARG>>>
-ARG :: defines a var that users can pass at build-time to the builder with the docker build command using the --build-arg <varname>=<value> flag.
-
-ARG acts like ENV but ENV always overrides ARG
-
-#+BEGIN_SRC dockerfile
-  FROM busybox
-  ARG user1
-  ARG buildno
-#+END_SRC
-
-ARG defined before FROM is outside of build stage so it can't be used in any other instruction. Define ARG again after FROM
-#+BEGIN_SRC dockerfile
-  ARG VERSION=latest
-  FROM busybox:$VERSION
-  ARG VERSION
-  RUN echo $VERSION > image_version
-#+END_SRC
-
-In this case, a default value is defined
-#+BEGIN_SRC dockerfile
-  ARG DEBIAN_FRONTEND=noninteractive
-  RUN apt-get update && apt-get install -y apt-utils
-#+END_SRC
+    # eq. to
+    RUN DEBIAN_FRONTEND=noninteractive apt-get ...
+  #+END_SRC
 
 **** Predefined ARG variables
 Docker has a set of predefined ARG variables without default values. Use it like without defining ARG in Dockerfile
@@ -61837,7 +61878,8 @@ Force SSL on a specific folder. Place this .htaccess in that folder
 
 * Nginx
 ** Install on Ubuntu 16.04
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
+  # Ubuntu 16.04
   sudo apt-get update
   sudo apt-get install nginx
 #+END_SRC
@@ -69830,6 +69872,9 @@ PHP APM (Application Performance Metrics)
 
 * Tools
 ** MacOS
+*** Escape key not working
+- Activity Monitor > Find Siri > Force Quit > Start again
+
 *** Shortcuts
 - https://support.apple.com/en-ca/HT201236
 
@@ -70147,7 +70192,9 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
       - Which functions get called by this method/class? And which functions also call those functions?
 
 **** Navigate > Implementation(s) ~C-t~
-**** Navigate > Declaration and Usages ~F3~ ~C-leftClick~
+**** Navigate > Declaration and Usages ~F3~ or ~C-leftClick~ or ~⌘ + b~
+**** Navigate > Select in (select opened file in other window) ~⌥ + F1~
+**** Navigate > Column (Go to line) ~⌘ + L~
 **** View > Recent Locations ~C-S-e~ ~M-left or right~
 **** Next Error ~S-F1~
 - Navigate > Next / Previous Highlighted Error :: ~S-F1~
@@ -70359,6 +70406,12 @@ Add comments around tags with id or class attribute.
    - Show full method signatures :: default off <<phpstorm:settings:show-full-method-signatures>>
       - refer to [[phpstorm:settings:show-name-for-all-arguments]]
 
+*** Refactor
+- Refactor This.. :: ~⌃ + t~
+*** Help
+**** Find Action ~⇧ + ⌘ + a~
+- On Mac, there's a shortcut key binding conflict. Turn it off or use Search Everywhere on PHPStorm instead ~S+S~
+  
 *** Database
 **** Console
 When there're multiple statements (multiple ~;~), ~C-Enter~ (or to Execute from Menu) prompts a list of statements to run:
