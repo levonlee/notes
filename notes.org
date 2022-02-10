@@ -56433,7 +56433,7 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-o
 Install docker:docker compose:ubuntu
 
 ** Command Help ~docker docker-subcommand --help~
-** Images
+** Images <<docker:images>>
 - List all images :: ~docker images~
 - List all dangling images which can be removed :: ~docker images -f "dangling=true"~
 - Remove all dangling images (-q is to return IDs only) :: ~docker rmi $(docker images -f "dangling=true" -q --no-trunc)~
@@ -56466,10 +56466,10 @@ Extract Dockerfile from an image. Use one or more of below
   {{with .Config.WorkingDir}}WORKDIR {{.}}{{end}}
   {{with .Config.Entrypoint}}ENTRYPOINT {{json .}}{{end}}
   {{with .Config.Cmd}}CMD {{json .}}{{end}}
-  {{with .Config.OnBuild}}ONBUILD {{json .}}{{end}}' "$1"
+  {{with .Config		.OnBuild}}ONBUILD {{json .}}{{end}}' "$1"
 #+END_SRC
 
-*** docker build, docker tag
+*** docker build, docker tag <<docker:build>>
 - With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
 - Change ~myimage(:latest)~ to ~myimage:1.0~ :: ~docker tag myimage myimage:1.0~
 - Build an image and tag it with latest and 2.0 :: ~docker build -t myimage:latest -t myimage:2.0 .~
@@ -56538,7 +56538,7 @@ e.g. allow docker container to run docker daemon, allow docker container to acce
 *** ~--platform linux/x86_64~ <<docker:run:platform>>
 - refer to [[dockerfile:from:platform][dockerfile:from:platform]]
   
-** Containers cp logs stats start stop restart rm inspect
+** Containers cp logs stats start stop restart rm inspect <<docker:container>>
 - List containers :: ~docker ps -a~
 - Stop and Start :: ~docker stop containerName~ ~docker start containerName~
 - Restart :: ~docker restart containerName~
@@ -58772,13 +58772,32 @@ Parent images: openjdk:8-jdk
   tty: true
 #+END_SRC
 
-** image:node
-node:boron
+** image:node <<docker:node>>
+- https://github.com/nodejs/docker-node
+- [[https://hub.docker.com/_/node][Available images]]
+  
+*** Run image directly
+
+#+begin_src sh
+  docker run -it --rm --name my-running-script \
+	 -v "$PWD":/usr/src/app \
+	 -w /usr/src/app \
+	 node:8 \
+	 node your-daemon-or-script.js
+
+  # `node your-daemon-or-script.js` is a command run. Can be other things
+
+  npm install && npm run build
+#+end_src
+*** version
+**** node:boron
 Latest version 6.x (LTS)
 Parent image: buildpack-deps:jessie
 Available: git, openssh-client
 
 Use ~docker logs -f container_name~ to tail log
+
+**** node:16-alpine3.14
 
 ** image:golang
 golang:1.8
@@ -70009,6 +70028,7 @@ Help > Default Keymap Reference
 - Next project window :: Command + Option + `
 - Hide all windows :: ~⇧ + ⌘ + F12~
    - requires to Windows > Store Current Layout as Default 
+- Browse Remote Host Window
 
 *** Material Theme UI
 - https://github.com/ChrisRM/material-theme-jetbrains
@@ -70172,7 +70192,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
    - Select all occurances :: ~C-M-y~
 - Reduce to only one cursor :: ~Esc~
 - Previous method / Next method :: ~C-S-Up~ ~C-S-Down~ Move to previous sibling element in HTML. If there's none, then move to the start of the parent element
-- Extend selection :: ~S-M-Up~ ~S-M-Down~ 
+- Extend selection :: ~S-M-Up~ ~S-M-Down~ ~⌥ Up~ 
 - Move Caret to Code Block Start or end :: ~C-[~ ~C-]~
 - Move Caret to Matching Brace :: ~C-S-p~, first hit goes to the start brace, hit again to go to the end brace
    - a brace is :: ~(~ ~[~ ~<~ ~"~ ~'~
@@ -70195,6 +70215,9 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 **** Navigate > Declaration and Usages ~F3~ or ~C-leftClick~ or ~⌘ + b~
 **** Navigate > Select in (select opened file in other window) ~⌥ + F1~
 **** Navigate > Column (Go to line) ~⌘ + L~
+**** Navigate > Back (move to previous place on editor) :: ~⌘ [~
+**** Navigate > Last edit location :: ~⇧ + ⌘ + Backspace~
+**** Move caret to code block start / end :: ~⌥ ⌘ [~
 **** View > Recent Locations ~C-S-e~ ~M-left or right~
 **** Next Error ~S-F1~
 - Navigate > Next / Previous Highlighted Error :: ~S-F1~
@@ -70211,6 +70234,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 **** Open source in new window ~S-F4~
 **** Close tab ~C-F4~
+**** Show context menu ~⌥ + Enter~
 **** Quick Definition ~C-S-i~
 **** Quick Documentation ~C-S-Space~
 **** VCS Operations ~⌃ + v~
@@ -70637,191 +70661,6 @@ Settings -> Build, execution, development -> Debugger - >Allow unsigned request
 **** SQLite cannot open local file
 - Run as admin to open phpStorm
 
-** VS Code
-*** Install, Basics
-- Ubuntu :: ~sudo snap install --classic code~
-- Mac
-   - Enable open by typing ~code .~ in terminal :: C-S-p, select ~Shell Command: Install 'code' command in PATH~
-- Updates and Blogs :: https://code.visualstudio.com/updates
-   - On Windows, I found I need to admin open to update VS Code
-
-*** Mac
-#+begin_src sh
-  # That's it!
-  brew install --cask visual-studio-code
-#+end_src
-
-*** Extensions
-- ~ext install extension.name~
-
-**** GitLens eamodio.gitlens
-***** Git History donjayamanne.githistory
-**** Live Server
-**** Live Share
-**** Remote SSH ms-vscode-remote.remote-ssh
-***** Basics
-- Basics
-   - Install SSH client on local machine. Run command in VS Code ~Remote-SSH: Connect to Host...~
-   - After successful login, open Remote Explorer in left View Bar
-      - Set up forward port
-   - File > Close Remote Connection
-- Install Local Extensions on Remote
-   - Remote Explorer > LOCAL - INSTALLED, the cloud download icon
-- Limitations
-   - Alpine Linux and non-glibc based Linux SSH remote host is not supported
-- Full doc :: https://code.visualstudio.com/docs/remote/ssh
-- Tips and Tricks :: https://code.visualstudio.com/docs/remote/troubleshooting#_ssh-tips
-   - Some files including extensions are installed in remote host =~/.vscode-server=. Local VS Code is at =~/.vscode=
-   - VS Code nees execute access on ~/tmp~ directory on remote host
-
-***** Local > Vagrant > Docker Container <<vscode:remote:ssh:proxy>>
-- Goal :: VS Code remote development on a Docker container, which is spawn by Vagrant (Docker host) using Remote - SSH VS Code extension
-- Install [[linux:ssh:install][linux:ssh:install]] in the target container
-   - [[linux:ssh:permitrootlogin][linux:ssh:permitrootlogin]] to yes
-   - [[linux:ssh:sshd_config:port][linux:ssh:sshd_config:port]] to 22
-   - [[linux:ssh:sshd_config:passwordauthentication][linux:ssh:sshd_config:passwordauthentication]] to yes
-   - Set a password for root [[linux:user:passwd][linux:user:passwd]]
-   - [[linux:ssh:restart][linux:ssh:restart]]
-- On Docker host (Vagrant)
-   - Get docker container ip docker:inspect:ip
-   - Test ~ssh -p 22 root@1.2.3.4~
-   - Set up linux:ssh:config file, and [[linux:ssh:public-private][linux:ssh:public-private]] keys, so that docker host can run ~ssh onedockercontainer~ to connect
-   - Test ~ssh onedockercontainer~
-- On Windows
-   - Copy the private key generated on Docker host to Windows =~/.ssh/id_rsa_vagrant_spawn=
-   - [[vagrant:ssh:pure ssh][vagrant:ssh:pure ssh]] and test ~ssh myvagrant~
-   - =~/.ssh/config=
-     #+BEGIN_SRC conf
-       # This is added by `vagrant ssh-config --host myvagrant >> ~/.ssh/config`
-       Host myvagrant
-	   HostName 127.0.0.1
-	   User vagrant
-	   Port 2222
-	   UserKnownHostsFile /dev/null
-	   StrictHostKeyChecking no
-	   PasswordAuthentication no
-	   IdentityFile C:/c/.vagrant/machines/default/virtualbox/private_key
-	   IdentitiesOnly yes
-	   LogLevel FATAL
-
-       Host remotecontainer
-	   Hostname 172.17.0.2
-	   User root
-	   # the private key is copied from Docker host (Vagrant)
-	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
-	   # On Windows after `ssh -V` is v8+, just use `ssh` not the whole path of the executable
-	   ProxyCommand C:\WINDOWS\System32\OpenSSH\ssh.exe myvagrant -W %h:%p
-
-       Host remotecontainer2
-	   Hostname 172.17.0.2
-	   User root
-	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
-	   # On Windows after `ssh -V` is v8+, use ProxyJump
-	   ProxyJump myvagrant
-     #+END_SRC
-   - ~ssh remotecontainer~ :: done!
-- TS: may need to [[linux:ssh:known_hosts:remove][linux:ssh:known_hosts:remove]]
-
-**** Rest Client humao.rest-clident
-- Create ~.http~ file with ~GET http://a.ca HTTP/1.1~
-- Generate target code to execute that REST request
-**** Better Comments aaron-bond.better-comments
-**** Prettier -  Code formatter
-**** Bracket Pair Colorizer 2
-
-**** Python extension for Visual Studio Code <<<vs:code:ext:my-python.python>>>
-- Select code and run :: ~S-Enter~
-- Linting
-   - Default is [[https://www.pylint.org/][PyLint]]
-   - Change to PEP8
-      - ~pip install autopep8~
-      - In VS Code, ~C-,~ search ~python formatting provider~ change it to autopep8
-- Command
-   - Select interpreter
-   - Run Python File in Terminal
-
-**** Python Docstring Generator njpwerner.autodocstring
-**** JavaScript (ES6) code snippets xabikos.javascriptsnippets
-**** ESLint
-**** npm Intellisense christian-kohler.npm-intellisense
-Autocomplete npm modules in import statements based on package.json
-
-**** Import Cost wix.vscode-import-cost
-**** phpcs
-**** stylelint
-**** Glitch for VS Code <<<vs:code:ext:glitch.glitch>>>
-- https://marketplace.visualstudio.com/items?itemName=glitch.glitch
-- ~C-S p~ :: glitch show commands
-   - Sign in
-   - Open Project
-**** Sass syler.sass-indented
-**** MJML <<<vs:code:ext:attilabuti.vscode-mjml>>>
-*** View
-**** Editor Layout
-
-*** Shortcuts
-- Left bar is called View Bar that contains views
-   - Explorer :: C-S-e
-   - Debug :: C-S-d
-   - Version control :: C-S-g
-   - Search :: C-S-f
-   - Extension :: C-S-x
-   - Toggle Side Bar Visibility :: ~C-b~
-- View
-   - Toggle Zen mode :: ~C-k z~
-- Navigate Cursor
-   - Go to Bracket (jump to open or end bracket) :: ~C-S-\~
-   - Go to :: ~C-g~
-   - Go to Symbol in File :: ~C-S-o~
-- Navigate Files, Folders, Editors
-   - Cycle through opened tabs :: ~C-Tab~ quickopennavigateNextInEditorPicker
-   - Close Editor :: ~C-w~
-   - Reopen Closed Editor :: ~C-S-t~
-   - Toggle Vertical/Horizontal Editor Layout :: ~M-S-0~
-   - Split Editor :: ~C-\~
-   - Go to File :: ~C-p~
-   - Go to Symbol in Workspace :: ~C-t~
-   - Go to Definition :: ~F12~ or ~C-LeftClick~
-   - Go Backward / Forward :: ~M-Left~ ~M-Right~
-   - Find All References (in opened files only..) :: ~M-S-F12~  
-- Edit
-   - Indent / Outdent :: ~C-[~ ~C-]~
-   - Format Selection :: ~C-k C-f~
-   - Expand Selection :: ~M-S-RightArrow~
-   - Move Line Up (move selection up) :: ~M-UpArrow~
-   - Delete line :: ~C-S-k~
-   - Trigger Suggest :: ~C-Space~
-   - Toggle Block Comment :: ~M-S-a~
-   - Toggle Line Comment :: ~C-/~
-   - Multiple cursors
-      - Add Selection to Next Find Match :: ~C-d~, hit again will create another cursor which selects the same word
-      - Select All Occurances of Find Match :: ~C-S-l~, select and create cursors for all matches in file
-      - Create a cursor at caret :: ~M-LeftClick~ 
-      - Add Cursor Above / below :: ~C-M-Up~ 
-      - Left or right to move the cursors
-   - Right click on a variable name, Rename Symbol :: ~F2~ 
-- Search
-   - Find in Files :: ~C-S-f~
-      - While in view, see which files are included/excluded :: ~C-S-j~ ~search.toggleQueryDetails~
-- Command Pallete :: ~C-S-p~
-- Terminal
-   - Toggle Integrated Terminal :: ~C-`~
-   - Scroll Up (Line) :: ~C-M-PageUp~ 
-- Focus on Editor Group 1 :: ~C-1~ ~View: Focus First Editor Group~
-
-*** Setting
-- Settings :: ~C-,~
-   - User settings :: saved in =~/.config/Code/User/settings.json= or =~/AppData/Roaming/Code/User/settings.json=
-      - Open the settings.json, ~C-S-p~ search ~Preferences: Configure Language Specific Settings~ 
-- Emmet
-   - emmet.triggerExpansionOnTab :: ~true~
-   - includeLanguages :: ~{ "vue-html": "html", "mjml": "mjml" }~
-- Editor
-   - showFoldingControls :: always
-   - wordWrap :: ~on~
-   - formatOnType :: true
-   - formatOnPaste :: true 
-
 ** Emacs
 :PROPERTIES:
 :CUSTOM_ID: emacs
@@ -70941,7 +70780,8 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - Use Customize UI to save variables in ~.emacs~ <<<emacs:m-x:customize-option>>>
    - Variable will be set under ~(custom-set-variables~ in ~.emacs~
 - visual-line-mode :: toggle <<emacs:m-x:visual-line-mode>>
-
+- replace tab with whitespaces :: ~M-x tabify~ ~M-x untabify~
+  
 *** Basics
 - Help :: C-h
    - Exit Help buffer :: ~C-x 1~
@@ -71315,6 +71155,191 @@ To compile ~C-c C-c~ and display inline image ~C-c C-x C-v~
   - ~curved~ :: edges are curved arcs
   - ~polylines~ :: edges are one or multiple straight lines connected
   - ~ortho~ :: edges are routed with 2 perpendicular straight lines 
+
+** VS Code
+*** Install, Basics
+- Ubuntu :: ~sudo snap install --classic code~
+- Mac
+   - Enable open by typing ~code .~ in terminal :: C-S-p, select ~Shell Command: Install 'code' command in PATH~
+- Updates and Blogs :: https://code.visualstudio.com/updates
+   - On Windows, I found I need to admin open to update VS Code
+
+*** Mac
+#+begin_src sh
+  # That's it!
+  brew install --cask visual-studio-code
+#+end_src
+
+*** Extensions
+- ~ext install extension.name~
+
+**** GitLens eamodio.gitlens
+***** Git History donjayamanne.githistory
+**** Live Server
+**** Live Share
+**** Remote SSH ms-vscode-remote.remote-ssh
+***** Basics
+- Basics
+   - Install SSH client on local machine. Run command in VS Code ~Remote-SSH: Connect to Host...~
+   - After successful login, open Remote Explorer in left View Bar
+      - Set up forward port
+   - File > Close Remote Connection
+- Install Local Extensions on Remote
+   - Remote Explorer > LOCAL - INSTALLED, the cloud download icon
+- Limitations
+   - Alpine Linux and non-glibc based Linux SSH remote host is not supported
+- Full doc :: https://code.visualstudio.com/docs/remote/ssh
+- Tips and Tricks :: https://code.visualstudio.com/docs/remote/troubleshooting#_ssh-tips
+   - Some files including extensions are installed in remote host =~/.vscode-server=. Local VS Code is at =~/.vscode=
+   - VS Code nees execute access on ~/tmp~ directory on remote host
+
+***** Local > Vagrant > Docker Container <<vscode:remote:ssh:proxy>>
+- Goal :: VS Code remote development on a Docker container, which is spawn by Vagrant (Docker host) using Remote - SSH VS Code extension
+- Install [[linux:ssh:install][linux:ssh:install]] in the target container
+   - [[linux:ssh:permitrootlogin][linux:ssh:permitrootlogin]] to yes
+   - [[linux:ssh:sshd_config:port][linux:ssh:sshd_config:port]] to 22
+   - [[linux:ssh:sshd_config:passwordauthentication][linux:ssh:sshd_config:passwordauthentication]] to yes
+   - Set a password for root [[linux:user:passwd][linux:user:passwd]]
+   - [[linux:ssh:restart][linux:ssh:restart]]
+- On Docker host (Vagrant)
+   - Get docker container ip docker:inspect:ip
+   - Test ~ssh -p 22 root@1.2.3.4~
+   - Set up linux:ssh:config file, and [[linux:ssh:public-private][linux:ssh:public-private]] keys, so that docker host can run ~ssh onedockercontainer~ to connect
+   - Test ~ssh onedockercontainer~
+- On Windows
+   - Copy the private key generated on Docker host to Windows =~/.ssh/id_rsa_vagrant_spawn=
+   - [[vagrant:ssh:pure ssh][vagrant:ssh:pure ssh]] and test ~ssh myvagrant~
+   - =~/.ssh/config=
+     #+BEGIN_SRC conf
+       # This is added by `vagrant ssh-config --host myvagrant >> ~/.ssh/config`
+       Host myvagrant
+	   HostName 127.0.0.1
+	   User vagrant
+	   Port 2222
+	   UserKnownHostsFile /dev/null
+	   StrictHostKeyChecking no
+	   PasswordAuthentication no
+	   IdentityFile C:/c/.vagrant/machines/default/virtualbox/private_key
+	   IdentitiesOnly yes
+	   LogLevel FATAL
+
+       Host remotecontainer
+	   Hostname 172.17.0.2
+	   User root
+	   # the private key is copied from Docker host (Vagrant)
+	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
+	   # On Windows after `ssh -V` is v8+, just use `ssh` not the whole path of the executable
+	   ProxyCommand C:\WINDOWS\System32\OpenSSH\ssh.exe myvagrant -W %h:%p
+
+       Host remotecontainer2
+	   Hostname 172.17.0.2
+	   User root
+	   IdentityFile ~/.ssh/id_rsa_vagrant_spawn
+	   # On Windows after `ssh -V` is v8+, use ProxyJump
+	   ProxyJump myvagrant
+     #+END_SRC
+   - ~ssh remotecontainer~ :: done!
+- TS: may need to [[linux:ssh:known_hosts:remove][linux:ssh:known_hosts:remove]]
+
+**** Rest Client humao.rest-clident
+- Create ~.http~ file with ~GET http://a.ca HTTP/1.1~
+- Generate target code to execute that REST request
+**** Better Comments aaron-bond.better-comments
+**** Prettier -  Code formatter
+**** Bracket Pair Colorizer 2
+
+**** Python extension for Visual Studio Code <<<vs:code:ext:my-python.python>>>
+- Select code and run :: ~S-Enter~
+- Linting
+   - Default is [[https://www.pylint.org/][PyLint]]
+   - Change to PEP8
+      - ~pip install autopep8~
+      - In VS Code, ~C-,~ search ~python formatting provider~ change it to autopep8
+- Command
+   - Select interpreter
+   - Run Python File in Terminal
+
+**** Python Docstring Generator njpwerner.autodocstring
+**** JavaScript (ES6) code snippets xabikos.javascriptsnippets
+**** ESLint
+**** npm Intellisense christian-kohler.npm-intellisense
+Autocomplete npm modules in import statements based on package.json
+
+**** Import Cost wix.vscode-import-cost
+**** phpcs
+**** stylelint
+**** Glitch for VS Code <<<vs:code:ext:glitch.glitch>>>
+- https://marketplace.visualstudio.com/items?itemName=glitch.glitch
+- ~C-S p~ :: glitch show commands
+   - Sign in
+   - Open Project
+**** Sass syler.sass-indented
+**** MJML <<<vs:code:ext:attilabuti.vscode-mjml>>>
+*** View
+**** Editor Layout
+
+*** Shortcuts
+- Left bar is called View Bar that contains views
+   - Explorer :: C-S-e
+   - Debug :: C-S-d
+   - Version control :: C-S-g
+   - Search :: C-S-f
+   - Extension :: C-S-x
+   - Toggle Side Bar Visibility :: ~C-b~
+- View
+   - Toggle Zen mode :: ~C-k z~
+- Navigate Cursor
+   - Go to Bracket (jump to open or end bracket) :: ~C-S-\~
+   - Go to :: ~C-g~
+   - Go to Symbol in File :: ~C-S-o~
+- Navigate Files, Folders, Editors
+   - Cycle through opened tabs :: ~C-Tab~ quickopennavigateNextInEditorPicker
+   - Close Editor :: ~C-w~
+   - Reopen Closed Editor :: ~C-S-t~
+   - Toggle Vertical/Horizontal Editor Layout :: ~M-S-0~
+   - Split Editor :: ~C-\~
+   - Go to File :: ~C-p~
+   - Go to Symbol in Workspace :: ~C-t~
+   - Go to Definition :: ~F12~ or ~C-LeftClick~
+   - Go Backward / Forward :: ~M-Left~ ~M-Right~
+   - Find All References (in opened files only..) :: ~M-S-F12~  
+- Edit
+   - Indent / Outdent :: ~C-[~ ~C-]~
+   - Format Selection :: ~C-k C-f~
+   - Expand Selection :: ~M-S-RightArrow~
+   - Move Line Up (move selection up) :: ~M-UpArrow~
+   - Delete line :: ~C-S-k~
+   - Trigger Suggest :: ~C-Space~
+   - Toggle Block Comment :: ~M-S-a~
+   - Toggle Line Comment :: ~C-/~
+   - Multiple cursors
+      - Add Selection to Next Find Match :: ~C-d~, hit again will create another cursor which selects the same word
+      - Select All Occurances of Find Match :: ~C-S-l~, select and create cursors for all matches in file
+      - Create a cursor at caret :: ~M-LeftClick~ 
+      - Add Cursor Above / below :: ~C-M-Up~ 
+      - Left or right to move the cursors
+   - Right click on a variable name, Rename Symbol :: ~F2~ 
+- Search
+   - Find in Files :: ~C-S-f~
+      - While in view, see which files are included/excluded :: ~C-S-j~ ~search.toggleQueryDetails~
+- Command Pallete :: ~C-S-p~
+- Terminal
+   - Toggle Integrated Terminal :: ~C-`~
+   - Scroll Up (Line) :: ~C-M-PageUp~ 
+- Focus on Editor Group 1 :: ~C-1~ ~View: Focus First Editor Group~
+
+*** Setting
+- Settings :: ~C-,~
+   - User settings :: saved in =~/.config/Code/User/settings.json= or =~/AppData/Roaming/Code/User/settings.json=
+      - Open the settings.json, ~C-S-p~ search ~Preferences: Configure Language Specific Settings~ 
+- Emmet
+   - emmet.triggerExpansionOnTab :: ~true~
+   - includeLanguages :: ~{ "vue-html": "html", "mjml": "mjml" }~
+- Editor
+   - showFoldingControls :: always
+   - wordWrap :: ~on~
+   - formatOnType :: true
+   - formatOnPaste :: true 
 
 ** WinMerge
 - Edit > Options
