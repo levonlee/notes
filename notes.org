@@ -55708,7 +55708,11 @@ Create a Makefile in current folder
   default:
 	  @echo "Some description"
   # If you run `make` in current folder without specifying which command, the first command will be run
-  # @echo means it doesn't print out the actual command
+
+  # echo without @ prints
+  # echo "Some description"
+  # while @echo prints
+  # Some description
 
   all: build
   # the all command runs the build command
@@ -55735,25 +55739,25 @@ Create a Makefile in current folder
   # make testsub a b c
   # $@ is the target name, which is testsub
   # $(MAKECMDGOALS) is the list of targets, which is testsub a b c
-
   # This method requires you to put these 2 lines to the end of Makefile (remove leading #'s)
-
   # %:
   #    @:
-
+  # 
   # %: is a target which matches every target
   # @: is a recipe in which @ is the same as @echo. : means do nothing
 
   # Escaping $ might be needed for running sub command
-
   start:
 	  docker rm -f $$(docker ps -a -q)
 
+  # - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
   runrecipeinmiddle:
 	  - echo do something
 	  - $(MAKE) build
 
-  # - in front of command means ignore the exit status of the command so that a non-zero exit would not stop the recipe
+  testpwd:
+	  cd ~/abc; echo `pwd`; # ~/abc
+	  echo $(PWD); # the path where `make testpwd` is run
 #+END_SRC
 
 - Makefile :: ~make your-recipe~
@@ -56537,6 +56541,9 @@ e.g. allow docker container to run docker daemon, allow docker container to acce
 
 *** ~--platform linux/x86_64~ <<docker:run:platform>>
 - refer to [[dockerfile:from:platform][dockerfile:from:platform]]
+  
+*** ~-v~ volume <<docker:run:volume>>
+- Dockerfile can use relative path in source. However, ~docker run~ cannot. Use [[linux:makefile][linux:makefile]]
   
 ** Containers cp logs stats start stop restart rm inspect <<docker:container>>
 - List containers :: ~docker ps -a~
@@ -70940,6 +70947,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - ~M-g M-g~ :: Go to a line
 - ~C-c C-j~ :: org-goto. Search in headlines only
 - ~C-u C-@~ :: go back
+- ~C-u C-Space~ :: jump back locally in the file, go to previous location
 - ~C-a C-Space C-e M-w~ :: copy current line without the newline
 - ~C-a C-Space C-n M-w~ :: copy current line including the newline
 - ~C-S-backspace~ :: kill/cut the entire line
