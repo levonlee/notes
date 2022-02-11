@@ -52768,16 +52768,31 @@ Array loop
 #+END_SRC
 
 *** Compare text files <<linux:diff:file>>
+- Refer to [[brew:colordiff][brew:colordiff]]
+
 #+BEGIN_SRC sh
   diff file1.txt file2.txt
+
+  # Header
+  # 3d2 :: line 3 on the left file, line 2 on the right file
+  # - d :: deletion
+  # - a :: adding
+  # - c :: changing
+
+  # Body under Header
   # < means the line belongs to the left file
   # > means the line belongs to the right file
+
+  diff -u file1.txt file2.txt
+  # unified diff, which shows a bit differently
+
+  # Use colordiff, it's better!
 #+END_SRC
 
 - Options
    - ~-i~ :: case insensitive
    - ~-b~ :: ignore chagnes to blank characters
-   - ~-w~ ::  ignore all whitespace
+   - ~-w~ :: ignore all whitespace
    - ~-B~ :: ignore blank lines
    - ~-r~ :: recursive for directories
    - ~-s~ :: show identical files
@@ -56540,7 +56555,9 @@ e.g. allow docker container to run docker daemon, allow docker container to acce
 #+END_SRC
 
 *** ~--platform linux/x86_64~ <<docker:run:platform>>
-- refer to [[dockerfile:from:platform][dockerfile:from:platform]]
++ refer to [[dockerfile:from:platform][dockerfile:from:platform]]
++ When an image is run, may encounter this warning. Having the platform option changes the host platform arch
+   - ~WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested~
   
 *** ~-v~ volume <<docker:run:volume>>
 - Dockerfile can use relative path in source. However, ~docker run~ cannot. Use [[linux:makefile][linux:makefile]]
@@ -56724,8 +56741,14 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
 
 ** Dockerfile
 *** FROM <<dockerfile:from>>
-- <<dockerfile:from:platform>>
-   - refer to [[docker:run:platform][docker:run:platform]]
++ There're 3 ways to specify the target platform. Choose one that you like. For example, building an image on ARM64 and make it AMD64
+   - Set a global environment on docker host for building a single image using [[docker:build][docker:build]] and Dockerfile 
+      - ~export DOCKER_DEFAULT_PLATFORM=linux/amd64~
+   - In Dockerfile <<dockerfile:from:platform>>
+   - In docker-compose.yml where image is built [[docker:compose:platform][docker:compose:platform]]
++ When an image is run, may encounter this warning
+   - ~WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested~
+   - refer to [[docker:run:platform][docker:run:platform]] for a warning
 
 #+begin_src dockerfile
   # x86 version
@@ -56855,7 +56878,7 @@ ftp_proxy
 NO_PROXY
 no_proxy
 
-** Docker Compose
+** Docker Compose <<docker:compose>>
 #+BEGIN_SRC sh
   docker-compose --version
   docker-compose up -d
@@ -57113,6 +57136,21 @@ Dockerfile
   ...
   COPY $REQUIREMENTS $APP_ROOT/
 #+END_EXAMPLE
+
+**** platform <<docker:compose:platform>>
+#+begin_src dockerfile
+  services:  
+    frontend:  
+      platform: linux/amd64
+      build: frontend  
+      ports:
+	- 80:80
+      depends_on:
+	- backend
+    backend:  
+      platform: linux/amd64
+      build: backend
+#+end_src
 
 ** Docker for Windows
 Settings > General > Expose daemon on tcp://localhost:2375 without TLS.
@@ -69939,7 +69977,8 @@ PHP APM (Application Performance Metrics)
 
 *** Shortcuts
 - https://support.apple.com/en-ca/HT201236
-
+- Disable ~⌘ ⇧ a~
+   - System Preferences > Keyboard > Shortcuts > Services > Search man Page Index in Terminal
 **** Menu bar
 - Ctrl + F2
 
@@ -70038,6 +70077,9 @@ PHP APM (Application Performance Metrics)
   ==> Summary
   🍺  /opt/homebrew/Cellar/subversion/1.14.1_4: 234 files, 33.1MB
 #+end_src
+
+**** colordiff <<brew:colordiff>>
+~brew install colordiff~
 
 **** Font
 ***** source code pro
@@ -70208,7 +70250,7 @@ Make the xml file part of a project to use Evaluate XPath... (right click)
 *** Navigate, Display, Select inside Editor
 https://www.jetbrains.com/help/phpstorm/navigating-through-the-source-code.html#find_cursor_edit
 
-**** Edit > Paste > Paste from history ~C-S-v~
+**** Edit > Paste > Paste from history (access multiple clipboards) :: ~C-S-v~ ~⌘ ⇧ v~
 **** Edit > Find Usages
 - Find Usages :: ~C-g~
    - If a JavaScript method is called inside a PHP Heredoc, you'll need to open the Edit Fragment, then you can Find Usages at the place where the JS method is defined
@@ -70234,7 +70276,8 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
    - Add selection for next occurance :: ~M-y~
    - Select all occurances :: ~C-M-y~
 - Reduce to only one cursor :: ~Esc~
-- Previous method / Next method :: ~C-S-Up~ ~C-S-Down~ Move to previous sibling element in HTML. If there's none, then move to the start of the parent element
+- Previous method / Next method :: ~C-S-Up~ ~C-S-Down~
+   - Move to previous sibling element in HTML. If there's none, then move to the start of the parent element
 - Extend selection :: ~S-M-Up~ ~S-M-Down~ ~⌥ Up~ 
 - Move Caret to Code Block Start or end :: ~C-[~ ~C-]~
 - Move Caret to Matching Brace :: ~C-S-p~, first hit goes to the start brace, hit again to go to the end brace
@@ -72777,7 +72820,7 @@ After edit, right click on the Object Browser > Reflexil > Save as
   # iterm2 needs to be installed with cask
 #+END_SRC
 
-*** iTerm 2
+*** iTerm2
 **** Install
 #+BEGIN_SRC sh
   # install CLI developer tools for Xcode
@@ -72791,6 +72834,11 @@ After edit, right click on the Object Browser > Reflexil > Save as
   # install iterm2
   brew cask install iterm2
 #+END_SRC
+
+**** Config
++ Profiles
+   - Terminal
+      - Notifications :: Silence bell, Flash visual bell
 
 **** Shortcuts
 - Tab
