@@ -57476,8 +57476,16 @@ image:tatemz/wp-cli
 ** image:alpine <<image:alpine>>
 #+begin_src sh
   apk add --no-cache libstdc++ \
-      apk add --no-cache --virtual .build-deps 
+    && apk add --no-cache --virtual .build-deps \
+	   curl \
+    && apk del .build-deps
+
+  # --virtual .somename means the packages to be installed (curl) and their dependencies are not installed to global packages. Once the virtual package .somename is apk del, the packages specified those dependencies are removed
+
+  # Shell access, enter into the container
+  docker exec -it my_container ash
 #+end_src
+
 ** image:debian
 - image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
    - Parent: scratch (perfect for building base images such as debian and busybox
@@ -58802,7 +58810,30 @@ Available: git, openssh-client
 
 Use ~docker logs -f container_name~ to tail log
 
-**** node:16-alpine3.14
+**** node:
+#+begin_src dockerfile
+  FROM --platform=linux/x86_64 node:10.15.3
+  RUN mkdir /app
+  WORKDIR /app
+  CMD ["node", "--version"]
+#+end_src
+
+#+begin_src makefile
+  node-build-image:
+	  docker build --force-rm --no-cache -t mynode:1.0 -f Dockerfile-node .
+
+  npminstall:
+	  cd ../../relative/path; docker run -it --rm --platform linux/x86_64 --name mynodecontainer \
+	     -v `pwd`:/app \
+	     mynode:1.0 \
+	     /bin/sh -c 'cd sass; npm install'
+
+  npmrunbuild:
+	  cd ../../relative/path; docker run -it --rm --platform linux/x86_64 --name mynodecontainer \
+	     -v `pwd`:/app \
+	     manode:1.0 \
+	     /bin/sh -c 'cd sass; npm run build'
+#+end_src
 
 ** image:golang
 golang:1.8
