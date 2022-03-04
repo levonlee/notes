@@ -410,12 +410,14 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
        // if (isset($x['abc']) && is_numeric($x['abc'])) {}
        // if (is_numeric($x['abc'])) {}
      #+END_SRC
-- Trigger error <<php:trigger_error>>
+*** Trigger error <<php:trigger_error>>
+- Syntax
   #+BEGIN_SRC php
     trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
   #+END_SRC
+- Set an error handler to filter out specific error and do something :: [[php:set_error_handler][php:set_error_handler]]
 
-*** Custom error/warning/notice hanlder
+*** Custom error/warning/notice hanlder <<php:set_error_handler>>
 - https://www.php.net/manual/en/function.set-error-handler.php
   #+BEGIN_SRC php
     // set_error_handler returns the previous handler
@@ -27382,6 +27384,17 @@ sizes attribute has to be set in order for the Width header to be sent. In the n
    - With [[header:content-disposition:attachment][header:content-disposition:attachment]], browsers propose `Save as` dialog to download
    - Other ~application/*~, browsers may propose to open with a matching software app/program
    - Default for binary files also means unknown binary file
+   - PHP force a file to download
+     #+begin_src php
+       $fileNameAfterDownload = 'a.pdf';
+       header('Content-Type: application/octet-stream');
+       header("Content-disposition: attachment; filename=\"{$fileNameAfterDownload}\"");
+       // This is to make sure we get a refresh copy of the source file
+       // e.g. if file_get_contents($fn) is run before this, and the file is modified after the 1st file_get_contents and before this, the 2nd file_get_contents in here gets the cached copy
+       clearstatcache();
+       echo file_get_contents($fn);
+       die();
+     #+end_src
 
 ** Cookie <<html:cookie>>
 HTTP response header
@@ -70354,7 +70367,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 - Window > Editor Tabs > Split Vertically
 - Window > Editor Tabs > Change Split Orientation
 
-**** Open source in new window ~S-F4~
+**** Open source in new window (open current file in new window) :: ~S-F4~ ~⇧ F4~
 **** Close tab ~C-F4~
 **** Show context menu ~⌥ + Enter~
 **** Quick Definition ~C-S-i~
@@ -70497,7 +70510,7 @@ Add comments around tags with id or class attribute.
 - Border (bd, s) :: e.g. ~bd5#0s~ ~border: 5px #000 solid~
 - font-size :: ~fz~
 
-**** Edit > Join lines ~C-S-j~
+**** Edit > Join lines ~C-S-j~ ~⌃ ⇧ j~
 
 *** Settings > Directories <<phpstorm:settings:directories>>
 **** Exclude Directories
