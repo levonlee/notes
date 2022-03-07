@@ -5373,9 +5373,10 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 #+BEGIN_SRC php
   $ch = curl_init('https://a.com');
   curl_setopt_array($ch, array(
-		  CURLOPT_NOSIGNAL => 1, // libcurl timeout by default doesn't count domain name resolver time into timeout limit, use nosignal means ignore the domain name resolver signal (running) so that CURLOPT_TIMEOUT is the total time limit
-		  CURLOPT_TIMEOUT => 4, // in seconds. For setting timeout less than 1 second, use CURLOPT_TIMEOUT_MS
-		  CURLOPT_RETURNTRANSFER => 1,
+	  CURLOPT_CONNECTTIMEOUT => 2,
+	  CURLOPT_TIMEOUT => 4, // in seconds. For setting timeout less than 1 second, use CURLOPT_TIMEOUT_MS
+	  // CURLOPT_NOSIGNAL => 1, // If the timeout is set to less than a second using CURLOPT_TIMEOUT_MS, need to specify this to be 1 mainly because libcurl in multi-threaded needs it to make sure less than 1 second timeout is possible. Further info: libcurl timeout by default doesn't count domain name resolver time into timeout limit, use nosignal means ignore the domain name resolver signal (running) so that CURLOPT_TIMEOUT is the total time limit
+	  CURLOPT_RETURNTRANSFER => 1,
   ));
   $response = curl_exec($ch)
   $info = curl_getinfo($ch);
