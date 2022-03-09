@@ -1310,6 +1310,27 @@ Here's how to remove any 4 byte character:
   $array[array_key_last($array)];
 #+END_SRC
 
+*** ~array_shift~, ~array_unshift~ prepend elements, ~array_pop~
+#+BEGIN_SRC php
+  // array_pop ( array &$array ) : mixed
+  // pop and return the value of the last element of array, shorten the array by one element
+
+  // array_shift ( array &$array ) : mixed
+  // first element, literal keys won't be affected
+
+  // array_unshift ( array &$array [, mixed $... ] ) : int
+  // prepend passed elements to the front of the array. Literal keys won't be changed
+
+  $queue = ['orange', 'banana'];
+  $queue2 = $queue;
+  array_unshift($queue, 'apple', 'raspberry'); // ['apple', 'raspberry', 'orange', 'banana']
+  // to prepend into associative array, use array union (+) or array_merge
+
+  $toAdd = ['apple'];
+  // no mutation using array_merge for numeric arrays
+  $queue2 = array_merge($toAdd, $queue2); // ['apple', 'orange', 'banana']
+#+END_SRC
+
 *** ~in_array~ <<php:in_array>>
 #+BEGIN_SRC php
   in_array ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : bool
@@ -2027,27 +2048,6 @@ Associative arrays
 	    return isset($r) ? $r : $default;
     }
   #+END_SRC
-
-*** ~array_shift~, ~array_unshift~ prepend elements, ~array_pop~
-#+BEGIN_SRC php
-  // array_pop ( array &$array ) : mixed
-  // pop and return the value of the last element of array, shorten the array by one element
-
-  // array_shift ( array &$array ) : mixed
-  // first element, literal keys won't be affected
-
-  // array_unshift ( array &$array [, mixed $... ] ) : int
-  // prepend passed elements to the front of the array. Literal keys won't be changed
-
-  $queue = ['orange', 'banana'];
-  $queue2 = $queue;
-  array_unshift($queue, 'apple', 'raspberry'); // ['apple', 'raspberry', 'orange', 'banana']
-  // to prepend into associative array, use array union (+) or array_merge
-
-  $toAdd = ['apple'];
-  // no mutation using array_merge for numeric arrays
-  $queue2 = array_merge($toAdd, $queue2); // ['apple', 'orange', 'banana']
-#+END_SRC
 
 *** ~array_search~ get key by value <<php:array_search>>
 #+BEGIN_SRC php
@@ -66399,10 +66399,6 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
     CONCAT_WS(',', NULL, '123', NULLIF('',''), NULL) -- 123
   #+END_SRC
-- Replace all occurances, case-sensitve. multibyte safe
-  #+BEGIN_SRC sql
-    SELECT REPLACE('www.mysql.com', 'w', 'Ww');
-  #+END_SRC
 - Use regex_replace to do more complicated find and replace. MariaDB driver on host is required
   #+BEGIN_SRC sql
     SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3');
@@ -66434,6 +66430,10 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 - ~ELT(N, str1, str2, ... )~
    - ~SELECT ELT(1, 'Aa', 'Bb', 'Cc', 'Dd')~ :: ~'Aa'~
 
+***** Replace all occurances, case-sensitve. multibyte safe <<mysql:replace>>
+  #+BEGIN_SRC sql
+    SELECT REPLACE('www.mysql.com', 'w', 'Ww');
+  #+END_SRC
 ***** SUBSTRING()  <<mysql:substring>>
 - alias SUBSTR
 
@@ -70137,7 +70137,7 @@ PHP APM (Application Performance Metrics)
   brew install --cask font-source-code-pro
 #+end_src
 
-** PHPStorm <<toc:phpstorm>>
+** PhpStorm <<toc:phpstorm>>
 Help > Default Keymap Reference
 
 *** Installation and 64 bit
@@ -70336,7 +70336,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 **** Navigate > Class ~C-S-t~, File ~C-S-r~, Symbol ~C-M-S-n~
 **** Navigate > Jump to navigation bar
-**** Navigate > File Structure ~C-F3~
+**** Navigate > File Structure (popup window) :: ~C-F3~ ~⌘ F12~
 **** Navigate > Type Hierarchy ~F4~, Method Hierarchy, Call Hierarchy
 - Type :: Class inheritance hierarchy
 - Method :: Hierarchy of a method of a class
@@ -70583,7 +70583,9 @@ Add comments around tags with id or class attribute.
 - On Mac, there's a shortcut key binding conflict. Turn it off or use Search Everywhere on PHPStorm instead ~S+S~
   
 *** Database
-**** Select in Database explorer ~⌥ ⇧ b~
+**** Columns List (popup) :: ~⌘ F12~
+**** Go to DLL :: ~⌘ b~
+**** Select in Database explorer :: ~⌥ ⇧ b~
 **** Console
 When there're multiple statements (multiple ~;~), ~C-Enter~ (or to Execute from Menu) prompts a list of statements to run:
 - Smallest statement 
