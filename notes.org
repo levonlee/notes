@@ -66981,7 +66981,14 @@ Update Joined Tables
 **** Comparison functions and Operators
 - ~COALESCE(value1, value2, ...)~
    - Returns the first non-NULL value in the list, or NULL if there are no non-NULL values
-
+- ~<=>~ :: Null-safe equal to operator
+  #+begin_src sql
+    -- Like `=` operator. Return 1 if both operands are NULL. Return 0 if one operand is NULL
+    SELECT 1 <=> 1, NULL <=> NULL, 1 <=> NULL;
+    -- 1, 1, 0
+    SELECT 1 = 1, NULL = NULL, 1 = NULL;
+    -- 1, NULL, NULL
+  #+end_src
 **** Transaction
 #+BEGIN_SRC sql
   SET autocommit = 0;
@@ -67176,8 +67183,18 @@ Update Joined Tables
 
 **** EXPLAIN <<mysql:explain>>
 - Use it before ~SELECT~, ~DELETE~, ~INSERT~, ~REPLACE~ AND ~UPDATE~ statements
-- Output
-   - key :: when it's NULL means it's a full table scan
+- Output :: https://dev.mysql.com/doc/refman/8.0/en/explain-output.html
+   - type :: join type. From the best to the worst type
+      - system :: the table has only one row
+      - const :: at mot one matching row. It's used when you compare all parts of a PRIMARY KEY or UNIQUE index
+      - eq_ref :: one row is read from this table for each combination of rows from the previous tables. It's used when all parts of an index are used by the join and the index is a PRIMARY KEY or UNIQUE NOT NULL index
+	 - operator :: ~=~
+      - ref :: all rows with matching index values are read from this table for each combo of rows from the previous tables.
+	 - It's used if the join uses only a leftmost prefix of the key or if the key is not a PRIMARY KEY or UNIQUE index (in other words, if the join cannot select a single row based on the key value). If the key that is used matches only a few rows, this is a good join type.
+	 - Operator :: ~=~ or ~<=>~
+   - key
+      - null :: when it's NULL means it's a full table scan
+	 - Or the target index key is not used due to the provided value (from previous tables) does not exist in this table. Extra column may show Impossible ON condition 
    - rows :: number of rows to scan
       - when ~key~ is NULL, it'll be the table's total number of rows
 
