@@ -22164,6 +22164,7 @@ Target IE 10 and IE 11
 ** @media <<<css:@media>>>
 *** Syntax
 - ~@media not|only /mediatype/ and (/media feature/) {}~
+- [[html:meta:viewport][html:meta:viewport]]
 - ~<link rel="stylesheet" media="mediatype and|not|only (media feature)" href="style.css">~
 - Media type :: <<<css:@media:type>>>
    - Possible types :: all, print, screen, speech
@@ -22185,6 +22186,7 @@ Target IE 10 and IE 11
 *** Testing
 #+BEGIN_SRC js
   var mql = window.matchMedia("(orientation: portrait)");
+  // "(max-width: 600px)"
   // window.addListener(handlerOrientationChange);
   handlerOrientationChange(mql);
 
@@ -22633,7 +22635,7 @@ Mobile first
 #+END_SRC
 
 ** @viewport
-WD. Only Edge. Same as html:meta:viewport
+WD. Only Edge. Same as [[html:meta:viewport][html:meta:viewport]]
 
 #+BEGIN_SRC css
   @media screen and (max-width: 400px) {
@@ -27135,11 +27137,13 @@ Hide Safari UI (URL address bar)
   <meta name="theme-color" content="#4285f4">
 #+END_SRC
 
-*** Meta viewport <<<html:meta:viewport>>>
+*** Meta viewport <<html:meta:viewport>>
+- Without this tag, the browser viewport will take the full resolution (window.screen.width * window.screen.devicePixelRatio)
+- Not wise to use ~min-device-width~ and ~max-device-width~ in @media CSS
 #+BEGIN_SRC html
   <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, shrink-to-fit=no">
   <!--
-  Set the width of the page to follow the screen-width of the device
+  Set the width of the page (viewport) to follow the screen-width of the device (screen-width can be changed by resizing the browsing or changing the orientation)
   Initial zoom level 1.0
   shrink-to-fit is Safari only
 
@@ -33840,6 +33844,8 @@ Refer to bootstrap:responsive helpers
 ** Device Detection
 #+BEGIN_SRC js
   var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  console.log("Your screen resolution is: " + screen.width + "x" + screen.height);
+  console.log("Your screen resolution is: " + window.screen.width * window.devicePixelRatio + "x" + window.screen.height * window.devicePixelRatio);
 #+END_SRC
 
 ** CSS Media Viewport Size <<<js:viewport size>>>
@@ -66648,6 +66654,24 @@ MySQL 5.6
       - c2, c4
       - Use leftmost concept to identify whether a combo is optimized
 
+**** Index Hint <<mysql:index hint>>
+- https://dev.mysql.com/doc/refman/8.0/en/index-hints.html
+- Each hint requires index names, not column names
+   - ~SHOW INDEX FROM myTable~
+      - This also shows the cardinality of each index
+- Index hints apply only to SELECT and UPDATE statements
+- The ~FORCE INDEX~ hint acts like ~USE INDEX (index_list)~, with the addition that a table scan is assumed to be very expensive. In other words, a table scan is used only if there is no way to use one of the named indexes to find rows in the table.
+- Samples
+  #+begin_src sql
+    SELECT * FROM table1 USE INDEX (col1_index,col2_index)
+      WHERE col1=1 AND col2=2 AND col3=3;
+
+    SELECT * FROM table1 IGNORE INDEX (col3_index)
+      WHERE col1=1 AND col2=2 AND col3=3;
+
+    SELECT * FROM t1 USE INDEX (i1) IGNORE INDEX FOR ORDER BY (i2) ORDER BY a;
+  #+end_src
+
 *** Row size and number of columns
 - Row size <<mysql:row size>>
    - Hard limit :: 65,535 bytes (slightly less than 64KB)
@@ -70213,6 +70237,12 @@ PHP APM (Application Performance Metrics)
   brew install --cask font-source-code-pro
 #+end_src
 
+*** Display
+- 3024 × 1964 :: MacBook Pro (14-inch, 2021, M1 Pro)
+   - window.screen.width :: 1512
+   - window.screen.height :: 982
+   - window.screen.devicePixelRatio :: 2 
+
 ** PhpStorm <<toc:phpstorm>>
 Help > Default Keymap Reference
 
@@ -70395,7 +70425,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 
 **** Multiple cursors, move cursor, selection, navigate cursor
 - Create a cursor at caret :: ~M-click~ or
-   - Hit ~Ctrl~ twice and hold ~Ctrl~, then press an arrow key to create a cursor
+   - Hit ~Ctrl~ / ~⌥~ twice and hold ~Ctrl~ / ~⌥~, then press an arrow key to create a cursor
    - ~Clone Caret Below~ or ~Clone Caret Above~ when ~C-S-a~ (no shortcuts defined in Eclipse)
 - Select and make new cursors
    - Add selection for next occurance :: ~M-y~
@@ -73771,7 +73801,7 @@ Remove size attribute for input type file, confirm_email
 - PDF/UA-1 compliance. PDF needs to have this XMP metadata to mark it as PDF/UA-1 compliant
   - Tools > Print Production > Preflight, choose PDF Standards or Acrobat Pro DC 2015 Profiles as profile, choose the wrench tool icon (Select single fixups), expand to Document info and Metadata and choose Set PDF/UA-1 entry and then Fix
 
-*** html:meta:viewport
+*** [[html:meta:viewport][html:meta:viewport]]
 *** Skip to content link
 Right below <body>
 #+BEGIN_SRC html
