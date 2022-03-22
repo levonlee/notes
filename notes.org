@@ -52258,6 +52258,7 @@ wp:check file permissions
   #+END_SRC
 
 *** Search Text in Files <<linux:grep>> <<linux:regex>>
+- Regex is used. To match literal string, use ~-F~ :: ~grep -Fr 'hello' .~
 - Basic Regular Expression
   #+BEGIN_EXAMPLE
     ^ $ . [ ] - and * as Meta characters
@@ -53349,7 +53350,7 @@ Child process PID is 1234
 A package ~pstree~ can be installed and used
 ~pstree -s -p 2072~ outputs ~init(1)───pulseaudio(2061)───gconf-helper(2072)~
 
-*** Run executable in background for all sessions
+*** Run executable in background for all terminal sessions
 This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
 
 *** jobs <<linux:jobs>> <<linux:kill>>
@@ -53370,7 +53371,7 @@ This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
   # It produeces a file `nohup.out` in the directory that the script is in which contains STDOUT and STDERR.
   # No output to any terminals.
 
-  # To prevent background processes from seding error to terminal
+  # To prevent background processes from sending error to terminal
   ./test5.sh 2> /dev/null &
 
   # List processes that are running in background
@@ -53520,26 +53521,39 @@ Linux OS always uses physical memory so free is always low.
 A Linux system is really low on memory if the free value in -/+ buffers/cache: line gets low which is the available column in new Linux.
 
 ** Service <<linux:init>>
-- System V init system
-   - ~service --status-all~ :: List all services (on '+', off '-', managed by Upstart '?') 
-   - ~service~ operates on the daemon files in ~/etc/init~ or ~/etc/init.d~ which is an old init system
-      - Set up an PHP script file as service
-	#+BEGIN_SRC sh
-	  sudo nano /etc/init/myPHP.conf
-	#+END_SRC
-	#+BEGIN_SRC sh
-	  start on startup
-	  stop on shutdown
+*** SystemV init system :: other names SysVinit
+- Characteristics
+   - synchronous :: things have to be executed in sequence
+- ~service --status-all~ :: List all services (on '+', off '-', managed by Upstart '?')
+   - Services defined as ~/etc/init/*.conf~ or ~/etc/init.d/*~ do not appear in this list
+- ~service~ operates on the daemon files in ~/etc/init~ or ~/etc/init.d~ which is an old init system
+   - Set up an PHP script file as service
+     #+BEGIN_SRC sh
+       sudo nano /etc/init/myPHP.conf
+     #+END_SRC
+     #+BEGIN_SRC sh
+       start on startup
+       stop on shutdown
 
-	  respawn
+       respawn
 
-	  script
-	    cd /path/to/the/script
-	    php myPHP.php
-	  end script
-	#+END_SRC	
-- SystemD :: System Management Daemon
-   - a new init system :: parallel
+       script
+	 cd /path/to/the/script
+	 php myPHP.php
+       end script
+     #+END_SRC
+
+*** Upstart
+- Characteristics
+   - Designed to replace SystemV
+      - event-based initialization program :: plug and play devices
+      - asynchronous
+      - automatic restart
+   - no update since 2014
+
+*** SystemD :: System Management Daemon
+   - Characteristicsa 
+      - parallel
    - ~systemctl~ :: List running services only with more detail
      #+BEGIN_SRC sh
        systemctl | grep 'php'
@@ -66076,6 +66090,8 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
    - bind-address :: <<mysql:config:bind-address>>
       - ~127.0.0.1~ :: default which means it only allows localhost connection
       - ~0.0.0.0~ or ~*~ or comment out :: allow all network access
+	 - MySQL 8.0 may not be present. Add it
+	 - Make sure to comment out ~skip-networking~ directives
    - sql_mode :: <<mysql:config:sql-mode>>
       - STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION :: default
       - STRICT_TRANS_TABLES :: e.g. insert query should provide all values that are ~not null~
@@ -66291,6 +66307,17 @@ MySQL >= 5.1.12
   DELETE FROM mysql.user WHERE user = 'sammy';
 #+END_SRC
 
+**** revoke <<mysql:revoke>>
+#+begin_src sql
+  REVOKE INSERT ON *.* FROM 'li'@'localhost';
+
+  REVOKE ALL, GRANT OPTION FROM 'li'@'localhost';
+
+  -- it does not remove the user from mysql.user table
+  -- DROP USER :: remove one or more user accounts and all grants of them
+
+  SHOW GRANTS;
+#+end_src
 **** Create database
 #+BEGIN_SRC sql
   CREATE DATABASE `dbname_in_lowercase`;
@@ -67530,7 +67557,7 @@ Schema
   mysqldump -u user -p database_name > database_name_backup.sql
 
   # prevents table being locked
-  mysqldump --single-transaction --routines -u user -p database_name > backup.sql
+  mysqldump --single-transaction --routines --triggers --events -u user -p database_name > backup.sql
 
   # Assuming there's enough disk space
   mysqldump --single-transaction --routines -u user -p database_name > backup.sql && gzip backup.sql
@@ -67540,6 +67567,9 @@ Schema
 
   # dump specific tables
   mysqldump -u user -p database_name t1 t2 t3 > a.sql
+
+  # don't dump some tables
+  mysqldump -u user -p --ignore-table=database_name.tableNameToIgnore database_name
 
   # Use config file to avoid typing password
   mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.sql
@@ -67571,8 +67601,19 @@ Restore
 
 Dump a remote database
 #+BEGIN_SRC bash
-  mysqldump -P3306  -h192.168.20.151 -u root -p databasename > c:/my.sql
+  mysqldump -P3306 -h192.168.20.151 -u root -p databasename > c:/my.sql
 #+END_SRC
+
+Remove encryption
+#+begin_src sql
+  mysqldump --triggers --routines --events -h source.com -uroot -p mydbname --ignore-table=mydbname.tablenametoignore  > dump.sql
+  echo "finished exporting db\n"
+  sed -i "s/ENCRYPTION='Y'//g" dump.sql
+  echo "finished removing encryptions\n"
+  gzip dump.sql
+  echo "finished compressing the export"
+  echo "Done, your file name is dump.sql.gz"
+#+end_src
 
 **** Dump table definition only
 #+BEGIN_SRC sh
@@ -67886,7 +67927,7 @@ All together
       - 50-client.cnf ::
       - 50-mysqld_safe.cnf ::
       - 50-mysql-clients.cnf ::
-      - In MySQL
+      - In MySQL :: ~/etc/mysql/mysql.conf.d/*.cnf~
 	 - mysqld.cnf :: ~[mysqld_safe]~ ~[mysqld]~
 	 - mysqld_safe_syslog.conf :: ~[mysqld_safe]~
    - Custom config files should have only one dot and extension is ~.cnf~
