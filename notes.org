@@ -52362,6 +52362,7 @@ wp:check file permissions
    - ~-c~ :: show count only
    - ~-A <NUM>~ :: number of trailing lines of text
    - ~-B <NUM>~ :: number of leading lines of text
+   - ~-F~ :: literal text match instead of using regex by default
    - ~--exclude-dir=node_modules~
 - ~GREP_OPTIONS~ <<linux:env:GREP_OPTIONS>>
    - Set default options using [[linux:env][linux:env]]
@@ -52419,7 +52420,7 @@ Default delimiter is space
 *** awk <<<bash:awk>>>
 - https://www.tutorialspoint.com/awk/index.htm
 - Space delimited by default
-- Refer to bash:read
+- Refer to [[bash:read][bash:read]]
 - Syntax :: ~awk 'BEGIN {command1; command2;} /pattern/ {command3; command4;} END {command5; command6;}'~
    - ~BEGIN~ run AWK commands 1 and 2 before read
    - Read a line from input then execute AWK commands 3 and 4 using the line (~/pattern/~ to filter the line)
@@ -54484,6 +54485,225 @@ Run ~sudo apt-get update~ and maybe ~sudo apt-get upgrade~ after.
 
 https://askubuntu.com/a/430944/481813
 
+** curl, wget
+*** curl <<<linux:curl>>>
+**** Basic
+#+BEGIN_SRC bash
+  #!/bin/bash
+  dlDir=/home/lili/download/
+  dlFileName= ${dlDir}123.xml
+  curl "http://abc.com/123.xml" -L -o ${dlFileName}
+#+END_SRC
+
+**** Return HTTP response header only
+~curl -m 120 -IL "http://url.com" >> /path/to/log.log~
+e.g Drupal Cron URL response status
+#+BEGIN_SRC bash
+  #!/bin/bash
+  curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/your/cronlog
+#+END_SRC
+
+**** Download with HTTPS or HTTP authentication
+- Popup form or server authentication :: ~curl https://a.com/b.aspx -u user:password -L -o /path/to/xml.xml~
+
+**** <<<cURL download only after or before a date>>>
+Works for ftp and Http
+#+BEGIN_SRC bash
+  fileLocalTime=$(date -r "$localfile")
+  curl $remote_file_path -u $user:$password -o $localfile -R -z "${fileLocalTime}"
+
+  # default is "after"
+  # add a dash before date string will result in "before".
+  fileLocalTimeNew=$(date -r "$localfile")
+
+  if [ "$fileLocalTime" == "$fileLocalTimeNew" ]; then
+   echo "the same"
+  else
+   echo $fileLocalTime
+   echo $fileLocalTimeNew
+  fi
+#+END_SRC
+
+**** HTTP POST <<<linux:curl:post>>>
+- Refer to bash:pass arguments
+
+#+BEGIN_SRC sh
+  # default POST is application/x-www-form-urlencoded
+  curl -X POST -d "test=that&test2=that2" http://..
+
+  # explict -H 'Content-Type: application/x-www-form-urlencoded'
+
+  # with a data file
+  curl -X POST -d "@data.txt" http://..
+
+  # json
+  # keep value to be a single line
+  # I haven't figured out how to escape newline for json yet..
+  to='a@a.ca'
+  from='b@a.ca'
+  json_fmt='{"personalizations": [{"to": [{"email": "%s"}]}],"from": {"email": "%s"},"subject": "%s","content": [{"type": "text/plain", "value": "%s"}]}'
+  data_json=$(printf "$json_fmt" "$to" "$from" "$subject" "$content")
+
+  curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http://..
+  curl -X POST -H 'Content-Type: application/json' -d '{"test":"that"}' http://..
+  curl -X POST -H 'Content-Type: application/json' -d "$data_json" http://..
+
+  # with a data file
+  curl -X POST -d "@data.json" http://..
+#+END_SRC
+
+**** Use different IP address from DNS
+a.ca by DNS points to 1.2.3.4 IP, change it to a different IP 2.2.3.4 temporarily.
+#+BEGIN_SRC sh
+  curl -L -v -I --resolve 'a.ca:80:2.2.3.4' http://a.ca
+
+  # https://a.ca still points to 1.2.3.4 as port 80 does not match the request a.ca@443
+  curl -L -v -I --resolve 'a.ca:80:2.2.3.4' https://a.ca
+
+  # Use this instead
+  curl -L -v -I --resolve 'a.ca:443:2.2.3.4' https://a.ca
+
+  # sub domain
+  curl -L -v -I --resolve 'www.a.ca:443:2.2.3.4' https://www.a.ca
+
+  # --resolve <host:port:address> force resolve of HOST:PORT to ADDRESS
+#+END_SRC
+
+**** Fetch web pages and save as HTML files
+Uses bash:array
+
+#+BEGIN_SRC bash
+  #!/bin/bash
+  set -o history -o histexpand
+
+  declare -A fileMaps=(
+  [https://a.com/]='pages/index.html' \
+  [https://a.com/page1]='pages/page1.html' \
+  [https://a.com/page-2]='pages/page-2.html' \
+  )
+
+  declare -a curlArgs=('-L' '-H' "Connection: keep-alive" '-H' "Pragma: no-cache" '-H' "Cache-Control: no-cache" '-H' "Upgrade-Insecure-Requests: 1" '-H' "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36" '-H' "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8" '-H' "Accept-Encoding: gzip, deflate, br" '-H' "Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh;q=0.6")
+
+  for K in "${!fileMaps[@]}"; do
+   curlArgsTemp=("$K" "${curlArgs[@]}")
+   curlArgsTemp=( "${curlArgsTemp[@]}" "-o" "${fileMaps[$K]}" )
+   curl "${curlArgsTemp[@]}"
+  done
+
+  # echo !!
+#+END_SRC
+
+**** Fetch as Googlebot <<<curl:ua:googlebot>>>
+Googlebot's user agent: https://support.google.com/webmasters/answer/1061943
+
+#+BEGIN_SRC sh
+  curl -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -v https://a.ca
+#+END_SRC
+
+**** Options
+
+| -L           | Follow through all redirects                                  |
+| -o           | redirect STDOUT to a file                                     |
+| -O           | save file using same file name in current folder              |
+| -I           | get header response only                                      |
+| -m           | timeout in seconds                                            |
+| -H           | request header. =-H "Accept-Charset: ISO-8859-1,utf-8;q=0.7"= |
+| --limit-rate | limit download speed: --limit-rate=200k. use k, m or g        |
+| -s           | suppress STDOUT. ~-svo /dev/null~ show req/resp headers only  |
+| -w           | rewrite STDOUT                                                |
+| -R           | Keep remote file timestamp. --remote-time                     |
+| -z           | cURL download only after or before a date                     |
+| -d           | send POST data                                                |
+| -A           | ~--user-agent~                                                |
+| -v           | verbose                                                       |
+| -b, --cookie | ~-b "name1=v1; name2=v2"~                                     |
+|--------------+---------------------------------------------------------------|
+ 
+*** wget <<<bash:wget>>>
+Compared to curl, wget's advantages are:
+- recursive
+- continue downloading after broken transfer
+- Specify cookies in get request
+- Has redirect-following
+- Capture response such as time stamping from the remote resource.
+
+Disadvantages are only HTTP/HTTPS/FTP, Basic auth over HTTP proxy, no SOCKS support
+
+wget [option]... [URL]...
+
+Run a wp cron:
+#+BEGIN_SRC bash
+  # /dev/null
+  wget -O /dev/stdout -o /dev/stdout "https://mysite.ca/wp-cron.php?import_key=123&import_id=8&action=processing"
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  http://[username:password@]host[:port]/directory/file
+  ftp://[username:password@]host[:port]/directory/file
+#+END_EXAMPLE
+
+Download all subfolders and files of an FTP folder
+#+BEGIN_SRC bash
+  cd ~
+  wget --user=hello --password='mypassword' -cr ftp://server/path/to/test
+
+  # Default depth is 5, change it
+  wget -r -l 2 ftp://... 
+  # for infinite depth :: -l inf
+
+  # path/to/test is 3 depths, by default, 2 more levels can be downloaded
+
+  # ~/server/path/to/test/* will be downloaded
+
+  # -nH ~/path/to/test will be downloaded
+  # -nH --cut-dirs=1 ~/to/test will be downloaded
+  # -nH --cut-dirs=2 ~/test will be downloaded
+  # --cut-dirs=1 ~/server/to/test will be downloaded
+
+  # --ftp-user or --http-user can also be used. There's no difference
+
+  # Ignore folders (not file)
+  wget -cr -X path/to/folder/ignore/ ftp://server/path/to/folder/
+
+  # folder path/to/folder/ignore/ will not be downloaded
+
+  # wildcards can also be used
+  wget -cr -X path/to/folder/ignore*/ ftp://server/path/to/folder/
+
+  # ignore multiple folders
+  -X path/to/folder/ignore1,path/to/folder/ignore2
+
+  # Only include certain folders -I, exactly the same as -X
+
+  # Only download files -A
+  -A books*,zelazny*196[0-9],gif,jpg
+
+  gif and jpg are normal letters, they match the ending part of a file (not exactly file extension)
+
+  # Ignore certain files -R, exactly the same as -A
+
+  # -nH :: --no-host-directories :: use it with --cut-dirs. e.g. download http://a.com/ by default creates a.com/ directory
+
+  # -P :: --directory-prefix :: Default is . (the current directory)
+
+  # -N to retrieve timestamps so if local files are newer, skip download.
+
+  # -c :: enable continue download
+
+  # --limit-rate=20k :: limit download speed to 20kb/s, m or g can also be used
+
+  # -b :: put command run in background
+
+  # -O path/to/local/file :: output to a local file. Change downloaded filename
+
+  # Logging
+  # -v :: default
+  # -q :: complete quiet
+  # -nv :: only error and basic info are printed
+#+END_SRC
+
+[[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
+
 ** Bash File, Input and Output
 *** Version ~echo $BASH_VERSION~
 *** Last directory =~-=
@@ -54875,7 +55095,8 @@ https://askubuntu.com/a/430944/481813
       - ~grep "nor" <<<$var >/dev/null && echo "Found" || echo "Not found"~ equivalent to
 	~echo $var | grep -q "nor"  && echo "Found" || echo "Not found"~
 
-*** Read command output line by line <<<bash:read>>>
+*** Read command output line by line, Prompt <<bash:read>>
+**** Read command output line by line
 #+BEGIN_SRC sh
   multiple_commands_output=""
   output=$(drush command output contains multiple lines);
@@ -54904,6 +55125,22 @@ https://askubuntu.com/a/430944/481813
   # read -r :: to ignore all backslashes
 #+END_SRC
 
+**** Prompt
+#+begin_src sh
+  # `-n 1` accept one character
+  # `-p` outputs a prompt
+  # `-r` accepts backslashes literally otherwise it would see the backslash as an escape and wait for a second character
+  # `$REPLY` is the default global variable the command uses to store the answer input
+  # To specify a variable: read -p "..." -r my_var
+  read -p "Are you sure? [Y/n]" -n 1 -r
+  echo    # (optional) move to a new line
+
+  # `=~` to match a regex 
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+      exit 1
+  fi
+#+end_src
 *** Date format <<<bash:date>>>
 - ~date +%F~ :: YYYY-MM-DD
 - ~date +%H~ :: 00..23
@@ -55077,227 +55314,32 @@ Not floating-point values
 
 *** Special Parameters
 - ~man bash~
-- ~$@ => "$1" "$2" "$3" ...~
+- ~$@~ :: expands to ~"$1" "$2" "$3" ...~
+- ~$0~ :: expands to the name of the shell script file
+- ~$*~
+  #+begin_src sh
+    for arg in $*
+    do
+	    echo "Command line arg: $arg"
+    done
 
-** curl, wget
-*** curl <<<linux:curl>>>
-**** Basic
-#+BEGIN_SRC bash
-  #!/bin/bash
-  dlDir=/home/lili/download/
-  dlFileName= ${dlDir}123.xml
-  curl "http://abc.com/123.xml" -L -o ${dlFileName}
-#+END_SRC
+    # ./run.sh One Two Three
+    # Command line arg: One
+    # Command line arg: Two
+    # Command line arg: Three
 
-**** Return HTTP response header only
-~curl -m 120 -IL "http://url.com" >> /path/to/log.log~
-e.g Drupal Cron URL response status
-#+BEGIN_SRC bash
-  #!/bin/bash
-  curl -sL -o /dev/null -w "%{http_code}\n" "http://drupalcronurl" >> /path/to/your/cronlog
-#+END_SRC
+    for arg in "$*"
+    do
+	    echo "Command line arg: $arg"
+    done
 
-**** Download with HTTPS or HTTP authentication
-- Popup form or server authentication :: ~curl https://a.com/b.aspx -u user:password -L -o /path/to/xml.xml~
-
-**** <<<cURL download only after or before a date>>>
-Works for ftp and Http
-#+BEGIN_SRC bash
-  fileLocalTime=$(date -r "$localfile")
-  curl $remote_file_path -u $user:$password -o $localfile -R -z "${fileLocalTime}"
-
-  # default is "after"
-  # add a dash before date string will result in "before".
-  fileLocalTimeNew=$(date -r "$localfile")
-
-  if [ "$fileLocalTime" == "$fileLocalTimeNew" ]; then
-   echo "the same"
-  else
-   echo $fileLocalTime
-   echo $fileLocalTimeNew
-  fi
-#+END_SRC
-
-**** HTTP POST <<<linux:curl:post>>>
-- Refer to bash:pass arguments
-
-#+BEGIN_SRC sh
-  # default POST is application/x-www-form-urlencoded
-  curl -X POST -d "test=that&test2=that2" http://..
-
-  # explict -H 'Content-Type: application/x-www-form-urlencoded'
-
-  # with a data file
-  curl -X POST -d "@data.txt" http://..
-
-  # json
-  # keep value to be a single line
-  # I haven't figured out how to escape newline for json yet..
-  to='a@a.ca'
-  from='b@a.ca'
-  json_fmt='{"personalizations": [{"to": [{"email": "%s"}]}],"from": {"email": "%s"},"subject": "%s","content": [{"type": "text/plain", "value": "%s"}]}'
-  data_json=$(printf "$json_fmt" "$to" "$from" "$subject" "$content")
-
-  curl -X POST -H 'Content-Type: application/json' -d "{\"test\": \"that\"}" http://..
-  curl -X POST -H 'Content-Type: application/json' -d '{"test":"that"}' http://..
-  curl -X POST -H 'Content-Type: application/json' -d "$data_json" http://..
-
-  # with a data file
-  curl -X POST -d "@data.json" http://..
-#+END_SRC
-
-**** Use different IP address from DNS
-a.ca by DNS points to 1.2.3.4 IP, change it to a different IP 2.2.3.4 temporarily.
-#+BEGIN_SRC sh
-  curl -L -v -I --resolve 'a.ca:80:2.2.3.4' http://a.ca
-
-  # https://a.ca still points to 1.2.3.4 as port 80 does not match the request a.ca@443
-  curl -L -v -I --resolve 'a.ca:80:2.2.3.4' https://a.ca
-
-  # Use this instead
-  curl -L -v -I --resolve 'a.ca:443:2.2.3.4' https://a.ca
-
-  # sub domain
-  curl -L -v -I --resolve 'www.a.ca:443:2.2.3.4' https://www.a.ca
-
-  # --resolve <host:port:address> force resolve of HOST:PORT to ADDRESS
-#+END_SRC
-
-**** Fetch web pages and save as HTML files
-Uses bash:array
-
-#+BEGIN_SRC bash
-  #!/bin/bash
-  set -o history -o histexpand
-
-  declare -A fileMaps=(
-  [https://a.com/]='pages/index.html' \
-  [https://a.com/page1]='pages/page1.html' \
-  [https://a.com/page-2]='pages/page-2.html' \
-  )
-
-  declare -a curlArgs=('-L' '-H' "Connection: keep-alive" '-H' "Pragma: no-cache" '-H' "Cache-Control: no-cache" '-H' "Upgrade-Insecure-Requests: 1" '-H' "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36" '-H' "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8" '-H' "Accept-Encoding: gzip, deflate, br" '-H' "Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh;q=0.6")
-
-  for K in "${!fileMaps[@]}"; do
-   curlArgsTemp=("$K" "${curlArgs[@]}")
-   curlArgsTemp=( "${curlArgsTemp[@]}" "-o" "${fileMaps[$K]}" )
-   curl "${curlArgsTemp[@]}"
-  done
-
-  # echo !!
-#+END_SRC
-
-**** Fetch as Googlebot <<<curl:ua:googlebot>>>
-Googlebot's user agent: https://support.google.com/webmasters/answer/1061943
-
-#+BEGIN_SRC sh
-  curl -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -v https://a.ca
-#+END_SRC
-
-**** Options
-
-| -L           | Follow through all redirects                                  |
-| -o           | redirect STDOUT to a file                                     |
-| -O           | save file using same file name in current folder              |
-| -I           | get header response only                                      |
-| -m           | timeout in seconds                                            |
-| -H           | request header. =-H "Accept-Charset: ISO-8859-1,utf-8;q=0.7"= |
-| --limit-rate | limit download speed: --limit-rate=200k. use k, m or g        |
-| -s           | suppress STDOUT. ~-svo /dev/null~ show req/resp headers only  |
-| -w           | rewrite STDOUT                                                |
-| -R           | Keep remote file timestamp. --remote-time                     |
-| -z           | cURL download only after or before a date                     |
-| -d           | send POST data                                                |
-| -A           | ~--user-agent~                                                |
-| -v           | verbose                                                       |
-| -b, --cookie | ~-b "name1=v1; name2=v2"~                                     |
-|--------------+---------------------------------------------------------------|
- 
-*** wget <<<bash:wget>>>
-Compared to curl, wget's advantages are:
-- recursive
-- continue downloading after broken transfer
-- Specify cookies in get request
-- Has redirect-following
-- Capture response such as time stamping from the remote resource.
-
-Disadvantages are only HTTP/HTTPS/FTP, Basic auth over HTTP proxy, no SOCKS support
-
-wget [option]... [URL]...
-
-Run a wp cron:
-#+BEGIN_SRC bash
-  # /dev/null
-  wget -O /dev/stdout -o /dev/stdout "https://mysite.ca/wp-cron.php?import_key=123&import_id=8&action=processing"
-#+END_SRC
-
-#+BEGIN_EXAMPLE
-  http://[username:password@]host[:port]/directory/file
-  ftp://[username:password@]host[:port]/directory/file
-#+END_EXAMPLE
-
-Download all subfolders and files of an FTP folder
-#+BEGIN_SRC bash
-  cd ~
-  wget --user=hello --password='mypassword' -cr ftp://server/path/to/test
-
-  # Default depth is 5, change it
-  wget -r -l 2 ftp://... 
-  # for infinite depth :: -l inf
-
-  # path/to/test is 3 depths, by default, 2 more levels can be downloaded
-
-  # ~/server/path/to/test/* will be downloaded
-
-  # -nH ~/path/to/test will be downloaded
-  # -nH --cut-dirs=1 ~/to/test will be downloaded
-  # -nH --cut-dirs=2 ~/test will be downloaded
-  # --cut-dirs=1 ~/server/to/test will be downloaded
-
-  # --ftp-user or --http-user can also be used. There's no difference
-
-  # Ignore folders (not file)
-  wget -cr -X path/to/folder/ignore/ ftp://server/path/to/folder/
-
-  # folder path/to/folder/ignore/ will not be downloaded
-
-  # wildcards can also be used
-  wget -cr -X path/to/folder/ignore*/ ftp://server/path/to/folder/
-
-  # ignore multiple folders
-  -X path/to/folder/ignore1,path/to/folder/ignore2
-
-  # Only include certain folders -I, exactly the same as -X
-
-  # Only download files -A
-  -A books*,zelazny*196[0-9],gif,jpg
-
-  gif and jpg are normal letters, they match the ending part of a file (not exactly file extension)
-
-  # Ignore certain files -R, exactly the same as -A
-
-  # -nH :: --no-host-directories :: use it with --cut-dirs. e.g. download http://a.com/ by default creates a.com/ directory
-
-  # -P :: --directory-prefix :: Default is . (the current directory)
-
-  # -N to retrieve timestamps so if local files are newer, skip download.
-
-  # -c :: enable continue download
-
-  # --limit-rate=20k :: limit download speed to 20kb/s, m or g can also be used
-
-  # -b :: put command run in background
-
-  # -O path/to/local/file :: output to a local file. Change downloaded filename
-
-  # Logging
-  # -v :: default
-  # -q :: complete quiet
-  # -nv :: only error and basic info are printed
-#+END_SRC
-
-[[https://www.gnu.org/software/wget/manual/wget.html][Manual]]
-
+    # ./run.sh One Two Three
+    # Command line arg: One Two Three
+  #+end_src
+- ~$#~ :: number of arguments
+- ~$?~ :: exit status of last run command
+- ~$$~ :: process ID of the current shell
+  
 ** Cron <<linux:cron>>
 *** Install
 #+BEGIN_SRC sh
@@ -66300,8 +66342,12 @@ MySQL >= 5.1.12
 
   -- show granted privileges
   SHOW GRANTS FOR 'sammy'@'localhost';
-  SHOW GRANTS FOR CURRENT_USER();
   SHOW GRANTS;
+  -- eq. to 
+  -- SHOW GRANTS FOR CURRENT_USER();
+  -- SHOW GRANTS FOR CURRENT_USER;
+  -- Show grants for all users
+  select * from information_schema.user_privileges;
 
   -- remove a user
   DELETE FROM mysql.user WHERE user = 'sammy';
@@ -67283,6 +67329,7 @@ Update Joined Tables
     WHERE 0=0
 	-- AND ROUTINE_TYPE = 'FUNCTION';
 	-- AND ROUTINE_TYPE = 'PROCEDURE';
+	-- AND ROUTINE_NAME = 'myname';
   #+end_src
 **** Characteristics <<mysql:routine:characteristics>>
 #+BEGIN_EXAMPLE
@@ -67313,6 +67360,14 @@ Without specifying DETERMINISTIC and with the default setting, this error throws
 - MODIFIES SQL DATA :: indicates that the routine contains statements that may write data (for example, INSERT or DELETE).
 
 The parameter list enclosed within parentheses must always be present. If there are no parameters, an empty parameter list of () should be used. Parameter names are not case sensitive.
+
+**** Update definer
+- https://github.com/levonlee/change_definer
+#+begin_src sql
+  update mysql.proc set definer='root@localhost' where name = 'myprocedurename';
+
+  -- For MySQL v8.0, there's no mysql.proc table
+#+end_src
 
 **** Stored Procedure
 ***** Syntax
