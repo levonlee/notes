@@ -66686,8 +66686,24 @@ MySQL 5.6
 - Each hint requires index names, not column names
    - ~SHOW INDEX FROM myTable~
       - This also shows the cardinality of each index
-- Index hints apply only to SELECT and UPDATE statements
+- Index hints apply only to ~SELECT~ and ~UPDATE~ statements
 - The ~FORCE INDEX~ hint acts like ~USE INDEX (index_list)~, with the addition that a table scan is assumed to be very expensive. In other words, a table scan is used only if there is no way to use one of the named indexes to find rows in the table.
+- Syntax
+  #+begin_src sql
+    tbl_name [[AS] alias] [index_hint_list]
+
+    index_hint_list:
+	index_hint [index_hint] ...
+
+    index_hint:
+	USE {INDEX|KEY}
+	  [FOR {JOIN|ORDER BY|GROUP BY}] ([index_list])
+      | {IGNORE|FORCE} {INDEX|KEY}
+	  [FOR {JOIN|ORDER BY|GROUP BY}] (index_list)
+
+    index_list:
+	index_name [, index_name] ...
+  #+end_src
 - Samples
   #+begin_src sql
     SELECT * FROM table1 USE INDEX (col1_index,col2_index)
@@ -67259,12 +67275,16 @@ Update Joined Tables
   SELECT @s3;
 #+END_SRC
 
-*** Routines
-Procedure and User Defined Functions are stored under the schema as routines
-
-e.g. Schema (database) is pantheon, pantheon.tables are all tables and pantheon.routines
-
-<<<mysql:routine:characteristics>>>
+*** Routines, Procedures, User Defined Function
+- Stored Procedure and Stored Functions are stored under the schema as routines
+- List all routines
+  #+begin_src sql
+    SELECT * FROM INFORMATION_SCHEMA.ROUTINES
+    WHERE 0=0
+	-- AND ROUTINE_TYPE = 'FUNCTION';
+	-- AND ROUTINE_TYPE = 'PROCEDURE';
+  #+end_src
+**** Characteristics <<mysql:routine:characteristics>>
 #+BEGIN_EXAMPLE
   characteristic:
       COMMENT 'string'
@@ -67294,8 +67314,9 @@ Without specifying DETERMINISTIC and with the default setting, this error throws
 
 The parameter list enclosed within parentheses must always be present. If there are no parameters, an empty parameter list of () should be used. Parameter names are not case sensitive.
 
-*** Stored Procedure
-**** Syntax
+**** Stored Procedure
+***** Syntax
+- Refer to [[mysql:routine:characteristics][mysql:routine:characteristics]]
 #+BEGIN_EXAMPLE
   CREATE
       [DEFINER = { user | CURRENT_USER }]
@@ -67304,8 +67325,6 @@ The parameter list enclosed within parentheses must always be present. If there 
 
   proc_parameter:
       [ IN | OUT | INOUT ] param_name type
-
-  mysql:routine:characteristics
 #+END_EXAMPLE
 
 - IN :: Default. It passes a value into a procedure. The procedure might modify the value, but the modification is not visible to the caller when the procedure returns. 
@@ -67341,7 +67360,7 @@ Each SELECT statement that does not insert into a table or a variable will produ
   1 row in set (0.00 sec)
 #+END_EXAMPLE
 
-**** Prepare Statement, Convert delimited string into temp table
+***** Prepare Statement, Convert delimited string into temp table
 A prepare statement is unique to a session. If it's not deallocated, it will be deallocated automatically when the session ends.
 <<<mysql:string:list:temp table>>>
 
@@ -67384,10 +67403,10 @@ word column is string
 - Show the code of a stored procedure :: ~SHOW PROCEDURE my_stored_procedure_name~
 - Drop a stored procedure :: ~DROP PROCEDURE IF EXISTS my_sp_name~
 
-*** User Defined Function <<<mysql:udf>>>
+**** User Defined Function <<<mysql:udf>>>
 - UDF always returns a value
-
-Syntax
+***** Syntax
+- Refer to [[mysql:routine:characteristics][mysql:routine:characteristics
 #+BEGIN_EXAMPLE
   CREATE
       [DEFINER = { user | CURRENT_USER }]
@@ -67400,8 +67419,6 @@ Syntax
 
   type:
       Any valid MySQL data type
-
-  mysql:routine:characteristics
 #+END_EXAMPLE
 
 #+BEGIN_SRC sql
@@ -67453,7 +67470,7 @@ Syntax
     END;
 #+END_SRC
 
-**** Return a single value from SELECT statement
+***** Return a single value from SELECT statement
 #+BEGIN_SRC sql
   DROP FUNCTION IF EXISTS udfreturnselect;
 
