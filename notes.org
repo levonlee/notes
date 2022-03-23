@@ -5285,32 +5285,6 @@ Pay attention to global scope
 #+END_SRC
 
 ** Http Request - cURL, file_get_contents
-*** cURL-less <<php:file_get_contents>>
-Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
-Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
-
-#+BEGIN_SRC php
-  $url = 'http://server.com/path';
-  $data = array('key1' => 'value1', 'key2' => 'value2');
-
-  // use key 'http' even if you send the request to https://...
-  $options = array(
-      'http' => array(
-	  'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-	  'method'  => 'POST',
-	  'content' => http_build_query($data)
-      )
-  );
-  $context  = stream_context_create($options);
-  $result = file_get_contents($url, false, $context);
-
-  if ($result === FALSE) { /* Handle error */ }
-
-  // need to make sure string is UTF-8 php:string:encoding
-
-  var_dump($result);
-#+END_SRC
-
 *** cURL <<php:curl>>
 #+BEGIN_SRC php
   $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
@@ -5374,7 +5348,12 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 #+END_SRC
 
 **** Timeout
+- 
 #+BEGIN_SRC php
+  var_export(curl_version()['version']);
+  // Or shell run `curl --version`
+  // Since CURL v 7.60, CURLOPT_TIMEOUT_MS can be set
+
   $ch = curl_init('https://a.com');
   curl_setopt_array($ch, array(
 	  CURLOPT_CONNECTTIMEOUT => 2,
@@ -5519,6 +5498,45 @@ Manually construct a multipart/form-data with binary file data
     var_dump( 'error',  curl_error($curl));
     var_dump( 'errno',  curl_errno($curl));
   #+END_SRC
+
+**** curl_error, http_code
+#+begin_src php
+  $curl = curl_init();
+  $r['res'] = curl_exec($curl);
+  $r['info'] = curl_getinfo($curl);
+  $r['error'] = curl_errno($curl);
+  $r['error'] = $r['error'] ? "curl_errno: {$r['error']} " . curl_error($curl) : '';
+
+  if ($r['info']['http_code'] !== 200) {
+	  // 0 :: could be timeout
+	  echo $r['error'];
+  }
+#+end_src
+*** cURL-less <<php:file_get_contents>>
+Use file_get_contents for PHP5. Some host might disable file_get_contents. Use cURL method
+Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
+
+#+BEGIN_SRC php
+  $url = 'http://server.com/path';
+  $data = array('key1' => 'value1', 'key2' => 'value2');
+
+  // use key 'http' even if you send the request to https://...
+  $options = array(
+      'http' => array(
+	  'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+	  'method'  => 'POST',
+	  'content' => http_build_query($data)
+      )
+  );
+  $context  = stream_context_create($options);
+  $result = file_get_contents($url, false, $context);
+
+  if ($result === FALSE) { /* Handle error */ }
+
+  // need to make sure string is UTF-8 php:string:encoding
+
+  var_dump($result);
+#+END_SRC
 
 ** PHP HTTP Header <<php:header>>
 - Refer to header:cache-control
@@ -59080,6 +59098,9 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
   >>> exit
 #+END_EXAMPLE
 
+** image:yandex/clickhouse-server <<docker:clickhouse>>
+#+begin_src docker-compose
+#+end_src
 * Lando
 All subdomains of ~lndo.site~ will be DNS publicly resolved to ~localhost/127.0.0.1~ which requires no local ~/etc/hosts~ config.
 
@@ -71133,6 +71154,7 @@ Install linux:font, open Emacs:
    - ~x~ :: perform the i and u installation
    - ~RET~ to see more about a pkg
    - ~q~ :: quit
+   - ~M-x package-refresh-contents~ :: to refresh the package list
 - New install is in =~/.emacs.d/elpa/newpkgname-YYYYMMDD.123=
    - May need to follow instructions on Melpa.org to initialize in ~.emacs~ init file
 
@@ -74887,6 +74909,9 @@ https://developer.moneris.com/More/Testing/Penny%20Value%20Simulator
    - Payment from buyers' PayPal accounts
 
 *** Zum Rails <<payment:zumrails>>
+- https://zumrails.com/
+- API Doc
+   - Transactions :: https://docs.zumrails.com/docs/api-specification/transactions
 ** Market Research <<<market research:firm>>>
 - Refer to market research:service
 - Forrester
