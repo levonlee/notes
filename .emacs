@@ -55,8 +55,9 @@ There are two things you can do about this warning:
  '(org-export-with-sub-superscripts '{})
  '(org-goto-interface 'outline-path-completion)
  '(org-list-allow-alphabetical t)
+ '(gnutls-algorithm-priority "normal:-vers-tls1.3")
  '(package-selected-packages
-   '(graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode)))
+   '(docker-compose-mode graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode)))
 
 (define-derived-mode web-php-mode web-mode "WebPhp"
   "Major mode for editing web php templates."
