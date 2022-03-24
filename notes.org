@@ -55096,6 +55096,7 @@ Download all subfolders and files of an FTP folder
   #+END_SRC
 - ~<<-EOF~ :: suppress leading tabs in the document body
 - ~<<'EOF'~ :: don't expand variables/command
+   - can be combined with ~-~ :: ~<<-'EOF'~
 - Store as a variable
   #+BEGIN_SRC sh
     read -r -d '' VAR <<EOM
@@ -56842,7 +56843,8 @@ Personal dev project
           ipv4_address: 172.20.0.2
 #+END_EXAMPLE
 
-** Volume <<<docker:volume>>>
+** Volume <<docker:volume>>
+- Refer to [[docker-compose:volumes][docker-compose:volumes]]
 *** Basics
 #+BEGIN_SRC sh
   # List all volumes
@@ -56851,10 +56853,17 @@ Personal dev project
   # Info about a volume
   docker volume inspect the_vol_id
 
-  # Remove volumes
+  # a volume can be created
+  # - when using `docker run -v some_volume:/path/to/container`
+  # - when using docker-compose
+  # - when using docker volume
+  docker volume create --name dbdata
+
+  # Remove volumes dangling
   docker volume rm $(docker volume ls -qf dangling=true)
 
-  # a volume can be created when using `docker run -v some_volume:/path/to/container`
+  # Remove a volume
+  docker volume rm dbdatavolume
 #+END_SRC
 
 *** Access the named volume by starting another container <<<docker:volume:access>>>
@@ -57025,6 +57034,8 @@ NO_PROXY
 no_proxy
 
 ** Docker Compose <<docker:compose>>
+*** Basics
+- https://docs.docker.com/compose/reference/up/
 #+BEGIN_SRC sh
   docker-compose --version
   docker-compose up -d
@@ -57083,33 +57094,73 @@ Same for 16.04 and 18.04
 #+END_SRC
 
 *** YML
-It has to be this name ~docker-compose.yml~ and don't include this file in sub directories.
-
-Docker Engine version (docker version) 
-
-| Compose file format | Docker Engine release |
-|             3.0;3.1 |               1.13.0+ |
-|                 2.1 |               1.12.0+ |
-|                 2.0 |               1.10.0+ |
-|                 1.0 |                1.9.1+ |
-
 **** version (top level)
-#+BEGIN_EXAMPLE
+- Compose and Docker Engine compatibility matrix :: https://docs.docker.com/compose/compose-file/
+- Version 3 Doc :: https://docs.docker.com/compose/compose-file/compose-file-v3/
+#+BEGIN_SRC docker-compose
   version: '2'
-#+END_EXAMPLE
+#+END_SRC
 
-**** volumes (top level)
-Check volumes created by Docker =docker volume ls=
-Create a volume =docker volume create --name dbdata=
-Remove a volume =docker volume rm dbdatavolume=
-
+**** volumes <<docker-compose:volumes>>
+- Refer to [[docker:volume][docker:volume]]
+***** Top Level
 #+BEGIN_SRC yaml
+  version: "3.9"
+  services:
+    web:
+      image: nginx:alpine
+      volumes:
+	# Long syntax
+	- type: volume
+	  # first encounter of named volume `mydata`, and it's initialized
+	  # because `mydata` will be reused in other service `db`, so a top-level volume is needed
+	  source: mydata
+	  target: /data
+	  volume:
+	    nocopy: true
+	- type: bind
+	  source: ./static
+	  target: /opt/app/static
+
+    db:
+      image: postgres:latest
+      volumes:
+	- "/var/run/postgres/postgres.sock:/var/run/postgres/postgres.sock"
+	- "dbdata:/var/lib/postgresql/data"
+
+	# Top Level
   volumes:
-  # Named volume which can be used in all services
-  # this volume isn't mapped to anything in docker host!
-  # top-level volumes can't specify path to named volume.. You have to install other Docker plugin
+    # Named volume which can be used in all services
+    # this volume isn't mapped to anything in docker host!
+    # top-level volumes can't specify path to named volume.. You have to install other Docker plugin
+    mydata:
+    dbdata:
+
+  # Top level
+  volumes:
     dbdata:
 #+END_SRC
+
+***** Short syntax
+#+begin_src docker-compose
+  # Syntax [SOURCE:]TARGET[:MODE]
+  # mode :: ro (read only), rw (read and write)
+  volumes:
+    # Just specify a path and let the Engine create a volume
+    - /var/lib/mysql
+
+    # Specify an absolute path mapping
+    - /opt/data:/var/lib/mysql
+
+    # Path on the host, relative to the Compose file
+    - ./cache:/tmp/cache
+
+    # User-relative path
+    - ~/configs:/etc/configs/:ro
+
+    # Named volume
+    - datavolume:/var/lib/mysql
+#+end_src
 
 **** networks (top level) links (deprecated)
 Every time ~docker-compose up~ creates a single network (per app) which all services in the app are on.
@@ -57178,8 +57229,8 @@ Then in a service, specify the ip
 #+END_EXAMPLE
 
 **** services
-
-#+BEGIN_EXAMPLE
+***** Basics
+#+BEGIN_SRC docker-compose
   services:
     lucee:
       build: .
@@ -57200,8 +57251,9 @@ Then in a service, specify the ip
       networks:
         app_net:
           ipv4_address: 172.18.0.3
-#+END_EXAMPLE
+#+END_SRC
 
+***** ports <<docker-compose:ports>>
 ~EXPOSE~ in Dockerfile and ~-p~ in ~docker run -p 8080~
 - Neither specify EXPOSE nor -p
   - service in container will not be accessible from anywhere except from the container itself
@@ -57213,6 +57265,19 @@ Then in a service, specify the ip
 - Specify -p but not EXPOSE
  - It's like only specify EXPOSE
 
+***** user <<docker-compose:user>>
+- https://docs.docker.com/engine/reference/run/#user
+- one line
+- Both user/group name and user/group ID can be used
+
+#+begin_src docker-compose
+  clickhouse:
+    image: yandex/clickhouse-server
+    ports:
+      - "8123:8123"
+    user: "101:101"
+#+end_src
+  
 **** Resources
 [[https://docs.docker.com/compose/compose-file/compose-file-v2/#cpu-and-other-resources][compose file v2]]
 #+BEGIN_SRC yaml
@@ -58925,14 +58990,13 @@ dockerfile-from-image.rb (same as GitHub)
 #+END_EXAMPLE
 
 ** image:jenkins/jenkins
-Parent images: openjdk:8-jdk
-[[https://github.com/jenkinsci/docker][GitHub]]
+- Parent images: openjdk:8-jdk
+- [[https://github.com/jenkinsci/docker][GitHub]]
 
 #+BEGIN_SRC sh
   # latest LTS
   docker pull jenkins/jenkins:lts
   # Volume jenkins_home is created and holds Jenkins data directory includes plugins and configuration for upgrade
-  # Refer to docker:volume
 
   docker run --name myjenkins -d -v jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
 
@@ -59099,6 +59163,8 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
 #+END_EXAMPLE
 
 ** image:yandex/clickhouse-server <<docker:clickhouse>>
+- https://hub.docker.com/r/yandex/clickhouse-server
+- Container exposes 8123 port for HTTP interface and 9000 port for native client
 #+begin_src docker-compose
   version: '3.5'
 
@@ -59112,17 +59178,32 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
       image: yandex/clickhouse-server
       ports:
 	- "8123:8123"
+      # user is optional, 101:101 is clickhouse:clickhouse, default is root
+      user: "101:101"
       volumes:
-	- ./clickhouse:/var/lib/clickhouse
-      # - ./clickhouse-log:/var/log/clickhouse-server # optional
+	# refer to init.sh
+	- ./setupfiles/clickhouse/:/docker-entrypoint-initdb.d
+	# mapping /var/lib/clickhouse does not work on Mac 2022-03-24
+	# - ./clickhouse:/var/lib/clickhouse
+	# - ./clickhouse-log:/var/log/clickhouse-server # optional
       networks:
 	- default
 #+end_src
 
 #+begin_src sh
-  docker-compose exec -it myclickhouse bash
+  docker exec -it myclickhouse bash
   # inside the container
   clickhouse-client
+#+end_src
+
+*** Init script files
+#+begin_src sh
+  #!/bin/bash
+  set -e
+  clickhouse-client -n <<-'EOSQL'
+  CREATE DATABASE IF NOT EXISTS malog;
+  CREATE TABLE IF NOT EXISTS malog.accesslog(...);
+  EOSQL
 #+end_src
 
 * Lando
