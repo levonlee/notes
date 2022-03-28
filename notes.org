@@ -16637,7 +16637,7 @@ https://wordpress.org/plugins/genesis-visual-hook-guide/
    - native post types :: refer to wp:api:plugin:action:manage_posts_{post_type}_custom_column
 
 ** Custom Cache <<php:custom cache>>
-Same page request custom cache
+Same page request custom cache, Single request cache
 
 #+BEGIN_SRC php
   function lili_request_cache($field, $set = null) {
@@ -51158,38 +51158,6 @@ https://github.com/magicmonty/bash-git-prompt
 
 ** zsh <<linux:zsh>>
 -  [[https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/][Startup files loading order (URL)]]
-*** Homebrew
-- https://rick.cogley.info/post/use-homebrew-zsh-instead-of-the-osx-default/
-#+begin_src sh
-  # Current Login Shell
-  # System Pref > Users & Groups > Unlock to make changes > right click on your name > Advanced Options > Login shell
-  # default is /bin/zsh that is also what comes with MacOS
-  dscl . -read /Users/$USER UserShell
-
-  # should be
-  # UserShell: /bin/zsh
-
-  brew install zsh
-
-  which zsh
-
-  # should be
-  # /opt/homebrew/bin/zsh -> ../Cellar/zsh/5.8_1/bin/zsh
-
-  # Change the current user to use this as the Login Shell
-  sudo dscl . -create /Users/$USER UserShell /opt/homebrew/bin/zsh
-
-  # restart Terminal, verify the new shell is /opt/homebrew/bin/zsh
-  dscl . -read /Users/$USER UserShell
-
-  # should be /opt/homebrew/bin/zsh
-  echo $SHELL
-
-  # should be -zsh
-  echo $0
-
-  # done!
-#+end_src
 
 *** Oh My Zsh
 - Basics
@@ -51230,6 +51198,14 @@ https://github.com/magicmonty/bash-git-prompt
   
 *** iTerm2
 #+begin_src sh
+  # install CLI developer tools for Xcode
+  xcode-select --install
+
+  # if an error, run this to reset `xcode-select`
+  # xcode-select -r
+
+  # install homebrew
+
   brew install --cask iterm2
 
   # download Color Presets
@@ -51247,7 +51223,21 @@ https://github.com/magicmonty/bash-git-prompt
 - Profiles
    - General
       - Working Directory :: Reuse previous session's directory
-	
+   - Advanced
+      - Visual bell flashes the whole screen, not just a bell icon
+
+**** Shortcuts
+- Tab
+   - new tab :: ~Cmd-t~
+   - close current tab :: ~Cmd-w~
+   - Switch to a tab left or right :: ~Cmd-S-[~ ~Cmd-S-]~
+   - Switch to a tab :: ~Cmd-1~, ~Cmd-2~
+- Pane
+   - new vertical pane :: ~Cmd-d~
+   - new horizontal pane :: ~Cmd-S-d~
+   - Close current pane :: ~C-d~ 
+   - Switch to a pane left or right :: ~Cmd-[~ ~Cmd-]~
+**** Terminal Replay :: ~⌥ ⌘ b~ and then use arrow keys and hold ⇧ plus arrows to replay faster
 *** .zshrc
 - get some ideas from `cat /etc/zshrc`
 
@@ -52078,7 +52068,7 @@ Otherwise, add user to group ~www-data~ and change default [[wp:file permissions
 This way new file will be the user not www-data but editing/uploading exising files will remain www-data:www-data
 wp:check file permissions
 
-*** Links <<linux:ln>>
+*** Links <<linux:ln>> <<linux:symlink>>
 #+BEGIN_SRC sh
   # Hard links
   # reference a file in the filesystem
@@ -52099,7 +52089,7 @@ wp:check file permissions
   # ls -al ~/xyz
   # lrwxr-xr-x
 
-  # Relative Path :: you are at ~/abc/xyz, you want to creat ~/abc/xyz/sym to point to existing folder ~/abc/efg/source
+  # Relative Path :: you are at ~/abc/xyz, you want to create ~/abc/xyz/sym to point to existing folder ~/abc/efg/source
   ln -s ../eft/source/ sym
 
   # remove the symlink, not the files of it
@@ -70375,6 +70365,9 @@ PHP APM (Application Performance Metrics)
 
 * Tools
 ** MacOS
+*** Versions
+- Catalina :: 10.15
+
 *** Escape key not working
 - Activity Monitor > Find Siri > Force Quit > Start again
 
@@ -70391,7 +70384,13 @@ PHP APM (Application Performance Metrics)
 **** Window
 - Command + ` :: switch in-app windows e.g. chrome normal and chrome incognito
 - Ctrl + Tab :: switch in-app tab e.g. chrome tabs
-
+- Close current window :: ~Cmd-w~
+- Close all windows of the app :: ~Cmd-M-w~
+- No shortcut for maximize current window
+- Switch to next window of the app :: ~Cmd-`~
+- Hide current app :: ~Cmd-h~ and bring it back ~Cmd-Tab~ 
+- Hide all windows of other apps :: ~Cmd-M-h~
+- Bring back minimized app :: ~Cmd-Tab~ to the app, before releasing ~Cmd~, press ~Alt~
 **** Input
 - Emoji :: Command + Control + Space
 - fn :: switch between Input Source
@@ -70403,12 +70402,52 @@ PHP APM (Application Performance Metrics)
 
 **** Finder
 - View hidden files :: Command + Shift + .
+- Permanent delete :: ~Cmd-M-Delete~
 
 *** Screenshot and Screen Recording ~⇧ ⌘ 5~
 - Recording
    - Stop :: ~⌃ ⌘ Esc~
    - Options :: turn on microphone 
+- Save and edit portion of screen :: ~Cmd-S-4~
+   - Copy portion of screen :: ~Cmd-C-S-4~
+- Save entire screen :: ~Cmd-S-3~
+   - Copy entire screen :: ~Cmd-C-S-3~
+ 
 *** Homebrew
+**** Install :: https://brew.sh/
+**** Install brew version of zsh
+- https://rick.cogley.info/post/use-homebrew-zsh-instead-of-the-osx-default/
+#+begin_src sh
+  # Current Login Shell
+  # System Pref > Users & Groups > Unlock to make changes > right click on your name > Advanced Options > Login shell
+  # default is /bin/zsh that is also what comes with MacOS
+  dscl . -read /Users/$USER UserShell
+
+  # should be
+  # UserShell: /bin/zsh
+
+  brew install zsh
+
+  which zsh
+
+  # should be
+  # /opt/homebrew/bin/zsh -> ../Cellar/zsh/5.8_1/bin/zsh
+
+  # Change the current user to use this as the Login Shell
+  sudo dscl . -create /Users/$USER UserShell /opt/homebrew/bin/zsh
+
+  # restart Terminal, verify the new shell is /opt/homebrew/bin/zsh
+  dscl . -read /Users/$USER UserShell
+
+  # should be /opt/homebrew/bin/zsh
+  echo $SHELL
+
+  # should be -zsh
+  echo $0
+
+  # done!
+#+end_src
+
 **** Basics
 #+begin_src sh
   # like sudo apt-get update, it also updates brew and cask
@@ -70501,6 +70540,82 @@ PHP APM (Application Performance Metrics)
    - window.screen.height :: 982
    - window.screen.devicePixelRatio :: 2 
 
+*** Terminal
+- ~open afile~, ~open adir~, ~open .~, ~open ..~ :: open in Finder
+- ~open -a TextEdit afile.txt~ :: open a file using an app
+- ~ls -al | open -f~ :: redirect stdout to TextEdit
+- ~cat a.tsv | open -fa Numbers~ :: redirect stdout to an app
+- Clipboard
+   - ~ls -la | pbcopy~, ~pbcopy < afile.txt~
+   - ~pbpaste > afile.txt~
+   - 4 different clipboards!
+     #+BEGIN_SRC sh
+       echo "first" | pbcopy -pboard general
+       echo "second" | pbcopy -pboard find
+
+       pbpast -pboard find
+     #+END_SRC
+- Screen capture
+  #+BEGIN_SRC sh
+    screencapture /path/to/screencapture.png
+
+    # interactive
+    screencapture -i /path/to/screencapture.png
+
+    # -m main monitor only. Default all monitors
+    # -t, format: png, pdf, jpg, tiff
+    # -C, show cursor
+    # -T, delay in seconds
+    # -P, open file with Preview
+  #+END_SRC
+   - ~Cmd-S-3~
+   - ~Cmd-S-4~ :: interactive
+- ~sudo shutdown~
+   - Options 
+      - ~h~ :: halt
+      - ~r~ :: reboot
+      - ~s~ :: sleep
+   - Time
+      - now :: ~sudo shutdown -h now~
+      - +minutes
+      - yymmddhhmm
+
+*** NFS <<macos:nfs>>
+- Give Full Disk Access to nfsd <<macos:full disk access>>
+   - System Preferences > Security & Privacy > Privacy > on the left ~Full Disk Access~, add another
+   - ~Cmd-S-g~ then type ~/sbin/nfsd~
+
+#+BEGIN_SRC sh
+  sudo nano /etc/exports
+
+  # where $U is `id -u`, $G is `id -g`
+
+  # Since Catalina, /Users are in another volume
+  # instead of doing this:
+  # /Users -alldirs -mapall=$U:$G localhost
+
+  # now insert the following
+  # /System/Volumes/Data -alldirs -mapall=$U:$G localhost
+
+  # more about /etc/exports file
+  # http://scottlab.ucsc.edu/xtal/wiki/index.php//etc/exports
+
+  sudo nano /etc/nfs.conf
+
+  # insert
+  # nfs.server.mount.require_resv_port = 0
+  # more about /etc/nfs.conf file
+  # http://scottlab.ucsc.edu/xtal/wiki/index.php//etc/nfs.conf
+
+  sudo nfsd restart
+#+END_SRC
+*** DNS <<macos:dns>>
+#+BEGIN_SRC sh
+  sudo nano /etc/hosts
+
+  # clear DNS cache
+  sudo killall -HUP mDNSResponder
+#+END_SRC
 ** PhpStorm <<toc:phpstorm>>
 Help > Default Keymap Reference
 
@@ -70521,7 +70636,18 @@ Help > Default Keymap Reference
      If not, set environment variable ~JAVA_HOME~ to ~C:\Program Files\Java\jdk1.8.0_101~ and restart ~PhpStorm64.exe~
    - Restart ~PhpStorm64.exe~ and open multiple projects to test RAM
    - Finally, edit the shortcut to use ~PhpStorm64.exe~
+- Open a file from command line
+   - MacOS
+      - Create =~/phpstorm=
+	#+begin_src sh
+	  #!/bin/sh
 
+	  open -na "PhpStorm.app" --args "$@"
+	#+end_src
+	#+begin_src sh
+	  chmod ~/phpstorm
+	  sudo ln -s ~/phpstorm /usr/local/bin/phpstorm
+	#+end_src
 *** Window
 - Next project window :: Command + Option + `
 - Hide all windows :: ~⇧ + ⌘ + F12~
@@ -73216,174 +73342,6 @@ Put Reflexil AIO (all-in-one version) dll to ILSpy.exe directory and run ILSpy.e
 Put Reflexil AIO dll to Reflector's Addins folder C:\Program Files (x86)\Red Gate\.NET Reflector\Desktop 9.0\Addins. Tools > Add-Ins, add the dll.
 
 After edit, right click on the Object Browser > Reflexil > Save as
-
-** macOS
-*** Versions
-- Catalina :: 10.15
-
-*** Add a user to sudoers file [[linux:user:sudoer][linux:user:sudoer]]
-*** Homebrew <<macos:homebrew>>
-- https://brew.sh/
-
-#+BEGIN_SRC sh
-  # install homebrew
-
-  # Install on Catalina
-  # Switch to an Administrator or who can modify /usr/local. The dir belongs to root:wheel
-  # su liliadmin
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-
-  # exit to normal user
-
-  brew -v
-
-  # to uninstall homebrew
-  # https://github.com/homebrew/install#uninstall-homebrew
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh)"
-
-  # search and find version before installing a piece
-  brew search zsh
-  brew info zsh
-
-  brew search iterm2
-  brew cask info iterm2
-  # iterm2 needs to be installed with cask
-#+END_SRC
-
-*** iTerm2
-**** Install
-#+BEGIN_SRC sh
-  # install CLI developer tools for Xcode
-  xcode-select --install
-
-  # if an error, run this to reset `xcode-select`
-  # xcode-select -r
-
-  # install homebrew
-
-  # install iterm2
-  brew cask install iterm2
-#+END_SRC
-
-**** Config
-+ Profiles
-   - Terminal
-      - Notifications :: Silence bell, Flash visual bell
-
-**** Shortcuts
-- Tab
-   - new tab :: ~Cmd-t~
-   - close current tab :: ~Cmd-w~
-   - Switch to a tab left or right :: ~Cmd-S-[~ ~Cmd-S-]~
-   - Switch to a tab :: ~Cmd-1~, ~Cmd-2~
-- Pane
-   - new vertical pane :: ~Cmd-d~
-   - new horizontal pane :: ~Cmd-S-d~
-   - Close current pane :: ~C-d~ 
-   - Switch to a pane left or right :: ~Cmd-[~ ~Cmd-]~
-**** Terminal Replay :: ~⌥ ⌘ b~ and then use arrow keys and hold ⇧ plus arrows to replay faster
-*** Terminal
-- ~open afile~, ~open adir~, ~open .~, ~open ..~ :: open in Finder
-- ~open -a TextEdit afile.txt~ :: open a file using an app
-- ~ls -al | open -f~ :: redirect stdout to TextEdit
-- ~cat a.tsv | open -fa Numbers~ :: redirect stdout to an app
-- Clipboard
-   - ~ls -la | pbcopy~, ~pbcopy < afile.txt~
-   - ~pbpaste > afile.txt~
-   - 4 different clipboards!
-     #+BEGIN_SRC sh
-       echo "first" | pbcopy -pboard general
-       echo "second" | pbcopy -pboard find
-
-       pbpast -pboard find
-     #+END_SRC
-- Screen capture
-  #+BEGIN_SRC sh
-    screencapture /path/to/screencapture.png
-
-    # interactive
-    screencapture -i /path/to/screencapture.png
-
-    # -m main monitor only. Default all monitors
-    # -t, format: png, pdf, jpg, tiff
-    # -C, show cursor
-    # -T, delay in seconds
-    # -P, open file with Preview
-  #+END_SRC
-   - ~Cmd-S-3~
-   - ~Cmd-S-4~ :: interactive
-- ~sudo shutdown~
-   - Options 
-      - ~h~ :: halt
-      - ~r~ :: reboot
-      - ~s~ :: sleep
-   - Time
-      - now :: ~sudo shutdown -h now~
-      - +minutes
-      - yymmddhhmm
-
-*** Font <<macos:font>>
-#+BEGIN_SRC sh
-  brew tap homebrew/cask-fonts
-  brew cask install font-source-code-pro
-#+END_SRC
-
-*** NFS <<macos:nfs>>
-- Give Full Disk Access to nfsd <<macos:full disk access>>
-   - System Preferences > Security & Privacy > Privacy > on the left ~Full Disk Access~, add another
-   - ~Cmd-S-g~ then type ~/sbin/nfsd~
-
-#+BEGIN_SRC sh
-  sudo nano /etc/exports
-
-  # where $U is `id -u`, $G is `id -g`
-
-  # Since Catalina, /Users are in another volume
-  # instead of doing this:
-  # /Users -alldirs -mapall=$U:$G localhost
-
-  # now insert the following
-  # /System/Volumes/Data -alldirs -mapall=$U:$G localhost
-
-  # more about /etc/exports file
-  # http://scottlab.ucsc.edu/xtal/wiki/index.php//etc/exports
-
-  sudo nano /etc/nfs.conf
-
-  # insert
-  # nfs.server.mount.require_resv_port = 0
-  # more about /etc/nfs.conf file
-  # http://scottlab.ucsc.edu/xtal/wiki/index.php//etc/nfs.conf
-
-  sudo nfsd restart
-#+END_SRC
-
-*** DNS <<macos:dns>>
-#+BEGIN_SRC sh
-  sudo nano /etc/hosts
-
-  # clear DNS cache
-  sudo killall -HUP mDNSResponder
-#+END_SRC
-
-*** Shortcuts
-- Windows Management
-   - Close current window :: ~Cmd-w~
-   - Close all windows of the app :: ~Cmd-M-w~
-   - No shortcut for maximize current window
-   - Switch to next window of the app :: ~Cmd-`~
-   - Hide current app :: ~Cmd-h~ and bring it back ~Cmd-Tab~ 
-   - Hide all windows of other apps :: ~Cmd-M-h~
-   - Bring back minimized app :: ~Cmd-Tab~ to the app, before releasing ~Cmd~, press ~Alt~
-- Screenshots
-   - Save and edit portion of screen :: ~Cmd-S-4~
-      - Copy portion of screen :: ~Cmd-C-S-4~
-   - Save entire screen :: ~Cmd-S-3~
-      - Copy entire screen :: ~Cmd-C-S-3~ 
-- Finder
-   - Permanent delete :: ~Cmd-M-Delete~
-- Use all F1, F2, etc. keys as standard function keys
-   - System Preferences > Keyboard
 
 ** Project Management
 *** Jira
