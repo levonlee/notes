@@ -65646,7 +65646,7 @@ In this case, you can:
 | PHP response with ~Set-Cookie:~ Cache-varying ~STYXKEY[a-zA-Z0-9_-]~   | cache a version for each cache-varying cookie | cache a version for each cache-varying cookie |
 |------------------------------------------------------------------------+-----------------------------------------------+-----------------------------------------------|
 
-** Object Cache - Redis <<<pantheon:redis>>>
+** Object Cache - Redis <<pantheon:redis>>
 - Enable Redis in Pantheon Dashboard Settings > Add Ons > Add
 - For WP, no more is needed because the WP Redis plugin is loaded via drop-in file
 - Install Redis module https://www.drupal.org/project/redis or run terminus to install
@@ -65704,6 +65704,7 @@ Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
 #+END_SRC
 
 - Install Redis locally https://redis.io/download
+   - Refer to [[cache:redis][cache:redis]]
 - Use Redis Connection Info from Dashboard
 #+BEGIN_SRC sh
   redis> keys *
@@ -65739,65 +65740,6 @@ Edit [[https://pantheon.io/docs/redis/][sites/default/settings.php]]
   # Number of keys in cache
   redis> DBSIZE
   :0
-#+END_SRC
-
-*** Install Redis on Ubuntu
-- Install PECL https://github.com/phpredis/phpredis
-- https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04
-- ~/etc/redis/redis.conf~
-   - After changing, ~sudo systemctl restart redis~
-   - By default, Redis is only accessible from localhost. Without binding, Redis can allow connections from anywhere
-      - ~bind 127.0.0.1 ::1~
-      - To check ~sudo netstat -lnp | grep redis~
-   - Require password
-      - ~requirepass abcXXX~
-      - In command line to enter password ~auth abcXXX~
-   - Restrict commands
-      - All Redis commands https://redis.io/commands
-      - ~rename-command FLUSHDB ""~
-      - ~rename-command SHUTDOWN SHUTDOWN_MYOWNSUFFIX~
-   - Unix socket
-      - default ~unixsocket /var/run/redis/redis-server.sock~
-   - Log file
-      - default ~logfile /var/log/redis/redis-server.log~
-#+BEGIN_SRC sh
-  sudo apt install redis-server
-
-  sudo nano /etc/redis/redis.conf
-  # change `supervised` value frome `no` to `systemd`
-
-  sudo systemctl restart redis.service
-
-  # checkd status
-  sudo systemctl status redis
-
-  # disable auto start when boot
-  # sudo systemctl disable redis
-
-  sudo systemctl start redis
-  sudo systemctl status redis
-  sudo systemctl restart redis
-
-  # region For Ubuntu 14.04
-  #enable Redis to start at boot
-  # output :: Created symlink from /etc/systemd/system/multi-user.target.wants/redis.service to /etc/systemd/system/redis.service.
-  # sudo systemctl enable redis
-  # endregion
-
-  # connect to redis
-  redis-cli
-
-  ping
-  # output: PONG
-
-  set test "It's working!"
-  # output: OK
-
-  get test
-  # output: "It's working!"
-
-  # exit CLI
-  exit
 #+END_SRC
 
 ** Clear Cache
@@ -65867,6 +65809,69 @@ Use ~terminus env:clear-cache~ to debug clear cache failure.
 	- type: webphp
 	  description: Someone is clearing the cache again
 	  script: private/scripts/slack_notification.php
+#+END_SRC
+
+* Redis <<cache:redis>>
+- Port 6379
+- Refer to [[pantheon:redis][pantheon:redis]]
+  
+** Install on Ubuntu
+- Install PECL https://github.com/phpredis/phpredis
+- https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04
+- ~/etc/redis/redis.conf~
+   - After changing, ~sudo systemctl restart redis~
+   - By default, Redis is only accessible from localhost. Without binding, Redis can allow connections from anywhere
+      - ~bind 127.0.0.1 ::1~
+      - To check ~sudo netstat -lnp | grep redis~
+   - Require password
+      - ~requirepass abcXXX~
+      - In command line to enter password ~auth abcXXX~
+   - Restrict commands
+      - All Redis commands https://redis.io/commands
+      - ~rename-command FLUSHDB ""~
+      - ~rename-command SHUTDOWN SHUTDOWN_MYOWNSUFFIX~
+   - Unix socket
+      - default ~unixsocket /var/run/redis/redis-server.sock~
+   - Log file
+      - default ~logfile /var/log/redis/redis-server.log~
+#+BEGIN_SRC sh
+  sudo apt install redis-server
+
+  sudo nano /etc/redis/redis.conf
+  # change `supervised` value frome `no` to `systemd`
+
+  sudo systemctl restart redis.service
+
+  # checkd status
+  sudo systemctl status redis
+
+  # disable auto start when boot
+  # sudo systemctl disable redis
+
+  sudo systemctl start redis
+  sudo systemctl status redis
+  sudo systemctl restart redis
+
+  # region For Ubuntu 14.04
+  #enable Redis to start at boot
+  # output :: Created symlink from /etc/systemd/system/multi-user.target.wants/redis.service to /etc/systemd/system/redis.service.
+  # sudo systemctl enable redis
+  # endregion
+
+  # connect to redis
+  redis-cli
+
+  ping
+  # output: PONG
+
+  set test "It's working!"
+  # output: OK
+
+  get test
+  # output: "It's working!"
+
+  # exit CLI
+  exit
 #+END_SRC
 
 * AWS
