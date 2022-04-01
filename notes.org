@@ -53889,7 +53889,14 @@ Then you delete ~sudo ufw delete allow 22~
   #+END_SRC
 - [[macos:font][macos:font]]
 
-** Timezone, NTP <<<linux:timezone>>>
+** Timezone, NTP <<linux:timezone>>
+- Get current timezone
+  #+begin_src sh
+    date
+
+    # show alphabetic timezone and numeric timezone
+    date +"%Z %z"
+  #+end_src
 - Set timezone first :: ~sudo dpkg-reconfigure tzdata~
 - Make sure Network Time Protocol daemon (NTP) is installed ~which ntpd~
    - Install ~sudo apt-get update~ ~sudo apt-get install ntp~
@@ -53899,12 +53906,12 @@ Then you delete ~sudo ufw delete allow 22~
        sudo ntpd -gq
        sudo service ntp start
      #+END_SRC
-- Port 123 has to be open (but I think the default ufw setting is ok)
-- For Debian/Ubuntu, ~/etc/timezone~ file stores the timezone. Default is ~Etc/UTC~
-- All timezones are stored in ~/usr/share/zoneinfo/$TZ~
-- For Toronto, it's ~/usr/share/zoneinfo/America/Toronto~ file but it's a link to Montreal file
-- Make this link to ~/etc/localtime~ and then change the timezone
-- Refer to docker:timezone
+   - Port 123 has to be open (but I think the default ufw setting is ok)
+- For Debian/Ubuntu
+   - ~cat /etc/timezone~ :: file stores the timezone. Default is ~Etc/UTC~
+   - All timezones are stored in ~/usr/share/zoneinfo/$TZ~
+      - Toronto is ~/usr/share/zoneinfo/America/Toronto~ file but it's a link to Montreal file
+- Refer to [[docker:timezone][docker:timezone]] for changing timezone
 
 ** Hardware
 PCI devices: =lspci=
@@ -56157,7 +56164,7 @@ TS: Cannot connect to "Your Connection Name" No such file or directory. Verify y
 - linux:ssh:disallow_root :: Disallow SSH in as root
 - [[linux:sudo:nopassword][linux:sudo:nopassword]] :: require no password for non-root users with sudo privilige/group
 - linux:firewall :: configure firewall, open ports
-- linux:timezone :: setup timezone and sync time
+- [[linux:timezone][linux:timezone]] :: setup timezone and sync time
 
 * Domain Server, DNS Server, SSL/https
 Refer to linux:dns
@@ -66603,13 +66610,27 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 - Both are synonyms for TINYINT(1). Refer to [[mysql:tinyint][mysql:tinyint]]
 
 **** Datetime <<<mysql:datatype:datetime>>>
+- Get global and sessiond timezones
+  #+begin_src sql
+    SELECT @@GLOBAL.time_zone, @@SESSION.time_zone;
+
+    -- List of all timezones
+    SELECT * FROM mysql.time_zone_name;
+  #+end_src
+  If it's ~SYSTEM~, refer to [[linux:timezone][linux:timezone]]
 - ~TIME~ :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
-- ~FROM_UNIXTIME(intTime)~ :: e.g. ~2019-07-12 01:02:03~
+- ~FROM_UNIXTIME(intTime)~ :: return string e.g. ~2019-07-12 01:02:03~ in session timezone
 - ~NOW([fsp])~ :: returns a string ~YYYY-MM-DD hh:mm:ss~ or numeric ~YYYYMMDDhhmmss~ depending on the context
-   - fsp argument :: a fractional seconds precision from 0 to 6 
+   - fsp argument :: a fractional seconds precision from 0 to 6
+   - In session timezone 
 - Date comparison
    - 1 Year ago :: ~post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)~
-
+- ~UNIX_TIMESTAMP([date])~ :: return integer. Convert the string of time in session timezone to UTC integer
+   - date :: maybe a
+      - DATE
+      - DATETIME
+      - TIMESTAMP string, see ~NOW()~
+      - a number in YYMMDD, YYMMDDhhmmss, YYYYMMDD, or YYYYMMDDhhmmss format 
 #+BEGIN_SRC sql
   -- Custom datetime
   TIMESTAMP('2003-12-31')
@@ -66624,6 +66645,18 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   -- default date format
   DATE_FORMAT(FROM_UNIXTIME(intTime),'%Y-%m-%d %H:%i:%s')
   UNIX_TIMESTAMP(NOW()) -- returns integer
+
+  -- both using timezone name, requires MySQL to support the timezone name
+  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', 'America/Toronto', 'UTC'));
+
+  -- one using timezone name, requires MySQL to support the timezone name
+  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', 'UTC'));
+
+  -- Guaranteed to work
+  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', @@SESSION.time_zone));
+  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', '+00:00'));
+  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', 'SYSTEM'));
+
   SELECT * FROM a WHERE aUnixTimeColumn > UNIX_TIMESTAMP(NOW() - INTERVAL 24 HOUR) -- last 24 hours
 #+END_SRC
 
@@ -71425,9 +71458,11 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
    - Variable will be set under ~(custom-set-variables~ in ~.emacs~
 - visual-line-mode :: toggle <<emacs:m-x:visual-line-mode>>
 - replace tab with whitespaces :: ~M-x tabify~ ~M-x untabify~
+- Toggle minor mode :: ~M-x debug-mode~ 
   
 *** Basics, Help
 - Help :: ~C-h~
+   - minor / major modes being used :: ~C-h m~
    - Exit Help buffer :: ~C-x 1~
    - See all help options :: ~C-h ?~
    - Find shortcut by command ~where-is~ :: ~C-h w~
@@ -71505,15 +71540,13 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - Split vertically :: ~C-x 3~
 - Move to other window :: ~C-x o~
 
-*** Region, selection
+*** Region, Selection, Copy & Paste
 - ~C-space~ :: start region, then move cursor
 - ~C-x h~ :: copy all in buffer, select all
 - ~M-@~ :: mark-word. select next word. Can repeat
-- ~M-h~ :: mark-paragraph
+?- ~M-h~ :: mark-paragraph
 - ~C-M-h~ :: mark-defun. select a function
 - ~C-g~ :: quit selection
-
-*** Copy & Paste
 - C-w :: cut
 - M-w :: copy without cut (copy to kill-ring, shared with other buffers)
 - C-y :: yank (paste)
