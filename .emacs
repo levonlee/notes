@@ -50,14 +50,15 @@ There are two things you can do about this warning:
  '(auto-save-visited-mode t)
  '(column-number-mode t)
  '(custom-enabled-themes '(misterioso))
+ '(gnutls-algorithm-priority "normal:-vers-tls1.3")
  '(org-adapt-indentation nil)
  '(org-confirm-babel-evaluate nil)
  '(org-export-with-sub-superscripts '{})
  '(org-goto-interface 'outline-path-completion)
  '(org-list-allow-alphabetical t)
- '(gnutls-algorithm-priority "normal:-vers-tls1.3")
  '(package-selected-packages
-   '(docker-compose-mode graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode)))
+   '(docker-compose-mode graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
+ '(python-indent-guess-indent-offset nil))
 
 (define-derived-mode web-php-mode web-mode "WebPhp"
   "Major mode for editing web php templates."
