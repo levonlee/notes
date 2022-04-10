@@ -1115,11 +1115,6 @@ Here's how to remove any 4 byte character:
 #+END_SRC
 
 ** Array <<php:array>>
-*** Array Shorthand
-#+BEGIN_SRC php
-  $i = []; // Since PHP 5.4
-#+END_SRC
-
 *** list <<php:list>>
 #+BEGIN_SRC php
   $abNumeric = array('abc', 'xyz');
@@ -1341,7 +1336,7 @@ Here's how to remove any 4 byte character:
 - Loose comparison unless $strict is set
 - $strict is true :: also check the types of the needle in the haystack
 
-*** Search value and return Key <<php:array:search case-insensitive>>
+*** Search by a value and return keys <<php:array:search case-insensitive>>
 - Case insensitive search
   #+BEGIN_SRC php
     $a= array(
@@ -1356,6 +1351,81 @@ Here's how to remove any 4 byte character:
     // empty array if no match
   #+END_SRC
 - Use [[php:in_array]] for case sensitive search
+
+*** Search by keys and return values in order
+#+BEGIN_SRC php
+  function arrayFilterByKeysInOrder($array, $keys, $default = null, $valuesOnly = true) {
+	  $allKeys = array_keys($array);
+	  $array2 = [];
+	  foreach ($keys as $k) {
+		  $r = (in_array($k, $allKeys)) ? $array[$k] : $default;
+		  if ($valuesOnly) {
+			  $array2[] = $r;
+		  }
+		  else {
+			  $array2[$k] = $r;
+		  }
+	  }
+
+	  return $array2;
+  }
+  $a = [
+	  'a' => 123,
+	  'b' => 'abc',
+	  'c' => 321,
+  ];
+  var_dump(arrayFilterByKeysInOrder($a, ['c', 'abc', 'a']));
+  // ['c' => 321, 'abc' => null, 'a' => 123]
+#+END_SRC
+
+*** Search by value and return the first key by value ~array_search~ <<php:array_search>>
+#+BEGIN_SRC php
+  array_search ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : mixed
+#+END_SRC
+- return :: the first key that has the value or false
+- Case-insensitve 
+- Examples
+   - Search value in a multidimensional array
+     #+BEGIN_SRC php
+       $db = array(
+	       array('uid' => '100'),
+	       array('uid' => 100, 'optional' => 123),
+       );
+
+       // PHP 5.5+ to support array_column
+       var_dump(array_search('100', array_column($db, 'uid')) === 0);
+       var_dump(array_search(100, array_column($db, 'uid')) === 0);
+       // every item in $db has to have the column/array key as uid, otherwise, array_search returns the index of the first row that does not have the column/array key
+       var_dump(array_search(123, array_column($db, 'optional')) === 0);
+
+       // PHP < 5.5
+       var_dump(array_search('100', array_map(function ($v) {
+		       return $v['uid'];
+	       }, $db)) === 0);
+       var_dump(array_search(100, array_map(function ($v) {
+		       return $v['uid'];
+	       }, $db)) === 0);
+       var_dump(array_search(123, array_map(function ($v) {
+		       return $v['optional'];
+	       }, $db)) === 1);
+     #+END_SRC
+   - ~$key = array_search('100', array_column($userdb, 'uid'));~ Since PHP 5.5
+      - every item in $userdb has to have the column/array key as uid, otherwise, array_search returns the index of the first row that does not have the column/array key
+
+*** Delete by a value
+- Case-sensitive
+#+begin_src php
+  foreach (array_keys($items, 'search this value', true) as $key) {
+	  // true is case-insensitive
+	  unset($items[$key]);
+  }
+
+  // Comparison is done by `(string) $elem1 === (string) $elem2`
+  $items = array_diff($items, ['search this value']);
+
+  // PHP 7.4
+  $items = array_filter($items, fn ($m) => $m != 'search this value');
+#+end_src
 
 *** Change Case for All Keys <<php:array_change_key_case>>
 #+BEGIN_SRC php
@@ -1582,32 +1652,6 @@ Associative arrays
   var_export(array_keys_all_exist(array('a', 'c'), $a) === false);
 
   function array_key_exists($key, array $search) bool	
-#+END_SRC
-
-*** Get values by keys in order
-#+BEGIN_SRC php
-  function arrayFilterByKeysInOrder($array, $keys, $default = null, $valuesOnly = true) {
-	  $allKeys = array_keys($array);
-	  $array2 = [];
-	  foreach ($keys as $k) {
-		  $r = (in_array($k, $allKeys)) ? $array[$k] : $default;
-		  if ($valuesOnly) {
-			  $array2[] = $r;
-		  }
-		  else {
-			  $array2[$k] = $r;
-		  }
-	  }
-
-	  return $array2;
-  }
-  $a = [
-	  'a' => 123,
-	  'b' => 'abc',
-	  'c' => 321,
-  ];
-  var_dump(arrayFilterByKeysInOrder($a, ['c', 'abc', 'a']));
-  // ['c' => 321, 'abc' => null, 'a' => 123]
 #+END_SRC
 
 *** Change values of all elements <<php:array_map>>
@@ -2048,24 +2092,6 @@ Associative arrays
 	    return isset($r) ? $r : $default;
     }
   #+END_SRC
-
-*** ~array_search~ get key by value <<php:array_search>>
-#+BEGIN_SRC php
-  array_search ( mixed $needle , array $haystack [, bool $strict = FALSE ] ) : mixed
-#+END_SRC
-- return :: the first key that has the value
-- Examples
-   - Search value in a multidimensional array
-     #+BEGIN_SRC php
-       // PHP 5.5+ to support array_column
-       $key = array_search('100', array_column($userdb, 'uid'));
-
-       // PHP < 5.5
-       $key = array_search('100', array_map(function($v) { return $v['id']; });
-       array_map(function($v) { return $v['id']; }
-     #+END_SRC
-   - ~$key = array_search('100', array_column($userdb, 'uid'));~ Since PHP 5.5
-      - every item in $userdb has to have the column/array key as uid, otherwise, array_search returns the index of the first row that does not have the column/array key
 
 *** ~array_sum()~
 #+BEGIN_SRC php
@@ -51166,6 +51192,27 @@ https://github.com/magicmonty/bash-git-prompt
   EOF
 #+END_SRC
 
+*** Options <<bash:options>>
+#+begin_src sh
+  # List of all options and their on/off status
+  shopt
+
+  # List of all enabled options
+  shopt -s
+
+  # List of all unset/disabled options
+  shopt -u
+
+  # Disable an enabled option
+  shopt -s histappend
+
+  # Disable all options
+  shopt -u
+
+  # Eanble a disabled option
+  shopt -u cmdhist
+#+end_src
+
 ** zsh <<linux:zsh>>
 -  [[https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/][Startup files loading order (URL)]]
 
@@ -51263,6 +51310,19 @@ https://github.com/magicmonty/bash-git-prompt
   PROMPT+=' %{$fg[cyan]%}%~%{$reset_color%} $(git_prompt_info)'
 
   source ~/.zshrc
+#+end_src
+
+*** .zsh_history
+- Delete a command from history
+  
+*** Options <<zsh:options>>
+- Refer to [[bash:options][bash:options]]
+#+begin_src sh
+  # All enabled options
+  setopt
+
+  # All disabled options
+  unsetopt
 #+end_src
 
 ** User Management, Superuser, sudo
