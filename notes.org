@@ -67909,14 +67909,18 @@ Schema
 - https://www.mysqltutorial.org/tryit/
   
 *** Dump, Restore <<mysql:mysqldump>>
+- [[https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html][mysqldump doc]]
 #+BEGIN_SRC sh
   mysqldump -u user -p database_name > database_name_backup.sql
 
-  # prevents table being locked
-  mysqldump --single-transaction --routines --triggers --events -u user -p database_name > backup.sql
+  # prevents table from being locked
+  mysqldump --single-transaction --routines --triggers --events -uuser -p database_name > backup.sql
 
   # Assuming there's enough disk space
-  mysqldump --single-transaction --routines -u user -p database_name > backup.sql && gzip backup.sql
+  mysqldump --single-transaction --routines --triggers --events -uuser -p database_name > backup.sql && gzip backup.sql
+
+  # Remove encryption
+  sed -i "s/ENCRYPTION='Y'//g" backup.sql
 
   # Not enough disk space then use pipe
   mysqldump --single-transaction --routines -u user -p database_name > backup.sql | gzip backup.sql
@@ -67935,7 +67939,8 @@ Schema
 
   # dump a table
   mysqldump db_name table_name > table_name.sql
-  # restor a table
+
+  # restore a table
   mysql -u username -p db_name < /path/to/table_name.sql
 #+END_SRC
 
@@ -68012,6 +68017,31 @@ mysql -e "SELECT * FROM a INTO OUTFILE '/var/lib/mysql-files/a.txt' FIELDS TERMI
     mysql -uroot -pABC databasename < script.sql > /tmp/lili.tsv
   #+END_SRC
 
+**** Release space
+- https://stackoverflow.com/a/3456885/2196360
+#+begin_src sh
+  # See what tables without row data are dumped
+  mysqldump --single-transaction --routines --triggers --events -uroot -p --all-databases > backup.sql
+
+  # --all-databases, -A :: `mysql` DB is exported but not `performance_schema`
+  # --databases, -B :: `-B mydb1 mydb2`
+
+  # Don't export `mysql` nor `performance_schema` DB's
+  mysqldump --single-transaction --routines --triggers --events -uroot -p -B mydb1 mydb2 > backup.sql
+
+  sed -i "s/ENCRYPTION='Y'//g" backup.sql
+
+  mysqladmin -uroot -p drop mydb1 drop mydb2
+
+  mysqladmin shutdown
+  rm /var/lib/mysql/ibdata1
+  rm /var/lib/mysql/ib_logfile*
+  service mysql start
+
+  mysqladmin -uroot -p create database_name
+
+  mysql -uroot -p database_name < backup.sql
+#+end_src
 *** Binary Log
 https://dev.mysql.com/doc/internals/en/binary-log-overview.html
 
