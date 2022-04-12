@@ -66528,6 +66528,18 @@ MySQL >= 5.1.12
 - ~-N, --skip-column-names~ :: don't print the row of columns
 - ~-B, --batch~ :: batch mode. Don't separate columns and values using tab and |
   
+** SSH Tunneling
+#+begin_src sh
+  # forward local port 9001 to mysshhost port 3306, login to the mysshhost shell
+  ssh -L 9001:localhost:3306 mysshhost
+
+  # In anothe shell
+  mysql -uroot -p -P 9001 --protocol=tcp mydb
+
+  # or use -h, but it cannot be localhost!
+  mysql -uroot -p -P 9001 -h 127.0.0.1 mydb
+#+end_src
+
 *** Install
 #+BEGIN_SRC sh
   # Ubuntu
@@ -68033,15 +68045,18 @@ mysql -e "SELECT * FROM a INTO OUTFILE '/var/lib/mysql-files/a.txt' FIELDS TERMI
 
   mysqladmin -uroot -p drop mydb1 drop mydb2
 
+  mysql -uroot -p -e 'SET GLOBAL innodb_fast_shutdown = 0'
+
   mysqladmin shutdown
-  rm /var/lib/mysql/ibdata1
-  rm /var/lib/mysql/ib_logfile*
+  rm -f /var/lib/mysql/ib{data1,_logfile*}
   service mysql start
 
-  mysqladmin -uroot -p create database_name
+  mysqladmin -uroot -p create mydb1
+  mysqladmin -uroot -p create mydb2
 
-  mysql -uroot -p database_name < backup.sql
+  mysql -uroot -p < backup.sql
 #+end_src
+
 *** Binary Log
 https://dev.mysql.com/doc/internals/en/binary-log-overview.html
 
