@@ -51309,7 +51309,9 @@ https://github.com/magicmonty/bash-git-prompt
    - new horizontal pane :: ~Cmd-S-d~
    - Close current pane :: ~C-d~ 
    - Switch to a pane left or right :: ~Cmd-[~ ~Cmd-]~
+
 **** Terminal Replay :: ~⌥ ⌘ b~ and then use arrow keys and hold ⇧ plus arrows to replay faster
+**** Show execution time ~⇧ ⌘ e~
 *** .zshrc
 - get some ideas from `cat /etc/zshrc`
 
@@ -67930,23 +67932,23 @@ Schema
 #+BEGIN_SRC sh
   mysqldump -u user -p database_name > database_name_backup.sql
 
-  # prevents table from being locked
-  mysqldump --single-transaction --routines --triggers --events -uuser -p database_name > backup.sql
+  # `--single-transaction` prevents table from being locked
+  mysqldump --single-transaction --quick --max_allowed_packet=512M --compress --routines --triggers --events -uuser -p database_name > backup.sql
 
   # Assuming there's enough disk space
-  mysqldump --single-transaction --routines --triggers --events -uuser -p database_name > backup.sql && gzip backup.sql
+  mysqldump -uuser -p database_name > backup.sql && gzip backup.sql
 
   # Remove encryption
   sed -i "s/ENCRYPTION='Y'//g" backup.sql
 
   # Not enough disk space then use pipe
-  mysqldump --single-transaction --routines -u user -p database_name | gzip > backup.sql.gz
+  mysqldump -uroot -p database_name | gzip > backup.sql.gz
 
   # dump specific tables
-  mysqldump -u user -p database_name t1 t2 t3 > a.sql
+  mysqldump -uroot -p database_name t1 t2 t3 > a.sql
 
   # don't dump some tables
-  mysqldump -u user -p --ignore-table=database_name.tableNameToIgnore database_name
+  mysqldump -uroot -p --ignore-table=database_name.tableNameToIgnore database_name
 
   # Use config file to avoid typing password
   mysqldump --defaults-extra-file=/path/to/.mydb.cnf -u user db_name > db_name_bk.sql
@@ -67957,7 +67959,7 @@ Schema
   # dump a table
   mysqldump db_name table_name > table_name.sql
 
-  # restore a table
+  # restore one or more tables
   mysql -u username -p db_name < /path/to/table_name.sql
 #+END_SRC
 
@@ -67981,17 +67983,6 @@ Dump a remote database
 #+BEGIN_SRC bash
   mysqldump -P3306 -h192.168.20.151 -u root -p databasename > c:/my.sql
 #+END_SRC
-
-Remove encryption
-#+begin_src sql
-  mysqldump --triggers --routines --events -h source.com -uroot -p mydbname --ignore-table=mydbname.tablenametoignore  > dump.sql
-  echo "finished exporting db\n"
-  sed -i "s/ENCRYPTION='Y'//g" dump.sql
-  echo "finished removing encryptions\n"
-  gzip dump.sql
-  echo "finished compressing the export"
-  echo "Done, your file name is dump.sql.gz"
-#+end_src
 
 **** Dump table definition only
 #+BEGIN_SRC sh
