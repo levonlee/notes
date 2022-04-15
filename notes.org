@@ -67998,6 +67998,109 @@ Dump a remote database
   mysqldump -P3306 -h192.168.20.151 -u root -p databasename > c:/my.sql
 #+END_SRC
 
+**** Dump data
+#+begin_src sql
+  -- MySQL dump 10.13  Distrib 5.7.37, for Linux (x86_64)
+  --
+  -- Host: localhost    Database: loanstudio
+  -- ------------------------------------------------------
+  -- Server version	5.7.37
+
+  /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+  /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+  /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+  /*!40101 SET NAMES utf8 */;
+  /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+  /*!40103 SET TIME_ZONE='+00:00' */;
+  /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+  /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+  /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+  /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+  --
+  -- Table structure for table `abc`
+  --
+
+  DROP TABLE IF EXISTS `abc`;
+  /*!40101 SET @saved_cs_client     = @@character_set_client */;
+  /*!40101 SET character_set_client = utf8 */;
+  CREATE TABLE `abc` (
+  -- some columns
+  ) ENGINE=InnoDB AUTO_INCREMENT=341 DEFAULT CHARSET=latin1;
+  /*!40101 SET character_set_client = @saved_cs_client */;
+
+  --
+  -- Dumping data for table `lawyerintegrationbills`
+  --
+
+  LOCK TABLES `abc` WRITE;
+  /*!40000 ALTER TABLE `abc` DISABLE KEYS */;
+  INSERT INTO `abc` VALUES (
+  -- row
+  )
+  -- rows
+  -- ,()
+  ;
+  /*!40000 ALTER TABLE `abc` ENABLE KEYS */;
+  UNLOCK TABLES;
+
+  -- repeat for tables
+
+  --
+  -- Dumping events for database 'mydb'
+  --
+
+  /*!50003 SET sql_mode              = @saved_sql_mode */ ;
+  /*!50003 SET character_set_client  = @saved_cs_client */ ;
+  /*!50003 SET character_set_results = @saved_cs_results */ ;
+  /*!50003 SET collation_connection  = @saved_col_connection */ ;
+  /*!50003 DROP FUNCTION IF EXISTS `myfuncs` */;
+  /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+  /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+  /*!50003 SET @saved_col_connection = @@collation_connection */ ;
+  /*!50003 SET character_set_client  = latin1 */ ;
+  /*!50003 SET character_set_results = latin1 */ ;
+  /*!50003 SET collation_connection  = latin1_swedish_ci */ ;
+  /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+  /*!50003 SET sql_mode              = 'NO_ENGINE_SUBSTITUTION' */ ;
+  DELIMITER ;;
+  CREATE DEFINER=`root`@`localhost` FUNCTION `myfunceffstatus`(date_ bigint, status_ int, intadj_ bigint, dischargedate_ bigint, effdate_ bigint) RETURNS int(11)
+      DETERMINISTIC
+  begin
+
+
+  if status_=0 or status_=3 then return status_; end if;
+
+  if status_=1 then
+	  if date_<intadj_ then return 0; end if;
+	  if date_>effdate_ then return 4; end if;
+	  return 1;
+  end if;
+
+  if status_=2 then
+	  if date_ <intadj_ then return 0; end if;
+	  if date_<dischargedate_ then return 1; end if;
+	  return 2;
+  end if;
+
+  end ;;
+  DELIMITER ;
+
+  -- repeat for routines/functions
+
+  /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+  /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+  /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+  /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+  /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+  /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+  /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+  /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+  -- Dump completed on 2022-04-15 10:53:06
+#+end_src
 **** Dump table definition only
 #+BEGIN_SRC sh
   # all tables in a db
@@ -68039,6 +68142,25 @@ mysql -e "SELECT * FROM a INTO OUTFILE '/var/lib/mysql-files/a.txt' FIELDS TERMI
     mysql -uroot -pABC databasename < script.sql > /tmp/lili.tsv
   #+END_SRC
 
+**** Restore a table
+#+begin_src sh
+  # create a backup
+  mysqldump -uroot -p mydb mytable > mytable.sql
+  mysql -uroot -p mydb < mytable.sql
+
+  # From a full database backup
+
+  # Method 1: From a full database backup, create a temporary db
+  # - make sure dbBackup.sql does not have `use mydb`. phpMyAdmin might have it but mysqldump won't have it
+  mysql -uroot -p -e "create database temporary"
+  mysql -uroot -p temporary < dbBackup.sql
+  mysqldump -uroot -p temporary mytable > mytable.sql
+  mysql -uroot -p mydb < mytable.sql
+  mysql -uroot -p -e "drop database temporary"
+
+  # Method 2: From a full database backup, extract a table from a db backup
+  sed -n -e '/-- Table structure for table `abc`/,/UNLOCK TABLES/p' dbBackup.sql > mytable.sql
+#+end_src
 **** Release space
 - https://stackoverflow.com/a/3456885/2196360
 #+begin_src sh
@@ -74876,7 +74998,7 @@ Webpage
 *** https://zeit.co/
 Node.js, Dockerfile
 
-** Email Service
+** Email Service and Email Marketing
 *** SendGrid
 - Create a user per website who can use to authenticate SMTP and API
 - Sign to main account and go to Settings > Credentials
@@ -75083,6 +75205,10 @@ Preview text is the hidden text that is the first element in the body and it sho
   &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
   </div>
 #+END_SRC
+
+*** [[https://www.klaviyo.com/][Klaviyo]]
+- Email marketing platform used by big companies
+- Domain :: kmail-lists.com
 
 *** Send test HTML email for free
 https://htmlmail.pro/ use your Gmail to send HTML emails.
