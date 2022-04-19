@@ -1591,9 +1591,14 @@ Since PHP 5.5
 #+BEGIN_SRC php
   array_diff(array $array, array ...$arrays): array
 #+END_SRC
-
+- Compare on values
 - Two elements are considered equal if and only if ~(string) $elem1 === (string) $elem2~
 - Throw Notice when element cannot be cast to a string
+
+#+begin_src php
+  array_diff_key(array $array, array ...$arrays): array
+#+end_src
+- Compare on keys and return the key/value pairs in the first array for the keys don't exist in the following array(s)
 
 Single dimension
 #+BEGIN_SRC php
@@ -1617,6 +1622,24 @@ Associative arrays
 #+BEGIN_SRC php
   $array1 = array('blue' => 1, 'red' => 2, 'green' => 3, 'purple' => 4);
   $array2 = array('green' => 5, 'yellow' => 7, 'cyan' => 8);
+  $array3 = array('green' => 3, 'yellow' => 7, 'cyan' => 8);
+
+  var_export(
+	  array_diff($array1, $array2) === array(
+		  'blue' => 1,
+		  'red' => 2,
+		  'green' => 3,
+		  'purple' => 4,
+	  )
+  );
+
+  var_export(
+	  array_diff($array1, $array3) === array(
+		  'blue' => 1,
+		  'red' => 2,
+		  'purple' => 4,
+	  )
+  );
 
   var_export(
 	  array_diff_key($array1, $array2) === array(
@@ -2035,6 +2058,18 @@ Associative arrays
 - Original index number is used!
 
 #+BEGIN_SRC php
+  $a = [
+	  '1' => null,
+	  '2' => 0,
+	  '3' => '0',
+	  '4' => '',
+	  '5' => false,
+	  '6' => 123,
+	  '7' => -1
+  ];
+
+  var_dump(array_filter($a) === array('6' => 123, '7' => -1));
+
   array_filter(explode(',', $string));
   array_filter(explode(',', $string), 'strlen');
 
@@ -63559,29 +63594,6 @@ Context:	http, server, location, limit_except
   }
 #+END_SRC
 
-* Web Application Firewall (WAF)
-** ModSecurity <<waf:modsecurity>>
-Mod security is a free Web Application Firewall (WAF) that works with Apache, Nginx and IIS. It supports a flexible rule engine to perform simple and complex operations and comes with a Core Rule Set (CRS) which has rules for SQL injection, cross site scripting, Trojans, bad user agents, session hijacking and a lot of other exploits. For Apache, it is an additional module which makes it easy to install and configure.
-
-https://www.digitalocean.com/community/tutorials/how-to-set-up-mod_security-with-apache-on-debian-ubuntu
-
-You can disable ModSecurity on WHM but not recommended.
-In InMotion, when curl website url that is hosted on the same server, you will get
-Error 406 - Not Acceptable. Generally a 406 error is caused because a request has been blocked by Mod Security.
-
-Add user agent. This only works for cURL GET request.
-#+BEGIN_EXAMPLE
-  curl --user-agent cPanel-Cron http://example.com/cron.php
-#+END_EXAMPLE
-
-To see any requests that violate which rules in which .conf file, tail the apache log
-#+BEGIN_SRC sh
-  tail -f /usr/local/apache/logs/error_log | grep ModSecurity | grep my-host-url.com
-
-  # to see which .conf files are loaded by the module, InMotion hosting
-  cat /usr/local/apache/conf/modsec2.user.conf
-#+END_SRC
-
 * Git
 ** Show config
 #+BEGIN_SRC sh
@@ -64957,6 +64969,29 @@ Try using ssh server instead.
     # or
     # git config --global core.preloadIndex false
   #+END_SRC
+
+* Web Application Firewall (WAF)
+** ModSecurity <<waf:modsecurity>>
+Mod security is a free Web Application Firewall (WAF) that works with Apache, Nginx and IIS. It supports a flexible rule engine to perform simple and complex operations and comes with a Core Rule Set (CRS) which has rules for SQL injection, cross site scripting, Trojans, bad user agents, session hijacking and a lot of other exploits. For Apache, it is an additional module which makes it easy to install and configure.
+
+https://www.digitalocean.com/community/tutorials/how-to-set-up-mod_security-with-apache-on-debian-ubuntu
+
+You can disable ModSecurity on WHM but not recommended.
+In InMotion, when curl website url that is hosted on the same server, you will get
+Error 406 - Not Acceptable. Generally a 406 error is caused because a request has been blocked by Mod Security.
+
+Add user agent. This only works for cURL GET request.
+#+BEGIN_EXAMPLE
+  curl --user-agent cPanel-Cron http://example.com/cron.php
+#+END_EXAMPLE
+
+To see any requests that violate which rules in which .conf file, tail the apache log
+#+BEGIN_SRC sh
+  tail -f /usr/local/apache/logs/error_log | grep ModSecurity | grep my-host-url.com
+
+  # to see which .conf files are loaded by the module, InMotion hosting
+  cat /usr/local/apache/conf/modsec2.user.conf
+#+END_SRC
 
 * SVN Subversion
 - http://svnbook.red-bean.com/
