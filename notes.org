@@ -1757,7 +1757,7 @@ Associative arrays
     $a['item2']('Pass self instance method in instance context');
   #+END_SRC
 - Lambda function defined from a static function
-  However, phpStorm can't track the usage of that static method
+  However, PhpStorm can't track the usage of that static method
   #+BEGIN_SRC php
     $fn = "Foo::staticMethod"; // can be single quote
     $fn(123);
@@ -3367,7 +3367,24 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 *** Heredoc
 - Result is a double-quoted string
 - Limitation
-   - Can't interpolate constants directly. Use ~sprintf~ or ~printf~ instead
+   - Can't interpolate constants, class constants and class static properties directly. Use ~sprintf~, ~printf~, or ~$fn~ instead
+     #+begin_src php
+       class A {
+	       const NAME = 'abc';
+	       public static $abc = 'xyz';
+
+	       public static function hello() {
+		       $fn = function ($d) {
+			       return $d;
+		       };
+		       echo <<<TEXT
+       {$fn(self::NAME)}
+       {$fn(self::$abc)}
+       TEXT;
+	       }
+       }
+       A::hello();
+     #+end_src
 
 **** Complex (curl) syntax
 - Refer to [[php:lambda]] [[php:iife]]
@@ -3503,11 +3520,12 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 #+END_SRC
 
 #+BEGIN_SRC php
-  $string = <<< heredoc
+  $string = <<<heredoc
   plain text and now a function: %s
   heredoc;
   $string = sprintf($string, testfunction());
 #+END_SRC
+
 *** Nowdoc can't expand variables and the result is single quoted string
 #+BEGIN_SRC php
   echo <<<'EOT'
@@ -3516,7 +3534,7 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 #+END_SRC
 
 *** Alternative
-- Also provides syntax highlighting and code inspection in phpStorm
+- Also provides syntax highlighting and code inspection in PhpStorm
 #+BEGIN_SRC php
   $a = "
       <div class=\"lookupanchor\">
