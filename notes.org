@@ -1687,90 +1687,11 @@ Associative arrays
   function array_key_exists($key, array $search) bool	
 #+END_SRC
 
-*** Change values of all elements <<php:array_map>>
-- Anonymous function :: is just a function that has no name
-   - It may or may not create a closure
-   - However, in PHP, any anonymous function is implemented using the Closure class
-- Closure :: is a function that captures the state of the surrounding environment and create its own scope <<php:closure>>
-   - A closure can have a function name in JavaScript
-   - A closure may not be defined as a result of immediately run. Refer to [[js:closure][js:closure]]
-   - In PHP, any anonymous function is implemented using the ~Closure~ class <<php:closure:use>>
-     #+BEGIN_SRC php
-       $message = 'hello';
-
-       $example = function ($arg) use ($message) {
-	   var_dump($arg . ' ' . $message);
-       };
-
-       // Inherit by-reference
-       $example = function () use (&$message) {
-	   var_dump($message);
-       };
-       $example();
-
-       // Very different from JavaScript's Closure
-       $create_printer = function () {
-	   $my_number = 42;
-
-	   // First, `use` has to be used
-	   return function () use ($my_number) {
-	       $my_number++; // can only modify $my_number inside the closure
-	       echo "My fav number is $my_number\n";
-	   };
-       };
-
-       $my_printer = $create_printer();
-       $my_printer(); // My fav number is 43
-       $my_printer(); // My fav number is 43
-     #+END_SRC
-      - Since 7.1, cannot ~use~ superglobals, ~$this~ or variables with the same name as a parameter
-
-**** Lambda function <<php:lambda>>
-- A function can be passed as data to e.g. functions, array values
-- Not necessarily anonymous e.g. in JavaScript, the function passed in may have a function name
-  #+BEGIN_SRC js
-    $('#el').on('click', function clickHandler () {
-      console.log(`
-      This is an example of a lambda expression that is not anonymous. As you can
-      see, it clearly has a name, clickHandler, which can be used inside the
-      function for the purpose of recursion (also an important concept in functional
-      programming).
-
-      It is a lambda expression because of the semantic use -- it's being passed
-      to another function as data. The .on() function is using the function as
-      an argument -- in other words, communicated as a message (i.e. functions as
-      data).
-      `);
-    });
-  #+END_SRC
-- Use array to pass object/class static/non-static methods as lambda
-  #+BEGIN_SRC php
-    $a = [
-	    'item1' => ['A', 'abc2'], // abc2 can be either static or non-static.
-	    // But abc2 method is run on static context which means if abc2 is non-static and `$this` is used inside
-	    // it will fail
-	    // Also calling non-static (instance) method in static context throws a warning
-	    // with namespace ['\LlPassObjectMethods\A', 'abc2'] or ['LlPassObjectMethods\A', 'abc2']
-	    'item2' => [$this, 'abc3'], // An instance's method is run
-    ];
-    $a['item1']('Pass self instance method in static context');
-    $a['item2']('Pass self instance method in instance context');
-  #+END_SRC
-- Lambda function defined from a static function
-  However, PhpStorm can't track the usage of that static method
-  #+BEGIN_SRC php
-    $fn = "Foo::staticMethod"; // can be single quote
-    $fn(123);
-  #+END_SRC
-
-**** Arrow function <<php:arrow function>>
-- https://www.php.net/manual/en/functions.arrow.php
-- A shorthand to define a function. As far as I know in all languages
-   - it's anonymous function
-   - called short closures in PHP
-- Since PHP 7.4
-   - Only one expression in the function body with no curly brackets
-   - Don't need to use ~use~
+*** ~array_map~ <<php:array_map>>
+- Return a new array
+#+begin_src php
+  array_map(?callable $callback, array $array, array ...$arrays): array
+#+end_src
 
 #+BEGIN_SRC php
   function sanitize($s) {
@@ -1810,67 +1731,6 @@ Associative arrays
 
   var_dump($a['b']($c)); // d
 #+END_SRC
-
-**** PHP Immediately Invoked Function Expressions <<php:iife>>
-- v7.0+
-  #+BEGIN_SRC php
-    echo (function() {
-	return 42;
-    })();
-
-    $foo = (function() {
-	return function($a) {
-	    return $a + 42;
-	};
-    })();
-
-    echo $foo(10); // 52
-
-    $foo = (function($a) {
-	return function($b) use ($a) {
-	    return $a + $b;
-	};
-    })(42);
-    echo $foo(10); // 52
-
-
-    // Pass by reference
-    $sum = 0;
-    (function ($a, $b, &$sum) {
-	    $sum = $a + $b;
-	    echo $sum . ' inside IIFE' . PHP_EOL;
-    })(
-	    25, 9, $sum
-    );
-    var_dump($sum); // 34
-  #+END_SRC
-- PHP 7.0-
-  #+BEGIN_SRC php
-    call_user_func(function() {
-	echo "Hello World!";
-    });
-
-    call_user_func(function($a, $b) {
-	$sum = $a + $b;
-	echo $sum;
-    }, 25, 9);
-
-    // Or
-    $a = 25; $b = 9;
-    call_user_func(function() use ($a, $b) {
-	$sum = $a + $b;
-	echo $sum;
-    });
-
-    // Pass by reference :: use call_user_func_array
-    call_user_func_array(
-	    function ($a, $b, &$sum) {
-		    $sum = $a + $b;
-		    echo $sum . ' inside IIFE' . PHP_EOL;
-	    },
-	    array(25, 9, &$sum)
-    );
-  #+END_SRC
 
 *** ~array_splice~ Insert to any position of an array <<php:array_splice>>
 #+BEGIN_SRC php
@@ -2033,6 +1893,7 @@ Associative arrays
 *** ~array_walk~ <<php:array_walk>>
 - Cannot change array keys! Use [[php:array_combine]]
 - Only change array values
+- To return the new array, refer to [[php:array_map][php:array_map]]
 
 #+BEGIN_SRC php
   array_walk ( array|object &$array , callable $callback , mixed $userdata = null ) : bool
@@ -4068,6 +3929,47 @@ Examples
 - It supports named parameters and prepared statements on client side while [[php:mysqli][php:mysqli]] doesn't 
 
 ** Function <<php:function>>
+*** Anonymous function
+- A function that has no name
+- It may or may not create a closure
+- However, in PHP, any anonymous function is implemented using the Closure class
+
+*** Closure <<php:closure>>
+- A function that captures the state of the surrounding environment and create its own scope 
+- A closure can have a function name in JavaScript
+- A closure may not be defined as a result of immediately run. Refer to [[js:closure][js:closure]]
+- In PHP, any anonymous function is implemented using the ~Closure~ class <<php:closure:use>>
+  #+BEGIN_SRC php
+    $message = 'hello';
+
+    $example = function ($arg) use ($message) {
+	var_dump($arg . ' ' . $message);
+    };
+
+    // Inherit by-reference
+    $example = function () use (&$message) {
+	var_dump($message);
+    };
+    $example();
+
+    // Very different from JavaScript's Closure
+    $create_printer = function () {
+	$my_number = 42;
+
+	// First, `use` has to be used
+	return function () use ($my_number) {
+	    $my_number++; // can only modify $my_number inside the closure
+	    echo "My fav number is $my_number\n";
+	};
+    };
+
+    $my_printer = $create_printer();
+    $my_printer(); // My fav number is 43
+    $my_printer(); // My fav number is 43
+  #+END_SRC
+- Since 7.1, cannot ~use~ superglobals, ~$this~ or variables with the same name as a parameter
+
+*** Pass by reference
 #+BEGIN_SRC php
   // Chaining
   function abc() {
@@ -4080,7 +3982,7 @@ Examples
   class Config {
 	  private $values = [];
 
-	  // return a REFERENCE to the actual $values array
+	  // return a REFERENCE to the actual $this->values array
 	  public function &getValues() {
 		  return $this->values;
 	  }
@@ -4096,6 +3998,122 @@ Examples
   $config->getValues()['test'] = 'test'; // mutate a private property from outside
   var_dump($test = $config->getValues()['test'], $test === 'test');
 #+END_SRC
+
+*** Lambda function <<php:lambda>>
+- A function can be passed as data to e.g. functions, array values
+  #+begin_src php
+    // Lambda function is available since PHP 5.3.0
+    $func = function($value) {
+	    return $value * 2;
+    };
+    print_r(array_map($func, range(1, 5)));
+  #+end_src
+- Use array to pass object/class static/non-static methods as lambda
+  #+BEGIN_SRC php
+    $a = [
+	    'item1' => ['A', 'abc2'], // abc2 can be either static or non-static.
+	    // But abc2 method is run on static context which means if abc2 is non-static and `$this` is used inside
+	    // it will fail
+	    // Also calling non-static (instance) method in static context throws a warning
+	    // with namespace ['\LlPassObjectMethods\A', 'abc2'] or ['LlPassObjectMethods\A', 'abc2']
+	    'item2' => [$this, 'abc3'], // An instance's method is run
+    ];
+    $a['item1']('Pass self instance method in static context');
+    $a['item2']('Pass self instance method in instance context');
+  #+END_SRC
+- Lambda function defined from a static function
+  However, PhpStorm can't track the usage of that static method
+  #+BEGIN_SRC php
+    $fn = "Foo::staticMethod"; // can be single quote
+    $fn(123);
+  #+END_SRC
+- Not necessarily anonymous e.g. in JavaScript, the function passed in may have a function name
+  #+BEGIN_SRC js
+    $('#el').on('click', function clickHandler () {
+      console.log(`
+      This is an example of a lambda expression that is not anonymous. As you can
+      see, it clearly has a name, clickHandler, which can be used inside the
+      function for the purpose of recursion (also an important concept in functional
+      programming).
+
+      It is a lambda expression because of the semantic use -- it's being passed
+      to another function as data. The .on() function is using the function as
+      an argument -- in other words, communicated as a message (i.e. functions as
+      data).
+      `);
+    });
+  #+END_SRC
+
+*** Arrow function <<php:arrow function>>
+- https://www.php.net/manual/en/functions.arrow.php
+- A shorthand to define a function. As far as I know in all languages
+   - it's anonymous function
+   - called short closures in PHP
+- Since PHP 7.4
+- Only one expression in the function body with no curly brackets
+- Don't need to use ~use~
+- Refer to [[php:array_map][php:array_map]]
+
+*** PHP Immediately Invoked Function Expressions <<php:iife>>
+- v7.0+
+  #+BEGIN_SRC php
+    echo (function() {
+	return 42;
+    })();
+
+    $foo = (function() {
+	return function($a) {
+	    return $a + 42;
+	};
+    })();
+
+    echo $foo(10); // 52
+
+    $foo = (function($a) {
+	return function($b) use ($a) {
+	    return $a + $b;
+	};
+    })(42);
+    echo $foo(10); // 52
+
+
+    // Pass by reference
+    $sum = 0;
+    (function ($a, $b, &$sum) {
+	    $sum = $a + $b;
+	    echo $sum . ' inside IIFE' . PHP_EOL;
+    })(
+	    25, 9, $sum
+    );
+    var_dump($sum); // 34
+  #+END_SRC
+- PHP 7.0-
+  #+BEGIN_SRC php
+    call_user_func(function() {
+	echo "Hello World!";
+    });
+
+    call_user_func(function($a, $b) {
+	$sum = $a + $b;
+	echo $sum;
+    }, 25, 9);
+
+    // Or
+    $a = 25; $b = 9;
+    call_user_func(function() use ($a, $b) {
+	$sum = $a + $b;
+	echo $sum;
+    });
+
+    // Pass by reference :: use call_user_func_array
+    call_user_func_array(
+	    function ($a, $b, &$sum) {
+		    $sum = $a + $b;
+		    echo $sum . ' inside IIFE' . PHP_EOL;
+	    },
+	    array(25, 9, &$sum)
+    );
+  #+END_SRC
 
 ** OOP <<php:oop>>
 *** Sample
@@ -5705,6 +5723,7 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
       - ~string|null|int~
    - Intersection typen :: since PHP 8.1
    - Some others
+
 ** Troubleshooting
 *** Parse error: syntax error, unexpected end of file
 Or ~Parse error: syntax error, unexpected 'endwhile' (t_endwhile)~
@@ -30836,7 +30855,6 @@ These values are considered as false
 ** Closure, Javascript Singleton <<js:closure>>
 *** Compare to PHP Closure [[php:closure][php:closure]]
 *** IIFE (Immediately Invoked Function Expression) <<js:iife>>
-
 #+BEGIN_SRC js
   // function declaration
   function() { console.log('test') }
@@ -32165,9 +32183,7 @@ To make a method non enumerable
 
 *** ~DocumentFragment~
 - https://developer.mozilla.org/en-US/docs/Web/API/Document/createDocumentFragment
-  
-#+begin_src js
-#+end_src
+- https://github.com/levonlee/jsSandbox/blob/master/dom-createDocumentFragment.html  
 
 ** URI and URI Component Encode, Current URL, open, email link
 - eq. to [[php:urlencode][php:urlencode]] <<js:encodeURIComponent>>
@@ -63689,7 +63705,7 @@ User name and email
   git commit -m '...' --author="Li Li <a@b.ca>"
 #+END_SRC
 
-Don't verify SSL
+Don't verify SSL and use temporary username and password to pull and push
 #+BEGIN_SRC sh
   git -c http.sslVerify=false -c user.name=abc -c user.password=xyz pull -p
 #+END_SRC
