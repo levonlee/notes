@@ -20,6 +20,8 @@ There are two things you can do about this warning:
 (autoload 'apache-mode "apache-mode" nil t)
 (require 'php-mode)
 (require 'web-mode)
+(require 'expand-region)
+(global-set-key (kbd "C-=") 'er/expand-region)
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -57,7 +59,7 @@ There are two things you can do about this warning:
  '(org-goto-interface 'outline-path-completion)
  '(org-list-allow-alphabetical t)
  '(package-selected-packages
-   '(docker-compose-mode graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
+   '(expand-region docker-compose-mode graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
  '(python-indent-guess-indent-offset nil))
 
 (define-derived-mode web-php-mode web-mode "WebPhp"
