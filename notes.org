@@ -52250,6 +52250,8 @@ This way new file will be the user not www-data but editing/uploading exising fi
 wp:check file permissions
 
 *** Links <<linux:ln>> <<linux:symlink>>
+- Can create symlink to non-existing file
+  
 #+BEGIN_SRC sh
   # Hard links
   # reference a file in the filesystem
@@ -57140,7 +57142,8 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
       - ~ENTRYPOINT ["redis", "-H", "something", "-u", "toto"]~
       - ~CMD ["get", "key"]~
       - ~docker run redisimg~ is eq. to ~docker run redisimg get key~
-
+- Specifying ~entrypoint~ in ~docker-compose.yml~ overrides dockerfile's ~ENTRYPOINT~ and clears out dockerfile's ~CMD~
+  
 There're 3 forms of ~CMD~
 #+BEGIN_SRC dockerfile
   # exec form, json array, doesn't have variable substitution
@@ -62518,13 +62521,6 @@ Enable HTTPS, allow Full and delete HTTP
 	       └─12858 nginx: worker process
   #+END_EXAMPLE
 
-** Installed modules
-#+begin_src sh
-  # To check if a module (http_stub_status_module) is installed. It returns the module name if it's installed
-
-  nginx -V 2>&1| grep -o http_stub_status_module
-#+end_src
-
 ** /etc/nginx /var/log/nginx
 *** /etc/nginx/sites-available/
 The directory where per-site "server blocks" can be stored.
@@ -62615,6 +62611,47 @@ This directory contains config fragments that can be included elsewhere in the N
 
 *** /var/log/nginx/error.log
 - Refer to nginx:d:error_log
+
+** Installed modules
+#+begin_src sh
+  # To check if a module (http_stub_status_module) is installed. It returns the module name if it's installed
+
+  nginx -V 2>&1 | grep -o with-http_stub_status_module
+#+end_src
+
+*** Stub status module
+- https://nginx.org/en/docs/http/ngx_http_stub_status_module.html
+- Check if stub status module is installed, if it returns ~with-http_stub_status_module~ then it's installed
+  #+begin_src sh
+    nginx -V 2>&1 | grep -o with-http_stub_status_module
+  #+end_src
+Create this location directive under any server directive to see the status info for the whole Nginx status for all servers and connections
+#+begin_src conf
+  server {
+    listen 81;
+    server_name localhost;
+
+    access_log off;
+    allow 127.0.0.1;
+    deny all;
+
+    location /nginx_status {
+      # Choose your status module
+
+      # freely available with open source NGINX
+      stub_status;
+
+      # for open source NGINX < version 1.7.5
+      # stub_status on;
+
+      # available only with NGINX Plus
+      # status;
+
+      # ensures the version information can be retrieved
+      server_tokens on;
+    }
+  }
+#+end_src
 
 ** Config nginx.conf
 Main global config /etc/nginx/nginx.conf
@@ -70480,6 +70517,61 @@ change to version 1.1 or get rid of the characters
   <?xml version="1.1" encoding="UTF-8" ?>
 #+END_EXAMPLE
 
+* YAML <<toc:yaml>>
+#+begin_src yaml
+  ---
+  # three dashes to separate documents
+  # data types
+  # - string :: single or double-quoted or no quote at all
+  # - float
+  # - integer
+  # - boolean
+  #   - True, true, On, on, Yes, yes
+  #   - False, false, Off, off, No, no
+  # - null :: `~` or `null` (unquoted)
+
+  # Indentation
+  # - Can be any number of spaces but tabs are not allowed
+
+  doe: "a deer, a female deer"
+  ray: "a drop of golden sun"
+  stringWithLineFeed: "this is a line with linefeed \n"
+  multipleLinedString: |
+    paragraph 1
+    paragraph 2
+  onelineStringButTypeInMultipleLines: >
+    paragraph 1
+    paragraph 2
+  multipleLinedStringWithoutStrip: |+
+    paragraph 1
+    paragraph 2
+  
+  
+  pi: 3.14159
+  xmas: true
+  french-hens: 3
+  calling-birds:
+    - huey
+    - dewey
+    - louie
+    - fred
+  anotherArray: [ 1, 2, 3, 4, 5 ]
+  anotherArray2: [ "one", "two", "three", "four" ]
+  anotherArray3:
+    - type: file
+      path: /path/to/file1.log
+    - type: file
+      path: /path/to/file2.log
+  xmas-fifth-day:
+    calling-birds: four
+    french-hens: 3
+    golden-rings: 5
+    partridges:
+      count: 1
+      location: "a pear tree"
+    turtle-doves: two
+  inlineDictionary: { thing1: huey, thing2: louie, thing3: dewey }
+#+end_src
 * Software Programming
 ** Programming Paradigm
 - A way to classify programming languages based on their features. A language can have multiple paradigms
