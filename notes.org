@@ -31079,6 +31079,7 @@ These values are considered as false
 
 *** Singleton <<js:singleton>>
 - It's also called [[js:closure:revealing-module-pattern][Revealing Module Pattern]]
+- Refer to [[js:oop][js:oop]] for instantiation
   
 #+BEGIN_SRC js
   var Managers = {}; //namespace
@@ -32567,80 +32568,93 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 
 ** OOP Pattern <<js:oop>>
 - This is not a singleton pattern. Refer to [[js:singleton]]
-  
-#+BEGIN_SRC js
-  // JavaScript Singleton
-  (function() {
-    // this === self === window
-    this.myApp = this.MyApp || {};
-    var ns = this.myApp; // further shorten the keyboard typing
 
-    // private properties
-    var vehicleCount = 5;
-    var vehicles = [];
+#+begin_src js
+  // Simple OOP pattern or prototypal pattern
+  Vehicle = function (year, make, model) {
+      this.year = year;
+      this.make = make;
+      this.model = model;
+  };
+  Vehicle.prototype.publicProperty = '';
+  Vehicle.prototype.getInfo = function () {
+      // Use private properties
+      return this.year + ' ' + this.make + ' ' + this.model;
+  };
+  Vehicle.prototype.startEngine = function () {
+      return 'Vroom';
+  };
 
-    // Public properties
-    ns.publicHello = 'This is public';
+  (function () {
+      // this === self === window
+      this.myApp = this.MyApp || {};
+      var ns = this.myApp; // further shorten the keyboard typing
 
-    // Public method
-    ns.getVehicleCount = function() {
-      return vehicleCount;
-    };
-    ns.setVehicleCount = function(value) {
-      vehicleCount = value;
-    };
+      // private properties
+      var vehicleCount = 5;
+      var vehicles = [];
 
-    // Define a Class
-    // You can even separate the class definition into another JavaScript file
-    // Just remember to include the necessary closure like the above
-    ns.Vehicle = (function() {
+      // Public properties
+      ns.publicHello = 'This is public';
 
-      function Vehicle(year, make, model) {
-	// private properties
-	this.year = year;
-	this.make = make;
-	this.model = model;
-      }
-
-      // Public methods
-      Vehicle.prototype.getInfo = function() {
-	return this.year + ' ' + this.make + ' ' + this.model;
+      //region Public methods
+      ns.getVehicleCount = function () {
+	  return vehicleCount;
       };
-      
-      Vehicle.prototype.startEngine = function() {
-	return 'Vroom';
+      ns.setVehicleCount = function (value) {
+	  vehicleCount = value;
       };
-      /* Better not to override prototype
-	Vehicle.prototype = {
-	    getInfo: function () {
-	    return this.year + ' ' + this.make + ' ' + this.model;
-	    },
-	    startEngine: function () {
-	    return 'Vroom';
-	    }
-	};
-	,*/
+      //endregion
 
-      return Vehicle;
-    }());
+      // Define a Class
+      // You can even separate the class definition into another JavaScript file
+      // Just remember to include the necessary closure like the above
+      ns.Vehicle = (function () {
 
-    // Define a sub Class
-    ns.Car = (function(parent) {
+	  function Vehicle(year, make, model) {
+	      //region private properties
+	      this.year = year;
+	      this.make = make;
+	      this.model = model;
+	      //endregion
+	  }
 
-      function Car(year, make, model) {
-	parent.call(this, year, make, model);
-	this.wheelQuantity = 4;
-      }
+	  //region Public methods
+	  Vehicle.prototype.getInfo = function () {
+	      // Use private properties
+	      return this.year + ' ' + this.make + ' ' + this.model;
+	  };
 
-      Car.prototype = Object.create(parent.prototype);
-      Car.prototype.constructor = Car;
-      Car.prototype.getInfo = function() {
-	// Extend parent's method
-	return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
-      }
+	  Vehicle.prototype.startEngine = function () {
+	      return 'Vroom';
+	  };
+	  //endregion
 
-      return Car;
-    }(ns.Vehicle));
+	  // Better not to override prototype, don't do this:
+	  // Vehicle.prototype = {getInfo: function () {}, startEngine: function () {}}
+
+	  return Vehicle;
+      }());
+
+      // Define a sub Class
+      ns.Car = (function (parent) {
+
+	  function Car(year, make, model) {
+	      parent.call(this, year, make, model);
+	      this.wheelQuantity = 4;
+	  }
+
+	  // Inherit parent's prototype properties
+	  Car.prototype = Object.create(parent.prototype);
+	  // Override the constructor to this child class
+	  Car.prototype.constructor = Car;
+	  // Extend or override a parent's method
+	  Car.prototype.getInfo = function () {
+	      return 'Vehicle Type: Car ' + parent.prototype.getInfo.call(this);
+	  }
+
+	  return Car;
+      }(ns.Vehicle));
 
   }());
 
@@ -32655,7 +32669,11 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 
   var c = new myApp.Car(2012, 'Toyota', 'Rav4');
   console.log(c.getInfo());
-#+END_SRC
+
+  // Instantiate Simple OOP
+  var vSimple = new Vehicle(2022, 'Lexus', 'UX');
+  console.log(vSimple.getInfo());
+#+end_src
 
 ** Promise <<js:promise>>
 - Promise is now native in all browsers including Edge except IE
