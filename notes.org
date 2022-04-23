@@ -31079,54 +31079,57 @@ These values are considered as false
 
 *** Singleton <<js:singleton>>
 - It's also called [[js:closure:revealing-module-pattern][Revealing Module Pattern]]
+  
 #+BEGIN_SRC js
   var Managers = {}; //namespace
   // Singleton object CssManager
-  // Managers and singleton object CssManager has to be defined before they are used
+  // `Managers` and singleton object `CssManager` has to be defined before they are used
 
-  Managers.CssManager = (function() {
+  Managers.CssManager = (function () {
 
-      // Private space in which all variables and methods are protected from the global scope
-      // Initialization of properties but it can't be instantialized.
-      // Private member can have the same name as in the object and they are referred diffrently inside the object
+      //region Private Space
+
+      // All variables and methods are protected from the global scope
+
+      // To initialize, assign aliases of global properties/methods/functions/objects for this Singleton
+      var doc = document;
+
+      // Private members can have the same name as in the object and they are referred diffrently inside the object
       // - privateAndMember();
       // - this.publicMember();
 
-      var doc = document;
-      var setAttributes = function(element, attributes) {
+      var setAttributes = function (element, attributes) {
 	  for (attribute in attributes) {
 	      element[attribute] = attributes[attribute];
 	  }
       }
-      // Private space.
+      //endregion
 
       return {
-	  // Public members 
-	  addStyleSheet: function(id, url) {
+	  addStyleSheet: function (id, url) {
+	      // global variable `document` can be used, or use alias `doc` as defined above in Private Space
 	      var newStyleSheet = document.createElement("link");
 	      // call private member
 	      setAttributes(newStyleSheet, {
-		  rel : "stylesheet",
+		  rel: "stylesheet",
 		  type: "text/css",
-		  id : id,
+		  id: id,
 		  href: url
 	      });
 	      document.getElementByTagName("head")[0].appendChild(newStyleSheet);
 	  },
-	  removeStyleSheet: function(id) {
+	  removeStyleSheet: function (id) {
 	      var currentStyleSheet = document.getElementById(id);
 	      if (currentStyleSheet) {
 		  currentStyleSheet.parentNode.removeChild(currentStyleSheet);
 	      }
 	  },
-	  swapStyleSheet: function(id, url) {
+	  swapStyleSheet: function (id, url) {
 	      // call other public member
 	      this.removeStyleSheet(id);
 	      this.addStyleSheet(id, url);
 	  }
-	  // Public members
       }
-      // return ends.
 
   })();
 #+END_SRC
@@ -32563,7 +32566,8 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
 #+END_SRC
 
 ** OOP Pattern <<js:oop>>
-- Also see the signleton pattern [[js:singleton]]
+- This is not a singleton pattern. Refer to [[js:singleton]]
+  
 #+BEGIN_SRC js
   // JavaScript Singleton
   (function() {
@@ -32587,7 +32591,7 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
     };
 
     // Define a Class
-    // You can even separate the class definition into another javascript file
+    // You can even separate the class definition into another JavaScript file
     // Just remember to include the necessary closure like the above
     ns.Vehicle = (function() {
 
@@ -32602,6 +32606,7 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
       Vehicle.prototype.getInfo = function() {
 	return this.year + ' ' + this.make + ' ' + this.model;
       };
+      
       Vehicle.prototype.startEngine = function() {
 	return 'Vroom';
       };
