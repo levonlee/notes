@@ -54118,14 +54118,6 @@ Then you delete ~sudo ufw delete allow 22~
 
 [[https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands][More info]]
 
-** Font <<<linux:font>>>
-- Install Source Code Pro
-  #+BEGIN_SRC sh
-    git clone --depth 1 --branch release https://github.com/adobe-fonts/source-code-pro.git /usr/local/share/fonts/adobe-fonts/source-code-pro/
-    sudo fc-cache -fv
-  #+END_SRC
-- [[macos:font][macos:font]]
-
 ** Timezone, NTP <<linux:timezone>>
 - Get current timezone
   #+begin_src sh
@@ -54149,6 +54141,14 @@ Then you delete ~sudo ufw delete allow 22~
    - All timezones are stored in ~/usr/share/zoneinfo/$TZ~
       - Toronto is ~/usr/share/zoneinfo/America/Toronto~ file but it's a link to Montreal file
 - Refer to [[docker:timezone][docker:timezone]] for changing timezone
+
+** Font <<<linux:font>>>
+- Install Source Code Pro
+  #+BEGIN_SRC sh
+    git clone --depth 1 --branch release https://github.com/adobe-fonts/source-code-pro.git /usr/local/share/fonts/adobe-fonts/source-code-pro/
+    sudo fc-cache -fv
+  #+END_SRC
+- [[macos:font][macos:font]]
 
 ** Hardware
 PCI devices: =lspci=
@@ -56227,6 +56227,30 @@ https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
 - Copy from Nano to terminal (system clipboard) :: ~C-S-c~ have to ensure visual word wrap is on for multiple lines
 - By default, nano covert tab to 4 spaces. Turn off :: ~M-S-q~
 - https://nano-editor.org/dist/latest/cheatsheet.html
+
+** Vim <<linux:vim>>
+-  Interactive tutorial :: https://www.openvim.com/
+
+*** Normal Mode
+**** Move Cursor
+- h, j, k, l
+- w :: start of next word
+- e :: end of the word
+- b :: beginning of the word (previous word beginng)
+- {number}{h, j, k, l, w, e, b}
+
+**** Copy, Cut, Paste
+- ~dd~ :: delete a line and add it to the default register
+- ~p~ :: paste below the current lines
+- ~S-p~ :: paste above the current line
+- ~ddkP~ :: move up a line
+- ~ddp~ :: move down a line
+ 
+**** Replace
+- ~ciw~ :: change inner word. Delete word at cursor and go to Insert Mode
+
+*** Insert Mode
+- ~30i- Esc~ :: insert ~-~ 30 times and jump back to normal mode
 
 ** Ubuntu <<linux:ubuntu>>
 *** Gnome
@@ -63856,6 +63880,7 @@ Don't verify SSL and use temporary username and password to pull and push
 - [[git:branch:file difference][git:branch:file difference]]
 
 ** log <<git:log>>
+- Refer to [[git:log:commit difference][git:log:commit difference]]
 #+BEGIN_SRC sh
   git log --all --decorate --oneline --graph
 #+END_SRC
@@ -64005,10 +64030,11 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
   git push origin -u new-branch-name
 #+END_SRC
 
-*** Commit difference between 2 branches 
+*** Commit difference between 2 branches <<git:log:commit difference>>
 - What commits ~li~ has but ~master~ doesn't :: ~git log master..li~
    - For a specific file ~git log master..li path/to/file~
-
+- Refer to [[git:branch:file difference][git:branch:file difference]]
+     
 *** File difference between 2 branches <<git:branch:file difference>>
 - [[git:diff][git:diff]]
 - ~git diff --name-status master..origin/master~
@@ -64017,6 +64043,7 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
    - M :: Both are modified
 - ~git diff --stat --color master..origin/master~
    - Only number of lines of difference, can't see which files are D (deleted), A (added) or M (modified)
+- Refer to [[git:log:commit difference][git:log:commit difference]]
 
 *** Find authors of all remote/local branches and tags
 #+BEGIN_EXAMPLE
@@ -64133,8 +64160,7 @@ Merge file ~f~ of branch ~B~'s ~HEAD~ into ~f~ of branch ~A~~
 #+END_SRC
 
 ** Rebase <<git:rebase>>
-feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their common ancestor is C2
-
+*** Rebase master onto feature branch
 #+BEGIN_SRC sh
   git checkout master
   git pull --rebase
@@ -64181,37 +64207,8 @@ feature branch has 1 commit ahead (C4) and 1 commit behind master (C3) and their
 
 The result is feature and master are exactly the same: C2 -> C3 -> C4
 
-**** Sample message after running ~git rebase~
-First, rewinding head to replay your work on top of it...
-Applying: NDV-2426 corelogic
-Using index info to reconstruct a base tree...
-M       site/app/connect.php
-M       site/app/icl/listloanclients.inc.php
-.git/rebase-apply/patch:7: trailing whitespace.
-<?php
-.git/rebase-apply/patch:8: trailing whitespace.
-
-.git/rebase-apply/patch:9: trailing whitespace.
-date_default_timezone_set('America/Toronto');
-.git/rebase-apply/patch:10: trailing whitespace.
-
-.git/rebase-apply/patch:11: trailing whitespace.
-$lib=$_SERVER['HTTP_CLIBLIB'];
-warning: squelched 1345 whitespace errors
-warning: 1350 lines add whitespace errors.
-Falling back to patching base and 3-way merge...
-Auto-merging site/app/icl/listloanclients.inc.php
-Auto-merging site/app/connect.php
-CONFLICT (content): Merge conflict in site/app/connect.php
-error: Failed to merge in the changes.
-Patch failed at 0001 NDV-2426 corelogic
-The copy of the patch that failed is found in: .git/rebase-apply/patch
-
-When you have resolved this problem, run "git rebase --continue".
-If you prefer to skip this patch, run "git rebase --skip" instead.
-To check out the original branch and stop rebasing, run "git rebase --abort".
-
-**** Branch preference
+*** Commands p(pick), s(quash), e(edit)
+*** Branch preference
 #+BEGIN_SRC sh
   git checkout feature-a
   # favor feature-a changes over master
@@ -64223,32 +64220,67 @@ To check out the original branch and stop rebasing, run "git rebase --abort".
   # -Xxxx is reversed in git merge!
 #+END_SRC
 
-*** Merge commits into one commit on local branch
-Branch feature has 4 commits ahead of branch master
-
-m1 > c1 > c2 > c3 > c4
-
-Combine *c2*, c3 and c4 (c1 is not included!) to c5 and assign a different commit message
+*** Squash commits into one commit
+- Branch feature has 4 commits ahead of branch master :: m1 > c1 > c2 > c3 > c4
+- Combine *c2*, c3 and c4 (c1 is not included!) to c5 and assign a different commit message
 #+BEGIN_SRC sh
   # interactive rebase for commits NEWer than c1
   git rebase -i c1
-  # open up VIM, keep the first line unchanged pick c2 and change pick to s or squash for all other commits
+  # open up VIM, keep the first line unchanged pick c2 and change pick to `s` or `squash` for all other commits
   pick c2
   s c3
   s c4
 
-  # ESC and :wq to save, VIM returns that what will happen. Comment lines with # and give a new commit message without #
+  # `ESC` and `:wq` to save, VIM returns that what will happen. Comment lines with # and give a new commit message without #
 
   # a new SHA commit c5 is created with a commit msg that is specified
 
-  # ESC and :wq to save. Done!
+  # `ESC` and `:wq` to save. Done!
 #+END_SRC
 
 Commands other than p(ick), s(quash):
-- When in doubt :: ~git status~
-- To continue to next command :: ~git rebase --continue~
-- Abort at any point :: ~git rebase --abort~
 - e(dit) :: make file changes, ~git add myfile~ and to continue to next command or commit ~git commit --amend~
+
+*** Reorder commits
+- https://stackoverflow.com/questions/2740537/reordering-of-commits
+- branchA has :: a, b, c, d, e, f, g
+   - squash a, d, e and g
+   - 
+
+#+begin_src sh
+  git checkout branchA
+
+  # New commits including a
+  git rebase -i a^
+
+  # Inital order
+  # p a
+  # p b
+  # p c
+  # p d
+  # p e
+  # p f
+  # p g
+
+  # Reorder
+
+  # p c ...
+  # p a ...
+  # s d ...
+  # s e ...
+  # s g ...
+  # p b ...
+  # s f
+
+  # Branch A will become c, [a + d + e + g], [b + f]
+
+#+end_src
+  
+*** Split a commit
+- Assign ~e~ or ~edit~ to the commit after ~git rebase~ is run, ~Esc :wq~ to start the rebase process
+- It will stop after the selected commit is applied, now undo it (unstage) :: ~git reset HEAD^~
+   - Create as many commits as needed
+- ~git rebase --continue~
 
 ** Cherry pick <<git:cherry-pick>>
 - https://www.atlassian.com/git/tutorials/cherry-pick
@@ -76531,14 +76563,14 @@ Web Symbols
 ** https://www.youtube.com/playlist?list=PLNYkxOF6rcIDzLmWaDwfHVZJl1Q5RFgOR
 ** dialpad.com, aloware.com
 ** ClickHouse.tech
-** TODO MySQL sql mode
+** DONE MySQL sql mode
 ** TODO Vagrant on Hyper-V
 ** TODO Inspectlet.com
 ** TODO QUnit
 ** TODO Learn Continuous Integration "Pantheon Build Drupal with Composer on Travis"
 ** TODO Learn tool Zeplin
 ** TODO Lynda Web Project Workflows with Gulp.js, Git, and Browserify
-** TODO Lynda Agile Project Management
+** DONE Lynda Agile Project Management
 ** TODO Lynda Firebase, Travis CI, Heroku
 ** TODO JavaScript HTML5 Animation Framework: GSAP or Tween https://greensock.com/
 ** TODO Lynda: MVC Frameworks for Building PHP Web Applications with Drew Falkman
