@@ -4218,30 +4218,52 @@ RestJson.php
 
 *** Instantiate Dynamically
 #+BEGIN_SRC php
+  <?php
+
   class A {
-	  public $property = '';
+	  public $name = '';
 
-	  public function __construct(string $property) {
-		  $this->property = $property;
+	  public function __construct(string $property = '') {
+		  $this->name = $property;
 	  }
 
-	  public function getProperty() {
-		  var_dump($this->property);
+	  public function getName() {
+		  return $this->name;
 	  }
 
-	  public static function getInstance($property) {
+	  public static function getInstance($property): self {
 		  return new A($property);
 	  }
+
+	  public static function getInstanceNames($property): array {
+		  return array(
+			  (new A($property))->getName() === $property,
+			  (new static($property))->getName() === $property,
+			  (new static())->getName() === '',
+			  (new static)->getName() === '',
+			  (new self($property))->getName() === $property,
+			  (new self())->getName() === '',
+			  (new self)->getName() === '',
+		  );
+	  }
+
   }
 
-  $className = 'A'; // namespace 'MyNamespace\A'
+  $className = 'A'; // namespace ::  `$className = 'MyNamespace\A';`
   // Since PHP 7
-  $instance = new $className('abc');
+  $instance = new $className('abc'); // `$instance = new (A::class);`
+
+  // `A::class` returns string of the fully qualified class name
 
   // Below PHP 7
   $instance = call_user_func([$className, 'getInstance'], 'abc');
 
-  $instance->getProperty();
+  $instance->getName();
+
+  // In one line
+  $property = (new $className('abc'))->getName();
+
+  var_export(A::getInstanceNames('xyz'));
 #+END_SRC
 
 *** OOP Features
@@ -5719,12 +5741,13 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
    - class properties since PHP 7.4
 - A child's method must match any return type declartion of the parent
    - Parent may not define a return type, then the child method may do so
-- Types can be declared
+- Types
    - void :: since PHP 7.1
-   - mixed :: since PHP 8.0
    - nullable type :: since PHP 7.1
       - ~?string~ :: either a string or null
       - ~function f (C $c = null) {}~ :: this is also possible but not recommended
+   - ~self~, ~parent~ :: There's no ~static~! An instance of the same class
+   - mixed :: since PHP 8.0
    - Union types :: since PHP 8.0
       - ~string|null|int~
    - Intersection typen :: since PHP 8.1
@@ -5978,6 +6001,35 @@ Device tect, browser detect :: [[https://github.com/serbanghita/Mobile-Detect][G
 
 *** firebase/php-jwt <<php:jwt>>
 https://github.com/firebase/php-jwt
+
+*** Laravel <<php:laravel>>
+**** Installation
+#+begin_src sh
+  curl -s https://laravel.build/example-app | bash
+
+  cd example-app
+  # Interactive mode for debugging
+  ./vendor/bin/sail up
+
+  # Detached mode
+  ./vendor/bin/sail up -d
+
+  # stop and down/remove all running containers
+  ./vendor/bin/sail stop
+
+  # nano ./.env
+  # Add
+  APP_PORT=81 # To solve Bind for 0.0.0.0:80 failed: port is already allocated
+
+  # Then go to http://localhost:81
+
+  # Source code
+  cd ./vendor/laravel/framework/src/Illuminate/Database/Eloquent/
+#+end_src
+
+**** Eloquent (ORM) <<php:laravel:orm>> <<php:laravel:eloquent>>
+***** Relationships
+https://laravel.com/docs/9.x/eloquent-relationships
 
 ** Coding Standard
 *** Variable, action/filter and function name
@@ -51278,6 +51330,7 @@ https://github.com/magicmonty/bash-git-prompt
   #+END_SRC
 
 *** Shortcuts <<linux:bash:shortcuts>>
+- https://github.com/fliptheweb/bash-shortcuts-cheat-sheet
 - Process
    - Exit command line when it's empty :: ~C-d~
 - Screen
@@ -51542,7 +51595,13 @@ Use ~useradd~ for non-interactive (Docker)
 Refer to bash:awk
 ~awk -F':' 'BEGIN{OFS="\t"; print "Login Username","Password","UID", "Group ID (GID)", "Comment", "Home Dir", "Default shell"} {print $1,$2,$3,$4,$5,$6,$7}' /etc/passwd | column -t -s $'\t'~
 
-*** Switch to another user <<linux:sudo:su>>
+*** Sudo <<linux:sudo>>
+- Options
+   - ~-S, --stdin~ :: [[linux:sudo:password][linux:sudo:password]]
+   - ~-H~ :: use the target user's home directory <<linux:sudo:o:H>>
+   - ~-n, --non-interactive~ :: avoid prompting the user for input of any kind. If a password is required, it will stdout an error message and exit
+     
+**** Switch to another user <<linux:sudo:su>>
 - Switch to superuser/root
    - Debian :: ~sudo su~
    - RedHat :: ~sudo -~
@@ -51555,15 +51614,15 @@ Refer to bash:awk
       - ~/bin/su - username -c 'whoami'~
    - As root user, run as another user without typing password
       - ~sudo -H -u username bash -c 'whoami'~
-	 - ~-H~ :: to use the target user's home directory <<linux:sudo:o:H>>
+	 - See [[linux:sudo:o:H][linux:sudo:o:H]]
 
-*** Sudo run multiple commands
+**** Sudo run multiple commands
 ~sudo bash -c 'apt-get update;apt-get install'~
 
-*** Pass password as a file to sudo <<linux:sudo:password>>
+**** Pass password as a file to sudo <<linux:sudo:password>>
 ~sudo -S your_script -var1 </path/to/file.txt~
 
-*** Require no password when sudo is run as another user <<linux:sudo:nopassword>>
+**** Require no password when sudo is run as another user <<linux:sudo:nopassword>>
 - User abc has sudo privilege. When abc is signed in and run a script/command that requires sudo, system will ask for password
    - e.g. ~sudo ./path/to/script.sh~ This bash file can contain ~make start~ where recipes may not have sudo in front
    - Goal :: bypass so password input is not required
@@ -72026,6 +72085,12 @@ Install linux:font, open Emacs:
    - ~.emacs.el~ or
    - ~.emacs.d/init.el~
 **** Get version :: ~M-x info~ ~M-x org-info~
+*** Keybinding
+- ~M-~ :: Alt, ~⌥~
+- ~C-~ :: Ctrl, ~⌃~
+- ~S-~ :: Shift, ~⇧~
+- ~s-~ :: Special ~⌘~
+
 *** MELPA packages
 - Add http://melpa.org/packages/
    - Default is just one package-archives "gnu" at http://elpa.gnu.org/packages/
@@ -72079,7 +72144,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
       - Normal hooks :: hook names end with ~-hook~
       - Abnormal hooks :: end in ~-functions~
 - File
-   - ~C-x C-s~ :: save file, save current buffer
+   - ~C-x C-s~, ~s-s~ :: save file, save current buffer
    - ~C-x C-c~ :: quit Emacs
    - ~C-x C-f~ :: open file, create file
 - [[https://orgmode.org/org.html][Org Mode full Doc]]
