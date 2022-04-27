@@ -1115,6 +1115,36 @@ Here's how to remove any 4 byte character:
 #+END_SRC
 
 ** Array <<php:array>>
+*** Spread Operator
+#+begin_src php
+  // Spread Operator in Array Expression
+  $arr1 = [1, 2, 3];
+  $arr2 = [...$arr1]; // [1, 2, 3]
+  $arr3 = [0, ...$arr1]; // [0, 1, 2, 3]
+
+  // Argument Unpacking since 5.6
+  // Argument Unpacking
+  // - Applies to array or Traversable
+  $args1 = [1, 2, 3];
+  $args2 = [4, 5, 6];
+
+  function test(...$args) {
+	  return $args;
+  }
+
+  var_dump(test(1, 2, 3) === $args1);
+  var_dump(test(...[1, 2, 3]) === $args1);
+  var_dump(test(...$args1) === $args1);
+  var_dump(test(...new ArrayIterator($args1)) === $args1);
+
+  var_dump(test(...$args1, ...$args2) === array_merge($args1, $args2));
+  var_dump(test(1, 2, 3, ...$args2) === array_merge($args1, $args2));
+
+  // Not possible to use normal arguments after argument unpacking was used. These are invalid
+  // test(...$args1, 4, 5, 6);
+  // test(...$args1, 4, 5, 6, ...$args2);
+#+end_src
+
 *** list <<php:list>>
 #+BEGIN_SRC php
   $abNumeric = array('abc', 'xyz');
@@ -3975,7 +4005,7 @@ Examples
   #+END_SRC
 - Since 7.1, cannot ~use~ superglobals, ~$this~ or variables with the same name as a parameter
 
-*** Pass by reference
+*** Return a reference of the returned value
 #+BEGIN_SRC php
   // Chaining
   function abc() {
@@ -4060,8 +4090,8 @@ Examples
 - Don't need to use ~use~
 - Refer to [[php:array_map][php:array_map]]
 
-*** PHP Immediately Invoked Function Expressions <<php:iife>>
-- v7.0+
+*** IIFE - Immediately Invoked Function Expressions <<php:iife>> <<php:call_user_func_array>> <<php:call_user_func>>
+**** v7.0+
   #+BEGIN_SRC php
     echo (function() {
 	return 42;
@@ -4093,7 +4123,8 @@ Examples
     );
     var_dump($sum); // 34
   #+END_SRC
-- PHP 7.0-
+
+**** Below PHP 7.0
   #+BEGIN_SRC php
     call_user_func(function() {
 	echo "Hello World!";
@@ -4120,6 +4151,19 @@ Examples
 	    array(25, 9, &$sum)
     );
   #+END_SRC
+
+*** func_get_args, func_get_arg <<php:func_get_args>> <<php:func_get_arg>>
+#+begin_src php
+  function foo() {
+	  var_dump(func_num_args() === 3);
+	  var_dump(func_get_arg(1) === 2);
+	  var_dump(func_get_arg(10) === false);
+	  var_dump(($eleventhArgValue = func_num_args() >= 10 ? func_get_arg(10) : null) === null);
+	  var_dump(func_get_args() === array(1, 2, 3));
+  }
+
+  foo(1, 2, 3);
+#+end_src
 
 ** OOP <<php:oop>>
 *** Sample
@@ -4289,7 +4333,7 @@ RestJson.php
 - It prevents child classes from overriding a method or constant (as of PHP 8.1.0) by prefixing the definition with ~final~.
 - If the class itself is being defined final then it cannot be extended.
 
-*** Abstract Class <<php:abstract>>
+*** Abstract Class <<php:abstract>> <<php:abstract function>>
 - Abstract class cannot be instantiated
    - It's used as a base to make child classes and the base can have abstract methods that child must declare
 - If a class has an abstract method, then the class itself must be abstract
@@ -4453,10 +4497,39 @@ RestJson.php
    - can be inherited without implementing the abstract methods
 - interfaces may be multiple-inherited, abstract classes may not. Biggest difference.
 
-*** Use trait with interface <<php:trait>>
-Always use a trait that fulfils one, all or extra capabilities that are
-- required by an interface that the current class implements
-- or required by an abstract class that the current class extends to
+*** Trait <<php:trait>>
+- Always use a trait that fulfils one, all or extra capabilities that are
+   - required by an interface that the current class implements
+   - or required by an abstract class that the current class extends to
+- A trait can
+   - Use other traits
+   - Define properties (static and non-static)
+- Limitation
+   - Cannot extend a class
+   - Cannot implement an interface
+   - Calling a static method or accessing a static property directly on a trait is deprecated since PHP 8.1
+     #+begin_src php
+       trait TestTrait {
+	       public static function foo() {
+		       echo "Foo\n";
+	       }
+
+	       public static function bar() {
+		       self::foo();
+	       }
+
+       }
+
+       // Works until PHP 8.1 (throws warning Deprecated)
+       TestTrait::foo();
+
+       class A {
+	       use TestTrait;
+       }
+
+       // Works in all versions
+       A::bar();
+     #+end_src
 
 #+BEGIN_SRC php
   interface PersonInterface {
@@ -5678,7 +5751,7 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
   var_dump($result);
 #+END_SRC
 
-** PHP HTTP Header <<php:header>>
+** HTTP Header <<php:header>>
 - Refer to header:cache-control
   #+BEGIN_SRC php
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -6004,6 +6077,15 @@ https://github.com/firebase/php-jwt
 
 *** Laravel <<php:laravel>>
 **** Installation
+- A skeleton Laravel project runs on top of the Laravel Framework :: https://github.com/laravel/laravel
+- Laravel Framework :: https://github.com/laravel/framework
+   - Source code in Sail :: 
+
+**** Sail <<php:laravel:sail>>
+- https://laravel.com/docs/9.x/sail
+
+***** Installation (Laravel Framework 9.9.0)
+- Change APP_PORT in <<php:laravel:sail:.env:app_port>>
 #+begin_src sh
   curl -s https://laravel.build/example-app | bash
 
@@ -6023,13 +6105,51 @@ https://github.com/firebase/php-jwt
 
   # Then go to http://localhost:81
 
-  # Source code
-  cd ./vendor/laravel/framework/src/Illuminate/Database/Eloquent/
+  # Laravel Source Code
+  cd ./vendor/laravel/framework/src/
+
+  # e.g. ORM
+  cd Illuminate/Database/Eloquent/
+#+end_src
+
+***** CLI
+#+begin_src sh
+  # Display Help
+  ./vendor/bin/sail
+
+  # Container CLI
+  sail shell
+  # eq.
+  sail bash
+
+  sail root-shell
+  sail root-bash
+
+  # Artisan commands
+  sail artisan --version
+#+end_src
+
+***** .env
+- See [[php:laravel:sail:.env:app_port][php:laravel:sail:.env:app_port]]
+
+**** Artisan CLI
+#+begin_src sh
+  php artisan --version
+  # List of all commands
+  php artisan list
 #+end_src
 
 **** Eloquent (ORM) <<php:laravel:orm>> <<php:laravel:eloquent>>
+***** Model.php
+****** Traits
+- Concerns\HasRelationships
+
 ***** Relationships
 https://laravel.com/docs/9.x/eloquent-relationships
+
+** Run PHP Online in multiple versions
+- https://sandbox.onlinephpfunctions.com/
+- https://3v4l.org/
 
 ** Coding Standard
 *** Variable, action/filter and function name
@@ -67163,6 +67283,13 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   #+BEGIN_SRC sql
     SELECT REPLACE('www.mysql.com', 'w', 'Ww');
   #+END_SRC
+***** ~LIKE~ <<mysql:like>>
+- ~%~ :: like ~*~
+- ~_~ :: like ~?~
+- Escape :: use ~\~
+   - ~\n~ :: newline character. ~\\n~ to escape ~\n~
+   - ~\~ :: Use ~\\\\~ to escape, if the target ~\~ is at the end of the pattern string, use ~\\~
+
 ***** SUBSTRING()  <<mysql:substring>>
 - alias SUBSTR
 
@@ -67183,7 +67310,6 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   -- search 'bar' from 5 + 1 position
   SELECT LOCATE('bar', 'foobarbar', 5) = 7;
 #+END_SRC
-
 **** ~CHAR~ and ~VARCHAR~
 - 1 character 1 byte
 - ~CHAR(n)~
