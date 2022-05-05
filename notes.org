@@ -51680,39 +51680,47 @@ https://github.com/magicmonty/bash-git-prompt
 *** Create and delete a user, Add user to sudo group <<linux:user>>
 - ~sudo adduser corey~
 - ~sudo deluser corey~
+- Use ~useradd~ for non-interactive (Docker)
+   - Example
+      - ~useradd --user-group --create-home newusername~
+   - Options
+      - ~--usergroup, -U~ :: Create a group with the same name as the user
+      - ~--create-home, -m~ :: Create home directory if does not exist
+      - ~--shell, -s~ :: Assign a default shell for this user. ~/bin/false~ returns false then exit (logout)
+	 - ~useradd --user-group --create-home --shell /bin/false newusername~ 
+      - ~-o -u 1000~ :: change UID to 1000, -o is to allow duplicate UID
 
-sudo is a group
+**** Add user to the ~sudo~ group <<linux:user:sudoer>>
+- See [[linux:sudoer]] to fine tune permissions
 As root user, run this to add the user to the sudo group
 #+BEGIN_SRC sh
   gpasswd -a username sudo
   # or
-  # usermod -aG sudo username
-  # to list groups a user is in
+  usermod -aG sudo username
+  # -aG keeps the existing groups the user belongs to and add the user to another group
+
+  # list groups a user is in
   groups username
 
   # list groups for the current user
   id -nG
+  # or
+  groups
 
-  # gpasswd is the same as to add user to a group
   sudo usermod -aG agroupname ausername
-  # -aG keeps the existing groups the user belongs to and add the user to another group
+
 #+END_SRC
 
-Use ~useradd~ for non-interactive (Docker)
-- ~--usergroup, -U~ :: Create a group with the same nanme as the user
-- ~--create-home, -m~ :: Create home directory if does not exist
-- ~--shell, -s~ :: Assign a default shell for this user. ~/bin/false~ returns false then exit (logout)
-  - ~useradd --user-group --create-home --shell /bin/false newusername~ 
-- ~-o -u 1000~ :: change UID to 1000, -o is to allow duplicate UID
-
-*** Group sudo
-- Run ~sudo visudo~ to see
+*** Sudoer file <<linux:sudoer>>
+- Run ~sudo visudo~ to see the sudoers file to check:
    - permissions given to each group
    - check sudo environment variable setting
-- e.g.
+- Instead of directly editing using ~sudo visudo~ (don't directly edit file ~/etc/sudoers~), add files to ~/etc/sudoers.d~
+- Examples
    - ~root ALL=(ALL:ALL) ALL~ :: User root can run sudo as all hosts (1st ALL), all users, all groups and apply to all commands
-   - ~%sudo   ALL=(ALL:ALL) ALL~ :: Start with % means is a group
-   - ~lili2   ALL=(ALL:ALL) ALL~ :: login as a sudoer, add another user lili2 in sudoers file <<linux:user:sudoer>>
+   - ~%sudo ALL=(ALL:ALL) ALL~ :: Start with ~%~ means is a group
+   - ~lili2 ALL=(ALL:ALL) ALL~ :: lili2 can run any command or login as any user <<linux:user:sudoer>>
+   - ~ubuntu ALL=(ALL) NOPASSWD:ALL~ :: ubuntu can run any command without using password on any host or login as any user
 - Which group a user belongs to :: ~groups username~
 - [[https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos][More info]]
 
@@ -53572,41 +53580,58 @@ Options
 
 *** rsync <<linux:rsync>>
 **** Basic
-- By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated
-
+- Both client and server must have rsync installed
+   - ~rsync -v~
 - Dry run first :: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
-- ~-I~, ~--ignore-times~ :: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated
-- ~-u~ :: skip files that are newer in ~$DESTINATION~
-- ~--delete~ :: Delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side
-- ~-r~ :: recursive
-- ~-l~ :: symlink
-- ~-z~ :: compress
-- ~-v~ :: verbose
-- ~-i~ :: Very useful! Display change-summary for all updates, also use with --stats
-- ~-P~ :: --progress --partial, show progress and to resume interrupted transfers 
-- ~-n~ :: dry run
-- ~-t~ :: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless ~--size-only~ is used, missing ~-t~ or ~-a~ will cause the next transfer to behave as if it used ~-I~, causing all files to be updated
-   - This command will not sync files with different permissions, ownership and modification time. Review the results and remove dry run ~-n~ before running again
-- ~-a~ :: ~-rlptgoD~ recursive, symlink, same permissions, mod time, group/owner, device/special files
-- ~-p~ :: the receiving rsync to set the destinaion permissions to be the same as the source permissions.
-- ~-g~ :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
-- ~-o~ :: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
-- ~-D~ :: is equivalent to ~--devices --specials~
-- ~--devices~ :: To transfer character and block device files to the remote system to recreate these devices.
-- ~--specials~ :: To transfer special files such as named sockets and fifos.
-- ~--size-only~ :: This modifies rsync’s "quick check" algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly
-- ~-c, --checksum~ :: Use it with ~--size-only~. Refer to pantheon:rsync
-- ~--stats~ :: show file-transfer stats: number of files, number of files transferred, Total file size in bytes, Total transferred file size
-- ~--chown~ :: refer to -og, change owner:group on dest. ~rsync -rlvzPitog --chown=www-data:www-data /source /destination~
+   - ~-n~ :: dry run
+   - ~-z, --compress~ :: compress data sent to destination machine
+   - ~-u, --update~ :: skip files that are newer in ~$DESTINATION~
+      - See ~--ignore-existing~ 
+- Verbose and output
+   - ~-v~ :: verbose
+   - ~--stats~ :: show file-transfer stats: number of files, number of files transferred, Total file size in bytes, Total transferred file size
+      - ~-i~ :: Very useful! Display change-summary for all updates, also use with ~--stats~
+   - ~-P~ :: ~--progress --partial~
+      - show progress and to resume interrupted transfers 
+- ~-a, --archive~ :: ~-rlptgoD~
+   - recursive, symlink, same permissions, mod time, group/owner, device/special files
+   - ~-r~ :: recursive
+   - ~-l, --links~ :: symlink
+   - ~-p, --perms~ :: preserve permissions. The receiving rsync sets the destinaion permissions to be the same as the source permissions
+      - ~--no-p~
+   - ~-t~ :: actually is very crucial. This tells rsync to transfer modification times along with the files and update them on the remote system. Unless ~--size-only~ is used, missing ~-t~ will cause the next transfer to behave as if it used ~-I~, causing all files to be updated
+      - This command will not sync files with different permissions, ownership and modification time. Review the results and remove dry run ~-n~ before running again
+      - By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated
+      - ~--size-only~ :: This modifies rsync’s "quick check" algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly
+	 - ~-c, --checksum~ :: Use it with ~--size-only~. Refer to pantheon:rsync
+      - ~-I~, ~--ignore-times~ :: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated
+   - ~-g~ :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
+      - ~--no-g~
+   - ~-o~ :: To set the owner of the destination file to be the same as the source file. Only if dest is run as super-user
+      - ~--no-o~
+   - ~--chmod=~ :: To give new files the destination-default permissions (while leaving existing files unchanged), make sure ~-p~ is off and use ~--chmod=ugo=rwX~
+      - ~rsync -zar --no-p --no-g --no-o --chmod=ugo=rwX~
+	 - ~--no-p~ :: to use the default permissions of the destination dir 
+	 - ~--no-g~ :: to use the default group of the destination dir
+	 - ~--no-o~ :: to use the default user of the destination dir 
+   - ~--chown~ :: hard set owner:group on dest. ~rsync -rlvzPitog --chown=www-data:www-data /source /destination~
+   - ~-D~ :: is equivalent to ~--devices --specials~
+      - ~--devices~ :: To transfer character and block device files to the remote system to recreate these devices
+      - ~--specials~ :: To transfer special files such as named sockets and fifos
 - ~--exclude 'public_html/database.txt'~ :: exclude a file or directory. Multiple ~--exclude~ can be used
    - ~--exclude='*.log'~ :: by file extension
+- ~--exclude-from '/home/backup/exclude.txt'~ :: exclude multiple files and folders, use relative path without leading ~./~
 - ~--include~ :: Only include log files ~--include='*.log' --exclude='*'~
 - ~--ignore-existing~ :: skip updating files that already exist on the destination
-- ~-e, --rsh=COMMAND~ :: By default, rsync uses =~/.ssh/config=. Change the default e.g.
+   - ~--ignore-non-existing, --existing~ :: skip creating files and directories that do not exist yet on the destination
+- ~-e, --rsh=COMMAND~ :: By default, rsync uses =~/.ssh/config= on local to SSH into remote. Change the default e.g.
    - ~-e 'ssh -p 2234'~
    - ~-e 'ssh -o "ProxyCommand nohup ssh firewall nc -w1 %h %p"'~
-   - Refer to bash:sshpass for --rsh
-- ~--exclude-from '/home/backup/exclude.txt'~ :: exclude multiple files and folders, use relative path without leading ~./~
+   - See bash:sshpass
+- ~--rsync-path~ :: On remote, specify which program (default ~rsync~). e.g. change it to ~sudo rsync~ to elevate permissions
+   - See [[linux:rsync:sudo]]
+- Dangerous!
+   - ~--delete~ :: Delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side
 
 e.g.
 #+BEGIN_EXAMPLE
@@ -53713,6 +53738,18 @@ use ~**~ to match anything, including slashes
 #+END_EXAMPLE
 
 A trailing ~***~ will match both the directory and everything in the directory e.g. ~foldername/***~
+
+**** Run rsync on remote using non-root SSH credentials <<linux:rsync:sudo>>
+- Need to make sure the non-root SSH credentials can run ~sudo rsync~
+- Files uploaded to remote will have the default permissions, group and user of the destination remote dir
+#+begin_src sh
+  # --rsync-path 'sudo rsync'
+  # --rsync-path="sudo rsync"
+  # "--rsync-path=sudo rsync"
+  # '--rsync-path=sudo rsync'
+  rsync ... -zar --no-p --no-g --no-o --rsync-path='sudo rsync' ...
+
+#+end_src
 
 **** Examples
 
@@ -71586,8 +71623,27 @@ JVM: OpenJDK 64-Bit Server VM by JetBrains s.r.o
 Find Action > Switch IDE Boot SDK to switch between installed runtimes. Always use the JetBrains version.
 
 *** Deployment
-For localhost, Use In place type, and Web server root URL is the file path to the project root directory e.g. file:///E:/li/cssSandbox/
-Mappings > Web path on server is /
+- https://www.jetbrains.com/help/phpstorm/tutorial-deployment-in-product.html
+- Tools > Deployment > Configuration
+   - For local deployment, use ~In place~ type, and Web server root URL is the file path to the project root directory e.g. ~file:///E:/li/cssSandbox/~, Mappings > Web path on server is ~/~
+   - Rsync setting
+      - Default for MacOS
+	 - Rsync executable path :: rsync
+	 - Rsync options :: ~-zar~
+	 - Shell executable path :: ssh
+      - Rsync using a non-root but sudoer SSH credentials
+	 - See [[linux:rsync:sudo]]
+	 - Rsync executable path :: rsync
+	 - Rsync options
+	   #+begin_example
+	     -zar
+	     --no-p
+	     --no-g
+	     --no-o
+	     --rsync-path=sudo rsync
+	   #+end_example
+	 - Shell executable path :: ssh
+- Tools > Deployment > Upload to... :: ~⌥ ⇧ ⌘ x~
 
 *** Search, Find
 **** Find Usages ~⌥ F7~
