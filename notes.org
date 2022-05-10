@@ -1880,6 +1880,16 @@ Associative arrays
 	  return array_search($key, array_keys($array));
   }
 
+  var_export(insertKeyValuePairsToAssocArray(
+	  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null], 'z', ['xyz' => true], false) ===
+	  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null, 'xyz' => true]
+  );
+
+  var_export(insertKeyValuePairsToAssocArray(
+	  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null], 'z', ['xyz' => true, 'x' => 'override'], false) ===
+	  [1, 2, 3, 'x' => 'override', 'y' => 1, 'z' => null, 'xyz' => true]
+  );
+
   /**
    ,* Insert key/value pairs before or after a key/value
    ,*
@@ -1889,18 +1899,23 @@ Associative arrays
    ,* @param bool $insertBefore otherwise, insert after
    ,*
    ,* @return array
+   ,* @throws Exception
    ,*/
-  function insertKeyValuePairsToAssocArray($array, $insertAtThisKey, $insertItems, $insertBefore = true) {
-	  $index = array();
-	  foreach ($array as $_k => $_v) {
-		  $index[] = $_k;
+  function insertKeyValuePairsToAssocArray($array, $insertAtThisKey, $insertItems, $insertBefore = true): array {
+	  if (! array_key_exists($insertAtThisKey, $array)) {
+		  throw new Exception('Key cannot be found.');
 	  }
+	  // $index = array();
+	  // foreach ($array as $_k => $_v) {
+	  // 	$index[] = $_k;
+	  // }
+	  array_walk($array, function ($v, $k) use (&$index) {
+		  $index[] = $k;
+	  }, $index = []);
 	  $indexFlip = array_flip($index);
 	  $indexToInsert = $insertBefore ? $indexFlip[$insertAtThisKey] : $indexFlip[$insertAtThisKey] + 1;
 	  $arrayEnd = array_splice($array, $indexToInsert);
 	  $arrayStart = array_splice($array, 0, $indexToInsert);
-	  //array_splice($array, $indexToInsert, 0, $insertItems);
-
 	  return array_merge($arrayStart, $insertItems, $arrayEnd);
   }
 #+END_SRC
