@@ -68192,6 +68192,8 @@ Update Joined Tables
 
 *** Routines, Procedures, User Defined Function
 - Stored Procedure and Stored Functions are stored under the schema as routines
+   - function returns a value
+- A routine, by default, is associated with the default database, to specify a given database :: ~db_name.sp_name~
 - List all routines
   #+begin_src sql
     SELECT * FROM INFORMATION_SCHEMA.ROUTINES
@@ -68200,6 +68202,47 @@ Update Joined Tables
 	-- AND ROUTINE_TYPE = 'PROCEDURE';
 	-- AND ROUTINE_NAME = 'myname';
   #+end_src
+
+**** Procedure <<mysql:procedure>>
+#+begin_src sql
+  CREATE
+      [DEFINER = user]
+      PROCEDURE [IF NOT EXISTS] sp_name ([proc_parameter[,...]])
+      [characteristic ...] routine_body
+#+end_src
+- proc_parameter
+   - Types
+      - IN :: the procedure might modify but the caller cannot see the modification
+      - OUT :: the value is passed back from the procedure back to the caller. Initial value is ~NULL~
+      - INOUT 
+
+#+begin_src sql
+  DELIMITER //
+
+  CREATE PROCEDURE GetAllProducts()
+  BEGIN
+	  SELECT *  FROM products;
+  END //
+
+  DELIMITER ;
+
+  -- CALL GetAllProducts();
+
+  DELIMITER //
+
+  CREATE PROCEDURE GetAllProducts(IN country CHAR(3), OUT cities INT)
+  BEGIN
+	  SELECT COUNT(*) INTO cities  FROM products
+	  WHERE CountryCode = country;;
+  END //
+
+  DELIMITER ;
+
+  -- CALL GetAllProducts('JPN', @cities);
+  -- SELECT @cities;
+
+#+end_src
+
 **** Characteristics <<mysql:routine:characteristics>>
 #+BEGIN_EXAMPLE
   characteristic:
@@ -69074,6 +69117,8 @@ This does not work with Ubuntu. Change 50-server.cnf instead.
 - List triggers for a db :: ~SHOW TRIGGERS FROM mydbname;~
 - List triggers for a table :: ~SHOW TRIGGERS FROM mydbname WHERE table = 'mytblname';~
 - Drop a trigger :: ~DROP TRIGGER mydbname.mytriggername;~
+- Can call stored procedures but cannot pass ~NEW~ nor ~OLD~ as the whole row
+   - See [[mysql:procedure]]
 
 #+BEGIN_SRC sql
   DELIMITER //
