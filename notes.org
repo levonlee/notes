@@ -935,10 +935,10 @@ Convert a string format to another
 
 ** Bitwise Operator
 #+BEGIN_SRC php
-  define('FLAG_A', 1); /// 0001
-  define('FLAG_B', 2); /// 0010
-  define('FLAG_C', 4); /// 0100
-  define('FLAG_D', 8); /// 1000
+  define('FLAG_A', 1); /// 0001 or 1<<0
+  define('FLAG_B', 2); /// 0010 or 1<<1
+  define('FLAG_C', 4); /// 0100 or 1<<2
+  define('FLAG_D', 8); /// 1000 or 1<<3
 
   $combined_flags = FLAG_A | FLAG_C; // 0101 binary, which is decimal 5
 
@@ -1146,17 +1146,42 @@ Here's how to remove any 4 byte character:
   // test(...$args1, 4, 5, 6, ...$args2);
 #+end_src
 
-*** list <<php:list>>
+*** list, compact, extract <<php:list>>
+- https://www.php.net/manual/en/function.extract.php
 #+BEGIN_SRC php
   $abNumeric = array('abc', 'xyz');
   $abAssociative = array(
 	  'a' => 'abc',
 	  'b' => 'xyz',
   );
+
   list($a, $b) = $abNumeric;
-  var_dump($a, $a === 'abc');
+  var_dump($a === 'abc');
+
+  list($a, $b) = $abAssociative;
+  var_dump($a === null);
+
   list('a' => $a, 'b' => $b) = $abAssociative; // PHP 7.1.0+
-  var_dump($a, $a === 'abc');
+  var_dump($a === 'abc');
+
+  $a = 'abc';
+  $b = 'xyz';
+
+  var_dump(compact('a', 'b') === $abAssociative);
+
+  // extract(array &$array, int $flags = EXTR_OVERWRITE, string $prefix = ""): int
+
+  // Returns the number of variables successfully imported into the symbol table.
+
+  $size = "large";
+  $var_array = array(
+	  "color" => "blue",
+	  "size" => "medium",
+	  "shape" => "sphere",
+  );
+  extract($var_array, EXTR_PREFIX_SAME, "wddx");
+
+  var_dump($color === 'blue', $size === 'large', $shape === 'sphere', $wddx_size === 'medium');
 #+END_SRC
 
 *** ~array_merge~, array_merge_recursive <<<php:array_merge>>>
