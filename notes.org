@@ -67769,6 +67769,19 @@ SELECT aliases can only be used in ORDER BY, GROUP BY and HAVING
     )
   ) t2
   ON t1.scid = t2.scid;
+
+  -- Faster
+  SELECT t1.*,  t2.final_exam_score
+  FROM (
+    -- Original query
+    SELECT scid, SUM(score), MAX(CONCAT_WS(0x1F, final_exam_score, ssid)) AS _sortColumns FROM s_score GROUP BY scid
+  ) t1 JOIN (
+  -- Join on 1 row
+  SELECT *
+  FROM s_score
+  ) t2
+  ON t1._sortColumns = CONCAT_WS(0x1F, t2.final_exam_score, t2.ssid);
+
 #+END_SRC
 
 **** ~GROUP BY~ and ~HAVING~ <<mysql:group by>>
@@ -68256,6 +68269,14 @@ Update Joined Tables
    - rows :: number of rows to scan
       - when ~key~ is NULL, it'll be the table's total number of rows
 
+**** Profiling
+#+begin_src sql
+  SET profiling = 1;
+  -- Run query #1
+  -- Run query #2
+  SHOW PROFILES;
+  -- Query_ID and Duration
+#+end_src
 *** User-Defined Variables
 - https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
 
