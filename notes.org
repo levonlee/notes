@@ -67374,7 +67374,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 
 **** String Functions <<mysql:string:functions>>
 - https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
-- Concatenate user variable
+- Concatenate user variable <<mysql:concat>>
   #+BEGIN_SRC sql
     SET @s3 = 'http://s3.amazonaws.com/abc/';
     -- if there any value that is NULL, CONCAT returns NULL
@@ -67389,7 +67389,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 	       IF(TRIM(colC), 1, NULL));
   #+END_SRC
 - Refer to [[mysql:separator]]
-- Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values
+- Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values <<mysql:concat_ws>>
   #+BEGIN_SRC sql
     CONCAT_WS(',', colA, colB, 'Column C Value')
     WHERE url_alias.source = CONCAT('node/', n.nid)
@@ -67721,8 +67721,10 @@ SELECT aliases can only be used in ORDER BY, GROUP BY and HAVING
 ***** Join on one row only <<mysql:join on one row>>
 - Tables
    - users
+      - id
    - widgets
-      - user_id
+      - id
+      - user_id :: one to many
 	
 #+BEGIN_SRC sql
   -- In general, using ORDER BY ... LIMIT 1 is slower compared to MAX() or MIN()
@@ -67730,19 +67732,50 @@ SELECT aliases can only be used in ORDER BY, GROUP BY and HAVING
   FROM users JOIN (
 
       SELECT * FROM widgets
-      WHERE id = (
+      WHERE id IN (
 	  SELECT MAX(id) FROM widgets
 	  GROUP BY user_id
       )
 
   ) AS most_recent_user_widget 
       ON users.id = most_recent_user_widget.user_id
+
+  -- Multiple columns sort
+  SELECT *
+  FROM users JOIN (
+
+      SELECT * FROM widgets
+      WHERE CONCAT_WS(0x1F, col2, id) IN (
+	  SELECT MAX(CONCAT_WS(0x1F, col2, id)) FROM widgets
+	  GROUP BY user_id
+      )
+
+  ) AS most_recent_user_widget 
+      ON users.id = most_recent_user_widget.user_id
+
+  -- Group by but order by non-grouped columns
+
+  SELECT t1.*,  t2.final_exam_score
+  FROM (
+    -- Original query
+    SELECT scid, SUM(score) FROM s_score GROUP BY scid
+  ) t1 JOIN (
+  -- Join on 1 row
+  SELECT *
+  FROM s_score
+  WHERE CONCAT_WS(0x1F, final_exam_score, ssid) IN (
+       SELECT MAX(CONCAT_WS(0x1F, final_exam_score, ssid)) FROM s_score
+       GROUP BY scid
+    )
+  ) t2
+  ON t1.scid = t2.scid;
 #+END_SRC
 
 **** ~GROUP BY~ and ~HAVING~ <<mysql:group by>>
 - After ~WHERE~ before ~ORDER BY~ and ~HAVING~
    - ~WHERE 1=1 GROUP BY col1 HAVING fieldDefinedinSELECT > 1 ORDER BY col1~
 - ~GROUP BY col1, col2~ as if ~ORDER BY col1, col2~ is also included. To suppress sorting :: ~GROUP BY col1 ORDER BY NULL~
+- ~ORDER BY~ on non-grouped columns, see [[mysql:join on one row]], the grouped query result on the left of the join, the order by table(s) is on the right of the join
 
 **** ~COUNT~ <<mysql:count>>
 - ~COUNT(*)~ :: count all rows of a table
