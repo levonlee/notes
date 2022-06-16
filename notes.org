@@ -4801,6 +4801,13 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
   ,*/
 #+END_SRC
 
+**** __set()
+- It's run when writing data to inaccessible (protected or private) or non-existing properties
+
+#+begin_src php
+  public __set(string $name, mixed $value): void
+#+end_src
+
 *** is_a, is_subclass_of, get_class(), get_parent_class()
 #+BEGIN_SRC php
   get_class(object $object = ?): string
@@ -57255,7 +57262,7 @@ Extract Dockerfile from an image. Use one or more of below
 
 *** docker build, docker tag <<docker:build>>
 - With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
-- Change ~myimage(:latest)~ to ~myimage:1.0~ :: ~docker tag myimage myimage:1.0~
+- Rename image: Change ~myimage(:latest)~ to ~myimage:1.0~ :: ~docker tag myimage myimage:1.0~
 - Build an image and tag it with latest and 2.0 :: ~docker build -t myimage:latest -t myimage:2.0 .~
 - Multiple Dockerfiles (Dockerfile1, Dockerfile2) in the current folder :: ~docker build -t your-image-name -f Dockerfile2 .~
 - Dockerfile and resource are in different folders (e.g. COPY a file from parent folder in Dockerfile) :: ~docker build -t your-image-name -f /path/Dockerfile.yourname /path/to/docker/~
@@ -57324,8 +57331,26 @@ e.g. allow docker container to run docker daemon, allow docker container to acce
 + When an image is run, may encounter this warning. Having the platform option changes the host platform arch
    - ~WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested~
   
-*** ~-v~ volume <<docker:run:volume>>
+*** ~-v~, ~--volume~ vs ~--mount~ volume <<docker:run:volume>>
+- https://docs.docker.com/storage/volumes/
+- Bind mount vs named volume
+   - Bind mount :: no volume is created, direct map host path to container path
+   - Named volume or data volume :: fully controlled by Docker (Linux VM) 
+- Create a volume :: See [[docker:volume]]
+- See [[docker-compose:volumes]]
 - Dockerfile can use relative path in source. However, ~docker run~ cannot. Use [[linux:makefile][linux:makefile]]
+- For named volumes, both ~-v~ and ~--mount~ cover all options
+   #+begin_src sh
+     # -v volumeName:/target/in/container:comma-separated,list,of,options,eg,ro
+     docker run -d --name devtest -v myvol2:/app nginx:latest
+
+     # --mount
+     # type=bind, volume or tmpfs
+     # source= or src=
+     # destination= or dst= or target=
+     # 
+     docker run -d --name devtest --mount source=myvol2,target=/app nginx:latest
+   #+end_src
   
 ** Containers cp logs stats start stop restart rm inspect <<docker:container>>
 - List containers :: ~docker ps -a~
@@ -57462,8 +57487,10 @@ Personal dev project
 #+END_EXAMPLE
 
 ** Volume <<docker:volume>>
-- Refer to [[docker-compose:volumes][docker-compose:volumes]]
 *** Basics
+- See [[docker-compose:volumes][docker-compose:volumes]]
+- See [[docker:run:volume]]
+
 #+BEGIN_SRC sh
   # List all volumes
   docker volume ls
@@ -57721,7 +57748,8 @@ Same for 16.04 and 18.04
 #+END_SRC
 
 **** volumes <<docker-compose:volumes>>
-- Refer to [[docker:volume][docker:volume]]
+- See [[docker:volume][docker:volume]]
+
 ***** Top Level
 #+BEGIN_SRC yaml
   version: "3.9"
@@ -57729,7 +57757,7 @@ Same for 16.04 and 18.04
     web:
       image: nginx:alpine
       volumes:
-	# Long syntax
+	# Long syntax. Volume #1
 	- type: volume
 	  # first encounter of named volume `mydata`, and it's initialized
 	  # because `mydata` will be reused in other service `db`, so a top-level volume is needed
@@ -57737,9 +57765,12 @@ Same for 16.04 and 18.04
 	  target: /data
 	  volume:
 	    nocopy: true
+	# Long syntax. Volume #2
 	- type: bind
 	  source: ./static
 	  target: /opt/app/static
+	# Short syntax. Volume #3. data-volume needs to be at top-level
+	- data-volume:/var/lib/mysql
 
     db:
       image: postgres:latest
@@ -57747,23 +57778,24 @@ Same for 16.04 and 18.04
 	- "/var/run/postgres/postgres.sock:/var/run/postgres/postgres.sock"
 	- "dbdata:/var/lib/postgresql/data"
 
-	# Top Level
+  # Top Level
   volumes:
     # Named volume which can be used in all services
     # this volume isn't mapped to anything in docker host!
     # top-level volumes can't specify path to named volume.. You have to install other Docker plugin
     mydata:
     dbdata:
-
-  # Top level
-  volumes:
-    dbdata:
+    data-volume:
 #+END_SRC
 
 ***** Short syntax
 #+begin_src docker-compose
   # Syntax [SOURCE:]TARGET[:MODE]
-  # mode :: ro (read only), rw (read and write)
+  # modes (comma separated)
+  # - ro (read only), rw (read and write)
+  # - consistent (default) :: perfect consistency (host and container have an identical view of the mount at all times)
+  # - delegated :: the container’s view is authoritative (permit delays before updates on the container appear in the host). Writes performed by containers may not be immediately reflected on the host file system. In situations such as NFS asynchronous mode, if a running container with a delegated bind mount crashes, then writes may be lost.
+  # - cached :: the host’s view is authoritative (permit delays before updates on the host appear in the container). Writes performed by containers are immediately visible to the host, but there may be a delay before writes performed on the host are visible within containers.
   volumes:
     # Just specify a path and let the Engine create a volume
     - /var/lib/mysql
@@ -64392,17 +64424,17 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
 
 *** Make current branch exactly as another branch
 Make current branch li exactly the same as remote branch origin/master
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git checkout li
   git reset --hard origin/master
-#+END_EXAMPLE
+#+END_SRC
 
 *** Force push to remote branch
 local master has different commits than remote li's master branch
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC sh
   git checkout master
   git push li master -f
-#+END_EXAMPLE
+#+END_SRC
 
 *** Find most recent ancestor of 2 branches
 #+BEGIN_EXAMPLE
