@@ -27826,12 +27826,38 @@ sizes attribute has to be set in order for the Width header to be sent. In the n
    - PHP force a file to download
      #+begin_src php
        $fileNameAfterDownload = 'a.pdf';
+       $size = filesize($fn);
        header('Content-Type: application/octet-stream');
        header("Content-disposition: attachment; filename=\"{$fileNameAfterDownload}\"");
+
+       // Maybe unnecessary
+       header('Content-Transfer-Encoding:binary');
+
+       header("Content-Length:" . filesize($fn));
+
+       header("Expires:0");
+       header("Cache-Control:no-cache, must-revalidate");
+       header("Pragma:no-cache");
+
        // This is to make sure we get a refresh copy of the source file
        // e.g. if file_get_contents($fn) is run before this, and the file is modified after the 1st file_get_contents and before this, the 2nd file_get_contents in here gets the cached copy
        clearstatcache();
-       echo file_get_contents($fn);
+
+       $chunkSize = 25*(1024 * 1024); //25mb per chunky chunk
+
+       if ($size > $chunkSize) {
+	       $handle = fopen($fn, 'rb');
+	       while (!feof($handle)) {
+		       print(@fread($handle, $chunkSize));
+		       ob_flush();
+		       flush();
+	       }
+	       fclose($handle);
+       }
+       else {
+	       echo file_get_contents($fn);
+       }
+
        die();
      #+end_src
 
