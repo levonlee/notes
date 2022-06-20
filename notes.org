@@ -536,7 +536,7 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
 #+BEGIN_SRC php
   $fptr = fopen(getenv("OUTPUT_PATH"), "w");
 
-  $stdin = fopen("php://stdin", "r");
+  $stdin = fopen("php://stdin", "rb"); // b means binary and has to be put at the end, t means plaintext
 
   fscanf($stdin, "%d\n", $ar_count); // total number of different numbers
 
@@ -56038,6 +56038,42 @@ Every 5 seconds
   done
 #+END_SRC
 
+** InCron - inotify cron <<linux:incron>>
+#+begin_src sh
+  sudo apt-get install incron
+
+  # /etc/incron is created
+  # one user per line e.g. root
+  nano incron.allow
+
+  # https://linux.die.net/man/8/incrond
+
+  systemctl start incron.service
+  # or
+  /etc/init.d/incrond start
+
+  incrontab -l
+  incrontab -e
+#+end_src
+
+#+begin_src conf
+  # <path/to/folder/or/file> <mask> <command>
+
+  # Mask: https://linux.die.net/man/5/incrontab
+
+  # IN_CLOSE_WRITE :: file opened for writing was closed.
+  # IN_MODIFY :: file was modified. Before file open for writing is closed, there may be more than 1 time the file/folder is modified
+
+  # Wildcards
+  # $$ dollar sign
+  # $@ watched filesystem path (see above)
+  # $# event-related file name
+  # $% event flags (textually)
+  # $& event flags (numerically)
+
+  # example
+  /path/to/file IN_CLOSE_WRITE /usr/bin/php /home/vmail/ma-notify.php $@ $# $%
+#+end_src
 ** upx <<<linux:upx>>>
 Executable file packer (compresser)
 
