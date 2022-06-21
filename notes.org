@@ -2865,6 +2865,32 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   echo sprintf("%.5f", 123); // 123.00000
 #+END_SRC
 
+*** strtr <<php:strtr>>
+#+begin_src php
+  // byte-to-byte
+  strtr(string $string, string $from, string $to): string
+
+  // The longest keys will be tried first. Once a substring has been replaced, its new value will not be searched again 
+  strtr(string $string, array $replace_pairs): string
+#+end_src
+
+#+begin_src php
+  $trans = array("h" => "-", "hello" => "hi", "hi" => "hello");
+
+  // `h` is not picked because there're longer matches and replaced text was not searched again 
+  strtr("hi all, I said hello", $trans) === 'hello all, I said hi';
+
+  $strTemplate = "My name is :name, not :name2.";
+  $strParams = [
+    ':name' => 'Dave',
+    'Dave' => ':name2 or :password', // a wrench in the otherwise sensible input
+    ':name2' => 'Steve',
+    ':pass' => '7hf2348', // sensitive data that maybe shouldn't be here
+  ];
+
+  strtr($strTemplate, $strParams) === "My name is Dave, not Steve.";
+#+end_src
+
 *** Random bash64 string
 #+BEGIN_SRC php
   $str = substr(base64_encode(sha1(mt_rand())), 0, 16);
