@@ -67065,6 +67065,7 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
 ~cf_sql_longvarchar~ doesn't work. You should use ~<cfqueryparam cfsqltype="CF_SQL_CLOB" value="#description#">~ instead. 
 
 ** MySQL <<db:mysql>>
+show engine innodb status
 *** Version, Settings, Global variables <<mysql:config>>
 - ~service mysql status~
 - ~sudo systemctl restart mysql.service~ or ~service mysql restart~ or ~service mysqld restart~
@@ -68449,6 +68450,131 @@ Update Joined Tables
    - rows :: number of rows to scan
       - when ~key~ is NULL, it'll be the table's total number of rows
 
+**** SIGNAL / RESIGNAL throw error or warning <<mysql:signal>>
+- https://dev.mysql.com/doc/refman/5.7/en/signal.html
+- No priveleges required
+- Inside a ~BEGIN ... END~ block
+
+***** Basics
+#+begin_src sql
+  SIGNAL condition_value
+      [SET signal_information_item
+      [, signal_information_item] ...]
+
+  condition_value: {
+      SQLSTATE [VALUE] sqlstate_value
+    | condition_name
+  }
+
+  signal_information_item:
+      condition_information_item_name = simple_value_specification
+    
+  condition_information_item_name: {
+      CLASS_ORIGIN
+    | SUBCLASS_ORIGIN
+    | MESSAGE_TEXT
+    | MYSQL_ERRNO
+    | CONSTRAINT_CATALOG
+    | CONSTRAINT_SCHEMA
+    | CONSTRAINT_NAME
+    | CATALOG_NAME
+    | SCHEMA_NAME
+    | TABLE_NAME
+    | COLUMN_NAME
+    | CURSOR_NAME
+  }
+#+end_src
+
+#+begin_src sql
+  SIGNAL
+  SQLSTATE '01000'
+  SET MESSAGE_TEXT = 'my warning';
+#+end_src
+
+#+begin_src sql
+  CREATE PROCEDURE p (pval INT)
+  BEGIN
+    DECLARE specialty CONDITION FOR SQLSTATE '45000';
+    IF pval = 0 THEN
+      SIGNAL SQLSTATE '01000';
+      -- '01' :: warning class, which does not terminate
+    ELSEIF pval = 1 THEN
+      SIGNAL SQLSTATE '45000'
+	SET MESSAGE_TEXT = 'An error occurred';
+    ELSEIF pval = 2 THEN
+      SIGNAL specialty
+	SET MESSAGE_TEXT = 'An error occurred';
+    ELSE
+      SIGNAL SQLSTATE '01000'
+	SET MESSAGE_TEXT = 'A warning occurred', MYSQL_ERRNO = 1000;
+      -- The last SIGNAL replaces MESSAGE_TEXT AND MYSQL_ERRNO set previously
+      SIGNAL SQLSTATE '45000'
+	SET MESSAGE_TEXT = 'An error occurred', MYSQL_ERRNO = 1001;
+    END IF;
+  END;
+#+end_src
+
+***** SQLSTATE <<mysql:sqlstate>>
+- 5-character string
+   - First 2 characters are called class
+   - '45000' :: generic value, exception, means "unhandled user-defined exception"
+- Overrides MYSQL_ERRNO
+   - Classes
+      - '00' :: success. Do not use this in ~SIGNAL~ / ~RESIGNAL~
+      - '01' :: warning but not failing the statement
+      - '02' :: not found. By default, it will work just as warning: not failing the statement
+      - > '02' :: exception, fails the statement
+
+***** RESIGNAL <<mysql:resignal>>
+- Pass upper level warning/error onto the current level
+- Must be inside a [[mysql:handler]]
+
+#+begin_src sql
+  DELIMITER $$
+
+  CREATE PROCEDURE Divide(IN numerator INT, IN denominator INT, OUT result double)
+  BEGIN
+	  DECLARE division_by_zero CONDITION FOR SQLSTATE '22012';
+
+	  DECLARE CONTINUE HANDLER FOR division_by_zero 
+	  RESIGNAL SET MESSAGE_TEXT = 'Division by zero / Denominator cannot be zero';
+	  -- 
+	  IF denominator = 0 THEN
+		  SIGNAL division_by_zero;
+	  ELSE
+		  SET result := numerator / denominator;
+	  END IF;
+  END
+#+end_src
+  
+**** Handler <<mysql:handler>>
+- https://dev.mysql.com/doc/refman/8.0/en/declare-handler.html
+- Handler declarations must appear after variable or condition declarations
+- condition_value
+   - SQLWARNING :: Shorthand for the class of SQLSTATE values that begin with '01'
+   - NOT FOUND :: Shorthand for the class of SQLSTATE values that begin with '02'
+   - SQLEXCEPTION :: Shorthand for the class of SQLSTATE values that do not begin with '00', '01', or '02'
+  
+#+begin_src sql
+  DECLARE handler_action HANDLER
+      FOR condition_value [, condition_value] ...
+      statement
+
+  handler_action: {
+      CONTINUE
+    | EXIT
+    | UNDO
+  }
+
+  condition_value: {
+      mysql_error_code
+    | SQLSTATE [VALUE] sqlstate_value
+    | condition_name
+    | SQLWARNING
+    | NOT FOUND
+    | SQLEXCEPTION
+  }
+#+end_src
 **** Profiling
 #+begin_src sql
   SET profiling = 1;
