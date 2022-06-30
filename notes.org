@@ -67201,9 +67201,11 @@ https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
 
 **** charset, collation <<<mysql:charset>>> <<<mysql:collation>>>
 - Collation
-   - A set of fules that defines how to compare and sort character strings
+   - A set of rules that defines how to compare and sort character strings
    - Every collation belongs to a single character set
    - A character set has at least one collation and most have 2 or more collations
+   - ~*_ci~ :: case-insensitive at least in stopwords matching in full-text search
+      - ~*_cs~ :: case-sensitive
 - Character Set
    - ~latin1~ :: default for MySQL, 1 byte
    - ~utf8~ :: default collation ~utf8_general_ci~, 3 bytes
@@ -67563,6 +67565,42 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 
 **** String Functions <<mysql:string:functions>>
 - https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
+- ~CHAR_LENGTH(@str)~ :: visual string length
+- ~LENGTH(@str)~ :: byte length/size
+  #+BEGIN_SRC sql
+    -- Times a substring appear in a string. e.g. substring is lili
+    SELECT ROUND((LENGTH(col1) - LENGTH(REPLACE(col1, 'lili', ''))) / LENGTH('lili')) AS numOfAppearanceOfSubstring
+    FROM t1
+  #+END_SRC
+
+***** ~REGEXP_REPLACE~ <<mysql:regexp_replace>>
+- Do more complicated find and replace. MariaDB driver on host is required
+  #+BEGIN_SRC sql
+    SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3');
+  #+END_SRC
+
+***** String delimited list <<mysql:substring_index>>
+  #+BEGIN_SRC sql
+    substring_index ( substring_index ( context,',',1 ), ',', -1) ) 
+    substring_index ( substring_index ( context,',',2 ), ',', -1) ) 
+    substring_index ( substring_index ( context,',',3 ), ',', -1) ) 
+    substring_index ( substring_index ( context,',',4 ), ',', -1) )
+    -- it means 1st value, 2nd, 3rd, etc.
+  #+END_SRC
+   - Explanation :: original string is "34,7,23,89", ~substring_index( context,',', 3)~ returns "34,7,23". The outer substring_index takes the value returned by the inner substring_index and the -1 allows you to take the last value. So you get "23" from the "34,7,23"
+   - See mysql:string:list:temp table for more
+
+***** ~FIELD(str, str1, str2, ...)~ <<mysql:field>> <<mysql:elt>>
+- return index position (starting from 1) of ~str~ in the ~str1, str2, ...~ list
+   - 0 if not found or ~str~ is ~NULL~
+- If all arguments including ~str~ are strings, then compare as strings. If all arguments are numbers, compare as numbers
+   - Otherwise, compare as double
+- A good place to use it is in ~ORDER BY~
+- The complement is ~ELT()~
+   - ~ELT(N, str1, str2, ... )~
+      - ~SELECT ELT(1, 'Aa', 'Bb', 'Cc', 'Dd')~ :: ~'Aa'~
+
+***** Concat
 - Concatenate user variable <<mysql:concat>>
   #+BEGIN_SRC sql
     SET @s3 = 'http://s3.amazonaws.com/abc/';
@@ -67577,7 +67615,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 	       IF(TRIM(colB), 1, NULL),
 	       IF(TRIM(colC), 1, NULL));
   #+END_SRC
-- Refer to [[mysql:separator]]
+- See [[mysql:separator]]
 - Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values <<mysql:concat_ws>>
   #+BEGIN_SRC sql
     CONCAT_WS(',', colA, colB, 'Column C Value')
@@ -67588,36 +67626,6 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
     CONCAT_WS(',', NULL, '123', NULLIF('',''), NULL) -- 123
   #+END_SRC
-- Use regex_replace to do more complicated find and replace. MariaDB driver on host is required
-  #+BEGIN_SRC sql
-    SELECT REGEXP_REPLACE("stackoverflow", "(stack)(over)(flow)", '\\2 - \\1 - \\3');
-  #+END_SRC
-- String delimited list
-  #+BEGIN_SRC sql
-    substring_index ( substring_index ( context,',',1 ), ',', -1) ) 
-    substring_index ( substring_index ( context,',',2 ), ',', -1) ) 
-    substring_index ( substring_index ( context,',',3 ), ',', -1) ) 
-    substring_index ( substring_index ( context,',',4 ), ',', -1) )
-    -- it means 1st value, 2nd, 3rd, etc.
-  #+END_SRC
-   - Explanation :: original string is "34,7,23,89", ~substring_index( context,',', 3)~ returns "34,7,23". The outer substring_index takes the value returned by the inner substring_index and the -1 allows you to take the last value. So you get "23" from the "34,7,23"
-   - See mysql:string:list:temp table for more
-- ~CHAR_LENGTH(@str)~ :: visual string length
-- ~LENGTH(@str)~ :: byte length/size
-  #+BEGIN_SRC sql
-    -- Times a substring appear in a string. e.g. substring is lili
-    SELECT ROUND((LENGTH(col1) - LENGTH(REPLACE(col1, 'lili', ''))) / LENGTH('lili')) AS numOfAppearanceOfSubstring
-    FROM t1
-  #+END_SRC
-- ~FIELD(str, str1, str2, ...)~
-   - return index position (starting from 1) of ~str~ in the ~str1, str2, ...~ list
-      - 0 if not found or ~str~ is ~NULL~
-   - If all arguments including ~str~ are strings, then compare as strings. If all arguments are numbers, compare as numbers
-      - Otherwise, compare as double
-   - A good place to use it is in ~ORDER BY~
-   - The complement is ~ELT()~
-- ~ELT(N, str1, str2, ... )~
-   - ~SELECT ELT(1, 'Aa', 'Bb', 'Cc', 'Dd')~ :: ~'Aa'~
 
 ***** Replace all occurances, case-sensitve. multibyte safe <<mysql:replace>>
   #+BEGIN_SRC sql
@@ -67630,7 +67638,8 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - ~\n~ :: newline character. ~\\n~ to escape ~\n~
    - ~\~ :: Use ~\\\\~ to escape, if the target ~\~ is at the end of the pattern string, use ~\\~
 
-***** SUBSTRING()  <<mysql:substring>>
+***** ~SOUNDDEX()~, ~SOUNDS LIKE~ <<mysql:soundex>>
+***** ~SUBSTRING()~  <<mysql:substring>>
 - alias SUBSTR
 
 #+BEGIN_SRC sql
@@ -67650,12 +67659,60 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   -- search 'bar' from 5 + 1 position
   SELECT LOCATE('bar', 'foobarbar', 5) = 7;
 #+END_SRC
+***** MATCH ... AGAINST <<mysql:match>>
+- https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html
+- Can be used in ~SELECT~, ~GROUP BY~, ~HAVING~ or ~ORDER BY~
+- ~expr~ in ~AGAINST~ is a search string which must be a string value that is constant during query evaluation. This rules out, for example, a table column because that can differ for each row
+- On top of stopwords, words that have length less than ~SELECT @@innodb_ft_min_token_size = 3;~ and larger than ~SELECT @@innodb_ft_max_token_size = 84;~ are not in the fulltext index
+   - Do not apply to FULLTEXT indexes created using the ngram parser. ngram token size is defined by the ~ngram_token_size~ option
+   - Do not apply to the search string with leading plus and minus sign ~'+word +the'~
+- Returns the matching score, the higher the more relevant the matching is
+#+begin_src sql
+  MATCH (col1,col2,...) AGAINST (expr [search_modifier])
+
+  search_modifier:
+    {
+	 IN NATURAL LANGUAGE MODE
+       | IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION
+       | IN BOOLEAN MODE
+       | WITH QUERY EXPANSION
+    }
+#+end_src
+****** FULLTEXT index type
+- Only for ~CHAR~, ~VARCHAR~ or ~TEXT~ columns 
+#+begin_src sql
+  CREATE FULLTEXT INDEX myfulltextindex ON mytable (field1, field2, field3);
+#+end_src
+
+****** Stopwords
+- Stopwords are not part of full text index and are ignored in case of a linguistic search
+- ~SELECT @@innodb_ft_enable_stopword = 1;~ :: Default, it means to use stopwords from this order
+   - ~SELECT @@innodb_ft_user_stopword_table~
+   - ~SELECT @@innodb_ft_server_stopword_table~
+   - ~SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;~ :: Default set of stopwords
+
+****** Boolean Mode
+- https://dev.mysql.com/doc/refman/8.0/en/fulltext-boolean.html
+- InnoDB
+   - 
+   - Support
+      - leading plus or minus signs
+      - ~@distance~ :: whether two or more words all start within a specified distance from each other, measured in words
+	 - ~MATCH(col1) AGAINST('"word1 word2 word3" @8' IN BOOLEAN MODE)~
+   - Does not support
+      - ~'+*'~
+      - ~'+-'~
+      - ~'+-apple'~
+#+begin_src sql
+  AGAINST ('+WordMustHave -WordMustNotHave WordNiceToHave' IN BOOLEAN MODE);
+#+end_src
+
 **** ~CHAR~ and ~VARCHAR~
 - 1 character 1 byte
 - ~CHAR(n)~
    - Fixed byte
    - Required no storage space. So ~CHAR(n)~ is n bytes
-   - When retrieved, trailing spaces are removed unless PAD_CHAR_TO_FULL_LENGTH mode is enabled
+   - When retrieved, trailing spaces are removed unless ~PAD_CHAR_TO_FULL_LENGTH~ mode is enabled
       - Trailing spaces are not retained when fetched!
    - right padding with space
 - ~VARCHAR(n)~
