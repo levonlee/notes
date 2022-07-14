@@ -1740,8 +1740,10 @@ Associative arrays
 #+END_SRC
 
 *** ~array_key_exists~ <<php:array_key_exists>>
-- Refer to [[php:array_diff_key]]
+- See [[php:array_diff_key]]
 #+BEGIN_SRC php
+  function array_key_exists($key, array $search) bool	
+
   $a = array(
 	  'a' => 123,
 	  'b'=> 321,
@@ -1763,7 +1765,11 @@ Associative arrays
   }
   var_export(array_keys_all_exist(array('a', 'c'), $a) === false);
 
-  function array_key_exists($key, array $search) bool	
+  function array_keys_exist_count(array $keys, array $arr) {
+	  return count(array_intersect_key(array_flip($keys), $arr));
+  }
+  var_export(array_keys_exist_count(array('a', 'c'), $a) == 1);
+
 #+END_SRC
 
 *** ~array_map~ <<php:array_map>>
@@ -64653,6 +64659,26 @@ Merge file ~f~ of branch ~B~'s ~HEAD~ into ~f~ of branch ~A~~
   # if f on B does not exist yet, omit --patch, otherwise, you'll get a "No Change" message
   # B could be any commit
 #+END_SRC
+
+** merge-base <<git:merge-base>>
+#+begin_src sh
+  # Return the best common ancestor(s) between 2 commits
+
+  # If the return is identical to last-commit-feature-branch, then last-commit-feature-branch is in previous commit before last-commit-master-branch
+  git merge-base <last-commit-master-branch> <last-commit-feature-branch>
+
+  # Let's say master branch is tagged every time a deployment to live happens, let's say a tag is called `latest`, find that commit on master
+
+  git show latest
+
+  # copy this hash, let's assume it's last-commit-master-branch
+
+  # you have a commit abc, you want to find out if it is already deployed
+
+  git merge-base last-commit-master-branch abc
+
+  # If it returns abc, then abc is deployed
+#+end_src
 
 ** Rebase <<git:rebase>>
 *** Rebase master onto feature branch
