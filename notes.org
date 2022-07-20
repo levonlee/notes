@@ -2425,6 +2425,43 @@ Associative arrays
   }
 #+END_SRC
 
+*** Set array value by deep path
+#+begin_src php
+  $a = [
+	  'a' => [
+		  'b' => 123,
+	  ],
+  ];
+
+  function setArrayByPath(&$array, $path, $value): array {
+	  $temp = &$array;
+	  foreach ($path as $key) {
+		  // if key does not exist, the value of that key is NULL
+		  $temp = &$temp[$key];
+	  }
+	  $temp = $value;
+	  return $array;
+  }
+
+  var_dump(($arr = setArrayByPath($a, ['a', 'b'], 'some value')) === [
+		  'a' => [
+			  'b' => 'some value',
+		  ],
+	  ]);
+
+  setArrayByPath($a, ['z', 'y', 'x'], 'some value');
+
+  var_dump($a === [
+		  'a' => [
+			  'b' => 'some value',
+		  ],
+		  'z' => [
+			  'y' => [
+				  'x' => 'some value',
+			  ],
+		  ],
+	  ]);
+#+end_src
 *** If it's numeric and continuous array
 #+begin_src php
   function hasMany($arr) {
@@ -31528,6 +31565,24 @@ This provides you more debugging info
 
   let decimals = 2;
   console.log( Number(Math.round(value +'e'+ decimals) +'e-'+ decimals).toFixed(decimals) ); // use this to round
+
+  function isInt(value) {
+    return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value))
+  }
+
+  isInt(42)        // true
+  isInt("42")      // true
+  isInt(4e2)       // true
+  isInt("4e2")     // true
+  isInt(" 1 ")     // true
+  isInt("")        // false
+  isInt("  ")      // false
+  isInt(42.1)      // false
+  isInt("1a")      // false
+  isInt("4e2a")    // false
+  isInt(null)      // false
+  isInt(undefined) // false
+  isInt(NaN)       // false
 #+END_SRC
 
 *** Boolean <<<js:boolean>>>
