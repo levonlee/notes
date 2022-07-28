@@ -3475,6 +3475,26 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 		       ?>
 	       ,*/
        )}
+
+       {$fn((function ($results, $fn) {
+	       $f = function($array) use (&$f, $fn) {
+		       return <<<HTML
+       <ul>
+	       {$fn((function ($array, $f, $fn) {
+		       array_walk($array, function ($v, $k) use (&$r, $f, $fn) {
+		       $r .= <<<HTML
+	       <li>
+	       {$fn(htmlspecialchars($k))}
+	       {$fn(is_array($v) ? $f($v) : ': ' . htmlspecialchars($v))}
+       HTML;
+		       }, $r = '');
+		       return $r;
+	       })($array, $f, $fn))}
+       </ul>
+       HTML;
+	       };
+	       return $f($results);
+       })(['a' => ['b' => 'c']], $fn))}
        TEXT;
 	       }
 
@@ -4218,6 +4238,12 @@ Examples
     $my_printer(); // My fav number is 43
     $my_printer(); // My fav number is 43
   #+END_SRC
+- An anonymous function or a closure can call itself <<php:closure:recursive>>
+  #+begin_src php
+    $f = function() use($bar, $foo, &$f) {
+       $f();
+    };
+  #+end_src
 - Since 7.1, cannot ~use~ superglobals, ~$this~ or variables with the same name as a parameter
 
 *** Return a reference of the returned value
@@ -5511,6 +5537,10 @@ class_exists is case-insensitive match. Better to restart PHP first
 #+END_SRC
 
 *** ReflectionClass, get_class_vars(), get_object_vars() <<php:ReflectionClass>>
+- get_class_vars($classNameInString = '')
+   - default public variables (names and default values) or private/protected if called within the class
+- get_object_vars($this|Object)
+   - current public variables (names and current values) or private/protected if called within the class object/non-static methods
 #+BEGIN_SRC php
   class A {
 
