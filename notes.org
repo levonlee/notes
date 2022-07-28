@@ -2001,9 +2001,12 @@ Associative arrays
 #+end_src
   
 *** ~array_walk~ <<php:array_walk>>
-- Cannot change array keys! Use [[php:array_combine]]
-- Only change array values
-- To return the new array, refer to [[php:array_map][php:array_map]]
+- Side-effect :: may mutate source array values
+   - Cannot change array keys! Use [[php:array_combine]]
+- Can access source array key and value
+   - [[php:array_reduce]] can only access value, but it returns a value after the loop
+- Return bool
+   - To return the new array, refer to [[php:array_map][php:array_map]]
 
 #+BEGIN_SRC php
   array_walk ( array|object &$array , callable $callback , mixed $userdata = null ) : bool
@@ -2072,7 +2075,7 @@ Associative arrays
 #+END_SRC
 
 *** ~array_reduce~ <<php:array_reduce>>
-- Refer to [[js:array:reduce][js:array:reduce]]
+- See [[js:array:reduce][js:array:reduce]]
   #+BEGIN_SRC php
     array_reduce ( array $array , callable $callback [, mixed $initial = NULL ] ) : mixed
 
@@ -2091,6 +2094,7 @@ Associative arrays
   #+END_SRC
 - Can be associative array, but no way to access the key in callback function
    - Use [[php:array_walk]]
+- Return a value after loop
 - Return deep value in array
   #+BEGIN_SRC php
     /**
@@ -3439,20 +3443,30 @@ ENT_QUOTES is to convert both single ~&#039;~ and double ~&quot;~ quotes.
 		       echo <<<TEXT
        {$fn(self::NAME)}
        {$fn(self::$abc)}
+
        {$fn((function ($abc) {
-		       $r = '';
-		       if ($abc) {
-			       $r = $abc;
-		       }
-		       return $r;
-	       })(self::$abc)
-       )}
+	       $r = '';
+	       if ($abc) {
+		       $r = $abc;
+	       }
+	       return $r;
+       })(self::$abc))}
+
        {$fn((function ($abc) {
-		       ob_start();
-		       echoSomething($abc);
-		       return ob_get_clean();
-	       })(self::$abc)
-       )}
+	       ob_start();
+	       echoSomething($abc);
+	       return ob_get_clean();
+       })(self::$abc))}
+
+       {$fn((function ($array) {
+	       array_walk($array, function ($v, $k, &$r) {
+		       $r .= <<<HTML
+	       <span>{$k}: {$v}</span>
+       HTML;
+	       }, $r = '');
+	       return $r;
+       })(array('an', 'array', 'to walk/loop')))}
+
        TEXT;
 	       }
        }
@@ -72553,6 +72567,7 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 **** Code > Insert Live Template ~C-M-S-j~
 - Insert HTML5 template
 
+**** Postfix Template [[phpstorm:postfix]]
 **** Code > Generate... ~M-Insert~
 - Generate PHPDoc Blocks
    - A manual way is go to the previous line and type ~/** Enter~, PHPDoc will be generated
@@ -72716,7 +72731,15 @@ Add comments around tags with id or class attribute.
 - Other
    - Do not indent children of :: add script
 
-**** File and Code Template
+**** File and Code Templates
+**** Postfix Completion <<phpstorm:postfix>>
+***** PHP array_walk
+#+begin_src php
+  array_walk($EXPR$, function ($v, $k, &$r) {
+      $END$
+  }, $r = '');
+#+end_src
+
 **** General
 ***** Code Folding
 - Fold by default
