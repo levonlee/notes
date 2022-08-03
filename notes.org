@@ -71744,6 +71744,67 @@ change to version 1.1 or get rid of the characters
       - Side-effect free :: the function cannnot cause any side effects which may include I/O (console.log), modifyng a mutable object, reassigning a variable, etc.
 	 - Triggering any external process
 
+**** Avoid reassigning variables
+https://blog.sapegin.me/all/avoid-reassigning-variables/
+
+***** Incremental computations
+#+begin_src js
+  const VIDEO_VALIDATIONS = [
+      {
+	  // Must provide either both a height + width, or neither
+	  isValid: video =>
+	      validateHeightWidthConsistency(video.videoFiles),
+	  message: ERROR_MESSAGES.InconsistentWidthHeight
+      },
+      {
+	  // Must have ONE OF either a file or a URL
+	  isValid: video => validateVideoFileAndUrl(video.videoFiles),
+	  message: ERROR_MESSAGES.InvalidVideoFiles
+      },
+      {
+	  // Video URL must be a valid link
+	  isValid: video => validateVideoURL(video.videoFiles),
+	  message: ERROR_MESSAGES.InvalidVideoURL
+      },
+      {
+	  // Title cannot be blank
+	  isValid: video => !!video[INPUT_TYPES.Title],
+	  message: ERROR_MESSAGES.BlankTitle
+      },
+      {
+	  // ID must be alphanumeric
+	  isValid: video =>
+	      video[INPUT_TYPES.Id].match(ID_PATTERN) !== null,
+	  message: ERROR_MESSAGES.InvalidId
+      }
+  ];
+
+  const validateVideo = video => {
+      return VIDEO_VALIDATIONS.map(({isValid, message}) =>
+	  isValid(video) ? undefined : message
+      ).filter(Boolean);
+  };
+
+  const printVideoErrors = video => {
+      console.log(validateVideo(video).join('\n'));
+  };
+#+end_src
+
+***** Building complex objects
+#+begin_src js
+  const hasDateRange = dateRangeFrom && dateRangeTo;
+  const queryValues = {
+      sortBy: sortField,
+      orderDesc: sortDirection === SORT_DESCENDING,
+      words: query,
+      from: hasDateRange && format(dateRangeFrom.setHours(0, 0, 0, 0), DATE_FORMAT),
+      to: hasDateRange && format(dateRangeTo.setHours(23, 59, 59), DATE_FORMAT)
+  };
+#+end_src
+
+***** Indeterminate loops
+Reassignments aren’t pure evil and exterminating all of them won’t make your code better. They are more like signs: if you see a reassignment, ask yourself if rewriting the code without it would make it more readable. There’s no right or wrong answer, but if you do use a reassignment, isolate it in a small function, where it’s clear what the current value of a variable is.
+
 ** Side Effect
 An operation, function or expression is said to have a side effect if it modifies some state variable values outside its local environment, that is to say has an observable effect besides returning a value (the main effect) to the invoker of the operation
 
