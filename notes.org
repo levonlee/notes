@@ -4151,6 +4151,7 @@ Examples
 - array<int|string, mixed> :: ~[1=>Order1, 'a'=>123]~
 - array<int, string[]> :: ~[1=>['a']]~
 - array<int, array<int, string>> :: ~[1=> [1=>'a']]~
+- array<string, array<int, string>> :: ~['abc' => [ 1 => 'a' ] ]~ 
 - array{key1: string, key2: string} :: ~['key1' => 'a', 'key2' => 'b']~
 - array<int, array{key1: string, key2: string}>
 - list<string> :: array with key starts from 0 ~[0 => 'a', 1 => 'b']~
@@ -5553,10 +5554,28 @@ class_exists is case-insensitive match. Better to restart PHP first
 #+END_SRC
 
 *** ReflectionClass, get_class_vars(), get_object_vars() <<php:ReflectionClass>>
+- $reflect = new ReflectionClass(object|string $objectOrClass)
+   - https://www.php.net/manual/en/class.reflectionclass.php
+   - $reflectProperties = $reflect->getProperties(?int filter = null): array
+      - https://www.php.net/manual/en/reflectionclass.getproperties.php
+      - $filter
+	 - null :: return all properties without filter
+	 - Use these constants :: https://www.php.net/manual/en/class.reflectionproperty.php#reflectionproperty.constants.modifiers
+	    - ReflectionProperty::IS_PUBLIC 
+   - $reflectProperty = $reflect->getProperty(string $name): ReflectionProperty
+      - https://www.php.net/manual/en/class.reflectionproperty.php
+      - $reflectProperty->getName(): string
+      - $reflectProperty->getDocComemnt(): string|false
+	 - ~preg_match('/@var (\S+)/m', $reflectProperty->getDocComment(), $typesFromDocComment);~
+- $reflectMethod = new ReflectionMethod(object|string $objectOrMethod, string $method)
+   - https://www.php.net/manual/en/class.reflectionmethod.php
+   - $reflectMethod->getDocComment(): string|false
 - get_class_vars($classNameInString)
    - default public variables (names and default values) or private/protected if called within the class
 - get_object_vars($this|Object)
    - current public variables (names and current values) or private/protected if called within the class object/non-static methods
+
+**** Example
 #+BEGIN_SRC php
   class A {
 
