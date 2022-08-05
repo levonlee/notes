@@ -2043,7 +2043,21 @@ Associative arrays
 - cb function should return true or false. By default, only value is passed to the callback function. Unless flag is used
 - ~array_filter($my_array)~ can be used to roughly filter empty/null elements out
    - ~array element value == false~
-      - ~'0'~
+     #+begin_src php
+       $simpleXMLElementWithoutChildenNorAttributes = new SimpleXMLElement("<news></news>");
+       $a = array('0', '', null, ' ', 0.0, -0.0, 0, -1, false, array(), $simpleXMLElementWithoutChildenNorAttributes);
+       var_export(array_diff($a, array_filter($a)) === array(
+	       0 => '0',
+	       1 => '',
+	       2 => NULL,
+	       4 => 0.0,
+	       5 => -0.0,
+	       6 => 0,
+	       8 => false,
+	       9 => array(),
+	       10 => $simpleXMLElementWithoutChildenNorAttributes,
+       ));
+     #+end_src
 - Original index number is used!
 
 #+BEGIN_SRC php
@@ -64671,6 +64685,8 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
   git push --set-upstream origin newbranch
   # eq.
   git push -u origin newbranch
+  # eq. set current local branch's upstream without specifying the local branch name
+  git push -u origin HEAD
 #+END_SRC
 
 *** Duplicate current branch to a commit and switch
