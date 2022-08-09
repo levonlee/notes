@@ -58711,7 +58711,8 @@ image:tatemz/wp-cli
 - Docker Swarm
    - Written in Go
 
-** image:alpine <<image:alpine>>
+** Images
+*** image:alpine <<image:alpine>>
 #+begin_src sh
   apk add --no-cache libstdc++ \
     && apk add --no-cache --virtual .build-deps \
@@ -58724,21 +58725,21 @@ image:tatemz/wp-cli
   docker exec -it my_container ash
 #+end_src
 
-** image:debian
-- image:debian:jessie - Debian 8 <<<image:debian:jessie>>>
+*** image:debian
+- image:debian:jessie - Debian 8 <<image:debian:jessie>>
    - Parent: scratch (perfect for building base images such as debian and busybox
-- image:debian:stretch - Debian 9 <<<image:debian:stretch>>>
+- image:debian:stretch - Debian 9 <<image:debian:stretch>>
 
-** image:buildpack-deps:jessie-scm
+*** image:buildpack-deps:jessie-scm
 Parent: buildpack-deps:jessie-curl
 Available: git, curl, wget, openssh-client
 
-** image:buildpack-deps:stretch-curl
-Parent: image:debian:stretch
+*** image:buildpack-deps:stretch-curl
+Parent: [[image:debian:stretch]]
 
-** image:php:5.6.31-apache-jessie <<<image:php:apache>>>
+*** image:php:5.6.31-apache-jessie <<<image:php:apache>>>
 Short name: php:5.6.31-apache
-Parent: image:debian:jessie
+Parent: [[image:debian:jessie]]
 [[https://github.com/docker-library/php/blob/0bb4068bd639ba98631bc2999e0d20cae583ec00/5.6/jessie/apache/Dockerfile][Dockerfile]]
 
 Refer to [[apache:config][apache:config]]
@@ -58829,7 +58830,7 @@ The ~docker-php-ext-*~ scripts can accept an arbitrary path, but it must be abso
 
 copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or copy php-prod.ini to /usr/local/etc/php/conf.d/
 
-*** Sample
+**** Sample
 #+BEGIN_SRC dockerfile
   FROM php:5.6.31-apache-jessie
 
@@ -58871,8 +58872,8 @@ copy host config/php.ini to /usr/local/etc/php/php.ini (name has to be exact) or
   CMD ["apache2-foreground"]
 #+END_SRC
 
-** image:php53
-*** image:bylexus:apache-php53
+*** image:php53
+**** image:bylexus:apache-php53
 Ubuntu 12.04 (LTS), Apache 2.2, PHP 5.3.10
 Ubuntu Server 12.04, based on ubuntu docker image
 apache2
@@ -58910,7 +58911,7 @@ Default:
 - error_reporting=E_ALL & ~E_DEPRECATED & ~E_NOTICE
   - change it via -e PHP_ERROR_REPORTING=...
 
-*** image:orsolin/php:5.3-apache
+**** image:orsolin/php:5.3-apache
 https://github.com/cristianorsolin/docker-php-5.3-apache
 
 This one is Debian and has curl
@@ -58931,12 +58932,12 @@ This one is Debian and has curl
         - dbhoht
 #+END_EXAMPLE
 
-** image:php:7 <<image:php:7>>
+*** image:php:7 <<image:php:7>>
 - Tag latest is 7.2.3-cli-stretch
 - php:7.2.3-apache <<<image:php:7:apache>>>
 - Installed PHP extensions :: ftp mysqlnd mbstring ftp password-argon2 sodium curl libedit openssl zlib
 
-** image:php:7-fpm <<image:php:7.x-fpm>>
+*** image:php:7-fpm <<image:php:7.x-fpm>>
 - Tag latest is php:7.2-fpm
 - FPM is for Nginx
 - PHP_INI_DIR <<image:php:7.x-fpm:ini>>
@@ -58945,7 +58946,7 @@ This one is Debian and has curl
       - Setting of extensions installed by docker-php-ext-enable <<image:php:7.x-fpm:ini:extensions>>
    - Restart using ~docker-compose restart phpcontainername~
 
-** image:python <<<image:python>>>
+*** image:python <<image:python>>
 - ~python:3~
    - ~python:3.8.2-buster~
 - Basics
@@ -58957,13 +58958,13 @@ This one is Debian and has curl
     docker run -it --rm --name mypy -v "$PWD":/usr/src/myapp -w /usr/src/myapp python:3.8.2-buster python hello.py
   #+END_SRC
 
-** image:mongo <<<image:mongo>>>
+*** image:mongo <<image:mongo>>
 - Last used :: mongo:4.2.5-bionic
 - Other related images
-   - <<<image:mongo-express>>>
+   - <<image:mongo-express>>
 
-** image:mysql:5.7.9 <<<image:mysql>>>
-- Parent :: image:debian:jessie
+*** image:mysql:5.7.9 <<image:mysql>>
+- Parent :: [[image:debian:jessie]]
 - user:group :: mysql:mysql
 - Executable :: mysqld
 - Exposed port :: ~EXPOSE 3306~
@@ -58971,7 +58972,7 @@ This one is Debian and has curl
 - Log folder :: ~mysql-log:/var/log/mysql~
 - Conf folder :: ~mysql-conf:/etc/mysql/conf.d~
 
-*** Load configs
+**** Load configs
 - Startup config :: ~/etc/mysql/my.cnf~ and any ~.cnf~ files under ~/etc/mysql/conf.d~ 
 - Mount host directory to ~/etc/mysql/conf.d~ in container using ~-v~ in docker run
 - Instead of loading custom ~conf.d~ directory, tags ~--tag-name~ can be used adjust the configs
@@ -58991,7 +58992,7 @@ This one is Debian and has curl
   #+END_SRC
 - More [[mysql:config]]
 
-*** Environment vars
+**** Environment vars
 -e :: set environment vars. None of these will have effect if the container is started with a data dir that already contains a db.
 
 MYSQL_ROOT_PASSWORD :: required
@@ -59003,7 +59004,7 @@ These vars can be loaded through a file
   -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root
 #+END_EXAMPLE
 
-*** Import .sql on image startup
+**** Import .sql on image startup
 Poibt a directory that has a .sh, .sql, and .sql.gz to a dir in container
 
 #+BEGIN_EXAMPLE
@@ -59012,7 +59013,7 @@ Poibt a directory that has a .sh, .sql, and .sql.gz to a dir in container
 
 Importing needs a lot of memory. If host doesn't have 128M memory, try to import it locally and then rsync the persist data folder to host and chown -R 999:docker /path/to/persistdir accordingly on host.
 
-*** Access, view logs, db dump
+**** Access, view logs, db dump
 #+BEGIN_SRC sh
   docker exec -it my-mysql-container bash
   docker logs my-mysql-container
@@ -59020,7 +59021,7 @@ Importing needs a lot of memory. If host doesn't have 128M memory, try to import
     'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
 #+END_SRC
 
-*** Persist data
+**** Persist data
 A place to persist db data on host :: /my/own/datadir
 
 #+BEGIN_EXAMPLE
@@ -59061,7 +59062,7 @@ For dev where db data can be imported and disposed when needed, use volume (e.g.
         MYSQL_PASSWORD: d7
 #+END_EXAMPLE
 
-*** Example
+**** Example
 To initialize a db, use docker run with data persist
 #+BEGIN_EXAMPLE
   docker run -it --name my-db-container \
@@ -59091,13 +59092,13 @@ Check db status, then you docker-compose restart the container without specifyin
       ...
 #+END_EXAMPLE
 
-** image:wordpress <<<image:wordpress:apache>>>
+*** image:wordpress <<<image:wordpress:apache>>>
 - wordpress:4.9.3-php7.1-apache
    - Parent :: php:7.1-apache image:php:apache image:php:7:apache
 - Installed Debian packages :: ghostscript libfreetype6-dev libjpeg-dev libmagickwand-dev libpng-dev libzip-dev
 - Installed PHP extensions :: [[php:gd][php:gd]] mysqli opcache bcmath exif zip
 
-*** docker-compose.yml
+**** docker-compose.yml
 #+BEGIN_SRC yaml
   version: '2'
   volumes:
@@ -59155,11 +59156,11 @@ Check db status, then you docker-compose restart the container without specifyin
 	- dbsandboxwp
 #+END_SRC
 
-** image:drupal <<<image:drupal:apache>>>
+*** image:drupal <<<image:drupal:apache>>>
 drupal:7.56-apache
 Parent :: php:7.0-apache
 
-*** docker-compose.yml
+**** docker-compose.yml
 docker run -ti --rm --volumes-from phpsandboxd7 --name html-data ubuntu:xenial
 docker cp html-data:/var/www/html .
 
@@ -59214,7 +59215,7 @@ docker cp html-data:/var/www/html .
 	- dbsandboxd7
 #+END_SRC
 
-** image:tatemz/wp-cli <<<image:tatemz/wp-cli>>>
+*** image:tatemz/wp-cli <<<image:tatemz/wp-cli>>>
 https://github.com/tatemz/docker-wpcli
 
 Refer to wp-cli:search-replace
@@ -59236,7 +59237,7 @@ Refer to wp-cli:search-replace
   docker-compose run --rm my-wpcli db export --add-drop-table /var/www/html/devops/db/dump.sql
 #+END_SRC
 
-** image:wordpress:cli <<<image:wordpress:cli>>>
+*** image:wordpress:cli <<<image:wordpress:cli>>>
 wordpress:cli-php5.6 wordpress-cli-2-php5.6 wordpress:cli-2.0-php5.6 wordpress:cli-2.0.0-php5.6
 wordpress:cli-php7.0
 wordpress:cli-php7.1
@@ -59248,13 +59249,13 @@ wordpress:cli-php7.2
   docker run -it --rm --volumes-from mywp --network container:mywp wordpress:cli-php7.0 user list
 #+END_EXAMPLE
 
-** image:lucee <<<docker:image:lucee>>>
+*** image:lucee <<<docker:image:lucee>>>
 - Image name :: [[https://hub.docker.com/r/lucee/lucee4-nginx/][lucee/lucee4-nginx]]
 - Tags :: https://hub.docker.com/r/lucee/lucee4-nginx/tags
 - Choose a tag :: https://github.com/lucee/lucee-dockerfiles
 - Parent Images :: lucee/lucee4 > tomcat:8.0.36-jre8 > openjdk:8-jre > buildpack-deps:stretch-curl
 
-*** docker-compose.yml Dockerfile
+**** docker-compose.yml Dockerfile
 docker-compose.yml
 
 #+BEGIN_SRC yaml
@@ -59348,7 +59349,7 @@ Dockerfile
   # COPY index.cfm /var/www
 #+END_SRC
 
-*** Add ucanaccess db driver to TomCat, Add M$ Access Datasources
+**** Add ucanaccess db driver to TomCat, Add M$ Access Datasources
 - Refer to docker:image:tomcat
 - Add Access datasource on ~yourdomain.com:8888/lucee/admin/server.cfm~
 - Type :: Other - JDBC Driver
@@ -59368,17 +59369,17 @@ Create a datasource using UI. One of the Lucee setting files will have this line
 	       storage="false" validate="false"/>
 #+END_SRC
 
-*** Lucee server and web settings
+**** Lucee server and web settings
 - Lucee server setting :: ~/opt/lucee/server/lucee-server/context/lucee-server.xml~
 - Individual website setting :: ~/opt/lucee/web/lucee-web.xml.cfm~
 
-*** Custom tags (.cfm|.cfc) under ~/opt/lucee/web/customtags/~
-*** Change Lucee Server Admin UI password
+**** Custom tags (.cfm|.cfc) under ~/opt/lucee/web/customtags/~
+**** Change Lucee Server Admin UI password
 [[https://gist.github.com/jlamoree/6c1fc89ca3b8ce2581eb76dadeb1ee53][Use this with a salt]] to generate hspw in Lucee server setting ~<cfLuceeConfiguration hspw="" salt="" version="4.5">~
 Refer to image:lucee:salt. It seems like you should use the salt that is in the default lucee-server.xml.
 Can't use a random salt.
 
-*** How does it work with Nginx?
+**** How does it work with Nginx?
 Lucee operates on TomCat port 8888 using 127.0.0.1. Nginx forwards 80 incoming traffic to port 8888. 
 By default, only ~*.cfm|cfc|cfr~ files are forwarded to 8888. Add more files to ~/etc/nginx/conf.d/default.conf~
 
@@ -59398,7 +59399,7 @@ By default, only ~*.cfm|cfc|cfr~ files are forwarded to 8888. Add more files to 
   }
 #+END_SRC
 
-*** Virtual Directory and TomCat
+**** Virtual Directory and TomCat
 Virtual Directory. Setup docker:image:tomcat:vd first, then setup forwarding
 
 #+BEGIN_SRC nginx
@@ -59417,7 +59418,7 @@ Virtual Directory. Setup docker:image:tomcat:vd first, then setup forwarding
   }
 #+END_SRC
 
-*** Add hosts
+**** Add hosts
 #+BEGIN_SRC nginx
   server {
       listen 80 default_server;
@@ -59472,14 +59473,14 @@ Virtual Directory. Setup docker:image:tomcat:vd first, then setup forwarding
 
 Add hosts in docker:image:tomcat:host
 
-*** Scheduled Tasks
+**** Scheduled Tasks
 Create them in ~/lucee/admin/web.cfm~
 Checkout this file ~/var/www/WEB-INF/lucee/scheduler/scheduler.xml~
 
-** image:tomcat <<<docker:image:tomcat>>>
+*** image:tomcat <<<docker:image:tomcat>>>
 Image name: tomcat:8.0.36-jre8
 
-*** Settings
+**** Settings
 The default webapps (including TomCat Admin Console, localhost:8080/manager/html and .jar files) is in /usr/local/tomcat/webapps
 The default connector port is 8080.
 
@@ -59507,7 +59508,7 @@ ${catalina_home}/[enginename]/[host]/META-INF/context.xml
 
 The only time ~path~ attribute in ~<Context>~ has any effect is in the server.xml
 
-*** Install UcanAccess JDBC driver to enable M$ Access datasource
+**** Install UcanAccess JDBC driver to enable M$ Access datasource
 Copy these jar files
 #+BEGIN_EXAMPLE
   COPY ucanaccess/* /usr/local/tomcat/lib/
@@ -59527,7 +59528,7 @@ docker:image:lucee
   RUN chmod a+x /usr/local/tomcat/bin/setenv.sh
 #+END_EXAMPLE
 
-*** Setup Virtual Directory per Host <<<docker:image:tomcat:vd>>>
+**** Setup Virtual Directory per Host <<<docker:image:tomcat:vd>>>
 In /usr/local/tomcat/conf/server.xml, you can see how many hosts are defined. e.g.
 #+BEGIN_SRC xml
   <Server port="8005" shutdown="SHUTDOWN">
@@ -59613,7 +59614,7 @@ Don't reverse proxy to TomCat at all, if vd has only static files. In nginx defa
   location ~* \.(cfm|cfc|cfr|jpe?g|js)
 #+END_EXAMPLE
 
-*** Add host <<<docker:image:tomcat:host>>>
+**** Add host <<<docker:image:tomcat:host>>>
 Host name should be 127/8 ip address otherwise you need to setup DNS.
 Refer to docker:image:tomcat:log
 
@@ -59645,7 +59646,7 @@ Refer to docker:image:tomcat:log
   </Host>
 #+END_EXAMPLE
 
-*** Restrict Access
+**** Restrict Access
 Refer to docker:image:tomcat:log
 
 #+BEGIN_EXAMPLE
@@ -59657,7 +59658,7 @@ Refer to docker:image:tomcat:log
          allow="127.0.0.1,10.100.1.2" />
 #+END_EXAMPLE
 
-*** Logging
+**** Logging
 <<<docker:image:tomcat:log>>>
 Google :: tomcat access log value
 pattern
@@ -59678,7 +59679,7 @@ pattern
 - %{xxx}i :: incoming header value. e.g. %{X-Forwarded-Host}
 - %{xxx}o :: outgoing header value
 
-** image:goaccess <<<docker:image:goaccess>>>
+*** image:goaccess <<<docker:image:goaccess>>>
 - Don't follow the provided instructions.. :: https://github.com/allinurl/goaccess#docker
 - Follow mine
   #+BEGIN_SRC sh
@@ -59716,7 +59717,7 @@ pattern
     docker rmi allinurl/goaccess
   #+END_SRC
 
-*** Config goaccess.conf
+**** Config goaccess.conf
 - https://pantheon.io/docs/nginx-access-log
 - Modify the default :: https://raw.githubusercontent.com/allinurl/goaccess/master/config/goaccess.conf
 - Log format :: https://goaccess.io/man#custom-log
@@ -59735,7 +59736,7 @@ Better to add the following lines to the default conf or you can just have these
   # log-format COMBINED
 #+END_SRC
 
-** image:stilliard/pure-ftpd <<<docker:image:ftp>>>
+*** image:stilliard/pure-ftpd <<<docker:image:ftp>>>
 Image name: stilliard/pure-ftpd:hardened
 Parent image: debian:jessie
 
@@ -59855,7 +59856,7 @@ FTP opens one channel for command and another for data.
 
 - Passive mode :: client establishes both channels. In that case, the server tells the client which port should be used for the data channel.
 
-** image:dockerfile-from-image
+*** image:dockerfile-from-image
 <<<image:dockerfile-from-image>>>
 https://github.com/levonlee/dockerfile-from-image
 
@@ -59971,7 +59972,7 @@ dockerfile-from-image.rb (same as GitHub)
   puts commands.reverse
 #+END_EXAMPLE
 
-** image:jenkins/jenkins
+*** image:jenkins/jenkins
 - Parent images: openjdk:8-jdk
 - [[https://github.com/jenkinsci/docker][GitHub]]
 
@@ -60002,7 +60003,7 @@ dockerfile-from-image.rb (same as GitHub)
   # https://wiki.jenkins.io/display/JENKINS/Jenkins+behind+an+NGinX+reverse+proxy
 #+END_SRC
 
-** image:ubuntu
+*** image:ubuntu
 #+BEGIN_SRC sh
   # as the time of writing, these lines are equivalent
   docker pull ubuntu:latest
@@ -60024,11 +60025,11 @@ dockerfile-from-image.rb (same as GitHub)
   tty: true
 #+END_SRC
 
-** image:node <<docker:node>>
+*** image:node <<docker:node>>
 - https://github.com/nodejs/docker-node
 - [[https://hub.docker.com/_/node][Available images]]
   
-*** Run image directly
+**** Run image directly
 
 #+begin_src sh
   docker run -it --rm --name my-running-script \
@@ -60041,15 +60042,15 @@ dockerfile-from-image.rb (same as GitHub)
 
   npm install && npm run build
 #+end_src
-*** version
-**** node:boron
+**** version
+***** node:boron
 Latest version 6.x (LTS)
 Parent image: buildpack-deps:jessie
 Available: git, openssh-client
 
 Use ~docker logs -f container_name~ to tail log
 
-**** node:
+***** node:
 #+begin_src dockerfile
   FROM --platform=linux/x86_64 node:10.15.3
   RUN mkdir /app
@@ -60074,7 +60075,7 @@ Use ~docker logs -f container_name~ to tail log
 	     /bin/sh -c 'cd sass; npm run build'
 #+end_src
 
-** image:golang
+*** image:golang
 golang:1.8
 Parent image: buildpack-deps:jessie-scm
 Available: make
@@ -60096,7 +60097,7 @@ To download the compiled hello command to host directory /tmp/bin:
 Then run ~/tmp/bin/hello~ where hello is the parent directory name
 (For private repo, add ~-it~ for inputing username and password)
 
-** image:vimagick/scrapyd
+*** image:vimagick/scrapyd
 https://hub.docker.com/r/vimagick/scrapyd/
 https://github.com/vimagick/dockerfiles/tree/master/scrapyd
 
@@ -60146,7 +60147,7 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
   >>> exit
 #+END_EXAMPLE
 
-** image:yandex/clickhouse-server <<docker:clickhouse>>
+*** image:yandex/clickhouse-server <<docker:clickhouse>>
 - https://hub.docker.com/r/yandex/clickhouse-server
 - Container exposes 8123 port for HTTP interface and 9000 port for native client
 #+begin_src docker-compose
@@ -60180,7 +60181,7 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
   clickhouse-client
 #+end_src
 
-*** Init script files
+**** Init script files
 #+begin_src sh
   #!/bin/bash
   set -e
@@ -60188,6 +60189,16 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
   CREATE DATABASE IF NOT EXISTS malog;
   CREATE TABLE IF NOT EXISTS malog.accesslog(...);
   EOSQL
+#+end_src
+
+*** image:ngrok/ngrok <<image:ngrok>>
+#+begin_src sh
+  # docker-compose is run and it creates a default network and a service called madocker
+  # docker-compose.yml is in folder devdocker, so the network devdocker_default is created
+  # --host-header overwrites the request's Host header
+  # -p 3000:4040 :: http://localhost:3000 is now a web UI for debugging
+
+  docker run -it --rm -p 3000:4040 --net devdocker_default -e NGROK_AUTHTOKEN=MY_AUTH_TOKEN ngrok/ngrok http --host-header="localhost:80" madocker:80
 #+end_src
 
 * Lando
@@ -75924,6 +75935,7 @@ Tests
 - Webhook.site
 - ngrok.com
    - Host your local http app on the internet
+   - See [[image:ngrok]]
 
 ** Send password
 - https://onetimesecret.com/
