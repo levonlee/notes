@@ -1350,7 +1350,7 @@ Here's how to remove any 4 byte character:
     ];
   #+END_SRC
 
-*** Union
+*** Union ~$array1 + $array2~
 #+BEGIN_SRC php
   $a = [
 	  'one' => 'a1',
@@ -4810,7 +4810,7 @@ RestJson.php
 	}
       #+END_SRC
    3. Constants can be defined in Interface. However, prior to PHP 8.1.0, they cannot be overriden by any class/interface that inherits the Interface.
-   4. Interface may include static methods 
+   4. Interface may include static methods. However, these static methods are not required to be implemented 
 - ~CustomQueryInterface~ (CQI) is an interface building on top of ~QueryInterface~, any implementation of CQI can be passed as dependency injection to constructor of another class
 
 *** Interface vs Abstract Class
@@ -5056,30 +5056,41 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
 #+end_src
 
 *** Magic Constants [[php:magic constants]]
-*** is_a, is_subclass_of, get_class(), get_parent_class()
+*** is_object, is_a, is_subclass_of, get_class(), get_parent_class()
 #+BEGIN_SRC php
   get_class(object $object = ?): string
   get_parent_class(object|string $object_or_class = ?): string
 #+END_SRC
 
 #+BEGIN_SRC php
-  class A {}
-  class B extends A {}
-  class C extends B {}
+  <?php
+
+  class A {
+  }
+
+  class B extends A {
+  }
+
+  class C extends B {
+  }
 
   $a = new A();
   $b = new B();
   $c = new C();
 
-  var_dump(is_a($b, 'A'), 'should be true');
-  var_dump(is_a($b, 'B'), 'should be true');
+  var_dump(is_a($b, 'A') === true);
+  var_dump(is_a($b, 'B') === true);
+  var_dump(is_a($a, 'A') === true);
 
-  var_dump(get_class($b), 'should be B');
+  var_dump(get_class($b) === 'B');
 
-  var_dump(is_subclass_of($b, 'A'), 'should be true');
-  var_dump(is_subclass_of($a, 'A'), 'should be false');
-  var_dump(is_subclass_of($c, 'A'), 'should be true');
-  var_dump(is_subclass_of($c, 'B'), 'should be true');
+  var_dump(is_subclass_of($b, 'A') === true);
+  var_dump(is_subclass_of($a, 'A') === false);
+  var_dump(is_subclass_of($c, 'A') === true);
+  var_dump(is_subclass_of($c, 'B') === true);
+
+  var_dump(get_parent_class($b) === 'A');
+  var_dump(get_parent_class($a) === false); // $a has no parent class! Returns false
 
   // inside a class, get_class() and get_parent_class() don't need to provide a parameter
 #+END_SRC
@@ -6178,7 +6189,8 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
       - ~?string~ :: either a string or null
       - ~function f (C $c = null) {}~ :: this is also possible but not recommended
    - ~self~, ~parent~ :: There's no ~static~! An instance of the same class
-   - mixed :: since PHP 8.0
+   - ~static~ :: since PHP 8.0
+   - ~mixed~ :: since PHP 8.0
    - Union types :: since PHP 8.0
       - ~string|null|int~
    - Intersection typen :: since PHP 8.1
@@ -72805,21 +72817,34 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 *** Edits inside Editor
 **** Line Comment ~C-/~, Block Comment ~C-S-/~
 **** To Spaces / To Tabs (convert to Tab/Spaces for indentation) :: Find Action > To Tab
-**** Surround with ~M-S-z~ or ~C-M-t~ <<phpstorm:surround with>>
-***** Surround with Live Template
+**** Surround with ~M-S-z~ or ~C-M-t~ or ~⌥ ⌘ t~  <<phpstorm:surround with>>
+***** Surround with Live Template <<phpstorm:surround-with-live-template>>
 - Select a text abc and wrap it into a function call
    - Settings > Live Templates > under user, +, Live Template >
       - Abbreviation :: ~lifc~
       - Description :: Surround with function call
       - Template text :: ~$END$($SELECTION$)~
-      - Context :: Everywhere
+      - Context :: Everywhere 
 - Select the text, Code > Surround with, or ~M-S-z~
 
 ***** Surround with Emmet phpstorm:emmet:wrap
 
 **** Code > Code Completion > Basic  ~C-Space~
 **** Code > Insert Live Template ~C-M-S-j~
-- Insert HTML5 template
+- See [[phpstorm:postfix]]
+- See [[phpstorm:surround-with-live-template]]
+- HTML
+- PHP
+   - pubf :: public function
+   - pubsf :: public static function
+   - prif :: private function
+   - prisf :: private static function
+   - prof :: protected function
+   - prosf :: protected static function
+   - thr :: throw new
+   - inco :: include once
+   - forek :: foreach(iterable_expr as $key => $value)
+   - eco :: echo
 
 **** Postfix Template [[phpstorm:postfix]]
 **** Code > Generate... ~M-Insert~
@@ -72839,6 +72864,14 @@ Find Action (Ctrl+Shift+A) > search Show Whitespaces
 **** Code > Auto-Indent Lines (auto indent) :: ~⌃ ⌥ i~
 **** Code > Analyze Code > Configure Current File Analysis :: ~⌥ ⇧ ⌘ h~
 Turn off error highlighting, turn off highlight
+
+**** Code > Code Completion
+- Basic :: ~⌃ Space~
+   - Complete names of classes, methods and keywords within the visibility scope
+   - Include Live templates
+- Type-matching :: ~⌃ ⇧ Space~
+- Complete Current Statement :: ~⇧ ⌘ Enter~
+- Cyclic Expand Word :: ~⌥ /~ ~⇧ ⌥ /~
 
 **** Show Context Actions (show intention actions) :: ~M-Enter~ ~⌥ Enter~
 - At code line, press ~M-enter~
