@@ -17,11 +17,16 @@ There are two things you can do about this warning:
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
 (package-initialize)
 
-(autoload 'apache-mode "apache-mode" nil t)
-(require 'php-mode)
-(require 'web-mode)
-(require 'expand-region)
-(global-set-key (kbd "C-=") 'er/expand-region)
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(eval-and-compile
+  (setq use-package-always-ensure t
+        use-package-expand-minimally t))
+
+(unless package-archive-contents
+  (package-refresh-contents))
+
 
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
@@ -36,12 +41,7 @@ There are two things you can do about this warning:
       smie-indent-basic 2
       org-src-fontify-natively t
       org-src-tab-acts-natively t)
-(add-hook 'text-mode-hook 'turn-on-visual-line-mode)
-(add-hook 'php-mode-hook '(lambda ()
-                            (setq c-basic-offset 2
-                                  tab-width 2
-                                  indent-tabs-mode t)
-                            ))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -59,13 +59,26 @@ There are two things you can do about this warning:
  '(org-goto-interface 'outline-path-completion)
  '(org-list-allow-alphabetical t)
  '(package-selected-packages
-   '(expand-region docker-compose-mode graphql-mode gitignore-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
+   '(expand-region docker-compose-mode graphql-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
  '(python-indent-guess-indent-offset nil))
 
+(package-install-selected-packages)
+
+(autoload 'apache-mode "apache-mode" nil t)
+(require 'php-mode)
+(add-hook 'php-mode-hook '(lambda ()
+                            (setq c-basic-offset 2
+                                  tab-width 2
+                                  indent-tabs-mode t)
+                            ))
+(require 'web-mode)
 (define-derived-mode web-php-mode web-mode "WebPhp"
   "Major mode for editing web php templates."
   (web-mode)
   (web-mode-set-engine "php"))
+(add-hook 'text-mode-hook 'turn-on-visual-line-mode)
+(require 'expand-region)
+(global-set-key (kbd "C-=") 'er/expand-region)
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
