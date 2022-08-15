@@ -55,6 +55,7 @@ There are two things you can do about this warning:
  '(gnutls-algorithm-priority "normal:-vers-tls1.3")
  '(org-adapt-indentation nil)
  '(org-confirm-babel-evaluate nil)
+ '(org-export-backends '(ascii html icalendar latex md odt confluence))
  '(org-export-with-sub-superscripts '{})
  '(org-goto-interface 'outline-path-completion)
  '(org-list-allow-alphabetical t)
