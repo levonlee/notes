@@ -33,7 +33,7 @@ There are two things you can do about this warning:
 (setq-default org-catch-invisible-edits 'smart
 	      line-move-visual nil
 	      org-list-indent-offset 1
-)
+	      frame-title-format "%b <%f>")
 (setq inhibit-startup-message t
       backup-directory-alist '(("." . "~/.saves"))
       sh-basic-offset 2
