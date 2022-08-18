@@ -64578,7 +64578,7 @@ Context:	http, server, location, limit_except
   }
 #+END_SRC
 
-* Git
+* Git <<toc:git>>
 ** Show config
 #+BEGIN_SRC sh
   # 3 levels: system > global (user) > local
@@ -64697,14 +64697,6 @@ Don't verify SSL and use temporary username and password to pull and push
 - ~git diff HEAD~ :: Between (Unstaged or Staged) and HEAD
 - ~git diff HEAD^~ :: Between (Unstaged or Staged) and HEAD^
 - [[git:branch:file difference][git:branch:file difference]]
-
-** log <<git:log>>
-- See [[git:log:commit difference][git:log:commit difference]]
-
-*** Basics
-#+BEGIN_SRC sh
-  git log --all --decorate --oneline --graph
-#+END_SRC
 
 ** Patch
 - Create a patch
@@ -64871,6 +64863,9 @@ Create a local branch and then push to a new remote branch. Save changes to a ne
       - ~git log --no-merges feature-1-branch feature-2-branch ^release ^master~
       - To limit to a file
 	~git log --no-merges feature-1-branch feature-2-branch ^release ^master -- path/to/file~
+   - Options
+      - ~-p~ :: show changed files for each commit listed
+	 - ~git log -p master..li~ 
 - See [[git:branch:file difference][git:branch:file difference]]
 - See [[git:merge-base]]
      
@@ -65319,22 +65314,31 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
   git push anotherremote shrinksize:master
 #+END_SRC
 
-** Show Commit History <<git:log>>
+** log - Show Commit History <<git:log>>
 - Syntax :: ~git log [<options>] [<revision range>] [[--] <path>…​]~
-   - ~git log --oneline origin/master -- path/to/a/file~
-      - show commits on origin/master which modify a file
-   - ~git log --graph --oneline --all -- path/to/a/file~
-      - show commits of all branches about a file
-- Commit formatting 
-   - ~git log --graph~
-   - ~git log --oneline~
+- Commit formatting
+  #+begin_src sh
+    git log --oneline
+    git log --all --decorate --oneline --graph
+  #+end_src
+- Options
+   - ~--decorate[=short|full|auto|no]~ :: default is short, just displays the commit hash
+   - ~--pretty[=<format>]~, ~--format=<format>~
+      - ~medium~ :: default 
+      - ~oneline~ :: ~<hash> <title-line>~
+      - Placeholders
+	 - ~%as~ :: author date YYYY-MM-DD
+	 - ~%s~ :: subject 
+   - ~-- path/to/file/or/director~
+      - ~git log origin/master -- path/to/a/file~
+	 - show commits on origin/master which modify a file
+      - ~git log -- path/to/a/file~
+	 - show commits of all branches about a file       
+- See [[git:log:commit difference][git:log:commit difference]] 
 - ~git log -3~ :: Last 3 commits
    - ~git log -3~ eq. ~git log -n 3~ ~git log --max-count=3~
 - ~git log --grep=<pattern>~ :: Search commit message
-- ~%s~ :: subject (commit message)
-- Commit difference between 2 branches
-   - What commits branch B has but branch A does not :: ~git log A..B~
-   - Show file content difference for each commit :: ~git log -p A..B~
+   - ~%s~ :: subject (commit message)
 - Show commits for multiple repos between start/end dates
   #+BEGIN_SRC bash
     #!/bin/bash
@@ -65357,6 +65361,12 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
   #+END_SRC
 - Show commits of a specific branch :: ~git log origin/master~
 - Show an author's commits (email can also be used) :: ~git log --author="Li Li" --before="2018-12-01" --after="2018-11-01"~
+   - ~--since=<date>~, ~--after=<date>~
+      - Today :: ~--after=midnight~
+      - Commit date
+   - Author date :: a commit's creation date
+      - ~git log --author='Li Li' --format='%as %s' | grep -E ^2022-08-18~
+      - ~git log --author='Li Li' --format='%as %s' | grep -E ^$(date +%F)~ :: Today
 - Show an author's commits of a specifc branch :: ~git log origin/master --author="Li Li"~
 - Show an auhtor's commits by number of files changed, insertion and deletion :: ~git log --author="Li Li" --oneline --shortstat~
 - Show an author's commits by lines added/deleted for each file :: ~git log --author="Li Li" --pretty=tformat: --numstat~
