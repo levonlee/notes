@@ -2877,6 +2877,7 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 
 **** If a string is a JSON string
 #+begin_src php
+  <?php
   $string = 'abc';
   $number = 123;
   $numberAsString = '123';
@@ -2887,26 +2888,47 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   $null = null;
   $array = array('ABC', 'xyz');
 
+  function isJSONString($string) {
+      return (1 || @json_decode($string, 1)) && json_last_error() === JSON_ERROR_NONE;
+  }
+
   var_dump(JSON_ERROR_NONE === 0);
 
   var_dump(json_decode($string, 1) === null);
   var_dump(json_last_error() !== JSON_ERROR_NONE);
+  var_dump(isJSONString($string) === false);
+
   var_dump(json_decode($number, 1) === $number);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($number) === true);
+
   var_dump(json_decode($numberAsString, 1) === $number);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($numberAsString) === true);
+
   var_dump(json_decode($zero, 1) === $zero);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($zero) === true);
+
   var_dump(json_decode($zeroAsString, 1) === $zero);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($zeroAsString) === true);
+
   var_dump(json_decode($zeroAsFloat, 1) === $zero);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($zeroAsString) === true);
+
   var_dump(json_decode($zeroAsFloatInString, 1) === $zeroAsFloat);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($zeroAsFloatInString) === true);
+
   var_dump(json_decode($null, 1) === $null);
   var_dump(json_last_error() !== JSON_ERROR_NONE);
+  var_dump(isJSONString($null) === false);
+
   var_dump(json_decode(json_encode($array), 1) === $array);
   var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(isJSONString($null) === true);
 #+end_src
 
 *** Back slashes for quotes and other characters <<php:addslashes>> <<php:stripslashes>>
@@ -4395,8 +4417,8 @@ Examples
 - Callable
    - https://www.php.net/manual/en/language.types.callable.php
    - Static class method
-      - ~array('MyClass', 'myCallbackMethod')~
-      - ~MyClass::myCallbackMethod~
+      - ~array('MyClass', 'myCallbackMethod')~ :: ~call_user_func(array('MyClass', 'myCallbackMethod'));~
+      - ~MyClass::myCallbackMethod~  :: ~call_user_func('MyClass::myCallbackMethod');~
    - Object method call :: ~array($obj, 'myCallbackMethod')~
 - Cannot ~use~
    - superglobals,
