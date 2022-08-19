@@ -2858,7 +2858,7 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
        console.log(anObj);
        </script>
      #+END_SRC
-- Refer to [[js:innerHTML][js:innerHTML]]
+- See [[js:innerHTML][js:innerHTML]]
 
 **** UTF-8
 #+BEGIN_SRC php
@@ -2874,6 +2874,40 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   var_dump($test = urldecode(urlencode(json_encode($string, JSON_UNESCAPED_UNICODE))), $test === '"' . $string . '"');
   var_dump($test = json_decode(urldecode(urlencode(json_encode($string, JSON_UNESCAPED_UNICODE)))), $test === $string);
 #+END_SRC
+
+**** If a string is a JSON string
+#+begin_src php
+  $string = 'abc';
+  $number = 123;
+  $numberAsString = '123';
+  $zero = 0;
+  $zeroAsString = '0';
+  $zeroAsFloat = 0.00;
+  $zeroAsFloatInString = '0.00';
+  $null = null;
+  $array = array('ABC', 'xyz');
+
+  var_dump(JSON_ERROR_NONE === 0);
+
+  var_dump(json_decode($string, 1) === null);
+  var_dump(json_last_error() !== JSON_ERROR_NONE);
+  var_dump(json_decode($number, 1) === $number);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(json_decode($numberAsString, 1) === $number);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(json_decode($zero, 1) === $zero);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(json_decode($zeroAsString, 1) === $zero);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(json_decode($zeroAsFloat, 1) === $zero);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(json_decode($zeroAsFloatInString, 1) === $zeroAsFloat);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+  var_dump(json_decode($null, 1) === $null);
+  var_dump(json_last_error() !== JSON_ERROR_NONE);
+  var_dump(json_decode(json_encode($array), 1) === $array);
+  var_dump(json_last_error() === JSON_ERROR_NONE);
+#+end_src
 
 *** Back slashes for quotes and other characters <<php:addslashes>> <<php:stripslashes>>
 #+BEGIN_SRC php
@@ -73125,6 +73159,8 @@ Add comments around tags with id or class attribute.
    - Wrapping and Braces
       - Braces placement
 	 - Place braces for empty functions/methods on one line
+      - 'if()' statement
+	 - 'else' on new line
       - try statement
 	 - catch on new line
 	 - finally on new line
