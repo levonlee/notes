@@ -33,7 +33,8 @@ There are two things you can do about this warning:
 (setq-default org-catch-invisible-edits 'smart
 	      line-move-visual nil
 	      org-list-indent-offset 1
-	      frame-title-format "%b <%f>")
+	      frame-title-format "%b <%f>"
+	      tab-width 4)
 (setq inhibit-startup-message t
       backup-directory-alist '(("." . "~/.saves"))
       sh-basic-offset 2
@@ -67,11 +68,11 @@ There are two things you can do about this warning:
 
 (autoload 'apache-mode "apache-mode" nil t)
 (require 'php-mode)
-(add-hook 'php-mode-hook '(lambda ()
-                            (setq c-basic-offset 2
-                                  tab-width 2
-                                  indent-tabs-mode t)
-                            ))
+;; (add-hook 'php-mode-hook '(lambda ()
+;;                            (setq c-basic-offset 2
+;;                                  tab-width 2
+;;                                  indent-tabs-mode t)
+;;                            ))
 (require 'web-mode)
 (define-derived-mode web-php-mode web-mode "WebPhp"
   "Major mode for editing web php templates."
