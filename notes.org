@@ -68366,19 +68366,46 @@ MySQL 5.6
 
 *** Common queries, functions, operators
 **** Reuse SELECT alias <<mysql:select alias>>
-SELECT aliases (or column aliases) can only be used in ~ORDER BY~, ~GROUP BY~ and ~HAVING~, not ~WHERE~!
+- SELECT aliases (or column aliases) can only be used in later columns in the same ~SELECT~, ~ORDER BY~, ~GROUP BY~ and ~HAVING~, not ~WHERE~!
 
 ***** Reuse SELECT alias later in sub SELECT statements inside later columns of the parent SELECT 
 #+BEGIN_SRC sql
   SELECT
-  s.f1 + s.f2 as total_sale, 
-  s.f1 / (SELECT total_sale) as f1_percent
+  s.f1 + s.f2 AS total_sale, 
+  s.f1 / (SELECT total_sale) AS f1_percent
   IF((SELECT total_score) > 100, 1, 0) AS good_or_bad,
-  IF((SELECT good_or_bad), 'good score', 'bad score') AS good_or_bad_text
-  -- Notice: total_sale is not s.total_sale, s.total_sale will error out
-  -- Still cannot use total_sale in WHERE
+  IF((SELECT good_or_bad), 'good score', 'bad score') AS good_or_bad_text,
+
   -- The alias should not be a group/aggregation function result. e.g. COUNT(*) AS localCount, (SELECT localCount) + 1
   --   * But alias of group/aggregate function result can be used in HAVING
+  --   * Can be passed onto only the first subquery not to the next deeper level subqueries
+
+  @loanID := s.loanid AS loanid,
+  @xID := s.xid AS xid,
+  @lawyerType := CASE
+	  WHEN s.action IN (1, 2, 5) THEN 1 -- Lender's lawyer
+	  WHEN s.action IN (3, 4, 6) THEN 2 -- Borrower's lawyer
+  END AS lawyerType,
+  @renewals := s.renewals AS renewals,
+  @integrationID := s.lawyerintegrationid AS lawyerintegrationid,
+  @totalComms := COUNT(*) AS totalComms,
+  (
+	  SELECT actiondate FROM (
+		  SELECT actiondate, (@rowNumber := @rowNumber + 1) AS _RowNumber 
+		  FROM lawyerintegrationlogs _LIL
+			, (SELECT @rowNumber := 0) AS _rowRank
+		  WHERE _LIL.xid = @xID AND _LIL.loanid = @loanID 
+			AND _LIL.renewals = @renewals AND _LIL.lawyerintegrationid = @integrationID
+		  AND CASE
+			  WHEN _LIL.action IN (1, 2, 5) AND @lawyerType = 1 THEN 1 = 1 -- Lender's lawyer
+			  WHEN _LIL.action IN (3, 4, 6) AND @lawyerType = 2 THEN 1 = 1 -- Borrower's lawyer
+			  ELSE 1 = 0
+			  END
+		  ORDER BY actiondate
+	  ) AS _sortedChargeDateRows
+	  WHERE _RowNumber = IF(@totalComms > 2, 3, IF(@totalComms > 1, 2, 1))
+  ) AS _chargeDate
+
   FROM sales s
 #+END_SRC
 
