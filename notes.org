@@ -46415,6 +46415,10 @@ https://github.com/mahnunchik/gulp-responsive
   apt install graphicsmagick
 
   npm install --save-dev gulp-image-resize
+
+  # Imagick config
+  #   - By default, it prevents the conversion from PDF to PNG. Comment out this line to relax this policy
+  <policy domain="coder" rights="none" pattern="PDF" />
 #+END_SRC
 
 #+BEGIN_SRC js
@@ -65838,13 +65842,33 @@ An existing remote: origin
 
 Method 1: Configure Origin as a Multi-Remote Destination
 Add another push URL for origin within ~.git/config~
-Commits will be pushed to both remote destinations automatically on ~git push origin~
+Commits will be pushed to both remote destinations automatically on ~git push origin~, fetch will still fetch from the first URL
+#+begin_src sh
+  git remote set-url --add --push origin https://original-remote.com/myproject.git
+  git remote set-url --add --push origin https://second-remote.com/myproject.git
+#+end_src
+
 #+BEGIN_EXAMPLE
   [remote "origin"]
-    url=ssh://.../repo.git
-    url = git@github.com:username/reponame.git
-    fetch= +refs/heads/*:refs/remotes/origin/*
+	# default are the following 2 lines. If pushurl does not exist, url is used for pushing
+	url = https://original-remote.com/myproject.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+	# The following 2 lines are added. Sequence does not matter
+	pushurl = https://original-remote.com/myproject.git
+	pushurl = https://second-remote.com/myproject.git
 #+END_EXAMPLE
+
+~git remote show origin~ lists the Fetch and Push URL's
+#+begin_example
+  ,* remote origin
+	Fetch URL: https://original-remote.com/myproject.git
+	Push URL: https://original-remote.com/myproject.git
+	Push URL: https://second-remote.com/myproject.git
+	HEAD branch: release
+	Remote branches:
+	  branch-1                                        tracked
+	  branch-2                                        tracked
+#+end_example
 
 Method 2: Add another remote github
 #+BEGIN_SRC sh
