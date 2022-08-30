@@ -1159,7 +1159,7 @@ Convert a string format to another
 
 *** Remove 4 byte characters <<<php:4byte>>>
 - PHP UTF-8 character range is wider than MySQL utf8. MySQL's true UTF-8 is utf8mb4 but sometimes it's hard to change
-   - mysql:charset
+   - [[mysql:charset]]
    - d7:mysql:charset 
 
 Here's how to remove any 4 byte character:
@@ -67699,7 +67699,7 @@ https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
   binlog_stmt_cache_size=4K
 #+END_EXAMPLE
 
-**** charset, collation <<<mysql:charset>>> <<<mysql:collation>>>
+**** charset, collation <<mysql:charset>> <<<mysql:collation>>>
 - Collation
    - A set of rules that defines how to compare and sort character strings
    - Every collation belongs to a single character set
@@ -68215,13 +68215,16 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - When retrieved, trailing spaces are removed unless ~PAD_CHAR_TO_FULL_LENGTH~ mode is enabled
       - Trailing spaces are not retained when fetched!
    - right padding with space
-- ~VARCHAR(n)~
+- ~VARCHAR(n)~ <<mysql:varchar>>
    - Variable length
+   - n is called column length and can be from 0 to 65,535
    - Not padded thus trailing spaces are retained
-   - n can be from 0 to 65,535
-   - Extra storage byte on top of the data storage
-      - If n <= 255, 1 storage byte
-      - n > 255, 2 storage byte
+	  - VARCHAR(3) and insert a column length 4 value and with trailing spaces, the value (the trailing spaces) will be truncated and saved. If the value has no trailing spaces, it will throw an error
+   - 1-byte or 2-byte length prefix plus actual data
+      - Length prefix
+		 - If actual data < 255 bytes, 1 storage byte
+		 - if actual data >= 255, 2 storage byte
+	  - Actual data :: see [[mysql:charset]]
 
 **** ~TEXT~ Type <<mysql:datatype:text>>
 - ~TEXT~ data is not stored in the database server’s memory. Quering ~TEXT~ data requires reading from disk, much slower than ~CHAR~ and ~VARCHAR~
@@ -68392,21 +68395,6 @@ MySQL 5.6
 
     SELECT * FROM t1 USE INDEX (i1) IGNORE INDEX FOR ORDER BY (i2) ORDER BY a;
   #+end_src
-
-*** Row size and number of columns
-- Row size <<mysql:row size>>
-   - Hard limit :: 65,535 bytes (slightly less than 64KB)
-   - [[mysql:datatype:blob][mysql:datatype:blob]] contributes 9 bytes
-   - [[mysql:datatype:text][mysql:datatype:text]] contributes 12 bytes
-   - [[mysql:innodb][mysql:innodb]]
-      - mysql:var:innodb_page_size default is 16,384 bytes (16kb), can be 4kb, 8kb, 16kb, 32kb and 64kb
-      - Max row size is slightly less than half of page size. For 64KB page size, slightly less than 16KB
-   - See a table's avg row size :: [[mysql:avg_row_length][mysql:avg_row_length]]
-- Column Count
-   - Hard limit :: 4096
-   - Determined by row size
-   - [[mysql:innodb][mysql:innodb]] :: 1017
-      - including virutal generated columns
 
 *** Common queries, functions, operators
 **** Reuse SELECT alias <<mysql:select alias>>
@@ -69218,6 +69206,23 @@ Update Joined Tables
   SHOW PROFILES;
   -- Query_ID and Duration
 #+end_src
+**** Row size and number of columns
+- https://dev.mysql.com/doc/mysql-reslimits-excerpt/5.7/en/column-count-limit.html
+- Row size <<mysql:row size>>
+   - Hard limit :: 65,535 bytes (slightly less than 64KB)
+   - [[mysql:datatype:blob][mysql:datatype:blob]] only contributes 9 bytes
+   - [[mysql:datatype:text][mysql:datatype:text]] only contributes 12 bytes
+   - [[mysql:innodb][mysql:innodb]]
+      - Max row size of an InnoDB table is slightly less than half of page size
+		 - Exception :: For 64KB page size, slightly less than 16KB
+		 - innodb_page_size :: default is 16,384 bytes (16kb), can be 4kb, 8kb, 16kb, 32kb and 64kb <<mysql:innodb_page_size>>
+   - See a table's avg row size :: [[mysql:avg_row_length][mysql:avg_row_length]]
+- Column Count
+   - Hard limit :: 4096
+   - Determined by row size
+   - [[mysql:innodb][mysql:innodb]] :: 1017
+      - including virutal generated columns
+
 *** User-Defined Variables
 - https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
 
