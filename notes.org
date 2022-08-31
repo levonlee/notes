@@ -46419,6 +46419,9 @@ https://github.com/mahnunchik/gulp-responsive
   # Imagick config
   #   - By default, it prevents the conversion from PDF to PNG. Comment out this line to relax this policy
   <policy domain="coder" rights="none" pattern="PDF" />
+
+  # or
+  <policy domain="coder" rights="read|write" pattern="PDF" />
 #+END_SRC
 
 #+BEGIN_SRC js
@@ -57774,7 +57777,15 @@ Extract Dockerfile from an image. Use one or more of below
 
 *** docker build, docker tag <<docker:build>>
 - With one Dockerfile in a folder (resource). Run to build :: ~docker build -t your-image-name .~
-- Rename image: Change ~myimage(:latest)~ to ~myimage:1.0~ :: ~docker tag myimage myimage:1.0~
+- Rename image: Change ~myimage(:latest)~ to ~myimage:1.0~
+  #+begin_src sh
+	docker tag myimage myimage:1.0
+
+	# rename from myname1 to myname2
+	docker image tag myname1 myname2
+	docker rmi myname1
+  #+end_src
+   - ~docker tag myimage myimage:1.0~
 - Build an image and tag it with latest and 2.0 :: ~docker build -t myimage:latest -t myimage:2.0 .~
 - Multiple Dockerfiles (Dockerfile1, Dockerfile2) in the current folder :: ~docker build -t your-image-name -f Dockerfile2 .~
 - Dockerfile and resource are in different folders (e.g. COPY a file from parent folder in Dockerfile) :: ~docker build -t your-image-name -f /path/Dockerfile.yourname /path/to/docker/~
@@ -67639,11 +67650,11 @@ It's possibly due to you are using Microsoft Access with Unicode driver in ColdF
    - bind-address :: <<mysql:config:bind-address>>
       - ~127.0.0.1~ :: default which means it only allows localhost connection
       - ~0.0.0.0~ or ~*~ or comment out :: allow all network access
-	 - MySQL 8.0 may not be present. Add it
-	 - Make sure to comment out ~skip-networking~ directives
+   - MySQL 8.0 may not be present. Add it
+	  - Make sure to comment out ~skip-networking~ directives
    - sql_mode :: <<mysql:config:sql-mode>>
       - STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION :: default
-      - STRICT_TRANS_TABLES :: e.g. insert query should provide all values that are ~not null~
+		 - STRICT_TRANS_TABLES :: e.g. insert query should provide all values that are ~not null~
    - innodb_file_per_table :: default 1 since 5.6.6 
 
 **** Allow remote access to user root <<mysql:user:remote access>>
@@ -73441,7 +73452,16 @@ When there're multiple statements (multiple ~;~), ~C-Enter~ (or to Execute from 
    - indexed :: the left bar is highlighted (in blue)
    - Primary key :: yellow key
    - Foreign key :: blue key
-
+**** sql_mode or other session variables are not followed by global variables
+- Reason :: JDBC driver might override and set session variables differently than global variables set on MySQL target server
+- Solutions :: choose 1
+   - Change on the Data Source (connection) :: worked for me 20220831
+	  - Options > Startup script
+		 - ~SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION'~
+   - Change on the Drivers (NySQL)
+	  - Advanced > sessionVariables
+		 - ~sql_mode='NO_ENGINE_SUBSTITUTION'~
+		   
 *** Plugins
 **** Rainbow Brackets
 **** nodejs <<<phpstorm:nodejs>>>
