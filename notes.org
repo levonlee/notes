@@ -68413,18 +68413,33 @@ MySQL 5.6
 - SELECT aliases (or column aliases) can only be used in later columns in the same ~SELECT~, ~ORDER BY~, ~GROUP BY~ and ~HAVING~, not ~WHERE~!
    - Order
 	  - ~FROM~
+		 - ~SELECT~ aliases cannot be used
 	  - ~WHERE~
-	  - ~SELECT~
+		 - ~SELECT~ aliases cannot be used
+	  - ~SELECT select_expr1 AS myAlias1, select_expr2 AS myAlias2~
+		 - Aliases can be used in later ~GROUP BY~, ~HAVING~ and ~ORDER BY~ with some exceptions
+			- User-defined variables
+			   - The order of evaluation for expressions involving user variables is undefined. For example,
+				  - there is no guarantee that ~SELECT @a, @a:=@a+1~ evaluates @a first and then performs the assignment.
+		 - An earlier alias can be used in later ~select_expr~
+		   #+begin_src sql
+			 SELECT
+			 s.f1 + s.f2 AS total_sale, 
+			 s.f1 / (SELECT total_sale) AS f1_percent
+			 IF((SELECT total_score) > 100, 1, 0) AS good_or_bad,
+			 IF((SELECT good_or_bad), 'good score', 'bad score') AS good_or_bad_text,
+
+			 -- Limitation of this method ~(SELECT my_alias)~ : my alias should not be a group/aggregation function result. e.g. SELECT COUNT(*) AS localCount, (SELECT localCount) + 1
+		   #+end_src
+		 - Aliases can be passed onto only the first subquery not to the next deeper level subqueries in later ~select_expr~
 	  - ~GROUP BY~
-		 - ~select_expr~ value can be used
-	  - ~SELECT~
 	  - ~HAVING~
 		 - Aggregated values from the ~SELECT~
 		 - Keys from the ~GROUP BY~
 		 - Functions that take no argument e.g. current date
 		 - Expressions composed of the above
 		 - Besides only the above, MySQL has an extension to standard SQL:
-			- permits HAVING to refer to columns in the SELECT list and columns in outer subqueries as well.
+			- permits HAVING to refer to columns in the ~SELECT~ list and columns in outer subqueries as well.
 	  - ~SELECT~
 	  - ~ORDER BY~
 		 - ~select_expr~ alias can be used, it's picked first before ~FROM~ table.aCol
@@ -68435,48 +68450,7 @@ MySQL 5.6
    - PhpStorm might report the following if an alias of aggregate function result is used
 	  - Using aggregate-free condition(s) in HAVING clause might be inefficient. Consider moving them to WHERE
 
-***** Reuse SELECT alias later in sub SELECT statements inside later columns of the parent SELECT 
-#+BEGIN_SRC sql
-  SELECT
-  s.f1 + s.f2 AS total_sale, 
-  s.f1 / (SELECT total_sale) AS f1_percent
-  IF((SELECT total_score) > 100, 1, 0) AS good_or_bad,
-  IF((SELECT good_or_bad), 'good score', 'bad score') AS good_or_bad_text,
-
-  -- The alias should not be a group/aggregation function result. e.g. COUNT(*) AS localCount, (SELECT localCount) + 1
-  --   * But alias of group/aggregate function result can be used in HAVING
-  --   * Can be passed onto only the first subquery not to the next deeper level subqueries
-
-  @loanID := s.loanid AS loanid,
-  @xID := s.xid AS xid,
-  @lawyerType := CASE
-	  WHEN s.action IN (1, 2, 5) THEN 1 -- Lender's lawyer
-	  WHEN s.action IN (3, 4, 6) THEN 2 -- Borrower's lawyer
-  END AS lawyerType,
-  @renewals := s.renewals AS renewals,
-  @integrationID := s.lawyerintegrationid AS lawyerintegrationid,
-  @totalComms := COUNT(*) AS totalComms,
-  (
-	  SELECT actiondate FROM (
-		  SELECT actiondate, (@rowNumber := @rowNumber + 1) AS _RowNumber 
-		  FROM lawyerintegrationlogs _LIL
-			, (SELECT @rowNumber := 0) AS _rowRank
-		  WHERE _LIL.xid = @xID AND _LIL.loanid = @loanID 
-			AND _LIL.renewals = @renewals AND _LIL.lawyerintegrationid = @integrationID
-		  AND CASE
-			  WHEN _LIL.action IN (1, 2, 5) AND @lawyerType = 1 THEN 1 = 1 -- Lender's lawyer
-			  WHEN _LIL.action IN (3, 4, 6) AND @lawyerType = 2 THEN 1 = 1 -- Borrower's lawyer
-			  ELSE 1 = 0
-			  END
-		  ORDER BY actiondate
-	  ) AS _sortedChargeDateRows
-	  WHERE _RowNumber = IF(@totalComms > 2, 3, IF(@totalComms > 1, 2, 1))
-  ) AS _chargeDate
-
-  FROM sales s
-#+END_SRC
-
-***** SELECT alias CANNOT be used in WHERE, need subquery
+***** SELECT alias CANNOT be used in ~WHERE~ and ~FROM~, need subquery
 - Use sub query :: create a sub table with additional computed fields added in original table, and select from it later
 
 #+BEGIN_SRC sql
@@ -69236,6 +69210,11 @@ Update Joined Tables
 
 *** User-Defined Variables
 - https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
+- They can still be defined in non-~SET~ statements up to MySQL v8, but in the future will be removed
+  #+begin_src sql
+	SELECT @myVariable := myTable.col1 AS myAlias
+	FROM myTable
+  #+end_src
 
 #+BEGIN_SRC sql
   SET @s3 = 'http://s3.amazon.com/abc/';
@@ -73946,7 +73925,7 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 - ~C-u C-@~ :: go back
 - ~C-u C-Space~ :: jump back locally in the file, go to previous location
 - ~M-^~ :: join the current line with previous line
-  
+ 
 *** Headline <<emacs:headline>>
 - ~C-u TAB~ :: Global tree fold/unfold
    - ~C-u C-u C-u TAB~ :: Show all
