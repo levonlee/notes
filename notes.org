@@ -3061,6 +3061,8 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 #+END_SRC
 
 *** sprintf and printf <<php:sprintf>>
+- See [[php:strtr]] for named arguments
+
 #+begin_src php
   sprintf(string $format, mixed ...$values): string
 #+end_src
@@ -3108,15 +3110,15 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   // `h` is not picked because there're longer matches and replaced text was not searched again 
   strtr("hi all, I said hello", $trans) === 'hello all, I said hi';
 
-  $strTemplate = "My name is :name, not :name2.";
   $strParams = [
-    ':name' => 'Dave',
-    'Dave' => ':name2 or :password', // a wrench in the otherwise sensible input
-    ':name2' => 'Steve',
-    ':pass' => '7hf2348', // sensitive data that maybe shouldn't be here
+	  ':name' => 'Dave123',
+	  'Dave123' => ':name2 or :password', // Not replaced because it's not found in the original source text
+	  ':name2AndPassword' => ':name2 or :password',
+	  ':name2' => 'Steve',
+	  ':pass' => '7hf2348',
   ];
 
-  strtr($strTemplate, $strParams) === "My name is Dave, not Steve.";
+  var_dump(strtr("My name is :name, not :name2. :name2AndPassword", $strParams) === "My name is Dave123, not Steve. :name2 or :password");
 #+end_src
 
 *** Random bash64 string
@@ -73356,7 +73358,7 @@ Add comments around tags with id or class attribute.
    - Qualify object with :: database auto completion
 
 ***** Smart Keys
-- Reformat on paste :: none (default indent each line)
+- Reformat on paste :: indent each line (default)
 
 *** Settings > Tools > Database
 **** Data Editor and Viewer
