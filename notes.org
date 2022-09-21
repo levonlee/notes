@@ -72973,9 +72973,11 @@ https://www.jetbrains.com/help/phpstorm/navigating-through-the-source-code.html#
 ***** Search Structurally <<php:structural search>>
 - https://www.jetbrains.com/help/phpstorm/2022.2/structural-search-and-replace.html
 - Saved templates are stored per project basis not throughout the IDE
+- Choose language first!
 
 ****** Static method calls of all child classes of a specific parent class
 - First, create a search template ~BasicEnumChildClasses~ that finds all child classes of a parent class called ~BasicEnum~
+  ~abstract class $BasicEnumChildClass$ extends $b$ {}~
   #+begin_src xml
     <searchConfiguration name="BasicEnumChildClasses" text="abstract class $BasicEnumChildClass$ extends $b$ {}" recursive="true" type="PHP" case_sensitive="true">
       <constraint name="__context__" within="" contains="" />
@@ -72983,13 +72985,25 @@ https://www.jetbrains.com/help/phpstorm/navigating-through-the-source-code.html#
       <constraint name="BasicEnumChildClass" target="true" within="" contains="" />
     </searchConfiguration>
   #+end_src
-- Create another search template
+- Create another search template ~BasicEnumChildClass Static Method Calls~ which reuses ~$BasicEnumChildClass$~ from the previous template
+  ~$BasicEnumChildClass$::$b$()~
   #+begin_src xml
     <searchConfiguration name="BasicEnumChildClass Static Method Calls" text="$BasicEnumChildClass$::$b$()" recursive="true" type="PHP" case_sensitive="true">
       <constraint name="__context__" within="" contains="" />
       <constraint name="b" within="" contains="" />
       <constraint name="BasicEnumChildClass" reference="BasicEnumChildClasses" within="" contains="" />
     </searchConfiguration>
+  #+end_src
+
+****** Function Calls
+- ~sql_fetch_assoc($a$($p$), $pp$)~ :: sql_fetch_assoc followed by function calls of sql_query or sql_prep
+  #+begin_src xml
+	<searchConfiguration name="sql_fetch_assoc($a$($p$), $pp$)" uuid="d8bdd089-5864-3ad5-8649-fad285ed10f8" text="sql_fetch_assoc($a$($p$), $pp$)" recursive="true" type="PHP" case_sensitive="true">
+	  <constraint name="__context__" within="" contains="" />
+	  <constraint name="a" regexp="sql_prep|sql_query" within="" contains="" />
+	  <constraint name="p" minCount="0" maxCount="2147483647" within="" contains="" />
+	  <constraint name="pp" minCount="0" maxCount="2147483647" within="" contains="" />
+	</searchConfiguration>
   #+end_src
 
 ****** My Search Templates
