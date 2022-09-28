@@ -373,62 +373,63 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
       - no error of notice level :: 20 ms
    - Example
      #+BEGIN_SRC php
-       // Rule of thumb, always set a valid value with the right type for a key/value if you want to manipute later
-       // Save you a lot of work to check, validate and type conversion hassles down the road
+	   // Rule of thumb, always set a valid value with the right type for a key/value if you want to manipute later
+	   // Save you a lot of work to check, validate and type conversion hassles down the road
 
-       $x = [];
-       $a = $x['abc'] + 0; // notice undefined index
+	   $x = [];
+	   $a = $x['abc'] + 0; // notice undefined index
 
-       $x['abc'] = '';
-       $a = $x['abc'] + 0;
-       // fatal error for array
-       // warning non-numeric for string
-       // no warning for null
+	   $x['abc'] = '';
+	   $a = $x['abc'] + 0;
+	   // fatal error for array
+	   // warning non-numeric for string
+	   // no warning for null
 
-       $a = intval($x['abc'] ?? 0); // PHP 7 using null coalescing operator. good!
-       $a = floatval($x['abc'] ?? 0); // PHP 7. good!
+	   $a = intval($x['abc'] ?? 0); // PHP 7 using null coalescing operator. good!
+	   $a = floatval($x['abc'] ?? 0); // PHP 7. good!
+	   $a = (array)($x['abc'] ?? null);
 
-       $a = intval(isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
-       $a = floatval(isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
+	   $a = intval(isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
+	   $a = floatval(isset($x['abc']) ? $x['abc'] : 0); // PHP < 7. good!
 
-       // Use this function to have a warning/error proofing and the result could be int or float!
-       // Use this also for PHP 7+ when the result type cannot not be predefined
-       function toNumber($valueOrKey, $array = null, $default = 0) {
-	       $val = $valueOrKey;
-	       if (is_array($array) && isset($array[$val])) {
-		       $val = $array[$val];
-	       }
-	       if (is_numeric($val)) {
-		       return $val + $default;
-	       }
+	   // Use this function to have a warning/error proofing and the result could be int or float!
+	   // Use this also for PHP 7+ when the result type cannot not be predefined
+	   function toNumber($valueOrKey, $array = null, $default = 0) {
+		   $val = $valueOrKey;
+		   if (is_array($array) && isset($array[$val])) {
+			   $val = $array[$val];
+		   }
+		   if (is_numeric($val)) {
+			   return $val + $default;
+		   }
 
-	       return $default;
-       }
+		   return $default;
+	   }
 
-       var_dump($test = toNumber(null), $test === 0);
-       var_dump($test = toNumber(''), $test === 0);
-       var_dump($test = toNumber(array()), $test === 0);
-       var_dump($test = toNumber(array(1, 2)), $test === 0);
-       $x = array('a' => 123);
-       var_dump($test = toNumber('keyNotExists', $x), $test === 0);
-       var_dump($test = toNumber('a', $x), $test === 123);
+	   var_dump($test = toNumber(null), $test === 0);
+	   var_dump($test = toNumber(''), $test === 0);
+	   var_dump($test = toNumber(array()), $test === 0);
+	   var_dump($test = toNumber(array(1, 2)), $test === 0);
+	   $x = array('a' => 123);
+	   var_dump($test = toNumber('keyNotExists', $x), $test === 0);
+	   var_dump($test = toNumber('a', $x), $test === 123);
 
-       function arrayValue($key, $array, $default = null) {
-	       return isset($array[$key]) ? $array[$key] : $default;
-       }
+	   function arrayValue($key, $array, $default = null) {
+		   return isset($array[$key]) ? $array[$key] : $default;
+	   }
 
-       $a = arrayValue('abc', $x);
-       $a = isset($x['abc']) ? $x['abc'] : null;
-       // $a = $x['abc'];
+	   $a = arrayValue('abc', $x);
+	   $a = isset($x['abc']) ? $x['abc'] : null;
+	   // $a = $x['abc'];
 
-       if (isset($x['abc']) ? $x['abc'] : null) {}
-       if (arrayValue('abc', $x)) {}
-       // if (array_key_exists('abc', $x) && $x['abc']) {}
-       //if ($x['abc']) {}
+	   if (isset($x['abc']) ? $x['abc'] : null) {}
+	   if (arrayValue('abc', $x)) {}
+	   // if (array_key_exists('abc', $x) && $x['abc']) {}
+	   //if ($x['abc']) {}
 
-       if (is_numeric(arrayValue('abc', $x))) {}
-       // if (isset($x['abc']) && is_numeric($x['abc'])) {}
-       // if (is_numeric($x['abc'])) {}
+	   if (is_numeric(arrayValue('abc', $x))) {}
+	   // if (isset($x['abc']) && is_numeric($x['abc'])) {}
+	   // if (is_numeric($x['abc'])) {}
      #+END_SRC
 *** Trigger error <<php:trigger_error>>
 - Syntax
@@ -1238,6 +1239,9 @@ Here's how to remove any 4 byte character:
   var_dump(list('c' => $r1, 'b' => $r2, 'a' => $r3) = $a);
   // Notice is thrown as $a['c'] cannot be found
   var_dump($r1 === 123, $r2 === null, $r3 === 'abc');
+
+  list('a' => $a, 'b' => $b, 'e' => $e) = $abcde;
+  var_dump(compact('a', 'b', 'e'));
 
   $a = 'abc';
   $b = 'xyz';
