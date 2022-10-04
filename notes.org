@@ -68473,6 +68473,7 @@ MySQL 5.6
 			 -- Limitation of this method ~(SELECT my_alias)~ : my alias should not be a group/aggregation function result. e.g. SELECT COUNT(*) AS localCount, (SELECT localCount) + 1
 		   #+end_src
 		 - Aliases can be passed onto only the first subquery not to the next deeper level subqueries in later ~select_expr~
+			- Use ~JOIN~
 	  - ~GROUP BY~
 	  - ~HAVING~
 		 - Aggregated values from the ~SELECT~
@@ -68602,6 +68603,55 @@ MySQL 5.6
 
 #+END_SRC
 
+***** Join on the 2nd, 3rd, 4th row
+- MySQL 8.0 can use ROW_NUMBER https://www.mysqltutorial.org/mysql-window-functions/mysql-row_number-function/
+  #+begin_src sql
+	ROW_NUMBER() OVER (<partition_definition> <order_definition>)
+
+	partition_definition:
+	PARTITION BY <expression>,[{,<expression>}...]
+
+	order_definition:
+	ORDER BY <expression> [ASC|DESC],[{,<expression>}...]
+
+	SELECT 
+		   productLine,
+		   productName,
+		   quantityInStock,
+		   ROW_NUMBER() OVER (
+			  PARTITION BY productLine 
+			  ORDER BY quantityInStock DESC) row_num
+		FROM 
+		   products
+  #+end_src
+- In MySQL 5, to emulate the ROW_NUMBER
+  #+begin_src sql
+	-- For each filtered log, find the 3rd, 2nd or 1st action date in the raw log conditionally depening on filtered log totalComms as the charge date
+	SELECT T1.*, _FindChargeDate._chargeDate
+	FROM filteredlog T1
+	LEFT JOIN (
+			SELECT _RawLog.actiondate AS _chargeDate, CASE
+					WHEN _RawLog.action IN (1, 2, 5) THEN 1 -- Action Type 1
+					WHEN _RawLog.action IN (3, 4, 6) THEN 2 -- Action Type 2
+					ELSE 0
+				END AS _actionType,
+				   _RawLog.col1, _RawLog.col2, _RawLog.col3, _RawLog.col4,
+				@rowNumberCalculated := CASE
+					WHEN @rowNumberHashCalculated = CONCAT_WS('|', _RawLog.col1, _RawLog.col2, _RawLog.col3, _RawLog.col4, (SELECT _actionType))
+					THEN @rowNumberCalculated + 1
+					ELSE 1
+				END AS _rowNumber,
+				   @rowNumberHashCalculated := CONCAT_WS('|', _RawLog.col1, _RawLog.col2, _RawLog.col3, _RawLog.col4, (SELECT _actionType))
+			FROM rawLog AS _RawLog, 
+				 (SELECT @rowNumberHashCalculated := '', @rowNumberCalculated := 0) AS _rowRank
+			ORDER BY _RawLog.col1, _RawLog.col2, _RawLog.col3, _RawLog.col4, _actionType, _RawLog.actiondate
+		) AS _FindChargeDate ON
+			_FindChargeDate.col1 = T1.col1 AND _FindChargeDate.col2 = T1.col2 AND 
+			_FindChargeDate.col3 = T1.col3 AND _FindChargeDate.col4 = T1.col4 AND 
+			_FindChargeDate._actionType = T1._actionType AND
+			_FindChargeDate._rowNumber = IF(T1.totalComms > 2, 3, IF(T1.totalComms > 1, 2, 1))
+  #+end_src
+  
 **** ~GROUP BY~ and ~HAVING~ <<mysql:group by>>
 - After ~WHERE~ before ~ORDER BY~ and ~HAVING~
    - ~WHERE 1=1 GROUP BY col1 HAVING fieldDefinedinSELECT > 1 ORDER BY col1~
