@@ -3345,20 +3345,34 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
 - ~http_build_query~
 - ~parse_str~ :: parse query parameter value as an array
   #+BEGIN_SRC php
-    $url = $_SERVER['REQUEST_URI'];
-    $parts = parse_url($url);
-    if ($parts !== false) {
-	    // if there's error, it will return false
-	    parse_str($parts['query'], $query);
-	    echo $query['email'];
-    }
+	$url = $_SERVER['REQUEST_URI'];
+	$parts = parse_url($url);
+	if ($parts !== false) {
+		// if there's error, it will return false
+		parse_str($parts['query'], $query);
+		echo $query['email'];
+	}
 
-    // parse_str ($str, array &$result = null) : void
-    $str = "first=value&arr[]=foo+bar&arr[]=baz";
-    parse_str($str, $output);
-    echo $output['first'];  // value
-    echo $output['arr'][0]; // foo bar
-    echo $output['arr'][1]; // baz
+	// parse_str ($str, array &$result = null) : void
+	$str = "first=value&arr[]=foo+bar&arr[]=baz";
+	parse_str($str, $output);
+	echo $output['first'];  // value
+	echo $output['arr'][0]; // foo bar
+	echo $output['arr'][1]; // baz
+
+	function removeOneQueryParameter($url, $queryParameter)
+	{
+		if (($urlParsed = parse_url($url)) === false) {
+			return $url;
+		}
+		parse_str($urlParsed['query'], $query);
+		unset($query[$queryParameter]);
+		$queryPart = http_build_query($query);
+		return strtok($url, '?') . ($queryPart ? "?{$queryPart}" : '');
+	}
+
+	var_dump(removeOneQueryParameter('https://abc.com?abc=123', 'abc') === 'https://abc.com');
+	var_dump(removeOneQueryParameter('https://abc.com?xyz=&abc=123', 'abc') === 'https://abc.com?xyz=');
   #+END_SRC
 
 Current URL path. Refer to php:parse_url
@@ -4399,7 +4413,7 @@ Examples
 *** Anonymous function
 - A function that has no name
 - It may or may not create a closure
-- However, in PHP, any anonymous function is implemented using the Closure class
+   - However, in PHP, any anonymous function is implemented using the Closure class
 
 *** Closure <<php:closure>>
 - A function that captures the state of the surrounding (outer) environment and create its own scope
@@ -4459,7 +4473,7 @@ Examples
    - superglobals,
    - ~$this~
    - variables with the same name as a parameter
-   - An array element ~$array['a']~, have to use the whole array
+   - an array element ~$array['a']~, have to use the whole array
 
 *** Return a reference of the returned value
 #+BEGIN_SRC php
