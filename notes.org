@@ -57929,8 +57929,9 @@ e.g. allow docker container to run docker daemon, allow docker container to acce
 #+END_SRC
 
 *** ~--platform linux/x86_64~ <<docker:run:platform>>
-+ refer to [[dockerfile:from:platform][dockerfile:from:platform]]
-+ When an image is run, may encounter this warning. Having the platform option changes the host platform arch
+- See [[dockerfile:from:platform][dockerfile:from:platform]]
+- Try to use ~--platform linux/amd64~ instead of ~linux/x86_64~
+- When an image is run, may encounter this warning. Having the platform option changes the host platform arch
    - ~WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested~
   
 *** ~-v~, ~--volume~ vs ~--mount~ volume <<docker:run:volume>>
@@ -58113,7 +58114,7 @@ Personal dev project
   docker volume rm dbdatavolume
 #+END_SRC
 
-*** Access the named volume by starting another container <<<docker:volume:access>>>
+*** Access the named volume by starting another container <<docker:volume:access>>
 On Windows, you may be forced to have named volume because file permissions cannot be set. In this case, you can start a new container to access the volume
 
 Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/html~
@@ -58132,6 +58133,10 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
 
   docker run --rm --volumes-from bkcontainer -v $(pwd):/backup ubuntu bash -c "cd /dbdata && tar xvf /backup/backup.tar --strip 1"
 #+END_SRC
+
+*** File System Sharing
+- Before, ~osxfs~/~gRPC-FUSE~ + ~Hypervisor Framework~ was used on Mac, now ~VirtioFS~ + ~Virtualization Framework~ is used
+   - See [[docker-compose:volumes]]
 
 ** Hosts file <<docker:hosts>>
 - Cannot modify/override ~/etc/hosts~ file when building an image
@@ -58391,13 +58396,16 @@ Same for 16.04 and 18.04
 #+END_SRC
 
 ***** Short syntax
+- Modes :: https://docker-docs.netlify.app/docker-for-mac/osxfs-caching/#tuning-with-consistent-cached-and-delegated-configurations
+   - Has no effect on old gRPC-FUSE e.g. (osxfs)
+
 #+begin_src docker-compose
   # Syntax [SOURCE:]TARGET[:MODE]
   # modes (comma separated)
-  # - ro (read only), rw (read and write)
-  # - consistent (default) :: perfect consistency (host and container have an identical view of the mount at all times)
-  # - delegated :: the container’s view is authoritative (permit delays before updates on the container appear in the host). Writes performed by containers may not be immediately reflected on the host file system. In situations such as NFS asynchronous mode, if a running container with a delegated bind mount crashes, then writes may be lost.
-  # - cached :: the host’s view is authoritative (permit delays before updates on the host appear in the container). Writes performed by containers are immediately visible to the host, but there may be a delay before writes performed on the host are visible within containers.
+  #   - ro (read only), rw (read and write)
+  #   - consistent (default) :: perfect consistency (host and container have an identical view of the mount at all times)
+  #   - delegated :: the container’s view is authoritative (permit delays before updates on the container appear in the host). Writes performed by containers may not be immediately reflected on the host file system. In situations such as NFS asynchronous mode, if a running container with a delegated bind mount crashes, then writes may be lost.
+  #   - cached :: the host’s view is authoritative (permit delays before updates on the host appear in the container). Writes performed by containers are immediately visible to the host, but there may be a delay before writes performed on the host are visible within containers.
   volumes:
     # Just specify a path and let the Engine create a volume
     - /var/lib/mysql
