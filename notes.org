@@ -53138,13 +53138,12 @@ This way new file will be the user not www-data but editing/uploading exising fi
 wp:check file permissions
 
 *** Links <<linux:ln>> <<linux:symlink>>
-- Can create symlink to non-existing file
-  
+**** Example
 #+BEGIN_SRC sh
   # Hard links
   # reference a file in the filesystem
   # do not break if file is moved or deleted (hardlink will still hold the file)
-  ln filektolink hardlink
+  ln filetolink hardlink
 
   # hardlink has the same size as filetolink. Good to directly open or edit it
   cat hardlink
@@ -53170,12 +53169,17 @@ wp:check file permissions
   cd -P ~/abc
 #+END_SRC
 
+**** Summary
+- Can create symlink to non-existing file
+- Options
+   - -s :: symbolic link instead of hard link
+   - -f, --force :: remove existing destination files
 - On Windows <<symlink:windows>>
    - See [[git:symlink][git:symlink]]
    - To create a symlink on Windows, enable Developer Mode first and command prompt not PowerShell
       - ~mklink symlinkgoesto myfolder\mytargetfolder~
       - ~del symlinkgoesto~
-- On Vagrant, refer to vagrant:symlink
+- On Vagrant, see vagrant:symlink
 
 *** Search files or directories, sort by size <<linux:find>>
 - Return path of matched files or directories
@@ -68230,7 +68234,22 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     SELECT REPLACE('www.mysql.com', 'w', 'Ww');
   #+END_SRC
 ***** ~LIKE~ <<mysql:like>>
-- ~%~ :: like ~*~
+- ~expr LIKE pattern [ESCAPE 'escape_char']~
+   - Case insensitive. String comparisons are not case-sensitive unless one of the operands is case-sensitive (uses a case-sensitive collation or is a binary string)
+	 #+begin_src sql
+	   SELECT 'abc' LIKE 'ABC';
+	   --        -> 1
+	   SELECT 'abc' LIKE _utf8mb4 'ABC' COLLATE utf8mb4_0900_as_cs;
+	   --        -> 0
+	   SELECT 'abc' LIKE _utf8mb4 'ABC' COLLATE utf8mb4_bin;
+	   --        -> 0
+	   SELECT 'abc' LIKE BINARY 'ABC';
+	   --        -> 0
+	 #+end_src
+   - escape_char :: default ~\~
+   - ~expr NOT LIKE pat [ESCAPE 'escape_char']~ eq. ~NOT (expr LIKE pat [ESCAPE 'escape_char'])~
+- ~%~ :: eq. ~*~
+   - Ends with :: ~SELECT * FROM aTable WHERE colA LIKE '*.pdf'~
 - ~_~ :: like ~?~
 - Escape :: use ~\~
    - ~\n~ :: newline character. ~\\n~ to escape ~\n~
