@@ -58134,7 +58134,9 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
   ll /var/www/html
 
   # backup volume `dbdata` to host backup/backup.bar
-  docker run --rm --volumes-from yourContainerName -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /dbdata
+  docker run --rm --volumes-from yourContainerName -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /var/www/html
+
+  # In the backup.tar, the file structure is var/www/html/*
 
   # restore volume for a container
   # create a container `bkcontainer` with  `dbdata` and bash in
@@ -58379,38 +58381,38 @@ Same for 16.04 and 18.04
 #+BEGIN_SRC yaml
   version: "3.9"
   services:
-    web:
-      image: nginx:alpine
-      volumes:
-	# Long syntax. Volume #1
-	- type: volume
-	  # first encounter of named volume `mydata`, and it's initialized
-	  # because `mydata` will be reused in other service `db`, so a top-level volume is needed
-	  source: mydata
-	  target: /data
-	  volume:
-	    nocopy: true
-	# Long syntax. Volume #2
-	- type: bind
-	  source: ./static
-	  target: /opt/app/static
-	# Short syntax. Volume #3. data-volume needs to be at top-level
-	- data-volume:/var/lib/mysql
-
-    db:
-      image: postgres:latest
-      volumes:
-	- "/var/run/postgres/postgres.sock:/var/run/postgres/postgres.sock"
-	- "dbdata:/var/lib/postgresql/data"
-
+	web:
+	  image: nginx:alpine
+	  volumes:
+		# Long syntax. Volume #1
+		# https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference
+		- type: volume
+		  # first encounter of named volume `mydata`, and it's initialized
+		  # because `mydata` will be reused in other service `db`, so a top-level volume is needed
+		  source: mydata
+		  target: /data
+		  volume:
+			# flag to disable copying of data from a container when a volume is created
+			nocopy: true
+		# Long syntax. Volume #2
+		- type: bind
+		  source: ./static
+		  target: /opt/app/static
+		# Short syntax. Volume #3. data-volume needs to be at top-level
+		- data-volume:/var/lib/mysql
+	db:
+	  image: postgres:latest
+	  volumes:
+		- "/var/run/postgres/postgres.sock:/var/run/postgres/postgres.sock"
+		- "dbdata:/var/lib/postgresql/data"
   # Top Level
   volumes:
-    # Named volume which can be used in all services
-    # this volume isn't mapped to anything in docker host!
-    # top-level volumes can't specify path to named volume.. You have to install other Docker plugin
-    mydata:
-    dbdata:
-    data-volume:
+	# Named volume which can be used in all services
+	# this volume isn't mapped to anything in docker host!
+	# top-level volumes can't specify path to named volume.. You have to install other Docker plugin
+	mydata:
+	dbdata:
+	data-volume:
 #+END_SRC
 
 ***** Short syntax
@@ -59330,6 +59332,7 @@ Importing needs a lot of memory. If host doesn't have 128M memory, try to import
 #+END_SRC
 
 **** Persist data
+- See [[docker:volume:access]]
 A place to persist db data on host :: /my/own/datadir
 
 #+BEGIN_EXAMPLE
@@ -59404,16 +59407,19 @@ Check db status, then you docker-compose restart the container without specifyin
   version: '3.5'
 
   services:
-	madb:
+	mydb:
 	  container_name: mydb
 	  image: mysql:5.7.40
 	  platform: linux/amd64
 	  command: --default-authentication-plugin=mysql_native_password
 	  volumes:
-		- ../../../my-mysql-data:/var/lib/mysql:cached
+		# Include this line for importing .sql to initialize database mymysqldb
+		# - ../../../my-mysql-data:/var/lib/mysql:cached
 		- ./setupfiles/mysql/my.cnf:/etc/mysql/my.cnf
+		- mydbdata: /var/lib/mysql
 	  environment:
 		- MYSQL_ROOT_PASSWORD=myrootpass
+		# Include this line for imporiting .sql to initialize database mymysqldb 
 		- MYSQL_DATABASE=mymysqldb
 	  ports:
 		- "9006:3306"
