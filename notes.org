@@ -2817,10 +2817,21 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
 *** URL Encode [[php:urlencode][php:urlencode]]
 *** strip_tags <<php:strip_tags>>
 *** UTF-8 encoding <<php:string:encoding>> <<php:mb_convert_encoding>> <<php:mb_detect_encoding>>
-Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][php:file_get_contents]]
+#+begin_src php
+  mb_convert_encoding(array|string $string, string $to_encoding, array|string|null $from_encoding = null): array|string|false
+#+end_src
+
+- Make sure the string is UTF-8 encoded
+   - after [[php:file_get_contents][php:file_get_contents]]
+   - Or any binary data
+
 #+BEGIN_SRC php
+  // Auto detect source encoding and specify target encoding
+  $twitterHTML = mb_convert_encoding($twitterHTML, 'UTF-8');
+
+
   $twitterHTML = mb_convert_encoding($twitterHTML, 'UTF-8',
-    mb_detect_encoding($twitterHTML)
+	mb_detect_encoding($twitterHTML)
   );
   echo $twitterHTML;
 #+END_SRC
@@ -2916,6 +2927,13 @@ Make sure the string is UTF-8 encoded especially after [[php:file_get_contents][
   var_dump($test = urldecode(urlencode(json_encode($string, JSON_UNESCAPED_UNICODE))), $test === '"' . $string . '"');
   var_dump($test = json_decode(urldecode(urlencode(json_encode($string, JSON_UNESCAPED_UNICODE)))), $test === $string);
 #+END_SRC
+
+**** Debug
+Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
+
+***** JSON_ERROR_UTF8 - Malformed UTF-8 characters, possibly incorrectly encoded
+- Make sure there's no binary data or non UTF-8 characters in any keys or values in ~json_encode($array)~
+   - Use [[php:mb_convert_encoding]]
 
 **** If a string is a JSON string
 #+begin_src php
