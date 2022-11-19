@@ -4503,16 +4503,37 @@ Examples
     };
   #+end_src
 - Callable
-   - https://www.php.net/manual/en/language.types.callable.php
-   - Static class method
-      - ~array('MyClass', 'myCallbackMethod')~ :: ~call_user_func(array('MyClass', 'myCallbackMethod'));~
-      - ~MyClass::myCallbackMethod~  :: ~call_user_func('MyClass::myCallbackMethod');~
-   - Object method call :: ~array($obj, 'myCallbackMethod')~
+
 - Cannot ~use~
    - superglobals,
    - ~$this~
    - variables with the same name as a parameter
    - an array element ~$array['a']~, have to use the whole array
+
+*** Callable <<php:callable>>
+- https://www.php.net/manual/en/language.types.callable.php
+- Static class method
+   - ~array('MyClass', 'myCallbackMethod')~ :: ~call_user_func(array('MyClass', 'myCallbackMethod'));~
+   - ~MyClass::myCallbackMethod~  :: ~call_user_func('MyClass::myCallbackMethod');~
+- Object method call :: ~array($obj, 'myCallbackMethod')~
+- Named function
+  #+begin_src php
+	function named($a) {
+		var_dump('This is ' . $a);
+	}
+
+	$unnamed = function ($a) {
+		var_dump('This is ' . $a);
+	};
+
+	function caller($callee, string $name) {
+		is_callable($callee) === true;
+		$callee($name);
+	}
+
+	caller('named', 'named');
+	caller($unnamed, 'unnamed');
+  #+end_src
 
 *** Return a reference of the returned value
 #+BEGIN_SRC php
@@ -6388,7 +6409,7 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
    - nullable type :: since PHP 7.1
       - ~?string~ :: either a string or null
       - ~function f (C $c = null) {}~ :: this is also possible but not recommended
-   - ~self~, ~parent~ :: There's no ~static~! An instance of the same class
+   - ~self~, ~parent~ :: There's no ~static~ in PHP 7.x! An instance of the same class
    - ~static~ :: since PHP 8.0
    - ~mixed~ :: since PHP 8.0
    - Union types :: since PHP 8.0
