@@ -69200,8 +69200,31 @@ Update Joined Tables
 *** Admin queries
 **** CREATE TABLE IF NOT EXITS <<mysql:create table>>
 **** ALTER TABLE <<mysql:alter table>>
+- [[https://dev.mysql.com/doc/refman/5.7/en/alter-table.html][Alter Table Doc]]
+- column_definition
+   - https://dev.mysql.com/doc/refman/5.7/en/create-table.html
 #+BEGIN_SRC sql
   -- MODIFY eq. MODIFY COLUMN can change definition only
+  MODIFY [COLUMN] col_name column_definition
+		  [FIRST | AFTER col_name]
+
+  column_definition: {
+	  data_type [NOT NULL | NULL] [DEFAULT default_value]
+		[AUTO_INCREMENT] [UNIQUE [KEY]] [[PRIMARY] KEY]
+		[COMMENT 'string']
+		[COLLATE collation_name]
+		[COLUMN_FORMAT {FIXED | DYNAMIC | DEFAULT}]
+		[STORAGE {DISK | MEMORY}]
+		[reference_definition]
+	| data_type
+		[COLLATE collation_name]
+		[GENERATED ALWAYS] AS (expr)
+		[VIRTUAL | STORED] [NOT NULL | NULL]
+		[UNIQUE [KEY]] [[PRIMARY] KEY]
+		[COMMENT 'string']
+		[reference_definition]
+  }
+  
   ALTER TABLE `t1` MODIFY `col1` VARCHAR(255);
   ALTER TABLE `t1` MODIFY `col1` VARCHAR(255) FIRST; -- AFTER can be used
 
@@ -69227,8 +69250,8 @@ Update Joined Tables
   -- ADD eq. ADD COLUMN
   ALTER TABLE `t1` ADD COLUMN `col1` VARCHAR(10) DEFAULT NULL; -- default null also means can be null
   ALTER TABLE `t1` ADD COLUMN `col1` VARCHAR(10) DEFAULT NULL,
-    ADD COLUMN `col2` bigint(20) unsigned DEFAULT NULL,
-    ADD COLUMN `col3` tinyint(1) unsigned DEFAULT 0; -- one query multiple alter's
+	ADD COLUMN `col2` bigint(20) unsigned DEFAULT NULL,
+	ADD COLUMN `col3` tinyint(1) unsigned DEFAULT 0; -- one query multiple alter's
 
   -- DROP column
   ALTER TABLE `t1` DROP COLUMN `col1`;
@@ -70481,7 +70504,8 @@ This does not work with Ubuntu. Change 50-server.cnf instead.
 *** Trigger <<mariadb:trigger>>
 - List triggers in all dbs :: ~SHOW TRIGGERS;~
 - List triggers for a db :: ~SHOW TRIGGERS FROM mydbname;~
-- List triggers for a table :: ~SHOW TRIGGERS FROM mydbname WHERE table = 'mytblname';~
+- List triggers for a table :: ~SHOW TRIGGERS FROM mydbname LIKE 'mytblname';~ or
+   - ~SHOW TRIGGERS FROM mydbname WHERE 'Table' = 'mytblname';~ 
 - See a specific trigger :: ~SHOW TRIGGERS FROM mydbname WHERE `Trigger` = 'my_trigger_name'\G~
 - Drop a trigger :: ~DROP TRIGGER mydbname.mytriggername;~
 - Can call stored procedures but cannot pass ~NEW~ nor ~OLD~ as the whole row
