@@ -2153,36 +2153,44 @@ Associative arrays
 	  printf('%s="%s" ', $k, $v);
   });
 
-  // $fruits is altered
+  // To alter $fruits
   array_walk($fruits, function(&$v, $k, $prefix) {
 	  $v = "$prefix: $v";
   }, 'customPrefix');
-  var_dump('$fruits', $fruits); // this does not work! empty array
+  var_dump('$fruits', $fruits);
 
+  // Don't do this to alter external param $fruits2 !!!
   $fruits2 = [];
   array_walk($fruits, function($v, $k, &$externalVar) {
 	  $externalVar[$k] = $v;
   }, $fruits2);
-  var_dump('$fruits2', $fruits2); // this does not work! empty array
+  var_dump('$fruits2', $fruits2 === []);
 
+  // To alter external params #1
   array_walk($fruits, function($v, $k) use (&$fruits2) {
 	  $fruits2[$k] = $v;
-  }, $fruits2);
+  }, $fruits2 = []);
   var_dump('$fruits2', $fruits2); // works!
 
-  // Other external params can be passed (even as a reference), but the first one in `use` has to be `$fruits2`!
+  // To alter external params #2
+  $fruits3 = [];
+  array_walk($fruits, function($v, $k) use (&$fruits3) {
+	  $fruits3[$k] = $v;
+  });
+  var_dump('$fruits3', $fruits3); // works!
+
+  // Other external params can be passed (even as a reference)
   $counter = 0;
   array_walk($fruits, function($v, $k) use (&$fruits2, &$counter) {
 	  $fruits2[$k] = $v;
 	  $counter++;
-  }, $fruits2);
+  }, $fruits2 = []);
   var_dump('$fruits2', $fruits2, '$counter', $counter); // works!
 
   // Walk an existing array and create a new array $index
   array_walk($array, function ($v, $k) use (&$index) {
 	  $index[] = $k;
   }, $index = []);
-
 
   // Unset a subkey in a multi-dimensional array
   // unset subkey recognizedFields in a deep nested array
