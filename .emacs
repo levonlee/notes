@@ -41,7 +41,8 @@ There are two things you can do about this warning:
       sh-indentation 2
       smie-indent-basic 2
       org-src-fontify-natively t
-      org-src-tab-acts-natively t)
+      org-src-tab-acts-natively t
+      org-startup-folded t)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
