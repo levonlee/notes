@@ -1249,8 +1249,21 @@ Here's how to remove any 4 byte character:
 #+begin_src php
   // Spread Operator in Array Expression (Splat Operator) since PHP 7.4
   $arr1 = [1, 2, 3];
-  $arr2 = [...$arr1]; // [1, 2, 3]
-  $arr3 = [0, ...$arr1]; // [0, 1, 2, 3]
+  $arr2 = [
+	  'a' => 123,
+	  'b' => array(
+		  'c' => 123
+	  ),
+  ];
+  var_dump([...$arr1] === [1, 2, 3]);
+  var_dump(array(...$arr1) === [1, 2, 3]);
+  var_dump([0, ...$arr1] === [0, 1, 2, 3]);
+  var_dump(array(0, ...$arr1) === [0, 1, 2, 3]);
+  var_dump([...$arr1, 0] === [1, 2, 3, 0]);
+  // Fatal error: Unpacking arrays with string keys is forbidden for PHP < 8.1
+  // var_dump([...$arr2, 0] === [1, 2, 3, 0]);
+  // Maybe eq. to the following for PHP < 8.1
+  var_dump(array_merge($arr2, array('c' => 321)) === ['a' => 123, 'b' => ['c' => 123], 'c' => 321]);
 
   // Argument Unpacking and Variadic Functions since 5.6
   // - Applies to array or Traversable
