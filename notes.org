@@ -53262,17 +53262,17 @@ sw :: Mount options :: A comma-separated list of options that can be used to con
      |    111 |     7 | setuid, setgid, sticky bits are set     |
      |        |       |                                         |
       - SUID or setuid :: If set, when the file will be executed by a user, the process will have the same rights as the owner of the file being executed
-	 - If set, then replaces "x" in the owner permissions to "s", if owner has execute permissions, or to "S" otherwise. Examples:
-	    - ~-rws------~ both owner execute and SUID are set
-	    - ~-r-S------~ SUID is set, but owner execute is not set
-      - SGID or setgid :: Same as above, but inherits rights of the group of the owner of the file. For directories it also may mean that when a new file is created in the directory it will inherit the group of the directory (and not of the user who created the file)
-	 - If set, then replaces "x" in the group permissions to "s", if group has execute permissions, or to "S" otherwise. Examples:
-	    - ~-rwxrws---~ both group execute and SGID are set
-	    - ~-rwxr-S---~ SGID is set, but group execute is not set
+   - If set, then replaces "x" in the owner permissions to "s", if owner has execute permissions, or to "S" otherwise. Examples:
+	  - ~-rws------~ both owner execute and SUID are set
+	  - ~-r-S------~ SUID is set, but owner execute is not set
+   - SGID or setgid :: Same as above, but inherits rights of the group of the owner of the file. For directories it also may mean that when a new file is created in the directory it will inherit the group of the directory (and not of the user who created the file)
+	  - If set, then replaces "x" in the group permissions to "s", if group has execute permissions, or to "S" otherwise. Examples:
+		 - ~-rwxrws---~ both group execute and SGID are set
+		 - ~-rwxr-S---~ SGID is set, but group execute is not set
       - Sticky bit :: It was used to trigger process to "stick" in memory after it is finished, now this usage is obsolete. Currently its use is system dependant and it is mostly used to suppress deletion of the files that belong to other users in the folder where you have "write" access to
-	 - If set, then replaces "x" in the others permissions to "t", if others have execute permissions, or to "T" otherwise. Examples:
-	    - ~-rwxrwxrwt~ both others execute and sticky bit are set
-	    - ~-rwxrwxr-T~ sticky bit is set, but others execute is not set
+	  - If set, then replaces "x" in the others permissions to "t", if others have execute permissions, or to "T" otherwise. Examples:
+		 - ~-rwxrwxrwt~ both others execute and sticky bit are set
+		 - ~-rwxrwxr-T~ sticky bit is set, but others execute is not set
 - Last 3 digits :: owner-group-public
    - ~400~ :: r-------- e.g. ssh private keys in ~/.ssh/ <<<chmod:400>>>
    - ~440~ :: read for owner and group, but none for public <<<chmod:440>>>
@@ -53304,17 +53304,62 @@ sw :: Mount options :: A comma-separated list of options that can be used to con
    - g :: group that owns the file
    - o :: other (everyone else)
    - a :: all (everybody)
-- Refer to wp:check file permissions
+- Recursive :: ~-R~
+  #+begin_src sh
+	# In general, don't use -R but use find-chmod or find-xargs-chmod chain instead
+	# - -R will
+	#     - Execute `fchmodat` system call for each file and sub folder. Hence, changing the ctime (file status modification time) for all its files and sub folders.
+
+	# By using find-chmod or find-xargs-chmod, it finds the files and sub folders that need to be changed and then change the permissions
+
+	cd /path/to/targetFolder
+
+	# - `find -print0`
+	#     - `find` will separate each line of file path with a null character (a zero byte)
+	#     - `xargs` must then be called with `-0` or `--null`
+	# - `xargs`
+	#     - Default command is `echo`
+	#     - `xargs -0` eq. `xargs -0 echo` 
+	# - `xargs echo`
+	#     - Result :: echo 'foundFile1.txt' 'foundFile2.txt'
+	# - `xargs -I {} echo {}`
+	#     - `-I` :: Run the `echo` command for each record of the previous `find` command
+	#     - Result :: echo 'foundFile1.txt'; echo 'foundFile2.txt'
+	# This is the best solution 
+	find . -type f ! -perm 666 -print0 | xargs -0 -I {} chmod 666 {}
+	# chmod 666 foundFile1.txt
+	# chmod 666 foundFile2.txt
+	# ...
+
+	# eq.
+	# However, the list of files might be too long and error pops up
+	# -bash: /bin/chmod: Argument list too long.
+	find . -type f ! -perm 666 -print0 | xargs -0 chmod 666
+	# chmod 666 foundFile1.txt foundFile2.txt
+
+	# eq.
+	# Same caveat as the above
+	find . -type f ! -perm 666 -exec chmod 666 {} +
+
+	# eq.
+	# Same caveat as the above
+	chmod 666 $(find . -type f ! -perm 666)
+
+	# eq.
+	# `find .` can be `find /path/to/targetFolder`
+  #+end_src
+- See wp:check file permissions
 
 **** Change owner:group for a folder <<linux:chown>>
 #+BEGIN_SRC sh
+  # change a sub folder and all its files and directories
   sudo chown -R user:group aFolder
 
   # change current folder
   sudo chown -R user:group .
 #+END_SRC
 
-List files or directories that are not a user or group. Refer to [[wp:file permissions][wp:file permissions]]
+List files or directories that are not a user or group. See [[wp:file permissions][wp:file permissions]]
 #+BEGIN_SRC sh
   find . -type d -not -group test -o -type f -not -user test
 #+END_SRC
