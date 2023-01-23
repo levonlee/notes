@@ -112,6 +112,13 @@ Install multiple versions of PHP
 		echo "\n"; 
 		echo "Thank you, continuing...\n";
 	  #+end_src
+	  #+begin_src sh
+		abc=1 php a.php
+	  #+end_src
+	  #+begin_src php
+		$abc = getenv('abc');
+		$abc = ($abc === false) ? 'not exists' : $abc;
+	  #+end_src
    - Interactive shell mode :: ~php -a~, type ~quit~
 - Changing php.ini requires PHP restart and [[apache:restart][apache:restart]] or Nginx
   #+BEGIN_SRC sh
@@ -4630,12 +4637,23 @@ Examples
   #+END_SRC
 - An anonymous function or a closure can call itself <<php:closure:recursive>>
   #+begin_src php
-    $f = function() use($bar, $foo, &$f) {
-       $f();
-    };
-  #+end_src
-- Callable
+	$f = function() use($bar, $foo, &$f) {
+	   $f();
+	};
 
+	$arr = ($_f = function ($argument) use (&$_f) {
+		if (count($argument) < 3) {
+			$argument[] = 'foo';
+			$argument = $_f($argument);
+		}
+		return $argument;
+	})(
+		array()
+	);
+
+	var_dump($arr === ['foo', 'foo', 'foo']);
+  #+end_src
+- Callable type
 - Cannot ~use~
    - superglobals,
    - ~$this~
@@ -4753,6 +4771,8 @@ Examples
 - Refer to [[php:array_map][php:array_map]]
 
 *** IIFE - Immediately Invoked Function Expressions <<php:iife>> <<php:call_user_func_array>> <<php:call_user_func>>
+**** Recursive <<php:iife:recursive>>
+- See [[php:closure:recursive]]
 **** v7.0+
   #+BEGIN_SRC php
     echo (function() {
