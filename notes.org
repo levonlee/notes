@@ -20733,11 +20733,8 @@ Inspired by plugin [[https://wordpress.org/plugins/ssl-insecure-content-fixer/][
 
 ** REST API <<<wp:rest>>>
 https://deliciousbrains.com/wordpress-rest-api-vs-custom-request-handlers/
-
-*** OpenAPI
-- Sample definition :: https://editor.swagger.io/
-
-*** Methods (Also called operations, verbs)
+ 
+*** Methods (Also called operations, verbs, routes)
 - ~/tickets~ :: is called endpoint
 - GET /tickets :: Retrieves a list of tickets
 - OPTIONS /tickets :: see any parameters and fields can be used for endpoint ~tickets~
@@ -72638,6 +72635,7 @@ change to version 1.1 or get rid of the characters
    - square brackets :: around arrays
 - YAML
    - Hyphens :: before arrays
+   - key :: need to double quoted the whole key if key has ~:~
 - For string :: https://stackoverflow.com/a/21699210/2196360 
 
 ** Sample
@@ -72697,6 +72695,122 @@ change to version 1.1 or get rid of the characters
   inlineDictionary: { thing1: huey, thing2: louie, thing3: dewey } # in abbreviated form
 #+end_src
 
+* OpenAPI <<toc:openapi>>
+- Sample definition :: https://editor.swagger.io/
+- Get Started :: https://oai.github.io/Documentation/specification.html
+
+** schema - reuse properties
+#+begin_src yaml
+  paths:
+	'/customers':
+	  post:
+		tags:
+		  - Customer
+		requestBody:
+		  $ref: '#/components/requestBodies/CreateCustomer'
+		responses:
+		  201:
+			description: Created
+			content:
+			  application/json:
+				schema:
+				  $ref: '#/components/schemas/CustomerId'
+	  get:
+		tags:
+		  - Customer
+		responses:
+		  200:
+			description: OK
+			content:
+			  application/json:
+				schema:
+				  type: array
+				  items:
+					$ref: '#/components/schemas/Customer'
+	/customers/{CustomerId}:
+	  get:
+		tags:
+		  - Customer
+		parameters:
+		  - $ref: '#/components/parameters/CustomerId'
+		responses:
+		  200:
+			description: OK
+			content:
+			  application/json:
+				schema:
+				  allOf:
+					- $ref: '#/components/schemas/CustomerProperties'
+					- $ref: '#/components/schemas/CustomerRequiredProperties'
+	  put:
+		tags:
+		  - Customer
+		requestBody:
+		  $ref: '#/components/requestBodies/CreateCustomer'
+		parameters:
+		  - $ref: '#/components/parameters/CustomerId'
+		responses:
+		  204:
+			description: Updated
+	  patch:
+		tags:
+		  - Customer
+		requestBody:
+		  description: Update customer with properties to be changed
+		  content:
+			application/json:
+			  schema:
+				allOf:
+				  - $ref: '#/components/schemas/CustomerProperties'
+				  - type: object
+					properties:
+					  Segment:
+						nullable: true
+		parameters:
+		  - $ref: '#/components/parameters/CustomerId'
+		responses:
+		  204:
+			description: Updated
+  components:
+	schemas:
+	  CustomerProperties:
+		type: object
+		properties:
+		  FirstName:
+			type: string
+		  LastName:
+			type: string
+		  DOB:
+			type: string
+			format: date-time
+		  Segment:
+			type: string
+			enum:
+			  - Young
+			  - MiddleAged
+			  - Old
+			  - Moribund
+	  CustomerRequiredProperties:
+		type: object
+		required:
+		  - FirstName
+		  - LastName
+		  - DOB
+	  Customer:
+		allOf:
+		  - $ref: '#/components/schemas/CustomerId'
+		  - $ref: '#/components/schemas/CustomerProperties'
+		  - $ref: '#/components/schemas/CustomerRequiredProperties'
+	  requestBodies:
+		CreateCustomer:
+		  description: Create a new customer
+		  content:
+			application/json:
+			  schema:
+				allOf:
+				  - $ref: '#/components/schemas/CustomerProperties'
+				  - $ref: '#/components/schemas/CustomerRequiredProperties'
+#+end_src
 * Software Programming
 ** Programming Paradigm
 - A way to classify programming languages based on their features. A language can have multiple paradigms
