@@ -5671,12 +5671,14 @@ Reference is faster than clone and direct copy. But when ~===~ is used to compar
 e.g. database connection
 
 **** Lazy Initialization
-- at the beginning properties are null and populated on demand
+- at the beginning, properties are null and populated on demand
 - If null, set and return
 - If value, just return
 
 **** Factory Method
-Create objects without specifying class
+- Create objects without specifying class
+   - Dynamically create instantiation
+   - Good when instantiation process is complicated and needs to be abstracted into the factory
 #+BEGIN_SRC php
   class Address {
     const ADDRESS_TYPE_RESIDENCE = 2;
@@ -5709,30 +5711,30 @@ Create objects without specifying class
 
 #+BEGIN_SRC php
   class Address {
-    const ADDRESS_ERROR_NO_DISPLAY_STRATEGY = 1002;
+	const ADDRESS_ERROR_NO_DISPLAY_STRATEGY = 1002;
 
-    private static $_display_strategies = [
-      'AddressDisplayNoCountry', 'AddressDisplayFull', 'AddressDisplayPark'
-    ];
+	private static $_display_strategies = [
+	  'AddressDisplayNoCountry', 'AddressDisplayFull', 'AddressDisplayPark'
+	];
 
-    private $_display_strategy;
+	private $_display_strategy;
 
-    function display() {
-      // Lazy initialization
-      if (is_null($this->_display_strategy)) {
+	function display() {
+	  // Lazy initialization
+	  if (is_null($this->_display_strategy)) {
 	foreach (self::$_display_strategies as $strategy_class_name) {
 	  if ($strategy_class_name::isAvailable($this)) {
-	    $this->_display_strategy = $strategy_class_name;
+		$this->_display_strategy = $strategy_class_name;
 	  }
 	}
-      }
-      if (!$this->_display_strategy) {
+	  }
+	  if (!$this->_display_strategy) {
 	throw new Exception('No display strategy found', self::ADDRESS_ERROR_NO_DISPLAY_STRATEGY);
-      }
-      $display_strategy = $this->_display_strategy;
-      return $display_strategy::display($this);
+	  }
+	  $display_strategy = $this->_display_strategy;
+	  return $display_strategy::display($this);
 
-    }
+	}
 
   }
 #+END_SRC
@@ -5922,6 +5924,9 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
       }
   }
 #+END_SRC
+
+**** Chain of Responsibility (Behavioral DP)
+- https://refactoring.guru/design-patterns/chain-of-responsibility/php/example
 
 *** Clean Code
 - Method names should have verbs
@@ -65597,7 +65602,9 @@ git push -f
    - Currently at local branch ~dev~ and need to pull remote/master to local master branch
    - This does not work if current branch is local master
    - Don't use ~git pull origin master~ as it pulls from ~origin/master~ to current local ~dev~ branch
-
+   - ~git fetch origin~ :: update all ~origin/branchname~ branches
+   - ~git fetch --all~ :: update all remote branches for all remotes
+ 
 *** Orphan Branch with no parent
 [[github:gh-pages][github:gh-pages]]
 
