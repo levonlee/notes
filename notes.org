@@ -5056,7 +5056,7 @@ RestJson.php
   class AddressResidence extends Address {}
 #+END_SRC
 
-**** Flaws of inheritance
+**** Flaws of inheritance <<oop:inheritance:flaws>>
 - Inheritance achieves 2 things
    - Re-use code and further extend
    - Abstraction :: child classes must have all of what their parent class has
@@ -5397,29 +5397,29 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
 #+BEGIN_SRC php
   class SubObject
   {
-    static $instances = 0;
-    public $instance;
+	static $instances = 0;
+	public $instance;
 
-    public function __construct() {
-      $this->instance = ++self::$instances;
-    }
+	public function __construct() {
+	  $this->instance = ++self::$instances;
+	}
 
-    public function __clone() {
-      $this->instance = ++self::$instances;
-    }
+	public function __clone() {
+	  $this->instance = ++self::$instances;
+	}
   }
 
   class MyCloneable
   {
-    public $object1;
-    public $object2;
+	public $object1;
+	public $object2;
 
-    function __clone()
-    {
-      // Force a copy of this->object, otherwise
-      // it will point to same object. (shallow copy)
-      $this->object1 = clone $this->object1;
-    }
+	function __clone()
+	{
+	  // Force a copy of this->object, otherwise
+	  // it will point to same object. (shallow copy)
+	  $this->object1 = clone $this->object1;
+	}
   }
 
   $obj = new MyCloneable();
@@ -5440,14 +5440,14 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
   Original Object:
   MyCloneable Object
   (
-    [object1] => SubObject Object
+	[object1] => SubObject Object
   (
-    [instance] => 1
+	[instance] => 1
 	  )
 
-      [object2] => SubObject Object
+	  [object2] => SubObject Object
   (
-    [instance] => 2
+	[instance] => 2
 	  )
 
   )
@@ -5455,14 +5455,14 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
   Cloned Object:
   MyCloneable Object
   (
-    [object1] => SubObject Object
+	[object1] => SubObject Object
   (
-    [instance] => 3
+	[instance] => 3
 	  )
 
-      [object2] => SubObject Object
+	  [object2] => SubObject Object
   (
-    [instance] => 2
+	[instance] => 2
 	  )
 
   )
@@ -5669,35 +5669,38 @@ Reference is faster than clone and direct copy. But when ~===~ is used to compar
 *** Design Pattern
 - https://refactoring.guru/design-patterns/php
 
-**** Singleton Pattern
+**** Singleton (Creational DP)
 e.g. database connection
+
+**** Prototype (Creational DP)
+- Object clone
 
 **** Lazy Initialization
 - at the beginning, properties are null and populated on demand
 - If null, set and return
 - If value, just return
 
-**** Factory Method
+**** Factory Method (Creational DP)
 - Create objects without specifying class
    - Dynamically create instantiation
    - Good when instantiation process is complicated and needs to be abstracted into the factory
 #+BEGIN_SRC php
   class Address {
-    const ADDRESS_TYPE_RESIDENCE = 2;
-  
-    static public $valid_address_types = array(
-      Address::ADDRESS_TYPE_RESIDENCE => 'Residence',
-      Address::ADDRESS_TYPE_BUSINESS => 'Business',
-      Address::ADDRESS_TYPE_PARK => 'Park',
-    );
+	const ADDRESS_TYPE_RESIDENCE = 2;
 
-    final public static function getInstance($address_type_id, $data = []) {
-      $class_name = 'Address'. self::$valid_address_types[$address_type_id];
-      if (!class_exists($class_name)) {
+	static public $valid_address_types = array(
+	  Address::ADDRESS_TYPE_RESIDENCE => 'Residence',
+	  Address::ADDRESS_TYPE_BUSINESS => 'Business',
+	  Address::ADDRESS_TYPE_PARK => 'Park',
+	);
+
+	final public static function getInstance($address_type_id, $data = []) {
+	  $class_name = 'Address'. self::$valid_address_types[$address_type_id];
+	  if (!class_exists($class_name)) {
 	throw new ExceptionAddress('Address subclass not found. cannot create: ', self::ADDRESS_ERROR_UNKNOWN_SUBCLASS);
-      }
-      return new $class_name($data);
-    }
+	  }
+	  return new $class_name($data);
+	}
   }
 
   // end class
@@ -5778,6 +5781,24 @@ e.g. database connection
     }
   }
 #+END_SRC
+
+**** Facade (Structural DP)
+- Sample
+   - Download a YouTube video has a lot of steps which can be done by using 2 objects ~YouTube~ and ~FFMpeg~
+	  - Use ~YouTube~ to get the title and then the video file
+	  - Use ~FFMpeg~ to resize the video
+	  - Use ~FFMpeg~ to extract the thumbnail
+	  - Use ~FFMpeg~ to convert to different formats and save the video files
+   - Create a new class ~YouTubeDownloader~, instantiate it with objects ~YouTube~ and ~FFMpeg~, and a method called ~downloadVideo~ to call the object methods.
+- It creates an abastract level where details of ~YouTube~ and ~FFMpeg~ do not need to be exposed
+   - It creates a new interface for existing objects
+**** Proxy (Structural DP)
+- Sample 1
+   - The original object (a service) is massive in memory, you don't want to keep it for long. It has all the methods but they are not all needed all the time.
+	  - Other ways
+		 - Lazy initialization
+			- But the object might be created by 3rd party which you have no control of.
+   - Create a new class which only instantiates the original object when needed (collect requirements before request), calls partial methods of the original object (performs the service), modifies or cache the results (after the service/request), and destroys the original object
 
 **** Dependency Injection
 - Dependencies are given rather than creating them. So instead of
@@ -5927,8 +5948,9 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
   }
 #+END_SRC
 
-**** Chain of Responsibility (Behavioral DP)
+**** Chain of Responsibility (Behavioral DP) - Composition + Dependency Injection
 - https://refactoring.guru/design-patterns/chain-of-responsibility/php/example
+- See [[oop:inheritance:flaws]]
 
 *** Clean Code
 - Method names should have verbs
