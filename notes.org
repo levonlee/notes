@@ -5708,80 +5708,6 @@ e.g. database connection
   $address_residence = AddressFactory::getInstance(Address::ADDRESS_TYPE_RESIDENCE);
 #+END_SRC
 
-**** Strategy Pattern
-- Finite number of strategies, check each one if it can be satisfied in a loop, the last strategy is the best preferred one
-- Each strategy implements a common interface which has a check method: isAvailable and a action-method: display
-- Each strategy is singleton
-- The best strategy is chosen in an Lazy Initialization process
-
-#+BEGIN_SRC php
-  class Address {
-	const ADDRESS_ERROR_NO_DISPLAY_STRATEGY = 1002;
-
-	private static $_display_strategies = [
-	  'AddressDisplayNoCountry', 'AddressDisplayFull', 'AddressDisplayPark'
-	];
-
-	private $_display_strategy;
-
-	function display() {
-	  // Lazy initialization
-	  if (is_null($this->_display_strategy)) {
-	foreach (self::$_display_strategies as $strategy_class_name) {
-	  if ($strategy_class_name::isAvailable($this)) {
-		$this->_display_strategy = $strategy_class_name;
-	  }
-	}
-	  }
-	  if (!$this->_display_strategy) {
-	throw new Exception('No display strategy found', self::ADDRESS_ERROR_NO_DISPLAY_STRATEGY);
-	  }
-	  $display_strategy = $this->_display_strategy;
-	  return $display_strategy::display($this);
-
-	}
-
-  }
-#+END_SRC
-
-#+BEGIN_SRC php
-  interface AddressDisplay {
-    /**
-     ,* AddressDisplay an Address.
-     ,* @return string
-     ,*/
-    public static function display($address);
-
-    /**
-     ,* Is this method of display available?
-     ,* @return boolean
-     ,*/
-    public static function isAvailable($address);
-  }
-#+END_SRC
-
-#+BEGIN_SRC php
-  class AddressDisplayFull implements AddressDisplay {
-    /**
-     ,* Display an addess with a country.
-     ,*/
-    public static function display($address) {
-      $output = AddressDisplayNoCountry::display($address);
-      $output .= '<br/>';
-      $output .= $address->country_name;
-      return $output;
-    }
-
-    /**
-     ,* Is this method of display available?
-     ,* @return boolean
-     ,*/
-    public static function isAvailable($address) {
-      return $address->country_name ? TRUE : FALSE;
-    }
-  }
-#+END_SRC
-
 **** Facade (Structural DP)
 - Sample
    - Download a YouTube video has a lot of steps which can be done by using 2 objects ~YouTube~ and ~FFMpeg~
@@ -5846,7 +5772,15 @@ e.g. database connection
     class OpenStreetMap implements GeolocationService { }
   #+END_SRC
 
-**** Decorator
+**** Decorator (Structural DP) <<design pattern:decorator>>
+- Decorators can be stacked and executed all together
+   - Concrete Decorators (MarkdownFormat, DangerousHTMLTagsFilter) extend a basic Decorator (TextFormat)
+	  - The basic Decorator (TextFormat)
+		 - implements an interface (InputFormatInterface) which contains methods that the other Decorators must implement (formatText)
+	  - Other concrete Decorators override the parent's method (formatText) by calling the parent's method and its own code
+- https://refactoring.guru/design-patterns/decorator/php/example#example-1
+- Very similar to Chain of Responsibility (CoR). However, there are crucial differences
+   - CoR can stop passing the request further
 Class Book has 3 methods: getAuthor, getTitle, getAuthorAndTitle
 
 Decorator BookTitleDecorator adds methods: resetTitle and showTitle. When it instaniates, it resets the title of an instance of Book (in this example, the original title is not changed)
@@ -5948,10 +5882,103 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
   }
 #+END_SRC
 
-**** Chain of Responsibility (Behavioral DP) - Composition + Dependency Injection
+**** Adapter (Structural DP)
+- Allow objects with incompatible interfaces to collaborate
+
+**** Strategy (Behavioral DP)
+- Finite number of strategies, check each one if it can be satisfied in a loop, the last strategy is the best preferred one
+- Each strategy implements a common interface which has a check method: isAvailable and a action-method: display
+- Each strategy is singleton
+- The best strategy is chosen in an Lazy Initialization process
+
+#+BEGIN_SRC php
+  class Address {
+	const ADDRESS_ERROR_NO_DISPLAY_STRATEGY = 1002;
+
+	private static $_display_strategies = [
+	  'AddressDisplayNoCountry', 'AddressDisplayFull', 'AddressDisplayPark'
+	];
+
+	private $_display_strategy;
+
+	function display() {
+	  // Lazy initialization
+	  if (is_null($this->_display_strategy)) {
+	foreach (self::$_display_strategies as $strategy_class_name) {
+	  if ($strategy_class_name::isAvailable($this)) {
+		$this->_display_strategy = $strategy_class_name;
+	  }
+	}
+	  }
+	  if (!$this->_display_strategy) {
+	throw new Exception('No display strategy found', self::ADDRESS_ERROR_NO_DISPLAY_STRATEGY);
+	  }
+	  $display_strategy = $this->_display_strategy;
+	  return $display_strategy::display($this);
+
+	}
+
+  }
+#+END_SRC
+
+#+BEGIN_SRC php
+  interface AddressDisplay {
+    /**
+     ,* AddressDisplay an Address.
+     ,* @return string
+     ,*/
+    public static function display($address);
+
+    /**
+     ,* Is this method of display available?
+     ,* @return boolean
+     ,*/
+    public static function isAvailable($address);
+  }
+#+END_SRC
+
+#+BEGIN_SRC php
+  class AddressDisplayFull implements AddressDisplay {
+    /**
+     ,* Display an addess with a country.
+     ,*/
+    public static function display($address) {
+      $output = AddressDisplayNoCountry::display($address);
+      $output .= '<br/>';
+      $output .= $address->country_name;
+      return $output;
+    }
+
+    /**
+     ,* Is this method of display available?
+     ,* @return boolean
+     ,*/
+    public static function isAvailable($address) {
+      return $address->country_name ? TRUE : FALSE;
+    }
+  }
+#+END_SRC
+
+**** Iterator (Behavioral DP)
+**** Observer (Behavioral DP)
+- Provide a way to subscribe and unsubscribe to and from events for any object that implements a subscriber interface
+   - Subject emits events and allows observers to listen to the events
+	  - We can say attach observers to a subject
+	  - Or we can say an observer subcribes to a subject
+- Sample PHP :: https://refactoring.guru/design-patterns/observer/php/example#example-1
+   - interface SplSubject
+	  - public function attach(SplObserver $observer): void;
+	  - public function detach(SplObserver $observer): void;
+	  - public function notify(): void;
+		 - Call SplObserver->update($this, $event, $data)
+   - interface SplObserver
+	  - public function update(SplSubject $subject): void;
+
+**** Chain of Responsibility (Behavioral DP) - Composition/Aggregation + Dependency Injection
 - https://refactoring.guru/design-patterns/chain-of-responsibility/php/example
 - See [[oop:inheritance:flaws]]
-
+- See [[design pattern:decorator]]
+  
 *** Clean Code
 - Method names should have verbs
    - may choose to private constructor to force to use static factory methods to contruct a class
@@ -7005,6 +7032,12 @@ https://laravel.com/docs/9.x/eloquent-relationships
 - Class file name
    - lowercase with ~class-~ preppended
    - Underscore becomes hyphen :: ~WP_Error~ is ~class-wp-error.php~ 
+
+**** State (Behavioral DP)
+- https://refactoring.guru/design-patterns/state/php/example#example-0
+**** Aggregation vs Composition
+- Aggregation :: object A contains objects B; B can live without A.
+- Composition :: object A consists of objects B; A manages life cycle of B; B can’t live without A.
 
 * Drupal
 ** Install Drupal on Windows
