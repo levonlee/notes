@@ -3527,72 +3527,92 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 #+end_src
 
 ** URL
-- ~urlencode()~ :: encode the query string (the part after ~?~) <<php:urlencode>>
+*** ~urlencode()~ :: encode the query string (the part after ~?~) <<php:urlencode>>
+- encodes spaces as plus signs
+- eq. to [[js:encodeURIComponent][js:encodeURIComponent]]
+- Should be used to encode keys and values pairs of POST data
+#+BEGIN_SRC php
+  $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
+  echo '<a href="mycgi?' . htmlentities($query_string) . '">';
+#+END_SRC
+
+*** ~rawurlencode~ <<php:rawurlencode>>
+- encode path (the part before ~?~). Almost the same as ~urlencode~ except it enocodes space as ~%20~
+- Basics
   #+BEGIN_SRC php
-    $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
-    echo '<a href="mycgi?' . htmlentities($query_string) . '">';
-  #+END_SRC	   
-   - encodes spaces as plus signs
-   - eq. to [[js:encodeURIComponent][js:encodeURIComponent]]
-   - Should be used to encode keys and values pairs of POST data
-- ~rawurlencode~ <<php:rawurlencode>>
-   - encode path (the part before ~?~). Almost the same as ~urlencode~ except it enocodes space as ~%20~
-   - Basics
-     #+BEGIN_SRC php
-      echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
-	   '@ftp.example.com/x.txt">';
-      echo '<a href="http://example.com/department_list_script/',
-	  rawurlencode('sales and marketing/Miami'), '">';
-     #+END_SRC
-   - Use to encode filename in [[header:content-disposition][header:content-disposition]]
-     #+BEGIN_SRC php
-       function fileNameForHeader( $fileName = '' ) {
-	       // Usage: header("Content-disposition: attachment; filename=\"fileNameForHeader('FileName')\"");
-	       $fileName = str_replace( array( "\n", "\r", "\r\n", ' ', ',' ), '_', $fileName );
-	       $fileName = str_replace( array( "'", '"' ), '', $fileName );
-
-	       return rawurlencode( $fileName );
-       }
-     #+END_SRC
-- ~http_build_query~
-- ~parse_str~ :: parse query parameter value as an array
-  #+BEGIN_SRC php
-	$url = $_SERVER['REQUEST_URI'];
-	$parts = parse_url($url);
-	if ($parts !== false) {
-		// if there's error, it will return false
-		parse_str($parts['query'], $query);
-		echo $query['email'];
-	}
-
-	// parse_str ($str, array &$result = null) : void
-	$str = "first=value&arr[]=foo+bar&arr[]=baz";
-	parse_str($str, $output);
-	echo $output['first'];  // value
-	echo $output['arr'][0]; // foo bar
-	echo $output['arr'][1]; // baz
-
-	function removeOneQueryParameter($url, $queryParameter)
-	{
-		if (($urlParsed = parse_url($url)) === false) {
-			return $url;
-		}
-		parse_str($urlParsed['query'], $query);
-		unset($query[$queryParameter]);
-		$queryPart = http_build_query($query);
-		return strtok($url, '?') . ($queryPart ? "?{$queryPart}" : '');
-	}
-
-	var_dump(removeOneQueryParameter('https://abc.com?abc=123', 'abc') === 'https://abc.com');
-	var_dump(removeOneQueryParameter('https://abc.com?xyz=&abc=123', 'abc') === 'https://abc.com?xyz=');
+   echo '<a href="ftp://user:', rawurlencode('foo @+%/'),
+	'@ftp.example.com/x.txt">';
+   echo '<a href="http://example.com/department_list_script/',
+   rawurlencode('sales and marketing/Miami'), '">';
   #+END_SRC
+- Use to encode filename in [[header:content-disposition][header:content-disposition]]
+  #+BEGIN_SRC php
+    function fileNameForHeader( $fileName = '' ) {
+	    // Usage: header("Content-disposition: attachment; filename=\"fileNameForHeader('FileName')\"");
+	    $fileName = str_replace( array( "\n", "\r", "\r\n", ' ', ',' ), '_', $fileName );
+	    $fileName = str_replace( array( "'", '"' ), '', $fileName );
 
-Current URL path. Refer to php:parse_url
+	    return rawurlencode( $fileName );
+    }
+  #+END_SRC
+*** ~http_build_query~
+- Return a URL-encoded query string
+   - By default perfect for cURL POST content-type ~application/x-www-form-urlencoded~
+	  - spaces are encoded as ~+~ which is eq. to ~urlencode~
+	  - Also good for GET url query string
+
+#+begin_src php
+  var_dump(http_build_query([
+	  'a' => 'hello world', // a=hello+world
+	  'b' => ' hello world ', // &b=+hello+world+
+	  'c' => [1, 2, 3], // &c%5B0%5D=1&c%5B1%5D=2&c%5B2%5D=3 which is &c[0]=1&c[1]=2&c[2]=3
+	  'd' => ['1' => 'hello', '2' => 'world'], // &d%5B1%5D=hello&d%5B2%5D=world which is &d[1]=hello&d[2]=world
+	  'e' => ['1' => ' hello ', '2' => 'wor ld'], // &e%5B1%5D=+hello+&e%5B2%5D=wor+ld which is &e[1]=+hello+&e[2]=wor+ld
+	  'f' => ['hello' => 'world', 'hello2' => 'world'], // &f%5Bhello%5D=world&f%5Bhello2%5D=world which is &f[hello]=world&f[hello2]=world
+	  'g' => [' hello ' => ' world ', 'hello 2' => 'wor ld'], // &g%5B+hello+%5D=+world+&g%5Bhello+2%5D=wor+ld which is &g[+hello+]=+world+&g[hello+2]=wor+ld
+	  ' hello ' => [' hello ' => ' world ', 'hello 2' => 'wor ld'], // &+hello+%5B+hello+%5D=+world+&+hello+%5Bhello+2%5D=wor+ld which is &+hello+[+hello+]=+world+&+hello+[hello+2]=wor+ld
+	  'wor ld' => [' hello ' => ' world ', 'hello 2' => 'wor ld'], // &wor+ld%5B+hello+%5D=+world+&wor+ld%5Bhello+2%5D=wor+ld which is &wor+ld[+hello+]=+world+&wor+ld[hello+2]=wor+ld
+  ]));
+#+end_src
+
+*** ~parse_str~ :: parse query parameter value as an array
+#+BEGIN_SRC php
+  $url = $_SERVER['REQUEST_URI'];
+  $parts = parse_url($url);
+  if ($parts !== false) {
+	  // if there's error, it will return false
+	  parse_str($parts['query'], $query);
+	  echo $query['email'];
+  }
+
+  // parse_str ($str, array &$result = null) : void
+  $str = "first=value&arr[]=foo+bar&arr[]=baz";
+  parse_str($str, $output);
+  echo $output['first'];  // value
+  echo $output['arr'][0]; // foo bar
+  echo $output['arr'][1]; // baz
+
+  function removeOneQueryParameter($url, $queryParameter)
+  {
+	  if (($urlParsed = parse_url($url)) === false) {
+		  return $url;
+	  }
+	  parse_str($urlParsed['query'], $query);
+	  unset($query[$queryParameter]);
+	  $queryPart = http_build_query($query);
+	  return strtok($url, '?') . ($queryPart ? "?{$queryPart}" : '');
+  }
+
+  var_dump(removeOneQueryParameter('https://abc.com?abc=123', 'abc') === 'https://abc.com');
+  var_dump(removeOneQueryParameter('https://abc.com?xyz=&abc=123', 'abc') === 'https://abc.com?xyz=');
+#+END_SRC
+
+*** Current URL path. See php:parse_url
 #+BEGIN_SRC php
   $path_only = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 #+END_SRC
 
-The last component of path
+*** The last component of path
 #+BEGIN_SRC php
   basename("/etc/passwd") // passwd
   basename("/etc/sudoers.d") // sudoers.d
@@ -6343,14 +6363,16 @@ Pay attention to global scope
 ** Http Request - cURL, file_get_contents
 *** cURL <<php:curl>>
 #+BEGIN_SRC php
+  <?php
+
   $url = 'http://www.someurl.com'; // if this url is external, then it's safe to use.
   // usually don't ever refer back to the same server because there might be firewall setting to prevent curl the local server
 
   $myvars = 'myvar1=' . $myvar1 . '&myvar2=' . $myvar2;
 
   // Or
-  $myvars = [ 'myvar1' => $myvar1, 'myvar2' => $myvar2 ];
-  $myvars = http_build_query( $myvars ); // default content-type is application/x-www-form-urlencoded
+  $myvars = ['myvar1' => $myvar1, 'myvar2' => $myvar2];
+  $myvars = http_build_query($myvars); // default content-type is application/x-www-form-urlencoded
 
   $ch = curl_init();
   // use curl_setopt to set each one
@@ -6361,36 +6383,46 @@ Pay attention to global scope
   // $verbose = fopen('php://temp', 'w+'); // enable debug
 
   $options = array(
-   CURLOPT_URL => $url,
-   CURLOPT_POSTFIELDS => $myvars, // if value is pure array, then request content-type should multipart/form-data
-   // if request content-type is application/json, then POSTFIELDS should be a json string
-	 // otherwise it should be x-www-form-urlencoded (use http_build_query($array))
-   CURLOPT_FOLLOWLOCATION => 1, // follow through. Default is not to follow through
-   CURLOPT_HEADER => 0,
-   CURLOPT_RETURNTRANSFER => 1,
-   // CURLOPT_VERBOSE => true, // enable debug
-   // CURLOPT_STDERR => $verbose, // enable debug
-   // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
+	  CURLOPT_URL => $url,
+	  CURLOPT_POSTFIELDS => $myvars,
+	  // - If value is pure array, then request Content-Type will be set to multipart/form-data and Content-Length will be set (You don't need to specify)
+	  //     - CURLOPT_HTTPHEADER => array('Content-Type: multipart/form-data', 'Content-Length: 1234')
+	  // - If POSTFIELDS is a JSON string, set request Content-Type to application/json
+	  //     - CURLOPT_HTTPHEADER => array('Content-Type: application/json; charset=UTF-8', 'Content-Length: 1234')
+	  // - If POSTFIELDS is an XML string, set request Content-Type to XML
+	  //     - CURLOPT_HTTPHEADER => array('Content-Type: text/xml; charset=utf-8')
+	  // - If POSTFIELDS is a string and request Content-Type is not manually set, Content-Type is automatically set to x-www-form-urlencoded
+	  //     - use http_build_query($array) for POSTFIELDS
+	  CURLOPT_FOLLOWLOCATION => 1,
+	  // follow through. Default is not to follow through
+	  CURLOPT_HEADER => 0,
+	  CURLOPT_RETURNTRANSFER => 1,
+	  // CURLOPT_VERBOSE => true, // enable debug
+	  // CURLOPT_STDERR => $verbose, // enable debug
+	  // CURLOPT_USERAGENT => 'cPanel-Cron' // refer to waf:modsecurity, only works for GET request
   );
 
   // post json
-  $post = array( '...' );
+  $post = array('...');
   $payload = json_encode($post);
 
   $options = array(
 	  CURLOPT_URL => $url,
-	  CURLOPT_POST => 1, // post request with content-type: application/x-www-form-urlencoded header
+	  CURLOPT_POST => 1,
+	  // post request with content-type: application/x-www-form-urlencoded header
 	  // For GET requests, just don't include CURLOPT_POST. Max 2048 bytes in URL restricted by browsers or servers. One TCP connection means the request sends http header and data together
 	  // For POST requests, browsers send http header, server responds with code 100 (continue), then browers send data (payload or CUROPT_POSTFIELDS), server responds with code 200
-	  CURLOPT_RETURNTRANSFER => 1, // return string rather than output
-	  CURLOPT_TIMEOUT => 5, // max. number of seconds
+	  CURLOPT_RETURNTRANSFER => 1,
+	  // return string rather than output
+	  CURLOPT_TIMEOUT => 5,
+	  // max. number of seconds
 	  CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
 	  CURLOPT_POSTFIELDS => $payload
   );
 
   curl_setopt_array($ch, $options);
 
-  $response = curl_exec( $ch );
+  $response = curl_exec($ch);
 
   // catch debug BEFORE close
   /*
