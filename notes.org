@@ -32137,7 +32137,16 @@ These values are considered as false
 		  },
 		  value: function () {
 			  return privateCounter;
-		  }
+		  },
+		  callbackExample: function() {
+			  let changeBy = this.changeBy;
+			  [].forEach.call(
+				  documents.getElementsByClassName('my-class'),
+				  function (ele) {
+					  changeBy();
+				  }
+			  )
+		  },
 	  };
   }();
 
@@ -33239,19 +33248,50 @@ Always provide a base number :: parseInt("10", 10); // decimal base
   }
 #+END_SRC
 
-*** forEach <<<js:forEach>>>
-- ~Array.prototype.forEach(callback[, thisArg])~
-   - thisArg :: Pass a variable outside of .forEach() and change it inside .forEach() using /this/
+*** Array.prototype.forEach(callback[, thisArg]) <<<js:forEach>>>
+- Arguments
+   - thisArg :: Pass a variable outside of .forEach() and change it inside .forEach() using ~this~
    - callback :: 3 arguments
       - currentValue
       - index
       - array
    - Return :: undefined. So ~.forEach()~ is not chainable
+- For objects that have no reference to ~Array.prototype~ e.g. ~document.getElementsByClassName('myClass')~
+  #+begin_src js
+	[].forEach.call(elements, function(ele) {
+		// Do something
+	});
+  #+end_src
 - Can't ~break~ compared to traditional loop
 - Elements appended after the call to forEach() begins will not be visited
 - The value of element is changed before forEach() visits, it will reflect the change
 - Elements removed before being visited will not be visited
 
+*** Array.prototype.every()
+- Test whether all elements in the array pass the test implemented by the provided function. It returns a Boolean value.
+- Can break but not using ~break~
+
+#+begin_src js
+  // Inline callback function
+  every(function (element) { /* … */ })
+  every(function (element, index) { /* … */ })
+  every(function (element, index, array) { /* … */ })
+  every(function (element, index, array) { /* … */ }, thisArg)
+
+  let arr = [1, 2, 3, 4];
+  arr.every((elem, index, arr) => {
+	  arr[index + 1]--;
+	  console.log(`[${arr}][${index}] -> ${elem}`);
+	  return elem < 2; // if it is false, every() will return false and stop
+  });
+
+  // 1st iteration: [1,1,3,4][0] -> 1
+  // 2nd iteration: [1,1,2,4][1] -> 1
+  // 3rd iteration: [1,1,2,3][2] -> 2
+#+end_src
+
+*** Array.prototype.some()
+- Similar to ~every()~, but only one item/element must pass the test.
 *** break and continue
 - ~break~
    - without a label reference, can only jump out of a loop or a switch
