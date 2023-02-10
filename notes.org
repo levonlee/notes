@@ -6000,6 +6000,75 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 - See [[oop:inheritance:flaws]]
 - See [[design pattern:decorator]]
   
+*** Architectural Pattern
+**** Model-View-Controller (MVC)
+***** Summary
+- Model can be included independently in other scenario while
+   - Controller has to work with both the model and view
+   - View
+	  - Notifies (not direct call but through event binding) Controller
+	  - Reads from Model directly
+		 - Not perfect
+
+***** Sample
+- main.py
+   - model = Model()
+   - view = TodoList(model)
+   - controller = Controller(model, view)
+   - controller.run()
+- view.py
+   - bind_add_task(self, Callable[])
+   - bind_delete_task(self, Callable[])
+- model.py
+   - add_task
+   - delete_task
+   - get_tasks
+- controller.py
+   - __init__
+	  - view.bind_add_task(self.add_task)
+	  - view.bind_delete_task(self.delete_task)
+   - add_task
+	  - view.get_entry_text()
+	  - view.clear_entry()
+	  - model.add_task(task)
+	  - view.update_task_list()
+   - delete_task
+	  - model.delete_task()
+	  - view.update_task_list()
+
+**** Model-View-Presenter (MVP)
+***** Summary
+- Model
+   - Notifies Presenter
+   - Receives update requests from Presenter
+- Presenter
+   - Receives notifications from Model and sends update requests to View
+   - Receives notifications from View and sends update requests to Model
+- View
+   - Receives update requests from Presenter and notifies Presenter
+- Compared to MVC
+   - MVC
+	  - View couples with Controller and Model
+	  - Controller couples with Model and View
+	  - Model is independant
+   - MVP
+	  - View couples with Presenter only
+		 - Presenter calls Model to get data and pass the data directly to View
+		 - Do other words, presenter is a controller in MVC where it does a bit more so that the View is not coupled with Model
+	  - Presentor couples with Model and View
+	  - Model is still independent
+  
+***** Sample
+- https://www.youtube.com/watch?v=eHhXoCNCI1c&ab_channel=ArjanCodes
+
+**** Model–view–viewmodel (MVVM)
+***** Summary
+- Model
+   - data centric
+- View Model
+   - An abstraction of the view to handle data binding and event binding
+- View 
+
 *** Clean Code
 - Method names should have verbs
    - may choose to private constructor to force to use static factory methods to contruct a class
