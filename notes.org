@@ -3325,7 +3325,7 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   var_dump(strtr("My name is :name, not :name2. :name2AndPassword", $strParams) === "My name is Dave123, not Steve. :name2 or :password");
 #+end_src
 
-*** Random bash64 string
+*** Random base64 string
 #+BEGIN_SRC php
   $str = substr(base64_encode(sha1(mt_rand())), 0, 16);
 #+END_SRC
@@ -3354,7 +3354,7 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   sha1($text) === hash('sha1', $text)
 #+end_src
 
-**** sha1() <<php:sha1>> 
+**** sha1() <<php:sha1>>
 - Unsuitable for storing passwords
 - Result is a 40 lowercase hexadecimal characters (160 bits or 20 bytes). ~$binary = true~ returns binary of length 20. Maximum message size is 2^{64}-1 bits
   #+begin_src php
@@ -3430,6 +3430,29 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   echo "<br />";
 #+END_SRC
 
+**** hash_hmac <<php:hmac>> <<php:hash_hmac>>
+#+begin_src php
+  hash_hmac(
+	  string $algo,
+	  string $data,
+	  string $key,
+	  bool $binary = false
+  ): string
+#+end_src
+
+- Generate a keyed hash value using HMAC method
+- MAC (Message Authentication Code) is produced from a message and a secret key by a MAC algo.
+   - It's impossible to produce the MAC of a message and a secret key without knowing the secret key
+   - A MAC of the same message produced by a different key looks unrelated
+   - Even knowing the MAC of other messages does not help in computing the MAC of a new message
+   - Example, our server receives a long message and a MAC, the server uses the message and the secret key to compute the MAC and finds it's the same as the provided MAC, then the server sees this message comes from a valid source. A MAC is also called a signature based on secret key.
+- HMAC is a MAC based on a hash function
+   - There're other ways to define a MAC e.g. MAC algo based on block ciphers such as CMAC
+
+#+begin_src php
+  hash_hmac('md5', 'The quick brown fox jumps over the lazy dog', 'key'); // 32 hexadecimal hash
+#+end_src
+
 *** Password Hash <<php:password_hash>>
 #+BEGIN_SRC php
   if ( isset( $_POST['submit'] ) ) {
@@ -3499,6 +3522,30 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   #+END_SRC
    - If ~$encryptedMessage~, ~$key~ and ~$iv~ are all hex, you need to convert them to binary to decrypt <<php:openssl_decrypt>>
    - Refer to [[nodejs:decrypt][nodejs:decrypt]]
+*** Crypt <<php:crypt>>
+#+begin_src php
+  crypt(string $string, string $salt): string
+#+end_src
+- It creates a one-way hashed string and it is not yet binary safe
+- $salt
+   - Based on the salt provided, it will create a hash using the corresponding algorithm
+	  - Can be omitted but not recommended. When omitted, PHP will auto-generate a 12 character salt using MD5 algo if it's available, if not, a 2 character salt using DES algo
+   - CRYPT_STD_DES :: 2 character salt from the alphabet ~./0-9A-Za-z~
+   - CRYPT_EXT_DES :: 9 character salt starting with ~_~ followed by 4-character-iteration-count and 4-character-salt
+   - CRYPT_MD5 :: 12 character salt starting with ~$1$~
+   - CRYPT_BLOWFISH
+	  - Waring !! :: using this algo, the ~$string~ is truncated to 72 bytes!
+   - CRYPT_SHA256 :: 16 character salt prefixed with ~$5$~, may be followed by ~rounds=<N>$~ where ~N~ is used to indicate how many times the hashing loop should be executed, default is 5000, with minimum 1000 and maximum of 999999999
+   - CRYPT_SHA512 :: same as CRYPT_SHA256 but prefix is ~$6$~
+
+#+begin_src php
+  $user_input = 'rasmuslerdorf';
+  $hashed_password_stored_in_db = crypt($user_input, '$5$rounds=5000$usesomesillystringforsalt$');
+  // Only the first 16 characters of the salt will be used: usesomesillystri
+  $hashed_password_stored_in_db = '$5$rounds=5000$usesomesillystri$KqJWpanXZHKq2BOB43TSaYhEWsQ1Lr5QNyPCDH/Tp.6';
+  // KqJWpanXZHKq2BOB43TSaYhEWsQ1Lr5QNyPCDH/Tp.6 is the hashed result
+  var_dump(hash_equals($hashed_password_stored_in_db, crypt($user_input, $hashed_password_stored_in_db)));
+#+end_src
 
 *** Random Password <<php:random password>>
 #+BEGIN_SRC php
@@ -47835,7 +47882,7 @@ One ASCII character can be represented as 2 hex characters (UTF-8, etc.)
 Output size of SHA256 is 256 bits, which is 256/8*2 = 64 hex characters
 Output size of SHA1 is 160, which is 40 hex characters
 
-The secret/key of SHA256 should at least contain 256 bits. But I use 128 bits.. Which is 32 hex characters.
+The secret/key of SHA256 should at least contain 256 bits = 256/8 bytes = 32 bytes. But I use 128 bits.. Which is 128/8*2 = 32 hex characters.
 
 #+BEGIN_SRC js
   var crypto = require('crypto')
