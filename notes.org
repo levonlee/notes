@@ -3145,8 +3145,97 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 
 **** JSON Schema
 - https://json-schema.org/
-- MIME Type :: ~application/schema+json~ or ~application/schema-instance+json~
+- MIME Type :: ~application/schema+json~ or ~application/schema-instance+json~ or just ~application/json~
+
+***** Keyword: type
+   - Data Model :: https://json-schema.org/draft/2020-12/json-schema-core.html
+   - null
+   - boolean ::
+   - object ::
+   - array
+	  #+begin_src json
+		{
+			"my_property:": {
+				"type": "array",
+				"items": {"type": "string"}
+			}
+		}
+	  #+end_src
+   - number :: base-10 decimal number. The following types are accepted but there's no distinction
+	  - integer
+   - string ::
+   - ~"type": "string"~ or ~"type": ["string", "null"]~
+
+***** Keyword: enum
+#+begin_src json
+  {
+	  "type": "integer",
+	  "enum": [1, 2, 3]
+  }
+#+end_src
+#+begin_src json
+  {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+	  "product": {
+		"type": [
+		  "boolean",
+		  "string"
+		],
+		"enum": [
+		  "off",
+		  "on",
+		  "semi-on",
+		  true,
+		  false
+		]
+	  }
+	}
+  }
+#+end_src
   
+***** Keyword: if then else
+#+begin_src json
+  {
+	"type": "object",
+	"properties": {
+	  "street_address": {
+		"type": "string"
+	  },
+	  "country": {
+		"default": "United States of America",
+		"enum": ["United States of America", "Canada"]
+	  }
+	},
+	"if": {
+	  "properties": { "country": { "const": "United States of America" } }
+	},
+	"then": {
+	  "properties": { "postal_code": { "pattern": "[0-9]{5}(-[0-9]{4})?" } }
+	},
+	"else": {
+	  "properties": { "postal_code": { "pattern": "[A-Z][0-9][A-Z] [0-9][A-Z][0-9]" } }
+	}
+  }
+#+end_src
+
+***** Keyword: allOf
+#+begin_src json
+  {
+	"allOf": [
+	  {
+		"if": { ... },
+		"then": { ... }
+	  },
+	  {
+		"if": { ... },
+		"then": { ... }
+	  }
+	]
+  }
+#+end_src
+
 *** Back slashes for quotes and other characters <<php:addslashes>> <<php:stripslashes>>
 - Add backslashes before the following characters
    - Single quote
@@ -53385,6 +53474,14 @@ Notes
 Windows ~Internet Options~ can set SOCKS5 as proxy. However, DNS will be resolved locally at client. While Chrome and FireFox support resolving DNS on the proxy DNS.
 
 On Windows, use the portable [[https://www.sockscap64.com/homepage/][SocksCap64]], run it as admin, setup SOCKS5 proxy, and add individual Windows application as executable, select the app and click Run!
+
+*** TS - WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
+- The unique fingerprint of the destination server does not match what was stored in the client SSH ~known_hosts~. Common reasons on destination server
+   - root password is changed
+   - It is rebuilt
+   - Same IP address for multiple remote systems
+- Solution :: delete the entries corresponding to the destination server's IP in ~known_hosts~
+   - Linux and MacOS :: ~.ssh/known_hosts~
 
 ** fail2ban <<<linux:fail2ban>>>
 Ban access to services (e.g. SSH) for max tries and ban time based on service's log.
