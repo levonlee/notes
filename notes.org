@@ -54292,16 +54292,17 @@ Default delimiter is space
   - To enable multiple commas as one comma/column, use ~-F ',*'~
 
 **** AWK variables
+- Print 17th column :: ~cat access.log | awk {print $17}~
 - Print all variables to ~awkvars.out~
-  - ~awk --dump-variables ''~ with no commands
-  - Print one var ~awk 'BEGIN {print "Arguments =", ARGC}' f1.txt f2.txt~
+   - ~awk --dump-variables ''~ with no commands
+   - Print one var ~awk 'BEGIN {print "Arguments =", ARGC}' f1.txt f2.txt~
 - May change variables using ~-v FS='\t'~ or ~BEGIN {FS= ","}~
 - ~ARGC~ and ~ARGIND~
-  - multiple files as input
-    - ~awk 'BEGIN {print "Arguments =", ARGC}' f1.txt f2.txt~ number of arguments 3 which are ~awk~, ~f1.txt~ and ~f2.txt~
-    - ~cat f1.txt | awk 'BEGIN {print "Arguments =", ARGC}'~ :: only 1 argument ~awk~
-  - ~ARGIND~ is the index ~print "Filename = ", ARGV[ARGIND]~
-  - Loop arguments :: multiline commands do not require ~\~
+   - multiple files as input
+	  - ~awk 'BEGIN {print "Arguments =", ARGC}' f1.txt f2.txt~ number of arguments 3 which are ~awk~, ~f1.txt~ and ~f2.txt~
+	  - ~cat f1.txt | awk 'BEGIN {print "Arguments =", ARGC}'~ :: only 1 argument ~awk~
+   - ~ARGIND~ is the index ~print "Filename = ", ARGV[ARGIND]~
+   - Loop arguments :: multiline commands do not require ~\~
 #+BEGIN_SRC sh
   awk 'BEGIN { 
      for (i = 0; i < ARGC - 1; ++i) { 
@@ -54314,15 +54315,17 @@ Default delimiter is space
 - FS :: input field separator. Default space
 - FIELDSWIDTHS :: instead of using FS, a space-delimited list of field widths variable can be set to define fields
 - OFS :: output field separator. Default space
-  - ~awk -F':' 'BEGIN{OFS="\t";} {print $3, $4}' /etc/passwd~ Refer to linux:/etc/passwd
+   - ~awk -F':' 'BEGIN{OFS="\t";} {print $3, $4}' /etc/passwd~ Refer to linux:/etc/passwd
 - ORS :: output record separator. Default ~\n~. This is used in ~print~ in e.g. command 3 and 4. Manually add ~\n~ for ~printf "%g/n",$1~
 - RS :: record separator. Default newline ~\n~
 - NF :: number of fields/columns in current line
+   - Print 3rd column to the last column
+	  - ~awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}'~
+	  - ~awk '{for(i=3; i<=NF; ++i){printf("%s ", $i)}; printf("\n");}'~
 - NR :: the number of the current line
 - FNR :: similar to NR but relative to the current file
 - IGNORECASE :: when it's set, pattern becomes case-insensitive
-  - ~awk 'BEGIN{IGNORECASE = 1} /amit/' marks.txt~
-
+   - ~awk 'BEGIN{IGNORECASE = 1} /amit/' marks.txt~
 Variables that are functions related
 - RSTART :: the first position in the string matched by match function ~awk 'BEGIN { if (match("One Two Three", "Thre")) { print RSTART } }'~
 
@@ -64973,6 +64976,19 @@ access_log
    - Or :: ~access_log off;~
    - ~format is not specified~ :: then combined is used
 - Context :: http, server, location, if in location, limit_except
+
+*** Use Linux commands to analyze
+- https://easyengine.io/tutorials/nginx/log-parsing/
+
+#+begin_src sh
+  cd /var/log/nginx
+
+  # Filter archived logs with string `entity=loans&action=list`, grab the 17th column, sort and count the unique values
+  zcat access.log.*.gz | grep 'entity=loans&action=list' | awk '{print $17}' | sort | uniq -c | sort -rn
+
+  # cut -d '"' -f3 :: delimit the line with double quote and choose the 3rd element
+  cat access.log | cut -d '"' -f3 | cut -d ' ' -f2 | sort | uniq -c | sort -rn
+#+end_src
 
 ** Let's Encrypt SSL <<<nginx:ssl>>> <<<letsencrypt:certbot>>>
 - On Ubuntu, install Let's Encrypt SSL client ~certbot~ package to obtain, install and renew certificate
