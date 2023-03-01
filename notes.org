@@ -6921,9 +6921,22 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 	header("Location:somepage.php");
 	ob_end_flush();
   #+end_src
+** Throwable Interface <<php:throwable>>
+- https://www.php.net/manual/en/class.throwable.php
+- public methods
+   - getMessage()
+   - getCode()
+   - getFile()
+   - getLine()
+   - getTrace()
+   - getTraceAsString()
+   - getPrevious()
+   - __toString
+
 ** Exception <<php:exception>>
 - https://www.php.net/manual/en/language.exceptions.php
 - Exception class :: https://www.php.net/manual/en/class.exception.php
+   - Parent class :: see [[php:throwable]]
    - [[https://www.php.net/manual/en/exception.construct.php][Constructor]] :: ~public Exception::__construct(string $message = "", int $code = 0, ?Throwable $previous = null)~
   
 #+begin_src php
@@ -6935,6 +6948,36 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 	  $e->getMessage();
 	  // final public Exception::getCode(): int
 	  $e->getCode();
+  }
+#+end_src
+
+** Error <<php:error>>
+- https://www.php.net/manual/en/language.errors.php7.php
+   - Parent class :: see [[php:throwable]]
+   - Use ~catch (Error $e) {...}~, or ~catch (Throwable $t) {...}~ or ~set_exception_handler~ to handle fatal error
+   - Child classes
+	  - ArithmeticError
+	  - AssertionError
+	  - CompileError
+		 - ParseError
+	  - TypeError
+		 - ArgumentCountError
+	  - ValueError
+	  - UnhandledMatchError
+	  - FiberError
+
+#+begin_src php
+  try {
+	  // throw new Exception('an exception');
+	  // throwAFatalError();
+	  // die does not throw fatal error nor exception
+	  die('throw a fatal error');
+  }
+  catch (Exception $e) {
+	  echo "This is an exception: " . $e->getMessage();
+  }
+  catch (Error $e) {
+	  echo "This is a fatal error: " . $e->getMessage();
   }
 #+end_src
 
