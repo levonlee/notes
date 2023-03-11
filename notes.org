@@ -54932,6 +54932,7 @@ Options
 - -c :: create a new archive
 - -C :: current directory
 - -v :: verbose
+- --list, -t :: List the contents 
 - -p :: preserve permissions (default for superuser)
 - -f :: use archive file as result or input. It follows the output/input filename
 - --exclude :: wrap in '' if it contains spaces
@@ -58686,6 +58687,8 @@ Extract Dockerfile from an image. Use one or more of below
 
 	# rename from myname1 to myname2
 	docker image tag myname1 myname2
+
+	# docker image tag eq. docker tag
 	docker rmi myname1
   #+end_src
    - ~docker tag myimage myimage:1.0~
@@ -59503,6 +59506,22 @@ Assume your Docker Hub username is abc, give a tag for your image
 
 ~docker logout~
 
+** Docker registry
+#+begin_src sh
+  # docker login [OPTIONS] [SERVER]
+  # Options
+  # - --password, -p
+  # - --password-stdin
+  # - --isername, -u
+  docker login my.dockerregistry.com
+  docker login localhost:8080
+
+  # push a local image to registry
+  # First, tag the local image with the host name or IP address, and the port of the registry
+  docker tag myimage:latest my.dockerregistry.com/myimage:latest
+  docker push my.dockerregistry.com/myimage:latest
+#+end_src
+
 ** Common DevOps
 *** Files are in container
 container path to code and files dcontainerpath :: /var/www/html
@@ -60077,11 +60096,12 @@ This one is Debian and has curl
 - Other related images
    - <<image:mongo-express>>
 
-*** image:mysql:5.7.40 <<image:mysql>>
+*** image:mysql <<image:mysql>>
 - https://hub.docker.com/_/mysql 
 - Parent
    - 5.7.9 :: [[image:debian:jessie]]
-   - 5.7.40 :: image:oraclelinux:7-slim 
+   - 5.7.40 :: image:oraclelinux:7-slim
+   - Before MySQL v8 :: no ARM version
 - user:group :: mysql:mysql
 - Executable :: mysqld
 - Exposed port :: ~EXPOSE 3306~
@@ -61327,8 +61347,18 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
 
 #+begin_src sh
   docker exec -it myclickhouse bash
-  # inside the container
+  # inside the container, logon
   clickhouse-client
+
+  # to logon using a password and default host
+  clickhouse-client --password abc
+
+  # to logon to any server
+  clickhouse-client --host <HOSTNAME> \
+					--secure \
+					-- port 9440 \
+					--user <USERNAME> \
+					--password <PASSWORD>
 #+end_src
 
 **** Init script files
@@ -61690,49 +61720,53 @@ Level: off
 ** Builds
 Always use sudo to run commands
 
-* Go
+* Go <<toc:go>>
 ** Basics, Command
 Go is just an executable script file. Uninstall on Windows, go to Control Panel if you install using msi
 On Linux, uninstall by just replacing the bin folder
 
 Install on Windows using zip, extract it to C:\go so C:\go\bin exists. Add C:\go\bin to PATH. GOPATH is C:\Users\username\go
-Refer to phpstorm:golang
+See phpstorm:golang
 
-#+BEGIN_EXAMPLE
+#+begin_src sh
   echo $GOPATH
   go version
 
-  ;; # godoc <package_name>
+  # godoc <package_name>
   godoc fmt
 
   gofmt main.go
-  ;; # -w write file
+  # -w write file
   gofmt -w main.go
 
-  ;; # Format all files in directory
+  # Format all files in directory
   go fmt ./...
 
-  ;; # List environment variables
+  # List environment variables
   go env
 
-  ;; # GOROOT = usr/local/go
-  ;; # GOARCH and GOOS possible values
-  ;; # cat $GOROOT/src/go/build/syslist.go
+  # GOPATH :: e.g. "/root/go" on linux, where downloaded modules/packages are saved.
+  # GOROOT = usr/local/go
+  # GOARCH :: e.g. "arm64"
+  # GOOS :: like "linux"
+  # cat $GOROOT/src/go/build/syslist.go
 
-  ;; # Compile packages and dependencies based on 1 go file
+  # Compile packages and dependencies based on 1 go file
   go build main.go
 
-  ;; # A package file name should be only lowercase letters
+  # A package file name should be only lowercase letters
 
-  ;; # Folder structure in GOPATH directory
-  ;; # ./bin holds executables (compiled
-  ;; # ./pkg
-  ;; # ./src holds packages. In this folder, run go install
-  ;; # to compile and executables in ./bin
-  ;; # Change GOOS and GOARCH then go install again
+  # Folder structure in GOPATH directory
+  # ./bin holds executables (compiled
+  # ./pkg
+  # ./src holds packages. In this folder, run go install
+  # to compile and executables in ./bin
+  # Change GOOS and GOARCH then go install again
 
-  ;; # Standard library including builtin package are under $GOROOT/src, e.g. $GOROOT/src/fmt
-  ;; # Or go online https://golang.org/pkg/fmt/
+  # Standard library including builtin package are under $GOROOT/src, e.g. $GOROOT/src/fmt
+  # Or go online https://golang.org/pkg/fmt/
+#+end_src
+#+BEGIN_EXAMPLE
 #+END_EXAMPLE
 
 In Go Playground, the system time is always the same
