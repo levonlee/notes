@@ -55970,7 +55970,8 @@ Find which package owns a file =dpkg -S /etc/crontab=
 - Simulate what would happen if you upgrade/install a package (press ~n~ to cancel) :: ~apt-get -s install openssh-client~
 - Upgrade all installed packages :: ~apt-get upgrade~
 - Simulate what would happen if upgrade all (press ~n~ to cancel) :: ~apt-get -V -s upgrade~
-- Remove previously downloaded packages (/var/cache/apt/archives) :: ~apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*~ 
+- Remove previously downloaded packages (/var/cache/apt/archives) :: ~apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*~
+   - Official Debian and Ubuntu docker images automatically run ~apt-get clean~
 - See all installed packages :: ~apt list --installed~
    - For Ubuntu lower than 14.04, use ~dpkg -l~ to list all installed packages on Ubuntu
 - To see if a package is installed <<debian:package:installed>>
@@ -58570,7 +58571,7 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 https://www.whynopadlock.com/
 Qualys https://www.ssllabs.com/ssltest/
 
-* Docker
+* Docker <<toc:docker>>
 ** Version, Info, Installation
 - Brief :: ~docker --version~
 - Server and Client :: ~sudo docker version~
@@ -58982,6 +58983,8 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
    - Go into the running container and manually modify the hosts file
 
 ** Dockerfile
+- https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
 *** FROM <<dockerfile:from>>
 + There're 3 ways to specify the target platform. Choose one that you like. For example, building an image on ARM64 and make it AMD64
    - Set a global environment on docker host for building a single image using [[docker:build][docker:build]] and Dockerfile 
@@ -61204,9 +61207,14 @@ dockerfile-from-image.rb (same as GitHub)
 *** image:node <<docker:node>>
 - https://github.com/nodejs/docker-node
 - [[https://hub.docker.com/_/node][Available images]]
-  
-**** Run image directly
+- ENTRYPOINT :: ~/usr/local/bin/docker-entrypoint.sh~
+   - Run command with node if the first argument contains a ~-~ or is not a system command
+- CMD :: ~node~
+   - Use ~bash~ to bash in
+- Default user :: ~root~
+- https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md
 
+**** Run image directly
 #+begin_src sh
   docker run -it --rm --name my-running-script \
 	 -v "$PWD":/usr/src/app \
@@ -61218,6 +61226,7 @@ dockerfile-from-image.rb (same as GitHub)
 
   npm install && npm run build
 #+end_src
+
 **** version
 ***** node:boron
 Latest version 6.x (LTS)
@@ -61226,7 +61235,7 @@ Available: git, openssh-client
 
 Use ~docker logs -f container_name~ to tail log
 
-***** node:
+***** node:<version>
 #+begin_src dockerfile
   FROM --platform=linux/x86_64 node:10.15.3
   RUN mkdir /app
@@ -61249,6 +61258,19 @@ Use ~docker logs -f container_name~ to tail log
 	     -v `pwd`:/app \
 	     manode:1.0 \
 	     /bin/sh -c 'cd sass; npm run build'
+#+end_src
+
+**** Dockerfile
+#+begin_src dockerfile
+  FROM node:16
+
+  # Place global NPM dependencies in a non-root user directory
+  ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
+  # optionally if you want to run npm global bin without specifying path
+  ENV PATH=$PATH:/home/node/.npm-global/bin
+
+  # Install global NPM modules
+  RUN npm install --global zapier-platform-cli
 #+end_src
 
 *** image:golang
@@ -66491,7 +66513,11 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
       - ~git log origin/master -- path/to/a/file~
    - show commits on origin/master which modify a file
       - ~git log -- path/to/a/file~
-   - show commits of all branches about a file
+   - ~--branches[=<pattern>]~
+	  - The pattern should be any local branches (not remote branches) which are any of  ~.git/refs/heads/*~
+	  - If pattern is empty, commits of all local branches are included
+   - ~-all~
+	  - All commits of all local and remote branches are included which are all of ~.git/refs/*~
 - See [[git:log:commit difference][git:log:commit difference]] 
 - ~git log -3~ :: Last 3 commits
    - ~git log -3~ eq. ~git log -n 3~ ~git log --max-count=3~
@@ -66519,9 +66545,18 @@ Then you create another folder /path/to/duplicaterepo, and clone only the shrink
     done
   #+END_SRC
 - Show commits of a specific branch :: ~git log origin/master~
-- Show an author's commits (email can also be used) :: ~git log --author="Li Li" --before="2018-12-01" --after="2018-11-01"~
+- Show an author's commits
+   - Current branch
+	  - ~git log --author="Li Li" --before="2018-12-01" --after="2018-11-01"~
+   - All branches include remote and local
+	  - ~git log --author="Li Li" --after=yesterday --all~
+   - ~--author~
+	  - may use email
+	  - Regex :: ~--author='Li*'~
+   - ~-i~, ~--regexp-ignore-case~ :: match the regular expression limiting patterns without regard to letter case
    - ~--since=<date>~, ~--after=<date>~
       - Today :: ~--after=midnight~
+	  - yesterday :: ~--after=yesterday~ 
       - Commit date
    - Author date :: a commit's creation date
       - ~git log --author='Li Li' --format='%as %s' | grep -E ^2022-08-18~
@@ -78541,6 +78576,7 @@ https://mail.google.com/mail/u/?authuser=myemail@gmail.com
    - Has label :: has:userlabels
    - ~is:unread~ ~is:read~
    - ~category:updates~
+   - Not :: ~-~ e.g. Not starred ~-is:starred~
 
 **** Shortcuts
 - Action
@@ -79624,9 +79660,51 @@ Use Mobile App: Adobe Capture to capture colors.
 	  - To renew a developer test account, switch to the app developer account, click on Testing tab in between Apps and App Marketplace and select a developer test account to renew trial
 
 ** Automations
-*** Zapier
+*** Zapier <<toc:zapier>>
 - Build a Zapier integration https://zapier.com/platform
+- https://www.youtube.com/watch?v=CQ4j2GY-nbc&t=612s&ab_channel=Zapier
+- https://developer.zapier.com/cli-guide/testing-your-app
+- https://www.flowfinity.com/kb/zapier-write-data.html
+- https://platform.zapier.com/partners/lifecycle-planning
+
+**** CLI
+***** Dockerfile: ~npm install -g zapier-platform-cli~
+#+begin_src dockerfile
+  FROM node:16
+
+  # Place global NPM dependencies in a non-root user directory
+  ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
+  # optionally if you want to run npm global bin without specifying path
+  ENV PATH=$PATH:/home/node/.npm-global/bin
+
+  # Install global NPM modules
+  RUN npm install --global zapier-platform-cli
+  COPY .zapierrc /root
+#+end_src
+
+***** Example App
+- Tutorial :: https://developer.zapier.com/cli-guide/clone-the-example-app
+#+begin_src sh
+  git clone https://github.com/zapier/zapier-platform-example-app-github.git
+  cd zapier-platform-example-app-github
+  npm install
+#+end_src
+
+***** ~zapier login~
+- Create a Deploy Key
+   - https://zapier.com/developer/partner-settings/deploy-keys/
+   - The URL will be given when you first run ~zapier login --sso~
+   - The credential is saved to ~/root/.zapierrc~ given that the current user is ~root~
+
+#+begin_src sh
+  # Use single sign-on
+  zapier login --sso
+#+end_src
+
+***** GitHub ~zapier-platform~
+****** More Example Apps
 - 
+
 ** Form Service
 - JotForm
    - Video uploading
