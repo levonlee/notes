@@ -53298,10 +53298,34 @@ Convert this .pem file in PuttyGen and later uses it to connect to AWS
 Refer to aws:ssh
 
 *** Restart SSH <<linux:ssh:restart>>
-- Ubuntu :: ~sudo systemctl reload sshd~ (16.04) or ~sudo systemctl restart sshd~ (16.04) or ~sudo restart ssh~ (14.04)
+- Ubuntu
+   - See [[linux:sshd:socket-activated]] (22.10)
+   - ~sudo systemctl reload sshd~ (16.04)
+   - ~sudo systemctl restart sshd~ (16.04)
+   - ~sudo restart ssh~ (14.04)
 - General :: ~service ssh restart~
 
 *** sshd_config SSH Daemon Config File <<linux:ssh:sshd_config>>
+**** Socket-activated <<linux:sshd:socket-activated>>
+- Since Ubuntu 22.10, SSHd uses socket-based activation
+- Some settings on sshd_config is not used any more
+
+***** Add port
+- Add port 443 on top of the default port 22
+#+begin_src sh
+  mkdir -p /etc/systemd/system/ssh.socket.d
+  cat >/etc/systemd/system/ssh.socket.d/listen.conf <<EOF
+  [Socket]
+  ListenStream=
+  ListenStream=443
+  EOF
+
+  sudo systemctl daemon-reload
+  sudo systemctl restart ssh
+  # Should list `Server listening on :: port 22` and 443
+  systemctl status ssh
+#+end_src
+
 **** Backup
 #+BEGIN_SRC sh
   sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.factory-defaults
@@ -53410,7 +53434,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 - Say your IMAP port 143 to gmail is blocked by Wi-fi firewall
 - Default ssh port is 22. Default https port is 443
    - For Github and BitBucket, you can directly change to use port 443 without doing anything
-   - If you have control of the target server's ssh server, simply just add port 443 to /etc/ssh/sshd_config and use ~-p 443~ locally
+   - If you have control of the target server's ssh server, simply just add ~Port 443~ to ~/etc/ssh/sshd_config~ and use ~-p 443~ locally
 - Required server-side config
    - AllowTcpForwarding :: yes (default, means, allow all forwarding ~local~ / ~remote~ to allow local/remote forwarding) <<linux:ssh:sshd_config:allowtcpforwarding>>
    - AllowStreamLocalForwarding :: yes (default) <<linux:ssh:sshd_config:allowstreamlocalforwarding>>
@@ -53434,14 +53458,9 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
        ssh -L localhost:10143:mail.google.com:143 -p 443 user@my.server.com
      #+END_SRC
    - Change local email client setting to use localhost at port 10143
-- Refer to [[network:port][network:port]] on port range you should use
-- Multiple redirections can be set up in the same tunnel
-  #+BEGIN_SRC sh
-    # add -f to go into background and -N to not launch a shell
-    ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
-  #+END_SRC
-
-Now SSH to localhost:10022 will be forwarded to target_server_user@target.server.com:22 through SSH server user@my.server.com:443
+- See [[network:port][network:port]] on port range you should use
+   - See if port 10143 is being used on localhost :: ~lsof -i :10143~ 
+- Now SSH to localhost:10022 will be forwarded to target_server_user@target.server.com:22 through SSH server user@my.server.com:443
 #+BEGIN_SRC sh
   ssh -p 10022 target_server_user@localhost
   scp -P 10022 localhost:/target/server/path/ /local/path/
@@ -53449,13 +53468,18 @@ Now SSH to localhost:10022 will be forwarded to target_server_user@target.server
 #+END_SRC
 
 - -L [bind_address:]port:host:hostport :: Local forwarding. specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine.
-  - Summary :: [localhost | bind_address]:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
-- -D [bind_addres:]port :: similar to -L but the destionation host:hostport is not specified. It's called dynamic application-level port forwarding.
-  - e.g. ~ssh -ND 10022 -p 443 user@my.server.com~
-  - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
-  - Now a proxy server is set up :: 127.0.0.1:10022
-  - On my.server.com, set up custom records to resolve domains in file ~/etc/hosts~
-  - [[http://michalcichon.blogspot.com/2014/03/ssh-tunneling-using-putty-and-google.html][Config to start Chrome using a proxy server]]
+   - Summary :: [localhost | bind_address]:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
+   - Multiple redirections can be set up in the same tunnel
+	 #+BEGIN_SRC sh
+       # add -f to go into background and -N to not launch a shell
+       ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
+	 #+END_SRC 
+- -D [bind_addres:]port :: similar to -L but the destionation ~host:hostport~ is not specified. It's called dynamic application-level port forwarding.
+   - e.g. ~ssh -ND 10022 -p 443 user@my.server.com~
+   - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
+   - Now a proxy server is set up :: 127.0.0.1:10022
+   - On my.server.com, set up custom records to resolve domains in file ~/etc/hosts~
+   - [[http://michalcichon.blogspot.com/2014/03/ssh-tunneling-using-putty-and-google.html][Config to start Chrome using a proxy server]]
 
 #+BEGIN_SRC sh
   C:\Program Files (x86)\Google\Chrome\Application\chrome.exe --proxy-server="socks5://127.0.0.1:10022"
@@ -53490,12 +53514,16 @@ Now SSH to localhost:10022 will be forwarded to target_server_user@target.server
 
 #+END_SRC
 
-- ~-R [bind_address:]port:host:hostport~ :: Remote forwarding. Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
-  - Summary :: ~port~ my.server.com (access from internet) > -p 443 user@my.server.com (SSH) > from remote forward to host:hostport (at local).
-  - host:hostport is usually localhost:8888 
-  - e.g. people on the internet my.server.com:9000 to access your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
-  - ~ssh -R 9000:localhost:8001 -p 443 user@my.server.com~
-  - In order to use ~-R~, on my.server.com add this line to ~/etc/ssh/sshd_config~ then [[linux:ssh:restart][linux:ssh:restart]] :: ~GatewayPorts yes~
+- ~-R [bind_address:]port:host:hostport user@my.server.com~ :: Remote port forwarding (on local, initiate remote port fording for my.server.com). Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
+   - Summary :: [bind_address | empty means any IP] (access from internet) > ~port~ at my.server.com > -p 443 user@my.server.com (SSH) > host:hostport (usually host is localhost)
+   - host:hostport is usually localhost:8888 
+   - e.g. people on the internet my.server.com:9000 to access your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
+	  - ~ssh -R 9000:localhost:8001 -p 443 user@my.server.com~
+	  - In order to use ~ssh -R~ on local (The local initiates my.server.com to do remote port forwarding), on my.server.com add this line to ~/etc/ssh/sshd_config~ then [[linux:ssh:restart][linux:ssh:restart]] :: ~GatewayPorts yes~
+		 - ~GatewayPorts yes~ :: my.server.com allows anyone to connect to port 9000. SSH server my.server.com will open a port 9000 for anyone
+			- Anyone :: If the server is on the public internet, anyone on the Internet can connect to port 9000
+		 - ~GatewayPorts clientspecified~ :: e.g. only connections from the IP address 1.2.3.4 to port 9000 is allowed
+			- ~ssh -R 1.2.3.4:9000:localhost:8001 -p 443 user@my.server.com~
 - -g :: allows remote hosts to connect to local forwarded ports.
 - -N :: don't run command. Just forwarding ports.
 
@@ -55627,7 +55655,7 @@ Internal network Class C :: 192.168.0.1 -192.168.0.254 (192.168.0.0/24, total ho
       - n :: show numerical addresses instead of symbolic host, port or user names
       - t :: tcp
       - u :: udp
-- ~lsof~ <<<linux:lsof>>>
+- ~lsof~ <<linux:lsof>>
    - List all command files (open files) that are using an Internet address (-i)
       - ~lsof -Pi~
 	  - Filter any address of port 80 :: ~lsof -i :80~
@@ -79690,6 +79718,9 @@ Use Mobile App: Adobe Capture to capture colors.
   npm install
 #+end_src
 
+***** Environment Variable ~project/.env~ file
+- Refer to a variable :: ~process.env.MY_ENV_VAR_1~
+ 
 ***** ~zapier login~
 - Create a Deploy Key
    - https://zapier.com/developer/partner-settings/deploy-keys/
