@@ -53434,20 +53434,43 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 - Say your IMAP port 143 to gmail is blocked by Wi-fi firewall
 - Default ssh port is 22. Default https port is 443
    - For Github and BitBucket, you can directly change to use port 443 without doing anything
-   - If you have control of the target server's ssh server, simply just add ~Port 443~ to ~/etc/ssh/sshd_config~ and use ~-p 443~ locally
-- Required server-side config
-   - AllowTcpForwarding :: yes (default, means, allow all forwarding ~local~ / ~remote~ to allow local/remote forwarding) <<linux:ssh:sshd_config:allowtcpforwarding>>
-   - AllowStreamLocalForwarding :: yes (default) <<linux:ssh:sshd_config:allowstreamlocalforwarding>>
+	 #+BEGIN_SRC conf
+	   Host github.com
+		 Hostname ssh.github.com
+		 Port 443
 
-#+BEGIN_SRC conf
-  Host github.com
-    Hostname ssh.github.com
-    Port 443
+	   Host bitbucket.org
+		 Hostname altssh.bitbucket.org
+		 Port 443
+     #+END_SRC
+   - If you have control of the target server's SSH server, simply just add ~Port 443~ to ~/etc/ssh/sshd_config~ and use ~-p 443~ locally
+	  - See [[linux:sshd:socket-activated]] for Ubuntu 22.10+ to add port 443
+   - If you don't have control of the target server's SSH server
+	  - Assume you have a Host entry for intermediate host :: ~myserver~ using port ~443~
+	  - In your intermediate host ~my.server.com~, add ~Port 443~ as a second SSH port and set ~AllowTcpForwarding yes~ in ~/etc/ssh/sshd_config~, [[linux:ssh:restart]]
+		 - AllowTcpForwarding :: yes (default, means, allow all forwarding ~local~ / ~remote~ to allow local/remote forwarding) <<linux:ssh:sshd_config:allowtcpforwarding>>
+		 - Optional 
+			- AllowStreamLocalForwarding :: yes (default is not defined) <<linux:ssh:sshd_config:allowstreamlocalforwarding>>
+   - On your local set another Host entry in ~~/.ssh/config~
+	 #+begin_src conf
+	   Host targetserver-localhost
+		   Hostname 127.0.0.1
+		   Port 10143
+		   User myyser
+		   IdentityFile ~/.ssh/id_rsa_targetserver
+		   RemoteCommand sudo su -
+		   RequestTTY yes
 
-  Host bitbucket.org
-    Hostname altssh.bitbucket.org
-    Port 443
-#+END_SRC
+	   Host targetserver
+		   Hostname target.server.ip.0
+		   User myuser
+		   IdentityFile ~/.ssh/id_rsa_targetserver
+		   RemoteCommand sudo su -
+		   RequestTTY yes
+	 #+end_src
+	  - And initiate the local port forwarding on local :: ~ssh -L 10143:target.server.ip.0:22 myserver~
+		 - Any traffic to localhost:10143 is forwarded to ~target.server.ip.0~ at port 22 through ~myserver~ at port 443
+	  - Now you can ~ssh targetserver-localhost~ on local
 
 **** Port Forwarding via a single intermediate host
 - We are going to forward local client port 10143 to an intermediate host ~my.server.com~ at port 443, which forwards to mail.google.com at 143
@@ -53473,7 +53496,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 	 #+BEGIN_SRC sh
        # add -f to go into background and -N to not launch a shell
        ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
-	 #+END_SRC 
+	 #+END_SRC
 - -D [bind_addres:]port :: similar to -L but the destionation ~host:hostport~ is not specified. It's called dynamic application-level port forwarding.
    - e.g. ~ssh -ND 10022 -p 443 user@my.server.com~
    - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
