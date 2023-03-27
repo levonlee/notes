@@ -69237,7 +69237,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   -- UNIX Time
   -- default date format
   DATE_FORMAT(FROM_UNIXTIME(intTime),'%Y-%m-%d %H:%i:%s')
-  UNIX_TIMESTAMP(NOW()) -- returns integer
+  UNIX_TIMESTAMP(NOW()) -- returns integer, accepts date type
 
   -- both using timezone name, requires MySQL to support the timezone name
   SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', 'America/Toronto', 'UTC'));
@@ -69246,11 +69246,17 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', 'UTC'));
 
   -- Guaranteed to work
-  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', @@SESSION.time_zone));
-  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', '+00:00'));
-  SELECT UNIX_TIMESTAMP(CONVERT_TZ('2022-04-01 11:50:00', '-04:00', 'SYSTEM'));
+  -- The input date is of time zone '-04:00'. Convert timezone from '-04:00' to session timezone
+  SELECT CONVERT_TZ('2022-04-01 11:50:00', '-04:00', @@SESSION.time_zone);
+  -- eq.
+  SELECT CONVERT_TZ('2022-04-01 11:50:00', '-04:00', '+00:00');
+  -- eq. if session timezone is equal to system (e.g. Linux that MySQL is installed on) timezone
+  SELECT CONVERT_TZ('2022-04-01 11:50:00', '-04:00', 'SYSTEM');
 
   SELECT * FROM a WHERE aUnixTimeColumn > UNIX_TIMESTAMP(NOW() - INTERVAL 24 HOUR) -- last 24 hours
+
+  -- From UNIX timestamp (int) to a specific timezone, return date type
+  SELECT CONVERT_TZ(FROM_UNIXTIME(aColumnOfUnixTimeStamp), 'UTC', '-04:00');
 #+END_SRC
 
 **** String Functions <<mysql:string:functions>>
@@ -73474,6 +73480,11 @@ change to version 1.1 or get rid of the characters
 				  - $ref: '#/components/schemas/CustomerProperties'
 				  - $ref: '#/components/schemas/CustomerRequiredProperties'
 #+end_src
+* AI <<toc:ai>>
+** OpenAI
+*** DALL-E
+- Image generation :: https://openai.com/product/dall-e-2
+
 * Software Programming
 ** Programming Paradigm
 - A way to classify programming languages based on their features. A language can have multiple paradigms
