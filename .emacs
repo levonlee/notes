@@ -112,3 +112,8 @@ There are two things you can do about this warning:
 
  (setq visible-bell nil
        ring-bell-function 'my-terminal-visible-bell)
+
+;; display outline path of hierarchical headings
+(defun lili-show-path ()
+  (interactive)
+  (message (mapconcat #'identity (org-get-outline-path t) "/")))
