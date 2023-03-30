@@ -66293,7 +66293,15 @@ Merge file ~f~ of branch ~B~'s ~HEAD~ into ~f~ of branch ~A~~
 
 The result is feature and master are exactly the same: C2 -> C3 -> C4
 
-*** Rebase master onto a feature branch that has merges from master
+*** Rebase master onto a feature branch that has merges from master <<git:merge:--squash>>
+- ~my-branch~ is based on ~master~ and it has its own commits, merges from master and conflict resolves from time to time
+- The result we want is: modify ~my-branch~ history so that there's only one commit on top of the ~master~ branch
+   - Benefits of using ~git merge --squash~
+	  - We don't have to resolve the conflicts we previously resolved
+	  - You can review all the changes previously made
+   - Caveat of using ~git merge --squash~
+	  - Changes are moved to working tree and waiting for you to index and commit
+
 #+begin_src sh
   # After many merges from master to my-branch, now we want to rebase master onto my-branch:
   git checkout my-branch
@@ -66302,7 +66310,84 @@ The result is feature and master are exactly the same: C2 -> C3 -> C4
   git checkout -b my-branch
   git merge --squash my-branch-old
   git commit
+  git branch --set-upstream-to origin/my-branch
+  git push -f
 #+end_src
+
+You want to see what changes are made for ~branch-for-cr~
+#+begin_src sh
+  git checkout branch-for-cr
+  git pull
+  git checkout master && git pull
+  git checkout -b t-branch-for-cr
+  git merge --squash branch-for-cr
+  git add . && git commit -m "for CR"
+  # Review the changes in the new commit
+#+end_src
+
+*** Rebase a base feature branch onto another feature branch
+- ~feature-b~ depends on ~feature-a~ and it should contain all changes from ~feature-a~
+   - ~feature-a~ commit history is changed constantly
+	  - It's always on top of ~master~ because ~master~ is continuously rebased onto ~feature-a~
+	  - ~feature-a~ might ~git merge --squash~ into ~master~ when ~feature-a~ is merged into ~master~. See [[git:merge:--squash]]
+   - ~feature-b~ is always on top ~feature-a~
+- See https://softwareengineering.stackexchange.com/a/351790/294454
+#+begin_src sh
+  # Start feature-b
+  git checkout feature_a
+  git checkout feature_b
+
+  # feature_b has some updates
+  git add . && git commit -m "feature_b update"
+
+  # feature_a now has more commits
+
+  # feature_a may rebase master
+  git checkout feature_a
+  git rebase master
+
+  # feature_a is merged to master
+
+  # feature_a is squash merged to master
+  git checkout feature_a
+  git branch -m feature_a_old
+  git checkout master
+  git checkout -b feature_a
+  git merge --squash feature_a_old
+  git add . && git commit -m "Merge feature_a into master"
+  git branch --set-upstream-to origin/feature_a
+  git push -f
+
+  # Every now and then, we need to rebase feature_a onto feature_b
+  # Pull changes for feature_a (history might change)
+  git checkout feature_a
+  git pull --rebase=i
+  # If it prompts for any commits, mark those commits to skip
+
+  git checkout feature_b
+  git rebase feature_a --interactive
+
+  # Scenario #1:
+  # feature_b before rebasing feature_a: (M1-M2-A1-A2)-B1-B2
+  # feature_a before: M1-M2-A1-A2
+  # feature_a after: M1-M2-M3-A1-A2-A3
+  # feature_b after rebasing feature_a: M1-M2-M3-A1-A2-A3-B1-B2
+  # Summary: mark any commits before B1 (M1-M2-A1-A2) to skip in case `git rebase` prompts
+
+  # Scenario #2:
+  # feature_b before rebasing feature_a: (M1-M2-A1-A2)-B1-B2
+  # feature_a before: M1-M2-A1-A2
+  # feature_a after: M1-M2-M3-A4
+  # feature_b after rebasing feature_a: M1-M2-M3-A4-B1-B2
+  # Summary: mark any commits before B1 (M1-M2-A1-A2) to skip in case `git rebase` prompts
+
+  # Finally, as soon as feature-a is merged into master
+  git checkout master
+  git pull
+  git checkout feature_b
+  git rebase --onto master feature_a feature_b
+#+end_src
+
 *** Commands p(pick), s(quash), e(edit)
 *** Branch preference
 #+BEGIN_SRC sh
