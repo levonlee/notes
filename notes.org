@@ -765,6 +765,7 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
     }
   #+END_SRC
 
+** ~$_COOKIE~ values may also exist in ~$_REQUEST~
 ** Filesystem
 http://php.net/manual/en/ref.filesystem.php
 
@@ -29056,7 +29057,7 @@ HTTP response header
       - ~www.a.ca~ is eq. to ~a.ca~, and from ~a.ca~ to any subdomains is the same site
       - while from ~b.a.ca~ to ~c.a.ca~ is not same site 
    - ~Strict~ ::
-   - ~Lax~ :: only action e.g. links, cookies will be passed. Default since Feb 2020 for Chrome
+   - ~Lax~ :: only action e.g. ~<a>~ links, cookies will be passed. Default since Feb 2020 for Chrome
    - ~None~ :: requires ~secure~ 
 - Refer to setcookie, [[php:ini:session:cookie_secure][php:ini:session:cookie_secure]], apache:mod_headers for adding flags to cookies
 - A single cookie can hold less than 4KB. A lot of browsers restrict max 20 cookies for a domain
@@ -67992,13 +67993,13 @@ https://pantheon.io/docs/new-relic
 - https://pantheon.io/docs/cookies
 - See pantheon:varnish to prevent caching on certain pages by setting http header
 - A cookie can be set in PHP in a response to prevent caching
-#+BEGIN_SRC php
-  if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
-    $domain =  $_SERVER['HTTP_HOST'];
-    setcookie('NO_CACHE', '1', time()+0, '/path-to-page', $domain);
-  }
-#+END_SRC
-
+  #+BEGIN_SRC php
+	if ((preg_match($regex_path_match, $_SERVER['REQUEST_URI'])) {
+	  $domain =  $_SERVER['HTTP_HOST'];
+	  setcookie('NO_CACHE', '1', time()+0, '/path-to-page', $domain);
+	}
+  #+END_SRC
+  Like other headers, cookies must be sent before any output
 - Cache-Varying Cookies :: ~STYXKEY[a-zA-Z0-9_-]~ e.g. ~STYXKEY_my-key-name~
    - Content pages with same cookies of this name structure and same url will be cached
    - Request without corresponding ~STYXKEY~ cookie and response with any ~Set-Cookie:~ will always receive non-cache content from Varnish
@@ -68009,37 +68010,36 @@ https://pantheon.io/docs/new-relic
       - STYXKEY_european_user :: Presents different privacy options to E.U. users
       - STYXKEY-under21 :: Part of your site markets alcohol and you want to change the content for minors
       - STYXKEY-school :: Your site changes content depending on the user's school affiliation
+- ~setcookie~ <<php:setcookie>>
+  #+BEGIN_SRC php
+	$bar = 'Around here, football is the winter sport of choice!';
+	if (isset($_COOKIE['STYXKEY_gorp'])) {
 
-#+BEGIN_SRC php
-  $bar = 'Around here, football is the winter sport of choice!';
-  if (isset($_COOKIE['STYXKEY_gorp'])) {
+	  $foo = $_COOKIE['STYXKEY_gorp'];
+	  // Generate varied content based on cookie value
+	  // Do NOT set cookies here; Set-Cookie headers do not allow the response to be cached
+	  if ($foo == 'ca') {
+		str_replace('football', 'hockey', $bar);
+	  }
 
-    $foo = $_COOKIE['STYXKEY_gorp'];
-    // Generate varied content based on cookie value
-    // Do NOT set cookies here; Set-Cookie headers do not allow the response to be cached
-    if ($foo == 'ca') {
-      str_replace('football', 'hockey', $bar);
-    }
-
-  }
-  else{
-    /**
-    ,* Set local vars passed to setcookie()
-    ,* Example:
-    ,* @code
-    ,* $name = 'STYXKEY_gorp';
-    ,* $value = 'bar';
-    ,* $expire = time()+600;
-    ,* $path = '/';
-    ,* $domain =  $_SERVER['HTTP_HOST'];
-    ,* $secure = true;
-    ,* $httponly = true;
-    ,* @endcode
-    ,**/
-    setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);
-  }
-#+END_SRC
-
+	}
+	else{
+	  /**
+	  ,* Set local vars passed to setcookie()
+	  ,* Example:
+	  ,* @code
+	  ,* $name = 'STYXKEY_gorp';
+	  ,* $value = 'bar';
+	  ,* $expire = time()+600; // Unix timestamp in seconds. If set to 0 or omitted, cookie will expire at the end of the session (browser closes, these are also called session cookies). 
+	  ,* $path = '/'; // `/`: cookie is avaialbe within the entire $domain (and subfolders). If empty stirng or omitted, the current directory that the cookie is being set in
+	  ,* $domain =  $_SERVER['HTTP_HOST']; // `exmaple.com`: the current domain and all subdomains
+	  ,* $secure = true; // true: cookie should only be transmitted over https connections
+	  ,* $httponly = true; // true: cookie is only accessible through HTTP protocol. JavaScript cannot access
+	  ,* @endcode
+	  ,**/
+	  setcookie($name, $value = '', $expire = 0, $path = '', $domain = '', $secure, $httponly);
+	}
+  #+END_SRC
 - Cookie limit for Pantheon Edge is 10K. Any larger cookies are dropped as if there is no cookie and header ~X-Cookies-Dropped: 1~ will be added to the request and response, indicating that they have been truncated
 - Varnish will not try to respond to the request from its cache or store the response if any of these cookies is present:
    - Cookies beginning with ~SESS~ that are followed by numbers and lowercase letters
