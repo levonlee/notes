@@ -1129,7 +1129,8 @@ Convert a string format to another
   // 0001 :: result is decimal 1
 #+END_SRC
 
-** Ternary Operator, Null Coalescing Operator, Elvis Operator, Short ~if~
+** Ternary Operator, Null Coalescing Operator, Elvis Operator, Short ~if~ <<php:ternary>>
+- See [[js:ternary]]
 
 #+BEGIN_SRC php
   // null coalescing operator (??) since PHP 7.0
@@ -32679,7 +32680,37 @@ This provides you more debugging info
 *** Boolean <<<js:boolean>>>
 - ~true~ or ~false~. NOT ~TRUE~ not ~FALSE~
 
-*** ~undefined~ - undefined or has not been assigned a value
+*** ~undefined~ undefined or has not been assigned a value
+#+begin_src js
+  // Variable
+  let name;
+
+  if (name === undefined) {
+	  console.log("This is undefined");
+  }
+
+  // Object
+  let user = {
+	  name: "John Doe",
+	  age: 14
+  };
+
+  if (user.hobby === undefined) {
+	  console.log("This is undefined");
+  }
+
+  // Array
+  let scores = [12, 34, 66, 78];
+
+  if (scores[10] === undefined) {
+	  console.log("This is undefined");
+  }
+
+  if(typeof user.hobby === "undefined"){}
+  if(typeof scores[10] === "undefined"){}
+  if(typeof name === "undefined"){}
+#+end_src
+
 *** ~null~ - a special type of object
 *** String <<js:string>>
 - See [[js:Number]] to convert a string to number
@@ -33431,6 +33462,42 @@ parseInt("year 10"); // NaN
 The same for parseFloat.
 
 Always provide a base number :: parseInt("10", 10); // decimal base
+** Ternary <<js:ternary>>
+- See [[php:ternary]]
+
+#+begin_src js
+  // Ternary
+  var myVar = document.getElementById('myCheckbox');
+  myVar ? myVar.checked : null
+
+  // But Elvis is not supported
+  myVar ?: null
+
+  // May consider chaining to see if deeper key is defined
+  // undefined if either a or b are null/undefined, otherwise a.b.c (a has to be defined, otherwise error)
+  const myVar = a && a.b && a.b.c;
+
+  // eq. to the new Optional Chaining Operator `?.` (IE not supported) (a has to be defined, otherwise error)
+  const myVar = a?.b?.c;
+
+  // Nullish Coalescing operator `??` can also be used to set default value (IE not supported) (a has to be defined, otherwise error)
+  const myVariable = a?.b?.c ?? 'Some other value';
+
+  // Evaluates to 'Some other value'
+  const myVariable2 = null ?? 'Some other value';
+
+  // Evaluates to ''
+  const myVariable3 = '' ?? 'Some other value';
+
+  // Exmaple about DOM
+  var myCheckbox = document.getElementById('myCheckbox')?.checked;
+
+  var postData = [];
+  if (myCheckbox !== undefined) {
+	  postData.push('myCheckbox=' + (myCheckbox ? 1 : 0));
+  }
+#+end_src
+
 ** Loops and Breaks
 *** for, while, do...while
 #+BEGIN_SRC js
@@ -33745,6 +33812,7 @@ Except inherited properties, all methods and properties are enumerable in js:for
 *** encodeURIComponent vs encodeURI <<js:encodeURIComponent>>
 - eq. to [[php:urlencode][php:urlencode]]
 - See [[js:xmlhttprequest]]
+   - For URL parameters and POST data
 
 #+BEGIN_SRC js
   var url1 = "http://abc.com";
@@ -33754,7 +33822,7 @@ Except inherited properties, all methods and properties are enumerable in js:for
   encodeURIComponent(JSON.stringify(array1));
   // decodeURIComponent();
 
-  // When you want encode a whole URL that you don't trust
+  // When you want to encode a whole URL that you don't trust
   var uri = "http://abc.com/folder name with space/file name with space.asp?abc=has space"
   var uri_en = encodeURI(uri);
   // decodeURI(str)
@@ -34688,20 +34756,53 @@ An observable is like a promise, but it calls some code every time a new value b
 
 ** XMLHttpRequest <<js:xmlhttprequest>>
 *** Basics
+- Event handlers
+   - onload :: Always use onload instead of onreadystatechange
+	  - eq. to ~onreadystatechange~ and ~this.readyState == 4~
+   - onreadystatechange
+	  - ~readyState~ property values <<js:xmlhttprequest:readyState>>
+		 - 0: request not initialized
+		 - 1: connection established
+		 - 2: request received
+		 - 3: processing request
+		 - 4: request finished and response is ready
+   - upload
+     #+begin_src js
+	   rq.upload.onprogress = function (e) {
+		   var gId = document.getElementById;
+		   gId('cancel').style.display = 'block';
+		   if (e.lengthComputable) {
+			   gId('debug').innerHTML = Math.floor(e.loaded * 100 / e.total) + '%';
+			   if (Math.floor(e.loaded * 100 / e.total) === 100) {
+				   gId('debug').innerHTML = 'Processing...';
+			   }
+		   } else {
+			   gId('debug').innerHTML = 'uploading...';
+		   }
+	   };
+	#+end_src
+   - onabort
+	 #+begin_src js
+	   rq.onabort = function () {
+		   gid('cancel').style.display = 'none';
+		   gid('debug').innerHTML = 'canceled';
+	   }
+	 #+end_src
+   - Others :: onloadstart, onprogress, onerror, ontimeout, onloadend
+- Methods
+   - send
+   - setRequestHeader
+	  - Specify request header ~Content-type~ manually to x-www-form-urlencoded and ~send('postDataInStringWith&=Separated')~
+	  - ~send()~ with [[js:formdata]], Content-type is set to ~multipart/formdata~ automatically
+- Properties :: ~this.propertyName~
+   - readyState :: See [[js:xmlhttprequest:readyState]]
+   - responseText
+   - responseXML
+   - statusText :: "OK" or "Not Found" 
+ 
 #+BEGIN_SRC js
   function loadDoc() {
       var xhr = new XMLHttpRequest();
-
-      // event handlers. Others: onloadstart, onprogress, onabort, onerror, onload, ontimeout, onloadend
-      // Always use onload instead of onreadystatechange
-      // onload = onreadystatechange and this.readyState ==4
-
-      // XHR property: readyState
-      // 0: request not initialized,
-      // 1: connection established
-      // 2: request received,
-      // 3: processing request
-      // 4: request finished and response is ready
 
       xhr.onload = function () {
 	  if (this.status === 200) {
@@ -34768,14 +34869,14 @@ An observable is like a promise, but it calls some code every time a new value b
 *** ~application/x-www-form-urlencoded~ vs ~multipart/form-data~
 - Common
    - PHP will have ~$_POST~ if the request content-type is either of these 2
-   - To intepret other content type or other request method e.g. [[php:$_PUT]] <<php:input>>
+   - To interpret other content type or other request method e.g. [[php:$_PUT]] <<php:input>>
       - ~$_POST = json_decode(file_get_contents('php://input'), true);~
       - ~parse_str(file_get_contents('php://input'), $_PUT);~ :: ~$str = "first=value&arr[]=foo+bar&arr[]=baz";~
 - ~application/x-www-form-urlencoded~
    - Transfers extra data if large amount of binary data is sent
    - spaces are encoed as plus signs
 - ~multipart/form-data~ <<rfc:mime:multipart/form-data>>
-   - HTML and use [[js:formdata][js:formdata]] to POST multipart/form-data
+   - HTML form submit uses [[js:formdata][js:formdata]] to POST ~multipart/form-data~
    - Request header
       - ~Content-Type: multipart/form-data; boundary=user-agent-sets-this-boundary~
       - ~user-agent-sets-this-boundary~
@@ -34798,21 +34899,22 @@ An observable is like a promise, but it calls some code every time a new value b
      #+END_EXAMPLE
 
 *** FormData to send file <<js:formdata>>
-- Use JavaScript and HTML to POST multipart/form-data
+- Use JavaScript and HTML to POST ~multipart/form-data~
 - Not for IE 9 and below
 
 HTML to include a file upload field
 #+BEGIN_SRC html
   <form action="" method="post" enctype="multipart/form-data">
-      <div>Pictures:
+	  <div>Pictures:
 	  <input type="file" name="pictures[]" />
 	  <input type="file" name="pictures[]" />
 	  <input type="file" name="pictures[]" />
 	  <input type="submit" value="Send" />
-      </div>
-      <!-- Or just one -->
-      <input type="file" id="gv-inv_image">
+	  </div>
+	  <!-- Or just one -->
+	  <input type="file" id="gv-inv_image">
   </form>
+  <button onclick="upload(this);return false;">Upload</button>
 #+END_SRC
 
 #+BEGIN_SRC js
