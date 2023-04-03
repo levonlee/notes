@@ -53739,6 +53739,46 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 
 		  # --proxy-server="foopy:8080" --proxy-bypass-list="*.google.com;*foo.com;127.0.0.1:8080"
         #+END_SRC
+	  - Git
+		#+begin_src sh
+		  git config --global http.proxy 'socks5://127.0.0.1:10022'
+		  git config --global https.proxy 'socks5://127.0.0.1:10022'
+		#+end_src
+   - For applications that don't support using SOCKS
+	  - Use ~torify~ or ~usewithtor~ (installed along with tor) as shell wrapper to re-direct command line traffic using SOCKS
+		https://neverendingsecurity.wordpress.com/2015/03/14/proxify-applications-with-torsocks-tsocks-and-proxychains-on-linux/
+		#+begin_src sh
+		  sudo apt-get install tor
+
+		  # re-direct for `telnet google.com 80`
+		  torify telnet google.com 80
+
+		  # or
+
+		  usewithtor telnet google.com 80
+
+		  # On top of wrapping command line, some applications/software are supported
+
+		  userwithtor pidgin
+		#+end_src
+	  - ~tsocks~
+		#+begin_src sh
+		  sudo apt-get install tsocks
+
+		  nano /etc/tsocks.conf
+
+		  # server = 127.0.0.1
+		  # server_port = 100220
+
+		  # Run applications using tsocks. Run locally (applications, command line e.g. ~ftp~ ~ssh~, you don't need to open different SSH tunnels/ports!):
+		  tsocks skype tsocks kopete tsocks kmail tsocks ftp someserver.com tsocks ssh user@target.server.com
+
+		  # Notes
+		  # - FTP has to be in passive mode
+		  # - Some applications might not support tsocks
+		#+end_src
+	  - sshuttle
+		 - https://github.com/apenwarr/sshuttle
 - Other options
    - ~-N~ :: Don't run any command on ~user@my.server.com~ after the connection is first established
    - ~-f~ :: fork the process to the background
@@ -53768,28 +53808,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 - -g :: allows remote hosts to connect to local forwarded ports.
 - -N :: don't run command. Just forwarding ports.
 
-**** SOCKS server
-Run a SOCKS server on a given port, and set applications to use SOCKS, either natively or forcibly.
-When the app uses SOCKS, all its network connections are routed through the SOCKS server which forwards it to all your server on internet.
-
-Open port 443 on my.server.com like the above solution.
-
-Install tsocks on localhost ~sudo apt-get install tsocks~ and configure tsocks, /etc/tsocks.conf, near the end, change it to
-#+BEGIN_EXAMPLE
-  server -127.0.0.1 port = 1080
-#+END_EXAMPLE
-
-Bind traffic to local port 1080 to the jump host. Run locally
-~ssh -D 1080 -p 443 user@my.server.com~
-
-Run applications using tsocks. Run locally:
-~tsocks skype tsocks kopete tsocks kmail tsocks ftp someserver.com tsocks ssh user@target.server.com~
-
-Notes
-- FTP has to be in passive mode
-- Some applications might not support tsocks
-
-***** SOCKS on Windows
+**** SOCKS on Windows
 Windows ~Internet Options~ can set SOCKS5 as proxy. However, DNS will be resolved locally at client. While Chrome and FireFox support resolving DNS on the proxy DNS.
 
 On Windows, use the portable [[https://www.sockscap64.com/homepage/][SocksCap64]], run it as admin, setup SOCKS5 proxy, and add individual Windows application as executable, select the app and click Run!
