@@ -53660,7 +53660,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 		 - Any traffic to localhost:10143 is forwarded to ~target.server.ip.0~ at port 22 through ~myserver~ at port 443
 	  - Now you can ~ssh targetserver-localhost~ on local
 
-**** Port Forwarding via a single intermediate host
+**** Local Port Forwarding
 - We are going to forward local client port 10143 to an intermediate host ~my.server.com~ at port 443, which forwards to mail.google.com at 143
    - In the intermediate host with ssh server installed, add the line ~Port 443~ to /etc/ssh/sshd_config, [[linux:ssh:restart][linux:ssh:restart]], ~sudo ufw allow 443/tcp~
    - Check if it connects from local ~ssh -p 443 my.server.com~
@@ -53672,60 +53672,90 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 - See [[network:port][network:port]] on port range you should use
    - See if port 10143 is being used on localhost :: ~lsof -i :10143~ 
 - Now SSH to localhost:10022 will be forwarded to target_server_user@target.server.com:22 through SSH server user@my.server.com:443
-#+BEGIN_SRC sh
-  ssh -p 10022 target_server_user@localhost
-  scp -P 10022 localhost:/target/server/path/ /local/path/
-  rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
-#+END_SRC
-
-- -L [bind_address:]port:host:hostport :: Local forwarding. specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine.
+  #+BEGIN_SRC sh
+	ssh -p 10022 target_server_user@localhost
+	scp -P 10022 localhost:/target/server/path/ /local/path/
+	rsync -av -e "ssh -p 10022" /target/server/path localhost:/local/path/
+  #+END_SRC
+- ~-L [bind_address:]port:host:hostport~ :: Local forwarding. specifies that the given port on the local (client) host is to be forwarded to the given host and port on the remote side. Allocate a socket to listen to ~port~ on the local side, optionally bound to the specified ~bind_address~. Whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the remote machine.
    - Summary :: [localhost | bind_address]:port > -p 443 user@my.server.com (SSH) > host:hostport (access from my.server.com)
    - Multiple redirections can be set up in the same tunnel
 	 #+BEGIN_SRC sh
        # add -f to go into background and -N to not launch a shell
        ssh -L localhost:10143:mail.google.com:143 localhost:10022:target.server.com:22 -p 443 user@my.server.com
 	 #+END_SRC
-- -D [bind_addres:]port :: similar to -L but the destionation ~host:hostport~ is not specified. It's called dynamic application-level port forwarding.
-   - e.g. ~ssh -ND 10022 -p 443 user@my.server.com~
-   - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
-   - Now a proxy server is set up :: 127.0.0.1:10022
-   - On my.server.com, set up custom records to resolve domains in file ~/etc/hosts~
-   - [[http://michalcichon.blogspot.com/2014/03/ssh-tunneling-using-putty-and-google.html][Config to start Chrome using a proxy server]]
+- ~-D [bind_addres:]port~
+   - Similar to -L but the destionation ~host:hostport~ is not specified. It's called dynamic application-level port forwarding.
+   - e.g. ~ssh -CND 10022 -p 443 user@my.server.com~
+	  - Open port 10022 on localhost, any traffic going into this port is forwarded to ~user@my.server.com~ at ~443~, and finally to any IP of any port on the internet 
+	  - Putty :: setup SSH to my.server.com as usual and then Connection > SSH > Tunnels > Uncheck everything except adding source port e.g. 10022 so that Forwarded ports become D10022 and check Dynamic and Auto.
+		 - https://www.digitalocean.com/community/tutorials/how-to-route-web-traffic-securely-without-a-vpn-using-a-socks-tunnel
+   - Now a SOCKS proxy server is set up
+	  - 127.0.0.1:10022
+	  - localhost:10022
+   - Set up application e.g. Firefox, Chrome to use the SOCKS 5 tunnel
+	  - Firefox
+		 - https://www.digitalocean.com/community/tutorials/how-to-route-web-traffic-securely-without-a-vpn-using-a-socks-tunnel
+		 - Firefox supports ~Proxy DNS when using SOCKS v5~. If the app does not support DNS proxy, ISP can see traffic send to the DNS server specified in the app.
+			- You may need to specify each domain-IP lookup manually. On my.server.com, set up custom records to resolve domains in file ~/etc/hosts~
+	  - Chrome
+        #+BEGIN_SRC sh
+		  "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" ^
+			--user-data-dir="%USERPROFILE%\my-proxy-profile" ^
+			--proxy-server="socks5://127.0.0.1:10022" 
 
-#+BEGIN_SRC sh
-  C:\Program Files (x86)\Google\Chrome\Application\chrome.exe --proxy-server="socks5://127.0.0.1:10022"
+		  # or chrome.exe
+		  /usr/bin/google-chrome \
+			--user-data-dir="$HOME/my-proxy-profile" \
+			--proxy-server="socks5://127.0.0.1:10022" 
 
-  # or
+		  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+			--user-data-dir="$HOME/my-proxy-profile" \
+			--proxy-server="socks5://127.0.0.1:10022" 
 
-  chrome.exe --proxy-server="socks5://127.0.0.1:10022"
+		  # --user-data-dir :: user profile will be created automatically if not exists
 
-  # The hostname for destination URLs will be resolved by the proxy server.
-  # ftp:// URLs though a SOCKS proxy is not implemented
+		  # The hostname for destination URLs will be resolved by the proxy server.
+		  # ftp:// URLs though a SOCKS proxy is not implemented
 
-  # To prevent Chrome from sending any DNS requests over the network (e.g. DNS prefetch uses direct DNS resolve even though proxy is used)
-  # --host-resolver-rules="MAP * ~NOTFOUND , EXCLUDE myproxy"
+		  # To prevent Chrome from sending any DNS requests over the network (e.g. DNS prefetch uses direct DNS resolve even though proxy is used)
+		  # --host-resolver-rules="MAP * ~NOTFOUND , EXCLUDE myproxy"
 
-  # Verify proxy setting
-  # chrome://net-internals/#proxy
+		  # Verify proxy setting
+		  # chrome://net-internals/#proxy
 
-  # Verify DNS resolving
-  chrome://net-internals/#dns
+		  # Verify DNS resolving
+		  chrome://net-internals/#dns
 
-  # Verify proxy logic for individual requests
-  # chrome://net-internals/#events
+		  # Verify proxy logic for individual requests
+		  # chrome://net-internals/#events
 
-  # Use HTTP proxy "foopy:80" for http URLs and HTTP proxy "foopy2:80" for ftp URLs
-  # Without scheme and a single proxy :: use that proxy for all URLs
-  chrome.exe --proxy-server="http=foopy:80;ftp=foopy2"
+		  # Use HTTP proxy "foopy:80" for http URLs and HTTP proxy "foopy2:80" for ftp URLs
+		  # Without scheme and a single proxy :: use that proxy for all URLs
+		  chrome.exe --proxy-server="http=foopy:80;ftp=foopy2"
 
-  # --proxy-bypass-list=(<trailing_domain>|<ip-address>)[:<port>][;...]
-  # * can be used
+		  # --proxy-bypass-list=(<trailing_domain>|<ip-address>)[:<port>][;...]
+		  # * can be used
 
-  # --proxy-server="foopy:8080" --proxy-bypass-list="*.google.com;*foo.com;127.0.0.1:8080"
+		  # --proxy-server="foopy:8080" --proxy-bypass-list="*.google.com;*foo.com;127.0.0.1:8080"
+        #+END_SRC
+- Other options
+   - ~-N~ :: Don't run any command on ~user@my.server.com~ after the connection is first established
+   - ~-f~ :: fork the process to the background
+	 #+begin_src sh
+	   # To terminate
+	   ps aux | grep ssh
 
-#+END_SRC
+	   # Find the PID by searching the command
 
-- ~-R [bind_address:]port:host:hostport user@my.server.com~ :: Remote port forwarding (on local, initiate remote port fording for my.server.com). Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
+	   kill $thePID
+	 #+end_src
+   - ~-C~ :: compress the data before sending
+   - ~-q~ :: quiet mode
+
+**** Remote Port Forwarding
+- ~-R [bind_address:]port:host:hostport user@my.server.com~
+   - Remote port forwarding (on local, initiate remote port fording for my.server.com). Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
    - Summary :: [bind_address | empty means any IP] (access from internet) > ~port~ at my.server.com > -p 443 user@my.server.com (SSH) > host:hostport (usually host is localhost)
    - host:hostport is usually localhost:8888 
    - e.g. traffic from the internet access my.server.com:9000 will be forwarded to your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
@@ -53759,7 +53789,7 @@ Notes
 - FTP has to be in passive mode
 - Some applications might not support tsocks
 
-**** SOCKS on Windows
+***** SOCKS on Windows
 Windows ~Internet Options~ can set SOCKS5 as proxy. However, DNS will be resolved locally at client. While Chrome and FireFox support resolving DNS on the proxy DNS.
 
 On Windows, use the portable [[https://www.sockscap64.com/homepage/][SocksCap64]], run it as admin, setup SOCKS5 proxy, and add individual Windows application as executable, select the app and click Run!
