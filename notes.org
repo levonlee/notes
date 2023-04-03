@@ -66598,20 +66598,32 @@ You want to see what changes are made for ~branch-for-cr~
 
   git checkout feature_b
   git rebase feature_a --interactive
+  # `:wq` to pick every commit
 
   # Scenario #1:
   # feature_b before rebasing feature_a: (M1-M2-A1-A2)-B1-B2
   # feature_a before: M1-M2-A1-A2
-  # feature_a after: M1-M2-M3-A1-A2-A3
-  # feature_b after rebasing feature_a: M1-M2-M3-A1-A2-A3-B1-B2
+  # feature_a after: M1-M2-M3-A1'-A2'-A3
+  git rebase feature_a --interactive
+  # Find the first commit of feature_b, which is B1
+  # `:wq` to pick all commits to replay
+  # - Any commits that have conflict (from A1 to A2 on feature_b) and possibly any B1-B2
+  # - Pick all of them
+  # `git rebase --skip` for any commits that before B1. Like (A1-A2)
+  # Don't skip any B1-B2
+  # feature_b after rebasing feature_a: M1-M2-M3-A1'-A2'-A3-B1'-B2'
   # Summary: mark any commits before B1 (M1-M2-A1-A2) to skip in case `git rebase` prompts
 
   # Scenario #2:
   # feature_b before rebasing feature_a: (M1-M2-A1-A2)-B1-B2
   # feature_a before: M1-M2-A1-A2
   # feature_a after: M1-M2-M3-A4
-  # feature_b after rebasing feature_a: M1-M2-M3-A4-B1-B2
-  # Summary: mark any commits before B1 (M1-M2-A1-A2) to skip in case `git rebase` prompts
+  git rebase feature_a -i
+  # Find the first commit of feature_b, which is B1
+  # `:wq` to pick all commits to replay
+  # `git rebase --skip` for any commits that are before B1. Like (A1-A2)
+  # Don't skip any B1 and onwards
+  # feature_b after rebasing feature_a: M1-M2-M3-A4-B1'-B2'
 
   # Finally, as soon as feature-a is merged into master
   git checkout master
