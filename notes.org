@@ -4826,6 +4826,153 @@ Examples
 - list<string> :: array with key starts from 0 ~[0 => 'a', 1 => 'b']~
 - list<array{key1: string, key2: strin}>
 
+*** Generic Types / Generics
+- https://dev.to/jszutkowski/how-to-start-using-generic-types-in-php-2f1k
+- PhpStorm only supports
+   - ~@template T~
+   - ~@template T of aSubClass|anInterface~
+   - ~@return T[]~
+**** Example
+#+begin_src php
+  interface EntityAutomobileInterface
+  {
+  }
+
+  class Car implements EntityAutomobileInterface
+  {
+	  public $id;
+	  public $engineCapacity;
+
+	  public function __construct(int $id, float $engineCapacity)
+	  {
+		  $this->id = $id;
+		  $this->engineCapacity = $engineCapacity;
+	  }
+  }
+
+  // IMPORTANT We can use PhpDoc for Generic Types before PHP natively supports it
+
+  /**
+   ,* @template T
+   ,*/
+  interface CollectionInterface
+  {
+	  /**
+	   ,* @param T $entity
+	   ,*/
+	  public function add($entity);
+
+	  /**
+	   ,* @param int $id
+	   ,* @return T
+	   ,*/
+	  public function find(int $id);
+
+	  /**
+	   ,* @return T[]
+	   ,*/
+	  public function listAll();
+  }
+
+  // IMPORTANT T of anInterface
+  /**
+   ,* @template T of EntityAutomobileInterface
+   ,*/
+  interface CollectionAutomobileInterface
+  {
+	  /**
+	   ,* @param T $entity
+	   ,*/
+	  public function add($entity);
+
+	  /**
+	   ,* @param int $id
+	   ,* @return T
+	   ,*/
+	  public function find(int $id);
+
+	  /**
+	   ,* @return T[]
+	   ,*/
+	  public function listAll();
+  }
+
+  // IMPORTANT T of aSubClass
+  /**
+   ,* @template T of Car
+   ,*/
+  interface CollectionCarInterface
+  {
+	  /**
+	   ,* @param T $entity
+	   ,*/
+	  public function add($entity);
+
+	  /**
+	   ,* @param int $id
+	   ,* @return T
+	   ,*/
+	  public function find(int $id);
+
+	  /**
+	   ,* @return T[]
+	   ,*/
+	  public function listAll();
+  }
+
+  $car = new Car(1, 1.23);
+
+  interface EntityAnimalInterface
+  {
+  }
+
+  class Monkey implements EntityAnimalInterface
+  {
+	  public $name;
+	  public $gender;
+
+	  public function __construct(string $name, float $gender)
+	  {
+		  $this->name = $name;
+		  $this->gender = $gender;
+	  }
+  }
+
+  $monkey = new Monkey('moneky name', 'f');
+
+  // IMPORTANT All good
+  /** @var CollectionInterface<Car> $carCollection */
+  $carCollection->find(1)->engineCapacity;
+
+  // IMPORTANT All good
+  /** @var CollectionAutomobileInterface<Car> $carCollection */
+  $carCollection->find(1)->engineCapacity;
+
+  // IMPORTANT No suggestion for `engineCapacity` because `EntityAutomobileInterface` does not have property `engineCapacity`
+  /** @var CollectionAutomobileInterface<EntityAutomobileInterface> $carCollection */
+  $carCollection->find(1)->engineCapacity;
+
+  // IMPORTANT All good
+  /** @var CollectionCarInterface<Car> $carCollection */
+  $carCollection->find(1)->engineCapacity;
+
+  // IMPORTANT All good
+  /** @var CollectionInterface<Monkey> $monkeyCollection */
+  $monkeyCollection->find(1)->name;
+
+  // IMPORTANT All good (PhpStorm static analysis should have thrown some warnings. Tested on PhpStorm 2023.1)
+  /** @var CollectionAutomobileInterface<Monkey> $monkeyCollection */
+  $monkeyCollection->find(1)->name;
+
+  // IMPORTANT All good (PhpStorm static analysis should have thrown some warnings. Tested on PhpStorm 2023.1)
+  /** @var CollectionCarInterface<Monkey> $monkeyCollection */
+  $monkeyCollection->find(1)->name;
+
+  // IMPORTANT All good (PhpStorm static analysis should have thrown some warnings. Tested on PhpStorm 2023.1)
+  /** @var CollectionCarInterface<Monkey> $monkeyCollection */
+  $monkeyCollection->add($monkey)->name;
+#+end_src
+
 ** Database
 *** mysqli <<php:mysqli>>
 - Driver only for MySQL while [[php:pdo][php:pdo]] has 12 different drivers
