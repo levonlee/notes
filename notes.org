@@ -66936,13 +66936,19 @@ Add a remote: upstream
 #+END_SRC
 
 ** Symlink <<git:symlink>>
-- Keep ~core.symlinks=false~, symlinks might not be pulled. Create symlink:windows and remove tracking for those symlink files
-~git update-index --assume-unchanged symlink1~ using [[git:update-index][git:update-index]] 
-
-To find all symlink files but are not created as symlinks on Windows:
-#+BEGIN_SRC sh
-  git ls-files -s | awk '/120000/{print $4}'
-#+END_SRC
+- ~core.symlinks~ defaults to true
+   - Git detect if the current filesystem supports symlink (FAT does not support) during ~git clone~ and ~git init~
+	  - if not, it will set it to false on the project folder
+- When it is false, the symlinks will be created as plain text file. To pull from remote again and make those plain text files to be symlinks:
+   - Keep ~core.symlinks=false~, create [[symlink:windows]] and remove tracking for those symlink files
+	  - ~git update-index --assume-unchanged symlink1~ using [[git:update-index][git:update-index]]
+	  - To find all symlink files but are not created as symlinks on Windows:
+        #+BEGIN_SRC sh
+		  git ls-files -s | awk '/120000/{print $4}'
+        #+END_SRC
+	  - Change it to true for the current repo
+		 - ~git config core.symlinks true~
+	  - and then ~git pull~
 
 ** Remove tracking for commited files <<git:update-index>>
 - A file is commited but you don't want to track it anymore in the future
