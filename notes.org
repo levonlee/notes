@@ -73889,10 +73889,72 @@ change to version 1.1 or get rid of the characters
 	  - number 
    - More
 	  - integer
-		
+
+*** array
+- Unlike general JSON Schema, ~items~ keyword is required
+- An array of any type
+  #+begin_src yaml
+	# [ "hello", -2, true, [5.7], {"id": 5} ]
+	type: array
+	items: {}
+  #+end_src
+- An array of 2 types
+	#+begin_src yaml
+	  # ["foo", 5, -2, "bar"]
+	  type: array
+	  items:
+		oneOf:
+		  - type: string
+		  - type: integer
+	#+end_src
+- An array of an array
+  #+begin_src yaml
+	# [ [1, 2], [3, 4] ]
+	type: array
+	items:
+	  type: array
+	  items:
+		type: integer
+  #+end_src
+- An array of an object
+  #+begin_src yaml
+	# [ {"id": 5}, {"id": 8} ]
+	type: array
+	items:
+	  type: object
+	  properties:
+		id:
+		  type: integer
+  #+end_src
+  #+begin_src yaml
+	# Array of Pets
+	type: array
+	items:
+	  $ref: '#/components/schemas/Pet'
+  #+end_src
+- An array's length
+  #+begin_src yaml
+	# Without minItems, an empty array is valid
+
+	type: array
+	items:
+	  type: integer
+	minItems: 1
+	maxItems: 10
+  #+end_src
+- Unique items
+  #+begin_src yaml
+	type: array
+	items:
+	  type: integer
+	uniqueItems: true
+	# [1, 2, 3] – valid
+	# [1, 1, 3] – not valid
+	# [ ] – valid
+  #+end_src
+  
 *** Markdown
 - https://spec.commonmark.org/
-
 
 ** schema - reuse properties
 - ~$ref~ in
