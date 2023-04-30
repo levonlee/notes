@@ -2361,6 +2361,24 @@ Associative arrays
   var_dump(array_filter($arr, function($v, $k) {
 	  return $k == 'b' || $v == 4;
   }, ARRAY_FILTER_USE_BOTH));
+
+  $clients = [
+	  'Li' => 'hello',
+  ];
+  $htmlOptions = '';
+  $fn = function ($d = '') {
+	  return $d;
+  };
+  array_filter($clients, function ($v, $k) use (&$htmlOptions, $fn) {
+	  if (!$k) {
+		  return false;
+	  }
+	  $htmlOptions .= <<<HTML
+	  <option value="{$fn(htmlspecialchars($k))}">{$fn(htmlspecialchars($v))}</option>
+  HTML;
+	  return false;
+  }, ARRAY_FILTER_USE_BOTH);
+  var_dump($htmlOptions);
 #+END_SRC
 
 *** ~array_reduce~ <<php:array_reduce>>
@@ -2382,7 +2400,8 @@ Associative arrays
     var_dump($r === 97);
   #+END_SRC
 - Can be associative array, but no way to access the key in callback function
-   - Use [[php:array_walk]]
+   - Use [[php:array_walk]] but it suggests the input array might be mutated
+   - Use [[php:array_filter]]
 - Return a value after loop
 - Return deep value in array
   #+BEGIN_SRC php
