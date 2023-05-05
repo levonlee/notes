@@ -3767,6 +3767,23 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   ];
 #+END_SRC
 
+*** If string is an integer
+#+begin_src php
+  // Option #1.
+  // Limitation: leading zero string e.g. '05' is not considered an integer
+  if ($value === strval(intval($value))) {
+	  return intval($value);
+  }
+
+  var_dump(filter_var('2', FILTER_VALIDATE_INT));   // 2
+  var_dump(filter_var('2.0', FILTER_VALIDATE_INT)); // false
+  var_dump(filter_var('2.1', FILTER_VALIDATE_INT)); // false
+
+  var_dump(filter_var(2, FILTER_VALIDATE_INT));     // 2
+  var_dump(filter_var(2.0, FILTER_VALIDATE_INT));   // 2
+  var_dump(filter_var(2.1, FILTER_VALIDATE_INT));   // false
+#+end_src
+
 ** Conversion to boolean <<php:bool>>
 #+begin_src php
   /*
@@ -69808,6 +69825,14 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     SELECT ROUND((LENGTH(col1) - LENGTH(REPLACE(col1, 'lili', ''))) / LENGTH('lili')) AS numOfAppearanceOfSubstring
     FROM t1
   #+END_SRC
+
+***** Regex search <<mysql:regexp>>
+#+begin_src sql
+  -- column is integer
+  SELECT field
+  FROM myTable
+  WHERE field REGEXP '^-?[0-9]+$';
+#+end_src
 
 ***** ~REGEXP_REPLACE~ <<mysql:regexp_replace>>
 - Do more complicated find and replace. MariaDB driver on host is required
