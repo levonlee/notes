@@ -6338,7 +6338,8 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
 **** Adapter (Structural DP)
 - Allow objects with incompatible interfaces to collaborate
 
-**** Strategy (Behavioral DP)
+**** Strategy Pattern (Behavioral DP) <<design pattern:strategy>>
+***** Example 1
 - Finite number of strategies, check each one if it can be satisfied in a loop, the last strategy is the best preferred one
 - Each strategy implements a common interface which has a check method: isAvailable and a action-method: display
 - Each strategy is singleton
@@ -6411,6 +6412,62 @@ Moreover, a decorator has to know which class the decorator decorates. But this 
     }
   }
 #+END_SRC
+
+***** Example 2
+
+#+begin_src php
+  // The following is not ideal
+
+  class FetchMode 
+  {
+   const FetchAll = 0;
+   const FetchOne = 1;
+   const FetchRow = 2;
+  }
+
+  // in another file
+  public function getRecordSet($mode)
+  {
+	  switch ($mode) {
+		  case FetchMode::ALL:
+			  // code to do a fetchAll
+			  break;
+		  case FetchMode::ONE:
+			  // code to do a fetchOne
+			  break;
+		  default:
+	  }
+  }
+
+  // Let's refactor
+  public function getRecordSet(FetchMode $fetchModeStrategy)
+  {
+	  return $fetchModeStrategy->fetch();
+  }
+
+  interface FetchMode
+  {
+	  public function fetch();
+  }
+
+  class FetchOne implements FetchMode
+  {
+	  public function fetch()
+	  {
+		  // code to fetchOne
+	  }
+  }
+
+  class FetchAll
+  {
+	  // ...
+  }
+
+  class FetchRow
+  {
+	  // ...
+  }
+#+end_src
 
 **** Iterator (Behavioral DP)
 **** Observer (Behavioral DP)
