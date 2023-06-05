@@ -53278,11 +53278,13 @@ https://github.com/magicmonty/bash-git-prompt
 
 *** Alias <<linux:bash:alias>>
 - https://www.digitalocean.com/community/tutorials/an-introduction-to-useful-bash-aliases-and-functions
-- =nano ~/.bash_alias=
+- =nano ~/.bashrc=
   #+BEGIN_SRC conf
-    alias ll="ls -lhA"
-    ualias ll
+	alias ll="ls -lhA"
   #+END_SRC
+  After changing the file ~source ~/.bashrc~
+- Remove an alias :: ~unalias ll~
+- What command an alias runs :: ~type ll~
 
 *** Shortcuts <<linux:bash:shortcuts>>
 - https://github.com/fliptheweb/bash-shortcuts-cheat-sheet
@@ -54554,6 +54556,25 @@ wp:check file permissions
   cd -P ~/abc
 #+END_SRC
 
+***** Move a directory to a different directory and make the original directory as a symlink to the new directory
+#+begin_src sh
+  # Check permission
+  ll /path/to/source
+
+  # Create the new directory with the same permission as the source
+  mkdir -m 777 /path/to/destination
+
+  # Make a copy of the source
+  cp -a /path/to/source /path/to/source_backup
+  mv /path/to/source/* /path/to/destination
+
+  # remove the source directory
+  rm -rf /path/to/source
+
+  # create symlink
+  ln -s /path/to/destination /path/to/source
+#+end_src
+
 **** Summary
 - Can create symlink to non-existing file
 - Options
@@ -55480,7 +55501,17 @@ To enable wildcard for rm, use glob
   # rename a directory
   mv path/to/dir path/to/nonexsitingdir
 
-  # move a directory to another existing directory
+  # move a directory to another existing directory so that path/to/existingdir/dir
+  mv path/to/dir path/to/existingdir
+  # eq.
+  mv path/to/dir path/to/existingdir/
+
+  # move a directory to the current directory so that path/to/destination_dir/dir
+  cd path/to/destination_dir
+  mv path/to/dir .
+
+  # move a directory's files and subdirectories to another existing directory so that path/to/existingdir
+  # path/to/dir remains
   mv path/to/dir path/to/existingdir
 
   # no overwriting
@@ -55492,6 +55523,28 @@ To enable wildcard for rm, use glob
   # interactive asking for overwriting
   mv -i path/to/dir path/to/existingdir
 #+END_SRC
+
+*** mount <<linux:mount>>
+**** ~mount --bind~
+#+begin_src sh
+  # Bind `source` directory to `destination` directory
+  # `destination` directory content is set to the same as `source` directory
+  # - Symlink is not created
+  mount --bind path/to/source path/to/destination
+
+  # See if a directory is a mountpoint
+  # 1. path/to/destination is a mountpoint
+  mountpoint path/to/destination
+  # 2. `Mounted on` shows path/to/destination.
+  #    For non-mountpoint directory, `/` is shown
+  df path/to/destination
+
+  # Show the source directory the mountpoint points to
+  findmnt path/to/destination
+
+  # Unmount to remove the bind
+  umount path/to/destination
+#+end_src
 
 *** tar <<linux:tar>>
 **** Compress and Read .tar file
@@ -58071,12 +58124,24 @@ If the first command not successful, 2nd command will not run: =lspci && lspci=
 
 *** ls <<linux:ls>>
 List files or directories by name
+- ~ll~
+   - Ubuntu server default ::  ~ls -alF~
 - Options
    - sort by file name :: t
    - sort by file size :: S
    - reverse sort :: r
    - in detail :: l
    - In MB :: ~-l --block-size=M~
+   - Append indicator to entries :: -F, --classify
+	  - @ :: symbolic link (or that the file has extended attributes)
+	  - * :: executable
+	  - = :: socket
+	  - | :: named pipe
+	  - > :: door
+	  - / :: directory
+   - Output immediately :: ~-1~
+   - do not sort; list entries in directory order :: ~-U~
+   - do not sort, enable ~-aU~, disable -ls --color :: ~-f~
 - Results of ~ls -l~
    - ~-rwxr-xr-x 1 10490 floppy 17242 May  8  2013 acroread~
    - First ~-~ represents a regular file. It could be
@@ -58088,6 +58153,9 @@ List files or directories by name
       - b :: block device
       - D :: door
       - - :: regular file
+- Large directory
+   - ~ll -U -1~ :: do not sort, print immediately
+   - ~ll -1 -f~ :: do not sort, print immediately without color
 
 #+BEGIN_SRC sh
   ls -l my_scr?pt
@@ -58097,6 +58165,19 @@ List files or directories by name
   ls -l f[a-i]ll
   ls -l f[!a]ll
 #+END_SRC
+
+**** colors
+***** Bash shell 
+#+begin_src sh
+  eval $(echo "no:global default;fi:normal file;di:directory;ln:symbolic link;pi:named pipe;so:socket;do:door;bd:block device;cd:character device;or:orphan symlink;mi:missing file;su:set uid;sg:set gid;tw:sticky other writable;ow:other writable;st:sticky;ex:executable;"|sed -e 's/:/="/g; s/\;/"\n/g')           
+  {      
+	IFS=:     
+	for i in $LS_COLORS     
+	do        
+	  echo -e "\e[${i#*=}m$( x=${i%=*}; [ "${!x}" ] && echo "${!x}" || echo "$x" )\e[m" 
+	done       
+  } 
+#+end_src
 
 *** less <<linux:less>>
 #+BEGIN_SRC sh
