@@ -70923,6 +70923,7 @@ Update Joined Tables
 	     LIMIT 1
 	 ) AS SMS
 #+END_SRC
+
 *** Admin queries
 **** CREATE TABLE IF NOT EXITS <<mysql:create table>>
 **** ALTER TABLE <<mysql:alter table>>
@@ -72005,8 +72006,8 @@ Data :: INSERT
   , GROUP_CONCAT(DISTINCT ts.score ORDER BY ts.testDate SEPARATOR ', ') AS student_scores
   , GROUP_CONCAT(DISTINCT liConCat2(c.course, c.year) SEPARATOR 0x1E) AS courses
   FROM student s 
-       LEFT JOIN s_score ts ON ts.sid = s.id
-       LEFT JOIN s_course c ON c.sid = s.id
+	   LEFT JOIN s_score ts ON ts.sid = s.id
+	   LEFT JOIN s_course c ON c.sid = s.id
   GROUP BY s.id
   ORDER BY s.lastname
 #+END_SRC
@@ -72029,6 +72030,24 @@ Concatenate multiple fields
   GROUP_CONCAT(foo SEPARATOR 0x1D)
   $array = explode(chr(29),$s);
 #+END_EXAMPLE
+
+**** JSON_ARRAYAGG <<mysql:json_arrayagg>>
+- Return a string of JSON or NULL
+- Pros
+   - No length limit like [[mysql:group_concat]]
+- Cons
+   - Since MySQL 5.7.22
+   - ~DISTINCT~ is not allowed and other expressions are allowed
+
+#+begin_src sql
+  SELECT s.sid, s.firstname, s.lastname
+	, JSON_ARRAYAGG(ts.final_exam_score) AS student_scores
+  FROM student s
+		 LEFT JOIN s_score ts ON ts.ssid = s.sid
+		 LEFT JOIN s_course c ON c.sid = s.sid
+  GROUP BY s.sid
+  ORDER BY s.lastname
+#+end_src
 
 *** UC: Split Comma-Separated Values <<<mysql:split list>>>
 - https://www.periscopedata.com/blog/splitting-comma-separated-values-in-mysql
