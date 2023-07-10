@@ -70508,50 +70508,50 @@ MySQL 5.6
   SELECT *
   FROM users JOIN (
 
-      SELECT * FROM widgets
-      WHERE id IN (
+	  SELECT * FROM widgets
+	  WHERE id IN (
 	  SELECT MAX(id) FROM widgets
 	  GROUP BY user_id
-      )
+	  )
 
   ) AS most_recent_user_widget 
-      ON users.id = most_recent_user_widget.user_id
+	  ON users.id = most_recent_user_widget.user_id
 
   -- Multiple columns sort
   SELECT *
   FROM users JOIN (
 
-      SELECT * FROM widgets
-      WHERE CONCAT_WS(0x1F, col2, id) IN (
+	  SELECT * FROM widgets
+	  WHERE CONCAT_WS(0x1F, col2, id) IN (
 	  SELECT MAX(CONCAT_WS(0x1F, col2, id)) FROM widgets
 	  GROUP BY user_id
-      )
+	  )
 
   ) AS most_recent_user_widget 
-      ON users.id = most_recent_user_widget.user_id
+	  ON users.id = most_recent_user_widget.user_id
 
   -- Group by but order by non-grouped columns
 
   SELECT t1.*,  t2.final_exam_score
   FROM (
-    -- Original query
-    SELECT scid, SUM(score) FROM s_score GROUP BY scid
+	-- Original query
+	SELECT scid, SUM(score) FROM s_score GROUP BY scid
   ) t1 JOIN (
   -- Join on 1 row
   SELECT *
   FROM s_score
   WHERE CONCAT_WS(0x1F, final_exam_score, ssid) IN (
-       SELECT MAX(CONCAT_WS(0x1F, final_exam_score, ssid)) FROM s_score
-       GROUP BY scid
-    )
+	   SELECT MAX(CONCAT_WS(0x1F, final_exam_score, ssid)) FROM s_score
+	   GROUP BY scid
+	)
   ) t2
   ON t1.scid = t2.scid;
 
   -- Faster
   SELECT t1.*,  t2.final_exam_score
   FROM (
-    -- Original query
-    SELECT scid, SUM(score), MAX(CONCAT_WS(0x1F, final_exam_score, ssid)) AS _sortColumns FROM s_score GROUP BY scid
+	-- Original query
+	SELECT scid, SUM(score), MAX(CONCAT_WS(0x1F, final_exam_score, ssid)) AS _sortColumns FROM s_score GROUP BY scid
   ) t1 JOIN (
   -- Join on 1 row
   SELECT *
