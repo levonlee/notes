@@ -3004,12 +3004,10 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
    - sanitize HTML attribute values (pure text)
 	  - JavaScript inside an HTML attribute
 		#+begin_src php
-		  <?php
-
 		  // Title should be plain text
-		  $title = "<span style=\"color: red;\">It's supposed to be plain text</span>";
-		  $titleEncoded = htmlspecialchars($title);
-		  // &lt;span style=&quot;color: red;&quot;&gt;It's supposed to be plain text&lt;/span&gt;
+		  $title = "<span style=\"color: red;\">It's supposed to be, `well`, \"plain\" text</span>";
+		  $flags = ENT_QUOTES;
+		  $titleEncoded = htmlspecialchars($title, $flags);
 
 		  // Tips: Which means we can stack usages of htmlspecialchars()!
 
@@ -3022,29 +3020,25 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
 		  <p>$titleEncoded:</p>
 		  <code>{"key": [{"fieldA": "#1"}, {"fieldB": "#2"}]}</code>
 		  HTML;
-		  $htmlEncoded = htmlspecialchars($html);
-		  /*
-		  &lt;p&gt;&amp;lt;span style=&amp;quot;color: red;&amp;quot;&amp;gt;Use Flat's JSON&amp;lt;/span&amp;gt;:&lt;/p&gt;
-		  &lt;code&gt;{&quot;key&quot;: [{&quot;fieldA&quot;: &quot;#1&quot;}, {&quot;fieldB&quot;: &quot;#2&quot;}]}&lt;/code&gt;
-		  ,*/
+		  $htmlJsonEscaped = htmlspecialchars(json_encode($html), $flags);
+		  $content4 = htmlspecialchars(json_encode("I'm good, too"), $flags);
 
 		  // Use JavaScript literal for multi-line string
 		  echo <<<HTML
 			  <script>
-				  function myFunc(content) {
+				  function myFunc(content, content2, content3, content4) {
 					  console.log(content);
-					  /*
-		  <p>&lt;span style=&quot;color: red;&quot;&gt;Use Flat's JSON&lt;/span&gt;:</p>
-		  <code>{"key": [{"fieldA": "#1"}, {"fieldB": "#2"}]}</code>
-					   ,*/
-					  document.getElementById('content').innerHTML = content; 
+					  document.getElementById('content').innerHTML = content;
+					  console.log(content2);
+					  console.log(content3);
+					  console.log(content4);
 				  }
 			  </script>
-			  <span onmouseover="myFunc(`$htmlEncoded`);">Hover me!</span>
+			  <span onmouseover="myFunc($htmlJsonEscaped, 123, 'hello I\'m good', $content4);">Hover me!</span>
 			  <div id="content"></div>
 		  HTML;
 		#+end_src
-   - sanitize attribute with JavaScript
+   - sanitize HTML attribute with JavaScript
      #+BEGIN_SRC php
        $fileNameDisplay = htmlspecialchars($fileNameDisplay);
        $fileNameDisplayAttribute = addslashes($fileNameDisplay);
@@ -3084,8 +3078,11 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
 - Flags
    - ~ENT_QUOTES~ :: convert both double and single quotes
    - ~htmlspecialchars($text, ENT_QUOTES | ENT_XML1, 'UTF-8')~ :: escape XML values in elements and attributes
-   - ~ENT_COMPAT | ENT_HTML401~ :: default flags
-      - ~ENT_COMPAT~ :: convert double quotes only and leave single-quotes alone
+   - ~ENT_SUBSTITUTE~ :: if the text contains an invalid character, those characters are replaced with � characters, instead of returning a completely empty string. 
+   - Default flags
+	  - ~ENT_COMPAT | ENT_HTML401~ :: default flags
+		 - ~ENT_COMPAT~ :: convert double quotes only and leave single-quotes alone
+	  - Default from PHP 8.1 :: ~ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401~ 
 
 *** URL Encode [[php:urlencode][php:urlencode]]
 *** strip_tags <<php:strip_tags>>
