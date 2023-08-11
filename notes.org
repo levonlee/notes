@@ -5991,7 +5991,7 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
 #+end_src
 
 *** Magic Constants [[php:magic constants]]
-*** is_object, is_a, is_subclass_of, get_class(), get_parent_class()
+*** is_object, is_a, is_subclass_of, get_class(), get_parent_class(), get_called_class()
 #+BEGIN_SRC php
   get_class(object $object = ?): string
   get_parent_class(object|string $object_or_class = ?): string
@@ -6029,6 +6029,45 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
 
   // inside a class, get_class() and get_parent_class() don't need to provide a parameter
 #+END_SRC
+
+**** get_called_class() <<php:get_called_class>>
+#+begin_src php
+  namespace Lili;
+
+  class foo {
+
+	  static public function testGetCalledClass(): string {
+		  // eq.
+		  // return __CLASS__;
+		  // return (new \ReflectionClass(get_called_class()))->getName();
+		  return get_called_class();
+	  }
+
+	  static public function testGetClass(): string {
+		  // eq.
+		  // return static::class;
+		  // return (new \ReflectionClass(get_class()))->getName();
+		  return get_class();
+	  }
+
+	  static public function testReflectionGetShortName(): string {
+		  // eq.
+		  // return (new \ReflectionClass(get_called_class()))->getShortName();
+		  return substr(strrchr(get_called_class(), '\\'), 1);
+	  }
+
+  }
+
+  class bar extends foo {
+  }
+
+  var_dump(foo::testGetCalledClass() === 'Lili\foo');
+  var_dump(bar::testGetCalledClass() === 'Lili\bar');
+  var_dump(foo::testGetClass() === 'Lili\foo');
+  var_dump(bar::testGetClass() === 'Lili\foo');
+  var_dump(foo::testReflectionGetShortName() === 'foo');
+  var_dump(bar::testReflectionGetShortName() === 'bar');
+#+end_src
 
 *** Clone, copy and reference
 - ~$obj1 == $obj2~ :: do 2 objects have the same property names and values
@@ -6760,7 +6799,7 @@ class_exists is case-insensitive match. Better to restart PHP first
       - $filter
 	 - null :: return all properties without filter
 	 - Use these constants :: https://www.php.net/manual/en/class.reflectionproperty.php#reflectionproperty.constants.modifiers
-	    - ReflectionProperty::IS_PUBLIC 
+	    - ~ReflectionProperty::IS_PUBLIC~
    - $reflectProperty = $reflect->getProperty(string $name): ReflectionProperty
       - https://www.php.net/manual/en/class.reflectionproperty.php
       - $reflectProperty->getName(): string
@@ -79717,7 +79756,8 @@ https://mail.google.com/mail/u/?authuser=myemail@gmail.com
    - Search a shortcut
 - Insert row/columns or Open insert menu
    - ~C-M-=~ or ~C-M-S-=~
-
+- Insert current date time :: ~⇧ ⌘ ;~
+  
 *** Google Maps
 - Embed single location :: https://www.embedgooglemap.net/
 - Embed multiple locations, use My Maps of Google Maps
