@@ -66562,12 +66562,21 @@ Don't verify SSL and use temporary username and password to pull and push
 #+begin_src conf
   # All files are checked into the repo with LF
   # text :: It marks the path as a text file, which enables end-of-line conversion: When a matching file is added to the index, the file’s line endings are normalized to LF in the index. Conversely, when the file is copied from the index to the working directory, its line endings may be converted from LF to CRLF depending on the eol attribute, the Git config, and the platform
-  # -text :: Unsetting the text attribute on a path tells Git not to attempt any end-of-line conversion upon checkin or checkout.
+  # -text :: Unsetting the text attribute on a path tells Git not to attempt any end-of-line conversion upon checkin or checkout. Equivalent to core.autocrlf = false
   # text=auto :: Git decides by itself whether the file is text or binary. If it is text and the file was not already in Git with CRLF endings, line endings are converted on checkin and checkout as described above. Otherwise, no conversion is done on checkin or checkout.
-  ,* text=auto
+  ,* -text
 
   # These files are checked out using CRLF locally
   ,*.bat eol=crlf
+#+end_src
+
+#+begin_src sh
+  # List files in the index and the working tree
+  # --eol will show i/<eolinfo><SPACES>w/<eolinfo><SPACES>attr/<eolattr><SPACE*><TAB><file>
+  #   - <eolinfo> is the file content identification used by Git when the "text" attribute is "auto" (or not set and core.autocrlf is not false). <eolinfo> is either "-text", "none", "lf", "crlf", "mixed" or "". "" means the file is not a regular file, it is not in the index or not accessible in the working tree.
+  #   - <eolattr> is the attribute that is used when checking out or committing, it is either "", "-text", "text", "text=auto", "text eol=lf", "text eol=crlf". Since Git 2.10 "text=auto eol=lf" and "text=auto eol=crlf" are supported
+  #   - Both the <eolinfo> in the index ("i/<eolinfo>") and in the working tree ("w/<eolinfo>") are shown for regular files, followed by the ("attr/<eolattr>").
+  git ls-files --eol
 #+end_src
 
 ** Alias <<git:alias>>
