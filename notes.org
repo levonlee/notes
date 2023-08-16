@@ -1906,6 +1906,7 @@ Since PHP 5.5
 #+BEGIN_SRC php
   array_diff(array $array, array ...$arrays): array
 #+END_SRC
+
 - Compare on values, and return the key/value pairs in the first array for the values don't exist in the following array(s)
 - Two elements are considered equal if and only if ~(string) $elem1 === (string) $elem2~
 - Throw Notice when element cannot be cast to a string
@@ -2016,17 +2017,18 @@ Associative arrays
   var_export(array_key_exists('a', $a) === true);
 
   // Check if multiple keys all exist in an array
-  function array_keys_all_exist(array $keys, array $arr) {
-	  var_export(
-		  array_flip($keys) === array(
-			  'a' => 0,
-			  'c' => 1,
-		  )
-	  );
-
-	  return ! array_diff_key(array_flip($keys), $arr);
+  function arrayKeysAllExist($keys, $arr, $onlyThoseKeys = false): bool {
+	  if ($onlyThoseKeys) {
+		  $arrKeys = array_keys($arr);
+		  $diff1 = array_diff($keys, $arrKeys);
+		  return $diff1 == array() && array_diff($arrKeys, $keys) == $diff1;
+	  }
+	  return !array_diff_key(array_flip($keys), $arr);
   }
-  var_export(array_keys_all_exist(array('a', 'c'), $a) === false);
+  var_dump(arrayKeysAllExist(array('a', 'c'), $a) === false);
+  var_dump(arrayKeysAllExist(array('a'), $a) === true);
+  var_dump(arrayKeysAllExist(array('a', 'a'), $a) === true);
+  var_dump(arrayKeysAllExist(array('a', 'a'), $a, true) === false);
 
   function array_keys_exist_count(array $keys, array $arr) {
 	  return count(array_intersect_key(array_flip($keys), $arr));
@@ -66498,7 +66500,7 @@ Context:	http, server, location, limit_except
 * Git <<toc:git>>
 ** Show config
 #+BEGIN_SRC sh
-  # 3 levels: system > global (user) > local
+  # 3 levels: system < global (user, ~/.gitconfig) < local (./.git/config) < ./.git/info/attributes < ./.gitattributes
 
   # List all active config for the current folder
   git config --list | grep credential
@@ -66519,7 +66521,8 @@ Context:	http, server, location, limit_except
 
   # edit system config
   # Windows :: C:/Program Files/Git/mingw64/etc/gitconfig
-  # Mac Homebrew :: /opt/homebrew/etc/gitconfig
+  # Mac Homebrew ::
+  #   - Source :: /opt/homebrew/etc/gitconfig
   #   - Old :: /usr/local/etc/gitconfig
   git config --edit --system
 
@@ -66531,7 +66534,7 @@ Context:	http, server, location, limit_except
   which git.exe
 #+END_SRC
 
-User name and email
+*** User name and email
 #+BEGIN_SRC sh
   # change username and email in global
   git config --global user.name "Li Li"
@@ -66552,6 +66555,20 @@ Don't verify SSL and use temporary username and password to pull and push
 #+BEGIN_SRC sh
   git -c http.sslVerify=false -c user.name=abc -c user.password=xyz pull -p
 #+END_SRC
+
+*** .gitattributes
+- ~./.git/info/attributes~ or ~./.gitatrributes~
+
+#+begin_src conf
+  # All files are checked into the repo with LF
+  # text :: It marks the path as a text file, which enables end-of-line conversion: When a matching file is added to the index, the file’s line endings are normalized to LF in the index. Conversely, when the file is copied from the index to the working directory, its line endings may be converted from LF to CRLF depending on the eol attribute, the Git config, and the platform
+  # -text :: Unsetting the text attribute on a path tells Git not to attempt any end-of-line conversion upon checkin or checkout.
+  # text=auto :: Git decides by itself whether the file is text or binary. If it is text and the file was not already in Git with CRLF endings, line endings are converted on checkin and checkout as described above. Otherwise, no conversion is done on checkin or checkout.
+  ,* text=auto
+
+  # These files are checked out using CRLF locally
+  ,*.bat eol=crlf
+#+end_src
 
 ** Alias <<git:alias>>
 #+BEGIN_SRC sh
@@ -70871,7 +70888,7 @@ Update Joined Tables
   )
 #+END_SRC
 
-**** ~UNION~
+**** ~UNION~ <<mysql:union>>
 #+BEGIN_EXAMPLE
   select_statement_1
   UNION [ALL]
@@ -75728,7 +75745,9 @@ Find Action > search Show Whitespaces
       - An editor tab will open to show commit difference
 - In Editor, with or without selection of codes/lines, bring out Git context menu, it's called VCS Operations :: ~⌃ + v~
    - 6 :: Show Diff for current file
-  	
+- Display ~.git~ folder :: see [[phpstorm:file types]]
+
+
 *** Edits inside Editor
 **** Line Comment ~C-/~, Block Comment ~C-S-/~
 **** To Spaces / To Tabs (convert to Tab/Spaces for indentation) :: Find Action > To Tab
@@ -76024,6 +76043,10 @@ Add comments around tags with id or class attribute.
 	  - But double quotes in ~INSERT ... VALUES~ still throw errors
 
 **** File and Code Templates
+**** File Types <<phpstorm:file types>>
+- Ignore Files and Folders
+   - Remove ~.git~ to show ~.git~ folder under Project View
+
 **** Inlay Hints
 - Show name for all arguments :: default off <<phpstorm:settings:show-name-for-all-arguments>>
 - Always show pass-by-reference
