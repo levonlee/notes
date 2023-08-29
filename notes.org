@@ -58204,19 +58204,77 @@ Executable file packer (compresser)
 
 *** screen <<<bash:screen>>>
 It creates a screen session
-- In a screen session, multiple shell windows can be open from a single SSH session.
-- See if it's installed ~which screen~ in the SSH remote server not your local
-- For help :: ~C-a ?~ 
-- Create a window :: ~C-a c~
-- Switch between windows :: ~C-a n~ or ~p~ for previous window
-- Detach a window from the screen session and can be reattached later ::  ~C-a d~
-- If network connection fails in one screen session, screen will automatically detach the session.
-- Reattach (when connection drops or you have detached from a screen) :: ~screen -r~ or a specific screen ~screen -r 12345.pts-0.xxxx~ or simply ~screen -r 12345~
+- In a screen session, multiple shell windows (virtual terminals) can be open from a single SSH session.
+   - Processes running in Screen will continue to run when their window is not visible even if the SSH session is terminated
+   - If network connection fails in one screen session, screen will automatically detach the session.
+- https://www.howtogeek.com/662422/how-to-use-linuxs-screen-command/
+- Installation
+  #+begin_src sh
+	which screen
+	sudo apt update
+	sudo apt install screen
+	
+  #+end_src
+- For help :: ~C-a ?~
+- Commands about screen session
+  #+begin_src sh
+	# open a screen session with a new window with a new shell
+	screen
 
-Get alert
-- To get an alert when there's output registered on a specific screen, on that screen run ~Ctrl-a M~ and then switch to other screen
-- Or get an alert when there's no output ~C-a _~
+	# To create a screen session with a name
+	screen -S my_session_name
 
+	# Detach the current screen session
+	C-a d
+
+	# List running screen sessions
+	screen -ls
+
+	# Restore a detached screen session using session ID
+	screen -r 10835
+
+	# simply quit or exit all windows in the attached session will close the session
+	quit
+	exit
+
+	# To close a session
+	# - -X: execute command
+	# - -S: session PID
+	screen -XS 10835 quit
+	
+  #+end_src
+- Commands about windows in a screen session
+  #+begin_src sh
+	# Create a window with shell inside a screen session
+	# ~C-a c~
+
+	# Switch between windows
+	# - next window ~C-a n~
+	# - previous window ~C-a p~
+	# - Go to a specific window ~C-a 0~ ~C-a 1~
+  #+end_src
+- Commands about regions in a screen session
+  #+begin_src sh
+	# To split a window into 2 regions: the first region is the current window, the second region is empty
+	# - Split the window horizontally: ~C-a S-s~
+	# - Split the window vertically: ~C-a |~
+
+	# Move cursor to the next region (the empty region)
+	# ~C-a Tab~
+
+	# Display a window in a new region
+	# - choose to open the first window: ~C-a 0~
+	# - Or create a new window: ~C-a c~
+
+	# Region navigation
+	# - Go to next region: ~C-a~
+	# - Close all regions except the current one: ~C-a q~
+	# - Close the current region: ~C-a x~
+
+  #+end_src
+- Get alert
+   - To get an alert when there's output registered on a specific screen, on that screen run ~Ctrl-a M~ and then switch to other screen
+   - Or get an alert when there's no output ~C-a _~
 - Lock a screen session when you need to go away :: ~C-a x~
 - Stop the screen session :: ~C-a k~ or ~exit~ for each screen window.
 - List all screen sessions and status :: ~screen -ls~
@@ -58229,6 +58287,7 @@ Run a background process after SSH signout
   nohup ./main &
   # C-a d
   exit
+  
 #+END_SRC
 
 *** Run Sequentially
