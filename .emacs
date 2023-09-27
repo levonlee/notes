@@ -55,6 +55,7 @@ There are two things you can do about this warning:
  '(column-number-mode t)
  '(custom-enabled-themes '(misterioso))
  '(gnutls-algorithm-priority "normal:-vers-tls1.3")
+ '(help-window-select t)
  '(org-adapt-indentation nil)
  '(org-confirm-babel-evaluate nil)
  '(org-export-backends '(ascii html icalendar latex md odt))
