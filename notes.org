@@ -1592,8 +1592,15 @@ Here's how to remove any 4 byte character:
   // First element/value
   // PHP 5.4+
   $first = array_values($array)[0]; // throw error if array is empty
+
   // PHP 7.3+
-  $first = $array[array_key_first($array)]; // NULL if array is empty or NULL, no error nor warning is thrown
+  $first = $array[array_key_first($array)];
+  // array_key_first($param) requires $param to be array otherwise warning will be thrown
+  // array_key_first([]) returns null
+  // Use this
+  $first = is_array($array)
+	? ($array[array_key_first($array)] ?? "default value if $array is an empty array")
+	: "default value if $array is not an array";
 
   // $first = current($array); // requires the array current pointer is at the beginning
   // $first = reset($array); // mutates the array (set the current pointer to the first element) and returns the first array element value or false if the array is empty!
@@ -2433,6 +2440,10 @@ Associative arrays
     }, $sum);
     var_dump($r === 97);
   #+END_SRC
+- Return
+   - null
+	  - if ~$array~ is not an array
+	  - if ~$array~ is an empty array and ~$initial~ is not set
 - Can be associative array, but no way to access the key in callback function
    - Use [[php:array_walk]] but it suggests the input array might be mutated
    - Use [[php:array_filter]]
