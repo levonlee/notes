@@ -56245,7 +56245,12 @@ Linux OS always uses physical memory so free is always low.
 
 A Linux system is really low on memory if the free value in -/+ buffers/cache: line gets low which is the available column in new Linux.
 
-** Service <<linux:init>>
+** Service
+:PROPERTIES:
+:ID:       ED7AFEFC-AFC9-4ADC-85F6-24DFF19D78BD
+:CUSTOM_ID:       linux:service
+:END:
+
 *** SystemV init system :: other names SysVinit
 - Characteristics
    - synchronous :: things have to be executed in sequence
@@ -56277,36 +56282,39 @@ A Linux system is really low on memory if the free value in -/+ buffers/cache: l
    - no update since 2014
 
 *** SystemD :: System Management Daemon
-   - Characteristics
-      - parallel
-   - ~systemctl~ :: List running services only with more detail
-     #+BEGIN_SRC sh
-       systemctl | grep 'php'
-     #+END_SRC		    
-   - ~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old System V init
-   - Some daemon files can do restart and it might be the preferred way to interact with service. e.g. ~sudo /etc/init.d/jenkins restart~
-   - Set up an PHP script file as a system
-     Create ~/etc/systemd/system/myPHP.service~ file or symlink to this directory
-     https://maslosoft.com/blog/2019/07/10/running-php-script-as-a-system-service-in-ubuntu/
-     #+BEGIN_SRC sh
-       [Unit]
-       Description=Web Socket Server
+- Characteristics
+   - parallel
+- ~systemctl~ :: List running services only with more detail
+  #+BEGIN_SRC sh
+    systemctl | grep 'php'
+  #+END_SRC		    
+- ~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old System V init
+- Some daemon files can do restart and it might be the preferred way to interact with service. e.g. ~sudo /etc/init.d/jenkins restart~
+- Set up an PHP script file as a system
+  Create ~/etc/systemd/system/myPHP.service~ file or symlink to this directory
+  https://maslosoft.com/blog/2019/07/10/running-php-script-as-a-system-service-in-ubuntu/
+  #+BEGIN_SRC sh
+    [Unit]
+    Description=Web Socket Server
 
-       [Service]
-       WorkingDirectory=/path/to/run
-       ExecStart=/usr/bin/php comms_scheduled.php
-       Restart=always
+    [Service]
+    WorkingDirectory=/path/to/run
+    ExecStart=/usr/bin/php comms_scheduled.php
+    Restart=always
 
-       [Install]
-       WantedBy=multi-user.target
-     #+END_SRC
-     #+BEGIN_SRC sh
-       # Instruct SystemD that config was updated
-       sudo systemctl daemon-reload
-       sudo systemctl enable myPHP
-       sudo systemctl start myPHP
-       systemctl status myPHP
-     #+END_SRC
+    [Install]
+    WantedBy=multi-user.target
+  #+END_SRC
+  #+BEGIN_SRC sh
+	# Instruct SystemD that config was updated
+	sudo systemctl daemon-reload
+	sudo systemctl enable myPHP
+	sudo systemctl start myPHP
+	systemctl status myPHP
+
+	# Looks like simply restarting the service can enable and start the new service
+	systemctl restart myPHP
+  #+END_SRC
 
 *** systemctl <<linux:systemctl>>
 - https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-unitsxs
