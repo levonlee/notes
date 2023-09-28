@@ -65537,9 +65537,20 @@ Create this location directive under any server directive to see the status info
   }
 #+end_src
 
-** Config nginx.conf
-Main global config /etc/nginx/nginx.conf
+** Config
+:PROPERTIES:
+:ID:       F65495B3-DFF9-4944-9A1C-6BC37B147487
+:CUSTOM_ID:       F65495B3-DFF9-4944-9A1C-6BC37B147487
+:END:
 
+- Check syntax and restart [[nginx:restart][nginx:restart]]
+- Check a setting
+  #+BEGIN_SRC sh
+    cd /etc/nginx/
+    grep -r 'client_max_body_size' .
+  #+END_SRC
+
+*** Main global config /etc/nginx/nginx.conf
 #+BEGIN_SRC conf
   user www-data;
   worker_processes 4;
@@ -65565,7 +65576,9 @@ Main global config /etc/nginx/nginx.conf
   }
 #+END_SRC
 
-Define server(s) in /etc/nginx/conf.d/default.conf
+*** Define server(s) in /etc/nginx/conf.d/default.conf
+- https://github.com/h5bp/server-configs
+
 #+BEGIN_SRC conf
   # comment starts here.
   # You should always add a server to catch any requests without "Host" header
@@ -65580,15 +65593,6 @@ Define server(s) in /etc/nginx/conf.d/default.conf
 
   }
 #+END_SRC
-
-https://github.com/h5bp/server-configs
-
-- Check syntax and restart [[nginx:restart][nginx:restart]]
-- Check a setting
-  #+BEGIN_SRC sh
-    cd /etc/nginx/
-    grep -r 'client_max_body_size' .
-  #+END_SRC
 
 ** server Block <<<nginx:b:server>>>
 - Include directives :: listen, server_name, root, index
@@ -65942,13 +65946,19 @@ Use [[nginx:d:rewrite][nginx:d:rewrite]] for regex redirect
 - Context :: main, http, mail, stream, server, location
 - Level :: one of debug, info, notice, warn, error, crit, alert, or emerg
 
-** client_max_filesize <<nginx:d:client_max_filesize>>
-- If the request body size exceeds this limit, Nginx throws HTTP 413 response
-- Need to also change PHP post_max_size as well. Restart PHP and then Nginx
-   - The following PHP configs may also need to be changed
-      - memory_limit
-      - upload_max_filesize
-- https://www.cyberciti.biz/faq/linux-unix-bsd-nginx-413-request-entity-too-large/
+** Core Module Directives <<nginx:core module directives>>
+:PROPERTIES:
+:ID:       4585469D-B769-458A-9177-7A21C8591818
+:CUSTOM_ID:       4585469D-B769-458A-9177-7A21C8591818
+:END:
+- client_max_body_size <<nginx:d:client_max_body_size>>
+   - Maximum allowed size of the client request body. If the size in a request exceeds the configured value, the 413 (Request Entity Too Large) error is returned to the client. Please be aware that browsers cannot correctly display this error. Setting size to 0 disables checking of client request body size.
+   - Default is 1m
+   - Need to also change PHP ~post_max_size~ as well. Restart PHP and then Nginx
+	  - The following PHP configs may also need to be changed
+		 - ~memory_limit~
+		 - ~upload_max_filesize~
+   - https://www.cyberciti.biz/faq/linux-unix-bsd-nginx-413-request-entity-too-large/
 
 ** log_format and access_log <<<nginx:d:log_format>>>
 log_format
