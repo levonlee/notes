@@ -68312,21 +68312,52 @@ RawGit is down.. Use raw.githack.com
 *** Shortcut
 - Search :: ~⌘ k~
 
-** GitLab <<git:gitlab>>
+** GitLab
+:PROPERTIES:
+:ID:       256674B6-ECBA-4B7F-8E2F-F3D961642548
+:CUSTOM_ID:       git:gitlab
+:END:
+
 *** Comment on a file of a commit
-+ Comment can be made on a file of any line when the file is in a Merge Request (MR)
-+ To make a comment for a line without the Merge Request context, we can
-   + create an MR
-   + Create an issue with a link to the line of the latest commit which changes the file
+- Comment can be made on a file of any line when the file is in a Merge Request (MR)
+- To make a comment for a line without the Merge Request context, we can
+   - create an MR
+   - Create an issue with a link to the line of the latest commit which changes the file
       - Left sidebar :: Project > Repository > Files > Find file to open the file
       - Click on History and go to the most recent commit of the file
       - View file @commit-hash :: the default view only shows relevant lines of the commit, this opens the whole file so that any line can be referred to
       - Go to the line and click on it, URL is changed, copy the URL :: this copies the location of the line of a specific commit
       - Left sidebar :: Create an issue, paste the link and tag the relevant Dev as Assignee who will later gets notified and resolve the issue
-   + Comment on the line of the latest commit which changes the line
+   - Comment on the line of the latest commit which changes the line
       - Left sidebar :: Project > Repository > Files > Find file to open the file
       - Click on Blame and go to the line, click on the last commit which changes the line
       - Comment on the line. Mention someone to make sure the developer is notified 
+
+*** CI/CD
+**** ~docker run~ a container
+- https://docs.gitlab.com/runner/install/docker.html
+  #+begin_src sh
+	docker volume create gitlab-runner-config
+
+	docker run -d --name gitlab-runner --restart always \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v gitlab-runner-config:/etc/gitlab-runner \
+		gitlab/gitlab-runner:latest
+
+	docker exec -it gitlab-runner bash
+
+	# inside, register
+	sudo gitlab-runner register
+
+	# How to register? https://docs.gitlab.com/runner/register/index.html#docker
+
+	# After registration, the config file is /etc/gitlab-runner/config.toml
+
+	# restart the container
+	docker restart gitlab-runner
+  #+end_src
+
+  
 ** SSH Key Fingerprint <<github:ssh:key:fingerprint>>
 - On GitHub, it shows the fingerprint for a public key you upload. To see which private/public key on your local machine matches the finger print
   #+BEGIN_SRC sh
@@ -70259,6 +70290,11 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - 3 to 4 :: 2 bytes
    - 5 to 6 :: 3 bytes
    - 7-9 :: 4 bytes
+- Insert or Update a decimal field with empty string
+  #+begin_src sql
+	-- Throws a warning but the row is inserted with value 0.00
+	INSERT INTO myTable (decimal_field) VALUE ('');
+  #+end_src
 
 **** BOOL and BOOLEAN
 - Both are synonyms for TINYINT(1). Refer to [[mysql:tinyint][mysql:tinyint]]
