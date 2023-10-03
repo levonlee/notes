@@ -56398,7 +56398,12 @@ After changing interfaces file, turn off and on the interface
   sudo ifdown eth0 && sudo ifup eth0
 #+END_SRC
 
-*** DNS <<<linux:dns>>>
+*** DNS
+:PROPERTIES:
+:ID:       552A1EF1-7540-4B09-B412-2AFA4A7F312F
+:CUSTOM_ID:       linux:dns
+:END:
+
 - Define DNS hosts :: ~/etc/nsswitch.conf~ and the line starting with ~hosts:~ defines which files Linux should look for the IP of a domain
      #+BEGIN_EXAMPLE
        hosts: files mdns4_minimal [NOTFOUND=return] dns
@@ -56427,8 +56432,16 @@ After changing interfaces file, turn off and on the interface
       - Query All DNS records including NS, SOA :: ~dig google.com ANY~
       - DNS Reverse Look-up :: ~dig -x 72.30.38.140~
       - [[https://www.whatsmydns.net/][DNS Propagation Checker]]
-   - Flush DNS <<<linux:dns:flush>>>
-      - Ubuntu :: ~sudo /etc/init.d/networking restart~
+   - [[#linux:dns:flush][Flush DNS]]
+
+*** Flush DNS
+:PROPERTIES:
+:ID:       31B9235B-6ECD-4E71-BBD7-7B60D69AE8FA
+:CUSTOM_ID:       linux:dns:flush
+:END:
+
+- Ubuntu
+   - ~sudo /etc/init.d/networking restart~
 
 *** Get Server's Public IP <<<linux:get public ip>>>
 #+BEGIN_SRC sh
@@ -56812,11 +56825,11 @@ Find which package owns a file =dpkg -S /etc/crontab=
 **** ~apt-get~ ~apt-cache~ Ubuntu
 - Since Ubuntu 16.04, ~apt~ is introduced and it's a subset of ~apt-get~ and ~apt-cache~
 - Update list of available packages ~/var/lib/apt/lists/~ :: ~apt-get update~
-   - It might return failed to fetch error. Might be due to linux:dns nameserver is changed to a local ip in a docker container in a docker network. Add a line ~nameserver 8.8.8.8~ to ~/etc/resolv.conf~. This way the ~/etc/resolv.conf~ is not persisted. You can also config DNS in Docker daemon
-     #+BEGIN_SRC dockerfile
-       RUN echo "nameserver 10.1.1.1" >> /etc/resolv.conf && \
-	   your-other-commands
-     #+END_SRC
+- It might return failed to fetch error. Might be due to [[#linux:dns][linux:dns]] nameserver is changed to a local ip in a docker container in a docker network. Add a line ~nameserver 8.8.8.8~ to ~/etc/resolv.conf~. This way the ~/etc/resolv.conf~ is not persisted. You can also config DNS in Docker daemon
+  #+BEGIN_SRC dockerfile
+    RUN echo "nameserver 10.1.1.1" >> /etc/resolv.conf && \
+	your-other-commands
+  #+END_SRC
 - Install or upgrade a package :: ~apt-get install openssh-client~
 - Simulate what would happen if you upgrade/install a package (press ~n~ to cancel) :: ~apt-get -s install openssh-client~
 - Upgrade all installed packages :: ~apt-get upgrade~
@@ -59177,11 +59190,12 @@ TS: Cannot connect to "Your Connection Name" No such file or directory. Verify y
 - [[linux:timezone][linux:timezone]] :: setup timezone and sync time
 
 * Domain Server, DNS Server, SSL/https
-Refer to linux:dns
+See linux:dns
 
 ** DNS records: A AAAA ANAME CNAME TXT ALIAS URL
 - Hostname :: a sub domain. e.g. ~www~ ~@~
-- ~A~ records :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
+- ~A record~ :: redirect hostname.domainname.com to an IP address. For the barebone domain name, the hostname is @
+   - wildcard :: hostname ~*~ or ~*.asubdomain~ 
 - ~AAAA~ records :: same as A records but they are IPv6. Nowadays, both AAAA and A are needed
 - ~ANAME~ :: It's like ~CNAME~. Name (from source domain) could be @. The value has to be another (target) apex domain. DNS resolves the target fully qualified domain name (FQDN) to an IP or multiple and also synthesize A records of the domain that points to the IP(s) of the FQDN. Since the target FQDN's IP is returned on the first lookup, it's faster than ALIAS record.
 - ~CNAME~ records :: point another subdomain (hostname) to an ~A~ record (e.g. hostname.domainname.com). It should only be used when there are no other records on that name. Don't use the bare domain in ~CNAME~ on the left hand side.
@@ -68339,7 +68353,11 @@ RawGit is down.. Use raw.githack.com
       - Comment on the line. Mention someone to make sure the developer is notified 
 
 *** CI/CD
-**** ~docker run~ a container
+- Install a runner, register a project to use the runner
+- Create a project file ~.gitlab-ci.yml~ telling the runner what to do
+   - GitLab Pages
+  
+**** Use a docker container as a runner
 - https://docs.gitlab.com/runner/install/docker.html
   #+begin_src sh
 	docker volume create gitlab-runner-config
@@ -68362,7 +68380,47 @@ RawGit is down.. Use raw.githack.com
 	docker restart gitlab-runner
   #+end_src
 
-  
+**** ~.gitlab-ci.yml~
+***** GitLab Pages
+- https://code.mortgageautomator.com/help/user/project/pages/getting_started/pages_from_scratch.md
+- ~public~ is the directory serves the static website
+- Use Jekyll as the HTML server
+   - Jekyll requires a ~Gemfile~ 
+
+#+begin_src yaml
+  image: ruby:2.7
+
+  # GitLab Pages
+  pages:
+	script:
+	  - gem install bundler
+	  - bundle install
+	  - bundle exec jekyll build -d public
+	artifacts:
+	  paths:
+		- public
+#+end_src
+
+Gemfile
+#+begin_src sh
+  source "https://rubygems.org"
+
+  gem "jekyll"
+#+end_src
+
+*** GitLab server
+**** ~nano /etc/gitlab/gitlab.rb~
+***** GitLab Pages
+- https://docs.gitlab.com/ee/administration/pages/
+- First, set up a DNS ~A record~ e.g. ~*.docs~ as hostname and the IP is the GitLab server IP
+- Modify gitlab.rb
+   - Uncomment ~pages_external_url~ so that it's ~http:://docs.lili.com~
+   - ~$gitlab_pages['one_of_the_following_key']~
+	  - enable :: true
+	  - access_control :: true
+		 - On the GitLab app, administrators of a project can now change visibility settings / access control for GitLab Pages
+			- Settings > General > Visibility, project features, permissions > Pages
+
 ** SSH Key Fingerprint <<github:ssh:key:fingerprint>>
 - On GitHub, it shows the fingerprint for a public key you upload. To see which private/public key on your local machine matches the finger print
   #+BEGIN_SRC sh
