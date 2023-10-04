@@ -43,6 +43,10 @@ There are two things you can do about this warning:
       org-src-fontify-natively t
       org-src-tab-acts-natively t
       org-startup-folded t)
+;; Turn off some unneeded UI elements
+(menu-bar-mode -1)  ; Leave this one on if you're a beginner!
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -53,7 +57,6 @@ There are two things you can do about this warning:
    [default default default italic underline success warning error])
  '(auto-save-visited-mode t)
  '(column-number-mode t)
- '(custom-enabled-themes '(misterioso))
  '(gnutls-algorithm-priority "normal:-vers-tls1.3")
  '(help-window-select t)
  '(org-adapt-indentation nil)
@@ -65,6 +68,29 @@ There are two things you can do about this warning:
  '(package-selected-packages
    '(expand-region docker-compose-mode graphql-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
  '(python-indent-guess-indent-offset nil))
+
+;; Configure the Modus Themes' appearance https://protesilaos.com/emacs/modus-themes
+;; Fallback to misterioso in custom-set-variables '(custom-enabled-themes '(misterioso))
+(setq modus-themes-mode-line '(accented borderless)
+      modus-themes-bold-constructs t
+      modus-themes-italic-constructs t
+      modus-themes-fringes 'subtle
+      modus-themes-tabs-accented t
+      modus-themes-paren-match '(bold intense)
+      modus-themes-prompts '(bold intense)
+      modus-themes-org-blocks 'tinted-background
+      modus-themes-region '(bg-only)
+      modus-themes-headings
+      '((1 . (rainbow bold 1.5))
+        (2 . (rainbow regular 1.4))
+        (3 . (rainbow bold 1.3))
+        (4 . (rainbow regular 1.2))
+        (5 . (rainbow bold 1.1))
+        (t . (rainbow regular 1.1)))
+)
+
+;; Load the dark theme by default
+(load-theme 'modus-vivendi t)
 
 (package-install-selected-packages)
 
