@@ -81,11 +81,11 @@ There are two things you can do about this warning:
       modus-themes-org-blocks 'tinted-background
       modus-themes-region '(bg-only)
       modus-themes-headings
-      '((1 . (rainbow bold 1.5))
+      '((1 . (rainbow regular 1.5))
         (2 . (rainbow regular 1.4))
-        (3 . (rainbow bold 1.3))
+        (3 . (rainbow regular 1.3))
         (4 . (rainbow regular 1.2))
-        (5 . (rainbow bold 1.1))
+        (5 . (rainbow regular 1.12))
         (t . (rainbow regular 1.1)))
 )
 

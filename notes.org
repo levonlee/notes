@@ -68384,29 +68384,36 @@ RawGit is down.. Use raw.githack.com
 ***** GitLab Pages
 - https://code.mortgageautomator.com/help/user/project/pages/getting_started/pages_from_scratch.md
 - ~public~ is the directory serves the static website
-- Use Jekyll as the HTML server
-   - Jekyll requires a ~Gemfile~ 
+- Option 1: just use the ~public~ directory, make a job called ~pages~, specify the ~public~ directory
+  #+begin_src yaml
+	pages:
+	  script:
+		- echo "Anything in the public folder of the project's repo will be served on a static website"
+	  artifacts:
+		paths:
+		  - public
+  #+end_src
+- Option 2: Use Jekyll to build a website and put all the built files to ~public~ directory
+   - Jekyll requires a ~Gemfile~
+	 #+begin_src conf
+	   source "https://rubygems.org"
 
-#+begin_src yaml
-  image: ruby:2.7
+	   gem "jekyll"
+	 #+end_src
+   - Add script section to ~.gitlab-ci.yml~
+	 #+begin_src yaml
+	   image: ruby:2.7
 
-  # GitLab Pages
-  pages:
-	script:
-	  - gem install bundler
-	  - bundle install
-	  - bundle exec jekyll build -d public
-	artifacts:
-	  paths:
-		- public
-#+end_src
-
-Gemfile
-#+begin_src sh
-  source "https://rubygems.org"
-
-  gem "jekyll"
-#+end_src
+	   # GitLab Pages
+	   pages:
+		 script:
+		   - gem install bundler
+		   - bundle install
+		   - bundle exec jekyll build -d public
+		 artifacts:
+		   paths:
+			 - public
+     #+end_src
 
 *** GitLab server
 **** ~nano /etc/gitlab/gitlab.rb~
@@ -68415,6 +68422,7 @@ Gemfile
 - First, set up a DNS ~A record~ e.g. ~*.docs~ as hostname and the IP is the GitLab server IP
 - Modify gitlab.rb
    - Uncomment ~pages_external_url~ so that it's ~http:://docs.lili.com~
+	  - This should be different from ~external_url~ and cannot be a suddomain of it
    - ~$gitlab_pages['one_of_the_following_key']~
 	  - enable :: true
 	  - access_control :: true
