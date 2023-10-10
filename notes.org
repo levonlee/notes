@@ -33210,21 +33210,37 @@ This provides you more debugging info
 
 **** Template Literal
 - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
-#+BEGIN_SRC js
-  // Template literal. Since js:es6
-  console.log(`This is ${myVar} times easier!`);
-  let a = 5;
-  let b = 10;
-  console.log(`Fifteen is ${a + b} and
-  not ${2 * a + b}.`);
-  // need to escape backtick
-  console.log(`Escape \``);
-  // multi lines
-  console.log(`string text line 1
-  string text line 2`);
-  // "string text line 1
-  // string text line 2"
-#+END_SRC
+- Basics
+  #+BEGIN_SRC js
+	// Template literal. Since js:es6
+	console.log(`This is ${myVar} times easier!`);
+	let a = 5;
+	let b = 10;
+	console.log(`Fifteen is ${a + b} and
+	not ${2 * a + b}.`);
+	// need to escape backtick
+	console.log(`Escape \``);
+	// multi lines
+	console.log(`string text line 1
+	string text line 2`);
+	// "string text line 1
+	// string text line 2"
+  #+END_SRC
+- Inside an HTML's ~<script>~ tag, and there's ~</script>~ inside it, no matter if it's a string in quotes, apostrophes, or even a template literal, it will always close the script tag. Escape it:
+  #+begin_src html
+	<script>
+	  var str = `
+	  <div>
+
+	  </div>
+	  <script>
+	  <\/script>
+	`
+		var pre = document.createElement('pre')
+		pre.textContent = str
+		document.body.appendChild(pre)
+	</script>
+  #+end_src
 
 *** Array <<js:array>>
 **** DOM elements ~HTMLCollection~
@@ -46280,70 +46296,51 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 
 - [[https://brainhub.eu/library/migrating-to-react][Incrementally migrate to React]]
 - Documentation :: https://react.dev/
-- Begin
-  #+BEGIN_SRC sh
-    sudo npm i -g create-react-app
-
-    # cd to your new project's parent folder
-    cd myProjects
-
-    create-react-app lake-app
-    cd lake-app
-    npm i
-    npm start
-
-    # build a production inside the "build" folder 
-    npm run build
-
-    # then you can serve the prod code. First install "serve" as a static server
-    sudo npm i -g serve
-
-    serve -s build
-  #+END_SRC
 - React Lifecycle methods diagram :: http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/
 - netlify.com, deploy your build folder to a web server. e.g. it has redirect http to https
+- To read
 
-*** Example
-Loan View
-- ajxpgn <div id="loan_123">
-- ...
-- </div>
-   - PHP > HTML
-	  - Echo HTML way
-		 - Section Borrower List
-			- <div id="borrower_list_loan_123" data-1="" data-2=""></div>
-			   - 
-			   - <script> 
-				  root = ReactDOM.createRoot(document.getElementById("borrower_list_loan_123"));
-      root.render(
-          <BorrowerList
-              data-1={<?php echo json; ?>}
-          />
-      );
-	  - </script>
-	  
-	  - JSON way
-		 - <div id="normal-html-borrower-header"></div>
-		 - <BorrowerList data-1="" data-2="" />
-			- <div id="normal-html-borrower-footer"></div>
-		 - <script> renderBorrowerSectionOfALoan(loanId=123, $json = html+jsx) </script>
-		 - renderBorrowerSectionOfALoan(loanId, string) {
-		      eval(string)
-		      root = ReactDOM.createRoot(document.getElementById("ul-jsx-components-dynamic-data"));
-      root.render(
-          <App
-              parent={root}
-          />
-      );
-		 - }
-		   }
-		   
-ajxpgn --> html
-<div id="app"></div>
-javascript ajxpgn call back
-function(){
 
-}
+*** Create React App
+- App will be running on local port 3000
+- Code structure
+   - src
+	  - components :: better put each component as a sub directory
+		 - https://www.digitalocean.com/community/tutorials/how-to-create-custom-components-in-react
+		 - MyComponent
+			- MyComponent.js
+			- MyComponent.css
+		 - App
+			- App.js
+			- App.css
+			- App.test.js
+	  - index.js
+   - public :: built code
+- Build
+   - ~react-scripts~ is used to build, start, test and eject
+	  - [[https://github.com/facebook/create-react-app/blob/main/packages/react-scripts/package.json][Source code]] is insdie the ~create-react-app~ project
+
+#+BEGIN_SRC sh
+  # cd to your new project's parent folder
+  cd /path/to/myProjects
+
+  # new way
+  npx create-react-app lake-app
+
+  cd lake-app
+  npm start
+
+  # build a production inside the "build" folder 
+  npm run build
+
+  # then you can serve the prod code.
+
+  # First install "serve" as a static server
+  sudo npm i -g serve
+
+  serve -s build
+#+END_SRC
+
 *** CDN
 - https://legacy.reactjs.org/docs/cdn-links.html
 
@@ -46397,6 +46394,11 @@ function(){
 - See [[postman:moment]]
 
 * NodeJS
+:PROPERTIES:
+:ID:       17471F3E-4DBF-4349-9701-75952502FD12
+:CUSTOM_ID:       toc:nodejs
+:END:
+
 ** Install
 *** Ubuntu
 #+BEGIN_SRC sh
@@ -46527,7 +46529,7 @@ Refer to phpstorm:nodejs
 #+END_SRC
 
 Link
-#+BEGIN_SRC bash
+#+BEGIN_SRC sh
   # run npm link alone in local repo is to create a symlink in global folder that links to the package where the command was executed
   cd ~/projects/node-redis # Note local package name is not node-redis but redis as in ~/projects/node-redis/package.json
   npm link # create symlink in global folder so that redis can be globally referrenced/linked.
@@ -46736,22 +46738,22 @@ app.js
 	 - First-level package has hard coded the dependency version number
 	 - No patch available yet
 
-*** Global package and Scoped package
-~npm install -g @angular/cli~
-~@~ indicates angular/cli is a scoped package. 
+*** Scoped package
+~npm install -g @angular/cli~ where ~@~ indicates angular/cli is a scoped package. 
 Without ~@~, package is installed in ~node_modules/packagename~
 Scoped package is installed in ~node_modules/@angular/cli~
 Thus, scoped package can group packages under one namespace
 
-#+BEGIN_SRC json
-  // package.json
-  "dependencies": {
-    "@angular/cli": "^1.3.0"
-  }
-
-  // In code
-  require('@angular/cli')
-#+END_SRC
+- package.json
+  #+BEGIN_SRC json
+	"dependencies": {
+	  "@angular/cli": "^1.3.0"
+	}
+  #+END_SRC
+- In code
+  #+begin_src js
+	require('@angular/cli')
+  #+end_src
 
 *** Peer dependencies
 A dependency says "I need this thing directly available to me"
@@ -47005,7 +47007,12 @@ Spawn for ongoing process (async)
   }, 4000);
 #+END_SRC
 
-*** npx <<<npm:npx>>>
+*** npx
+:PROPERTIES:
+:ID:       B140DB80-EF42-422F-B8AC-85536B6C6980
+:CUSTOM_ID:       npm:npx
+:END:
+
 - Run ~<command>~ either from a local ~./node_modules/.bin/<command>~, or from a central cache, installing any packages needed in order for ~<command>~ to run
 - By default, it will check whether ~<command>~ exists in ~$PATH~, or in the local project binaries, and execute that. If ~<command>~ is not found, it will be installed prior to execution
 
@@ -53591,10 +53598,18 @@ https://github.com/magicmonty/bash-git-prompt
   EOF
 #+END_SRC
 
-*** Options <<bash:options>>
+*** Options
+:PROPERTIES:
+:ID:       0E694DAC-7D38-40F3-B245-A2E472B588DC
+:CUSTOM_ID:       bash:options
+:END:
+
 #+begin_src sh
   # List of all options and their on/off status
   shopt
+
+  # See if an option is enabled or not
+  shopt extglob
 
   # List of all enabled options
   shopt -s
@@ -53602,7 +53617,7 @@ https://github.com/magicmonty/bash-git-prompt
   # List of all unset/disabled options
   shopt -u
 
-  # Disable an enabled option
+  # Enable an disabled option
   shopt -s histappend
 
   # Disable all options
@@ -53610,6 +53625,9 @@ https://github.com/magicmonty/bash-git-prompt
 
   # Eanble a disabled option
   shopt -u cmdhist
+
+  # Enable extglob for just the running command: prints all immediate child directories and files whose name is not foo
+  bash -c -O extglob 'echo !(foo)'
 #+end_src
 
 ** zsh <<linux:zsh>>
@@ -53742,7 +53760,8 @@ https://github.com/magicmonty/bash-git-prompt
 - Delete a command from history
   
 *** Options <<zsh:options>>
-- See [[bash:options][bash:options]]
+- See [[#bash:options][Bash -> options]]
+
 #+begin_src sh
   # All enabled options
   setopt
@@ -55723,7 +55742,12 @@ To enable wildcard for rm, use glob
 - -i :: turn off interactive prompting during multiple file transfers
 - -n :: restrain from attempting auto-login upon initial connection
 
-*** cp <<linux:cp>>
+*** cp
+:PROPERTIES:
+:ID:       9B75D503-0CF5-4036-BBD7-A10213713448
+:CUSTOM_ID:       linux:cp
+:END:
+
 - Basics
   #+BEGIN_SRC sh
     # Copy a sub folder abc/ in the current directory to a new directory ~/xyz with everything preserved
@@ -55753,7 +55777,10 @@ To enable wildcard for rm, use glob
      #+END_SRC
 - To copy and exclude some directories use rsync
   #+BEGIN_SRC sh
-    rsync -Pavin sourceFolder/ /destinationFolder/ --exclude theFolderToExclude 
+	# At parent folder which is the parent for sourceFolder and destinationFolder
+	rsync -Pavin sourceFolder/ destinationFolder --exclude node_modules
+
+	# remove -n to actually run rsync
   #+END_SRC
 - Copy and rename ~ABC.*~ to ~DEF.*~
   #+BEGIN_SRC sh
@@ -59623,7 +59650,12 @@ Initiate an AXFR zone-transfer request is simple and can be used by hackers. The
 https://www.whynopadlock.com/
 Qualys https://www.ssllabs.com/ssltest/
 
-* Docker <<toc:docker>>
+* Docker
+:PROPERTIES:
+:ID:       801D4495-A28C-490C-AD4F-BCF18E74D778
+:CUSTOM_ID:       toc:docker
+:END:
+
 ** Version, Info, Installation
 - Brief :: ~docker --version~
 - Server and Client :: ~sudo docker version~
@@ -59759,7 +59791,12 @@ Extract Dockerfile from an image. Use one or more of below
     docker build --rm --force-rm --no-cache -t my-image-name .
   #+END_SRC
 
-** run <<docker:run>>
+** run
+:PROPERTIES:
+:ID:       184F3F35-FD8A-4454-B119-CB1B134E010E
+:CUSTOM_ID:       docker:run
+:END:
+
 *** Interactive mode with tty ~-it~
 If there's an  error, ~cannot enable tty mode on non tty input~, try ~-i~ only
 
@@ -59809,10 +59846,11 @@ Combine --name and --hostname as much as you can
 *** --privileged <<<docker:run:privileged>>>
 e.g. allow docker container to run docker daemon, allow docker container to access all devices such as file systems.
 
-*** ~-p~ <<<docker:run:port>>>
-#+BEGIN_SRC sh
-  docker run -it -p 1234:7890
-#+END_SRC
+*** Port ~-p 1234:3000~ 
+:PROPERTIES:
+:ID:       75F9AF76-0165-4142-BF1E-CC88093C2D64
+:CUSTOM_ID:       docker:run:port
+:END:
 
 *** ~--platform linux/x86_64~ <<docker:run:platform>>
 - See [[dockerfile:from:platform][dockerfile:from:platform]]
