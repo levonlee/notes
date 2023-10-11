@@ -46694,6 +46694,14 @@ app.js
 - =~1.2.3= :: any 1.2.x versions but will miss 1.3.0 (e.g. allow patch but not minor or major)
 - ~^~ :: caret, is the default now
 
+*** package.json
+:PROPERTIES:
+:ID:       12307566-56DA-4D6F-AA20-8C939D79BEA2
+:CUSTOM_ID:       npm:package.json
+:END:
+
+- https://docs.npmjs.com/cli/v10/configuring-npm/package-json
+
 *** Update Package
 - ~npm outdated -l~ :: Show if there're updates for locally installed packages based on package.json in ~--long~ format
    - package status
@@ -48071,8 +48079,21 @@ Install grunt globally and locally
   grunt watch
 #+END_SRC
 
-*** webpack <<<npm:webpack>>>
+*** webpack
+:PROPERTIES:
+:ID:       2325D152-2BD4-471E-9BB4-4CFD4DEB12B0
+:CUSTOM_ID:       npm:webpack
+:END:
 https://angular.io/guide/webpack ng:cli:webpack
+
+**** Basics
+#+begin_src sh
+  mkdir webpack-demo
+  cd webpack-demo
+  npm init -y
+  npm install webpack webpack-cli --save-dev
+#+end_src
+
 **** Multiple bundles
 #+BEGIN_SRC js
   entry: {
@@ -48115,6 +48136,25 @@ https://angular.io/guide/webpack ng:cli:webpack
 #+END_SRC
 
 Webpack, the plugins, and the loaders are also installed as packages. They are listed in the updated packages.json.
+
+***** terser-webpack-plugin
+- https://github.com/webpack-contrib/terser-webpack-plugin 
+- Even though Webpack v5 comes with the plugin but you still need to install it :: ~npm i terser-webpack-plugin -D~
+- webpack.config.js
+  #+begin_src js
+	const TerserPlugin = require("terser-webpack-plugin");
+
+	module.exports = {
+		optimization: {
+			minimize: true,
+			minimizer: [new TerserPlugin({
+				terserOptions: {
+					keep_fnames: true,
+				},
+			})],
+		},
+	};
+  #+end_src
 
 **** resolve
 Most import statements don't mention the extension. Tell Webpack to resolve extension-less file requests by looking for matching files with .ts extension or .js extension.
@@ -55954,10 +55994,18 @@ Options
 - -x :: extract
 - -C :: change the folder that the tar file will be uncompressed to. Without it, it will be the current folder
 
-*** rsync <<linux:rsync>>
+*** rsync
+:PROPERTIES:
+:ID:       55108BBC-A612-45F1-A790-AD6CDE842CAD
+:CUSTOM_ID:       linux:rsync
+:END:
+
 **** Basic
 - Both client and server must have rsync installed
    - ~rsync -v~
+- ~rsync [OPTION...] SRC... [DEST]~
+   - SRC :: If SRC ends with ~/~, it means only the files and subdirectories in that SRC directory. If it doesn't end with ~/~ and the SRC is a directory, then the whole directory is the SRC
+   - DEST :: it doesn't matter to end the DEST directory with or without ~/~ 
 - Dry run first :: ~rsync -rlvzuPn --size-only $SOURCE $DESTINATION~
    - ~-n~ :: dry run
    - ~-z, --compress~ :: compress data sent to destination machine
@@ -55979,7 +56027,7 @@ Options
       - This command will not sync files with different permissions, ownership and modification time. Review the results and remove dry run ~-n~ before running again
       - By default, rsync finds files that need to be transferred using a "quick check" algorithm that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated
       - ~--size-only~ :: This modifies rsync’s "quick check" algorithm for finding files that need to be transferred, changing it from the default of transferring files with either a changed size or a changed last-modified time to just looking for files that have changed in size. This is useful when starting to use rsync after using another mirroring system which may not preserve timestamps exactly
-	 - ~-c, --checksum~ :: Use it with ~--size-only~. Refer to pantheon:rsync
+   - ~-c, --checksum~ :: Use it with ~--size-only~. Refer to pantheon:rsync
       - ~-I~, ~--ignore-times~ :: Normally rsync will skip any files that are already the same size and have the same modification timestamp. This option turns off this “quick check” behavior, causing all files to be updated
    - ~-g~ :: To set the group of the destination file to be the same as the source file. Only if dest is run as super-user
       - ~--no-g~
@@ -55987,9 +56035,9 @@ Options
       - ~--no-o~
    - ~--chmod=~ :: To give new files the destination-default permissions (while leaving existing files unchanged), make sure ~-p~ is off and use ~--chmod=ugo=rwX~
       - ~rsync -zar --no-p --no-g --no-o --chmod=ugo=rwX~
-	 - ~--no-p~ :: to use the default permissions of the destination dir 
-	 - ~--no-g~ :: to use the default group of the destination dir
-	 - ~--no-o~ :: to use the default user of the destination dir 
+   - ~--no-p~ :: to use the default permissions of the destination dir 
+	  - ~--no-g~ :: to use the default group of the destination dir
+	  - ~--no-o~ :: to use the default user of the destination dir 
    - ~--chown~ :: hard set owner:group on dest. ~rsync -rlvzPitog --chown=www-data:www-data /source /destination~
    - ~-D~ :: is equivalent to ~--devices --specials~
       - ~--devices~ :: To transfer character and block device files to the remote system to recreate these devices
@@ -55997,6 +56045,11 @@ Options
 - ~--exclude 'public_html/database.txt'~ :: exclude a file or directory. Multiple ~--exclude~ can be used
    - ~--exclude='*.log'~ :: by file extension
 - ~--exclude-from '/home/backup/exclude.txt'~ :: exclude multiple files and folders, use relative path without leading ~./~
+  #+BEGIN_EXAMPLE
+	sources
+	public_html/database.*
+	downloads/test/*
+  #+END_EXAMPLE
 - ~--include~ :: Only include log files ~--include='*.log' --exclude='*'~
 - ~--ignore-existing~ :: skip updating files that already exist on the destination
    - ~--ignore-non-existing, --existing~ :: skip creating files and directories that do not exist yet on the destination
@@ -56008,18 +56061,6 @@ Options
    - See [[linux:rsync:sudo]]
 - Dangerous!
    - ~--delete~ :: Delete extra files from the receiving side (ones that aren't on the sending side), but only for the directories that are being synchronnized. By default, rsync does not delete files on the receiving side
-
-e.g.
-#+BEGIN_EXAMPLE
-  afolder/*
-#+END_EXAMPLE
-
-exclude.txt
-#+BEGIN_EXAMPLE
-  sources
-  public_html/database.*
-  downloads/test/*
-#+END_EXAMPLE
 
 **** Change summary, compare 2 directories
 For comparing, you don't need ~-a~ specifically ~-pgoD~ so that left ~-rlt~
