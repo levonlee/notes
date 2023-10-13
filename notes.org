@@ -78307,45 +78307,77 @@ F12 > 3 dots > More Tools > Rendering > Paint flashing
 :END:
 
 **** Memory
+:PROPERTIES:
+:ID:       A1947538-62C1-4391-9382-7FCB25BA4FCF
+:CUSTOM_ID:       chrome:performance:memory
+:END:
+
 - https://developer.chrome.com/docs/devtools/memory-problems/
-- See real time memory usage for a tab
+- Real time memory usage for a tab using Task Manager
    - 3 dots in the main window (not DevTools) > More Tools > Task Manager, right click on columns and show JavaScript Memory
-- See Heap size by recording profiling in Time Line format
+- Real time memory usage, CPU, number of DOM nodes and more using *Performance monitor* drawer
+   - Drawer is in the Console Drawer
+- See Heap size by recording profiling in Time Line format in Performance Panel
    - DevTools > Command Menu > type ~Show Performance~ and go to Performance Panel > enable Memory and hit ~Start Profiling and reload page~
 	  - Don't forget to hit the recycle button to force collect garbage when starting and ending a recording
-- See Heap Snapshots
-   - DevTools > Command Menu > type ~Show Memory~ and go to Memory Panel
+- See Heap Snapshots in Memory Panel
+   - DevTools > Command Menu > type ~Show Memory~ and go to ~Memory~ Panel
 	 
 **** Performance Insights Panel
-- https://developer.chrome.com/docs/devtools/performance-insights/
-- ~⌘ ⇧ p~ open Command Menu and type ~performance~ to open the Performance Insights panel
+- ~⌘ ⇧ p~ open Command Menu and type ~performance~ to open the ~Performance Insights~ panel
+   - https://developer.chrome.com/docs/devtools/performance-insights/
+   - Use W to zoom in, S to zoom out, A to go to left of the timeline, D to go to right
+   - Can record or measure page load
+   - Major events like Rendering blocking requests, long tasks and layout shifts are laid out in a vertical timeline. Those are usually the ones need special attention (insights) and details like call tree are available. Not all events/calls have details. For full details, record in the Performance Panel.
+   - Key metrics in Timeline
+	  - First Contentful Paint (FCP)
+	  - DOM Content Loaded (DCL)
+	  - Largest Contentful Paint (LCP)
+	  - Cumulative Layout Shift (CLS)
 
-The first chart is called Overview and sections follow
+**** Performance Panel
+:PROPERTIES:
+:ID:       460B0881-4123-4C04-AD97-3F40ECE06333
+:CUSTOM_ID:       chrome:performance-panel
+:END:
 
-Select a section and use W S A D to move the zoom in, move left, zoom out and move right in Overview. Selected section or item will be outlined in blue.
+- Command Menu > type ~performance~ to open ~Performance~ panel
+- https://developer.chrome.com/docs/devtools/performance/reference/
+- Don't forget to force collect garbage! See [[#chrome:performance:memory][Chrome Monitor Memory]]
+- The first chart on top is called Overview and sections follow
+   - Select a section and use W S A D to move the zoom in, move left, zoom out and move right in Overview.
+	  - Selected section or item will be outlined in blue.
+	  - Only the ~Main~ section shows JS Heap, Documents, Nodes, Listeners, GPU Memory
+   - Ctrl+F to search an activity in a section e.g. Main section :: ~^E.*~ in regex e.g. Evaluate Script...
+	  - Shift+Enter to select the previous and Enter for the next.
+   - Sections
+	  - Network
+		 - HTML: Blue
+		 - CSS: Purple
+		 - JS: Yellow
+		 - Images: Green
+   - Darker yellow is scripting activity :: Event, Function Call, Evaluate Script, Compile Script, etc.
+   - Purple event is rendering activity :: Recalculate Style, Layout, Update Layer Tree, etc.
+   - Under each section, the chart is called flame chart. Root activities are the ones at the top of Main section chart and they are activities that cause the browser to do some work.
+- Tabs
+   - Call Tree
+	  - Which root activities cause the most work during the selected portion of a recording (range in Overview)
+	  - Columns 
+		 - Activity :: root activities followed by their children 
+		 - Self Time :: the time directly spent in that activity.
+		 - Total Time :: the time spent in that activity or any of its children
+	  - On the top right, there's a button Show Heaviest Stack
+		 - shows which children of the selected activity took the longest time to execute
+   - Bottom-Up
+	  - Which activities directly took up the most time in aggregate
+   - Event Log
+	  - List activites in the order in which they occurred during the recording
 
-Ctrl+F to search an activity :: ~^E.*~ in regex e.g. Evaluate Script... Shift+Enter to select the previous and Enter for the next.
-
-Darker yellow is scripting activity :: Event, Function Call, Evaluate Script, Compile Script, etc.
-Purple event is rendering activity :: Recalculate Style, Layout, Update Layer Tree, etc.
-
-Under each section, the chart is called flame chart. Root activities are the ones at the top of Main section chart and they are activities that cause the browser to do some work.
-
-Call Tree tab shows which root activities cause the most work during the selected portion of a recording (range in Overview)
-- Activity :: root activities followed by their children 
-- Self Time :: the time directly spent in that activity.
-- Total Time :: the time spent in that activity or any of its children
-- Show Heaviest Stack :: shows which children of the selected activity took the longest time to execute
-
-Bottom-Up tab shows which activities directly took up the most time in aggregate
-
-Event Log tag views activites in the order in which they occurred during the recording
-
-Network Section
-- HTML: Blue
-- CSS: Purple
-- JS: Yellow
-- Images: Green
+**** Recorder Panel (experimental)
+- Command Menu > type ~Show Recorder~ and go to Recorder Panel
+- Start recording and perform user actions e.g. go to a page, click a button. Then stop recording
+- For each step, ~Add duration~ to make the step lasts longer (delay the time to go to next step)
+- Clicking ~Performance panel~ will perform the recorded and check out the Performance profiling recording!
 
 *** Clear cache for one domain
 Settings > Advanced settings > Content Settings under Privacy > All cookies and site data under Cookies > search a website and clear
