@@ -2060,7 +2060,12 @@ Associative arrays
   var_export(array_keys_exist_count(array('a', 'c'), $a) == 1);
 #+END_SRC
 
-*** ~array_map~ <<php:array_map>>
+*** ~array_map~
+:PROPERTIES:
+:ID:       BDF500C0-D45A-4C24-B8FE-826E5C29D43F
+:CUSTOM_ID:       php:array_map
+:END:
+
 - Do something with each array element's value and return a new array
 - See [[php:array_combine]] to change keys
 #+begin_src php
@@ -2308,7 +2313,7 @@ Associative arrays
 - Can access source array key and value
    - [[php:array_reduce]] can only access value, but it returns a value after the loop
 - Return bool
-   - To return the new array, see [[php:array_map][php:array_map]]
+   - To return the new array, see [[#php:array_map][array_map]]
    - May use ~return~ in callback for guard clauses
 - Will walk through the entire array regardless of pointer position
 - No ~break~ nor ~continue~
@@ -5329,7 +5334,12 @@ Examples
     });
   #+END_SRC
 
-*** Arrow function <<php:arrow function>>
+*** Arrow function
+:PROPERTIES:
+:ID:       C9A3B32B-87E8-41E3-996F-CB39A2955DBB
+:CUSTOM_ID:       php:arrow function
+:END:
+
 - https://www.php.net/manual/en/functions.arrow.php
 - A shorthand to define a function. As far as I know in all languages
    - it's anonymous function
@@ -5337,7 +5347,26 @@ Examples
 - Since PHP 7.4
 - Only one expression in the function body with no curly brackets
 - Don't need to use ~use~
-- Refer to [[php:array_map][php:array_map]]
+- See [[#php_array_map][array_map]]
+- Example
+  #+begin_src php
+	$y = 1;
+
+	// This is valid for PHP 7.4+. Not valid for 7.3
+	var_dump(
+		(fn($x) => $x + $y)(2)
+		=== 3
+	);
+
+	var_dump(
+		(function ($x) use ($y) {
+			return $x + $y;
+		})(
+			2
+		)
+		=== 3
+	);
+  #+end_src
 
 *** IIFE - Immediately Invoked Function Expressions <<php:iife>> <<php:call_user_func_array>> <<php:call_user_func>>
 **** Recursive <<php:iife:recursive>>
@@ -22238,6 +22267,35 @@ I think REST response is object cache. When using with Pantheon Advanced Page Ca
    - only allows XML
    - Used to expose components of application logic as service rather than data
       - perform operations through a standardized set of messaging patterns
+   - Example 1: getMessage request to SOAP server
+	 #+begin_src xml
+	   <soap:Envelope
+		   xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+		   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+		   xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing"
+		   xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+		   xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+		   <soap:Header>
+			   <wsse:Security soap:mustUnderstand="1">
+				   <wsse:UsernameToken>
+					   <wsse:Username>%%wsse:Username%%</wsse:Username>
+					   <wsse:Nonce>%%wsse:Nonce%%</wsse:Nonce>
+					   <wsu:Created>%%wsu:Created%%</wsu:Created>
+					   <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">%%wsse:Password%%</wsse:Password>
+				   </wsse:UsernameToken>
+			   </wsse:Security>
+		   </soap:Header>
+		   <soap:Body>
+			   <getMessage xmlns="http://soap.server.ca">
+				   <channel>%%linkid%%</channel>
+			   </getMessage>
+		   </soap:Body>
+	   </soap:Envelope>
+	 #+end_src
+	  - Link ID or Channel ID: each channel may have multiple different users
+	  - Nonce is completely random for each request
+	  - Password is hashed with time and the real password. Related to ~wsu:Created~
 - REST :: Representational State Transfer
    - Used to access data (named resources)
 
