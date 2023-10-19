@@ -522,9 +522,14 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
   #+BEGIN_SRC php
     trigger_error ( string $error_msg [, int $error_type = E_USER_NOTICE ] ) : bool
   #+END_SRC
-- Set an error handler to filter out specific error and do something :: [[php:set_error_handler][php:set_error_handler]]
+- Set an error handler to filter out specific error and do something :: [[#php:set_error_handler][set_error_handler]]
 
-*** Custom error/warning/notice hanlder <<php:set_error_handler>>
+*** Custom error/warning/notice hanlder
+:PROPERTIES:
+:ID:       6DB024E7-25CE-4035-9281-10F47C232495
+:CUSTOM_ID:       php:set_error_handler
+:END:
+
 - https://www.php.net/manual/en/function.set-error-handler.php
   #+BEGIN_SRC php
     // set_error_handler returns the previous handler
@@ -559,6 +564,27 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
 	    E_NOTICE | E_WARNING
     );
   #+END_SRC
+
+*** register_shutdown_function
+:PROPERTIES:
+:ID:       CC18372F-548A-4CD0-98C7-DE6077D9DA1A
+:CUSTOM_ID:       php:register_shutdown_function
+:END:
+
+- Run after script execution finishes or exit() is called
+- Shutdown functions can run beyond ~max_execution_time~
+- Example
+  #+begin_src php
+	register_shutdown_function('shutDownLogError');
+
+	function shutDownLogError() {
+		$e = error_get_last();
+		if (isset($e['type']) && $e['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR)) {
+			$errstr = $e['file'] . '(' . $e['line'] . '): ' . $e['message'];
+			badnews_logtodb($errstr);
+		}
+	}
+  #+end_src
 
 *** opcache <<php:ini:opcache>>
 - Preload Laravel
@@ -7491,7 +7517,7 @@ Make sure [[php:ini:allow_url_fopen][php:ini:allow_url_fopen]] is enabled
 - https://www.php.net/manual/en/language.errors.php7.php
    - Parent class :: see [[php:throwable]]
    - Use ~catch (Error $e) {...}~, or ~catch (Throwable $t) {...}~ or ~set_exception_handler~ to handle fatal error
-	  - If an ~Error~ exception is not ~try catch~ and ~set_exception_handler~ is not set, then ~Error~ exception becomes a fatal error, and later [[php:set_error_handler]] deals with the fatal error
+	  - If an ~Error~ exception is not ~try catch~ and ~set_exception_handler~ is not set, then ~Error~ exception becomes a fatal error, and later [[#php:set_error_handler][set_error_handler]] deals with the fatal error
 	  - PHP 7 now throws ~Error~ exceptions
    - Child classes
 	  - ArithmeticError
@@ -82304,6 +82330,7 @@ Web Symbols
 *** Castos.com
 *** Exercism.io
 * TODOs
+** TODO https://blog.pragmaticengineer.com/my-reading-list/
 ** PHP catch fatal error then close MySQL transaction
 ** https://www.pdftron.com/?utm_source=google&utm_medium=cpc&utm_campaign=branded&utm_content=pdftron&utm_term=pdftron&gclid=Cj0KCQiA9P__BRC0ARIsAEZ6irgMeBwmMtR70-tDS52EFyCLFEQ1wtatx-kF-cxskHtZTnHGbkQ-JnYaAtgvEALw_wcB
 ** https://www.youtube.com/playlist?list=PLNYkxOF6rcIDzLmWaDwfHVZJl1Q5RFgOR
