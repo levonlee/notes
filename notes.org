@@ -5133,7 +5133,12 @@ Examples
 #+end_src
 
 ** Database
-*** mysqli <<php:mysqli>>
+*** mysqli
+:PROPERTIES:
+:ID:       E4C743D1-116B-4233-A476-7A9DE6A5D23F
+:CUSTOM_ID:       php:mysqli
+:END:
+
 - Driver only for MySQL while [[php:pdo][php:pdo]] has 12 different drivers
 - It can be OOP or procedural. php:pdo only has OOP
 
@@ -5142,8 +5147,8 @@ Examples
 
   /* check connection */
   if (mysqli_connect_errno()) {
-      printf("Connect failed: %s\n", mysqli_connect_error());
-      exit();
+	  printf("Connect failed: %s\n", mysqli_connect_error());
+	  exit();
   }
 
   $mysqli->query("CREATE TEMPORARY TABLE myCity LIKE City");
@@ -5153,7 +5158,7 @@ Examples
   $city = $mysqli->real_escape_string($city);
 
   if ($mysqli->query("INSERT into myCity (Name) VALUES ('$city')")) {
-      printf("%d Row inserted.\n", $mysqli->affected_rows);
+	  printf("%d Row inserted.\n", $mysqli->affected_rows);
   }
 
 
@@ -5177,10 +5182,37 @@ Examples
 	  '{$db->real_escape_string($desc)}'
 	)
   SQL;
+
+  $con = mysqli_connect("localhost","my_user","my_password","my_db");
+  // Check connection
+  if (mysqli_connect_errno()) {
+	echo "Failed to connect to MySQL: " . mysqli_connect_error();
+  }
+
+  $sql = "SELECT Lastname,Age FROM Persons ORDER BY Lastname";
+
+  if ($result = mysqli_query($con,$sql)) {
+	// Seek to row number 15
+	mysqli_data_seek($result,14);
+
+	// mysqli_data_seek(mysqli_result $result, int $offset): bool
+
+	// Fetch row
+	$row = mysqli_fetch_row($result);
+
+	printf ("Lastname: %s Age: %s\n", $row[0], $row[1]);
+
+	// Loop can also be used while ($row = mysqli_fetch_assoc($result)) {...}
+
+	// Free result set
+	mysqli_free_result($result);
+  }
+
+  mysqli_close($con);
 #+END_SRC
 
 *** PDO <<php:pdo>>
-- It supports named parameters and prepared statements on client side while [[php:mysqli][php:mysqli]] doesn't 
+- It supports named parameters and prepared statements on client side while [[#php:mysqli][php:mysqli]] doesn't 
 
 ** Function <<php:function>>
 *** Anonymous function
@@ -81855,7 +81887,12 @@ https://community.hubspot.com/t5/APIs-Integrations/Attach-file-to-deal-record-us
 - https://platform.zapier.com/partners/lifecycle-planning
 - https://platform.zapier.com/docs/zapier-intro
 
-**** CLI <<zapier:cli>>
+**** CLI
+:PROPERTIES:
+:ID:       3EBD7395-C74B-433D-859A-DFB37E6BE51D
+:CUSTOM_ID:       zapier:cli
+:END:
+
 - https://zapier.github.io/zapier-platform/
    - https://github.com/zapier/zapier-platform/tree/main/example-apps
 - https://developer.zapier.com/cli-guide/introduction
@@ -81904,7 +81941,8 @@ https://community.hubspot.com/t5/APIs-Integrations/Attach-file-to-deal-record-us
 #+end_src
 
 ****** ~zapier register~
-- Create an integration and link the local app (link only once) to that integration
+- https://platform.zapier.com/reference/cli#register
+- Create a new integration app and link the local app (link only once) to that integration
    - ~.zapierapprc~ is created and it looks like this
 	 #+begin_src json
 	   {
@@ -81912,6 +81950,8 @@ https://community.hubspot.com/t5/APIs-Integrations/Attach-file-to-deal-record-us
 		 "key": "App123456"
 	   }
 	 #+end_src
+   - If ~.zapierapprc~ exists, it will ask if you want to update the currently-linked integration as opposed to creating a new one
+   - After ~zapier register~, ~zapier push~ can be run to build and upload the new integration for use in the Zapier editor.
 	 
 ****** ~zapier push~
 - Before push, better do ~zapier validate~
@@ -81921,6 +81961,21 @@ https://community.hubspot.com/t5/APIs-Integrations/Attach-file-to-deal-record-us
 
 ****** ~zapier integrations~
 - If you find the app and the version is not listed, you will need to re-login again ~zapier login --sso~
+
+****** ~zapier logs~
+#+begin_src sh
+  # Recent HTTP traffic to my API
+  zapier logs --type=http
+
+  # More detailed
+  zapier logs --type=http --detailed
+
+  # In the app code, throw custom debug messages using `z.console.log("my debug message")` and catch it in the logs:
+  zapier logs --type=console
+
+  # More opptions for the zapier logs command
+  zapier help logs
+#+end_src
 
 ***** Field types
 :PROPERTIES:
