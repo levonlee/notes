@@ -637,7 +637,7 @@ https://www.howtoforge.com/how-to-log-emails-sent-with-phps-mail-function-to-det
 		 - Previous ~define~ and ~const~ can be used in the value
 	  - PHP 5.6+ array can be assigned and expressions are allowed
    - Can be used inside and outside of a class
-      - See [[php:oop]]
+      - See [[#php:oop][PHP OOP]]
    - Can define a constant using another constant
    - ~const~ defines a constant in the current namespace
 	 #+begin_src php
@@ -5522,7 +5522,12 @@ Examples
   var_dump($reflFunc->getFileName() . ':' . $reflFunc->getStartLine());
 #+end_src
 
-** OOP <<php:oop>>
+** OOP
+:PROPERTIES:
+:ID:       293A8D4B-9BE7-4D7C-BED2-3B1B0F42870D
+:CUSTOM_ID:       php:oop
+:END:
+
 *** Sample
 RestJson.php
 #+BEGIN_SRC php
@@ -6242,59 +6247,30 @@ Turn an object to a string when ~echo $obj;~ Exception cannot be thrown within _
 - ~$obj1 === $obj2~ :: do 2 objects have the same properties and also are those 2 instances of the same class
 - ~get_class($obj1)~ ::
 - ~$obj1 instanceof AddressBusiness~ ::
-
-Clone, rather than just ~$obj1=$obj2~, __clone magic method can be used.
-Reference is faster than clone and direct copy. But when ~===~ is used to compare the two, they are different.
+- ~$obj2 = $obj1;~ :: assign ~$obj1~ to ~$obj2~ and both objects refer to the same object in memory. Changing properties of ~$obj2~ will also change ~$obj1~.
+   - Reference is faster than clone.
+   - ~$obj2 === $obj1~ is true
+- ~$obj2 = clone $obj1;~ :: create a shallow copy and ~$obj2~ is a new object in memory. The class of ~$obj1~ may run ~__clone()~ magic method if it exists.
 
 #+BEGIN_SRC php
-  $address_business = new AddressBusiness(array(
-    'street_address_1' => '123 Phony Ave',
-    'city_name' => 'Villageland',
-    'subdivision_name' => 'Region',
-    'country_name' => 'Canada',
-  ));
+  $a = new stdClass();
 
-  $address_park = new AddressPark(array(
-    'street_address_1' => '789 Missing Circle',
-    'street_address_2' => 'Suite 0',
-    'city_name' => 'Hamlet',
-    'subdivision_name' => 'Territory',
-    'country_name' => 'Australia',
-  ));
-  echo $address_park;
+  $a->name = 'Li';
+  $bindOnce = $a;
+  $bindAlways = &$a;
+  $clone = clone $a;
 
-  echo '<h2>Cloning AddressPark</h2>';
+  var_dump(($a === $bindOnce) ===  true);
+  var_dump(($a === $bindAlways) ===  true);
+  var_dump(($a === $clone) ===  false);
 
-  $address_park_clone = clone $address_park;
+  // Now $a points to a new memory in place (a different object)
+  $a = new stdClass();
+  $a->name = 'name';
 
-  echo '$address_park_clone is ' . ($address_park == $address_park_clone ?
-    '' : 'not ') . ' a copy of $address_park.';
-  // $address_park_clone is a copy of $address_park
-
-  echo '<h2>Copying AddressBusiness reference</h2>';
-
-  $address_business_copy = &$address_business;
-
-  echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
-    '' : 'not ') . ' a copy of $address_business.';
-  // $address_business_copy is a copy of $address_business
-
-  echo '<h2>Setting address_business_copy as a new AddressPark</h2>';
-  $address_business = new AddressPark();
-
-  echo '$address_business_copy is ' . ($address_business === $address_business_copy ?
-    '' : 'not ') . ' a copy of $address_business.';
-
-  // $address_business_copy is not a copy of $address_business
-
-  echo '<br/>$address_business is class ' . get_class($address_business) . '.';
-
-  // $address_business is class AddressPark.
-
-  echo '<br/>$address_business_copy is ' . ($address_business_copy instanceof
-  AddressBusiness ? '' : 'not ') . ' an AddressBusiness.';
-
-  // $address_business_copy is an AddressPark
+  var_dump(($a === $bindOnce) === false);
+  var_dump(($a === $bindAlways) ===  true);
+  var_dump(($a === $clone) ===  false);
 #+END_SRC
 
 *** Autoload Classes
