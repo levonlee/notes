@@ -7080,6 +7080,25 @@ class_exists is case-insensitive match. Better to restart PHP first
 *** Add capabilities to a class without making it bigger
 https://gist.github.com/levonlee/5d26ba1df7d742df5d5c87be1fc7730d
 
+*** Cast to object
+- If an object is converted to an object, it is not modified.
+- If a value of any other type is converted to an object, a new instance of the stdClass built-in class is created.
+   - An array converts to an object with properties named by keys and corresponding values. Note that in this case before PHP 7.2.0 numeric keys have been inaccessible unless iterated.
+- If the value was null, the new instance will be empty.
+
+#+begin_src php
+  $obj = (object) array('1' => 'foo');
+  var_dump(isset($obj->{'1'})); // outputs 'bool(true)' as of PHP 7.2.0; 'bool(false)' previously
+  var_dump(key($obj)); // outputs 'string(1) "1"' as of PHP 7.2.0; 'int(1)' previously
+
+  $a = new stdClass();
+  $a->{1} = 'abc';
+  $a->{'1'} = 'xyz';
+
+  var_dump($a->{'1'} === $a->{1});
+  var_dump($a->{1} === 'xyz');
+#+end_src
+
 ** Global <<php:global>>
 Define superglobal
 #+BEGIN_SRC php
