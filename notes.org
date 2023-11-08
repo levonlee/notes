@@ -7947,7 +7947,12 @@ https://github.com/firebase/php-jwt
    - ~composer create-project laravel/laravel example-app~ 
 - Laravel Framework :: https://github.com/laravel/framework 
 
-**** Sail <<php:laravel:sail>>
+**** Sail
+:PROPERTIES:
+:ID:       F0D24BA5-2633-44E8-9237-94DBE4959CAB
+:CUSTOM_ID:       php:laravel:sail
+:END:
+
 - https://laravel.com/docs/9.x/sail
 
 ***** Installation (Laravel Framework 9.9.0)
@@ -8015,6 +8020,37 @@ https://github.com/firebase/php-jwt
 
 ***** Relationships
 https://laravel.com/docs/9.x/eloquent-relationships
+
+**** Architecture
+- public/index.php
+   - bootstrap/app.php
+	  - create an instance of the application (service container which extends ~Illuminate\Container\Container~)
+		 - Request is sent to either the HTTP kernel (~app/Http/Kernel.php~) or the console kernal.
+			- HTTP kernel's ~handle~ method is simple: receive ~Request~ and return ~Response~
+			   - Think of the kernel as being a big black box that represents the entire app.
+			- HTTP kernel extends ~Illuminate\Foundation\Http\Kernel~
+			- ~bootstrappers~ are defined and run before the request is executed
+			   - config error handling
+			   - config logging
+			   - detect app environment
+			   - perform other tasks that need to be done before the request is handled
+			   - One of the most important kernel bootstrapping actions is loading the Service Providers
+				  - Service providers are configured in ~configure/app.php~, the ~providers~ array
+					 - Each provider is instantiated and the corresponding methods are called:
+						- ~register~ method is called
+						- ~boot~ method
+				  - Routing is a service provider
+					 - ~App\Providers\RouteServiceProvider~ loads ~routes~ directory
+					 - Once the app is bootstrapped and all service providers are registered, ~Request~ will be handled off to the router for dispatching. The router will dispatch the request to a route or controller, as well as run any route specific middleware.
+					 - After all the route's assigned middleware has passed through, the route or controller method will be executed and the response returned by the route or controller method will be sent back through the route's chain of middlewares
+					 - Once the route or controller method returns a response, the response will travel back outward through the route's middleware, giving the app a chance to modify or examine the outgoing response.
+					 - Finally, once the response travels back through the middleware, the HTTP kernel's ~handle~ method returns the response object and the ~index.php~ calls the ~send~ method on the returned resposne. The ~send~ method sends the response content to the user's web browser.
+			- Middlewares are defined
+			   - all requests must pass through before being handled by the application
+				  - read and write HTTP session
+				  - determine if the app is in maintenance mode
+				  - verify CSRF token and more
+				  - determine if the user is logged in
 
 ** Run PHP Online in multiple versions
 - https://sandbox.onlinephpfunctions.com/
@@ -46587,8 +46623,6 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 - Documentation :: https://react.dev/
 - React Lifecycle methods diagram :: http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/
 - netlify.com, deploy your build folder to a web server. e.g. it has redirect http to https
-- To read
-
 
 *** Create React App
 - App will be running on local port 3000
@@ -46683,11 +46717,138 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
    - A complimentary package which deals with binding
    - ~npm i -S react-redux~
 
+*** Custom hooks
+#+begin_src js
+  // ./src/hooks/usePasswordToggler.js
+  import {useState} from 'react';
+
+  export const usePasswordToggler = () => {
+	  const [passwordVisibility, setPasswordVisibility] = useState(true);
+	  const [type, setType] = useState('password');
+	  const handlePasswordVisibility = () => {
+		  if (type === 'password') {
+			  setType('text');
+			  setPasswordVisibility(!passwordVisibility);
+		  } else if (type === 'text') {
+			  setType('password');
+			  setPasswordVisibility(!passwordVisibility);
+		  }
+	  };
+	  return {
+		  type,
+		  passwordVisibility,
+		  handlePasswordVisibility
+	  };
+  };
+#+end_src
+
+#+begin_src js
+  import React from 'react';
+  import {usePasswordToggler} from './hooks/usePasswordToggler';
+  import './App.css';
+
+  function App() {
+	  const {type, passwordVisibility, handlePasswordVisibility} = usePasswordToggler()
+	  return (
+		  <main>
+			  <div>
+				  <input type={type} placeholder='Enter password...' />
+				  <button onClick={handlePasswordVisibility}>{passwordVisibility ? 'Show' : 'Hide'} Password</button>
+			  </div>
+		  </main>
+	  );
+  }
+#+end_src
+
+*** Use absolute imports
+By default, React apps with nested directory structures might lead to confusion on the import path such as the example below:
+#+begin_src js
+  import { Button } from '../../components'; 
+#+end_src
+
+Specify base path in jsconfig.json:
+#+begin_src json
+  { 
+	  "compilerOptions": { 
+		  "baseUrl": "src" 
+	  }, 
+	  "include": ["src"] 
+  }
+#+end_src
+
+#+begin_src js
+  import { Button } from 'components';
+#+end_src
+
+If your project includes webpack.config.js at the root, you may further personalize it by using a prefix such
+
+as @components or ~components. See the configuration below:
+
+#+begin_src js
+  module.exports = {
+	  resolve: {
+		  extensions: ['js'],
+		  alias: {
+			  '@': path.resolve(__dirname, 'src'),
+			  '@components': path.resolve(__dirname, 'src/components')
+			  '@hooks': path.resolve(__dirname, 'src/hooks'),
+		  }
+	  }
+  };
+#+end_src
+
+#+begin_src js
+  import { Button } from '@components';
+#+end_src
+
+*** Incrementally Migrate to React
+- PHP Back-end
+   - Now returns data only instead of bytes of HTML
+- Opptunities of migration
+   - Faster browser rendering speed (open loan > close loan > reopen loan)
+	  - PHP returns data only instead of bytes of HTML
+	  - React only renders the parts of HTML that are changed
+   - Front end and Back end decoupling
+	  - Reduce risk
+		 - Remove a lot of spaghetti PHP code that was mixed with HTML
+	  - Provide an opportunity for us to rewrite the PHP code and standardize the data
+	  - Ship new frontend features faster
+- Risk of migration to React
+   - Risk in rewriting PHP code to output/supply data
+- Metrics
+   - Loan view time to interactive
+   - Size of the app
+	  - memory usage
+- Step by Step
+   - Choose small basic components first
+	  - Basic UI components like buttons
+	  - Lowest hanging fruits
+   - New feature has to have front end and back end decoupled
+	  - What's the data we should provide?
+	  - New feature needs basic UI components. Develop those.
+*** Directory Structure
+- src
+   - assets
+   - components
+	  - Input :: a component called Input
+		 - Input.js :: all the logic
+		 - Input.css
+		 - Input.test.js
+   - views :: pages
+	  - Strictly views, no business logic
+	  - They are also components
+   - services :: codes that interact with external API resources
+   - utils
+   - hooks
+   - store
+
 *** Tools
 - [[#chrome:extension:react-developer-tools][Chrome Extension: React Developer Tools]]
 - Online Sandbox :: https:://react.new
 - Enable [[#chrome:tools:rendering:paint-flashing][Chrome > More Tools > Rendering > Paint flashing]]
-  
+- https://openreplay.com/
+- Redux-saga to manage a large amount of asynchronous code and side effects
+
 ** CryptoJS NPM
 - https://www.npmjs.com/package/crypto-js
 - See [[postman:cryptojs]]
