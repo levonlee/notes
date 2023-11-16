@@ -8022,6 +8022,52 @@ https://github.com/firebase/php-jwt
 https://laravel.com/docs/9.x/eloquent-relationships
 
 **** Architecture
+***** Short Version
+- create an app
+   - attach singleton of kernals: like api, http kernels
+- Instantiate the kernal
+- Ask kernal to handle a request
+   - Kernal runs ~register~ for each service provider defined in config/app.php
+	  - Attach/bind more things to the $app (dependency injection)
+		 - Instances of Service Container
+		 - Facade, which can be:
+			- singleton of a service container
+			- singleton of any class!
+	  - To access ~$request~ in Service Provider's ~register~ has no access ~$request~
+		#+begin_src php
+		  // Contextual Binding
+		  public function register() {
+			  $this->app->when(Service::class)
+				  ->needs(Thingable::class)
+				  ->give(function () {
+					  return request()->user_name === 'userA'
+						  ? $this->app->get(DependencyA::class)
+						  : $this->app->get(DependencyB::class);
+				  });
+		  }
+
+		  // or
+
+		  public function register() {
+			  $this->app->bind('App\Thingable', function ($app) {
+				  return $app->make(request()->user_name === 'userA' ? 'App\DependencyA' : 'App\DependencyB');
+			  });
+		  }
+		#+end_src
+   - Kernal runs ~boot~ for each service provider
+   - Kernal runs all middlewares which are defined when service providers are registered
+   - Kernal deals with the request
+	  - Pick a route that is defined at ~routes/web.php~
+		 - Instantiates the corresponding controller defined in the route
+		 - And do the method of the controller e.g. show loan, delete loan
+			- Either use the previously injected dependencies (from the $app)
+			- or use the Facade
+   - Kernal runs all middlewares which are defined when service providers are registered, run them before delivering the response
+   - Kernal delivers the response
+- Return the response after dealing a request
+- Terminate the kernel
+
+***** Long Version
 - public/index.php
    - bootstrap/app.php
 	  - create an instance of the application (service container which extends ~Illuminate\Container\Container~)
@@ -46802,12 +46848,11 @@ as @components or ~components. See the configuration below:
 #+end_src
 
 *** Incrementally Migrate to React
-- PHP Back-end
-   - Now returns data only instead of bytes of HTML
 - Opptunities of migration
    - Faster browser rendering speed (open loan > close loan > reopen loan)
 	  - PHP returns data only instead of bytes of HTML
 	  - React only renders the parts of HTML that are changed
+		 - e.g. a list of borrowers under loan view, remove a borrower from loan, PHP returns the whole Borrower section again. Instead, PHP returns the updated data of the loan's borrowers, and React will remove that removed Borrower div. Less amount of data is transferred, less re-rendering 
    - Front end and Back end decoupling
 	  - Reduce risk
 		 - Remove a lot of spaghetti PHP code that was mixed with HTML
@@ -46815,17 +46860,40 @@ as @components or ~components. See the configuration below:
 	  - Ship new frontend features faster
 - Risk of migration to React
    - Risk in rewriting PHP code to output/supply data
+	  - One challenge is the action rewrite, e.g. JavaScript and PHP delloanclient(clientId, loanId) returns HTML of borrowers of a loan, now we need to return data and then update the state.
+	  - A/B testing, Laravel Facade concept, Adaptor Pattern, delloanclientv1, delloav2, delloanclient 
 - Metrics
    - Loan view time to interactive
    - Size of the app
 	  - memory usage
+	  - state memory
+	  - number of event handlers
 - Step by Step
-   - Choose small basic components first
+   - *Choose small basic components first*
 	  - Basic UI components like buttons
-	  - Lowest hanging fruits
+	  - *Lowest hanging fruits*
    - New feature has to have front end and back end decoupled
 	  - What's the data we should provide?
 	  - New feature needs basic UI components. Develop those.
+- Data
+   - Actions of Data
+	  - CRUD
+	  - Form
+   - In other words, data first
+- React State data structure
+   - gss settings
+	  - country
+	  - almodules
+   - loans
+	  - loans table row in almost full detail (hide not-safe-for-public fields)
+		 - loanid: 123
+			- borrowers
+			   - id:
+			   - order:
+			   - not the full borrower detail
+   - borrowers
+	  - borrower in full detail
+
 *** Directory Structure
 - src
    - assets
@@ -46848,6 +46916,7 @@ as @components or ~components. See the configuration below:
 - Enable [[#chrome:tools:rendering:paint-flashing][Chrome > More Tools > Rendering > Paint flashing]]
 - https://openreplay.com/
 - Redux-saga to manage a large amount of asynchronous code and side effects
+- https://www.mindbowser.com/redux-saga-vs-redux-thunk/
 
 ** CryptoJS NPM
 - https://www.npmjs.com/package/crypto-js
@@ -76132,6 +76201,11 @@ PHP APM (Application Performance Metrics)
 
 * Tools
 ** MacOS <<toc:macos>>
+:PROPERTIES:
+:ID:       0512A02A-6A50-4A1F-9698-C6F134D69FB3
+:CUSTOM_ID:       toc:macos
+:END:
+
 *** Versions
 - Catalina :: 10.15
 
@@ -76555,10 +76629,12 @@ https://github.com/keycastr/keycastr#readme
 *** Change config directories
 - https://intellij-support.jetbrains.com/hc/en-us/articles/207240985-Changing-IDE-default-directories-used-for-config-plugins-and-caches-storage
 - Before doing that, export settings so that you can import them later
-- Help | Edit Custom Properties…
-   - ~idea.config.path=c:/work/idea/caches/trunk-config~
-   - ~idea.system.path=c:/work/idea/caches/trunk-system~
-   - ~idea.plugins.path=c:/work/idea/caches/trunk-plugins~
+- Help | Edit Custom Properties
+  #+begin_src conf
+	idea.config.path=c:/work/idea/caches/trunk-config
+	idea.system.path=c:/work/idea/caches/trunk-system
+	idea.plugins.path=c:/work/idea/caches/trunk-plugins
+  #+end_src
 - Windows config path
    - C:\Users\Li\AppData\Roaming\JetBrains\PHPStorm2020.1
       - codestyles
