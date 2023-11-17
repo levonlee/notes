@@ -36873,33 +36873,33 @@ Refer to bootstrap:responsive helpers
 *** Import, export <<js:import>>
 - ES5 :: ~require~ and ~module.exports~
   #+BEGIN_SRC js
-    // App.js
-    var React = require('react');
-    var Component = React.Component;
-    require('./App.css');
-    var Color = require('./Shapes'); // color component
+	// App.js
+	var React = require('react');
+	var Component = React.Component;
+	require('./App.css');
+	var Color = require('./Shapes'); // color component
 
-    class App extends Component {
-      render() {
+	class App extends Component {
+	  render() {
 	return (
 	  <div className="App">
-	    <div className="colors">
-	      <Color name="red"/>
-	      <Color name="green"/>
-	      <Color name="blue"/>
-	    </div>
+		<div className="colors">
+		  <Color name="red"/>
+		  <Color name="green"/>
+		  <Color name="blue"/>
+		</div>
 	  </div>
 	);
-      }
-    }
+	  }
+	}
 
-    module.exports = App;
+	module.exports = App;
 
-    // Shapes.js
-    var React = require('react');
-    var Component = React.Component;
-    class Color extends Component {
-      render() {
+	// Shapes.js
+	var React = require('react');
+	var Component = React.Component;
+	class Color extends Component {
+	  render() {
 	const divStyle = {
 	  backgroundColor: this.props.name,
 	  color: 'white',
@@ -36910,14 +36910,14 @@ Refer to bootstrap:responsive helpers
 	return (
 	  <div style={divStyle}>{this.props.name}</div>
 	)
-      }
-    }
-    module.exports = Color;
+	  }
+	}
+	module.exports = Color;
 
 
-    // Export multiple components
-    class Animal extends Component {
-      render() {
+	// Export multiple components
+	class Animal extends Component {
+	  render() {
 	const divStyle = {
 	  fontSize: '20px',
 	  height: '100px',
@@ -36928,19 +36928,19 @@ Refer to bootstrap:responsive helpers
 	return (
 	  <div style={divStyle}>{this.props.name}</div>
 	)
-      }
-    }
+	  }
+	}
 
-    module.exports = {
-      Color: Color,
-      Animal: Animal
-    }
+	module.exports = {
+	  Color: Color,
+	  Animal: Animal
+	}
 
-    // Multiple exports, the import needs to change, too
+	// Multiple exports, the import needs to change, too
 
-    // App.js
-    var {Color} = require('./Shapes');
-    var {Animal} = require('./Shapes');
+	// App.js
+	var {Color} = require('./Shapes');
+	var {Animal} = require('./Shapes');
   #+END_SRC
 - ES6
   #+BEGIN_SRC js
@@ -46691,13 +46691,16 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 :CUSTOM_ID:       toc:react
 :END:
 
-- [[https://brainhub.eu/library/migrating-to-react][Incrementally migrate to React]]
 - Documentation :: https://react.dev/
 - React Lifecycle methods diagram :: http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/
 - netlify.com, deploy your build folder to a web server. e.g. it has redirect http to https
 
-*** Create React App
+*** CDN
+- https://legacy.reactjs.org/docs/cdn-links.html
+
+*** create-react-app
 - App will be running on local port 3000
+   - change it in ~.env~ with ~PORT=3000~
 - Code structure
    - src
 	  - components :: better put each component as a sub directory
@@ -46735,10 +46738,6 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 
   serve -s build
 #+END_SRC
-
-*** CDN
-- https://legacy.reactjs.org/docs/cdn-links.html
-
 *** react-bootstrap
 - https://react-bootstrap.github.io/getting-started/introduction/
 - ~npm i react-bootstrap bootstrap~ :: react-boostrap itself does not have .css files
@@ -46761,19 +46760,124 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
   #+END_SRC
 - Inside your component
   #+BEGIN_SRC js
-    render () {
-	return (
-		<Router>
-		  <header>some header</header>
-		  <Switch>
-		    <Route exact path="/" component={Home} />
-		    <Route path="/vitamin" component={Vitamin} />
-		  </Switch>
-		</Router>
-	)
-    }
+	render () {
+		return (
+			<Router>
+				<header>some header</header>
+				<Switch>
+					<Route exact path="/" component={Home} />
+					<Route path="/vitamin" component={Vitamin} />
+				</Switch>
+			</Router>
+		)
+	}
   #+END_SRC
 
+*** JSX
+:PROPERTIES:
+:ID:       C4A48D3E-6C93-4282-A0A3-0E253493AD21
+:CUSTOM_ID:       react:jsx
+:END:
+
+- Comment out :: ~{/*~ and ~*/}~
+
+*** CSS
+**** Raw CSS file import
+#+begin_src js
+  // index.js
+  import './components/MyComponent/MyComponent.css';
+
+  // Don't use MyComponent.module.css'
+
+  // components/MyComponent/MyComponent.js
+  // You may import but not necessary because the whole CSS file is imported before in index.js
+  return (
+		  <>
+			 <span className="lili">hello</span>
+		  </>
+  )
+#+end_src
+
+The final HTML is ~<span class="lili">hello</span>~
+
+**** CSS Module Import
+- https://github.com/css-modules/css-modules
+- composes in Sass can be:
+  #+begin_src js
+	@import '/ProfileImage.module.scss' /* your ProfileImage scss file path */
+
+	.profileImage {
+	   @extend .profileImage;
+	   outline: 1px solid red;
+	}
+  #+end_src
+
+#+begin_src js
+  // components/MyComponent/MyComponent.js
+  import styles from './MyComponent.module.css';
+
+  return (
+		  <>
+		   <span className={[styles.lili, "lilihello"].join(' ')}>hello</span>
+		  </>
+  )
+#+end_src
+
+The final HTML is ~<span class="MyComponent_lili__J4Vn2 lilihello">hello</span>~
+The naming convention is ~[fileName]_[cssClassName]__[hash]~
+
+**** Styled-Component (CSS in JS)
+- https://www.smashingmagazine.com/2020/07/styled-components-react/
+- Styled-components is a CSS-in-JS tool
+
+**** NPM classnames
+:PROPERTIES:
+:ID:       4425121D-2034-4186-ACAB-793C846E6D7C
+:CUSTOM_ID:       npm:classnames
+:END:
+
+- https://www.npmjs.com/package/classnames#usage-with-reactjs
+- Compare
+  #+begin_src js
+	class Button extends React.Component {
+	  // ...
+	  render () {
+		var btnClass = 'btn';
+		if (this.state.isPressed) btnClass += ' btn-pressed';
+		else if (this.state.isHovered) btnClass += ' btn-over';
+		return <button className={btnClass}>{this.props.label}</button>;
+	  }
+	}
+
+	// Using NPM classnames
+
+	var classNames = require('classnames');
+
+	class Button extends React.Component {
+	  // ...
+	  render () {
+		var btnClass = classNames({
+		  btn: true,
+		  'btn-pressed': this.state.isPressed,
+		  'btn-over': !this.state.isPressed && this.state.isHovered
+		});
+		return <button className={btnClass}>{this.props.label}</button>;
+	  }
+	}
+  #+end_src
+
+**** NPM styled-components
+:PROPERTIES:
+:ID:       ACC65F7E-70A2-4F7E-BAF2-1D68AAF2E807
+:CUSTOM_ID:       npm:styled-components
+:END:
+
+- Install
+   - ~npm i styled-components~
+- GitHub
+- https://styled-components.com/
+- https://styled-components.com/docs
+  
 *** Redux
 :PROPERTIES:
 :ID:       28BAC666-869D-45A1-8C11-FBDA070C02A9
@@ -47129,74 +47233,26 @@ Backtick
 :CUSTOM_ID:       nodejs:require
 :END:
 
-- ~const myImport = require('path/to/file')~ along with [[#nodejs:o:module][module.exports]] is CommonJS (CJS) module system
-   - https://blog.risingstack.com/node-js-at-scale-module-system-commonjs-require/
-   - Features
-	  - modules are imported synchronously
-	  - ~require~ gives a copy of the imported object
-	  - CJS will not work in the browser. For Server side apps.
+- ~const myImport = require('path/to/file')~
+   - Along with [[#nodejs:o:module][module.exports]] is CommonJS (CJS) module system. See [[#js:commonjs][CommonJS]]
    - Other module systems
-	  - Asynchronous Module Definition (AMD)
-		 - Features
-			- Asynchronous and made for frontend. Exact opposite of CJS
-		 - Code example
-		   #+begin_src js
-			 // define is a RequireJS function
+	  - [[#js:module system:amd][Asynchronous Module Definition (AMD)]]
+	  - [[#js:module system:umd][Universal Module Definition (UMD)]]
+	  - [[#js:module system:esm][ECMAScript Module (ESM)]]
 
-			 // Define one module
-			 define(['dependency1', 'dependency2'], function(dependency1, dependency2) {
-			   // Methods
-			   function myPublicMethod() {
-				 console.log('Hello, world!');
-			   }
+**** CommonJS
+:PROPERTIES:
+:ID:       7FE8032F-5141-4E17-B3F6-F193506E0955
+:CUSTOM_ID:       js:commonjs
+:END:
 
-			   // Exposed public methods
-			   return {
-				 myPublicMethod: myPublicMethod
-			   };
-			 });
-		   #+end_src
-	  - Universal Module Definition (UMD)
-		 - Features
-			- For apps that work on both synchronous and asynchronous environment. Browser and Server apps.
-			- It's more like a pattern to configure several module systems
-		 - Code example
-		   #+begin_src js
-			 (function (root, factory) {
-			   if (typeof define === 'function' && define.amd) {
-				 // AMD. Register as an anonymous module.
-				 define(['dependency'], factory);
-			   } else if (typeof module === 'object' && module.exports) {
-				 // Node. Does not work with strict CommonJS, but
-				 // only CommonJS-like environments that support module.exports,
-				 // like Node.
-				 module.exports = factory(require('dependency'));
-			   } else {
-				 // Browser globals (root is window)
-				 root.returnExports = factory(root.dependency);
-			   }
-			 }(this, function (dependency) {
-			   // Methods
-			   function myModule() {
-				 console.log('Hello, world!');
-			   }
+- ES5 (old)
+- https://blog.risingstack.com/node-js-at-scale-module-system-commonjs-require/
+- Features
+   - modules are imported synchronously
+   - ~require~ gives a copy of the imported object
+   - CJS will not work in the browser. It's for Server side apps.
 
-			   // Exposed public methods
-			   return {
-				 myModule: myModule
-			   };
-			 }));
-		   #+end_src
-	  - ECMAScript Module (ESM)
-		 - Features
-			- Part of ECMAScript specification and is supported in modern JavaScript environments e.g. Node.js and modern web browsers. ~export~ and ~import~ are used to define and import modules
-			- Asynchronous
-		 - Code example
-		   #+begin_src js
-			 // https://stackoverflow.com/questions/39282253/how-can-i-alias-a-default-import-in-javascript
-		   #+end_src
-
-**** CommonJS Example
 #+BEGIN_SRC js
   // Importing a local module with a path relative to the `__dirname` or current
   // working directory. (On Windows, this would resolve to .\path\myLocalModule.)
@@ -47208,6 +47264,94 @@ Backtick
   // Importing a module from node_modules or Node.js built-in module:
   const crypto = require('crypto');
 #+END_SRC
+
+**** Asynchronous Module Definition (AMD)
+:PROPERTIES:
+:ID:       CC0E3C94-D20D-4504-BF75-39062A667EEA
+:CUSTOM_ID:       js:module system:amd
+:END:
+
+- Features
+   - Asynchronous and made for frontend. Exact opposite of CJS
+- Code example
+  #+begin_src js
+	// define is a RequireJS function
+
+	// Define one module
+	define(['dependency1', 'dependency2'], function(dependency1, dependency2) {
+	  // Methods
+	  function myPublicMethod() {
+		console.log('Hello, world!');
+	  }
+
+	  // Exposed public methods
+	  return {
+		myPublicMethod: myPublicMethod
+	  };
+	});
+  #+end_src
+
+**** Universal Module Definition (UMD)
+:PROPERTIES:
+:ID:       5E58848A-3836-44F9-95BB-7E2F8121D58C
+:CUSTOM_ID:       js:module system:umd
+:END:
+
+- Features
+   - For apps that work on both synchronous and asynchronous environment. Browser and Server apps.
+   - It's more like a pattern to configure several module systems
+- Code example
+  #+begin_src js
+	(function (root, factory) {
+	  if (typeof define === 'function' && define.amd) {
+		// AMD. Register as an anonymous module.
+		define(['dependency'], factory);
+	  } else if (typeof module === 'object' && module.exports) {
+		// Node. Does not work with strict CommonJS, but
+		// only CommonJS-like environments that support module.exports,
+		// like Node.
+		module.exports = factory(require('dependency'));
+	  } else {
+		// Browser globals (root is window)
+		root.returnExports = factory(root.dependency);
+	  }
+	}(this, function (dependency) {
+	  // Methods
+	  function myModule() {
+		console.log('Hello, world!');
+	  }
+
+	  // Exposed public methods
+	  return {
+		myModule: myModule
+	  };
+	}));
+  #+end_src
+
+**** ECMAScript Module (ESM)
+:PROPERTIES:
+:ID:       60AF67F2-5318-43DF-A778-47D9E638C828
+:CUSTOM_ID:       js:module system:esm
+:END:
+
+- ES6 (new)
+- Features
+   - Part of ECMAScript specification and is supported in modern JavaScript environments e.g. Node.js and modern web browsers. ~export~ and ~import~ are used to define and import modules
+   - Asynchronous
+- Code example
+  #+begin_src js
+	// https://stackoverflow.com/questions/39282253/how-can-i-alias-a-default-import-in-javascript
+
+	import {default as myAlias} from 'my-module';
+	// eq. to
+	import myAlias from 'my-module';
+
+	// React is the default and useEffect is one of the exports
+	import React, {useEffect} from 'react';
+
+	// e.g. MyReact.ReactElement, MyReact.default
+	import * as MyReact from 'react';
+  #+end_src
 
 *** process <<<nodejs:process>>>
 - ~console.log(process.pid)~
@@ -47328,10 +47472,16 @@ app.js
 - Update npm :: ~sudo npm i -g npm~
 - Install packages 
    - ~npm i -D~ :: eq. to ~npm install --save-dev gulp-imagemin~
-   - ~npm i -S~ :: eq. ~npm install -S gulp-imagemin~ 
+	  - devDependencies are the ones only needed for development not in production or testing environments 
+   - By default, the dependency is saved since v5~npm i -S~
+	  - Legacy :: ~npm i -S gulp-imagemin~ eq. ~npm install --save gulp-imagemin~ 
 - Npm website for a package ~gulp-sourcemaps~ :: https://www.npmjs.com/package/gulp-sourcemaps
 
-*** npm dependency =~= vs ~^~ <<<nodejs:semver>>>
+*** Semver =~= vs ~^~
+:PROPERTIES:
+:ID:       D4DDF671-1DD0-49DB-A027-03AF8AB03E62
+:CUSTOM_ID:       nodejs:semver
+:END:
 - ~^1.2.3~ :: any 1.x.x latest release but will miss 2.0.0 (e.g. allow minor and patch but not major)
 - =~1.2.3= :: any 1.2.x versions but will miss 1.3.0 (e.g. allow patch but not minor or major)
 - ~^~ :: caret, is the default now
@@ -50445,6 +50595,15 @@ svgo abc.svg --enable=convertStyleToAttrs
 
 Batch convert all *.svg files in a folder and output to another folder
 svgo -f ../path/to/folder/with/svg/files -o ../path/to/folder/with/svg/output
+
+*** serve
+:PROPERTIES:
+:ID:       0D022598-26BF-4731-9AF4-D17A504893AD
+:CUSTOM_ID:       npm:serve
+:END:
+
+- default port :: 3000
+   - To change port in command line :: ~serve -s build -p 3001~ 
 
 ** Custom Module
 #+BEGIN_SRC js
@@ -56480,7 +56639,12 @@ To enable wildcard for rm, use glob
     for file in ABC.*; do cp -a "$file" "${file/ABC/DEF}";done
   #+END_SRC
 
-*** mv <<linux:mv>>
+*** mv
+:PROPERTIES:
+:ID:       E812FD53-A09F-4F8B-B070-CB716353D0B1
+:CUSTOM_ID:       linux:mv
+:END:
+
 #+BEGIN_SRC sh
   # rename a file
   mv afile.txt afile2.txt
