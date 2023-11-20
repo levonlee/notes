@@ -36944,22 +36944,29 @@ Refer to bootstrap:responsive helpers
   #+END_SRC
 - ES6
   #+BEGIN_SRC js
-    //App.js
-    import React, {Component} from 'react';
-    import './App.css';
-    import {Color, Animal} from './Shapes';
-    // ...
-    // `export default` to export only one thing
-    export default App;
+	//App.js
+	import React, {Component} from 'react';
+	import './App.css';
+	import {Color, Animal} from './Shapes';
+	// ...
 
-    //Shapes.js
-    import React, {Component} from 'react';
-    export class Color extends Component {
+	// this way (called default import) is faster
+	import Button from '@mui/material/Button';
+
+	// than (called named import)
+	import { Button } from '@mui/material'; // this is slow
+
+
+	export default App;
+
+	//Shapes.js
+	import React, {Component} from 'react';
+	export class Color extends Component {
 	//...
-    }
-    export class Animal extends Component {
+	}
+	export class Animal extends Component {
 	//...
-    }
+	}
   #+END_SRC
 
 *** Trailing commas
@@ -47346,16 +47353,20 @@ Backtick
 	// eq. to
 	import myAlias from 'my-module';
 
-	// React is the default and useEffect is one of the exports
+	// React is the react.default and useEffect is one of the exports
 	import React, {useEffect} from 'react';
 
 	// e.g. MyReact.ReactElement, but not MyReact.default
 	import * as MyReact from 'react';
 
-	// more complicated example
-	export { default } from './Chip';
+	// a more complicated example
+	// material/Chip/index.js
+	export { default } from './Chip'; // Chip.js, default is const Chip. Then index.js exported default is const Chip
 	export { default as chipClasses } from './chipClasses';
 	export * from './chipClasses';
+
+	// MyComponent/MyComponent.js
+	import Chip from '../material/Chip';
   #+end_src
 
 *** process <<<nodejs:process>>>
@@ -50608,7 +50619,8 @@ svgo -f ../path/to/folder/with/svg/files -o ../path/to/folder/with/svg/output
 :END:
 
 - default port :: 3000
-   - To change port in command line :: ~serve -s build -p 3001~ 
+   - To change port in command line :: ~serve -s build -p 3001~
+- ~npm i -g serve~ 
 
 ** Custom Module
 #+BEGIN_SRC js
@@ -63194,6 +63206,18 @@ dockerfile-from-image.rb (same as GitHub)
   # `node your-daemon-or-script.js` is a command run. Can be other things
 
   npm install && npm run build
+#+end_src
+
+#+begin_src makefile
+  .PHONY: enter
+
+  enter:
+	  docker run -it --rm --name my-running-script \
+		 -v `pwd`:/usr/src/app \
+		 -w /usr/src/app \
+		 -p 3001:3001 \
+		 node:18.18 \
+		 bash -c "npm i -g serve && bash"
 #+end_src
 
 **** Version
