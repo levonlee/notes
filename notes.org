@@ -28385,6 +28385,41 @@ https://mdbootstrap.com/
 :END:
 
 - https://www.figma.com/community/file/912837788133317724
+- Base UI e.g. ~@mui/base/Button~ is a library of unstyled React UI components and hooks
+- MUI System is a set of CSS utilities that provide a styled-components-like API
+- Material UI e.g. ~@mui/material/button~ is Base UI plus styles
+- MUI X is a collection of advanced UI components and should install with Material UI
+
+*** MUI System
+- ~@mui/system~
+
+**** styled
+- Add prop ~sx~ to non-MUI-component
+
+#+begin_src js
+  import { styled } from '@mui/material/styles';
+
+  const Div = styled('div')``;
+#+end_src
+**** unstable_styleFunctionSx
+#+begin_src js
+  import * as React from 'react';
+  import styled, { ThemeProvider } from 'styled-components';
+  import { unstable_styleFunctionSx } from '@mui/system';
+  import { createTheme } from '@mui/material/styles';
+
+  const theme = createTheme();
+
+  const Div = styled('div')(unstable_styleFunctionSx);
+
+  export default function StyleFunctionSxDemo() {
+	return (
+	  <ThemeProvider theme={theme}>
+		<Div sx={{ m: 1, p: 1, border: 1 }}>Custom component with the sx prop</Div>
+	  </ThemeProvider>
+	);
+  }
+#+end_src
 
 ** Animate.css
 :PROPERTIES:
@@ -36870,104 +36905,119 @@ Refer to bootstrap:responsive helpers
  #+END_SRC
 
 *** js:for...of
-*** Import, export <<js:import>>
-- ES5 :: ~require~ and ~module.exports~
-  #+BEGIN_SRC js
-	// App.js
-	var React = require('react');
-	var Component = React.Component;
-	require('./App.css');
-	var Color = require('./Shapes'); // color component
+*** Import, export
+:PROPERTIES:
+:ID:       9BEF6589-8311-49ED-95CE-5790744CF627
+:CUSTOM_ID:       js:import
+:END:
 
-	class App extends Component {
-	  render() {
-	return (
-	  <div className="App">
-		<div className="colors">
-		  <Color name="red"/>
-		  <Color name="green"/>
-		  <Color name="blue"/>
-		</div>
+**** ES5
+- See [[#js:commonjs][CommonJS Module System]]
+
+#+BEGIN_SRC js
+  // App.js
+  var React = require('react');
+  var Component = React.Component;
+  require('./App.css');
+  var Color = require('./Shapes'); // color component
+
+  class App extends Component {
+	render() {
+  return (
+	<div className="App">
+	  <div className="colors">
+		<Color name="red"/>
+		<Color name="green"/>
+		<Color name="blue"/>
 	  </div>
-	);
-	  }
+	</div>
+  );
 	}
+  }
 
-	module.exports = App;
+  module.exports = App;
 
-	// Shapes.js
-	var React = require('react');
-	var Component = React.Component;
-	class Color extends Component {
-	  render() {
-	const divStyle = {
-	  backgroundColor: this.props.name,
-	  color: 'white',
-	  fontSize: '20px',
-	  height: '100px',
-	  width: '100px'
+  // Shapes.js
+  var React = require('react');
+  var Component = React.Component;
+  class Color extends Component {
+	render() {
+  const divStyle = {
+	backgroundColor: this.props.name,
+	color: 'white',
+	fontSize: '20px',
+	height: '100px',
+	width: '100px'
+  }
+  return (
+	<div style={divStyle}>{this.props.name}</div>
+  )
 	}
-	return (
-	  <div style={divStyle}>{this.props.name}</div>
-	)
-	  }
+  }
+  module.exports = Color;
+
+
+  // Export multiple components
+  class Animal extends Component {
+	render() {
+  const divStyle = {
+	fontSize: '20px',
+	height: '100px',
+	width: '100px',
+	border: '1px solid black',
+	borderRadius: '50%'
+  }
+  return (
+	<div style={divStyle}>{this.props.name}</div>
+  )
 	}
-	module.exports = Color;
+  }
+
+  module.exports = {
+	Color: Color,
+	Animal: Animal
+  }
+
+  // Multiple exports, the import needs to change, too
+
+  // App.js
+  var {Color} = require('./Shapes');
+  var {Animal} = require('./Shapes');
+#+END_SRC
+
+**** ES6
+- See [[#js:module system:esm][ESM Module System]]
+
+#+BEGIN_SRC js
+  //App.js
+  import React, {Component} from 'react';
+
+  // React is the default exported from react (react.default) but Component is react.Component
+
+  import './App.css';
+
+  // Color is Shapes.Color not Shapes.default. Same for Animal
+  import {Color, Animal} from './Shapes';
+  // ...
+
+  // this way (called default import) is faster
+  import Button from '@mui/material/Button';
+
+  // than (called named import)
+  import { Button } from '@mui/material'; // this is slow
 
 
-	// Export multiple components
-	class Animal extends Component {
-	  render() {
-	const divStyle = {
-	  fontSize: '20px',
-	  height: '100px',
-	  width: '100px',
-	  border: '1px solid black',
-	  borderRadius: '50%'
-	}
-	return (
-	  <div style={divStyle}>{this.props.name}</div>
-	)
-	  }
-	}
+  export default App;
 
-	module.exports = {
-	  Color: Color,
-	  Animal: Animal
-	}
-
-	// Multiple exports, the import needs to change, too
-
-	// App.js
-	var {Color} = require('./Shapes');
-	var {Animal} = require('./Shapes');
-  #+END_SRC
-- ES6
-  #+BEGIN_SRC js
-	//App.js
-	import React, {Component} from 'react';
-	import './App.css';
-	import {Color, Animal} from './Shapes';
-	// ...
-
-	// this way (called default import) is faster
-	import Button from '@mui/material/Button';
-
-	// than (called named import)
-	import { Button } from '@mui/material'; // this is slow
-
-
-	export default App;
-
-	//Shapes.js
-	import React, {Component} from 'react';
-	export class Color extends Component {
-	//...
-	}
-	export class Animal extends Component {
-	//...
-	}
-  #+END_SRC
+  //Shapes.js
+  import React, {Component} from 'react';
+  export class Color extends Component {
+  //...
+  }
+  export class Animal extends Component {
+  //...
+  }
+#+END_SRC
 
 *** Trailing commas
 - Safe in
@@ -46787,6 +46837,32 @@ var shape = BABYLON.MeshBuilder.Create[ShapeName](name, options, scene);
 :END:
 
 - Comment out :: ~{/*~ and ~*/}~
+- Inside ~()~, use ~{}~
+- Inside ~{}~, use ~()~
+
+**** Ternary return with another JSX
+#+begin_src js
+  useEffect(() => {
+	  count && (document.title = `$(pageTitle) - $(count)`)
+  })
+
+  return (
+	  {this.state.message === 'failed'
+	   ? (
+		   <div>
+			   <row>three elements wrapped</row>
+			   <row>inside</row>
+			   <row>another element work.</row>
+		   </div>
+	   )
+	   : (
+		   <row>html like</row>
+		   <row>haiku</row>
+		   <row>must follow rules of structure.</row>
+	   )
+	}
+  )
+#+end_src
 
 *** CSS
 **** Raw CSS file import
@@ -46955,7 +47031,7 @@ Specify base path in jsconfig.json:
 	  "compilerOptions": { 
 		  "baseUrl": "src" 
 	  }, 
-	  "include": ["src"] 
+	  "include": ["src"]
   }
 #+end_src
 
@@ -46963,9 +47039,9 @@ Specify base path in jsconfig.json:
   import { Button } from 'components';
 #+end_src
 
-If your project includes webpack.config.js at the root, you may further personalize it by using a prefix such
+React picks up ~jsconfig.json~ or ~tsconfig.json~ to resolve path in ~config/paths.js~
 
-as @components or ~components. See the configuration below:
+If your project includes webpack.config.js at the root, you may further personalize it by using a prefix such as ~@components~ or ~~components~. See the configuration below:
 
 #+begin_src js
   module.exports = {
@@ -46983,6 +47059,36 @@ as @components or ~components. See the configuration below:
 #+begin_src js
   import { Button } from '@components';
 #+end_src
+
+*** Meeting Agenda
+- React project kick-off meeting notes
+   - Welcome! Introduction
+	  - What? React + PHP
+	  - Why? Front end and Back End decoupling
+	  - What’re the benefits
+	  - A 5-min demo
+   - What’s the plan?
+	  - We always start small and make changes incrementally: Basic UI elements in React (Seden)
+		 - We are exploring to sync Mike’s Figma with our CSS framework
+		 - We are exploring to export Mike’s Figma to React code which is almost production level ready
+	  - One thing at a time on the Loan View
+		 - Loan > Borrowers > Borrower > Tag: Make it React!
+	  - New project will adopt our new React + PHP architecture
+		 - Due to limited resource, we may still allow PHP code to echo/return HTML. But we are aiming the new project at least should separate data/action from returning HTML.
+	  - We always start with data, which is the language between front end and back end
+		 - We will discuss and slowly figure out the data and its relationship, then standardize it.
+	  - After data, we will move on to each action around a piece of data. For example, delele a borrower froma a loan.
+		 - We want to keep the original code but at the same time write new code for React to receive data instead of HTML after the action is performed. (PHP)
+   - Let’s get to know each other better!
+	  - How much experience do you have for React or other similar JavaScript framework (Vue, Angular)?
+	  - How comfortable are you in using TypeScript?
+	  - How much experience do you have in Laravel or other MVC framework?
+   - There’s an excellent introduction course on LinkedIn Learning.
+	  - A lot of regional public libraries, if you have the library card, provide LinkedIn Learning for free.
+		 - Vaughan (York Region), Markham, and Toronto.
+		 - For example, Vaughan, just Google Vaughan library linkedin learning, then click on the link to a specific portal, enter your library card number and PIN and there you go!
+		 - LinkedIn Learning: React.js Essential Training
+			- https://www.linkedin.com/learning/react-js-essential-training-14836121/building-modern-user-interfaces-with-react?resume=false&u=90092057
 
 *** Incrementally Migrate to React
 - Opptunities of migration
@@ -47017,19 +47123,23 @@ as @components or ~components. See the configuration below:
 	  - CRUD
 	  - Form
    - In other words, data first
-- React State data structure
-   - gss settings
-	  - country
-	  - almodules
-   - loans
-	  - loans table row in almost full detail (hide not-safe-for-public fields)
-		 - loanid: 123
-			- borrowers
-			   - id:
-			   - order:
-			   - not the full borrower detail
-   - borrowers
-	  - borrower in full detail
+
+*** React State data structure
+- gss
+   - country
+   - almodules
+- loans
+   - loans table row in almost full detail (hide not-safe-for-public fields)
+	  - loanid: 123
+		 - borrowers :: not the full borrower detail
+			- id:
+			- order:
+- borrowers
+   - borrower in full detail
+	  - client_id :: 756
+	  - first_name ::
+	  - last_name ::
+	  - corporation_name :: 
 
 *** Directory Structure
 - src
@@ -47246,6 +47356,7 @@ Backtick
 	  - [[#js:module system:amd][Asynchronous Module Definition (AMD)]]
 	  - [[#js:module system:umd][Universal Module Definition (UMD)]]
 	  - [[#js:module system:esm][ECMAScript Module (ESM)]]
+- See [[#js:import][JavaScript ~import~]]
 
 **** CommonJS
 :PROPERTIES:
@@ -47364,6 +47475,21 @@ Backtick
 	export { default } from './Chip'; // Chip.js, default is const Chip. Then index.js exported default is const Chip
 	export { default as chipClasses } from './chipClasses';
 	export * from './chipClasses';
+
+	// export default using arrow function
+	export default () => {
+	}
+
+	// eq.
+	export default function MyComponent() {
+	}
+
+	export function MyComponent() {
+	}
+
+	// eq. (I don't like it)
+	export const MyComponent = () => {
+	}
 
 	// MyComponent/MyComponent.js
 	import Chip from '../material/Chip';
@@ -77584,6 +77710,30 @@ Add comments around tags with id or class attribute.
 - Editor Tabs
    - Equalize proportions in nested splits
 
+*** .editorconfig
+:PROPERTIES:
+:ID:       E2EBE02E-315D-436A-A1DA-F6488E98E167
+:CUSTOM_ID:       toc:.editorconfig
+:END:
+
+#+begin_src conf
+  root = true
+
+  [*]
+  end_of_line = lf
+
+  [*.js]
+  indent_size = 2
+#+end_src
+
+*** jsconfig.json
+:PROPERTIES:
+:ID:       7953A916-6D8A-4E2D-BC13-200CAC522B77
+:CUSTOM_ID:       toc:jsconfig.json
+:END:
+
+
+
 *** Refactor
 - Refactor This.. :: ~⌃ t~
 - Rename :: ~⇧ F6~
@@ -78130,6 +78280,11 @@ C:\emacs\emacs-24.5-bin-i686-mingw32\share\emacs\site-lisp is /usr/local/share/e
 | C-c \vert{}      | After text is selected, convert to table   |
 |                  |                                            |
 |------------------+--------------------------------------------|
+
+*** Temporarily Change Font Size in Current Buffer
+- Increase :: ~C-x C-+~
+- Decrease :: ~C-x C--~
+- Restore the default (global) font size :: ~C-x C-0~ 
 
 *** Windows
 - Remove current window :: ~C-x 0~
