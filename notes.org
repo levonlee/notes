@@ -68528,7 +68528,7 @@ You want to see what changes are made for ~branch-for-cr~
 #+begin_src sh
   # Start feature-b
   git checkout feature_a
-  git checkout feature_b
+  git checkout -b feature_b
 
   # feature_b has some updates
   git add . && git commit -m "feature_b update"
@@ -68830,25 +68830,49 @@ Add -f to force it to run and overwrite ~refs/original~
   git filter-branch -f --index-filter [...]
 #+END_EXAMPLE
 
-~git filter-branch [...] HEAD~ just shrinks the current branch and leave the other branches intact. 
-Say feature branch is a copy of master, then run filter-branch on feature. master branch and others are not affected. But now feature branch diverged from master.
-The get-top-10-biggest-files command returns the same files after filter-branch and the cleanup mentioned above are done. Because it's just one branch that you cleaned up, big files are still in other branches.
-You won't notice a big change in total git:repo size, as it's just one branch that had the big files removed.
-I didn't try ~git push --force~ to update a real remote branch.
-Let's say the repo is at /path/to/repo, and you duplicate master branch to shrinksize branch. Run filter-branch and the cleanup.
-Then you create another folder /path/to/duplicaterepo, and clone only the shrinksize branch from the original repo
+- ~git filter-branch [...] HEAD~
+   - just shrinks the current branch and leave the other branches intact. 
+   - Say feature branch is a copy of master, then run filter-branch on feature. master branch and others are not affected. But now feature branch diverged from master.
+- The get-top-10-biggest-files command returns the same files after filter-branch and the cleanup mentioned above are done. Because it's just one branch that you cleaned up, big files are still in other branches.
+   - You won't notice a big change in total git:repo size, as it's just one branch that had the big files removed.
+- I didn't try ~git push --force~ to update a real remote branch.
+   - Let's say the repo is at /path/to/repo, and you duplicate ~master~ branch to ~shrinksize~ branch. Run filter-branch and the cleanup.
+   - Then you create another folder /path/to/duplicaterepo, and clone only the ~shrinksize~ branch from the original repo
+	 #+BEGIN_SRC sh
+	   cd /path/to
+	   mkdir duplicaterepo
+	   cd duplicaterepo
+	   git clone file:///path/to/repo --branch shrinksize --single-branch
+	   cd repo
+	   du -sh .git/objects
+	   # push branch shrinksize to another remote as master branch
+	   git remote add anotherremote ...
+	   git push anotherremote shrinksize:master
+     #+END_SRC
 
-#+BEGIN_SRC sh
-  cd /path/to
-  mkdir duplicaterepo
-  cd duplicaterepo
-  git clone file:///path/to/repo --branch shrinksize --single-branch
-  cd repo
-  du -sh .git/objects
-  # push branch shrinksize to another remote as master branch
-  git remote add anotherremote ...
-  git push anotherremote shrinksize:master
-#+END_SRC
+** Remove one file from all remote branches
+- https://www.youtube.com/watch?v=liCAFV8Rmbs&ab_channel=RyanOrsinger
+
+#+begin_src sh
+  git filter-branch --force --index-filter \
+  "git rm --cached --ignore-unmatch ./path/to/file" \
+  --prune-empty --tag-name-filter cat -- --all
+
+  # --prune-empty :: some filters will generate empty commits that leave the tree untouched. This instructs git-filter-branch to remove such commits if they have exactly one or zero non-pruned parents; merge commits will therefore remain intact
+
+  # --tag-name-filter <command> :: This is the filter for rewriting tag names. The original tags are not deleted, but can be overwrriten; use "--tag-name-filter cat" to simply update the tags.
+
+
+  # Add the file to .gitignore
+  echo "path/to/file" >> .gitignore
+  git add .gitignore
+  git commit -m "add path/to/file to .gitignore"
+
+  git push origin --force --all --dry-run
+  git push origin --force --all
+  git push origin --force --tags --dry-run
+  git push origin --force --tags
+#+end_src
 
 ** log - Show Commit History <<git:log>>
 - Syntax :: ~git log [<options>] [<revision range>] [[--] <path>…​]~
