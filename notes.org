@@ -33,7 +33,7 @@ Install multiple versions of PHP
 
   # install multiple modules
   # sudo apt install php7.3-cli php7.3-xml php7.3-mysql
-  sudo apt install php7.3-{cli,xml,mysql,zip,mbstring}
+  sudo apt install php7.3-{cli,xml,mysql,zip,mbstring,curl}
 
   # after install, php-fpm services should be auto started
   sudo systemctl status php7.3-fpm
@@ -7731,10 +7731,21 @@ Check if php ~short_open_tag~ is enabled. Default is not enabled. Then search ~<
   }
 #+end_src
 
-** Composer <<php:composer>>
+** Composer
+:PROPERTIES:
+:ID:       CE4AB311-AF4C-4F6B-B609-230F4769C136
+:CUSTOM_ID:       php:composer
+:END:
+
 *** Install
 **** Ubuntu
 #+BEGIN_SRC sh
+  # php8.2-curl is required
+  # apt install php8.2-curl
+
+  # It's better to install zip/unzip (or 7z) rather than relying on php8.2-zip
+  # apt install zip unzip
+
   # download installer, run it using PHP and put the resulted executable as in /usr/local/bin/composer
   curl -sS -L https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -7945,7 +7956,44 @@ https://github.com/firebase/php-jwt
 **** Installation
 - A skeleton Laravel project runs on top of the Laravel Framework :: https://github.com/laravel/laravel
    - ~composer create-project laravel/laravel example-app~ 
-- Laravel Framework :: https://github.com/laravel/framework 
+- Laravel Framework :: https://github.com/laravel/framework
+- ~chmod -R 777 storage~
+
+***** Nginx
+#+begin_src nginx
+  server {
+		  server_name my.website.com;
+		  root /var/www/mywebsite/public;
+
+		  add_header X-Frame-Options "SAMEORIGIN";
+		  add_header X-Content-Type-Options "nosniff";
+
+		  index index.php;
+
+		  charset utf-8;
+
+		  location / {
+				  try_files $uri $uri/ /index.php?$query_string;
+		  }
+
+		  location = /favicon.ico { access_log off; log_not_found off; }
+		  location = /robots.txt  { access_log off; log_not_found off; }
+
+		  error_page 404 /index.php;
+
+		  location ~ \.php$ {
+				  fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+				  fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+				  include fastcgi_params;
+		  }
+
+		  location ~ /\.(?!well-known).* {
+				  deny all;
+		  }
+
+		  listen 80;
+  }
+#+end_src
 
 **** Sail
 :PROPERTIES:
@@ -8011,6 +8059,27 @@ https://github.com/firebase/php-jwt
   php artisan --version
   # List of all commands
   php artisan list
+
+  cd /path/to/my/website
+
+  # manually modify .env file
+
+  # whenever .env file is created or updated
+  php artisan config:cache
+
+  # generate key, .env > APP_KEY is modified
+  php artisan key:generate
+
+  php artisan config:cache
+
+  cd database/seeders
+
+  php artisan migrate
+
+  # .env > JWT_SECRET is inserted
+  php artisan jwt:secret
+
+  php artisan config:cache
 #+end_src
 
 **** Eloquent (ORM) <<php:laravel:orm>> <<php:laravel:eloquent>>
@@ -66830,7 +66899,12 @@ Force SSL on a specific folder. Place this .htaccess in that folder
   RewriteRule ^(.*)$ https://www.example.com/folder/$1 [R,L]
 #+END_SRC
 
-* Nginx <<toc:nginx>>
+* Nginx
+:PROPERTIES:
+:ID:       2BC8660B-5BB4-40C3-85CF-4CD0D6B9F3A7
+:CUSTOM_ID:       toc:nginx
+:END:
+
 ** Install on Ubuntu 16.04
 #+BEGIN_SRC sh
   # Ubuntu 16.04
