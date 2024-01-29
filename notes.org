@@ -2911,7 +2911,12 @@ Associative arrays
   printData($data);
 #+END_SRC
 
-** String <<php:string>>
+** String
+:PROPERTIES:
+:ID:       BDB8079B-7CA8-4E93-9A17-461AB2743DCD
+:CUSTOM_ID:       php:string
+:END:
+
 *** Conversion to string
 https://github.com/levonlee/phpSandbox/blob/master/conversionToString.php
 
@@ -4737,6 +4742,11 @@ To set Content-Length:
 #+END_SRC
 
 ** PHPDoc <<php:phpdoc>>
+:PROPERTIES:
+:ID:       E8ECD742-1D59-417A-8E4F-CEA34BC12D18
+:CUSTOM_ID:       php:phpdoc
+:END:
+
 *** Reference
 - [[https://www.drupal.org/coding-standards/docs][Drupal API documentation and comment standards]]
    - [[https://www.drupal.org/node/1354][Same but different URL]]
@@ -4961,6 +4971,23 @@ It can be used to demo by presenting the contents of files that use them.
 	  }
   }
 #+END_SRC
+
+**** @mixin
+- The mixin DocBlock allows you to signal that all properties and methods of another class are available on the class where the mixin is applied upon.
+   - For example, ClassB has ~__call()~ function that calls another ClassA and ClassB is not a child/parent of ClassA
+- Example
+  #+begin_src php
+	namespace App\Models;
+
+	use Illuminate\Database\Eloquent\Model;
+	use Illuminate\Database\Eloquent\Builder;
+
+	/**
+	 ,* @mixin Builder
+	 ,*/
+	class Post extends Model {}
+  #+end_src
+- Laravel Model Li
 
 *** datatype <<PHPDoc:datatype>>
 #+BEGIN_EXAMPLE
@@ -7799,7 +7826,13 @@ Check if php ~short_open_tag~ is enabled. Default is not enabled. Then search ~<
 *** Packages
 - PHP Package Repo :: https://packagist.org/
 
-**** squizlabs/php_codesniffer <<php:composer:php_codesniffer>>
+**** squizlabs/php_codesniffer
+:PROPERTIES:
+:ID:       CD13E6A8-1163-427E-A12F-850F3DFBBF17
+:CUSTOM_ID:       php:composer:php_codesniffer
+:END:
+
+- AKA phpcs, PHP CodeSniffer, PHP Code Sniffer
 - Prefer to require it as local dev
 - Static code analysis for PHP, JavaScript and CSS files
 - Install this package so that any other phpcs coding standards are installed through composer will be configured correctly and php_codesniffer can use/refer to them
@@ -7807,15 +7840,26 @@ Check if php ~short_open_tag~ is enabled. Default is not enabled. Then search ~<
 - Install other coding standards
    - wp-coding-standards/wpcs
    - phpcompatibility/php-compatibility
+
+***** Use an installer
+#+begin_src sh
+  # https://github.com/PHPCSStandards/composer-installer
+  # It can install phpcs and also standards
+
+  composer require --dev dealerdirect/phpcodesniffer-composer-installer
+
+  # List of all standards: https://packagist.org/explore/?type=phpcodesniffer-standard
+#+end_src
+
 - Sample
   #+BEGIN_SRC json
-    {
-	"require-dev": {
-	    "dealerdirect/phpcodesniffer-composer-installer": "^0.4",
-	    "wp-coding-standards/wpcs": "^2",
-	    "phpcompatibility/php-compatibility": "^9"
-	},
-    }
+	{
+		"require-dev": {
+			"dealerdirect/phpcodesniffer-composer-installer": "^0.4",
+			"wp-coding-standards/wpcs": "^2",
+			"phpcompatibility/php-compatibility": "^9"
+		},
+	}
   #+END_SRC
 - And run ~composer install~
 - PHP_CodeSniffer is installed at ~./vendor/bin/phpcs~ and it links to multiple standards installed above
@@ -28529,6 +28573,11 @@ https://mdbootstrap.com/
 - ~node_modules/tailwindcss/lib/public/colors.js~
 - https://tailwindcss.com/docs/customizing-colors
   
+**** padding
+- p-1 :: 0.25rem === 4px
+- p-2 :: 0.5rem === 8px
+- p-4 :: 1rem
+
 **** About turning off preflight
 - https://tailwindcss.com/docs/preflight
 
@@ -47274,6 +47323,9 @@ The naming convention is ~[fileName]_[cssClassName]__[hash]~
    - ~npm i -S react-redux~
 
 *** Custom hooks
+**** ~useState~
+- Group states and state setters in a file :: usePasswordToggler
+
 #+begin_src js
   // ./src/hooks/usePasswordToggler.js
   import {useState} from 'react';
@@ -47315,6 +47367,144 @@ The naming convention is ~[fileName]_[cssClassName]__[hash]~
 	  );
   }
 #+end_src
+**** ~useReducer~
+- Consolidate all state update logic outside the component in a single function, called a reducer
+- https://react.dev/learn/extracting-state-logic-into-a-reducer
+- Reducer function catches the fired event and change the state
+   - A reducer must be a pure function
+
+***** Sample
+Old code
+#+begin_src js
+  import { useState } from 'react';
+  import AddTask from './AddTask.js';
+  import TaskList from './TaskList.js';
+
+  let nextId = 3;
+  const initialTasks = [
+	  {id: 0, text: 'Visit Kafka Museum', done: true},
+	  {id: 1, text: 'Watch a puppet show', done: false},
+	  {id: 2, text: 'Lennon Wall pic', done: false},
+  ];
+
+  export default function TaskApp() {
+	  const [tasks, setTasks] = useState(initialTasks);
+
+	  function handleAddTask(text) {
+		  setTasks([
+			  ...tasks,
+			  {
+				  id: nextId++,
+				  text: text,
+				  done: false,
+			  },
+		  ]);
+	  }
+
+	  function handleChangeTask(task) {
+	  }
+
+	  function handleDeleteTask(taskId) {
+	  }
+
+	  return (
+		  <>
+			  <AddTask onAddTask={handleAddTask} />
+			  <TaskList
+				  tasks={tasks}
+				  onChangeTask={handleChangeTask}
+				  onDeleteTask={handleDeleteTask} />
+		  </>
+	  )
+  }
+#+end_src
+
+- Step 1 :: Move from setting state to dispatching actions
+  #+begin_src js
+	function handleAddTask(text) {
+	  dispatch({
+		type: 'added',
+		id: nextId++,
+		text: text,
+	  });
+	}
+  #+end_src
+- Step 2 :: Write a reducer function which groups all dispatching events that change the state
+   #+begin_src js
+	 function tasksReducer(tasks, action) {
+		 switch (action.type) {
+			 case 'added': {
+				 return [
+					 ...tasks,
+					 {
+						 id: action.id,
+						 text: action.text,
+						 done: false,
+					 },
+				 ];
+			 }
+			 case 'changed': {
+				 return '';
+			 }
+			 default: {
+				 throw Error('Unknown action: ' + action.type);
+			 }
+		 }
+	 }
+   #+end_src
+- Step 3: Use the reducer
+  #+begin_src js
+	import { useReducer } from 'react';
+	import AddTask from './AddTask.js';
+	import TaskList from './TaskList.js';
+
+	let nextId = 3;
+	const initialTasks = [
+		{id: 0, text: 'Visit Kafka Museum', done: true},
+		{id: 1, text: 'Watch a puppet show', done: false},
+		{id: 2, text: 'Lennon Wall pic', done: false},
+	];
+
+	export default function TaskApp() {
+		const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+
+		function handleAddTask(text) {
+			dispatch({
+				type: 'added',
+				id: nextId++,
+				text: text,
+			});
+		}
+
+		function handleChangeTask(task) {}
+
+		function handleDeleteTask(taskId) {}
+
+		return (
+			<>
+				<h1>Prague itinerary</h1>
+				<AddTask onAddTask={handleAddTask} />
+				<TaskList
+					tasks={tasks}
+					onChangeTask={handleChangeTask}
+					onDeleteTask={handleDeleteTask}
+				/>
+			</>
+		);
+	}
+  #+end_src
+
+**** ~useContext~
+- Use context to pass properties from parent component to distant children
+- https://react.dev/learn/passing-data-deeply-with-context
+- LevelContext.js
+   - ~createContext~ to initiate context
+- ~<LevelContext.Provider value={initialLevel}>~
+   - In parent component
+   - If any component inside this parent component asks for LevelContext, give them this ~initialLevel~. The component will use the value of the nearest ~<LevelContext.Provider>~ in the UI tree above it.
+
+**** ~useContext~ and ~useReducer~
+- https://react.dev/learn/scaling-up-with-reducer-and-context
 
 *** Use absolute imports
 By default, React apps with nested directory structures might lead to confusion on the import path such as the example below:
@@ -47546,6 +47736,18 @@ https://github.com/nodejs/LTS
   # install build-essential so that npm can compile code from source
   sudo apt install build-essential
 #+END_SRC
+
+*** MacOS
+#+begin_src sh
+  brew update
+  # other alias: nodejs
+  # will install the latest version (not the LTS version)
+  brew install node
+  # node, npm and npx are installed
+  node -v
+  npm -v
+  npx -v
+#+end_src
 
 *** Install on Windows
 Download the .msi and install with NPM. Installation path: =C:\Program Files\nodejs\=
@@ -68608,7 +68810,7 @@ git checkout feature
 git reset --hard common1
 git push -f
 
-*** Branches merged into a branch
+*** Find branches merged into a branch
 #+begin_src sh
   # List local branches merged into master
   # Use `-a` to show both local and remote branches
@@ -74654,8 +74856,8 @@ FOR XML PATH
 #+END_EXAMPLE
 
 | r | no value means don't add any newline character for every 2033 characters or new row |
-| w | Use Unicode characters                                                           |
-| S | server_name[\instance_name]                                                      |
+| w | Use Unicode characters                                                              |
+| S | server_name[\instance_name]                                                         |
 
 Save long query as stored procedure. You can't save FOR XML in Global Temporary Table.
 dev.todaystrucking is the database name. Inside the real SELECT, you can refer to table as
@@ -78121,8 +78323,6 @@ Add comments around tags with id or class attribute.
 :CUSTOM_ID:       toc:jsconfig.json
 :END:
 
-
-
 *** Refactor
 - Refactor This.. :: ~⌃ t~
 - Rename :: ~⇧ F6~
@@ -79160,16 +79360,41 @@ To compile ~C-c C-c~ and display inline image ~C-c C-x C-v~
 - name :: k--kato.intellij-idea-keybindings
 
 **** PHP related extensions <<vscode:php extensions>>
+***** PHP Tools for Visual Studio Code
+- https://marketplace.visualstudio.com/items?itemName=DEVSENSE.phptools-vscode
+- Setting PHP version and executable :: https://docs.devsense.com/en/vscode/php-version
+   - Executable
+	 #+begin_src sh
+	   #!/bin/bash
+	   docker exec -i existing-docker-container-name php "$@"
+	 #+end_src
+
 ***** PHP Intelephense
 - Follow the Quick Start to disable some builtin extensions
+
+****** Other extensions depend on PHP Intelephense
+- [[https://marketplace.visualstudio.com/items?itemName=MrChetan.phpstorm-parameter-hints-in-vscode][PhpStorm Parameter Hints in VScode]]
 
 ***** PHPDoc Comment
 - Shortcut
    - Add PHPDoc Comment :: ~⇧ ⌘ i~
-***** PhpStorm Parameter Hints in VScode
-- name :: MrChetan.phpstorm-parameter-hints-in-vscode
 
 **** ESLint
+:PROPERTIES:
+:ID:       F73FBED2-FFF2-42EC-8FEB-589A087CBB8F
+:CUSTOM_ID:       vscode:eslint
+:END:
+
+- See here for PhpStorm and ESLint :: https://www.jetbrains.com/help/phpstorm/eslint.html
+
+#+begin_src sh
+  # package.json is required
+  npm init --yes
+
+  # Install eslint and corresponding standards into ./node_modules and generate .eslintrc.json file
+  npx eslint --init
+#+end_src
+
 **** npm Intellisense christian-kohler.npm-intellisense
 Autocomplete npm modules in import statements based on package.json
 
@@ -81145,7 +81370,11 @@ A dashboard contains gadgets which show stats of different projects
    - Match message subject or text
 
 *** Azure DevOps
-** Slack <<toc:slack>>
+** Slack
+:PROPERTIES:
+:ID:       CD46DC4F-D216-4272-8DA0-96F1217529D4
+:CUSTOM_ID:       toc:slack
+:END:
 https://api.slack.com/apps
 
 *** Incoming Webhooks <<<slack:incoming webhooks>>>
@@ -81165,6 +81394,7 @@ https://api.slack.com/apps
 - Hover or select previous message in a channel :: ~Up~ or ~Down~
 - Add a reaction to this message :: ~C-S-\~ or ~Cmd-S-\~
 - Edit this message :: ~e~
+- Go to a conversation :: ~Cmd-k~
 
 ** Image
 *** Sample Image
@@ -81707,10 +81937,10 @@ http://www.google.com/s2/favicons?domain=http://superuser.com/
 
 **** api.js options
 | onload |                    | Optional. The name of your callback function to be executed once all the dependencies have loaded. |
-| render | explict onload     | Optional. Whether to render the widget explicitly.                               |
-|        |                    | Defaults to onload, which will render the widget in the first g-recaptcha tag it finds. |
-| hl     | See language codes | Optional. Forces the widget to render in a specific language.                    |
-|        |                    | Auto-detects the user's language if unspecified.                                 |
+| render | explict onload     | Optional. Whether to render the widget explicitly.                                                 |
+|        |                    | Defaults to onload, which will render the widget in the first g-recaptcha tag it finds.            |
+| hl     | See language codes | Optional. Forces the widget to render in a specific language.                                      |
+|        |                    | Auto-detects the user's language if unspecified.                                                   |
 
 **** ~class="g-recaptcha"~ tag attributes
 | tag attribute         | grecaptcha.render parameter | Value   | Default | Description                                 |
