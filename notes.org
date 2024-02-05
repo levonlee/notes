@@ -1033,7 +1033,8 @@ String to Time - return Unix timestamp
   $_u_time = strtotime('2016-11-01');
   // 20190228 format also works
 
-  // ISO date string. Refer to js:time:iso
+  // ISO date string (ISO 8601). See js:time:iso
+  // Z stands for UTC timezone
   $_u_time = strtotime('2011-10-05T14:48:00.000Z');
 
   $dateStr1 = '2022-12-01 00:00:00';
@@ -8133,6 +8134,9 @@ https://github.com/firebase/php-jwt
 
 ***** Relationships
 https://laravel.com/docs/9.x/eloquent-relationships
+
+****** Local scope
+- https://laravel.com/docs/10.x/eloquent#local-scopes
 
 **** Architecture
 ***** Short Version
@@ -47547,35 +47551,8 @@ If your project includes webpack.config.js at the root, you may further personal
   import { Button } from '@components';
 #+end_src
 
-*** Meeting Agenda
-- React project kick-off meeting notes
-   - Welcome! Introduction
-	  - What? React + PHP
-	  - Why? Front end and Back End decoupling
-	  - What’re the benefits
-	  - A 5-min demo
-   - What’s the plan?
-	  - We always start small and make changes incrementally: Basic UI elements in React (Seden)
-		 - We are exploring to sync Mike’s Figma with our CSS framework
-		 - We are exploring to export Mike’s Figma to React code which is almost production level ready
-	  - One thing at a time on the Loan View
-		 - Loan > Borrowers > Borrower > Tag: Make it React!
-	  - New project will adopt our new React + PHP architecture
-		 - Due to limited resource, we may still allow PHP code to echo/return HTML. But we are aiming the new project at least should separate data/action from returning HTML.
-	  - We always start with data, which is the language between front end and back end
-		 - We will discuss and slowly figure out the data and its relationship, then standardize it.
-	  - After data, we will move on to each action around a piece of data. For example, delele a borrower froma a loan.
-		 - We want to keep the original code but at the same time write new code for React to receive data instead of HTML after the action is performed. (PHP)
-   - Let’s get to know each other better!
-	  - How much experience do you have for React or other similar JavaScript framework (Vue, Angular)?
-	  - How comfortable are you in using TypeScript?
-	  - How much experience do you have in Laravel or other MVC framework?
-   - There’s an excellent introduction course on LinkedIn Learning.
-	  - A lot of regional public libraries, if you have the library card, provide LinkedIn Learning for free.
-		 - Vaughan (York Region), Markham, and Toronto.
-		 - For example, Vaughan, just Google Vaughan library linkedin learning, then click on the link to a specific portal, enter your library card number and PIN and there you go!
-		 - LinkedIn Learning: React.js Essential Training
-			- https://www.linkedin.com/learning/react-js-essential-training-14836121/building-modern-user-interfaces-with-react?resume=false&u=90092057
+*** Refactor
+- https://martinfowler.com/articles/modularizing-react-apps.html
 
 *** Incrementally Migrate to React
 - Opptunities of migration
@@ -72134,11 +72111,12 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - In session timezone 
 - Date comparison
    - 1 Year ago :: ~post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)~
-- ~UNIX_TIMESTAMP([date])~ :: return integer. Convert the string of time in session timezone to UTC integer
+- ~UNIX_TIMESTAMP([date|])~ :: return integer or float or NULL. Convert the string of time in session timezone to UTC integer
    - date :: maybe a
       - DATE
       - DATETIME
       - TIMESTAMP string, see ~NOW()~
+		 - ~UNIX_TIMESTAMP('2024-01-19T23:03:48.676Z')~ :: ~1705705428.676~
       - a number in YYMMDD, YYMMDDhhmmss, YYYYMMDD, or YYYYMMDDhhmmss format 
 #+BEGIN_SRC sql
   -- Custom datetime
@@ -72841,13 +72819,25 @@ Unless the field is binary, REGEXP is case-insensitive.
 **** ~INSERT~ <<mysql:insert>>
 ***** ~INSERT ... SELECT~
 - If there's no record from ~SELECT~, no row is inserted
-
-#+begin_src sql
-  INSERT INTO t1 (col1, col2)
-  SELECT t2.id, t3.name
-  FROM t2 JOIN t3 ON t2.t3bridge = t3.id
-  WHERE t2.score > 100;
-#+end_src
+  #+begin_src sql
+	INSERT INTO t1 (col1, col2)
+	SELECT t2.id, t3.name
+	FROM t2 JOIN t3 ON t2.t3bridge = t3.id
+	WHERE t2.score > 100;
+  #+end_src
+- ~SELECT~ in brackets
+   #+begin_src sql
+	 INSERT INTO t1 (col1, col2)
+	 VALUES
+	 (
+	   1,
+	   (SELECT id FROM t2 WHERE t2_col1 = 1 LIMIT 1)
+	 ),
+	 (
+	   2,
+	   (SELECT id FROM t2 WHERE t2_col1 = 2 LIMIT 1)
+	 );
+   #+end_src
 
 **** ~UPDATE~
 ***** Update fields in Multiple Tables
