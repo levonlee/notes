@@ -67412,7 +67412,13 @@ Create this location directive under any server directive to see the status info
   }
 #+END_SRC
 
-** location block <<<nginx:b:location>>>
+** location block
+:PROPERTIES:
+:ID:       6071E136-D87F-4614-B76D-E70ED53A3F38
+:CUSTOM_ID:       nginx:b:location
+:END:
+
+*** Basics
 - location blocks are usually under server blocks
 - Location Tester :: https://nginx.viraptor.info/
 - Don't need to escape ~/~
@@ -67503,6 +67509,48 @@ Create this location directive under any server directive to see the status info
       root /var/www;
   }
 #+END_SRC
+
+*** Subdirectory as a React app
+#+begin_src conf
+  server {
+	  gzip on;
+	  gzip_types text/css application/x-javascript application/javascript text/javascript text/x-javascript;
+	  gzip_vary on;
+
+	  listen 80;
+
+	  access_log /var/log/nginx/access.log gslog if=$loggable;
+
+	  server_name localhost;
+	  root /var/www/;
+
+	  client_max_body_size 120M;
+
+	  location / {
+		  index index.php;
+		  autoindex off;
+	  }
+
+	  location /path/to/react/app {
+		  index index.php;
+		  autoindex off;
+		  try_files $uri $uri/ /path/to/react/app/index.php;
+	  }
+
+	  location ~ \.php$ {
+		  fastcgi_pass 127.0.0.1:9000;
+		  fastcgi_index index.php;
+		  fastcgi_keep_conn on;
+		  fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		  fastcgi_send_timeout  3600;
+		  fastcgi_read_timeout 3600;
+		  fastcgi_connect_timeout 3600;
+		  send_timeout 3600;
+		  include fastcgi_params;
+	  }
+
+  }
+#+end_src
 
 ** proxy_pass directive
 *** Basic
@@ -72039,6 +72087,15 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   sudo /etc/init.d/mysql stop
   sudo /etc/init.d/mysql start
 #+END_SRC
+
+*** MySQL 8.0
+:PROPERTIES:
+:ID:       3B957C00-A1DA-47B1-9F8C-7137E865C7B7
+:CUSTOM_ID:       mysql:8
+:END:
+
+- What is new? :: https://dev.mysql.com/doc/refman/8.0/en/mysql-nutshell.html
+- https://dev.mysql.com/doc/refman/8.0/en/upgrading-from-previous-series.html
 
 *** Data Types
 **** Integer <<mysql:datatype:int>>
@@ -78525,7 +78582,7 @@ Settings > Languages & Frameworks > PHP
       - PHP executable :: /usr/bin/php7.3
       - Configuration file: /etc/php/7.3/cli/php.ini
 - Settings > Languages & Frameworks > PHP > Quality Tools <<phpstorm:php:quality tools>>
-   - Refer to [[php:composer:php_codesniffer][php:composer:php_codesniffer]]
+   - Refer to [[#php:composer:php_codesniffer][#php:composer:php_codesniffer]]
    - Then Editor > Inspections > PHP > Quality Tools > enable ~PHP_CodeSniffer validation~, and choose one coding standard
 - Run Code > Inspect Code > select scope, double check Quality Tools settings, run
    - ~PHP CODE BEAUTIFIER AND FIXER~ auto fix is available to some problems listed under PHP > Quality Tools > PHP_CodeSniffer validation
@@ -83836,6 +83893,7 @@ http://leaverou.github.io/contrast-ratio/
    - Capture the research effort, cost and time
 
 * TODOs
+** TODO https://www.gitbook.com/
 ** TODO https://blog.pragmaticengineer.com/my-reading-list/
 ** PHP catch fatal error then close MySQL transaction
 ** https://www.pdftron.com/?utm_source=google&utm_medium=cpc&utm_campaign=branded&utm_content=pdftron&utm_term=pdftron&gclid=Cj0KCQiA9P__BRC0ARIsAEZ6irgMeBwmMtR70-tDS52EFyCLFEQ1wtatx-kF-cxskHtZTnHGbkQ-JnYaAtgvEALw_wcB
