@@ -5914,9 +5914,9 @@ RestJson.php
 *** Interface
 :PROPERTIES:
 :ID:       8C75F76A-ED09-4C6F-91F3-B68714CFADF5
+:CUSTOM_ID:       php:interface
 :END:
 
-<<php:interface>>
 - Only 3 things an interface can do
    1. Define public method stubs or public methods signatures without bodies
        - Specify what methods must be implemented but not how
@@ -6006,7 +6006,7 @@ RestJson.php
    - Cannot extend a class
    - Cannot implement an interface
    - Constants are only allowed since PHP 8.2
-	  - Use [[php:interface]]
+	  - Use [[#php:interface][#php:interface]]
    - Calling a static method or accessing a static property directly on a trait is deprecated since PHP 8.1
      #+begin_src php
        trait TestTrait {
@@ -72148,6 +72148,17 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 	-- Throws a warning but the row is inserted with value 0.00
 	INSERT INTO myTable (decimal_field) VALUE ('');
   #+end_src
+- ~UNSIGNED~ for float, double and decimal are deprecated MySQL 8+.
+   - After upgraded to MySQL 8+
+	 #+begin_src sql
+	   -- remove unsigned
+	   alter table my_table
+		   modify my_col decimal(20, 2) default null;
+
+	   alter table my_table
+		 add constraint my_col_unsigned
+		 check (my_col > 0);
+	 #+end_src
 
 **** BOOL and BOOLEAN
 - Both are synonyms for TINYINT(1). Refer to [[mysql:tinyint][mysql:tinyint]]
@@ -73241,6 +73252,13 @@ Update Joined Tables
   ALTER TABLE `t1` DROP COLUMN `col1`;
 #+END_SRC
 
+**** Duplicate a table
+#+begin_src sql
+  -- to copy indexes and triggers
+  CREATE TABLE new_table LIKE old_table;
+  INSERT INTO new_table SELECT * FROM old_table;
+#+end_src
+
 **** Table Status, Table Settings, Table Definition
 - Filter tables
   #+BEGIN_SRC sql
@@ -73320,45 +73338,49 @@ Update Joined Tables
 #+END_SRC
 
 **** Table columns <<mysql:show columns>>
-- INFORMATION_SCHEMA.COLUMNS
-   - TABLE_NAME
-     Search tables by column name
-     #+BEGIN_SRC sql
-       SELECT DISTINCT TABLE_NAME 
-       FROM INFORMATION_SCHEMA.COLUMNS
-       WHERE COLUMN_NAME IN ('columnA','ColumnB') AND TABLE_SCHEMA='YourDatabase';
-     #+END_SRC
-   - COLUMN_NAME
-     All columns of a table
-     #+BEGIN_SRC sql
-       SELECT column_name, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT
-       FROM information_schema.columns
-       WHERE table_schema = DATABASE() -- current database
-       AND table_name = 'mytablename'
-     #+END_SRC
-   - COLUMN_TYPE :: e.g. ~decimal(10,2) unsigned~
-   - COLUMN_DEFAULT :: e.g. 0, 'default string'
-   - IS_NULLABLE :: YES or NO
-   - COLUMN_COMMENT
-   - [[mysql:alter table]]
-     #+BEGIN_SRC sql
-       alter table myTable
-	       modify colA tinyint unsigned default 0 null;
-
-       ALTER TABLE myTable
-	     MODIFY colA {COLUMN_TYPE} DEFAULT {COLUMN_DEFAULT} {IS_NULLABLE}
-     #+END_SRC
-- Column definition
-   - Collation, privileges, comments
-     #+BEGIN_SRC sql
-       SHOW FULL COLUMNS FROM myTable;
-       SHOW FULL COLUMNS FROM myTable WHERE Field = 'col1';
-
-       -- only show Type, Null, Key Default, Extra. They're all the same
-       DESCRIBE myTable;
-       EXPLAIN myTable;
-     #+END_SRC
 - To get index keys in a table :: [[mysql:show create table]]
+
+***** INFORMATION_SCHEMA.COLUMNS
+- TABLE_NAME
+  Search tables by column name
+  #+BEGIN_SRC sql
+    SELECT DISTINCT TABLE_NAME 
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE COLUMN_NAME IN ('columnA','ColumnB') AND TABLE_SCHEMA='YourDatabase';
+  #+END_SRC
+- COLUMN_NAME
+  All columns of a table
+  #+BEGIN_SRC sql
+    SELECT column_name, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE() -- current database
+    AND table_name = 'mytablename'
+  #+END_SRC
+- COLUMN_TYPE :: e.g. ~decimal(10,2) unsigned~
+- DATA_TYPE :: e.g. ~bigint~
+- EXTRA :: e.g. ~auto_increment~
+- COLUMN_DEFAULT :: e.g. 0, 'default string'
+- IS_NULLABLE :: YES or NO
+- COLUMN_COMMENT
+- [[mysql:alter table]]
+  #+BEGIN_SRC sql
+    alter table myTable
+	    modify colA tinyint unsigned default 0 null;
+
+    ALTER TABLE myTable
+	  MODIFY colA {COLUMN_TYPE} DEFAULT {COLUMN_DEFAULT} {IS_NULLABLE}
+  #+END_SRC
+
+***** Column definition ~SHOW FULL COLUMNS~
+- Collation, privileges, comments
+  #+BEGIN_SRC sql
+    SHOW FULL COLUMNS FROM myTable;
+    SHOW FULL COLUMNS FROM myTable WHERE Field = 'col1';
+
+    -- only show Type, Null, Key Default, Extra. They're all the same
+    DESCRIBE myTable;
+    EXPLAIN myTable;
+  #+END_SRC
 
 **** EXPLAIN
 :PROPERTIES:
