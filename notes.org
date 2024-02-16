@@ -7785,7 +7785,14 @@ Check if php ~short_open_tag~ is enabled. Default is not enabled. Then search ~<
    - ~composer require abc/xyz:0.3.*~ :: specify a range of versions
    - To use this package in PHP file :: ~require 'vendor/autoload.php'; use Abc\Xyz\component1;~
 - Whether packages are installed locally or globally, it will use the user's directory =~/.composer=. If current user is not root, don't run composer with sudo
-- ~composer global require "abc/xyz"~ :: global package is installed under =~/.composer/vendor/bin=, make sure it is in PATH e.g. ~PATH="/myusername/.composer/vendor/bin:$PATH"~
+- ~composer global require "abc/xyz"~
+   - global package is installed
+   - Installed path default is =~/.composer/vendor/bin=
+	  - ~composer global config bin-dir --absolute~ to find out the exact path
+	  - make sure the path is in PATH
+		 - ~echo 'export PATH="$PATH:/root/.config/composer/vendor/bin"' >> ~/.bashrc~
+		 - ~source ~/.bashrc~
+- ~composer global remove abc/xyz~
 - composer.json
    - ~composer init~ :: initialize proj and create composer.json
    - ~composer install~ :: install packages based on ~composer.json~
@@ -7827,29 +7834,60 @@ Check if php ~short_open_tag~ is enabled. Default is not enabled. Then search ~<
 *** Packages
 - PHP Package Repo :: https://packagist.org/
 
-**** squizlabs/php_codesniffer
+**** PHP Code Sniffer
 :PROPERTIES:
 :ID:       CD13E6A8-1163-427E-A12F-850F3DFBBF17
 :CUSTOM_ID:       php:composer:php_codesniffer
 :END:
 
 - AKA phpcs, PHP CodeSniffer, PHP Code Sniffer
-- Prefer to require it as local dev
 - Static code analysis for PHP, JavaScript and CSS files
-- Install this package so that any other phpcs coding standards are installed through composer will be configured correctly and php_codesniffer can use/refer to them
-   - dealerdirect/phpcodesniffer-composer-installer
-- Install other coding standards
+- Install other coding standards ::  https://packagist.org/explore/?type=phpcodesniffer-standard
    - wp-coding-standards/wpcs
    - phpcompatibility/php-compatibility
 
-***** Use an installer
+**** ~squizlabs/php_codesniffer~
+- https://github.com/squizlabs/PHP_CodeSniffer
+   - https://three29.com/set-up-php-codesniffer-in-visual-studio-code/
+   - https://marketplace.visualstudio.com/items?itemName=ikappas.phpcs&ssr=false
+- https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage
+
+#+begin_src sh
+  composer global require "squizlabs/php_codesniffer=*"
+
+  # Make sure composer bin dir in PATH
+  # Check the composer bin dir location
+  # default should be ~/.composer/vendor/bin/
+  # - 2 files are installed under this directory: phpcs and phpcbf
+  # - ~/.composer/vendor/squizlabs/php_codesniffer/src/Standards/PSR12 is the installation path for standard PSR12
+  composer global config bin-dir --absolute
+
+  # export PATH="$PATH:$HOME/.composer/vendor/bin"
+
+  # My docker container is /root/.config/composer/vendor/bin
+  echo 'export PATH="$PATH:/root/.config/composer/vendor/bin"' >> ~/.bashrc
+  source ~/.bashrc
+
+  phpcs --version
+
+  # see all installed coding standards
+  # PSR12 is installed by default
+  phpcs -i
+
+  # List all sniffers included in a standard
+  phpcs --standard=PSR12 -e
+
+  cd /path/to/my-project
+
+  phpcs --standard=PSR12 sample.php
+#+end_src
+
+**** ~phpcodesniffer-composer-installer~
 #+begin_src sh
   # https://github.com/PHPCSStandards/composer-installer
   # It can install phpcs and also standards
 
   composer require --dev dealerdirect/phpcodesniffer-composer-installer
-
-  # List of all standards: https://packagist.org/explore/?type=phpcodesniffer-standard
 #+end_src
 
 - Sample
