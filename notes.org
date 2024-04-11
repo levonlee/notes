@@ -5037,7 +5037,7 @@ Examples
   @return static
 #+END_EXAMPLE
 
-**** Array syntax
+**** Array syntax, array shape
 - int[] :: ~[1,2,3]~
 - string[] :: ~[ 'a', 'b' ]~
 - Order[] :: ~[Order1, Order2]~
@@ -5050,6 +5050,8 @@ Examples
 - array<int, array<int, string>> :: ~[1=> [1=>'a']]~
 - array<string, array<int, string>> :: ~['abc' => [ 1 => 'a' ] ]~ 
 - array{key1: string, key2: string} :: ~['key1' => 'a', 'key2' => 'b']~
+- ~array{key1: string, ...}~ :: eq. ~array{key1: string, ...<array-key, mixed>}~
+   - unsealed array :: aka open array
 - array<int, array{key1: string, key2: string}>
 - list<string> :: array with key starts from 0 ~[0 => 'a', 1 => 'b']~
 - list<array{key1: string, key2: strin}>
@@ -72419,15 +72421,19 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - ~ELT(N, str1, str2, ... )~
       - ~SELECT ELT(1, 'Aa', 'Bb', 'Cc', 'Dd')~ :: ~'Aa'~
 
-***** Concat
-- Concatenate user variable <<mysql:concat>>
+***** ~CONCAT(str1, str2, ...)~
+:PROPERTIES:
+:ID:       E96303CA-B0C4-406A-B44F-35A84C2CB731
+:CUSTOM_ID:       mysql:concat
+:END:
+
+- If there is any value that is ~NULL~, CONCAT returns ~NULL~
   #+BEGIN_SRC sql
     SET @s3 = 'http://s3.amazonaws.com/abc/';
-    -- if there any value that is NULL, CONCAT returns NULL
     SELECT CONCAT('t1', null); -- null
     SELECT REGEXP_REPLACE(thumbnail.uri, "^(s3://)(.*)", CONCAT(@s3,'\\2')) AS thumbnail';
   #+END_SRC
-- Multiple columns all have to have values that are not empty string or null
+- Multiple columns all have to have values that are not empty string nor null
   #+BEGIN_SRC sql
     SELECT * FROM aTable WHERE 1 = 1 AND
 	CONCAT(IF(TRIM(colA), 1, NULL),
@@ -72435,7 +72441,14 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 	       IF(TRIM(colC), 1, NULL));
   #+END_SRC
 - See [[mysql:separator]]
-- Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values <<mysql:concat_ws>>
+
+***** ~CONCAT_WS(separator, str1, str2, ...)~
+:PROPERTIES:
+:ID:       C5CFE68A-941D-434D-9E07-207719C80E0A
+:CUSTOM_ID:       mysql:concat_ws
+:END:
+
+- Concatenate columns or strings of one row. It doesn't skip empty string but it does skip NULL values
   #+BEGIN_SRC sql
     CONCAT_WS(',', colA, colB, 'Column C Value')
     WHERE url_alias.source = CONCAT('node/', n.nid)
@@ -72443,7 +72456,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
     CONCAT_WS(',', NULL, '123', NULL) -- 123
     CONCAT_WS(',', NULL, NULL) -- empty string
     CONCAT_WS(',', NULL, '123', '', NULL) -- 123,,
-    CONCAT_WS(',', NULL, '123', NULLIF(TRIM(''), ''), NULL) -- 123
+    CONCAT_WS(',', NULL, '123', TRIM(NULLIF(' ', '')), NULL) -- 123
   #+END_SRC
 
 ***** Replace all occurances, case-sensitve. multibyte safe <<mysql:replace>>
