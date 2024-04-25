@@ -1914,7 +1914,11 @@ Here's how to remove any 4 byte character:
   var_dump($r === $primaryKeyDBRows);
 #+END_SRC
 
-*** Get values of a column in a multidimensional array <<php:array_column>>
+*** Get values of a column in a multidimensional array
+:PROPERTIES:
+:ID:       B9B80F39-E761-4876-85CC-1BC1C6E93A58
+:CUSTOM_ID:       php:array_column
+:END:
 Since PHP 5.5
 
 #+BEGIN_SRC  php
@@ -1943,6 +1947,9 @@ Since PHP 5.5
 
   $a1 = array_column($records, 'last_name'); // ['Doe', 'Smith', 'Doe']
   $a2 = array_column($records, 'last_name', 'id'); // [2135 => 'Doe', 3245 => 'Smith', 5623 => 'Doe']
+
+  array_column([], 'id') === [];
+  array_column(null, 'id') === null;
 
   // no __get and __isset() magic methods
   class User {
@@ -72729,7 +72736,7 @@ MySQL 5.6
 	  ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
         #+END_SRC
       - Referred by d7:mysql:charset
-- See [[mysql:index hint]]
+- See [[#mysql:index hint][Index Hint]]
   
 **** Composite index
 - An index on multiple columns. MySQL supports up to 16 columns
@@ -72788,7 +72795,12 @@ MySQL 5.6
 	   - ~WHERE c2 = 2 AND c3 > 3 AND c4 = 4~
 		  - operator is ~>~ (range), so the only ~c2~ is used for the index
 
-**** Index Hint <<mysql:index hint>>
+**** Index Hint
+:PROPERTIES:
+:ID:       A07EA877-8FC1-4DA5-B01E-7CC68A5EB6DA
+:CUSTOM_ID:       mysql:index hint
+:END:
+
 - Index hints can be used in ~SELECT~ queries to specify whether or not to use the index column
    - https://dev.mysql.com/doc/refman/8.0/en/index-hints.html
    - With no index hint, MySQL will smartly decided whether to force using index
@@ -73418,7 +73430,12 @@ Update Joined Tables
 
 *** Admin queries
 **** CREATE TABLE IF NOT EXITS <<mysql:create table>>
-**** ALTER TABLE <<mysql:alter table>>
+**** ALTER TABLE
+:PROPERTIES:
+:ID:       7CDD9D61-BD54-414F-8481-0E2827F8952E
+:CUSTOM_ID:       mysql:alter table
+:END:
+
 - [[https://dev.mysql.com/doc/refman/5.7/en/alter-table.html][Alter Table Doc]]
 - column_definition
    - https://dev.mysql.com/doc/refman/5.7/en/create-table.html
@@ -73586,7 +73603,7 @@ Update Joined Tables
 - COLUMN_DEFAULT :: e.g. 0, 'default string'
 - IS_NULLABLE :: YES or NO
 - COLUMN_COMMENT
-- [[mysql:alter table]]
+- See [[#mysql:alter table][ALTER TABLE]]
   #+BEGIN_SRC sql
     alter table myTable
 	    modify colA tinyint unsigned default 0 null;
@@ -73606,7 +73623,7 @@ Update Joined Tables
     EXPLAIN myTable;
   #+END_SRC
 
-**** EXPLAIN
+**** ~EXPLAIN~
 :PROPERTIES:
 :ID:       AE901357-B27A-4A98-B6E8-2B7ACCE59E1D
 :CUSTOM_ID:       mysql:explain
@@ -73614,6 +73631,7 @@ Update Joined Tables
 
 - Use it before ~SELECT~, ~DELETE~, ~INSERT~, ~REPLACE~ AND ~UPDATE~ statements
 - ~EXPLAIN format=JSON SELECT * FROM aTable~
+- See [[#mysql:show processlist][SHOW FULL PROCESSLIST]]
 
 ***** JSON
 - query_block
@@ -73683,9 +73701,30 @@ Update Joined Tables
 - operator :: ~=~
 - key
    - null :: when it's NULL means it's a full table scan
-- Or the target index key is not used due to the provided value (from previous tables) does not exist in this table. Extra column may show Impossible ON condition 
+	  - Or the target index key is not used due to the provided value (from previous tables) does not exist in this table. Extra column may show Impossible ON condition 
 - rows :: number of rows to scan
    - when ~key~ is NULL, it'll be the table's total number of rows
+
+**** ~SHOW FULL PROCESSLIST~
+:PROPERTIES:
+:ID:       C54CC4C8-470F-4A57-BB2F-BD8DB5A5A403
+:CUSTOM_ID:       mysql:show processlist
+:END:
+
+- https://dev.mysql.com/doc/refman/8.0/en/thread-information.html
+- Response columns
+   - Id :: this is the connection ID
+   - User :: e.g. root
+   - Host :: IP:port
+   - db ::
+   - Command :: https://dev.mysql.com/doc/refman/8.0/en/thread-commands.html
+   - Time :: number of seconds the thread has been in its current state
+   - State :: https://dev.mysql.com/doc/refman/8.0/en/general-thread-states.html
+- ~mysqladmin -uroot -pABC -h abc.com --sleep=1 --count=5 --verbose processlist~
+   - ~processlist~ :: command
+   - ~--verbose, -v~ :: eq. ~SHOW FULL PROCESSLIST~
+   - ~--sleep=delayInSeconds, -i delayInSeconds~ :: run the command repeatedly
+	  - ~--count=N, -c N~ :: number of iterations to run
 
 **** SIGNAL / RESIGNAL throw error or warning <<mysql:signal>>
 - https://dev.mysql.com/doc/refman/5.7/en/signal.html
