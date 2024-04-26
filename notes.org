@@ -60308,7 +60308,12 @@ List files or directories by name
 - ~uniq -u filename~
    - Filter out lines that repeated consecutively
 
-*** Replace String, Stream Editor ~sed~ <<linux:sed>>
+*** Replace String, Stream Editor ~sed~
+:PROPERTIES:
+:ID:       B4A7AF9A-D43C-4538-A103-35D3C9AC59E7
+:CUSTOM_ID:       linux:sed
+:END:
+
 - Replace all (g) ~Nick~ with ~John~ case-insensitive
    - ~cat report.txt | sed 's/Nick/John/gi' > report_new.txt~
 - ~sed SCRIPT INPUTFILE...~
@@ -60327,7 +60332,8 @@ List files or directories by name
 		 - ~[~ :: ~\[~
 		 - ~\~ :: ~\\~
 		 - ~]~ :: ~\]~
-		 - ~^~ :: ~\^~ 
+		 - ~^~ :: ~\^~
+		 - ~`~ :: ~\`~
       - ~{replacement}~
 	  - e.g. ~echo 'daytime' | sed -E 's/(...)time/\1light/'~, result is ~xxxlight
 		 - Up to ~\9~
@@ -74250,6 +74256,11 @@ Schema
 - https://www.mysqltutorial.org/tryit/
   
 *** Dump, Restore <<mysql:mysqldump>>
+:PROPERTIES:
+:ID:       4B64B257-ECE7-47C5-9A1C-B67AC519D83A
+:CUSTOM_ID:       mysql:mysqldump
+:END:
+
 - [[https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html][mysqldump doc]]
 #+BEGIN_SRC sh
   mysqldump -u user -p database_name > database_name_backup.sql
@@ -74267,7 +74278,8 @@ Schema
   mysqldump -uroot -p database_name | gzip > backup.sql.gz
 
   # dump specific tables
-  mysqldump -uroot -p database_name t1 t2 t3 > a.sql
+  mysqldump -uroot -pMyPassword --single-transaction --quick --compress my_database t1 t2 t3 | gzip > a.sql.gz
+  # No `CREATE DATABASE`
 
   # don't dump some tables
   mysqldump -uroot -p --ignore-table=database_name.tableNameToIgnore database_name
@@ -74283,7 +74295,47 @@ Schema
 
   # restore one or more tables
   mysql -u username -p db_name < /path/to/table_name.sql
+
+  zcat 1.sql.gz | mysql -uroot -p my_db
+
+  # Change a table name in mysqldump file
+  # /*!40000 ALTER TABLE `my_table` ENABLE KEYS */;
+  (_oldname="my_table"; _newname="my_table_new"; cat 1.sql \
+  | sed "s/^CREATE TABLE \`${_oldname}\`/CREATE TABLE \`${_newname}\`/g" \
+  | sed "s/^DROP TABLE IF EXISTS \`${_oldname}\`/DROP TABLE IF EXISTS \`${_newname}\`/g" \
+  | sed "s/^INSERT INTO \`${_oldname}\`/INSERT INTO \`${_newname}\`/g" \
+  | sed "s/^-- Table structure for table \`${_oldname}\`/-- Table structure for table \`${_newname}\`/g" \
+  | sed "s/^-- Dumping data for table \`${_oldname}\`/-- Dumping data for table \`${_newname}\`/g" \
+  | sed "s/^LOCK TABLES \`${_oldname}\`/LOCK TABLES \`${_newname}\`/g" \
+  | sed "s/^\/\*\!40000 ALTER TABLE \`${_oldname}\`/\/\*\!40000 ALTER TABLE \`${_newname}\`/g" \
+  | grep --color "${_oldname}")
+
+  (_oldname="my_table"; _newname="my_table_new"; gunzip < 1.sql.gz \
+  | sed "s/^CREATE TABLE \`${_oldname}\`/CREATE TABLE \`${_newname}\`/g" \
+  | sed "s/^DROP TABLE IF EXISTS \`${_oldname}\`/DROP TABLE IF EXISTS \`${_newname}\`/g" \
+  | sed "s/^INSERT INTO \`${_oldname}\`/INSERT INTO \`${_newname}\`/g" \
+  | sed "s/^-- Table structure for table \`${_oldname}\`/-- Table structure for table \`${_newname}\`/g" \
+  | sed "s/^-- Dumping data for table \`${_oldname}\`/-- Dumping data for table \`${_newname}\`/g" \
+  | sed "s/^LOCK TABLES \`${_oldname}\`/LOCK TABLES \`${_newname}\`/g" \
+  | sed "s/^\/\*\!40000 ALTER TABLE \`${_oldname}\`/\/\*\!40000 ALTER TABLE \`${_newname}\`/g" \
+  | mysql -uroot -p my_db)
 #+END_SRC
+
+#+begin_src sh
+  # Change a table name in mysqldump file
+
+  # /*!40000 ALTER TABLE `my_table` ENABLE KEYS */;
+  (_oldname="my_table"; _newname="my_table_new"; cat 1.sql \
+  | sed "s/^CREATE TABLE \`${_oldname}\`/CREATE TABLE \`${_newname}\`/g" \
+  | sed "s/^DROP TABLE IF EXISTS \`${_oldname}\`/DROP TABLE IF EXISTS \`${_newname}\`/g" \
+  | sed "s/^INSERT INTO \`${_oldname}\`/INSERT INTO \`${_newname}\`/g" \
+  | sed "s/^-- Table structure for table \`${_oldname}\`/-- Table structure for table \`${_newname}\`/g" \
+  | sed "s/^-- Dumping data for table \`${_oldname}\`/-- Dumping data for table \`${_newname}\`/g" \
+  | sed "s/^LOCK TABLES \`${_oldname}\`/LOCK TABLES \`${_newname}\`/g" \
+  | sed "s/^\/\*\!40000 ALTER TABLE \`${_oldname}\`/\/\*\!40000 ALTER TABLE \`${_newname}\`/g" \
+  | grep --color "${_oldname}")
+
+#+end_src
 
 ~.mydb.cnf~
 #+BEGIN_SRC conf
@@ -75235,7 +75287,7 @@ iconv -f UCS-2 -t UTF-8 a.xml > b.xml
 Add xml declaration
 echo '<?xml version="1.0"?>' | cat - b.xml > c.xml
 
-Delete xml:invalid_characters [[linux:sed][linux:sed]]
+Delete xml:invalid_characters [[#linux:sed][sed]]
 sed "s/&#x1f;//gi; s/&#x1e;//gi;" c.xml > d.xml
 
 *** Copy to Excel
