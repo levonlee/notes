@@ -1922,6 +1922,31 @@ Here's how to remove any 4 byte character:
   var_dump($r === $primaryKeyDBRows);
 #+END_SRC
 
+**** Convert Numeric Arrays to Associative Arrays
+#+begin_src php
+  function arrayNumericToAssociative(array $keys, array $array, $options = array()): array {
+	  array_walk(
+		  $keys,
+		  function ($v, $k) use (&$r, $array, $options) {
+			  if (!isset($v)) {
+				  return $r;
+			  }
+			  $r[$v] = array_key_exists($k, $array)
+				  ? $array[$k]
+				  : ($options['default'] ?? null);
+			  return true;
+		  },
+		  $r = array()
+	  );
+	  return $r;
+  }
+
+  $keys = array('a', 'b', 'c');
+  arrayNumericToAssociative($keys, [1, 2, 3, 4]) === ['a' => 1, 'b' => 2, 'c' => 3];
+  arrayNumericToAssociative($keys, [1, 2]) === ['a' => 1, 'b' => 2, 'c' => null];
+  arrayNumericToAssociative($keys, []) === ['a' => null, 'b' => null, 'c' => null];
+#+end_src
+
 *** Get values of a column in a multidimensional array
 :PROPERTIES:
 :ID:       B9B80F39-E761-4876-85CC-1BC1C6E93A58
