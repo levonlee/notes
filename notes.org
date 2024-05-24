@@ -54,6 +54,72 @@ Install multiple versions of PHP
   php -i | grep "Loaded Configuration File"
 #+END_SRC
 
+*** Xdebug
+:PROPERTIES:
+:ID:       7DBAEC2F-592A-45D3-8D5A-0D73E3CDBA46
+:CUSTOM_ID:       php:xdebug
+:END:
+
+- https://xdebug.org/docs/install
+
+#+begin_src sh
+  apt update
+  apt install php7.4-xdebug
+
+  # find which xdebug ini file is loaded
+  php --ini | grep xdebug
+
+  # e.g. /etc/php/7.4/cli/conf.d/20-xdebug.ini
+
+  # /etc/php/7.4/cli/conf.d/20-xdebug.ini
+  # and
+  # /etc/php/7.4/fpm/conf.d/20-xdebug.ini both are symlink to:
+  # /etc/php/7.4/mods-available/xdebug.ini
+
+  # add the following line to /etc/php/7.4/mods-available/xdebug.ini
+
+  # zend_extension=xdebug.so
+  # xdebug.mode=debug
+  # xdebug.start_with_request=yes
+  # xdebug.idekey=docker
+  # # Xdebug v3 uses port 9003 as default
+  # # xdebug.client_port=9003
+  # # The internal IP of the docker host (Mac). Eq. `ipconfig getifaddr en0`
+  # xdebug.client_host=host.docker.internal
+
+  # create a webpage that runs:
+  # <?php
+  # var_dump(xdebug_info());
+
+  # Xdebug version should also appear after running php -v
+#+end_src
+
+**** PhpStorm set up
+- Xdebug is installed inside a docker with PHP with port 80 exposed and mapped to docker host port 80
+- https://dev.to/jackmiras/xdebug-in-phpstorm-with-docker-2al8
+- Make sure Settings > Build, Execution, Deployment > Docker is connection successful
+   - Docker for Mac: default unix:///var/run/docker.sock
+- Create a Server on PhpStorm
+   - Settings > PHP > Servers
+	  - Host: localhost
+	  - Port: 80
+	  - Debugger: Xdebug
+	  - Use path mappings
+- Add PHP Remote Debug
+   - On the main debug tool, click on 3 vertical dots and choose edit
+   - Add New Configuration > PHP Remote Debug
+	  - Filter debug connection by IDE key: check
+		 - Server: the server we just created above
+		 - IDE key (session id): docker
+- Click Debug button
+- Extra settings
+   - PHP > Debug
+	  - PHP > Debug > Xdebug
+		 - Force break at first line when no path mapping specified: uncheck
+		 - Force break at first line when a script is outside the project: uncheck
+	  - PHP > Debug > Settings
+		 - Notify if debug session was finished without being paused: uncheck
+ 
 ** Configuration & CLI <<php:config>>
 *** Basics
 - CLI <<php:cli>>
@@ -1759,9 +1825,12 @@ Here's how to remove any 4 byte character:
 
 *** Search by keys and return values in order
 #+BEGIN_SRC php
-  function arrayFilterByKeysInOrder($array, $keys, $default = null, $valuesOnly = true) {
+  function arrayFilterByKeysInOrder($array, $keys, $default = null, $valuesOnly = true, $notToSetIfNotExists = false) {
 	  $allKeys = array_keys($array);
 	  $array2 = [];
+	  if ($notToSetIfNotExists) {
+		  return array_intersect_key($array, array_flip($keys));
+	  }
 	  foreach ($keys as $k) {
 		  $r = (in_array($k, $allKeys)) ? $array[$k] : $default;
 		  if ($valuesOnly) {
@@ -1779,8 +1848,27 @@ Here's how to remove any 4 byte character:
 	  'b' => 'abc',
 	  'c' => 321,
   ];
-  var_dump(arrayFilterByKeysInOrder($a, ['c', 'abc', 'a']));
-  // ['c' => 321, 'abc' => null, 'a' => 123]
+  var_dump(
+	  arrayFilterByKeysInOrder($a, ['c', 'abc', 'a'])  == [
+		  321,
+		  null,
+		  123
+	  ]
+  );
+  var_dump(
+	  arrayFilterByKeysInOrder($a, ['c', 'abc', 'a'], null, false)  == [
+		  'c' => 321,
+		  'abc' => null,
+		  'a' => 123
+	  ]
+  );
+  var_dump(
+	  arrayFilterByKeysInOrder($a, ['c', 'abc', 'a'], null, false, true)  == [
+		  'c' => 321,
+		  'a' => 123,
+	  ]
+  );
+
 #+END_SRC
 
 *** Search by value and return the first key by value ~array_search~ <<php:array_search>>
@@ -58667,7 +58755,9 @@ Find which package owns a file =dpkg -S /etc/crontab=
 
 **** ~apt-get~ ~apt-cache~ Ubuntu
 - Since Ubuntu 16.04, ~apt~ is introduced and it's a subset of ~apt-get~ and ~apt-cache~
-- Update list of available packages ~/var/lib/apt/lists/~ :: ~apt-get update~
+- Update list of available packages ~/var/lib/apt/lists/~
+   - ~apt update~
+   - ~apt-get update~
 - It might return failed to fetch error. Might be due to [[#linux:dns][linux:dns]] nameserver is changed to a local ip in a docker container in a docker network. Add a line ~nameserver 8.8.8.8~ to ~/etc/resolv.conf~. This way the ~/etc/resolv.conf~ is not persisted. You can also config DNS in Docker daemon
   #+BEGIN_SRC dockerfile
     RUN echo "nameserver 10.1.1.1" >> /etc/resolv.conf && \
@@ -58685,7 +58775,9 @@ Find which package owns a file =dpkg -S /etc/crontab=
    - ~apt -qq list xyz~
    - ~apt list -a --installed openssh-client~
 - Return info of a package before it's installed
-   - ~apt show php~ or ~apt-cache show php~ or ~apt list -a --installed php~ (shows installed if it's installed)
+   - ~apt show php~
+   - or ~apt-cache show php~
+   - or ~apt list -a --installed php~ (shows installed if it's installed)
 - Search package by regex name (return name and description only) :: ~apt-cache search php~
 - Search packages with name starting php (return names only) :: ~apt-cache pkgnames php5~
 - All packages' names (return names only) :: ~apt-cache pkgnames~
