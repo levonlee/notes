@@ -3317,6 +3317,8 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
    - sanitize HTML attribute values (pure text)
 	  - JavaScript inside an HTML attribute
 		#+begin_src php
+		  <?php
+
 		  // Title should be plain text
 		  $title = "<span style=\"color: red;\">It's supposed to be, `well`, \"plain\" text</span>";
 		  $flags = ENT_QUOTES;
@@ -3334,20 +3336,45 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
 		  <code>{"key": [{"fieldA": "#1"}, {"fieldB": "#2"}]}</code>
 		  HTML;
 		  $htmlJsonEscaped = htmlspecialchars(json_encode($html), $flags);
+		  $jsonEscapedInScript = json_encode($html, JSON_UNESCAPED_UNICODE);
 		  $content4 = htmlspecialchars(json_encode("I'm good, too"), $flags);
-
+		  $link = '<a href="#">Click here</a>';
+		  $data = [
+			  'abc' => 123,
+			  'a' => [
+				  "I'm Li",
+				  $link,
+				  // no need to escape per value
+				  htmlspecialchars($link),
+			  ],
+		  ];
+		  $dataJsonHtmlString = htmlspecialchars(json_encode(json_encode($data)));
+		  $dataJson = htmlspecialchars(json_encode($data));
 		  // Use JavaScript literal for multi-line string
 		  echo <<<HTML
+			  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 			  <script>
-				  function myFunc(content, content2, content3, content4) {
-					  console.log(content);
+				  function htmlDecode(input) {
+					  var doc = new DOMParser().parseFromString(input, "text/html");
+					  return doc.documentElement.textContent;
+				  }
+
+				  function myFunc(content, content2, content3, content4, jsonDataString, jsonData) {
+					  console.log('content', content);
 					  document.getElementById('content').innerHTML = content;
-					  console.log(content2);
+					  console.log('content2', content2);
 					  console.log(content3);
 					  console.log(content4);
+					  console.log(htmlDecode(content));
+					  console.log($jsonEscapedInScript);
+					  console.log(_.isEqual(JSON.parse(jsonDataString), jsonData));
+					  var link = '<a href="#">Click here</a>';
+					  console.log(jsonData.a[1] === link);
+					  console.log(jsonData.a[2]);
+					  console.log(htmlDecode(jsonData.a[2]) === link);
 				  }
 			  </script>
-			  <span onmouseover="myFunc($htmlJsonEscaped, 123, 'hello I\'m good', $content4);">Hover me!</span>
+			  <span onmouseover="myFunc($htmlJsonEscaped, 123, 'hello I\'m good', $content4, $dataJsonHtmlString, $dataJson);">Hover me!</span>
 			  <div id="content"></div>
 		  HTML;
 		#+end_src
@@ -73536,10 +73563,48 @@ Update Joined Tables
    - Never do ~$convertedValue = $aColumnValue + 0;~ :: throws warning when input value is empty string
       - null is fine and converted to 0 in int or float
 
+**** Bitwise
+:PROPERTIES:
+:ID:       852FFEF4-ED18-4CA8-B9D8-08E28DB090DD
+:CUSTOM_ID:       mysql:bitwise
+:END:
+
+#+begin_src sql
+  SELECT
+  -- 1
+  CONV(131072, 10, 2) = 100000000000000000,
+  -- 1
+  1 << 17 = 131072
+  -- 1
+  LOG2(1 << 17) = 17,
+  -- 1
+  (131072 & (1 << 17)) = 131072,
+  -- 1
+  (131072 & (1 << 17)) > 0,
+  -- 1
+  CONV((1 << 17) | (1 << 1), 10, 2) = 100000000000000010,
+  -- 1, have the flag
+  ((1 << 17) | (1 << 1)) & (1 << 1) > 0,
+  -- 1, have the flag
+  ((1 << 17) | (1 << 1)) & (1 << 1) = (1 << 1),
+  -- 1, doesn't have the flag
+  ((1 << 17) | (1 << 1)) & (1 << 2) = 0
+  -- 1, remove a flag
+  CONV(
+  ((1 << 17) | (1 << 1)) & ~ (1 << 1),
+  10,2) = 100000000000000000
+  -- 1, remove a flag
+  ((1 << 17) | (1 << 1)) & ~ (1 << 1) = (1 << 17)
+#+end_src
+
 **** String functions [[mysql:string:functions]]
 **** Comparison functions and Operators
 - ~COALESCE(value1, value2, ...)~
    - Returns the first non-NULL value in the list, or NULL if there are no non-NULL values
+   - ~WHERE COALESCE(col1, col2, col3) IS NOT NULL~ eq.
+	  - ~WHERE col1 IS NOT NULL OR col2 IS NOT NULL OR col3 IS NOT NULL~
+   - ~WHERE COALESCE(col1, col2, col3) IS NULL~ eq.
+	  - ~WHERE col1 IS NULL AND col2 IS NULL AND col3 IS NULL~
 - ~<=>~ :: Null-safe equal to operator
   #+begin_src sql
     -- Like `=` operator. Return 1 if both operands are NULL. Return 0 if one operand is NULL
@@ -73548,6 +73613,7 @@ Update Joined Tables
     SELECT 1 = 1, NULL = NULL, 1 = NULL;
     -- 1, NULL, NULL
   #+end_src
+
 **** Transaction
 #+BEGIN_SRC sql
   SET autocommit = 0;
