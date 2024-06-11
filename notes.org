@@ -2324,6 +2324,8 @@ Associative arrays
 
 *** ~array_splice~ Insert to any position of an array <<php:array_splice>>
 #+BEGIN_SRC php
+  <?php
+
   $original = array('a', 'b', 'c', 'd', 'e');
   $inserted = array('x', 'y');
 
@@ -2375,12 +2377,17 @@ Associative arrays
   );
 
   var_dump(
+	  'array_keys($original)',
+	  array_keys($original) === ['a', 'b', 'c', 0, 1, 'd', 'e'],
 	  'Find Index By Key',
 	  findIndexByKey($original, 'c') === 2,
-	  findIndexByKey($original, 'd') === 3,
-	  findIndexByKey(array_merge($original, array('d' => 6)), 'd') === 3,
+	  findIndexByKey($original, 'd') === 5,
+	  findIndexByKey($original, 1) === 4,
+	  findIndexByKey($original, '1') === false,
+	  findIndexByKey($original, 0) === 3,
+	  findIndexByKey($original, '0') === false,
+	  findIndexByKey(array_merge($original, array('d' => 6)), 'd') === 5,
 	  findIndexByKey(array('a' => 1, 'b' => 2, 'c' => 3, 'd' => 4, 'e' => 5, 'd' => 6), 'd') === 3
-
   );
 
   var_dump(
@@ -2408,7 +2415,7 @@ Associative arrays
 		  'y' => 7,
 		  'e' => 5,
 	  ),
-	  'Insert after key e, last key',
+	  'Insert after key e (the last key in original array)',
 	  insertKeyValuePairsToAssocArray($original, 'e', $inserted, false) === array(
 		  'a' => 1,
 		  'b' => 2,
@@ -2420,7 +2427,7 @@ Associative arrays
 		  'x' => 6,
 		  'y' => 7,
 	  ),
-	  'Insert after key 1, last key',
+	  'Insert after key 1',
 	  insertKeyValuePairsToAssocArray($original, 1, $inserted, false) === array(
 		  'a' => 1,
 		  'b' => 2,
@@ -2435,24 +2442,31 @@ Associative arrays
   );
 
   function findIndexByKey($array, $key) {
-	  // If the $array is associative array with no numeric keys and no duplicate keys, below can be used
-	  return array_search($key, array_keys($array));
+	  return array_search($key, array_keys($array), true);
   }
 
-  var_export(insertKeyValuePairsToAssocArray(
-	  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null], 'z', ['xyz' => true], false) ===
+  var_export(
+	  insertKeyValuePairsToAssocArray(
+		  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null],
+		  'z', ['xyz' => true],
+		  false
+	  ) ===
 	  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null, 'xyz' => true]
   );
 
-  var_export(insertKeyValuePairsToAssocArray(
-	  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null], 'z', ['xyz' => true, 'x' => 'override'], false) ===
+  var_export(
+	  insertKeyValuePairsToAssocArray(
+		  [1, 2, 3, 'x' => 'abc', 'y' => 1, 'z' => null],
+		  'z', ['xyz' => true, 'x' => 'override'],
+		  false
+	  ) ===
 	  [1, 2, 3, 'x' => 'override', 'y' => 1, 'z' => null, 'xyz' => true]
   );
 
   /**
    ,* Insert key/value pairs before or after a key/value
    ,*
-   ,* @param array $array must be associative array with no numeric keys
+   ,* @param array $array any array
    ,* @param string|int $insertAtThisKey
    ,* @param array $insertItems
    ,* @param bool $insertBefore otherwise, insert after
@@ -2461,18 +2475,11 @@ Associative arrays
    ,* @throws Exception
    ,*/
   function insertKeyValuePairsToAssocArray($array, $insertAtThisKey, $insertItems, $insertBefore = true): array {
-	  if (! array_key_exists($insertAtThisKey, $array)) {
+	  if (!array_key_exists($insertAtThisKey, $array)) {
 		  throw new Exception('Key cannot be found.');
 	  }
-	  // $index = array();
-	  // foreach ($array as $_k => $_v) {
-	  // 	$index[] = $_k;
-	  // }
-	  array_walk($array, function ($v, $k) use (&$index) {
-		  $index[] = $k;
-	  }, $index = []);
-	  $indexFlip = array_flip($index);
-	  $indexToInsert = $insertBefore ? $indexFlip[$insertAtThisKey] : $indexFlip[$insertAtThisKey] + 1;
+	  $keyAtIndex = findIndexByKey($array, $insertAtThisKey);
+	  $indexToInsert = $insertBefore ? $keyAtIndex : $keyAtIndex + 1;
 	  $arrayEnd = array_splice($array, $indexToInsert);
 	  $arrayStart = array_splice($array, 0, $indexToInsert);
 	  return array_merge($arrayStart, $insertItems, $arrayEnd);
@@ -2496,7 +2503,14 @@ Associative arrays
   $output = array_slice($input, -2, 1);  // returns "d"
   $output = array_slice($input, 0, 3);   // returns "a", "b", and "c"
 #+end_src
-*** ~array_fill~ fill values <<php:array_fill>>
+*** ~array_fill~ fill values
+:PROPERTIES:
+:ID:       1F79EFD9-F80E-48CA-A4E6-66BA00056ED8
+:CUSTOM_ID:       php:array_fill
+:END:
+
+- See [[#php:range][range()]]
+
 #+BEGIN_SRC php
   // array_fill ($start_index, $num, $value)
   var_dump(
@@ -3001,10 +3015,13 @@ Associative arrays
   // [ a => 2, b => 1, c => 3]
 #+END_SRC
 
-*** range <<php:range>>
-#+BEGIN_SRC php
-  <?php
+*** range
+:PROPERTIES:
+:ID:       CAA35B55-D75E-43A2-AF84-067C4EB553D5
+:CUSTOM_ID:       php:range
+:END:
 
+#+BEGIN_SRC php
   // When start and end are numbers
   var_export(range(2,2) === array(2));
   var_export(range(2,3) === array(2, 3));
