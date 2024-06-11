@@ -2323,9 +2323,9 @@ Associative arrays
 #+END_SRC
 
 *** ~array_splice~ Insert to any position of an array <<php:array_splice>>
-#+BEGIN_SRC php
-  <?php
 
+**** Example
+#+BEGIN_SRC php
   $original = array('a', 'b', 'c', 'd', 'e');
   $inserted = array('x', 'y');
 
@@ -2466,7 +2466,7 @@ Associative arrays
   /**
    ,* Insert key/value pairs before or after a key/value
    ,*
-   ,* @param array $array any array
+   ,* @param array $array array_merge is used for numeric keys, please use it carefully. If array is purely string-keyed, no problem
    ,* @param string|int $insertAtThisKey
    ,* @param array $insertItems
    ,* @param bool $insertBefore otherwise, insert after
@@ -2485,6 +2485,171 @@ Associative arrays
 	  return array_merge($arrayStart, $insertItems, $arrayEnd);
   }
 #+END_SRC
+
+**** Example not using array_splice
+#+begin_src php
+  $original = array(
+	  array(
+		  'paymentid' => '2255997',
+		  'subItems' =>
+			  array(
+				  array(
+					  'paymentid' => '2255995',
+				  ),
+				  array(
+					  'paymentid' => '2255996',
+				  ),
+			  ),
+	  ),
+	  array(
+		  'paymentid' => '2256997',
+		  'subItems' =>
+			  array(
+				  array(
+					  'paymentid' => '2256995',
+				  ),
+				  array(
+					  'paymentid' => '2256996',
+				  ),
+			  ),
+	  ),
+  );
+
+  $result = array(
+	  array(
+		  'paymentid' => '2255997',
+		  'subItems' =>
+			  array(
+				  array(
+					  'paymentid' => '2255995',
+				  ),
+				  array(
+					  'paymentid' => '2255996',
+				  ),
+			  ),
+	  ),
+	  array(
+		  'paymentid' => '2255995',
+	  ),
+	  array(
+		  'paymentid' => '2255996',
+	  ),
+	  array(
+		  'paymentid' => '2256997',
+		  'subItems' =>
+			  array(
+				  array(
+					  'paymentid' => '2256995',
+				  ),
+				  array(
+					  'paymentid' => '2256996',
+				  ),
+			  ),
+	  ),
+	  array(
+		  'paymentid' => '2256995',
+	  ),
+	  array(
+		  'paymentid' => '2256996',
+	  ),
+  );
+
+  $copy = [];
+  foreach ($original as $key => $value) {
+	  $copy[] = $value;
+	  if (!($value['subItems'] ?? null)) {
+		  continue;
+	  }
+	  $itemsToInsert = $value['subItems'];
+	  // $copy[$key]['subItems'] = [];
+	  $copy = array_merge($copy, $itemsToInsert);
+  }
+
+  var_dump($copy === $result);
+
+  $original = array(
+	  2255997 =>
+		  array(
+			  'paymentid' => '2255997',
+			  'subItems' =>
+				  array(
+					  2255995 => array(
+						  'paymentid' => '2255995',
+					  ),
+					  2255996 => array(
+						  'paymentid' => '2255996',
+					  ),
+				  ),
+		  ),
+	  2256997 =>
+		  array(
+			  'paymentid' => '2256997',
+			  'subItems' =>
+				  array(
+					  2256995 => array(
+						  'paymentid' => '2256995',
+					  ),
+					  2256996 => array(
+						  'paymentid' => '2256996',
+					  ),
+				  ),
+		  ),
+  );
+
+  $result = array(
+	  2255997 =>
+		  array(
+			  'paymentid' => '2255997',
+			  'subItems' =>
+				  array(
+					  2255995 => array(
+						  'paymentid' => '2255995',
+					  ),
+					  2255996 => array(
+						  'paymentid' => '2255996',
+					  ),
+				  ),
+		  ),
+	  2255995 => array(
+		  'paymentid' => '2255995',
+	  ),
+	  2255996 => array(
+		  'paymentid' => '2255996',
+	  ),
+	  2256997 =>
+		  array(
+			  'paymentid' => '2256997',
+			  'subItems' =>
+				  array(
+					  2256995 => array(
+						  'paymentid' => '2256995',
+					  ),
+					  2256996 => array(
+						  'paymentid' => '2256996',
+					  ),
+				  ),
+		  ),
+	  2256995 => array(
+		  'paymentid' => '2256995',
+	  ),
+	  2256996 => array(
+		  'paymentid' => '2256996',
+	  ),
+  );
+
+  $copy = [];
+  foreach ($original as $key => $value) {
+	  $copy[$key] = $value;
+	  if (!($value['subItems'] ?? null)) {
+		  continue;
+	  }
+	  foreach ($value['subItems'] as $subKey => $subValue) {
+		  $copy[$subKey] = $subValue;
+	  }
+  }
+
+  var_dump($copy === $result);
+#+end_src
 
 *** ~array_slice~ Extract a slice of the array
 #+begin_src php
