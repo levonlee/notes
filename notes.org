@@ -70761,6 +70761,31 @@ RawGit is down.. Use raw.githack.com
 		 - On the GitLab app, administrators of a project can now change visibility settings / access control for GitLab Pages
 			- Settings > General > Visibility, project features, permissions > Pages
 
+*** Checkout merge requests
+Add the following line into ~/path/to/project/.git/config~ so that
+
+#+begin_src conf
+  [remote "origin"]
+	  url = git@my.domain.com:root/myproject.git
+	  fetch = +refs/heads/*:refs/remotes/origin/*
+  # new line	
+	  fetch = +refs/merge-requests/*/head:refs/remotes/origin/merge-requests/*
+	  pushurl = git@my.domain.com:root/myproject.git
+#+end_src
+
+~git fetch~ now should pull all merge requests e.g. ~origin/merge-requests/999~ with ~refs/merge-requests/999/head~
+
+Add an alias to ~~/.gitconfig~
+#+begin_src conf
+  [alias]
+	  mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+#+end_src
+
+#+begin_src sh
+  # checkout origin/merge-requests/999 to local mr-origin-999
+  git mr origin 999
+#+end_src
+
 ** SSH Key Fingerprint <<github:ssh:key:fingerprint>>
 - On GitHub, it shows the fingerprint for a public key you upload. To see which private/public key on your local machine matches the finger print
   #+BEGIN_SRC sh
@@ -80077,7 +80102,7 @@ After that, to show sub/super scripts, type these =Sometext_{subscript}= =Somete
 
 *** Include image
 #+BEGIN_EXAMPLE
-  [[file:images/abc.jpg]]
+  [[[[file:images/abc.jpg]]]]
   And C-c C-x C-v to toggle display images on Emacs
 #+END_EXAMPLE
 
