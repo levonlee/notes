@@ -34021,7 +34021,12 @@ These values are considered as false
 
 ** Closure, Javascript Singleton <<js:closure>>
 *** Compare to PHP Closure [[#php:closure][php:closure]]
-*** IIFE (Immediately Invoked Function Expression) <<js:iife>>
+*** IIFE (Immediately Invoked Function Expression)
+:PROPERTIES:
+:ID:       37BFF890-1E74-4719-8702-6C1C1D26229B
+:CUSTOM_ID:       js:iife
+:END:
+
 #+BEGIN_SRC js
   // function declaration
   function() { console.log('test') }
@@ -34029,54 +34034,105 @@ These values are considered as false
   // returns function(){ console.log('test') }
   (function() { console.log('test'); })
 
-  // Immediately Invoked Function Expression (IIFE) Variation 1
-  (function() {
-      console.log('test');
+  function myFunc() {
+	  // true except when var anInstance = new myFunc();
+	  console.log(this === window);
+	  return "global function myFunc";
+  }
 
-      return 'test';
+  // Immediately Invoked Function Expression (IIFE) Variation 1
+  var abc = (function() {
+	  console.log(this === window);
+	  return 'test';
   })();
 
+  console.log(abc === "test");
+
+  // Or
+  var abc = (function myFunc() {
+	  console.log(this === window);
+	  return 'test';
+  })();
+
+  console.log(abc === "test");
+  console.log(myFunc() === "global function myFunc");
+
   // IIFE Variation 2
-  (function() {
-      console.log('test');
+  var abc = (function() {
+	  console.log(this === window);
+	  return "test";
   }());
+
+  // Or
+  var abc = (function myFunc() {
+	  return "test";
+  }());
+
+  console.log(abc === "test");
+  console.log(myFunc() === "global function myFunc");
 
   // IIFE Variation 3
   // ! eq. to +, -, or even ~. Any unary operator
-  // returns true. Don't use it for assigning value to a variable
-  // Recommended
+  // returns true. because the function run returns nothing (undefined) !undefined === true
+  // Don't use it for assigning value to a variable
   !function() {
-      console.log('test');
+	  console.log(this === window);
   }();
 
-  // IIFE Variation 4. Use parent's `this` inside the IIFE
-  // Refer to js:function:call
-  ;(function() {
-      console.log('print immediately');
-      var localVar = 'a'
-      this.globalVar = localVar;    
-  }.call(this));
-
-  // return false
+  // return false because IIFE returns 'test' and !'test' === false
   !function() {
-      console.log('test');
-
-      return 'test';
+	  return 'test';
   }();
 
   // Don't do this. abc will be false
   var abc= !function() { return 'IIFE'; }();
 
-
-  // IIFE Variation 1 only for assigning return value to a variable
-  var result = function() {
-      return 'test';
+  // IIFE Variation 4 (only for assigning return value to a variable)
+  var abc = function() {
+	  return 'test';
   }();
 
-  // IIFE Variation 2
-  var result = (function() {
-      return 'test';
-  })();
+  // Or
+  var abc = function myFunc() {
+	  return 'test';
+  }();
+
+  // IIFE Variation 5. Use parent's `this` inside the IIFE
+  // See js:function:call
+
+  function Person() {
+	  this.instanceProperty = 10;
+	  var varVar = "a";
+	  let letVar = "b";
+	
+	  setTimeout(function() {
+		  console.log('Person setTimeout callback is not an arrow function');
+		  console.log(this === window);
+		  console.log(varVar === "a");
+		  console.log(letVar === "b");
+	  }, 0);
+
+	  setTimeout(() => {
+		  console.log('Person setTimeout callback is an arrow function executed under the instance scope');
+		  console.log(this !== window);
+		  console.log(this.instanceProperty === 10);
+		  console.log(varVar === "a");
+		  console.log(letVar === "b");
+		  ;(function() {
+			  console.log("IIFE with 'this' overriden");
+			  console.log(this !== window);
+			  console.log(this.instanceProperty === 10);
+			  console.log(varVar === "a");
+			  console.log(letVar === "b");
+		  }.call(this));
+		  !function() {
+			  console.log("IIFE without overriding 'this'");
+			  console.log(this === window);
+			  console.log(varVar === "a");
+			  console.log(letVar === "b");
+		  }();
+	  }, 0);
+  }
 #+END_SRC
 
 *** Revealing Module Pattern <<js:closure:revealing-module-pattern>>
@@ -35028,7 +35084,7 @@ Match one tag only
    - Pass no more than 65536 arguments/elements in array
 - ~.call(thisArg, arg1, ... , argN)~ :: Pass arguments as arguments to a function which accepts multiple arguments
    - ~thisArg~ :: pass it into funct as ~this~ in funct
-   - Refer to [[js:iife][js:iife]] 
+   - See [[#js:iife][IIFE]] 
 
 #+BEGIN_SRC js
   var numbers = [5,6,2,3,7];
@@ -35764,6 +35820,28 @@ https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
   JSON.stringify(obj1) === JSON.stringify(obj2)
 #+END_SRC
 
+*** Reuse previous value when declaring
+#+begin_src js
+  var obj = {
+	key1: "it ",
+	key2: "",
+	get key3() {
+	  console.log("key3 get is run multiple times");
+	  return this.key2 + " hello";
+	},
+	set init(dummy) {
+	  console.log("key2 is set only once");
+	  this.key2 = this.key1 + " hello";
+	}
+  };
+  obj.init = "";
+  console.log(obj.key2 === obj.key1 + " hello");
+  console.log(obj.key3 === obj.key2 + " hello");
+  console.log(obj.key3 === obj.key2 + " hello");
+  obj.key3 = "override";
+  console.log(obj.key3 === obj.key2 + " hello");
+#+end_src
+
 *** Example
 #+BEGIN_SRC js
   function CustomerBooking(bookingId, customerName, film, showDate) {
@@ -36246,29 +36324,29 @@ Refer to: Add "method" in Function class, Add "inherits" in Function class
    - So while searching for ~this~ which is not present in the current scope, an arrow function ends up finding the ~this~ from its enclosing scope
    - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions
      #+BEGIN_SRC js
-       window.age = 10;
+	   window.age = 10;
 
-       function Person () {
-	 this.age = 42; // this Person instance (beause it is created by new Person)
-	 // will have property age as 42
-	 console.log('this.age outside setTimeout', this.age); // 42
+	   function Person () {
+		   this.age = 42; // this Person instance (beause it is created by new Person)
+		   // will have property age as 42
+		   console.log('this.age outside setTimeout', this.age); // 42
 
-	 setTimeout(function () {
-	   // This is a traditional function (anonymous) and it is not created by
-	   // using `new` So `this` is the window scope
-	   console.log('this.age', this.age); // 10
-	 }, 100);
+		   setTimeout(function () {
+			   // This is a traditional function (anonymous) and it is not created by
+			   // using `new` So `this` is the window scope
+			   console.log('this.age', this.age); // 10
+		   }, 100);
 
-	 setTimeout(() => {
-	   // Arrow function executing in the "p" (an instance of Person) scope
-	   console.log('this.age', this.age); // yields "42" because the function
-					      // executes on the Person scope
-	 }, 100);
+		   setTimeout(() => {
+			   // Arrow function executing in the "p" (an instance of Person) scope
+			   console.log('this.age', this.age); // yields "42" because the function
+			   // executes on the Person scope
+		   }, 100);
 
-       }
+		 }
 
-       var p = new Person();
-       console.log('window.age', window.age); // 10
+	   var p = new Person();
+	   console.log('window.age', window.age); // 10
      #+END_SRC
 - self :: there is no self keyword in JavaScript. If JavaScript is run on a browser, ~window.self = window~ and all properties of ~window~ can be directly accessed. So ~self~ is ~windows~ unless it's overriden in other scopes
 
