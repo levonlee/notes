@@ -69272,7 +69272,20 @@ Show file names only between 2 commits
    - ~git reset --hard HEAD^~ :: set branch HEAD to the second last commit
    - ~git reset HEAD^~ :: set branch HEAD to the second last commit, the last commit changes are in working tree
    - ~git reset~ rewrites history. Only use it for local changes that are never pushed to remote
-   - ~git revert c1 --no-edit~ :: undo commit c1 and creates a commit. ~--no-edit~ means to skip the commit message
+   - ~git revert c2 --no-edit~ :: undo commit c1 and creates a commit. ~--no-edit~ means to skip the commit message
+	  - https://mirrors.edge.kernel.org/pub/software/scm/git/docs/howto/revert-a-faulty-merge.txt
+	  - If c2 is a merge commit, it will have more than 1 parents
+		 - Running ~git log c2~ shows all sub commits that are merged in ~c2~ merge commit. ~git log c2 -1~ only shows the merge commit. Something like this shows
+		   #+begin_src text
+			 commit c2
+			 Merge: parent1 parent2
+			 Author: Li Li <li@li.com>
+			 Date:   Mon Jun 24 11:36:52 2024 -0400
+
+				 Merge branch 'feature-branch' into release
+		   #+end_src
+		   In this case, parent1 is original commit in the feature-branch, parent2 is c1 in the current release branch, but it is better for you always check.
+		   To revert c2 on release branch, ~git revert c2 -m 1~ where ~-m 1~ is to choose parent1
 
 ** Checkout a folder from another branch to current branch
 current branch is master and get folder target-folder/ from feature branch
