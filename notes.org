@@ -3508,8 +3508,6 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
    - sanitize HTML attribute values (pure text)
 	  - JavaScript inside an HTML attribute
 		#+begin_src php
-		  <?php
-
 		  // Title should be plain text
 		  $title = "<span style=\"color: red;\">It's supposed to be, `well`, \"plain\" text</span>";
 		  $flags = ENT_QUOTES;
@@ -55381,7 +55379,7 @@ http://styleguides.io/
 
 ** System Version, Distro
 
-| =uanme -a=          | all info       |
+| =uname -a=          | all info       |
 | =uname -r=          | Kernal release |
 |                     |                |
 | =cat /etc/*release= | Linux distro   |
@@ -58942,7 +58940,7 @@ Then you delete ~sudo ufw delete allow 22~
    - ~cat /etc/timezone~ :: file stores the timezone. Default is ~Etc/UTC~
    - All timezones are stored in ~/usr/share/zoneinfo/$TZ~
       - Toronto is ~/usr/share/zoneinfo/America/Toronto~ file but it's a link to Montreal file
-- Refer to [[docker:timezone][docker:timezone]] for changing timezone
+- See [[#docker:timezone][Docker > timezone]] for changing timezone
 
 ** Font <<<linux:font>>>
 - Install Source Code Pro
@@ -62349,11 +62347,25 @@ ADD and COPY are the same except
 
 Always use COPY if it can do what you want
 
-*** Timezone <<docker:timezone>>
-#+BEGIN_SRC dockerfile
-  ENV TZ=America/Toronto
-  RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-#+END_SRC
+*** Timezone
+:PROPERTIES:
+:ID:       FDEEC4BF-1EF5-4986-8DA5-EE5874C64D50
+:CUSTOM_ID:       docker:timezone
+:END:
+
+- Works for Ubuntu
+  #+BEGIN_SRC dockerfile
+	ENV TZ=America/Toronto
+	RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+  #+END_SRC
+  #+begin_src sh
+	# /etc/localtime -> /usr/share/zoneinfo/Etc/UTC
+	ll /etc/localtime
+
+	cat /etc/timezone
+	Etc/UTC
+  #+end_src
+- See [[#image:mysql:env][MySQL Docker image environment variables]] 
 
 *** ARG Debian (Jessie) <<dockerfile:arg>>
 - Problem :: When building an image using Debian, a lot of these:
@@ -63381,7 +63393,12 @@ This one is Debian and has curl
 - Other related images
    - <<image:mongo-express>>
 
-*** image:mysql <<image:mysql>>
+*** image:mysql
+:PROPERTIES:
+:ID:       C7B130A6-807F-41DE-BF6E-CFA798000C93
+:CUSTOM_ID:       image:mysql
+:END:
+
 - https://hub.docker.com/_/mysql 
 - Parent
    - 5.7.9 :: [[image:debian:jessie]]
@@ -63423,16 +63440,20 @@ This one is Debian and has curl
 - More [[mysql:config]]
 
 **** Environment vars
--e :: set environment vars. None of these will have effect if the container is started with a data dir that already contains a db.
+:PROPERTIES:
+:ID:       D3477ABC-C490-4504-90A9-AEFE0F10EBF7
+:CUSTOM_ID:       image:mysql:env
+:END:
 
-MYSQL_ROOT_PASSWORD :: required
-MYSQL_DATABASE :: opt. a db to be created on image startup
-MYSQL_USER, MYSQL_PASSWORD :: opt. create a user for MYSQL_DATABASE.
-
-These vars can be loaded through a file
-#+BEGIN_EXAMPLE
-  -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root
-#+END_EXAMPLE
+- None of these will have effect if the container is started with a data dir that already contains a db:
+   - MYSQL_ROOT_PASSWORD :: required
+   - MYSQL_DATABASE :: opt. a db to be created on image startup
+   - MYSQL_USER, MYSQL_PASSWORD :: opt. create a user for MYSQL_DATABASE
+   - These vars can be loaded through a file
+	 #+begin_src sh
+	   docker run -it --rm -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root mysql:5.7
+	 #+end_src
+- TZ :: e.g. ~TZ=America/Toronto~ 
 
 **** Import .sql on image startup
 Poibt a directory that has a .sh, .sql, and .sql.gz to a dir in container
