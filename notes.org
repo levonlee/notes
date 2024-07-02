@@ -99,7 +99,8 @@ Install multiple versions of PHP
 - https://dev.to/jackmiras/xdebug-in-phpstorm-with-docker-2al8
 - Make sure Settings > Build, Execution, Deployment > Docker is connection successful
    - Docker for Mac: default unix:///var/run/docker.sock
-- Create a Server on PhpStorm
+   - This Docker setting is shared across projects in PhpStorm
+- Create a Server on PhpStorm (A debugging server on local)
    - Settings > PHP > Servers
 	  - Host: localhost
 	  - Port: 80
@@ -1242,13 +1243,13 @@ Convert a string format to another
 #+END_SRC
 
 ** Bitwise Operator
-:PROPERTIES::
+:PROPERTIES:
 :ID:       3E3C7306-E75A-46ED-83DA-989FB774944D
 :CUSTOM_ID:       php:bitwise
 END:
 
 #+BEGIN_SRC php
-  // $a << $b is to shift the bits of $a to left for $b steps (each step multiplyies by two) 
+  // $a << $b is to shift the bits of $a to left for $b steps (each step multiplyies by two)
 
   define('FLAG_A', 1); /// 0001 or 1<<0
   define('FLAG_B', 2); /// 0010 or 1<<1
@@ -1267,15 +1268,19 @@ END:
   var_dump(1<<62 === 4611686018427387904);
 
   $combined_flags = FLAG_A | FLAG_C; // 0101 binary, which is decimal 5
+  var_dump(decbin($combined_flags) === '101');
 
-  var_dump( $combined_flags & FLAG_C ); // FLAG_C which is 0100, which is decimal 4
+  var_dump(($combined_flags & FLAG_C) === FLAG_C); // FLAG_C which is 0100, which is decimal 4
   // 0101 :: FLAG_A or FLAG_C
   // 0100 :: FLAG_C
   // 0100 :: result is decimal 4
 
-  if ( $combined_flags & FLAG_C ) {
-	  echo 'Has FLAG_C';
+  if ($combined_flags & FLAG_C) {
+	  var_dump('Has FLAG_C assuming FLAG_C is 1 >> n');
   }
+
+  $combined_flags2 = $combined_flags | 0;
+  var_dump( $combined_flags2 === $combined_flags);
 
   var_dump( $combined_flags ^ FLAG_C ); // XOR :: like | but not both
   // 0101 :: FLAG_A or FLAG_C
