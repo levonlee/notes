@@ -69611,25 +69611,41 @@ Merge file ~f~ of branch ~B~'s ~HEAD~ into ~f~ of branch ~A~~
   git log -1 master
 #+end_src
 
-** Rebase <<git:rebase>>
+** Rebase
+:PROPERTIES:
+:ID:       0777332C-61A5-4A41-8927-70F3A376D193
+:CUSTOM_ID:       git:rebase
+:END:
+
 *** Rebase backup and revert
 #+begin_src sh
-  # Before doing rebase, tag the head of the current branch and easily reset to that after rebase if there's anything wrong
+  # rebase saves your starting point to ORIG_HEAD so this is usually as simple as:
 
-  # If it shows fatal error, that's good! LILIBACKUP is not used
-  git show LILIBACKUP
+  git reset --hard ORIG_HEAD
 
-  # Create a tag to point to the current head commit
-  git tag LILIBACKUP
+  # However, the reset, rebase and merge all save your original HEAD pointer into ORIG_HEAD so, if you've done any of those commands since the rebase you're trying to undo then you'll have to use the reflog.
 
-  # do git rebase
-
-  # If there's anything wrong after git rebase is done, reset back to it
-  git reset --hard LILIBACKUP
-
-  # Delete the local LILIBACKUP tag
-  git tag -d LILIBACKUP
+  # Referrence: https://stackoverflow.com/questions/134882/undoing-a-git-rebase
 #+end_src
+
+- Old method
+  #+begin_src sh
+	# Before doing rebase, tag the head of the current branch and easily reset to that after rebase if there's anything wrong
+
+	# If it shows fatal error, that's good! LILIBACKUP is not used
+	git show LILIBACKUP
+
+	# Create a tag to point to the current head commit
+	git tag LILIBACKUP
+
+	# do git rebase
+
+	# If there's anything wrong after git rebase is done, reset back to it
+	git reset --hard LILIBACKUP
+
+	# Delete the local LILIBACKUP tag
+	git tag -d LILIBACKUP
+  #+end_src
 
 *** Rebase master onto feature branch
 #+BEGIN_SRC sh
@@ -71748,7 +71764,7 @@ In this case, you can:
   git pull
 
   git rebase master
-  # resolve conflicts. Refer to git:rebase
+  # resolve conflicts. See git:rebase
 
   # push li-dev to origin/li-dev
   git push
