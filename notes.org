@@ -73102,6 +73102,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 	       IF(TRIM(colC), 1, NULL));
   #+END_SRC
 - See [[mysql:separator]]
+- See [[#mysql:find_in_set][FIND_IN_SET()]]
 
 ***** ~CONCAT_WS(separator, str1, str2, ...)~
 :PROPERTIES:
@@ -73226,11 +73227,17 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   AGAINST ('+WordMustHave -WordMustNotHave WordNiceToHave' IN BOOLEAN MODE);
 #+end_src
 
-***** find_in_set <<mysql:find_in_set>>
+***** ~FIND_IN_SET~
+:PROPERTIES:
+:ID:       F27CB361-0CF1-483A-B03F-55C4B16D33C4
+:CUSTOM_ID:       mysql:find_in_set
+:END:
+
 - ~strlist~ is a comma separated string
 - Return
    - 0 :: if ~str~ not in ~strlist~
    - null :: if either ~str~ or ~strlist~ is NULL 
+
 #+begin_src sql
   FIND_IN_SET(str, strlist)
 
@@ -73243,6 +73250,32 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 
   -- Change delimiter
   SELECT FIND_IN_SET('b', REPLACE('a|b|c|d', '|', ','));
+
+  -- Add to list
+  UPDATE users
+  SET groups = CONCAT(groups, '|account')
+  WHERE userid = 1234
+		AND IFNULL(FIND_IN_SET('account', REPLACE(groups, '|', ','), 0) = 0;
+
+  -- Remove from list (remove 2 from comma-delimited list, and list can contain multiple 2's)
+  UPDATE mytable
+  SET categories =
+		  TRIM(BOTH ',' FROM
+			   REPLACE(
+					   REPLACE(
+							   CONCAT(
+									   ',',
+									   REPLACE(categories, ',', ',,'),
+									   ','
+							   ),
+							   ',2,',
+							   ''
+					   ),
+					   ',,',
+					   ','
+			   )
+		  )
+  WHERE FIND_IN_SET('2', categories)
 #+end_src
 
 **** ~CHAR~ and ~VARCHAR~
