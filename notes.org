@@ -9771,12 +9771,19 @@ You can throw an Exception
   $caller = isset($dbt[1]['function']) ? $dbt[1]['function'] : null;
 #+END_SRC
 
-*** debug_backtrace <<php:debug_backtrace>>
+*** debug_backtrace
+:PROPERTIES:
+:ID:       096F673E-379A-4554-ADC2-F3880A0F632A
+:CUSTOM_ID:       php:debug_backtrace
+:END:
+
 - $options
    - DEBUG_BACKTRACE_PROVIDE_OBJECT	:: default. Include everything
    - DEBUG_BACKTRACE_IGNORE_ARGS :: Don't include function/method arguments
 - Result :: index 0 being the most recently run code, the last index is the entrypoint
    - Can be used to see which parent file includes a file
+   - If the current calling place is the first script file that is run, it will return an empty array
+
 #+begin_src php
   debug_backtrace(int $options = DEBUG_BACKTRACE_PROVIDE_OBJECT, int $limit = 0): array
 #+end_src
@@ -56984,7 +56991,12 @@ wp:check file permissions
       - ~del symlinkgoesto~
 - On Vagrant, see vagrant:symlink
 
-*** Search files or directories, sort by size <<linux:find>>
+*** Search files or directories, sort by size
+:PROPERTIES:
+:ID:       3F3FACF6-3E5E-4A9A-9D54-5A615DC2D01D
+:CUSTOM_ID:       linux:find
+:END:
+
 - Return path of matched files or directories
 - Search by name of files :: ~-name~ ~-iname~
    - Name case insensitive :: use ~-iname~ instead of ~-name~
@@ -60680,6 +60692,11 @@ Run a background process after SSH signout
 If the first command not successful, 2nd command will not run: =lspci && lspci=
 
 *** ls <<linux:ls>>
+:PROPERTIES:
+:ID:       C3CAA861-D1F2-4117-A9EE-56BEE841996D
+:CUSTOM_ID:       linux:ls
+:END:
+
 List files or directories by name
 - ~ll~
    - Ubuntu server default ::  ~ls -alF~
@@ -70669,6 +70686,26 @@ Method 2: Add another remote github
   // git submodule add https://github.com/chaconinc/DbConnector dbconnector
 #+END_EXAMPLE
 
+** Git-flow
+:PROPERTIES:
+:ID:       5FFCA67B-1672-4F25-B994-CC8C73872848
+:CUSTOM_ID:       git:gitflow
+:END:
+
+- https://nvie.com/posts/a-successful-git-branching-model/
+
+*** Case Study
+- FeatureA merged to LSR > FeatureA merged to Master > Hotfixes related to FeatureA, FeatureX and FeatureY on Master (HOTFIXes_A-X-Y) > Master merged to FeatureB > FeatureB merged to LSR > conflicts
+   - HOTFIXes_A-X-Y on Master cause the conflicts
+	  - Some valid reasons :: master is behind and diverged from LSR. LSR might fix some issues of FeatureA in other commits that are not yet merged to master or the way LSR fixes the issues of FeatureA differently.
+   - Developers of FeatureB (and all other Feature branches actively being merged to LSR) DO NOT know how to resolve conflicts when they merge master to FeatureB and merge FeatuerB to LSR. FeatureB does not have code changes for FeatureA, X and Y.
+   - My suggestion
+	  A) HOTFIXes_A-X-Y should be merged back to LSR. It will save a lot of developers' time and effort on resolving conflicts. These developers include ones who work on branches (e.g. FeatureB) which have no code change for FeatureA and FeatureX and FeatureY
+		  - Resolving conflicts when merging HOTFIXes_A-X-Y to LSR, we may totally ignore any hotfix that is done on master because LSR might already have fixes.
+	  B) HOTFIXes_A-X-Y should be merged back to any future branches that have not been and will be merged to master and have changes for FeatureA, X and Y.
+   - My comments
+	  - At the end of the day, LSR should be merged to master. Relying on merging individual feature branches to master is dangerous. In this example, FeatureA merges to LSR without a problem but merging to master requires hotfixes on master. These hotfixes should be merged to any ongoing related branches including LSR.
+
 ** GitHub <<git:github>>
 :PROPERTIES:
 :CUSTOM_ID: github
@@ -78477,6 +78514,7 @@ https://github.com/keycastr/keycastr#readme
 
   sudo nfsd restart
 #+END_SRC
+
 *** DNS <<macos:dns>>
 #+BEGIN_SRC sh
   sudo nano /etc/hosts
@@ -79787,8 +79825,16 @@ Install linux:font, open Emacs:
   - ~[M-x] package-list-packages [RET]~
 
 **** Install on Mac Catalina
-- ~brew cask install emacs~
+- ~brew install --cask emacs~
 - [[macos:full disk access][macos:full disk access]] to Emacs :: Applications > Emacs
+- Troubleshoot
+   - Emacs 29.4 on Mac :: ~Warning: arch-dependent data dir 'Contents/MacOS/libexec/': No such file or directory~
+	 #+begin_src sh
+	   # shows the installation path
+	   which emacs
+	   cd /Applications/Emacs.app/Contents/MacOS
+	   cp -a libexec-arm64-11 libexec
+	 #+end_src
 
 **** Init file
 - =~/=
