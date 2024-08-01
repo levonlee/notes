@@ -77,22 +77,65 @@ Install multiple versions of PHP
   # /etc/php/7.4/mods-available/xdebug.ini
 
   # add the following line to /etc/php/7.4/mods-available/xdebug.ini
+#+end_src
 
-  # zend_extension=xdebug.so
-  # xdebug.mode=debug
-  # xdebug.start_with_request=yes
-  # xdebug.idekey=docker
-  # # Xdebug v3 uses port 9003 as default
-  # # xdebug.client_port=9003
-  # # The internal IP of the docker host (Mac). Eq. `ipconfig getifaddr en0`
-  # xdebug.client_host=host.docker.internal
+**** Settings
+:PROPERTIES:
+:ID:       B1C65CB3-F307-491D-B605-DAE8481D4C8D
+:CUSTOM_ID:       xdebug:settings
+:END:
+
+- https://xdebug.org/docs/all_settings
+
+#+begin_src conf
+  zend_extension=xdebug.so
+  xdebug.mode=debug,profile
+
+  # xdebug.start_with_request=default means trigger for debug, yes for profile
+  xdebug.start_with_request=trigger
+
+  # php -d xdebug.profiler_enable=On script.php
+
+  xdebug.idekey=docker
+
+  # The internal IP of the docker host (Mac). Eq. `ipconfig getifaddr en0`
+  xdebug.client_host=host.docker.internal
+
+  # https://xdebug.org/docs/profiler
+
+  # default. %p for PID. Other %s for script location
+  # xdebug.profiler_output_name=cachegrind.out.%p
+
+  # https://xdebug.org/docs/profiler ends
+
+  # Xdebug v3 uses port 9003 as default
+  # xdebug.client_port=9003
+
+  # # Xdebug introduces nesting level e.g. recursion. Default is 256
+  # xdebug.max_nesting_level=999999
 
   # create a webpage that runs:
   # <?php
   # var_dump(xdebug_info());
 
-  # Xdebug version should also appear after running php -v
+  # Or
+  # php --ri xdebug
+
+  # Xdebug version: php -v
 #+end_src
+
+**** Profiling
+- Output directory :: ~php --ri xdebug | grep xdebug.output_dir~
+   - default :: ~/tmp~
+- Install an app on MacOS :: ~brew install qcachegrind~
+   - Then open a profiling file :: ~qcachegrind cachegrind.out.1~
+   - Metrics
+	  - 100,000 * 10ns = 1ms
+	  - View > Sidebars > Top Cost Call Stack :: the call stack in which the function (selected on the left panel) is involved
+	  - Lower right panel
+		 - Callees :: callees at distnace 1 (first level)
+		 - Call graph :: significant callers and callees at different distance
+		 - All Callees :: callees at all distance 
 
 **** PhpStorm set up
 - Xdebug is installed inside a docker with PHP with port 80 exposed and mapped to docker host port 80
@@ -122,105 +165,120 @@ Install multiple versions of PHP
 		 - Notify if debug session was finished without being paused: uncheck
  
 ** Configuration & CLI <<php:config>>
-*** Basics
-- CLI <<php:cli>>
-   - Get php configuration files location :: ~php --ini~
-	  - ~<?php var_dump(php_ini_loaded_file()); ?>~ 
+*** CLI
+:PROPERTIES:
+:ID:       0BC606BE-6DAD-42B1-8F94-87F94EDC293D
+:CUSTOM_ID:       php:cli
+:END:
+
+- Get php configuration files location :: ~php --ini~
+   - ~<?php var_dump(php_ini_loaded_file()); ?>~ 
+- Get loaded extensions/modules
+   - ~php -r "print_r(get_loaded_extensions());"~
+	  - ~-r~ :: run PHP code without using script tags ~<?..?>~
+   - ~php --ri xdebug~ :: show configuration for extension xdebug 
+   - ~php -m~ :: all loaded modules
+	  - ~php -m | grep -e redis~ :: see if a module is installed
+- Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
+   - ~<?php echo ini_get('memory_limit'); ?>~ 
+- All CLI options :: https://www.php.net/manual/en/features.commandline.options.php 
    - ~php -i~ :: eq. to ~phpinfo()~
-   - Get loaded extensions/modules
-	  - ~php -r "print_r(get_loaded_extensions());"~
-	  - ~php -m~ :: all loaded modules
-		 - ~php -m | grep -e redis~ :: see if a module is installed
-   - Get a php config variable :: ~php -i | grep --color -n "memory_limit"~
-	  - ~<?php echo ini_get('memory_limit'); ?>~ 
-   - All CLI options :: https://www.php.net/manual/en/features.commandline.options.php 
-   - Command line arguments
-     #+begin_src sh
-	   php script.php value1 value2
-     #+end_src
-     #+begin_src php
-	   if (isset($argc)) {
-		   for ($i = 0; $i < $argc; $i++) {
-			   echo "Argument #" . $i . " - " . $argv[$i] . "\n";
-		   }
-	   }
-	   else {
-		   echo "argc and argv disabled\n";
-	   }
-
-	   /*
-	   Argument #0 - script.php
-	   Argument #1 - value1
-	   Argument #2 - value2
-	   ,*/
-      #+end_src
-	  #+begin_src sh
-		# assign command line arguments as $_GET
-		php -f a.php a=1 b[]=2 b[]=3
-	  #+end_src
-	  #+begin_src php
-		// a.php
-		parse_str(implode('&', array_slice($argv, 1)), $_GET);
-
-		$_GET === [
-			'a' => '1',
-			'b' => ['2', '3'],
-		];
-
-		// URL: ?id[gte]=2&id[]=1&id[]=3
-		$_GET === [
-			'id' => [
-				'gte' => 2,
-				0 => 1,
-				1 => 3
-			],
-		];
-	  #+end_src
-	  #+begin_src php
-		// Wait for input
-		echo "Are you sure you want to do this?  Type 'yes' to continue: ";
-		$handle = fopen ("php://stdin","r");
-		$line = fgets($handle);
-		if (trim($line) != 'yes') {
-			echo "ABORTING!\n";
-			exit;
-		}
-		fclose($handle);
-		echo "\n"; 
-		echo "Thank you, continuing...\n";
-	  #+end_src
-	  #+begin_src php
-		$fieldA = (function ($value) {
-			$result = ($_f = function ($fieldA = null) use (&$_f) {
-				if (! intval($fieldA)) {
-					echo "Please provide a fieldA (integer):\n";
-					$handle = fopen('php://stdin', 'r');
-					$line = intval(trim(fgets($handle)));
-					fclose($handle);
-					$fieldA = (! $line) ? $_f() : $line;
-				}
-				return intval($fieldA);
-			})($value);
-			echo "fieldA is set to {$result}\n";
-			return $result;
-		})($argv[1] ?? null);
-	  #+end_src
-	  #+begin_src sh
-		abc=1 php a.php
-	  #+end_src
-	  #+begin_src php
-		$abc = getenv('abc');
-		$abc = ($abc === false) ? 'not exists' : $abc;
-	  #+end_src
+   - ~php -d xdebug.profiler_enable=On script.php~ :: override INI settings
    - Interactive shell mode :: ~php -a~, type ~quit~
+
+**** Command line arguments
+:PROPERTIES:
+:ID:       F10B92AA-A117-41EA-A28F-04A3CFE0529E
+:CUSTOM_ID:       php:cli:arguments
+:END:
+
+#+begin_src sh
+  php script.php value1 value2
+#+end_src
+#+begin_src php
+  if (isset($argc)) {
+	  for ($i = 0; $i < $argc; $i++) {
+		  echo "Argument #" . $i . " - " . $argv[$i] . "\n";
+	  }
+  }
+  else {
+	  echo "argc and argv disabled\n";
+  }
+
+  /*
+  Argument #0 - script.php
+  Argument #1 - value1
+  Argument #2 - value2
+  ,*/
+#+end_src
+#+begin_src sh
+  # assign command line arguments as $_GET
+  php -f a.php a=1 b[]=2 b[]=3
+#+end_src
+#+begin_src php
+  // a.php
+  parse_str(implode('&', array_slice($argv, 1)), $_GET);
+
+  $_GET === [
+	  'a' => '1',
+	  'b' => ['2', '3'],
+  ];
+
+  // URL: ?id[gte]=2&id[]=1&id[]=3
+  $_GET === [
+	  'id' => [
+		  'gte' => 2,
+		  0 => 1,
+		  1 => 3
+	  ],
+  ];
+#+end_src
+#+begin_src php
+  // Wait for input
+  echo "Are you sure you want to do this?  Type 'yes' to continue: ";
+  $handle = fopen ("php://stdin","r");
+  $line = fgets($handle);
+  if (trim($line) != 'yes') {
+	  echo "ABORTING!\n";
+	  exit;
+  }
+  fclose($handle);
+  echo "\n"; 
+  echo "Thank you, continuing...\n";
+ #+end_src
+ #+begin_src php
+   $fieldA = (function ($value) {
+	   $result = ($_f = function ($fieldA = null) use (&$_f) {
+		   if (! intval($fieldA)) {
+			   echo "Please provide a fieldA (integer):\n";
+			   $handle = fopen('php://stdin', 'r');
+			   $line = intval(trim(fgets($handle)));
+			   fclose($handle);
+			   $fieldA = (! $line) ? $_f() : $line;
+		   }
+		   return intval($fieldA);
+	   })($value);
+	   echo "fieldA is set to {$result}\n";
+	   return $result;
+   })($argv[1] ?? null);
+#+end_src
+#+begin_src sh
+  abc=1 php a.php
+#+end_src
+#+begin_src php
+  $abc = getenv('abc');
+  $abc = ($abc === false) ? 'not exists' : $abc;
+#+end_src
+
+*** Basics
 - Changing php.ini requires PHP restart and [[apache:restart][apache:restart]] or Nginx
   #+BEGIN_SRC sh
-    # raw way
-    /etc/init.d/php7.4-fpm restart
+	# raw way
+	/etc/init.d/php7.4-fpm restart
 
-    # SystemD
-    systemctl | grep 'php'
-    systemctl restart php7.4-fpm.service
+	# SystemD
+	systemctl | grep 'php'
+	systemctl restart php7.4-fpm.service
   #+END_SRC
 
 **** PHP Version
@@ -70091,6 +70149,8 @@ Add -f to force it to run and overwrite ~refs/original~
 
   # --tag-name-filter <command> :: This is the filter for rewriting tag names. The original tags are not deleted, but can be overwrriten; use "--tag-name-filter cat" to simply update the tags.
 
+  # wildcards can be used e.g. ./path/to/*.xml
+  # To remove a directory: git rm --cached --ignore-unmatch -r ./path/to/folder
 
   # Add the file to .gitignore
   echo "path/to/file" >> .gitignore
