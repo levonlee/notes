@@ -2932,7 +2932,7 @@ Associative arrays
 :CUSTOM_ID:       php:array_reduce
 :END:
 
-- See [[js:array:reduce][js:array:reduce]]
+- See [[#js:array:reduce][js:array:reduce]]
   #+BEGIN_SRC php
     array_reduce ( array $array , callable $callback [, mixed $initial = NULL ] ) : mixed
 
@@ -34649,6 +34649,9 @@ This provides you more debugging info
 :CUSTOM_ID:       js:array
 :END:
 
+**** Array.xxx() vs Array.prototype.xxx()
+~Array.xxx()~ is static method while ~Array.prototype.xxx()~ is instance method
+
 **** DOM elements ~HTMLCollection~
 - ~HTMLCollection~ is not an array. Need to use
    - ~Array.prototype.reduce.call(eles, function(a, b) {}, initialValue)~
@@ -34856,17 +34859,31 @@ js:forEach
   // return true if at least one return is true
 #+END_SRC
 
-**** array.reduce() <<js:array:reduce>>
+**** Array.prototype.reduce()
+:PROPERTIES:
+:ID:       911AD4E2-DEE2-46EC-83D9-3221E01DBD6D
+:CUSTOM_ID:       js:array:reduce
+:END:
+
 - The method executes a provided reducer function on each element of the array, resulting in a single output value
 - See [[#php:array_reduce][php:array_reduce]]
 - ~arr.reduce(callback( accumulator, currentValue[, index[, array]] )[, initialValue])~
 - See https://github.com/levonlee/jsSandbox/blob/master/array.html#L33
+
 #+BEGIN_SRC js
   var sum = [0, 1, 2, 3].reduce(
    function(a,b) { return a + b; },
    0
   );
-  // sum is integer 6
+  var sum2 = [...Array(4).keys()].reduce(
+	  // eq. for (let i = 0; i <= 3; i++)
+	  // eq. [0, 1, 2, 3]
+	  function(a, b) {
+		  return a + b;
+	  },
+	  0
+  );
+  // sum === sum2 === integer 6
 
   var flattened = [[0, 1], [2, 3], [4, 5]].reduce(
    function(a,b) { return a.concat(b); },
@@ -35454,6 +35471,22 @@ Always provide a base number :: parseInt("10", 10); // decimal base
 	 - ~Object.values(myObj)~ returns an array of values
 	 - ~Object.entries(myObj)~ returns ~[ ["name","John"], ["age",30] ]~
 	    - IE not supported
+		- Example
+			#+begin_src js
+			  const usersMap = {
+				  id_1: {
+					  name: 'John 1',
+				  },
+				  id_2: {
+					  name: 'John 2',
+				  },
+			  };
+			  const allUsersWithId = Object.entries(usersMap);
+
+			  allUsersWithId.forEach(([userId, user]) => {
+				console.log(userId, user);
+			  });
+			#+end_src
 	 - Refer to js:prototype
       - Works with NodeList
 	#+BEGIN_SRC js
