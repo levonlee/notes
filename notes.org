@@ -72826,7 +72826,7 @@ https://github.com/levonlee/vagrant/tree/master/build/docker-compose/mysql
     ALTER TABLE {tbl_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
     ALTER TABLE {tbl_name} MODIFY "field_name" "field_type" CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
   #+END_SRC
-- Refer to [[mysql:index][mysql:index]]
+- See [[#mysql:index][MySQL Index]]
 
 **** Memory, InnoDB Buffer, packet
 - name :: default
@@ -73554,7 +73554,12 @@ MySQL 5.6
   ALTER TABLE users ADD UNIQUE(id_text);
 #+END_SRC
 
-*** Index, Composite Index <<mysql:index>>
+*** Index, Composite Index
+:PROPERTIES:
+:ID:       23C7BA8E-8DA8-4801-B446-BBEB2E782DE8
+:CUSTOM_ID:       mysql:index
+:END:
+
 - Index columns used in ~WHERE~, ~ORDER BY~ and ~GROUP BY~ clauses
 - A column with <= 767 bytes can be indexed in Antelope file format which is default for MySQL 5.6 or lower
    - ~varchar(255)~ in ~utf8~ charset max byte size 255*3=765
@@ -73571,11 +73576,13 @@ MySQL 5.6
         #+END_SRC
       - As of Nov 25, 2016, Pantheon MySQL (innodb) version is 5.6.26 and does not have the above setting
       - If changing MySQL server setting is not possible and the index column has to be ~utf8mb4~, then need to convert those columns in every table to have ~varchar(191)~. Which is what WordPress does
-	#+BEGIN_SRC sql
-	  ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-        #+END_SRC
+	  #+BEGIN_SRC sql
+		ALTER TABLE tbl_name CHANGE index_col index_col VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+          #+END_SRC
       - Referred by d7:mysql:charset
 - See [[#mysql:index hint][Index Hint]]
+- Some MySQL 8 tricks to troubleshoot
+   - https://www.youtube.com/watch?v=96wuo3eou0M&list=PLBrWqg4Ny6vXQZqsJ8qRLGRH9osEa45sw&index=4
   
 **** Composite index
 - An index on multiple columns. MySQL supports up to 16 columns
@@ -73633,6 +73640,10 @@ MySQL 5.6
 		  - The index is used up to ~c2~
 	   - ~WHERE c2 = 2 AND c3 > 3 AND c4 = 4~
 		  - operator is ~>~ (range), so the only ~c2~ is used for the index
+	- c2 is the most selective column meaning given c2, we can get more unique records
+	- Redundant indexes. We have an existing composite index ~c2, c3, c4~. The following are redundant indexes
+	   - ~c2~
+	   - ~c2, c3~
 
 **** Index Hint
 :PROPERTIES:
