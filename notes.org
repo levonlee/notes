@@ -73820,21 +73820,24 @@ MySQL 5.6
       - id
    - widgets
       - id
-      - user_id :: one to many
+      - user_id :: one user has many widgets
 	
 #+BEGIN_SRC sql
   -- In general, using ORDER BY ... LIMIT 1 is slower compared to MAX() or MIN()
   SELECT *
-  FROM users JOIN (
+  FROM users
+  JOIN (
 
-	  SELECT * FROM widgets
+	  SELECT *
+	  FROM widgets
 	  WHERE id IN (
-	  SELECT MAX(id) FROM widgets
-	  GROUP BY user_id
+			SELECT MAX(id)
+			FROM widgets
+			GROUP BY user_id
 	  )
 
   ) AS most_recent_user_widget 
-	  ON users.id = most_recent_user_widget.user_id
+  ON users.id = most_recent_user_widget.user_id
 
   -- Multiple columns sort
   SELECT *
