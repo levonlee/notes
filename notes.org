@@ -73592,6 +73592,33 @@ MySQL 5.6
 :CUSTOM_ID:       mysql:index
 :END:
 
+- List indexes of one table :: ~SHOW INDEX FROM my_table;~
+   - Actually from table ~information_schema.statistics~
+- List indexex for all tables
+  #+begin_src sql
+	SELECT *
+	FROM information_schema.statistics
+	WHERE table_schema = 'my_db'
+
+	-- Exclude primary index
+	SELECT *
+	FROM information_schema.statistics
+	WHERE table_schema = 'my_db'
+		  AND index_name != 'PRIMARY'
+
+	-- List tables with no indexes other than their primary indexes
+	SELECT *
+	FROM INFORMATION_SCHEMA.tables
+	WHERE table_schema = 'loanstudio'
+	  AND table_name NOT IN
+		  (SELECT table_name
+		   FROM (SELECT table_name, index_name
+				 FROM information_schema.statistics
+				 WHERE table_schema = 'loanstudio'
+				   AND index_name != 'PRIMARY'
+				 GROUP BY table_name, index_name) AS _dummyJoin
+		   GROUP BY table_name)
+  #+end_src
 - Index columns used in ~WHERE~, ~ORDER BY~ and ~GROUP BY~ clauses
 - A column with <= 767 bytes can be indexed in Antelope file format which is default for MySQL 5.6 or lower
    - ~varchar(255)~ in ~utf8~ charset max byte size 255*3=765
