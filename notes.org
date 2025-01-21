@@ -5894,7 +5894,28 @@ Examples
    - ~array('MyClass', 'myCallbackMethod')~ :: ~call_user_func(array('MyClass', 'myCallbackMethod'));~
 	  - FQDN
    - ~[MyClass::class, 'myCallbackMethod']~
-	  - FQDN or alias 
+	  - FQDN or alias
+	  - With parameters
+		#+begin_src php
+		  class A {
+			  public static function echo($a, $b) {
+				  var_dump(compact('a', 'b'));
+			  }
+		  }
+
+		  $callable = [[A::class, 'echo'], 'abc', 'xyz'];
+		  $callback = array_shift($callable);
+		  call_user_func_array($callback, $callback);
+
+		  /*
+		  array(2) {
+			["a"]=>
+			string(1) "A"
+			["b"]=>
+			string(4) "echo"
+		  }
+		   ,*/
+		#+end_src
    - ~MyClass::myCallbackMethod~
 	  - ~call_user_func('MyClass::myCallbackMethod');~
 	  - ~$fn = 'MyClass::myCallbackMethod'; $fn('param1');~
@@ -74624,66 +74645,84 @@ Update Joined Tables
 - See [[#mysql:show processlist][SHOW FULL PROCESSLIST]]
 
 ***** JSON
+:PROPERTIES:
+:ID:       4705D6A4-F055-47D6-B8A2-B53F0073C822
+:CUSTOM_ID:       mysql:explain:json
+:END:
+
+- https://dev.mysql.com/doc/refman/5.7/en/explain-output.html
+
 - query_block
    - cost_info
 	  - query_cost
    - ordering_operation
-	  - nested_loop :: array
-		 - The sequence matters
-		 - array item
+	  - See nested_loop
+- nested_loop :: array
+   - The sequence matters
+   - list of items
+	  - table :: See [[mysql:explain:json:table][mysql:explain:json:table]]
+
+****** table
+:PROPERTIES:
+:ID:       56095E64-D50F-49A6-892A-48D8F286C9EC
+:CUSTOM_ID:       mysql:explain:json:table
+:END:
+
+- table
+   - table_name :: 
+   - using_index :: if true, great! True means all the columns needed from the table are found in the INDEX being used.
+	  - False or not exists otherwise
+	  - using_index_for_group_by :: Same for ~GROUP BY~
+   - access_type :: join type. From the best to the worst type
+	  - system :: the table has only one row
+	  - const :: at most one matching row. It's used when you compare all parts of a PRIMARY KEY or UNIQUE index and they are constant values.
+		#+begin_src sql
+		  SELECT * FROM tbl_name
+			WHERE primary_key_part1=1 AND primary_key_part2=2;
+		#+end_src
+	  - eq_ref :: one row is read from this table for each combination of rows from the previous tables. It's used when all parts of an index are used by the join and the index is a PRIMARY KEY or UNIQUE NOT NULL index. Operator ~=~
+		#+begin_src sql
+		  SELECT * FROM ref_table,other_table
+			WHERE ref_table.key_column = other_table.column;
+
+		  SELECT * FROM ref_table,other_table
+			WHERE ref_table.key_column_part1 = other_table.column
+			AND ref_table.key_column_part2 = 1;
+		#+end_src
+	  - ref :: all rows with matching index values are read from this table for each combo of rows from the previous tables.
+		 - Examples
+		   #+begin_src sql
+			 SELECT * FROM ref_table WHERE key_column= expr;
+
+			 SELECT * FROM ref_table,other_table
+			   WHERE ref_table.key_column = other_table.column;
+
+			 SELECT * FROM ref_table,other_table
+			   WHERE ref_table.key_column_part1 = other_table.column
+			   AND ref_table.key_column_part2 = 1;
+   		  #+end_src
+		 - It's used if the join uses only a leftmost prefix of the key or if the key is not a PRIMARY KEY or UNIQUE index (in other words, if the join cannot select a single row based on the key value). If the used key that matches only a few rows, this is a good join type.
+			- Operator: ~=~ or ~<=>~
+	  - fulltext :: join using ~FULLTEXT~ index
+	  - ref_or_null
+	  - index_merge
+	  - unique_subquery
+	  - index_subquery
+	  - range
+	  - index
+	  - ALL :: a full table scan is done 
+   - filtered
+	  - 100 :: bad. Means no filtering of rows occured
+   - key
+	  - The index that is actually used
+	  - null :: no index is used
+   - cost_info
+   - materialized_from_subquery
+	  - query_block
+		 - cost_info
+		 - grouping_operation
 			- table
-			   - using_index :: if true, great! True means all the columns needed from the table are found in the INDEX being used.
-				  - False or not exists otherwise
-				  - using_index_for_group_by :: Same for ~GROUP BY~
-			   - access_type :: join type. From the best to the worst type
-				  - system :: the table has only one row
-				  - const :: at most one matching row. It's used when you compare all parts of a PRIMARY KEY or UNIQUE index and they are constant values.
-					#+begin_src sql
-					  SELECT * FROM tbl_name
-						WHERE primary_key_part1=1 AND primary_key_part2=2;
-					#+end_src
-				  - eq_ref :: one row is read from this table for each combination of rows from the previous tables. It's used when all parts of an index are used by the join and the index is a PRIMARY KEY or UNIQUE NOT NULL index. Operator ~=~
-					#+begin_src sql
-					  SELECT * FROM ref_table,other_table
-						WHERE ref_table.key_column = other_table.column;
 
-					  SELECT * FROM ref_table,other_table
-						WHERE ref_table.key_column_part1 = other_table.column
-						AND ref_table.key_column_part2 = 1;
-					#+end_src
-				  - ref :: all rows with matching index values are read from this table for each combo of rows from the previous tables.
-					 - Examples
-					   #+begin_src sql
-						 SELECT * FROM ref_table WHERE key_column= expr;
-
-						 SELECT * FROM ref_table,other_table
-						   WHERE ref_table.key_column = other_table.column;
-
-						 SELECT * FROM ref_table,other_table
-						   WHERE ref_table.key_column_part1 = other_table.column
-						   AND ref_table.key_column_part2 = 1;
-   					  #+end_src
-					 - It's used if the join uses only a leftmost prefix of the key or if the key is not a PRIMARY KEY or UNIQUE index (in other words, if the join cannot select a single row based on the key value). If the used key that matches only a few rows, this is a good join type.
-						- Operator: ~=~ or ~<=>~
-				  - fulltext :: join using ~FULLTEXT~ index
-				  - ref_or_null
-				  - index_merge
-				  - unique_subquery
-				  - index_subquery
-				  - range
-				  - index
-				  - ALL :: a full table scan is done 
-			   - filtered
-				  - 100 :: bad. Means no filtering of rows occured
-			   - key
-				  - The index that is actually used
-				  - null :: no index is used
-			   - cost_info
-			   - materialized_from_subquery
-				  - query_block
-					 - cost_info
-					 - grouping_operation
-						- table
 
 ***** Non JSON
 - Output :: https://dev.mysql.com/doc/refman/8.0/en/explain-output.html
