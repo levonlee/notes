@@ -90,7 +90,7 @@ There are two things you can do about this warning:
 )
 
 ;; Load the dark theme by default
-(load-theme 'modus-vivendi t)
+(load-theme 'modus-vivendi-tinted t)
 
 (package-install-selected-packages)
 
