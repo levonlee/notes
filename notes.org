@@ -1884,8 +1884,11 @@ Here's how to remove any 4 byte character:
   var_dump(in_array(3, null) === null);
 
   var_dump(in_array(null, [0, 1]) === true);
+  var_dump(in_array(null, [0, 1], true) === false);
 
   var_dump(in_array('', [0, 1]) === true);
+  var_dump(in_array('', [0, 1], true) === false);
+  var_dump(in_array('1', [0, '1'], true) === true);
 
   var_dump(in_array('1', [0, 1]) === true);
   var_dump(in_array('3', [0, 1]) === false);
@@ -15054,7 +15057,7 @@ In MySQL, it means CAST(the field, to a type)
 - DATETIME
 - DECIMAL
 - SIGNED, UNSIGNED :: MySQL Integer
-- TIME :: mysql:datatype:datetime
+- TIME :: [[#mysql:datatype:datetime][Datetime]]
 
 <<<WP Types Custom Field Checkbox and WP Meta Query>>>
 Say the ~wpcf-newsletters~ custom field created by WP Types has 2 checkboxes are selected: enligne and pw.
@@ -56529,7 +56532,12 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
   ssh host1 "mysqldump -u user --password='$dbpw' dbname" > ~/db-live-"$filedate".sql
 #+END_SRC
 
-*** SSH tunneling <<linux:ssh:tunnel>>
+*** SSH tunneling
+:PROPERTIES:
+:ID:       10065834-89CC-44DA-8359-64AFE3DD6A8F
+:CUSTOM_ID:       linux:ssh:tunnel
+:END:
+
 - TCP Port forwarding is also called tunneling
 - Say your IMAP port 143 to gmail is blocked by Wi-fi firewall
 - Default ssh port is 22. Default https port is 443
@@ -56707,7 +56715,7 @@ https://www.cyberciti.biz/faq/noninteractive-shell-script-ssh-password-provider/
 
 **** Remote Port Forwarding
 - ~-R [bind_address:]port:host:hostport user@my.server.com~
-   - Remote port forwarding (on local, initiate remote port fording for my.server.com). Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
+   - Remote port forwarding (on local, initiate remote port forwarding for my.server.com). Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side. This works by allocating a socket to listen to ~port~ on the remote side, and whenever a connection is made to this port, the connection is forwarded over the secure channel, and a connection is made to ~host~ port ~hostport~ from the local machine.
    - Summary :: [bind_address | empty means any IP] (access from internet) > ~port~ at my.server.com > -p 443 user@my.server.com (SSH) > host:hostport (usually host is localhost)
    - host:hostport is usually localhost:8888 
    - e.g. traffic from the internet access my.server.com:9000 will be forwarded to your localhost:8001. Run this locally, and the SSH server my.server.com will open a port 9000 which forwards request to your localhost:8001
@@ -69812,8 +69820,21 @@ git push -f
 *** Orphan Branch with no parent
 [[github:gh-pages][github:gh-pages]]
 
+*** Feature branch merged to release but later needs to be merged to master
+- ~feature~ branch was branched off from ~release~ and later merged to ~release~
+- Later, the ~feature~ branch needs to be also merged to ~master~
+- First, create a new branch called ~feature-merge-to-master~, branched off from ~master~
+- Cherry pick the commits from ~feature~ branch to ~feature-merge-to-master~ branch
+- Merge ~feature-merge-to-master~ to ~master~
+- Merge ~feature-merge-to-master~ to ~release~
+
 *** [[git:upstream][git:upstream]]
-** Merge <<git:merge>>
+** Merge
+:PROPERTIES:
+:ID:       BA01E130-79F3-4D20-93A0-720A75EF5582
+:CUSTOM_ID:       git:merge
+:END:
+
 - By default without any options, merge will not create merge commits when fast-forward is possible
 - Create a merge commit even if fast-forward is possible :: ~--no-ff~
    - Default (~--ff~) :: create a merge commit only if the merge cannot fast forward
@@ -73231,7 +73252,12 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 **** BOOL and BOOLEAN
 - Both are synonyms for TINYINT(1). Refer to [[mysql:tinyint][mysql:tinyint]]
 
-**** Datetime <<<mysql:datatype:datetime>>>
+**** Datetime
+:PROPERTIES:
+:ID:       B79A9C3B-004A-46C3-93C6-F9E440F98C89
+:CUSTOM_ID: mysql:datatype:datetime
+:END:
+
 - Get global and sessiond timezones
   #+begin_src sql
     SELECT @@GLOBAL.time_zone, @@SESSION.time_zone;
@@ -73242,6 +73268,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   If it's ~SYSTEM~, refer to [[linux:timezone][linux:timezone]]
 - ~TIME~ :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
 - ~FROM_UNIXTIME(intTime)~ :: return string e.g. ~2019-07-12 01:02:03~ in session timezone
+   - Convert to a specific timezone :: ~SELECT CONVERT_TZ(FROM_UNIXTIME(1277942400), @@session.time_zone, 'America/Toronto');~
 - ~NOW([fsp])~ :: returns a string ~YYYY-MM-DD hh:mm:ss~ or numeric ~YYYYMMDDhhmmss~ depending on the context
    - fsp argument :: a fractional seconds precision from 0 to 6
    - In session timezone 
@@ -73252,9 +73279,9 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
       - DATE
       - DATETIME
       - TIMESTAMP string, see ~NOW()~
-		 - ~UNIX_TIMESTAMP('2024-01-19T23:03:48.676Z')~ :: ~1705705428.676~
-		 - ~UNIX_TIMESTAMP('2024-9-1')~ :: 1725163200
-			- ~'2024-09-1'~ ~'2024-09-01'~
+	 - ~UNIX_TIMESTAMP('2024-01-19T23:03:48.676Z')~ :: ~1705705428.676~
+	 - ~UNIX_TIMESTAMP('2024-9-1')~ :: 1725163200
+	    - ~'2024-09-1'~ ~'2024-09-01'~
       - a number in YYMMDD, YYMMDDhhmmss, YYYYMMDD, or YYYYMMDDhhmmss format 
 #+BEGIN_SRC sql
   -- Custom datetime
@@ -79191,6 +79218,7 @@ https://www.jetbrains.com/help/phpstorm/navigating-through-the-source-code.html#
 :ID:       9E41BB10-DE25-4E5D-84A1-B2F03841B6FA
 :CUSTOM_ID:       php:structural search
 :END:
+
 - https://www.jetbrains.com/help/phpstorm/2022.2/structural-search-and-replace.html
 - Saved templates are stored per project basis not throughout the IDE
 - Choose language first!
@@ -80973,19 +81001,22 @@ Autocomplete npm modules in import statements based on package.json
    - Split Editor :: ~C-\~
    - Go to File (search file) :: ~C-p~
    - Go to Definition :: ~F12~ or ~C-LeftClick~
-   - Go to Symbol in Workspace :: ~C-t~
+   - Go to Symbol in Workspace (global search a function/class/variable) :: ~C-t~
+   - Go to Symbol in Editor... (search a function/class/variable in the current file) :: ~⇧ ⌘ o~
    - Go Backward / Forward :: ~M-Left~ ~M-Right~
    - Find All References (in opened files only..) :: ~M-S-F12~
    - View: Show Explorer (show opened file in project view) :: ~⌘-⇧-e~ 
 - Edit
    - Indent / Outdent :: ~C-[~ ~C-]~
    - Format Selection :: ~C-k C-f~
-   - Expand Selection :: ~M-S-RightArrow~
+   - Expand Selection or shrink :: ~⌃ ⇧ ⌘ RightArrow~ ~M-S-RightArrow~
    - Move Line Up (move selection up) :: ~M-UpArrow~
    - Delete line :: ~C-S-k~
+   - Duplicate line :: ~⌃ ⌥ up or down~ 
    - Trigger Suggest :: ~C-Space~
    - Toggle Block Comment :: ~M-S-a~
    - Toggle Line Comment :: ~C-/~
+   - Fold and unfold :: ~⌥ ⌘ [~ and ~⌥ ⌘ ]~
    - Multiple cursors
       - Add Selection to Next Find Match :: ~C-d~, hit again will create another cursor which selects the same word
       - Select All Occurances of Find Match :: ~C-S-l~, select and create cursors for all matches in file
@@ -81025,9 +81056,11 @@ Autocomplete npm modules in import statements based on package.json
 :CUSTOM_ID:       toc:cursor
 :END:
 
-*** Cmd + Shift + j for Cursor Settings
-*** 
+*** Settings
+**** Keyboard Shortcuts
+- Remove shortcut ~⇧ ⌘ k~ for ~Cursor: Open Edit (Command K)~. This conflicts with ~Delete Line~
 
+*** Cmd + Shift + j for Cursor Settings
 *** Tab for intelligent code completions
 *** Cmd + k for inline code edits
 *** Cmd + i for AI conversation
