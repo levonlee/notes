@@ -73269,6 +73269,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 - ~TIME~ :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
 - ~FROM_UNIXTIME(intTime)~ :: return string e.g. ~2019-07-12 01:02:03~ in session timezone
    - Convert to a specific timezone :: ~SELECT CONVERT_TZ(FROM_UNIXTIME(1277942400), @@session.time_zone, 'America/Toronto');~
+   -  Convert a time in different timezone to Unix timestamp, returns integer :: ~WHERE timestamp > UNIX_TIMESTAMP(CONVERT_TZ('2025-05-01 00:00:00', 'America/Toronto', @@session.time_zone))~ 
 - ~NOW([fsp])~ :: returns a string ~YYYY-MM-DD hh:mm:ss~ or numeric ~YYYYMMDDhhmmss~ depending on the context
    - fsp argument :: a fractional seconds precision from 0 to 6
    - In session timezone 
@@ -73658,6 +73659,31 @@ MySQL 5.6
   -- If id_text is made to an index column, then it occupies space
   ALTER TABLE users ADD UNIQUE(id_text);
 #+END_SRC
+
+**** Statistics functions
+:PROPERTIES:
+:ID:       90016AB6-0F93-434C-BC6F-5BCE4246A1AA
+:CUSTOM_ID:       mysql:statistics:functions
+:END:
+
+#+begin_src sql
+  SELECT endpoint
+       , COUNT(*)                                                                           AS `Requests`
+       , ROUND(AVG(executiontime), 2)                                                       AS `AVG Execution Time (s)`
+       , ROUND(MAX(executiontime), 2)                                                       AS `MAX Execution Time (s)`
+       , ROUND(STDDEV_SAMP(executiontime), 2)                                               AS `Standard Deviation`
+       , 1 BETWEEN (AVG(executiontime) - 1.645 * STDDEV_SAMP(executiontime) / SQRT(COUNT(*))) AND
+      (AVG(executiontime) + 1.645 * STDDEV_SAMP(executiontime) / SQRT(COUNT(*)))            AS `Is 1 within 90% CI?`
+       , ROUND(AVG(executiontime) - 1.645 * STDDEV_SAMP(executiontime) / SQRT(COUNT(*)), 2) AS `90% CI Lower`
+       , ROUND(AVG(executiontime) + 1.645 * STDDEV_SAMP(executiontime) / SQRT(COUNT(*)), 2) AS `90% CI Upper`
+       , YEAR(FROM_UNIXTIME(timestamp))                                                     AS Year
+       , WEEK(FROM_UNIXTIME(timestamp))                                                     AS Week
+  FROM apilog
+  WHERE timestamp > UNIX_TIMESTAMP(CONVERT_TZ('2025-05-01 00:00:00', 'America/Toronto', @@session.time_zone))
+  GROUP BY endpoint, Year, Week
+  HAVING `AVG Execution Time (s)` > 1
+  ORDER BY endpoint, Year, Week;
+#+end_src
 
 *** Index, Composite Index
 :PROPERTIES:
