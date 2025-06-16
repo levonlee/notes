@@ -8110,11 +8110,30 @@ Manually construct a multipart/form-data with binary file data
    - "", "identity", "deflate", and "gzip"
 
 **** POST with CA
+:PROPERTIES:
+:ID:       B3BFFF6B-2A63-4196-A42E-742DB85B5C84
+:CUSTOM_ID:       php:curlopt_cainfo
+:END:
+
 #+BEGIN_SRC php
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
   curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
   curl_setopt($ch, CURLOPT_CAINFO, getcwd() . "/CAcerts/BuiltinObjectToken-EquifaxSecureCA.crt");
 #+END_SRC
+
+To verify a CA bundle
+#+begin_src sh
+  # single certificate
+  openssl x509 -in cacert.pem -text -noout
+
+  # then look for Validity Not Before and Not After, Issuer, Subject, and Signature Algorithm
+
+  # If the file has multiple certs, break it
+  awk 'BEGIN {c=0;} /BEGIN CERTIFICATE/ {c++} {print > ("cert" c ".pem")}' cacert.pem
+
+  # and inspect each with:
+  openssl x509 -in cert1.pem -text -noout
+#+end_src
 
 **** POST with SSL Certificate and Key
 - Convert PFX to a private key ~cl.pem~ and a certificate ~cl.cert~. A passphrase is needed
