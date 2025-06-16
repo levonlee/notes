@@ -4470,12 +4470,15 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 - encodes spaces as plus signs
 - eq. to [[js:encodeURIComponent][js:encodeURIComponent]]
 - Should be used to encode keys and values pairs of POST data
+- Try to use [[#php:http_build_query][http_build_query]]
+
 #+BEGIN_SRC php
   $query_string = 'foo=' . urlencode($foo) . '&bar=' . urlencode($bar);
   echo '<a href="mycgi?' . htmlentities($query_string) . '">';
 #+END_SRC
 
 *** ~rawurlencode~ <<php:rawurlencode>>
+- See php:urlencode
 - encode path (the part before ~?~). Almost the same as ~urlencode~ except it enocodes space as ~%20~
 - Basics
   #+BEGIN_SRC php
@@ -4495,10 +4498,16 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
     }
   #+END_SRC
 *** ~http_build_query~
+:PROPERTIES:
+:ID:       94441537-784D-41FC-AA61-10961294087A
+:CUSTOM_ID:       php:http_build_query
+:END:
+
 - Return a URL-encoded query string
    - By default perfect for cURL POST content-type ~application/x-www-form-urlencoded~
-	  - spaces are encoded as ~+~ which is eq. to ~urlencode~
-	  - Also good for GET url query string
+      - spaces are encoded as ~+~ which is eq. to ~urlencode~
+      - Also good for GET url query string: ~$url = "https://example.com/api?" . http_build_query($params);~
+	 - It will do the job as ~urlencode()~ for encoding URL parameter values
 
 #+begin_src php
   var_dump(http_build_query([
@@ -56756,7 +56765,7 @@ On Windows, use the portable [[https://www.sockscap64.com/homepage/][SocksCap64]
    - It is rebuilt
    - Same IP address for multiple remote systems
 - Solution :: delete the entries corresponding to the destination server's IP in ~known_hosts~
-   - Linux and MacOS :: ~.ssh/known_hosts~
+   - ~ssh-keygen -f ~/.ssh/known_hosts -R "3.98.153.187"~
 
 ** fail2ban <<<linux:fail2ban>>>
 Ban access to services (e.g. SSH) for max tries and ban time based on service's log.
