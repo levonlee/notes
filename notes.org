@@ -36848,14 +36848,14 @@ An observable is like a promise, but it calls some code every time a new value b
 *** Basics
 - Event handlers
    - onload :: Always use onload instead of onreadystatechange
-	  - eq. to ~onreadystatechange~ and ~this.readyState == 4~
+      - eq. to ~onreadystatechange~ and ~this.readyState == 4~
    - onreadystatechange
-	  - ~readyState~ property values <<js:xmlhttprequest:readyState>>
-		 - 0: request not initialized
-		 - 1: connection established
-		 - 2: request received
-		 - 3: processing request
-		 - 4: request finished and response is ready
+      - ~readyState~ property values <<js:xmlhttprequest:readyState>>
+	 - 0: request not initialized
+	 - 1: connection established
+	 - 2: request received
+	 - 3: processing request
+	 - 4: request finished and response is ready
    - upload
      #+begin_src js
 	   rq.upload.onprogress = function (e) {
@@ -36881,9 +36881,43 @@ An observable is like a promise, but it calls some code every time a new value b
    - Others :: onloadstart, onprogress, onerror, ontimeout, onloadend
 - Methods
    - send
-   - setRequestHeader
-	  - Specify request header ~Content-type~ manually to x-www-form-urlencoded and ~send('postDataInStringWith&=Separated')~
-	  - ~send()~ with [[js:formdata]], Content-type is set to ~multipart/formdata~ automatically
+   - ~setRequestHeader~
+      - Specify request header ~Content-type~ manually to ~x-www-form-urlencoded~ and ~send('postDataInStringWith&=Separated')~
+	 - Use URLSearchParams
+	   #+begin_src js
+	     const xhr = new XMLHttpRequest();
+	     xhr.open("POST", "/submit", true);
+	     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+	     // Data to send
+	     const params = new URLSearchParams({
+	       name: "John Doe",
+	       email: "john@example.com",
+	       message: "Hello & welcome!" // Escaped as needed
+	     }).toString();
+
+	     // may further concatenate
+	     const myKeyData = [1, 2, 3];
+	     const params2 = params + "mykey=" + encodeURIComponent(JSON.stringify(myKeyData));
+
+	     xhr.send(params);
+	   #+end_src
+	 - Use JSON.stringify()
+	   #+begin_src js
+	     const xhr = new XMLHttpRequest();
+	     xhr.open("POST", "/submit", true);
+	     xhr.setRequestHeader("Content-Type", "application/json");
+
+	     // Data to send
+	     const data = {
+	       name: "John Doe",
+	       email: "john@example.com",
+	       message: "Hello & welcome!"
+	     };
+
+	     xhr.send(JSON.stringify(data));
+	   #+end_src
+      - ~send()~ with [[js:formdata]], Content-type is set to ~multipart/formdata~ automatically
 - Properties :: ~this.propertyName~
    - readyState :: See [[js:xmlhttprequest:readyState]]
    - responseText
