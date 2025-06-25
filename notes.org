@@ -3726,7 +3726,12 @@ https://www.htmlgoodies.com/beyond/javascript/parsing-building-and-street-fields
   echo $twitterHTML;
 #+END_SRC
 
-*** JSON <<php:json_encode>>
+*** JSON
+:PROPERTIES:
+:ID:       7B40DC99-C934-4E09-A384-5DF0DD6E7F55
+:CUSTOM_ID:       php:json_encode
+:END:
+
 - Input variable is
    - String :: result is wrapped with double quotes
       - with the following characters escaped by ~\~
@@ -4466,6 +4471,11 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 #+end_src
 
 ** URL
+:PROPERTIES:
+:ID:       B8182BF0-E4CB-4014-8E7B-217AB081FAD2
+:CUSTOM_ID:       php:url
+:END:
+
 *** ~urlencode()~ :: encode the query string (the part after ~?~) <<php:urlencode>>
 - encodes spaces as plus signs
 - eq. to [[js:encodeURIComponent][js:encodeURIComponent]]
@@ -4477,7 +4487,12 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   echo '<a href="mycgi?' . htmlentities($query_string) . '">';
 #+END_SRC
 
-*** ~rawurlencode~ <<php:rawurlencode>>
+*** ~rawurlencode~
+:PROPERTIES:
+:ID:       5FE5DA4E-C8A9-49E6-8FE9-1F315C029A93
+:CUSTOM_ID:       php:rawurlencode
+:END:
+
 - See php:urlencode
 - encode path (the part before ~?~). Almost the same as ~urlencode~ except it enocodes space as ~%20~
 - Basics
@@ -4497,6 +4512,7 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 	    return rawurlencode( $fileName );
     }
   #+END_SRC
+
 *** ~http_build_query~
 :PROPERTIES:
 :ID:       94441537-784D-41FC-AA61-10961294087A
@@ -4524,14 +4540,18 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
   ]));
 #+end_src
 
-*** ~parse_str~ :: parse query parameter value as an array
+*** ~parse_str~ parse query parameter value as an array
 #+BEGIN_SRC php
+  $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+  $fullUrl = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+  // start with /
   $url = $_SERVER['REQUEST_URI'];
   $parts = parse_url($url);
   if ($parts !== false) {
-	  // if there's error, it will return false
-	  parse_str($parts['query'], $query);
-	  echo $query['email'];
+  	  // if there's error, it will return false
+  	  parse_str($parts['query'], $query);
+  	  echo $query['email'];
   }
 
   // parse_str ($str, array &$result = null) : void
@@ -4543,13 +4563,13 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 
   function removeOneQueryParameter($url, $queryParameter)
   {
-	  if (($urlParsed = parse_url($url)) === false) {
-		  return $url;
-	  }
-	  parse_str($urlParsed['query'], $query);
-	  unset($query[$queryParameter]);
-	  $queryPart = http_build_query($query);
-	  return strtok($url, '?') . ($queryPart ? "?{$queryPart}" : '');
+  	  if (($urlParsed = parse_url($url)) === false) {
+  		  return $url;
+  	  }
+  	  parse_str($urlParsed['query'], $query);
+  	  unset($query[$queryParameter]);
+  	  $queryPart = http_build_query($query);
+  	  return strtok($url, '?') . ($queryPart ? "?{$queryPart}" : '');
   }
 
   var_dump(removeOneQueryParameter('https://abc.com?abc=123', 'abc') === 'https://abc.com');
@@ -8109,11 +8129,15 @@ Manually construct a multipart/form-data with binary file data
    - One single value
    - "", "identity", "deflate", and "gzip"
 
-**** POST with CA
+**** POST with CA Bundle
 :PROPERTIES:
 :ID:       B3BFFF6B-2A63-4196-A42E-742DB85B5C84
 :CUSTOM_ID:       php:curlopt_cainfo
 :END:
+
+- A CA bundle (also known as a certificate chain or CA chain) contains one or more CA certificates
+   - Intermediate CAs
+   - Possibly the root CA (optional - often already in the system trust store)
 
 #+BEGIN_SRC php
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
@@ -30804,7 +30828,7 @@ ALLOW-FROM uri :: Chrome doesn't support.
    - ~Content-Disposition: form-data; name="fieldName"~
       - or ~Content-Disposition: form-data; name="fieldName"; filename="filename.jpg"~
       - Refer to [[rfc:mime:multipart/form-data][rfc:mime:multipart/form-data]]
-- Encode directive ~filename~ value :: [[php:rawurlencode][php:rawurlencode]]
+- Encode directive ~filename~ value :: [[#php:rawurlencode][php:rawurlencode]]
 
 *** X-XSS-Protection - response
 Not supported in FireFox. Use Content-Security-Policy for modern browsers. This is used for older browsers.
@@ -34067,7 +34091,7 @@ https://amp.dev/documentation/components/amp-analytics/
 	 - Set :: remove all of the element's descendants and replace them with nodes constructed by parsing the HTML given in the string
 	    - ~<script>~ elements inserted using innerHTML do not execute when they are inserted
 	    - ~onclick~ attributes are valid
-      - Refer to [[php:json_encode][php:json_encode]]
+      - See [[#php:json_encode][php:json_encode]]
       - May use with array
 	#+BEGIN_SRC js
 	  var html = [];
@@ -60545,7 +60569,12 @@ Download all subfolders and files of an FTP folder
       exit 1
   fi
 #+end_src
-*** Date format <<bash:date>>
+*** Date format
+:PROPERTIES:
+:ID:       5D14AA9C-922D-4C64-A17A-F7BF57500B0D
+:CUSTOM_ID:       linux:date
+:END:
+
 - ~date +%F~ :: YYYY-MM-DD
 - ~date +%M~ :: minute 00..59
 - ~date +%H~ :: 00..23
@@ -60556,6 +60585,7 @@ Download all subfolders and files of an FTP folder
 - ~date +%FT%H%M%S~ :: 2017-10-13T163902 use this as it is filename safe
 - ~date +%FT%H%M%S%Z~ :: 2017-10-13T163902EDT use this as it is filename safe
 - ~mydate=$(date +"%m-%d=%Y")~ :: bash variable
+- Ubuntu 15.04, you can use :: ~timedatectl~
 
 *** Last executed command
 #+BEGIN_SRC bash
