@@ -455,7 +455,18 @@ php.ini can also enable module. e.g. to enable module intl. Use php.ini:extensio
 #+END_SRC
 
 http://php.net/manual/en/extensions.alphabetical.php
+
+**** PECL Packages
 https://pecl.php.net/packages.php
+
+#+begin_src sh
+  apt update
+  apt install php-pear php-dev build-essential
+
+  # php-pear → provides pecl
+  # php-dev → provides PHP headers needed to compile extensions
+  # build-essential → provides make, gcc, etc.
+#+end_src
 
 *** [[https://github.com/php/php-src/blob/master/php.ini-production][prod]] <<php:ini:prod>>
 #+BEGIN_SRC conf
@@ -1654,7 +1665,7 @@ Here's how to remove any 4 byte character:
   var_dump($color === 'blue', $size === 'large', $shape === 'sphere', $wddx_size === 'medium');
 #+END_SRC
 
-*** ~array_merge~, array_merge_recursive
+*** ~array_merge~, ~array_merge_recursive~
 :PROPERTIES:
 :ID:       DBF452C1-1371-4D17-A61F-D27AC11497AF
 :CUSTOM_ID:       php:array_merge
@@ -4478,7 +4489,7 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 
 *** ~urlencode()~ :: encode the query string (the part after ~?~) <<php:urlencode>>
 - encodes spaces as plus signs
-- eq. to [[js:encodeURIComponent][js:encodeURIComponent]]
+- eq. to [[#js:encodeURIComponent][js:encodeURIComponent]]
 - Should be used to encode keys and values pairs of POST data
 - Try to use [[#php:http_build_query][http_build_query]]
 
@@ -4520,10 +4531,16 @@ Use ~json_last_error(): int~ and ~json_last_error_msg(): string~ to debug
 :END:
 
 - Return a URL-encoded query string
-   - By default perfect for cURL POST content-type ~application/x-www-form-urlencoded~
+   - By default perfect for cURL POST content-type ~application/x-www-form-urlencoded~ (PHP_QUERY_RFC1738)
+      - ~http_build_query($parmas) === http_build_query($params, '', '&', PHP_QUERY_RFC1738);~
       - spaces are encoded as ~+~ which is eq. to ~urlencode~
       - Also good for GET url query string: ~$url = "https://example.com/api?" . http_build_query($params);~
 	 - It will do the job as ~urlencode()~ for encoding URL parameter values
+      - eq. to JavaScript ~new URLSearchParams({ q: "hello world" });~
+   - ~http_build_query($params, '', '&', PHP_QUERY_RFC3986);~ newer standard for like OAuth
+      - spaces are encoded as ~%20~
+      - eq. to ~curl 'https://postman-echo.com/get' --data-urlencode 'q=hello world'~
+      - eq. to JavaScript ~encodeURIComponent("hello world")~. See [[#js:encodeURIComponent][js:encodeURIComponent]]
 
 #+begin_src php
   var_dump(http_build_query([
@@ -6555,7 +6572,7 @@ RestJson.php
    - Interface cannot have properties
    - To declare individual static properties for subclasses
 	  - A subclass without declaring a static property which the parent class declares, the subclass' static property uses and modifies the parent class' static property
-	  - Don't use [[php:trait]] for declaring static properties where the same static properties are declared in parent class
+	  - Don't use [[#php:trait][Trait]] for declaring static properties where the same static properties are declared in parent class
 - Used for dependency injection
    - ~CustomQueryInterface~ (CQI) is an interface building on top of ~QueryInterface~, any implementation of CQI can be passed as dependency injection to constructor of another class
 - A class can implement a method with the same name in multiple interfaces. As long as the function signature matches one interface. But only PHP 7.4+ supports it.
@@ -6576,7 +6593,12 @@ RestJson.php
    - A class may implement multiple interfaces
    - A class can only extend one abstract class
 
-*** Trait <<php:trait>>
+*** Trait
+:PROPERTIES:
+:ID:       8BB04F98-0E99-4BE6-B968-D5F7944E38AD
+:CUSTOM_ID:       php:trait
+:END:
+
 - Always use a trait that fulfils one, all or extra capabilities that are
    - required by an interface that the current class implements
    - or required by an abstract class that the current class extends to
@@ -8624,7 +8646,12 @@ Check if php ~short_open_tag~ is enabled. Default is not enabled. Then search ~<
 - PHP_CodeSniffer is installed at ~./vendor/bin/phpcs~ and it links to multiple standards installed above
    - Set it as PHP_CodeSniffer [[phpstorm:php:quality tools][phpstorm:php:quality tools]]
 
-** PHPUnit <<php:phpunit>>
+** PHPUnit
+:PROPERTIES:
+:ID:       1CE09B73-082E-4BEA-9D54-5AB583CBE834
+:CUSTOM_ID:       php:phpunit
+:END:
+
 - https://phpunit.de/getting-started/phpunit-9.html
    - v9 :: PHP 7.3, 7.4
    - v8 :: PHP 7.2, 7.3
@@ -35883,7 +35910,12 @@ Except inherited properties, all methods and properties are enumerable in js:for
 - https://github.com/levonlee/jsSandbox/blob/master/dom-createDocumentFragment.html  
 
 ** URI and URI Component Encode, Current URL, open, email link
-*** encodeURIComponent vs encodeURI <<js:encodeURIComponent>>
+*** encodeURIComponent vs encodeURI
+:PROPERTIES:
+:ID:       395DCE38-F286-4E32-874A-C3AAAEC398B5
+:CUSTOM_ID:       js:encodeURIComponent
+:END:
+
 - eq. to [[php:urlencode][php:urlencode]]
 - See [[js:xmlhttprequest]]
    - For URL parameters and POST data
@@ -57533,34 +57565,36 @@ wp:check file permissions
     grep -A 5 -B 10 prefork.c /etc/httpd/conf/httpd/conf
   #+END_SRC
 - Extended Regular Expression
-  ~(~, ~)~, ~{~, ~}~, ~?~, ~+~ and ~|~ as extra Meta characters
-  #+BEGIN_SRC sh
-    grep -E 'o' geeks.txt
+   - ~(~, ~)~, ~{~, ~}~, ~?~, ~+~ and ~|~ as extra Meta characters
+   - Also ~.~
+   - Example
+     #+BEGIN_SRC sh
+       grep -E 'o' geeks.txt
 
-    # 2 or more vowels
-    grep -E '[aeiou]{2,}' geeks.txt
+       # 2 or more vowels
+       grep -E '[aeiou]{2,}' geeks.txt
 
-    # 1 to 2 vowels
-    grep -E '[aeiou]{1,2}' geeks.txt
+       # 1 to 2 vowels
+       grep -E '[aeiou]{1,2}' geeks.txt
 
-    # exactly 2 vowels
-    grep -E 'el{2}' geeks.txt
+       # exactly 2 vowels
+       grep -E 'el{2}' geeks.txt
 
-    # Start of a word
-    grep -E -i '\<h' geeks.txt
+       # Start of a word
+       grep -E -i '\<h' geeks.txt
 
-    # End of a a word
-    grep -E 'y\>' geeks.txt
+       # End of a a word
+       grep -E 'y\>' geeks.txt
 
-    # Word boundary :: match a whole word
-    grep -E '\bGlenn\b' geeks.txt
+       # Word boundary :: match a whole word
+       grep -E '\bGlenn\b' geeks.txt
 
-    # Word boundary :: `way` must be part of a word or the whole word
-    grep -E '\Bway\B' geeks.txt
+       # Word boundary :: `way` must be part of a word or the whole word
+       grep -E '\Bway\B' geeks.txt
 
-    # OR
-    ls -al | grep -i -E 'folder1$|folder2$'
-  #+END_SRC
+       # OR
+       ls -al | grep -i -E 'folder1$|folder2$'
+     #+END_SRC
 - Options
    - --color :: hightlight
    - ~-H, -h~ :: return only the file names
@@ -59447,6 +59481,8 @@ Find which package owns a file =dpkg -S /etc/crontab=
    - ~apt show php~
    - or ~apt-cache show php~
    - or ~apt list -a --installed php~ (shows installed if it's installed)
+      - ~apt list -a --installed php-pear php-dev build-essential~ :: for multiple package checks
+   - or use regex :: ~apt list --installed | grep -E "php7\.4-"~ 
 - Search package by regex name (return name and description only) :: ~apt-cache search php~
 - Search packages with name starting php (return names only) :: ~apt-cache pkgnames php5~
 - All packages' names (return names only) :: ~apt-cache pkgnames~
@@ -61031,16 +61067,16 @@ List files or directories by name
 - Options
    - sort by time last modified :: ~-t~
    - sort by file size :: ~-S~
-   - reverse sort :: r
-   - in detail :: l
+   - reverse sort :: ~-r~
+   - in detail :: ~-l~
    - In MB :: ~-l --block-size=M~
    - Append indicator to entries :: -F, --classify
-	  - @ :: symbolic link (or that the file has extended attributes)
-	  - * :: executable
-	  - = :: socket
-	  - | :: named pipe
-	  - > :: door
-	  - / :: directory
+      - @ :: symbolic link (or that the file has extended attributes)
+      - * :: executable
+      - = :: socket
+      - | :: named pipe
+      - > :: door
+      - / :: directory
    - Output immediately :: ~-1~
    - do not sort; list entries in directory order :: ~-U~
    - do not sort, enable ~-aU~, disable -ls --color :: ~-f~
@@ -61058,6 +61094,7 @@ List files or directories by name
 - Large directory
    - ~ll -U -1~ :: do not sort, print immediately
    - ~ll -1 -f~ :: do not sort, print immediately without color
+   - ~find my_parent_folder -mindepth 1 -maxdepth 1 -type d~ :: 
 
 #+BEGIN_SRC sh
   ls -l my_scr?pt
@@ -74228,7 +74265,12 @@ Unless the field is binary, REGEXP is case-insensitive.
   WHERE t1.id = 123 AND t2.type = 'abc';
 #+END_SRC
 
-**** ~INSERT~ <<mysql:insert>>
+**** ~INSERT~
+:PROPERTIES:
+:ID:       49090FDD-B8EB-46DB-92AD-D4C1EF2FE366
+:CUSTOM_ID:       mysql:insert
+:END:
+
 ***** ~INSERT ... SELECT~
 - If there's no record from ~SELECT~, no row is inserted
   #+begin_src sql
@@ -74283,6 +74325,15 @@ Unless the field is binary, REGEXP is case-insensitive.
 	   (SELECT id FROM t2 WHERE t2_col1 = 2 LIMIT 1)
 	 );
    #+end_src
+
+***** ~INSERT INTO ... ON DUPLICATE KEY UPDATE~
+#+begin_src sql
+  INSERT INTO my_table (id, one_column, two_column)
+  VALUES (1, 'new_value', 'new_value')
+  ON DUPLICATE KEY
+      UPDATE one_column = VALUES(one_column),
+             two_column = VALUES(two_column);
+#+end_src
 
 **** ~UPDATE~
 ***** Update fields in Multiple Tables
@@ -80286,7 +80337,7 @@ Settings > Languages & Frameworks > PHP
 #+END_SRC
 
 *** PHPUnit <<phpstorm:phpunit>>
-- [[php:phpunit][php:phpunit]]
+- [[#php:phpunit][PHPUnit]]
 - Set up CLI interpreter as Local or [[phpstorm:php:cli:ssh proxy][phpstorm:php:cli:ssh proxy]]
 - Languages & Frameworks > PHP > Test Frameworks, add a ~PHPUnit Local~ or
    - ~PHPUnit by Remote Interpreter~
@@ -85594,6 +85645,7 @@ http://leaverou.github.io/contrast-ratio/
 
 * TODOs
 ** TODO https://www.gitbook.com/
+** TODO https://cert-manager.io
 ** TODO https://blog.pragmaticengineer.com/my-reading-list/
 ** PHP catch fatal error then close MySQL transaction
 ** https://www.pdftron.com/?utm_source=google&utm_medium=cpc&utm_campaign=branded&utm_content=pdftron&utm_term=pdftron&gclid=Cj0KCQiA9P__BRC0ARIsAEZ6irgMeBwmMtR70-tDS52EFyCLFEQ1wtatx-kF-cxskHtZTnHGbkQ-JnYaAtgvEALw_wcB
