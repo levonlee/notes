@@ -73416,7 +73416,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 - ~TIME~ :: format 'HH:MM:SS' from '-838:59:59.000' to '838:59:59.000'
 - ~FROM_UNIXTIME(intTime)~ :: return string e.g. ~2019-07-12 01:02:03~ in session timezone
    - Convert to a specific timezone :: ~SELECT CONVERT_TZ(FROM_UNIXTIME(1277942400), @@session.time_zone, 'America/Toronto');~
-   -  Convert a time in different timezone to Unix timestamp, returns integer :: ~WHERE timestamp > UNIX_TIMESTAMP(CONVERT_TZ('2025-05-01 00:00:00', 'America/Toronto', @@session.time_zone))~ 
+   - Convert a time in different timezone to Unix timestamp, returns integer :: ~WHERE timestamp > UNIX_TIMESTAMP(CONVERT_TZ('2025-05-01 00:00:00', 'America/Toronto', @@session.time_zone))~ 
 - ~NOW([fsp])~ :: returns a string ~YYYY-MM-DD hh:mm:ss~ or numeric ~YYYYMMDDhhmmss~ depending on the context
    - fsp argument :: a fractional seconds precision from 0 to 6
    - In session timezone 
@@ -73430,7 +73430,28 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
 	 - ~UNIX_TIMESTAMP('2024-01-19T23:03:48.676Z')~ :: ~1705705428.676~
 	 - ~UNIX_TIMESTAMP('2024-9-1')~ :: 1725163200
 	    - ~'2024-09-1'~ ~'2024-09-01'~
-      - a number in YYMMDD, YYMMDDhhmmss, YYYYMMDD, or YYYYMMDDhhmmss format 
+      - a number in YYMMDD, YYMMDDhhmmss, YYYYMMDD, or YYYYMMDDhhmmss format
+   - Start of yesterday
+     #+begin_src sql
+       SELECT UNIX_TIMESTAMP(
+          CONVERT_TZ(
+                  DATE(CONVERT_TZ(UTC_TIMESTAMP(), 'UTC', 'America/Toronto')) - INTERVAL 1 DAY,
+                  'America/Toronto',
+                  'UTC'
+          )
+       );
+     #+end_src
+   - Start of today
+      #+begin_src sql
+	SELECT UNIX_TIMESTAMP(
+	    CONVERT_TZ(
+	       DATE(CONVERT_TZ(UTC_TIMESTAMP(), 'UTC', 'America/Toronto')),
+	       'America/Toronto',
+	       'UTC'
+	    )
+	);
+      #+end_src
+
 #+BEGIN_SRC sql
   -- Custom datetime
   TIMESTAMP('2003-12-31')
