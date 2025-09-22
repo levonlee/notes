@@ -58307,6 +58307,20 @@ To enable wildcard for rm, use glob
     for file in ABC.*; do cp -a "$file" "${file/ABC/DEF}";done
   #+END_SRC
 
+**** Dry run cp
+:PROPERTIES:
+:ID:       C8611D75-F820-49FA-BC27-46EEE96C0F0D
+:CUSTOM_ID:       linux:cp:dryrun
+:END:
+
+- ~--remove-source-files~ :: move instead of copy (files only, not dirs)
+
+#+begin_src sh
+  rsync -avh --remove-source-files --dry-run \
+      /var/www/loanstudio/loanfiles/201/2016{1..7}/ \
+      /var/www/loanstudio/loanfiles/
+#+end_src
+
 *** mv
 :PROPERTIES:
 :ID:       E812FD53-A09F-4F8B-B070-CB716353D0B1
@@ -70406,8 +70420,7 @@ Add a remote: upstream
    - set it to ~--no-assume-unchanged~, stash the change or remember the change, merge/pull, and change to assumed-unchanged, and apply the previous change
 
 ** Remove a commited file from file but leave in filesystem
-Delete a file from Git (top of the current branch) but leave the file in filesystem
-The file becomes Untracked File
+First, delete a file from Git (top of the current branch) but leave the file in filesystem. The file becomes Untracked File
 #+BEGIN_SRC sh
   git rm --cached file.txt
 
@@ -70415,7 +70428,9 @@ The file becomes Untracked File
   git rm -r --cached .emacs.d/
 #+END_SRC
 
-Add file to local or global ignore so that the file won't appear as Untracked File and prevent from staging the file when =git add .=
+Then, add the file to local or global ignore so that the file won't appear as Untracked File and prevent from staging the file when =git add .=
+
+This will delete the file in this commit. However, the file still exists in the previous commit. See [[#git:remove-a-sensitive-file][How to remove a sensitive file from Git history]]
 
 ** Remove large files and folders
 - Reference :: https://docs.github.com/en/github/authenticating-to-github/removing-sensitive-data-from-a-repository
@@ -70490,7 +70505,12 @@ Add -f to force it to run and overwrite ~refs/original~
 	   git push anotherremote shrinksize:master
      #+END_SRC
 
-** Remove one file from all remote branches
+** Remove a sensitive file from Git history
+:PROPERTIES:
+:ID:       EEE62E5A-DB87-46C6-A575-D501C5F1562F
+:CUSTOM_ID:       git:remove-a-sensitive-file
+:END:
+
 - https://www.youtube.com/watch?v=liCAFV8Rmbs&ab_channel=RyanOrsinger
 
 #+begin_src sh
@@ -71118,6 +71138,29 @@ Method 2: Add another remote github
 	  B) HOTFIXes_A-X-Y should be merged back to any future branches that have not been and will be merged to master and have changes for FeatureA, X and Y.
    - My comments
 	  - At the end of the day, LSR should be merged to master. Relying on merging individual feature branches to master is dangerous. In this example, FeatureA merges to LSR without a problem but merging to master requires hotfixes on master. These hotfixes should be merged to any ongoing related branches including LSR.
+
+*** MA
+1. `release` branch
+    A) has the active development
+2. RC branch
+    A) At the start of Sprint N, branch off from the `release` branch: `RC`
+    B) Fix on the `RC branch
+	1) branch off from `RC`: `rcfix/abc`
+	2) MR: `rcfix/abc` to `RC`
+	3) In case the fix stops `release` from working, then
+	    a) we branch off from `release`: `rcfix/abc-to-release`
+	    b) Cherry-pick the commits from `rcfix/abc` and apply to `rcfix/abc-to-release`
+	    c) MR: `rcfix/abc-to-release` to `release`
+	    d) But we should treat this as the last resort. Only do this if `release` needs this immediate fix.
+    C) MR: `RC` to `master`
+    D) deploy
+    E) MR: `master` to `dev`
+3. `master` branch
+    A) Hotfix
+	1) branch off from `master`: `hotfix/abc`
+	2) MR: `hotfix/abc` to `master`
+	3) MR: `master` to `release`
+	4) MR: `master` to `RC` (if there is any)
 
 ** GitHub <<git:github>>
 :PROPERTIES:
