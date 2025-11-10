@@ -73485,7 +73485,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
    - Convert a time in different timezone to Unix timestamp, returns integer :: ~WHERE timestamp > UNIX_TIMESTAMP(CONVERT_TZ('2025-05-01 00:00:00', 'America/Toronto', @@session.time_zone))~ 
 - ~NOW([fsp])~ :: returns a string ~YYYY-MM-DD hh:mm:ss~ or numeric ~YYYYMMDDhhmmss~ depending on the context
    - fsp argument :: a fractional seconds precision from 0 to 6
-   - In session timezone 
+   - In session timezone
 - Date comparison
    - 1 Year ago :: ~post_date > DATE_SUB(NOW(), INTERVAL 1 YEAR)~
 - ~UNIX_TIMESTAMP([date|])~ :: return integer or float or NULL. Convert the string of time in session timezone to UTC integer
@@ -73771,7 +73771,7 @@ ERROR 1045: Access denied for user: 'root@localhost' (Using password: NO) or yes
   UPDATE users
   SET groups = CONCAT(groups, '|account')
   WHERE userid = 1234
-		AND FIND_IN_SET('account', REPLACE(groups, '|', ',')) = 0;
+		AND IFNULL(FIND_IN_SET('account', REPLACE(groups, '|', ',')), 0) = 0;
 
   -- Remove from list (remove 2 from comma-delimited list, and list can contain multiple 2's)
   -- - Requires columnn mytable.categories is non-null
@@ -78916,6 +78916,9 @@ PHP APM (Application Performance Metrics)
 :CUSTOM_ID:       software:documentation:adr
 :END:
 
+*** Software Diagrams
+Could use Eraser.io
+
 * Tools
 ** MacOS
 :PROPERTIES:
@@ -82922,6 +82925,31 @@ Put Reflexil AIO dll to Reflector's Addins folder C:\Program Files (x86)\Red Gat
 After edit, right click on the Object Browser > Reflexil > Save as
 
 ** Project Management
+*** Prioritization Framework
+**** WSJF (Weighted Shortest Job First)
+WSJF = Cost of Delay / Job Size
+
+For example: WSJF = (Cost of Delay / Story Points) * 10
+
+***** Cost of Delay
+Cost of Delay = User/Business Value + Time Criticality + Risk Reduction/Opportunity Enablement
+
+For example: Cost of Delay = Business Value * 0.6 + Time Criticality * 0.25 + RROE * 0.15
+
+****** Business Value
+Business Value = Severity Score + (Issue Value / 10000) * Strategic Tier Bounus
+- Severity Score: Operational/system impact (independent of client size and the importancy of a client)
+   - L5 Fire: 34
+   - L4 Critical: 21
+   - L3 High: 13
+   - L2 Medium: 5
+   - L1 Low: 1
+- Issue Value: automatically calculated. The sum of all affected client's price plans
+- Strategic Tier Bonus: Multiplier (1x - 5x) applied only to Issue Value. e.g. the client is an enterprise or flagged clients
+
+****** Time Criticality
+Depends on the Issue Type and Severity
+
 *** Jira
 **** Agile
 - 4 Values
@@ -85779,6 +85807,7 @@ http://leaverou.github.io/contrast-ratio/
    - Capture the research effort, cost and time
 
 * TODOs
+** TODO https://reportportal.io/
 ** TODO https://www.gitbook.com/
 ** TODO https://cert-manager.io
 ** TODO https://blog.pragmaticengineer.com/my-reading-list/
