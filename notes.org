@@ -59010,7 +59010,8 @@ A Linux system is really low on memory if the free value in -/+ buffers/cache: l
   #+END_SRC		    
 - ~systemctl~ operates on ~/etc/systemd~. File in this folder will be used first otherwise fall back to old System V init
 - Some daemon files can do restart and it might be the preferred way to interact with service. e.g. ~sudo /etc/init.d/jenkins restart~
-- Set up an PHP script file as a system
+
+*** Set up a PHP script file as a system
   Create ~/etc/systemd/system/myPHP.service~ file or symlink to this directory
   https://maslosoft.com/blog/2019/07/10/running-php-script-as-a-system-service-in-ubuntu/
   #+BEGIN_SRC sh
@@ -59036,20 +59037,45 @@ A Linux system is really low on memory if the free value in -/+ buffers/cache: l
 	systemctl restart myPHP
   #+END_SRC
 
-*** systemctl <<linux:systemctl>>
+*** systemctl
+:PROPERTIES:
+:ID:       906A13D1-1E1F-42A7-8825-976400DCF29A
+:CUSTOM_ID:       linux:systemctl
+:END:
+
 - https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-unitsxs
-#+BEGIN_SRC sh
-  sudo systemctl restart myapp.service
-  sudo systemctl reload myapp.service
-  sudo systemctl reload-or-restart myapp.service
+  #+BEGIN_SRC sh
+    sudo systemctl restart myapp.service
+    sudo systemctl reload myapp.service
+    sudo systemctl reload-or-restart myapp.service
 
-  sudo systemctl enable myapp.service
-  # /lib/systemd/system or /etc/systemd/system
-  # /usr/lib/systemd/system
-  # /etc/systemd/system/some_target.target.wants
+    sudo systemctl enable myapp.service
+    # /lib/systemd/system or /etc/systemd/system
+    # /usr/lib/systemd/system
+    # /etc/systemd/system/some_target.target.wants
 
-  # enable and start. enable does not start the service in the current session
-#+END_SRC
+    # enable and start. enable does not start the service in the current session
+  #+END_SRC
+- ~systemctl cat mabingo~ :: shows the setting eq. ~cat /etc/systemd/system/mabingo.service~
+- ~systemctl show mabingo~ :: shows the loaded setting parameters
+   - ~systemctl show mabingo | grep -E 'StandardOutput|StandardError|ExecStart|JournalFile|JournalFilePath'~
+      - If ~JournalFile~ exists, you tail the log file directly instead of using journal
+	 - ~tail -f /var/log/journal/mabingo.service.log~
+	 - Some systemd in some lightweight version for Docker containers writes directly to file instead of using the full journald service. But systemd-journald still needs to be running.
+- systemd-journald
+  #+begin_src sh
+    systemctl start systemd-journald
+    systemctl enable systemd-journald
+
+    # restart other services
+    systemctl restart mabingo
+
+    # force to tail
+    journalctl -u mabingo -f
+
+    # or
+    tail -f /var/log/journal/mabingo.service.log
+  #+end_src
 
 ** Network
 All active NIC and IP addresses: =ifconfig=
@@ -75234,6 +75260,39 @@ Update Joined Tables
    - Determined by row size
    - [[mysql:innodb][mysql:innodb]] :: 1017
       - including virutal generated columns
+
+*** Temporary Table
+:PROPERTIES:
+:ID:       2554740C-9E52-4D83-B20D-8E43BA610431
+:CUSTOM_ID:       mysql:temp table
+:END:
+
+Temporary tables are automatically created for:
+- GROUP BY / ORDER BY on non-indexed columns
+- DISTINCT operations
+- UNION queries
+- Complex JOIN operations
+- Subqueries in FROM clause (derived tables)
+- Queries using BLOB or TEXT columns
+
+Temporary tables may be created faster than they can fit in memeory and later spill to disk.
+- The effective limit for in-memory temporary tables is: LEAST(tmp_table_size, max_heap_table_size)
+- tmp_table_size
+   - Max size for in-memory temp tables
+   - ~SHOW VARIABLES LIKE 'tmp_table_size';~
+   - Default: 16M
+- max_heap_table_size
+   - Max size for MEMORY tables
+   - ~SHOW VARIABLES LIKE 'max_heap_table_size';~
+   - Default: 16M
+- Be careful not to set these too high as each connection can allocate this much memory.
+   - In MySQL/MariaDB only one session is permitted in a connection
+- Common Production Values
+   - Environment	Typical Setting
+   - Small (< 4GB RAM)	32-64 MB
+   - Medium (4-16GB RAM)	64-128 MB
+   - Large (16-64GB RAM)	128-256 MB
+   - Very Large (> 64GB RAM)	256-512 MB
 
 *** User-Defined Variables
 - https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
