@@ -66,7 +66,9 @@ There are two things you can do about this warning:
  '(org-goto-interface 'outline-path-completion)
  '(org-list-allow-alphabetical t)
  '(package-selected-packages
-   '(expand-region docker-compose-mode graphql-mode web-mode dockerfile-mode nginx-mode yaml-mode json-mode htmlize php-mode apache-mode))
+   '(apache-mode docker-compose-mode dockerfile-mode expand-region
+				 go-mode graphql-mode htmlize json-mode nginx-mode
+				 php-mode web-mode yaml-mode))
  '(python-indent-guess-indent-offset nil))
 
 ;; Configure the Modus Themes' appearance https://protesilaos.com/emacs/modus-themes
