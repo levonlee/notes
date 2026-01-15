@@ -67,8 +67,8 @@ There are two things you can do about this warning:
  '(org-list-allow-alphabetical t)
  '(package-selected-packages
    '(apache-mode docker-compose-mode dockerfile-mode expand-region
-				 go-mode graphql-mode htmlize json-mode nginx-mode
-				 php-mode web-mode yaml-mode))
+				 go-mode graphql-mode htmlize json-mode markdown-mode
+				 nginx-mode php-mode web-mode yaml-mode))
  '(python-indent-guess-indent-offset nil))
 
 ;; Configure the Modus Themes' appearance https://protesilaos.com/emacs/modus-themes
