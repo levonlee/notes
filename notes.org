@@ -24468,6 +24468,26 @@ Save cfdump in a string
 	   gh codespace stop --all
 	 #+end_src
 
+* Python
+:PROPERTIES:
+:ID:       90954D4E-8BEA-4006-8C9E-7F78E79CE340
+:CUSTOM_ID:       toc:python
+:END:
+
+** uv
+:PROPERTIES:
+:ID:       5F0379A4-299C-44BC-A5E0-574AB5588C9C
+:CUSTOM_ID:       python:uv
+:END:
+
+- Install :: ~curl -LsSf https://astral.sh/uv/install.sh | sh~
+- Update :: ~uv self-update~
+- Version :: ~uv --version~
+- List installed Pythons :: ~uv python list~
+   - The locations indicate who installs the python
+      - uv :: /Users/lili/.local/share/uv/python/
+      - ~/usr/bin~ :: System directory (only Apple can write here)
+
 * CSS
 ** Display, Float, Position, ~box-sizing~
 *** Display
@@ -78631,6 +78651,7 @@ change to version 1.1 or get rid of the characters
 - User Guidelines :: all projects, always
    - Saved in Augment account settings
    - e.g. Prefer composition over inheritance
+   - https://github.com/levonlee/dotfiles/blob/main/augment/rules/personal.md
 - ~/path/to/project/.augment/rules/~ :: this project, one file per module
    - Saved in Git repo
    - You can also specify rules in your user home directory :: ~~/.augment/rules/~. Auggie (CLI) will use this. It's just like User Guidelines when Augment is used inside an IDE as an extension e.g. VS Code
@@ -78640,48 +78661,152 @@ change to version 1.1 or get rid of the characters
    - Augment's storage (temporary). Not saved in cloud
    - e.g. Working on loan funding feature
 
-*** User Guidelines
-:PROPERTIES:
-:ID:       2FB9340A-C3EA-4418-A7CB-18FE7A9ECB08
-:CUSTOM_ID:       augment:user guidlines
-:END:
-
-#+begin_src markdown
-  # About Me
-  - PHP developer with 10 years of experience
-  - Solid understanding of OOP from PHP and Java
-  - Currently learning C# professionally
-
-  # Coding Preferences
-  - Prefer composition over inheritance
-  - Use dependency injection over singletons
-  - Explicit over implicit - clear data flow and dependencies
-  - Follow SOLID principles, especially Single Responsibility
-  - DRY and KISS - avoid premature abstractions
-  - Choose the boring, obvious solution over clever tricks
-  - Pragmatic over dogmatic - adapt to project reality
-
-  # Process Preferences
-  - Incremental progress - small changes that compile and pass tests
-  - Learn from existing codebase patterns before implementing
-  - Test-driven when possible
-  - Maximum 3 attempts on an issue, then reassess approach
-
-  # Formatting & Style
-  - Always convert datetimes to America/Toronto timezone
-  - Follow PSR-12 for PHP code
-  - Use descriptive variable and method names
-  - Place comments above code lines, not inline
-  - Add blank lines before comment blocks for readability
-
-  # Communication
-  - Skip flattery - respond directly
-  - Be concise
-  - Ask before taking potentially damaging actions (commits, deployments, etc.)
-#+end_src
-
 *** Billing
 - https://app.augmentcode.com/account/analytics?analyticsFilter=current_billing_cycle
+
+*** Auggie
+- ~npm install -g @augmentcode/auggie~
+   - automatic update
+- ~C-c~ to exit
+- Create ~~/.augment/rules/personal.md~ to serve as a rule for all projects and directories
+
+** GitHub Spec Kit
+:PROPERTIES:
+:ID:       C5A08F3C-D231-4596-8E79-5631EB979A3F
+:CUSTOM_ID:       ai:github spec kit
+:END:
+
+- https://github.com/github/spec-kit
+- New project :: https://www.youtube.com/watch?v=a9eR1xsfvHg
+- Existing project :: https://www.youtube.com/watch?v=SGHIQTsPzuY
+- Use uvx so that you don't need to upgrade compared to ~uv~
+   - ~alias specify='uvx --from git+https://github.com/github/spec-kit.git specify'~ in ~~/.zshrc~
+   - ~source ~/.zshrc~
+- Command order
+   - init
+      - ~specify init .~ :: init for the first time (for existing codebase)
+	 - ~specify check~
+      - ~specify init .~ :: init again when there are updates to GitHub Spec Kit (new slash commands or updated templates)
+	 - These files will update
+	    - ~.claude/commands~ and ~.github/prompts~ (they are not created if auggie agent is selected)
+	    - ~.specify~
+	       - ~scripts/~
+	       - ~templates/~
+	       - ~memory/~
+      - These directories are created
+	 - .github
+	    - prompts
+	    - workflows
+	 - .specify
+	    - memory
+	    - scripts
+	    - templates
+- Use Auggie to run commands, but use Augment Code (in IDE) to change .md files.
+
+*** Commands Step by Step
+:PROPERTIES:
+:ID:       FCDD006C-03AD-4633-9D73-6287D01C5163
+:CUSTOM_ID:       github-spec-kit:commands
+:END:
+
+https://github.com/github/spec-kit/blob/main/spec-driven.md
+- /constitution
+   - This is actually optional especially for existing large codebase
+   - Generates
+      - .specify/memory/constitution.md
+- /specify :: new feature
+   - no code, user experience
+   - select the spec.md and prompt to modify the spec.md file
+   - specs/001-i-want-to directory is created
+      - spec.md
+- /clarify :: to answer questions that the AI raises. To further update the spec.md
+- /plan :: provide your feature-specific tech stack and architecture choices
+   - e.g. "Here are the tools and patterns you must use or can only use"
+      - also feature-specific constraints
+   - Generates
+      - plan.md
+      - data-model.md
+      - research.md
+      - quickstart.md
+      - contracts/ (folder)
+- /tasks
+   - Generates tasks.md
+- /analyze
+- /implement
+   - You can use "Here's what I want. Update spec, plan and tasks as appropriate"
+
+*** Living Documentation
+:PROPERTIES:
+:ID:       60F8942C-A09A-41BB-92B5-73748DC60D34
+:CUSTOM_ID:       github-spec-kit:living documentation
+:END:
+
+To achieve:
+#+begin_src text
+  site/app/loan_status/
+  ├── AGENTS.md                    # ← Current state + evolution history
+  └── [code files]
+
+  .specify/specs/
+  ├── 003-loan-status/
+  │   ├── spec.md                  # ← MASTER (always current)
+  │   ├── plan.md                  # ← Current architecture
+  │   ├── data-model.md            # ← Current data model
+  │   ├── tasks.md                 # ← Current task list
+  │   └── CHANGELOG.md             # ← Track all changes
+  └── changes/
+      ├── 015-bugfix-gsid/
+      │   ├── spec.md              # What we're fixing
+      │   └── plan.md              # How we're fixing it
+      ├── 027-add-email/
+      │   ├── spec.md              # New feature
+      │   ├── plan.md
+      │   └── tasks.md
+      └── 041-bulk-ops/
+          ├── spec.md
+          ├── plan.md
+          └── tasks.md
+#+end_src
+
+Bug fix:
+#+begin_src text
+  /speckit.specify
+  # Prompt: "Fix gsid filtering bug in loan status history queries.
+  # Parent feature: 003-loan-status"
+
+  # Creates: .specify/specs/changes/015-bugfix-gsid/spec.md
+
+  /speckit.plan
+  /speckit.tasks
+  /speckit.implement
+
+  # After implementation:
+  # 1. Update master spec.md (if needed)
+  # 2. Update AGENTS.md (add to Evolution History)
+  # 3. Update CHANGELOG.md
+  # 4. Update master plan.md (if architecture changed)
+#+end_src
+
+Enhancement:
+#+begin_src text
+  /speckit.specify
+  # Prompt: "Add email notifications to loan status tracking.
+  # Parent feature: 003-loan-status
+  # New user story: US-3 Email Notifications"
+
+  # Creates: .specify/specs/changes/027-add-email/spec.md
+
+  /speckit.plan
+  /speckit.tasks
+  /speckit.implement
+
+  # After implementation:
+  # 1. Update master spec.md (add US-3)
+  # 2. Update AGENTS.md (add Email Notifications section)
+  # 3. Update CHANGELOG.md
+  # 4. Update master plan.md (add notification architecture)
+  # 5. Update master data-model.md (if schema changed)
+#+end_src
 
 * Software Programming
 ** Programming Paradigm
