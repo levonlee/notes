@@ -24417,9 +24417,12 @@ Save cfdump in a string
 - ~dotnet --list-sdks~ list installed SDKs
 - ~dotnet --info~
 - Use ~global.json~ to specify version in a project
+   - ~dotnet new globaljson --sdk-version 10.0.102 --roll-forward latestPatch~
 - All container images :: https://learn.microsoft.com/en-us/dotnet/core/docker/container-images
    - runtime is for production e.g. ~docker pull mcr.microsoft.com/dotnet/runtime:10.0~
    - sdk for local development e.g. ~docker pull mcr.microsoft.com/dotnet/sdk:10.0~
+- Install
+   - macOS :: ~brew install --cask dotnet-sdk~
 
 ** VS Code
 - Extensions
@@ -60032,6 +60035,14 @@ File > Settings
 - Compressor
 - Noise Suppression
 
+***** OBS Background Removal
+https://github.com/royshil/obs-backgroundremoval/releases
+- Just double click on the .pkg to install
+
+***** DeBlemish Filter Script
+https://obsproject.com/forum/resources/deblemish-filter-script.1558/
+- Go to OBS > Tools > Scripts > Add > Copy the .lua script to that directory > Add
+  
 *** Ubuntu troubleshooting
 **** Unmet dependencies
 Run these
@@ -71144,7 +71155,7 @@ List all local branches' upstream remotes
    - See all corruptions :: ~git fsck --full~ and it shows the following types (not all types) 
 	  - Commits that belong to no branch and no tag is attached (dangling commits) :: ~git fsck --unreachable~
 	  - Tags that don't point a commit (dangling tag)  :: ~git fsck --no-reflogs~
-   - Remove all tags in local repo :: refer to [[git:tag][git:tag]] 
+   - Remove all tags in local repo :: see [[#git:tag][Git Tag]] 
    - Mark reflog entries of all types as expired and prune them :: ~git reflog expire --expire=now --all~
    - Prune garbage :: ~git gc --prune=now~ or ~git prune~
 	  - Dry run prune :: ~git prune --dry-run --verbose~ 
@@ -71270,8 +71281,20 @@ Method 2: Add another remote github
   git push github
 #+END_SRC
 
-** Tag <<git:tag>>
+** Tag
+:PROPERTIES:
+:ID:       49BDB815-2F69-4C1D-8F9E-135762B03AEB
+:CUSTOM_ID:       git:tag
+:END:
+
 - A tag points to a commit and the commit may be on multiple branches
+- A tag cannot be deleted in these scenario
+   - ~git rebase~
+   - ~git push --force~ and ~git push --force-with-lease~
+   - branch deletion
+   - commit rewrites - Tags point to original commits
+- Need to manually fetch tags - ~git fetch --tags~. The default ~git fetch~ won't do
+
 #+BEGIN_SRC sh
   # list all tags
   git tag
@@ -71310,9 +71333,13 @@ Method 2: Add another remote github
 
   # In order to move the tag to point to another commit, have to delete and create
   git tag -d latest
-  git push origin :refs/tags/latest
+  git push --delete origin latest
   git tag -a latest -m "some note"
   git push origin latest
+
+  # Or you can force to update the local and push
+  git tag -f latest HEAD
+  git push origin latest --force
 
   # delete all tags in local repo
   git tag -d $(git tag -l)
@@ -78710,7 +78737,10 @@ change to version 1.1 or get rid of the characters
 :END:
 
 https://github.com/github/spec-kit/blob/main/spec-driven.md
-- /constitution
+
+For auggie agent, ~/speckit.constitution~
+
+- /constitution (optional)
    - This is actually optional especially for existing large codebase
    - Generates
       - .specify/memory/constitution.md
@@ -78719,7 +78749,7 @@ https://github.com/github/spec-kit/blob/main/spec-driven.md
    - select the spec.md and prompt to modify the spec.md file
    - specs/001-i-want-to directory is created
       - spec.md
-- /clarify :: to answer questions that the AI raises. To further update the spec.md
+- /clarify (optional) :: highly recommended. To answer questions that the AI raises. To further update the spec.md
 - /plan :: provide your feature-specific tech stack and architecture choices
    - e.g. "Here are the tools and patterns you must use or can only use"
       - also feature-specific constraints
@@ -78729,9 +78759,10 @@ https://github.com/github/spec-kit/blob/main/spec-driven.md
       - research.md
       - quickstart.md
       - contracts/ (folder)
+- /checklist (optional)
 - /tasks
    - Generates tasks.md
-- /analyze
+- /analyze (optional) :: highly recommended
 - /implement
    - You can use "Here's what I want. Update spec, plan and tasks as appropriate"
 
@@ -79741,6 +79772,10 @@ https://www.bresink.com/osx/TinkerTool.html
   sudo defaults delete /Library/Preferences/com.apple.airport.bt.plist bluetoothCoexMgmt
 #+end_src
 
+** JetBrains All Products Pack
+- JetBrains AI in Pro plan :: https://www.jetbrains.com/ai-ides/buy/?section=personal&billing=yearly
+   - 10 AI Credits per 30 days 
+
 ** PhpStorm
 :PROPERTIES:
 :ID:       5012CD5A-3C78-4C6A-9404-E2B38950C32E
@@ -80137,11 +80172,13 @@ Find Action > search Show Whitespaces
 *** Difference Viewer
 - ~⌃ + ⌘ + D~ :: Toggle viewer control options e.g. Ignore options, Highlight, collapse unchanged parts
 - ~⌃ + ⇧ + Tab~ :: Switch between left and right pane
-- ~F7~ or ~⇧+F7~ :: Next / previous difference
+- ~F7~ or ~⇧ + F7~ :: Next / previous difference
 - ~⇧ + ⌘ + [~ :: Compare next / previous file 
 - ~⌘ + Down~ :: Jump to source file
 - Highlight
    - Highlight split changes
+- ~⌘ + ⌥ + ⇧~ :: Main Menu > Code > Analyze Code > Configure Current File Analysis
+   - To change the level - Syntax, All Problems 
 
 *** Project View / Project Tree  ~⌘ 1~
 **** 3 dots > Always Select Opened File
