@@ -69803,6 +69803,31 @@ Don't verify SSL and use temporary username and password to pull and push
   git -c http.sslVerify=false -c user.name=abc -c user.password=xyz pull -p
 #+END_SRC
 
+*** Ignore case
+:PROPERTIES:
+:ID:       A5CADD3C-E7DA-463E-995C-4D3CC97D48AA
+:CUSTOM_ID:       git:config:ignore case
+:END:
+
+If the local file system is case-insensitive but the remote is case-sensitive, then set these for your local director
+#+begin_src sh
+  git config core.ignorecase false
+
+  # Step 1: Remove all loose refs completely
+  rm -rf .git/refs/remotes/origin/*
+
+  # Step 2: Fetch all branches (will recreate loose refs)
+  git fetch origin
+
+  # Step 3: Pack all refs into .git/packed-refs
+  git pack-refs --all --prune
+
+  # Step 4: Remove loose refs again (force Git to use packed-refs only)
+  rm -rf .git/refs/remotes/origin/*
+
+  git fetch
+#+end_src
+
 *** .gitattributes
 - ~./.git/info/attributes~ or ~./.gitatrributes~
 
@@ -71338,7 +71363,10 @@ Method 2: Add another remote github
   git push origin latest
 
   # Or you can force to update the local and push
-  git tag -f latest HEAD
+
+  # eq. to git tag -f latest HEAD
+  git tag -f latest
+
   git push origin latest --force
 
   # delete all tags in local repo
@@ -79861,6 +79889,9 @@ Help > Edit Custom Properties to create it and edit
   idea.max.intellisense.filesize=500000
   # Open file size
   idea.max.content.load.filesize=500000
+
+  # Inspection is stopped or not accurate when file is over 1800 lines. Change it
+  php.dfa.line.limit=5000
 #+END_SRC
 
 Help > Edit Custom VM Options
