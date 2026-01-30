@@ -69828,6 +69828,30 @@ If the local file system is case-insensitive but the remote is case-sensitive, t
   git fetch
 #+end_src
 
+Let's say macOS has file a.php but someone renames to A.php, you might see this:
+
+#+begin_src text
+  ➜  ~/li/my-project git:(my-branch) git rebase master
+  error: The following untracked working tree files would be overwritten by checkout:
+  	path/to/A.php
+  Please move or remove them before you switch branches.
+  Aborting
+#+end_src
+
+You will need to run ~git mv~ twice and commit and then do the rebase
+#+begin_src sh
+  git mv path/to/a.php path/to/a_temp.php
+  git mv path/to/a_temp.php path/to/A.php
+
+  git commit -m "Rename a.php to A.php to match master"
+
+  git rebase master
+
+  # that rename commit is dropped after the rebase
+#+end_src
+
+If you are the person who changes a file name, you should do the 2 ~git mv~ and commit and then push to remote.
+
 *** .gitattributes
 - ~./.git/info/attributes~ or ~./.gitatrributes~
 
@@ -78720,10 +78744,34 @@ change to version 1.1 or get rid of the characters
 - https://app.augmentcode.com/account/analytics?analyticsFilter=current_billing_cycle
 
 *** Auggie
+:PROPERTIES:
+:ID:       B86E46F4-98BF-4CF8-A8C9-FD2A83DE5A9A
+:CUSTOM_ID:       augment:auggie
+:END:
+
 - ~npm install -g @augmentcode/auggie~
    - automatic update
 - ~C-c~ to exit
-- Create ~~/.augment/rules/personal.md~ to serve as a rule for all projects and directories
+- Install MCP
+  #+begin_src sh
+    # Example using the official sequentialthinking MCP server via npx
+    auggie mcp add sequential-thinking \
+      --command npx \
+      --args "-y @modelcontextprotocol/server-sequential-thinking@latest"
+
+    auggie mcp list
+  #+end_src
+- ~~/.augment/~
+   - Create ~rules/personal.md~ to serve as a rule for all projects and directories
+
+**** Agents
+:PROPERTIES:
+:ID:       66EAB5F2-B73C-4782-BE28-1271A61D9C31
+:CUSTOM_ID:       auggie:agents
+:END:
+
+- model
+   - You can get model short names using ~auggie models list~
 
 ** GitHub Spec Kit
 :PROPERTIES:
