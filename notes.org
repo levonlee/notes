@@ -69861,23 +69861,33 @@ Don't verify SSL and use temporary username and password to pull and push
 :CUSTOM_ID:       git:config:ignore case
 :END:
 
-If the local file system is case-insensitive but the remote is case-sensitive, then set these for your local director
+- When ~core.ignorecase~ is false, Git expects the local file system is case-sensitive. If the remote has ~HotFix~ and the local has ~Hotfix~, Git might try to create a new folder or lock file for the new casing. The local OS then says "that already exists", which leads to the "Unable to create lock: File exists" error
+- When it is true, Git understands that ~HotFix~ and ~Hotfix~ refer to the same location on local. Instead of trying to create a new file/folder that conflicts with an existing one, it gracefully maps both to the same physical location
+
+If the local file system is case-insensitive but the remote is case-sensitive, then run these on your local. You can run this every single time it has these problems:
+#+begin_src text
+  error: could not delete references: cannot lock ref 'refs/remotes/origin/HotFix/lsr-issue-280': Unable to create '/Users/lili/ma/loanstudio/.git/refs/remotes/origin/HotFix/lsr-issue-280.lock': File exists.
+  Another git process seems to be running in this repository, e.g.
+  an editor opened by 'git commit'. Please make sure all processes
+  are terminated then try again. If it still fails, a git process
+  may have crashed in this repository earlier:
+  remove the file manually to continue.
+#+end_src
+
 #+begin_src sh
-  git config core.ignorecase false
+  git config core.ignorecase true
 
-  # Step 1: Remove all loose refs completely
-  rm -rf .git/refs/remotes/origin/*
+  # Remove all loose refs completely
+  rm -rf .git/refs/remotes
 
-  # Step 2: Fetch all branches (will recreate loose refs)
-  git fetch origin
+  # this creates a backup .git/packed-refs.bak
+  sed -i.bak '/refs\/remotes\//d' .git/packed-refs
+  find .git/refs/remotes -name "*.lock" -delete 2>/dev/null || true
 
-  # Step 3: Pack all refs into .git/packed-refs
-  git pack-refs --all --prune
+  # this should show empty
+  git show-ref | grep "refs/remotes"
 
-  # Step 4: Remove loose refs again (force Git to use packed-refs only)
-  rm -rf .git/refs/remotes/origin/*
-
-  git fetch
+  git fetch origin --prune
 #+end_src
 
 Let's say macOS has file a.php but someone renames to A.php, you might see this:
@@ -69913,8 +69923,6 @@ Now my-branch has git rebase release and A.php is used. Now you git checkout ano
   git commit -m "rename"
   git rebase release
 #+end_src
-
-
 
 *** .gitattributes
 - ~./.git/info/attributes~ or ~./.gitatrributes~
