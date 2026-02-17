@@ -78856,33 +78856,29 @@ change to version 1.1 or get rid of the characters
 - model
    - You can get model short names using ~auggie models list~
 
-** Gemini
+** Gemini CLI
 :PROPERTIES:
 :ID:       20E775FC-A98B-4180-A997-968DB2F03EC0
 :CUSTOM_ID:       ai:gemini
 :END:
 
-*** Google Developer Program Pricing
+*** Pricing & Limits
+**** Google Developer Program Pricing
 - Plans & Pricing - https://developers.google.com/program/plans-and-pricing
    - Standard, Premium and Enterprise
       - Standard is free
 - Benefits included - https://developers.google.com/program/my-benefits
-   - Gemini Code Assist
-      - Gemini CLI - https://codeassist.google/
-	 - Standard - 1,000 model requests / day
+   - Gemini Code Assist - https://codeassist.google/
+      - Includes Gemini CLI
+      - Plans
+	 - Gemini Code Assist for individuals (free)
+	    - 1,000 model requests / day
 
-*** Organization Google Account
-- Login with an Organization account will enable these:
-   - Gemini Code Assist
-      - Cloud Code with Gemini Code Assist
-      - Gemini CLI
-   - Antigravity (available only for free, Google One AI Pro, Google One AI Ultra, and Google Workspace AI Ultra for Business)
-
-*** Google One's Google AI Plans
+**** Google One's Google AI Plans
 - They are for personal accounts
    - Google AI Plus, Pro and Ultra
 
-*** Google Workspace apps
+**** Google Workspace apps
 https://workspace.google.com/
 
 - Add-ons
@@ -78893,9 +78889,16 @@ https://workspace.google.com/
 	    - Business Plus
 	    - Enterprise Standard
 	    - Enterprise Plus
+	 - Gemini App usage limits
+	    - https://support.google.com/a/answer/14571493#offerings
+	    - Context size - 1 million
+	    - Models
+	       - Fast - Unlimited
+	       - Pro - Up to 200 prompts / day
+	       - Thinking - Up to 600 prompts / day
       - AI Ultra
 
-*** Install Gemini CLI
+*** Install
 - Login with an Organization account will enable these:
    - Gemini Code Assist
    - Cloud Code with Gemini Code Assist
@@ -78913,6 +78916,40 @@ https://workspace.google.com/
   # login using a Google account
   gemini
 #+end_src
+
+*** settings.json
+- https://geminicli.com/docs/get-started/configuration/
+
+*** CLI Options
+- Sessions
+   - ~gemini --list-sessions~
+      - ~gemini -r 5~
+- Extensions
+   - https://geminicli.com/docs/extensions/reference/
+   - An extension is a package of prompts, MCP servers, custom commands, hooks, sub-agents, and agent skills into a familiar and user-friendly format
+   - https://geminicli.com/extensions/
+      - ~gemini extensions install https://github.com/upstash/context7~
+      - ~gemini extensions install https://github.com/atlassian/atlassian-mcp-server~
+      - ~gemini extensions install https://github.com/ctrlShiftBryan/chrome-devtools-mcp~
+      - Want to try
+	 - ~gemini extensions install https://github.com/exa-labs/exa-mcp-server~
+
+*** Commands
+- ~/memory~
+   - ~list~
+   - ~show~
+   - ~refresh~
+   - ~add~ - ~/memory add <text to remember>~
+- ~/resume~ - eq. ~gemini -r~
+- ~/agents~
+   - ~list~
+- ~/extensions list~ - eq. ~gemini extensions list~
+- ~Shift+Tab~ to cycle through approval modes - ~Default~ > ~Plan~ > ~Auto-Edit~
+
+*** Built-in sub-agents
+- https://geminicli.com/docs/core/subagents/
+- ~@codebase_investigator~
+- ~@cli_help~
 
 ** GitHub Spec Kit
 :PROPERTIES:
@@ -79069,11 +79106,44 @@ Enhancement:
    - ~@coderabbit review~ :: trigger to do a review
    - ~@coderabbit status~ :: to see the current status
 
+** MCP about Search
+- Context7
+   - Free
+   - A librarian that covers 20k+ popular GitHub repositories
+- Exa
+   - Not free
+   - Built for AI not human
+   - The entire live web, crawl on demand
+   - Deep research/Latest bugs
+   - Neural/Semantic
+- ref.tools
+   - Free tier / Paid for Private
+   - Public docs + Private repos
+   - 99% fewer tokens
+
+ref-58d772b40f3866593f30
+
+** Benchmark
+:PROPERTIES:
+:ID:       2F0E1604-E35E-4062-A7FF-DF3ABEAF0ECE
+:CUSTOM_ID:       ai:benchmark
+:END:
+
+- https://www.swebench.com/
+- https://arena.ai/leaderboard/ - Human Choice
+- MMLU - Massive Multitask Language Understanding
+   - https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro
+   - https://artificialanalysis.ai/evaluations/mmlu-pro
+   - https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
+- Experts in science
+   - https://artificialanalysis.ai/evaluations/gpqa-diamond
+
 ** Prompts
 :PROPERTIES:
 :ID:       C9447165-565D-43A6-8A4E-25D08FA2B1B7
 :CUSTOM_ID:       ai:prompt
 :END:
+
 *** Chain-of-Verification (CoVe)
 :PROPERTIES:
 :ID:       CE71797C-FA65-4473-8585-32412B2A19C6
@@ -79083,31 +79153,6 @@ Enhancement:
 You are an expert assistant.
 - First, answer the user’s question as clearly as possible.
 - Then, generate 3–7 concise verification questions that would help check the factual accuracy and logic of your own answer. Focus on specific claims, dates, numbers, and assumptions.
-- Next, answer each verification question independently, as if you were fact‑checking another model’s work. If you find contradictions or low‑confidence claims, explicitly note them.
-- Finally, produce a revised final answer that:
-   - Corrects or removes any claims that could not be verified.
-   - Clearly marks remaining low‑confidence points as uncertain or speculative.
-   - Keeps the structure tight and readable.
-   - In your final output, include only four labeled sections in order:
-      - Initial Answer
-      - Verification Questions
-      - Verification Answers
-      - Revised Final Answer
-
-**** Code review to understand the changes first
-:PROPERTIES:
-:ID:       282B72B6-EFB7-4146-B2CF-D0A0A23AE90E
-:CUSTOM_ID:       prompt:cove:code review
-:END:
-
-This branch is to implement this Jira ticket: https://...
-This branch will be merged to this target branch: main.
-Analyze changes made **only in this branch** `{branch}` (target: `{target}`).
-Use `git log {target}..HEAD` to find commits, then `git show` for each.
-Do not use `git diff` alone - it can be misleading for diverged branches.
-Instructions:
-- First, I want to understand all the code changes
-- Then, generate 3 concise verification questions that would help check the factual accuracy and logic of the code changes. Focus on specific claims, dates, numbers, and assumptions.
 - Next, answer each verification question independently, as if you were fact‑checking another model’s work. If you find contradictions or low‑confidence claims, explicitly note them.
 - Finally, produce a revised final answer that:
    - Corrects or removes any claims that could not be verified.
