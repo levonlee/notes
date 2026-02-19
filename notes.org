@@ -59058,7 +59058,12 @@ This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
   fg -
 #+END_SRC
 
-*** top <<linux:top>>
+*** top
+:PROPERTIES:
+:ID:       FDD863B8-F53D-417A-93ED-D4DA38CB6CDE
+:CUSTOM_ID:       linux:top
+:END:
+
 - First line
    - current time, system up time, number of users logged in, load average (1, 5, 15 minutes; >2 is busy). 
 - Second line
@@ -59082,6 +59087,8 @@ This should be enough. If not, use bash:screen :: ~nohup ./bin/newcomgo &~
    - TIME+: The total CPU time the process has used since starting
    - COMMAND: The command line name of the process (program started)
 - Type ~f~ for interaction :: set sort, display more fields/columns
+- ~Shift+m~ — sort by memory
+- ~c~ — show full command
 - Options
    - ~top -n 10 -o cpu -s 3 -U lili~
       - top 10, order by cpu usage, update every 3 seconds, processes are of user lili
@@ -59110,7 +59117,7 @@ So || is the opposite of &&
    - l :: show Low and High
    - h :: human readable
 - Another way :: ~vmstat -s~
-- See memory usage for each process, use [[linux:top][linux:top]] or ~htop~
+- See memory usage for each process, use [[#linux:top][top]] or ~htop~
 
 Before in Ubuntu it shows 6 columns and the -/+ buffers/cache row
              total       used       free     shared    buffers     cached
@@ -76207,6 +76214,10 @@ Dump a remote database
 #+BEGIN_SRC sh
   # all tables in a db
   mysqldump -uroot -p --no-data mydatabase > my-all-tables-def.sql
+
+  # including routines (procedures and functions) and triggers
+  mysqldump -uroot -p --no-data --routines --triggers mydatabase > my-all-tables-def.sql
+
   # for a table only
   mysqldump -uroot -p --no-data mydatabase mytable1 > mytable1-def.sql
   # --no-create-info dump data not definition
@@ -78950,6 +78961,94 @@ https://workspace.google.com/
 - https://geminicli.com/docs/core/subagents/
 - ~@codebase_investigator~
 - ~@cli_help~
+
+** Claude
+:PROPERTIES:
+:ID:       C4C6DD4B-8854-4EE7-9297-8B7FCE6780A0
+:CUSTOM_ID:       ai:claude
+:END:
+
+*** Config scope
+- System managed (deployed by IT)
+   - all users on the machine
+   - managed-settings.json
+   - Can't be overridden
+- Command line arguments
+- Local
+   - Overrides project and user settings
+   - ~.claude/*.local.*~ - gitignored
+      - ~.claude/settings.local.json~
+	 - Plugins
+   - ~~/.claude.json~ - (per-project)
+   - ~CLAUDE.local.md~
+   - No agents can be defined on the Local scope
+- Project
+   - ~.claude/~
+      - ~.claude/settings.json~
+	 - Plugins
+      - ~.claude/agents/~
+   - ~.mcp.json~ - MCPs
+   - ~CLAUDE.md~ or ~./claude/CLAUDE.md~
+      - 100-300 lines
+- User
+   - ~~/.claude~
+      - ~~/.claude/settings.json~
+	 - Plugins
+      - ~~/.claude/agents/~
+   - ~~/.claude.json~ - User's MCPs
+   - ~~/.claude/CLAUDE.md~
+   - ~~/.claude/projects/<project>/memory/~
+      - Auto memory loads only the first 200 lines of its main file.
+      - You need to enable it — ~/memory~
+
+*** JetBrains
+- Cmd+Esc for Quick Launch
+- Cmd+Option+K to reference files or lines in your input
+
+*** Skill
+- https://code.claude.com/docs/en/skills
+- SKILL.md — under 500 lines
+
+*** Plugin
+:PROPERTIES:
+:ID:       C272E1D6-50F5-4B31-B5F8-41C0F2C1789C
+:CUSTOM_ID:       claude:plugin
+:END:
+
+- A plugin is a package of skills, MCPs, agents and hooks
+- Built-in Marketplace ~claude-plugins-official~
+   - ~/plugin install plugin-name@claude-plugins-official~
+   - https://github.com/anthropics/claude-plugins-official
+      - Code intelligence
+- Another Anthropic marketplace — https://github.com/anthropics/claude-code/tree/main/plugins
+
+**** Superpowers
+:PROPERTIES:
+:ID:       139AB69A-84B9-4470-8171-EE7284BB2AFB
+:CUSTOM_ID:       claude:plugin:superpowers
+:END:
+
+- ~/plugin marketplace add obra/superpowers-marketplace~ and install the ~superpowers~ plugin for project
+   - https://github.com/obra/superpowers/tree/main
+- Workflow
+   - brainstorm
+      - The superpowers suite actually has a hidden "compaction" feature. You can interrupt the brainstorming and type:
+	 - "Summarize our progress so far and clear the history to save context."
+	 - Claude will write a .claude/checkpoint.md file, wipe the chat buffer, and then read that checkpoint back in. This usually drops context usage from 100% down to ~20%.
+   - ~using-git-worktrees~ - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
+   - ~writing-plans~ - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
+   - ~subagent-driven-development~ or ~executing-plans~ - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
+   - ~test-driven-development~ - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
+   - ~requesting-code-review~ - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
+   - ~finishing-a-development-branch~
+      - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+
+*** MCP
+#+begin_src sh
+  claude mcp add --scope project --transport http atlassian https://mcp.atlassian.com/v1/mcp
+  claude mcp add --scope project --transport sse jetbrains http://localhost:64342/sse
+  claude mcp add --scope project --transport http Ref https://api.ref.tools/mcp --header "x-ref-api-key: ref-xxxx"
+#+end_src
 
 ** GitHub Spec Kit
 :PROPERTIES:
