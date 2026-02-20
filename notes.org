@@ -78979,6 +78979,7 @@ https://workspace.google.com/
    - ~.claude/*.local.*~ - gitignored
       - ~.claude/settings.local.json~
 	 - Plugins
+	 - Skills
    - ~~/.claude.json~ - (per-project)
    - ~CLAUDE.local.md~
    - No agents can be defined on the Local scope
@@ -78987,6 +78988,7 @@ https://workspace.google.com/
       - ~.claude/settings.json~
 	 - Plugins
       - ~.claude/agents/~
+      - ~.claude/skills/~
    - ~.mcp.json~ - MCPs
    - ~CLAUDE.md~ or ~./claude/CLAUDE.md~
       - 100-300 lines
@@ -78995,6 +78997,7 @@ https://workspace.google.com/
       - ~~/.claude/settings.json~
 	 - Plugins
       - ~~/.claude/agents/~
+      - ~~/.claude/skills/~
    - ~~/.claude.json~ - User's MCPs
    - ~~/.claude/CLAUDE.md~
    - ~~/.claude/projects/<project>/memory/~
@@ -79015,6 +79018,31 @@ https://workspace.google.com/
 *** Skill
 - https://code.claude.com/docs/en/skills
 - SKILL.md — under 500 lines
+- https://skills.sh/
+   - By default, a skill is added to the proejct scope
+   - ~npx skills add https://github.com/remotion-dev/skills --skill remotion-best-practices --agent claude-code~
+      - Choose project scope
+      - Created ~.agents/skills/remotion-best-practices~
+	 - ~.claude/skills/remotion-best-practices~ is a symlink to the skill in ~.agents~
+	 - If you want to gitignore privately: ~git update-index --assume-unchanged .claude/skills/remotion-best-practices~
+   - ~npx skills list~ — List installed skills in project scope
+   - ~npx skills list -g~ — List installed skills in user scope
+
+**** Remotion video
+#+begin_src text
+  Use the Remotion skill's FFmpeg rules to process 1.mp4. I want to remove all silent segments longer than 0.5 seconds. Use a volume threshold of -30dB and add a 0.1s 'comfort buffer' at the start and end of each cut so it doesn't sound clipped. Output the final file as 1_edited.mp4
+  Show me the list of timestamps you plan to cut before starting the render.
+
+
+
+  Using the Remotion Skill's FFmpeg rules, analyze 1.mp4 using silencedetect with a noise threshold of -30dB and a duration of 0.5s.
+
+  1. Analyze First: Find all non-silent segments.
+  2. Apply Buffers: Add a 0.1s comfort buffer to the start and end of each 'active' segment.
+  3. Sync Logic: Ensure you use the setpts=PTS-STARTPTS and asetpts=PTS-STARTPTS filters on each segment before concatenating to prevent audio/video drift.
+  4. Review: Provide a table of the 'Keep' timestamps (Start - End) before running the command.
+  5. Output: Render to 1_edited.mp4 using the libx264 and aac codecs.
+#+end_src
 
 *** Plugin
 :PROPERTIES:
