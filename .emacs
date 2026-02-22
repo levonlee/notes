@@ -15,6 +15,7 @@ There are two things you can do about this warning:
   (when (< emacs-major-version 24)
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
+(setq package-user-dir (expand-file-name ".emacs.d/elpa" (file-name-directory load-file-name)))
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -90,6 +91,13 @@ There are two things you can do about this warning:
         (5 . (rainbow regular 1.12))
         (t . (rainbow regular 1.1)))
 )
+
+;; Force Emacs to look at its own built-in themes directory
+(add-to-list 'custom-theme-load-path (expand-file-name "themes" data-directory))
+(add-to-list 'load-path (expand-file-name "themes" data-directory))
+
+;; 2. Load the specific variant you want
+;; (require 'modus-themes)
 
 ;; Load the dark theme by default
 (load-theme 'modus-vivendi-tinted t)
