@@ -1,2 +1,3 @@
 #!/bin/bash
-emacs -nw -l ./.emacs --debug-init notes.org
+DIR="$(cd "$(dirname "$0")" && pwd)"
+emacs -nw -l "$DIR/.emacs" --debug-init "$DIR/notes.org"
