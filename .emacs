@@ -100,7 +100,7 @@ There are two things you can do about this warning:
 ;; (require 'modus-themes)
 
 ;; Load the dark theme by default
-(load-theme 'modus-vivendi-tinted t)
+(load-theme 'modus-vivendi t)
 
 (package-install-selected-packages)
 
