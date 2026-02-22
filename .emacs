@@ -96,9 +96,6 @@ There are two things you can do about this warning:
 (add-to-list 'custom-theme-load-path (expand-file-name "themes" data-directory))
 (add-to-list 'load-path (expand-file-name "themes" data-directory))
 
-;; 2. Load the specific variant you want
-;; (require 'modus-themes)
-
 ;; Load the dark theme by default
 (load-theme 'modus-vivendi t)
 
