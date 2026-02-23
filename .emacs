@@ -82,7 +82,7 @@ There are two things you can do about this warning:
       modus-themes-paren-match '(bold intense)
       modus-themes-prompts '(bold intense)
       modus-themes-org-blocks 'tinted-background
-      modus-themes-region '(bg-only)
+      modus-themes-region '(bg-char-accent)
       modus-themes-headings
       '((1 . (rainbow regular 1.5))
         (2 . (rainbow regular 1.4))
@@ -95,6 +95,12 @@ There are two things you can do about this warning:
 ;; Force Emacs to look at its own built-in themes directory
 (add-to-list 'custom-theme-load-path (expand-file-name "themes" data-directory))
 (add-to-list 'load-path (expand-file-name "themes" data-directory))
+
+(defun my/apply-theme-transparency ()
+  "Ensure Emacs background matches the terminal."
+  (set-face-background 'default "unspecified-bg" (selected-frame)))
+
+(add-hook 'window-setup-hook 'my/apply-theme-transparency)
 
 ;; Load the dark theme by default
 (load-theme 'modus-vivendi t)
@@ -117,12 +123,15 @@ There are two things you can do about this warning:
 (require 'expand-region)
 (global-set-key (kbd "C-=") 'er/expand-region)
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:family "Source Code Pro" :foundry "ADBO" :slant normal :weight normal :height 130 :width normal)))))
+;; Set the default font for all frames
+(set-face-attribute 'default nil 
+                    :family "JetBrains Mono" 
+                    :height 130 
+                    :weight 'normal)
+
+;; Set the font for fixed-pitch (coding) and variable-pitch (prose)
+(set-face-attribute 'fixed-pitch nil :family "JetBrains Mono")
+(set-face-attribute 'variable-pitch nil :family "JetBrains Mono")
 
 ;; Change the export directory from root to sub directory docs so that GitHub can pick up
 (defun org-export-output-file-name-modified (orig-fun extension &optional subtreep pub-dir)
