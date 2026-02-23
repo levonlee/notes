@@ -160,3 +160,20 @@ There are two things you can do about this warning:
 (defun lili-show-path ()
   (interactive)
   (message (mapconcat #'identity (org-get-outline-path t) "/")))
+
+(when (and (not (display-graphic-p)) (executable-find "pbcopy"))
+  ;; Function to send text to macOS clipboard
+  (defun my/paste-to-osx (text &optional push)
+    (let ((process-connection-type nil))
+      (let ((proc (start-process "pbcopy" nil "pbcopy")))
+        (process-send-string proc text)
+        (process-send-eof proc))))
+
+  ;; Function to get text from macOS clipboard
+  (defun my/copy-from-osx ()
+    (shell-command-to-string "pbpaste"))
+
+  ;; Bind Emacs clipboard functions to macOS tools
+  (setq interprogram-cut-function 'my/paste-to-osx)
+  (setq interprogram-paste-function 'my/copy-from-osx))
+
