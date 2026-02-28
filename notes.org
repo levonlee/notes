@@ -62888,7 +62888,12 @@ Personal dev project
           ipv4_address: 172.20.0.2
 #+END_EXAMPLE
 
-** Volume <<docker:volume>>
+** Volume
+:PROPERTIES:
+:ID:       96221553-C8FE-481D-8F89-B7733EE17B4D
+:CUSTOM_ID:       docker:volume
+:END:
+
 *** Basics
 - See [[docker-compose:volumes][docker-compose:volumes]]
 - See [[docker:run:volume]]
@@ -62914,6 +62919,10 @@ Personal dev project
 #+END_SRC
 
 *** Access the named volume by starting another container <<docker:volume:access>>
+:PROPERTIES:
+:ID:       89C4D264-9147-42D4-AA26-AA4C0FBFE9DB
+:END:
+
 On Windows, you may be forced to have named volume because file permissions cannot be set. In this case, you can start a new container to access the volume
 
 Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/html~
@@ -71572,14 +71581,16 @@ Method 2: Add another remote github
 	3) MR: `master` to `release`
 	4) MR: `master` to `RC` (if there is any)
 
-** GitHub <<git:github>>
+** GitHub
 :PROPERTIES:
-:CUSTOM_ID: github
+:CUSTOM_ID: git:github
 :END:
+
 *** API
 :PROPERTIES:
 :CUSTOM_ID: github-api
 :END:
+
 - REST API v3 :: https://developer.github.com/v3/
 - Get repo size
   #+BEGIN_SRC sh
@@ -71719,6 +71730,83 @@ RawGit is down.. Use raw.githack.com
 
 *** Shortcut
 - Search :: ~⌘ k~
+
+*** Settings
+:PROPERTIES:
+:ID:       60377098-9F72-4343-B16E-F47742D40709
+:CUSTOM_ID:       github:settings
+:END:
+
+- Acces
+   - Emails
+      - Keep my email addresses private
+	 - Block command line pushes that expose my email
+- Contributions & activity
+   - Include private contributions on my profile
+
+*** Multiple GitHub Accounts
+**** Optiion 1: 2 OpenSSH
+~~/.ssh/config~
+#+begin_src conf
+  Host github.com
+    AddKeysToAgent yes
+    UseKeychain yes
+    IdentityFile ~/.ssh/id_ed25519_account1_github
+
+  Host github-account2
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_account2_github
+#+end_src
+
+In a project's repo that should sync to account1 ~/path/to/project1/.git/config~
+#+begin_src conf
+  [remote "origin"]
+          url = git@github.com:account1/my-repo.git
+#+end_src
+
+In a project's repo that should sync to account2 ~/path/to/project2/.git/config~
+#+begin_src conf
+  [remote "origin"]
+          url = git@github-account2:account2/my-repo.git
+#+end_src
+
+**** Option 2: Move all repos of account2 to a directory
+No change in ~~/.ssh/config~
+
+In ~~/.gitconfig~
+#+begin_src conf
+  [user]
+          name = account1
+          email = account1@email.com
+
+  [includeIf "gitdir:~/path/to/private/"]
+      path = ~/path/to/private/.gitconfig-account2
+#+end_src
+
+~~/path/to/private/.gitconfig-account2~
+#+begin_src conf
+  [user]
+      name = account2
+      email = 99999+account2@users.noreply.github.com
+
+  [core]
+      sshCommand = "ssh -i ~/.ssh/id_ed25519_account2_github -F /dev/null"
+#+end_src
+
+Each project's remote URL in ~.git/config~ remains default: ~git@github.com:account1or2~
+
+In a project's repo that should sync to account1 ~/path/to/project1/.git/config~
+#+begin_src conf
+  [remote "origin"]
+          url = git@github.com:account1/my-repo.git
+#+end_src
+
+In a project's repo that should sync to account2 ~/path/to/project2/.git/config~
+#+begin_src conf
+  [remote "origin"]
+          url = git@github.com:account2/my-repo.git
+#+end_src
 
 ** GitLab
 :PROPERTIES:
@@ -79254,8 +79342,9 @@ Enhancement:
 :END:
 
 - When integrated with GitLab
-   - ~@coderabbit resolve~ :: if there is new commits, the diff is different for some files, the previous raied unresolved threads will be resolved if it is correctly resolved.
+   - ~@coderabbit resolve~ :: resolve all the CodeRabbit review comments
    - ~@coderabbit review~ :: trigger to do a review
+      - ~@coderabbit a new commit is pushed, please review it?~
    - ~@coderabbit status~ :: to see the current status
 
 ** MCP about Search
