@@ -1070,7 +1070,12 @@ Use absolute path. See dirname
 *** intl
 require debian pkg libicu-dev
 
-*** memcached <<php:memcached>>
+*** memcached
+:PROPERTIES:
+:ID:       C73FE6D5-1FC5-4029-9E03-0AE74C362B5A
+:CUSTOM_ID:       php:memcached
+:END:
+
 - Port 11211
 - Install
   #+BEGIN_SRC sh
@@ -62929,8 +62934,16 @@ Container ~yourContainerName~ has named volume ~dbdata~ pointed to ~/var/www/htm
 
 #+BEGIN_SRC sh
   # check what files are in the volume
-  docker run -ti --rm --volumes-from yourContainerName ubuntu:latest
-  ll /var/www/html
+
+  # alpine use /volume to bind, you will see the owner:group is 999:ping for MySQL data (/var/lib/mysql). 999 is a good news.
+  docker run --rm -v dbdata:/volume alpine ls -lh /volume
+
+  # Old option
+  # docker run -ti --rm --volumes-from yourContainerName ubuntu:latest
+  # ll /var/www/html
+  # Old option ends
+
+  # check the owner:group, for example, MySQL image uses mysql:mysql
 
   # backup volume `dbdata` to host backup/backup.bar
   docker run --rm --volumes-from yourContainerName -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /var/www/html
@@ -65370,22 +65383,22 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
     madocker:
   #    ..
       networks:
-	- default
+  	- default
     clickhouse:
       container_name: myclickhouse
       image: yandex/clickhouse-server
       ports:
-	- "8123:8123"
+  	- "8123:8123"
       # user is optional, 101:101 is clickhouse:clickhouse, default is root
       user: "101:101"
       volumes:
-	# refer to init.sh
-	- ./setupfiles/clickhouse/:/docker-entrypoint-initdb.d
-	# mapping /var/lib/clickhouse does not work on Mac 2022-03-24
-	# - ./clickhouse:/var/lib/clickhouse
-	# - ./clickhouse-log:/var/log/clickhouse-server # optional
+  	# refer to init.sh
+  	- ./setupfiles/clickhouse/:/docker-entrypoint-initdb.d
+  	# mapping /var/lib/clickhouse does not work on Mac 2022-03-24
+  	# - ./clickhouse:/var/lib/clickhouse
+  	# - ./clickhouse-log:/var/log/clickhouse-server # optional
       networks:
-	- default
+  	- default
 #+end_src
 
 #+begin_src sh
@@ -70062,7 +70075,7 @@ Show file names only between 2 commits
       - Reset current HEAD to a ~<tree-ish>~ or ~<commit>~ which defaults to ~HEAD~
       - ~--mixed~ :: default mode. Reset the Index (staged) but not the working tree
 - ~git reset --hard~ :: See [[git:reset:hard]]
-- ~git clean -dfn~ <<git:clean>> :: remove untracked files
+- ~git clean -dfn~ :: remove untracked files
 - ~git stash~ :: Save and remove Staged and Unstaged changes <<git:stash>>
    - Stash tracked file changes :: ~git stash~
       - Give a name :: ~git stash save 'my stash'~
@@ -71046,7 +71059,12 @@ Add -f to force it to run and overwrite ~refs/original~
   git-when-merged -lr a-commit-hash master
 #+end_src
 
-** Ignore, Local/Global Ignore, Show Ignored Files <<git:ignore>>
+** Ignore, Local/Global Ignore, Show Ignored Files
+:PROPERTIES:
+:ID:       DCF147F7-64E2-4473-BC2E-D40643CAC78F
+:CUSTOM_ID:       git:ignore
+:END:
+
 - https://www.gitignore.io/
 - Refer to [[git:update-index][git:update-index]]
 - Show untracked files :: ~git status -u~
@@ -71060,6 +71078,15 @@ Add -f to force it to run and overwrite ~refs/original~
       - Change excludesfile to a folder location that you know under ~[core]~ after ~git config --global -e~ (edit the global config file)
       - Or try this ~git config --global core.excludesfile K:/.gitignore_global~
 - Show all ignored files :: ~git status --ignored~
+   - Or this way — ~git clean -ndX~
+   - Backup
+      - ~git clean -ndX | sed 's/Would remove //' | grep -vE '\.DS_Store|\.idea/|\.vscode/|\.augment/|\.cursor/' | tr '\n' '\0' | xargs -0 du -ch | tail -n 1~ — dry run and get the total size to pack
+      - ~git clean -ndX | sed, tr ... | xargs -0 du -sh | sort -h~ — dry run and check size
+	 - Go to source folder to see what have large disk usage ~du -h -d 1 | sort -h~
+      - ~git clean -ndX | sed, tr ... | xargs -0 tar -cvzf - | split -b 500m - "ignored_files.tar.gz.part_"~
+	 - Unpack
+	    - ~cat ignored_files.tar.gz.part_* > ignored_files.tar.gz~
+	    - ~tar -xvzf ignored_files.tar.gz~
 - Why a file is ignored :: ~git check-ignore -v path/to/filename~
 - After 1.8.2, ~**~ can be used to mean zero or more sub-directories (relative to the place where .gitignore is)
    - ~bin/~ ignores any folder named bin
@@ -80290,6 +80317,13 @@ https://github.com/keycastr/keycastr#readme
    - Shared albums will be re-downloaded
 - Create and open a photo library and set it to the System Photo Library
    - In ~/Applications~ folder, ~⌥~ double click ~Photos.app~
+- Backup
+   - On iPhone, MacBook > Photos.app > Settings > iCloud, MacBook > Image Capture, turn on: Download and Keep Originals, and Sync to iCloud
+   - On iPhone > Display > don't lock the screen
+   - Use Image Capture to back up photos
+   - WhatsApp > Settings > Chats > Save to Photos (off)
+   - Turn off device backup (rely on per app iCloud backup only)
+      - iPhone > Settings > Your Name > iCloud > iCloud Backup > Back Up This iPhone (off)
 
 *** Time Machine
 - Disk Utility > Select all Devices and select the external hard drive > Erase
