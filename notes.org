@@ -65373,7 +65373,12 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
   >>> exit
 #+END_EXAMPLE
 
-*** image:yandex/clickhouse-server <<docker:clickhouse>>
+*** image:yandex/clickhouse-server
+:PROPERTIES:
+:ID:       14200BE8-D107-4875-B8A4-10C4EF2E22BF
+:CUSTOM_ID:       docker:clickhouse
+:END:
+
 - https://hub.docker.com/r/yandex/clickhouse-server
 - Container exposes 8123 port for HTTP interface and 9000 port for native client
 #+begin_src docker-compose
@@ -65421,10 +65426,39 @@ https://github.com/vimagick/dockerfiles/tree/master/scrapyd
 #+begin_src sh
   #!/bin/bash
   set -e
-  clickhouse-client -n <<-'EOSQL'
-  CREATE DATABASE IF NOT EXISTS malog;
-  CREATE TABLE IF NOT EXISTS malog.accesslog(...);
+  clickhouse-client --password abc -n <<-'EOSQL'
+  CREATE DATABASE IF NOT EXISTS mylog;
+  CREATE TABLE IF NOT EXISTS mylog.accesslog(...);
   EOSQL
+#+end_src
+
+**** system Database got too big
+Check which databases take up space
+
+#+begin_src sql
+  SELECT database, formatReadableSize(sum(bytes_on_disk)) AS size
+  FROM system.parts
+  GROUP BY database
+  ORDER BY sum(bytes_on_disk) DESC;
+
+  -- Truncate some system tables
+  TRUNCATE TABLE system.trace_log;
+  TRUNCATE TABLE system.metric_log;
+  TRUNCATE TABLE system.asynchronous_metric_log;
+
+  -- Force Clickhouse to release the disk space:
+  OPTIMIZE TABLE system.trace_log FINAL;
+  OPTIMIZE TABLE system.metric_log FINAL;
+  OPTIMIZE TABLE system.asynchronous_metric_log FINAL;
+#+end_src
+
+Add ~ttl~ to ~/etc/clickhouse-server/config.xml~, do this for each system table
+#+begin_src xml
+  <query_log>
+    <database>system</database>
+    <table>query_log</table>
+    <ttl>event_date + INTERVAL 3 DAY</ttl>
+  </query_log>
 #+end_src
 
 *** image:ngrok/ngrok <<image:ngrok>>
@@ -77268,7 +77302,7 @@ Run this .sql file:
 - GitHub GraphQL API explorer :: https://developer.github.com/v4/explorer/
 
 ** ClickHouse
-- Refer to [[docker:clickhouse][docker:clickhouse]]
+- See [[#docker:clickhouse][docker:clickhouse]]
 - Use uppercase for functions
 - ~INSERT INTO () VALUES ()~, don't use ~VALUE~
 
@@ -79216,6 +79250,17 @@ https://workspace.google.com/
   # Save to local scope (~/.claude.json) but per project
   claude mcp add --scope local --transport sse jetbrains http://localhost:64342/sse
   claude mcp add --scope local --transport http Ref https://api.ref.tools/mcp --header "x-ref-api-key: ref-xxxx"
+#+end_src
+
+*** Version control project settings
+#+begin_src sh
+  # /path/to/repo is the project
+  # /path/to/repo-claude is another directory and repo to hold the settings and version controlled
+
+  cd /path/to/repo
+  ln -s /path/to/repo-claude/CLAUDE.local.md ./CLAUDE.local.md
+  ln -s /path/to/repo-claude/.mcp.json ./.mcp.json
+  ln -s /path/to/repo-claude/.claude ./.claude
 #+end_src
 
 ** GitHub Spec Kit
@@ -81233,6 +81278,17 @@ Add comments around tags with id or class attribute.
 *** Settings > Advanced Settings
 - Editor Tabs
    - Equalize proportions in nested splits
+
+*** Move Settings from one computer to another
+- File > Manage IDE Settings > Export and then Import
+- Configure PHP interpreter
+- Settings > Appearance > Use custom font
+- Settings > Editor
+   - Font
+- Settings > Version Control > Git
+- Database (enter credentials and make sure settings are the same)
+- Settings > Tools > Tasks > Servers
+   - Jira (remember Atlassian API Token name should not have spaces)
 
 *** .editorconfig
 :PROPERTIES:
